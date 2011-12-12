@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -36,10 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
-int modelica_string_ok(modelica_string_t* a)
+int modelica_string_ok(const modelica_string_t* a)
 {
   /* Since a modelica string is a char* check that it is not null.*/
-    return (a != NULL ? 1 : 0);
+    return ((a != NULL) ? 1 : 0);
 }
 
 int modelica_string_length(modelica_string_const a)
@@ -123,7 +123,7 @@ modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b, mo
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr,const modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
 {
   return init_modelica_string(e[nr-1]);
 }
@@ -140,11 +140,11 @@ modelica_string_const init_modelica_string(modelica_string_const str)
   return dest;
 }
 
-modelica_string_t alloc_modelica_string(int n)
+modelica_string_t alloc_modelica_string(int length)
 {
     /* Reserve place for null terminator too.*/
-    modelica_string_t dest = (modelica_string_t) char_alloc(0,n+1);
-    dest[n]=0;
+    modelica_string_t dest = (modelica_string_t) char_alloc(0,length+1);
+    dest[length]=0;
     return dest;
 }
 

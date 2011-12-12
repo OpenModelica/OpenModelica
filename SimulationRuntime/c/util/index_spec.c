@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -36,32 +36,27 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-int index_spec_ok(index_spec_t* s)
+int index_spec_ok(const index_spec_t* s)
 {
     int i;
-    if (!s)
-    {
+    if (s == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec is NULL!\n"); fflush(stderr);
       return 0;
     }
-    if (s->ndims < 0)
-    {
+    if (s->ndims < 0) {
       fprintf(stderr,"index_spec_ok: the index spec dimensions are negative: %d!\n", (int)s->ndims); fflush(stderr);
       return 0;
     }
-    if (!s->dim_size)
-    {
+    if (s->dim_size == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec dimensions sizes is NULL!\n"); fflush(stderr);
       return 0;
     }
-    if (!s->index)
-    {
+    if (s->index == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec index array is NULL!\n"); fflush(stderr);
       return 0;
     }
     for (i = 0; i < s->ndims; ++i) {
-        if (s->dim_size[i] < 0)
-        {
+        if (s->dim_size[i] < 0) {
           fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
           return 0;
         }
@@ -136,13 +131,15 @@ _index_t* make_index_array(int nridx, ...)
     return res;
 }
 
-void print_size_array(int size, size_t* arr)
+void print_size_array(int size, const size_t* arr)
 {
   int i;
   printf("{");
   for(i = 0; i < size; ++i) {
     printf("%d", (int) arr[i]);
-    if (i != (size - 1)) printf(",");
+    if (i != (size - 1)) {
+        printf(",");
+    }
   }
   printf("}\n");
 }
@@ -154,7 +151,7 @@ void print_size_array(int size, size_t* arr)
  * The function returns 0 if new index is calculated and 1 if no more indices
  * are available (all indices traversed).
   */
-int next_index(int ndims, _index_t* idx, _index_t* size)
+int next_index(int ndims, _index_t* idx, const _index_t* size)
 {
     int d = ndims - 1;
 
@@ -162,7 +159,9 @@ int next_index(int ndims, _index_t* idx, _index_t* size)
 
     while (idx[d] >= size[d]) {
         idx[d] = 0;
-        if (!d) { return 1; }
+        if (d == 0) {
+            return 1;
+        }
         d--;
         idx[d]++;
     }
@@ -170,33 +169,35 @@ int next_index(int ndims, _index_t* idx, _index_t* size)
     return 0;
 }
 
-void print_index_spec(index_spec_t* spec)
+void print_index_spec(const index_spec_t* spec)
 {
-  int i,k;
-  printf("[");
-  for(i = 0; i < spec->ndims; ++i)
-  {
-    switch (spec->index_type[i])
-    {
-      case 'S':
-        printf("%d", (int) *spec->index[i]);
-        break;
-      case 'A':
-        printf("{");
-        for (k = 0; k < spec->dim_size[i]; ++k) {
-          printf("%d", (int) spec->index[i][k]);
-          if (k != (spec->dim_size[i] - 1)) printf(",");
+    int i,k;
+    printf("[");
+    for(i = 0; i < spec->ndims; ++i) {
+        switch (spec->index_type[i]) {
+            case 'S':
+                printf("%d", (int) *spec->index[i]);
+                break;
+            case 'A':
+                printf("{");
+                for (k = 0; k < spec->dim_size[i]; ++k) {
+                    printf("%d", (int) spec->index[i][k]);
+                    if (k != (spec->dim_size[i] - 1)) {
+                        printf(",");
+                    }
+                }
+                printf("}");
+                break;
+            case 'W':
+                printf(":");
+                break;
+            default:
+                printf("INVALID TYPE %c.", spec->index_type[i]);
+                break;
         }
-        printf("}");
-        break;
-      case 'W':
-        printf(":");
-        break;
-      default:
-        printf("INVALID TYPE %c.", spec->index_type[i]);
-        break;
+        if (i != (spec->ndims - 1)) {
+            printf(", ");
+        }
     }
-    if (i != (spec->ndims - 1)) printf(", ");
-  }
-  printf("]");
+    printf("]");
 }

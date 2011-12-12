@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -35,9 +35,9 @@
 #include <stdio.h>
 
 /* 16 MB of data ought to be enough */
-#define NR_ELEMENTS    4*1024*1024
+#define NR_ELEMENTS    (4*1024*1024)
 
-one_state *current_states;
+static one_state *current_states;
 
 void* push_memory_states(int maxThreads)
 {
@@ -57,7 +57,7 @@ void* push_memory_states(int maxThreads)
 
 void pop_memory_states(void* new_states)
 {
-  if (current_states)
+  if (current_states != NULL)
   {
     free(current_states[0].buffer); /* TODO: Free all of them... */
     free(current_states);
@@ -65,16 +65,16 @@ void pop_memory_states(void* new_states)
   current_states = new_states;
 }
 
-state get_memory_state()
+state get_memory_state(void)
 {
-  if (!current_states)
+  if (current_states == NULL)
   {
     push_memory_states(1);
   }
   return current_states[0].current_state;
 }
 
-void print_current_state()
+void print_current_state(void)
 {
   state current_state = current_states[0].current_state;
   printf("=== Current state ===\n");
@@ -91,14 +91,14 @@ void print_state(state s)
 
 void restore_memory_state(state restore_state)
 {
-  if (!current_states)
+  if (current_states == NULL)
   {
     push_memory_states(1);
   }
   current_states[0].current_state = restore_state;
 }
 
-void clear_current_state()
+void clear_current_state(void)
 {
   current_states[0].current_state.buffer = 0;
   current_states[0].current_state.offset = 0;
@@ -109,10 +109,10 @@ void* alloc_elements(int ix, int n, int sz)
   _index_t start,nelem;
   assert(n>=0);
   start = current_states[ix].current_state.offset;
-  nelem = (n*sz)/sizeof(int) + ((n*sz)%sizeof(int) ? 1 : 0);
+  nelem = ((n * sz)/sizeof(int)) + (((n * sz) % sizeof(int)) ? 1 : 0);
   assert(nelem <= NR_ELEMENTS);
-  if (start + nelem > NR_ELEMENTS) {
-    if (current_states[ix].nbuffers == current_states[ix].current_state.buffer+1) {
+  if ((start + nelem) > NR_ELEMENTS) {
+    if (current_states[ix].nbuffers == (current_states[ix].current_state.buffer + 1)) {
       /* We need to allocate another region */
       current_states[ix].buffer=realloc(current_states[ix].buffer,sizeof(int*)*current_states[ix].nbuffers);
       current_states[ix].buffer[current_states[ix].nbuffers]=malloc(sizeof(int)*NR_ELEMENTS);
