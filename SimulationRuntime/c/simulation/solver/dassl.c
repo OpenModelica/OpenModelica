@@ -352,6 +352,7 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   double* backupStates;
   double backupTime;
   int i;
+  int j;
   backupStates = globalData->states;
   backupTime = globalData->timeValue;
 
@@ -361,8 +362,10 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   functionJacA(pd);
 
   // add cj to the diagonal elements of the matrix
+  j = 0;
   for (i = 0; i < globalData->nStates; i++) {
-    pd[i + i * globalData->nStates] -= (double) *cj;
+    pd[j] -= (double) *cj;
+    j += globalData->nStates + 1;
   }
   globalData->states = backupStates;
   globalData->timeValue = backupTime;
@@ -378,8 +381,8 @@ int
 JacA_num(double *t, double *y, double *matrixA) {
   double delta_h = 1.e-10;
   double delta_hh;
-  double* yprime = (double*) calloc(globalData->nStates,sizeof(double));
-  double* yprime_delta_h = (double*) calloc(globalData->nStates,sizeof(double));
+  double* yprime = (double*) malloc(globalData->nStates * sizeof(double));
+//  double* yprime_delta_h = (double*) calloc(globalData->nStates,sizeof(double));
 
   double* backupStates;
   double backupTime;
@@ -403,16 +406,16 @@ JacA_num(double *t, double *y, double *matrixA) {
     functionODE();
     globalData->states[i] -= delta_hh;
 
+    l = i * globalData->nStates;
     for (j = 0; j < globalData->nStates; j++) {
-      l = j + i * globalData->nStates;
-      matrixA[l] = (globalData->statesDerivatives[j] - yprime[j]) / delta_hh;
+      matrixA[l+j] = (globalData->statesDerivatives[j] - yprime[j]) / delta_hh;
     }
   }
 
   globalData->states = backupStates;
   globalData->timeValue = backupTime;
   free(yprime);
-  free(yprime_delta_h);
+//  free(yprime_delta_h);
 
   return 0;
 }
@@ -431,12 +434,10 @@ int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
   }
 
   // add cj to diagonal elements and store in pd
+  j = 0;
   for (i = 0; i < globalData->nStates; i++) {
-    for (j = 0; j < globalData->nStates; j++) {
-      if (i == j) {
-        pd[i + j * globalData->nStates] -= (double) *cj;
-      }
-    }
+    pd[j] -= (double) *cj;
+    j += globalData->nStates + 1;
   }
   return 0;
 }

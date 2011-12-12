@@ -501,7 +501,7 @@ startInteractiveSimulation(int argc, char**argv)
   int retVal = -1;
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
-#ifndef NO_INTERACTIVE_DEPENDENCY 
+#ifndef NO_INTERACTIVE_DEPENDENCY
   initServiceInterfaceData(argc, argv);
 
   //Create the Control Server Thread
@@ -777,15 +777,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 DATA *initializeDataStruc2(DATA *returnData)
 {
   if (returnData->nStates) {
-    returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
-    returnData->states_old = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->states_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
+    returnData->states = (double*) calloc(returnData->nStates,sizeof(double));
+    returnData->statesFilterOutput = (modelica_boolean*) calloc(returnData->nStates,sizeof(modelica_boolean));
+    returnData->states_old = (double*) calloc(returnData->nStates,sizeof(double));
+    returnData->states_old2 = (double*) calloc(returnData->nStates,sizeof(double));
     assert(returnData->states&&returnData->states_old&&returnData->states_old2);
-    memset(returnData->states,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
-    memset(returnData->states_old,0,sizeof(double)*returnData->nStates);
-    memset(returnData->states_old2,0,sizeof(double)*returnData->nStates);
   } else {
     returnData->states = 0;
     returnData->statesFilterOutput = 0;
@@ -794,17 +790,12 @@ DATA *initializeDataStruc2(DATA *returnData)
   }
 
   if (returnData->nStates) {
-    returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivativesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
-    returnData->statesDerivatives_old = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivatives_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivativesBackup = (double*) malloc(sizeof(double)*returnData->nStates);
+    returnData->statesDerivatives = (double*) calloc(returnData->nStates,sizeof(double));
+    returnData->statesDerivativesFilterOutput = (modelica_boolean*) calloc(returnData->nStates,sizeof(modelica_boolean));
+    returnData->statesDerivatives_old = (double*) calloc(returnData->nStates,sizeof(double));
+    returnData->statesDerivatives_old2 = (double*) calloc(returnData->nStates,sizeof(double));
+    returnData->statesDerivativesBackup = (double*) calloc(returnData->nStates,sizeof(double));
     assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2&&returnData->statesDerivativesBackup);
-    memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivativesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
-    memset(returnData->statesDerivatives_old,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivatives_old2,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivativesBackup,0,sizeof(double)*returnData->nStates);
   } else {
     returnData->statesDerivatives = 0;
     returnData->statesDerivativesFilterOutput = 0;
@@ -814,23 +805,18 @@ DATA *initializeDataStruc2(DATA *returnData)
   }
 
   if (returnData->nHelpVars) {
-    returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);
+    returnData->helpVars = (double*) calloc(returnData->nHelpVars,sizeof(double));
     assert(returnData->helpVars);
-    memset(returnData->helpVars,0,sizeof(double)*returnData->nHelpVars);
   } else {
     returnData->helpVars = 0;
   }
 
   if (returnData->nAlgebraic) {
-    returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-    returnData->algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlgebraic);
-    returnData->algebraics_old = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-    returnData->algebraics_old2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+    returnData->algebraics = (double*) calloc(returnData->nAlgebraic,sizeof(double));
+    returnData->algebraicsFilterOutput = (modelica_boolean*) calloc(returnData->nAlgebraic,sizeof(modelica_boolean));
+    returnData->algebraics_old = (double*) calloc(returnData->nAlgebraic,sizeof(double));
+    returnData->algebraics_old2 = (double*) calloc(returnData->nAlgebraic,sizeof(double));
     assert(returnData->algebraics&&returnData->algebraics_old&&returnData->algebraics_old2);
-    memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
-    memset(returnData->algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlgebraic);
-    memset(returnData->algebraics_old,0,sizeof(double)*returnData->nAlgebraic);
-    memset(returnData->algebraics_old2,0,sizeof(double)*returnData->nAlgebraic);
   } else {
     returnData->algebraics = 0;
     returnData->algebraicsFilterOutput = 0;
@@ -839,23 +825,18 @@ DATA *initializeDataStruc2(DATA *returnData)
   }
 
   if (returnData->stringVariables.nAlgebraic) {
-    returnData->stringVariables.algebraics = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);
+    returnData->stringVariables.algebraics = (const char**)calloc(returnData->stringVariables.nAlgebraic,sizeof(char*));
     assert(returnData->stringVariables.algebraics);
-    memset(returnData->stringVariables.algebraics,0,sizeof(char*)*returnData->stringVariables.nAlgebraic);
   } else {
     returnData->stringVariables.algebraics=0;
   }
 
   if (returnData->intVariables.nAlgebraic) {
-    returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraics_old = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraics_old2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+    returnData->intVariables.algebraics = (modelica_integer*)calloc(returnData->intVariables.nAlgebraic,sizeof(modelica_integer));
+    returnData->intVariables.algebraicsFilterOutput = (modelica_boolean*) calloc(returnData->intVariables.nAlgebraic,sizeof(modelica_boolean));
+    returnData->intVariables.algebraics_old = (modelica_integer*)calloc(returnData->intVariables.nAlgebraic,sizeof(modelica_integer));
+    returnData->intVariables.algebraics_old2 = (modelica_integer*)calloc(returnData->intVariables.nAlgebraic,sizeof(modelica_integer));
     assert(returnData->intVariables.algebraics&&returnData->intVariables.algebraics_old&&returnData->intVariables.algebraics_old2);
-    memset(returnData->intVariables.algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraics_old,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraics_old2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
   } else {
     returnData->intVariables.algebraics=0;
     returnData->intVariables.algebraicsFilterOutput=0;
@@ -864,15 +845,11 @@ DATA *initializeDataStruc2(DATA *returnData)
   }
 
   if (returnData->boolVariables.nAlgebraic) {
-    returnData->boolVariables.algebraics = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraics_old = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraics_old2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+    returnData->boolVariables.algebraics = (modelica_boolean*)calloc(returnData->boolVariables.nAlgebraic,sizeof(modelica_boolean));
+    returnData->boolVariables.algebraicsFilterOutput = (modelica_boolean*) calloc(returnData->boolVariables.nAlgebraic,sizeof(modelica_boolean));
+    returnData->boolVariables.algebraics_old = (signed char*)calloc(returnData->boolVariables.nAlgebraic,sizeof(modelica_boolean));
+    returnData->boolVariables.algebraics_old2 = (signed char*)calloc(returnData->boolVariables.nAlgebraic,sizeof(modelica_boolean));
     assert(returnData->boolVariables.algebraics&&returnData->boolVariables.algebraics_old&&returnData->boolVariables.algebraics_old2);
-    memset(returnData->boolVariables.algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraics_old,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraics_old2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
   } else {
     returnData->boolVariables.algebraics=0;
     returnData->boolVariables.algebraicsFilterOutput=0;
@@ -881,117 +858,101 @@ DATA *initializeDataStruc2(DATA *returnData)
   }
 
   if (returnData->nParameters) {
-    returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);
+    returnData->parameters = (double*) calloc(returnData->nParameters,sizeof(double));
     assert(returnData->parameters);
-    memset(returnData->parameters,0,sizeof(double)*returnData->nParameters);
   } else {
     returnData->parameters = 0;
   }
 
   if (returnData->stringVariables.nParameters) {
-    returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
+    returnData->stringVariables.parameters = (const char**)calloc(returnData->stringVariables.nParameters,sizeof(char*));
     assert(returnData->stringVariables.parameters);
-    memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
   } else {
     returnData->stringVariables.parameters=0;
   }
 
   if (returnData->intVariables.nParameters) {
-    returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
+    returnData->intVariables.parameters = (modelica_integer*)calloc(returnData->intVariables.nParameters,sizeof(modelica_integer));
     assert(returnData->intVariables.parameters);
-    memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
   } else {
     returnData->intVariables.parameters=0;
   }
 
   if (returnData->boolVariables.nParameters) {
-    returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
+    returnData->boolVariables.parameters = (modelica_boolean*)calloc(returnData->boolVariables.nParameters,sizeof(modelica_boolean));
     assert(returnData->boolVariables.parameters);
-    memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
   } else {
     returnData->boolVariables.parameters=0;
   }
 
   if (returnData->nOutputVars) {
-    returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);
+    returnData->outputVars = (double*) calloc(returnData->nOutputVars,sizeof(double));
     assert(returnData->outputVars);
-    memset(returnData->outputVars,0,sizeof(double)*returnData->nOutputVars);
   } else {
     returnData->outputVars = 0;
   }
 
   if (returnData->nInputVars) {
-    returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);
+    returnData->inputVars = (double*) calloc(returnData->nInputVars,sizeof(double));
     assert(returnData->inputVars);
-    memset(returnData->inputVars,0,sizeof(double)*returnData->nInputVars);
   } else {
     returnData->inputVars = 0;
   }
 
   if (returnData->nAlias) {
-    returnData->realAlias = (DATA_REAL_ALIAS*) malloc(sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
+    returnData->realAlias = (DATA_REAL_ALIAS*) calloc(returnData->nAlias,sizeof(DATA_REAL_ALIAS));
     assert(returnData->realAlias);
-    returnData->aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlias);
+    returnData->aliasFilterOutput = (modelica_boolean*) calloc(returnData->nAlias,sizeof(modelica_boolean));
     assert(returnData->aliasFilterOutput);
-    memset(returnData->realAlias,0,sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
-    memset(returnData->aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlias);
   } else {
     returnData->realAlias = 0;
     returnData->aliasFilterOutput = 0;
   }
 
   if (returnData->intVariables.nAlias) {
-    returnData->intVariables.alias = (DATA_INT_ALIAS*) malloc(sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+    returnData->intVariables.alias = (DATA_INT_ALIAS*) calloc(returnData->intVariables.nAlias,sizeof(DATA_INT_ALIAS));
     assert(returnData->intVariables.alias);
-    returnData->intVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlias);
+    returnData->intVariables.aliasFilterOutput = (modelica_boolean*) calloc(returnData->intVariables.nAlias,sizeof(modelica_boolean));
     assert(returnData->intVariables.aliasFilterOutput);
-    memset(returnData->intVariables.alias,0,sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
-    memset(returnData->intVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlias);
   } else {
     returnData->intVariables.alias = 0;
     returnData->intVariables.aliasFilterOutput=0;
   }
 
   if (returnData->boolVariables.nAlias) {
-    returnData->boolVariables.alias = (DATA_BOOL_ALIAS*) malloc(sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
+    returnData->boolVariables.alias = (DATA_BOOL_ALIAS*) calloc(returnData->boolVariables.nAlias,sizeof(DATA_BOOL_ALIAS));
     assert(returnData->boolVariables.alias);
-    returnData->boolVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
+    returnData->boolVariables.aliasFilterOutput = (modelica_boolean*) calloc(returnData->boolVariables.nAlias,sizeof(modelica_boolean));
     assert(returnData->boolVariables.aliasFilterOutput);
-    memset(returnData->boolVariables.alias,0,sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
-    memset(returnData->boolVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
   } else {
     returnData->boolVariables.alias = 0;
     returnData->boolVariables.aliasFilterOutput=0;
   }
 
   if (returnData->stringVariables.nAlias) {
-    returnData->stringVariables.alias = (DATA_STRING_ALIAS*) malloc(sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
+    returnData->stringVariables.alias = (DATA_STRING_ALIAS*) calloc(returnData->stringVariables.nAlias,sizeof(DATA_STRING_ALIAS));
     assert(returnData->stringVariables.alias);
-    memset(returnData->stringVariables.alias,0,sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
   } else {
     returnData->stringVariables.alias = 0;
   }
 
   if (returnData->nJacobianvars) {
-    returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
+    returnData->jacobianVars = (double*) calloc(returnData->nJacobianvars,sizeof(double));
     assert(returnData->jacobianVars);
-    memset(returnData->jacobianVars,0,sizeof(double)*returnData->nJacobianvars);
   } else {
     returnData->jacobianVars = 0;
   }
 
   if (returnData->nInitialResiduals) {
-    returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);
+    returnData->initialResiduals = (double*) calloc(returnData->nInitialResiduals,sizeof(double));
     assert(returnData->initialResiduals);
-    memset(returnData->initialResiduals,0,sizeof(double)*returnData->nInitialResiduals);
   } else {
     returnData->initialResiduals = 0;
   }
 
   if (returnData->nRawSamples) {
-    returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
+    returnData->rawSampleExps = (sample_raw_time*) calloc(returnData->nRawSamples,sizeof(sample_raw_time));
     assert(returnData->rawSampleExps);
-    memset(returnData->rawSampleExps,0,sizeof(sample_raw_time)*returnData->nRawSamples);
   } else {
     returnData->rawSampleExps = 0;
   }

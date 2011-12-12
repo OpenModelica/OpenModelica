@@ -96,7 +96,7 @@ const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
 *
-*  This function calculates the residual value 
+*  This function calculates the residual value
 *  as the sum of squared residual equations.
 *
 *  \param nz [in] number of variables
@@ -159,13 +159,13 @@ static void NelderMeadOptimization(long N,
   double beta     = 2;        	/* 1 < beta */
   double gamma    = 0.5;        /* 0 < gamma < 1 */
 
-  double* simplex = (double*)calloc((N+1)*N, sizeof(double));
-  double* fvalues = (double*)calloc(N+1, sizeof(double));
+  double* simplex = (double*)malloc((N+1)*N*sizeof(double));
+  double* fvalues = (double*)malloc((N+1)*sizeof(double));
 
-  double* xr = (double*)calloc(N, sizeof(double));
-  double* xe = (double*)calloc(N, sizeof(double));
-  double* xk = (double*)calloc(N, sizeof(double));
-  double* xbar = (double*)calloc(N, sizeof(double));
+  double* xr = (double*)malloc(N * sizeof(double));
+  double* xe = (double*)malloc(N * sizeof(double));
+  double* xk = (double*)malloc(N * sizeof(double));
+  double* xbar = (double*)malloc(N * sizeof(double));
 
   double fxr;
   double fxe;
@@ -229,7 +229,7 @@ static void NelderMeadOptimization(long N,
       lambda += lambda_step;
       if(lambda > 1.0)
         lambda = 1.0;
-      
+
       DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda, data, initialResiduals));
       continue;
     }
@@ -338,7 +338,7 @@ static void NelderMeadOptimization(long N,
     else
     {
       /* not possible to be here */
-      INFO("not possible to be here"); 
+      INFO("not possible to be here");
     }
   }while((lambda < 1.0 || fvalues[xb] > acc) && iteration < maxIt);
 
@@ -545,7 +545,7 @@ static int initialize(_X_DATA *data, int optiMethod)
   else if(optiMethod == IOM_SIMPLEX)
   {
     retVal = simplex_initialization(data, nz, z);
-  } 
+  }
   else if(optiMethod == IOM_NEWUOA)
   {
     retVal = newuoa_initialization(data, nz, z);

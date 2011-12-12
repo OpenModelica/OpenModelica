@@ -481,8 +481,8 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
   fortran_integer i=0;
   static LIST *tmpEventList = NULL;
   
-  double *states_right = (double*) calloc(simData->modelData.nStates, sizeof(double));
-  double *states_left = (double*) calloc(simData->modelData.nStates, sizeof(double));
+  double *states_right = (double*) malloc(simData->modelData.nStates * sizeof(double));
+  double *states_left = (double*) malloc(simData->modelData.nStates * sizeof(double));
 
   double time_left = simData->localData[1]->timeValue;
   double time_right = simData->localData[0]->timeValue;
@@ -587,7 +587,7 @@ double BiSection(_X_DATA* simData, double* a, double* b, double* states_a,
   int right = 0;
   long i = 0;
 
-  double *backup_gout = (double*) calloc(simData->modelData.nZeroCrossings,
+  double *backup_gout = (double*) malloc(simData->modelData.nZeroCrossings *
       sizeof(double));
   assert(backup_gout);
 

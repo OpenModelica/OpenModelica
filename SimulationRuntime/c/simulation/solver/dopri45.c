@@ -81,14 +81,13 @@ maxnorm(double* a, double* b) {
 
   double max_value = 0;
   int i;
-  double* c = (double*) calloc(globalData->nStates,sizeof(double));
 
   for (i = 0; i < globalData->nStates; i++) {
-    c[i] = fabs(b[i] - a[i]);
-    if (c[i] > max_value)
-      max_value = c[i];
+    double c;
+    c = fabs(b[i] - a[i]);
+    if (c > max_value)
+      max_value = c;
   }
-  free(c);
   return max_value;
 }
 
@@ -109,12 +108,12 @@ int
 init_stepsize(int(*f)(), double tolerence) {
   double p = 4.0, d0norm = 0.0, d1norm = 0.0, d2norm = 0.0, h0 = 0.0, h1 = 0.0,
          d, backupTime;
-  double* sc = (double*) calloc(globalData->nStates,sizeof(double*));
-  double* d0 = (double*) calloc(globalData->nStates,sizeof(double*));
-  double* d1 = (double*) calloc(globalData->nStates,sizeof(double*));
-  double* temp = (double*) calloc(globalData->nStates,sizeof(double*));
-  double* x0 = (double*) calloc(globalData->nStates,sizeof(double*));
-  double* y = (double*) calloc(globalData->nStates,sizeof(double*));
+  double* sc = (double*) malloc(globalData->nStates * sizeof(double*));
+  double* d0 = (double*) malloc(globalData->nStates * sizeof(double*));
+  double* d1 = (double*) malloc(globalData->nStates * sizeof(double*));
+  double* temp = (double*) malloc(globalData->nStates * sizeof(double*));
+  double* x0 = (double*) malloc(globalData->nStates * sizeof(double*));
+  double* y = (double*) malloc(globalData->nStates * sizeof(double*));
   int i;
   if (sim_verbose >= LOG_SOLVER)
   {
@@ -132,9 +131,7 @@ init_stepsize(int(*f)(), double tolerence) {
     x0[i] = globalData->states[i]; /* initial values for solver (used as backup too) */
     y[i] = globalData->statesDerivatives[i]; /* initial values for solver (used as backup too) */
     /* if (sim_verbose >= LOG_SOLVER){ cout << "x0[" << i << "]: " << x0[i] << endl;  fflush(NULL); } for debugging */
-  }
 
-  for (i = 0; i < globalData->nStates; i++) {
     sc[i] = tolerence + fabs(globalData->states[i]) * tolerence;
     d0[i] = globalData->states[i] / sc[i];
     d1[i] = globalData->statesDerivatives[i];
@@ -204,9 +201,9 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
   int retry = 0;
   int i,l;
 
-  double* x4 = (double*) calloc(globalData->nStates, sizeof(double));
+  double* x4 = (double*) malloc(globalData->nStates * sizeof(double));
 
-  double* x5 = (double*) calloc(globalData->nStates, sizeof(double));
+  double* x5 = (double*) malloc(globalData->nStates * sizeof(double));
   double** k = work_states;
 
   backupTime = globalData->timeValue;
@@ -294,8 +291,8 @@ dopri54(int(*f)(), double* x4, double* x5) {
   double sum;
   int i, j, l;
 
-  double* backupstats = (double*) calloc(globalData->nStates,sizeof(double));
-  double* backupderivatives = (double*) calloc(globalData->nStates,sizeof(double));
+  double* backupstats = (double*) malloc(globalData->nStates * sizeof(double));
+  double* backupderivatives = (double*) malloc(globalData->nStates * sizeof(double));
 
   memcpy(backupstats, globalData->states, globalData->nStates * sizeof(double));
   memcpy(backupderivatives, globalData->statesDerivatives, globalData->nStates * sizeof(double));
@@ -382,9 +379,9 @@ interpolation_control(const int dideventstep, double interpolationStep,
     double** k = work_states;
     double backupTime = globalData->timeValue;
     double backupTime_old = globalData->oldTime;
-    double* backupstats = (double*) calloc(globalData->nStates,sizeof(double));
-    double* backupderivatives = (double*) calloc(globalData->nStates,sizeof(double));
-    double* backupstats_old = (double*) calloc(globalData->nStates,sizeof(double));
+    double* backupstats = (double*) malloc(globalData->nStates * sizeof(double));
+    double* backupderivatives = (double*) malloc(globalData->nStates * sizeof(double));
+    double* backupstats_old = (double*) malloc(globalData->nStates * sizeof(double));
     double bstar[9];
     double numerator = 0, sigma, sh, sum;
 
