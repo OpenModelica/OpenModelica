@@ -1808,24 +1808,11 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getDocumentationAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
-        ErrorExt.setCheckpoint("getDocumentationAnnotation");
-        Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNamedAnnotation(modelpath, p, "Documentation", getDocumentationAnnotationString);
-        Config.setEvaluateParametersInAnnotations(false);
-        ErrorExt.rollBack("getDocumentationAnnotation");
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getExperimentAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getExperimentAnnotation");
-        resstr = getNamedAnnotation(modelpath, p, "experiment", getExperimentAnnotationString);
+        resstr = getNamedAnnotation(modelpath, p, "experiment", SOME("{}"), getExperimentAnnotationString);
         ErrorExt.rollBack("getExperimentAnnotation");
       then
         (resstr,st);
@@ -1854,7 +1841,7 @@ algorithm
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getNamedAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNamedAnnotation(modelpath, p, str, getAnnotationValue);
+        resstr = getNamedAnnotation(modelpath, p, str, SOME("{}"), getAnnotationValue);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNamedAnnotation");
       then
@@ -9807,7 +9794,7 @@ algorithm
   (io,redecl,attr) := match(p,className)
   local String str;
     case(p,className) equation
-      str = getNamedAnnotation(className,p,"defaultComponentPrefixes",getDefaultComponentPrefixesModStr);
+      str = getNamedAnnotation(className,p,"defaultComponentPrefixes",SOME("{}"),getDefaultComponentPrefixesModStr);
       io = getDefaultInnerOuter(str);
       redecl = getDefaultReplaceable(str);
       attr = getDefaultAttr(str);
@@ -12047,30 +12034,30 @@ public function getNamedAnnotation
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Ident id;
+  input Option<T> default;
   input ModFunc f;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output T docStr;
   end ModFunc;
-  output String outString;
+  output T outString;
+  replaceable type T subtypeof Any;
 algorithm
-  outString := matchcontinue (inPath,inProgram,id,f)
+  outString := matchcontinue (inPath,inProgram,id,default,f)
     local
       Absyn.Class cdef;
-      String str;
+      T str;
       Absyn.Path modelpath;
       Absyn.Program p;
     
-    case (modelpath,p,id,f)
+    case (modelpath,p,id,_,f)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         SOME(str) = getNamedAnnotationInClass(cdef,id,f);
       then
         str;
     
-    case (_,_,_,_) 
-      then 
-        "{}";
+    case (_,_,_,SOME(str),_) then str;
   end matchcontinue;
 end getNamedAnnotation;
 
@@ -13274,7 +13261,7 @@ algorithm
   compName := match(className,p)
     case(className,p) 
       equation
-        compName = getNamedAnnotation(className,p,"defaultComponentName",getDefaultComponentNameModStr);
+        compName = getNamedAnnotation(className,p,"defaultComponentName",SOME("{}"),getDefaultComponentNameModStr);
       then 
         compName;
   end match;
@@ -13313,7 +13300,7 @@ algorithm
   compName := match(className,p)
     case(className,p) 
       equation
-        compName = getNamedAnnotation(className,p,"defaultComponentPrefixes",getDefaultComponentPrefixesModStr);
+        compName = getNamedAnnotation(className,p,"defaultComponentPrefixes",SOME("{}"),getDefaultComponentPrefixesModStr);
       then 
         compName;
   end match;
@@ -13437,9 +13424,9 @@ algorithm
     end matchcontinue;
 end getExperimentAnnotationString2;
 
-protected function getDocumentationAnnotationString
+public function getDocumentationAnnotationString
   input Option<Absyn.Modification> mod;
-  output String docStr;
+  output tuple<String,String> docStr;
 algorithm
   docStr := match (mod)
     local 
@@ -13450,13 +13437,7 @@ algorithm
       equation
         info = getDocumentationAnnotationInfo(arglst);
         revisions = getDocumentationAnnotationRevision(arglst);
-        s = stringAppendList({"{",info,",",revisions,"}"});
-      then 
-        s;
-    // adrpo: fail if we don't find it!
-    // case (_) 
-    //   then 
-    //     "";
+      then ((info,revisions));
   end match;
 end getDocumentationAnnotationString;
 
@@ -13469,15 +13450,17 @@ algorithm
   str := matchcontinue (eltArgs)
     local
       Absyn.Exp exp;
+      DAE.Exp dexp;
       list<Absyn.ElementArg> xs;
       String s;
       String ss;
-    case ({}) then "\"\"";
+    case ({}) then "";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
-        s = Dump.printExpStr(exp);
-        ss = getDocumentationAnnotationInfo(xs);
+        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, false, Prefix.NOPRE(), Absyn.dummyInfo);
+        (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
+        // ss = getDocumentationAnnotationInfo(xs);
       then s;
     case (_::xs)
       equation
@@ -13498,12 +13481,11 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
       String ss;
-    case ({}) then "\"\"";
+    case ({}) then "";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
         s = Dump.printExpStr(exp);
-        ss = getDocumentationAnnotationRevision(xs);
       then s;
     case (_::xs)
       equation

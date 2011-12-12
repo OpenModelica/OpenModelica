@@ -376,6 +376,7 @@ algorithm
             inModelPath, 
             Interactive.getSymbolTableAST(inSymTab), 
             "experiment", 
+            SOME("{}"),
             Interactive.getExperimentAnnotationString);
                 // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
         
@@ -1596,6 +1597,12 @@ algorithm
     case (cache, env, "saveTotalSCode", _, st, msg)
       then (cache, Values.BOOL(false), st);
         
+    case (cache,env,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, "Documentation", SOME(("","")),Interactive.getDocumentationAnnotationString);
+      then
+        (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
+
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         Print.clearBuf();

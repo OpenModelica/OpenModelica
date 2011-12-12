@@ -1719,6 +1719,14 @@ function iconv "The iconv() function converts one multibyte characters from one 
 external "builtin";
 end iconv;
 
+function getDocumentationAnnotation "
+  TODO: Should be changed to have 2 outputs instead of an array of 2 Strings...
+"
+  input TypeName cl;
+  output String out[2] "{info,revision}";
+external "builtin";
+end getDocumentationAnnotation;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
