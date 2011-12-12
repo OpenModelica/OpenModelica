@@ -63,6 +63,7 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	cp ./openmodelica.h $(builddir_inc)
 	cp ./openmodelica_func.h $(builddir_inc)
 	cp ./simulation_data.h $(builddir_inc)
+	cp ./f2c.h $(builddir_inc)
 	cp ./util/*.h $(builddir_inc)
 	cp ./math-support/matrix.h $(builddir_inc)
 	cp ./math-support/blaswrap.h $(builddir_inc)

@@ -278,6 +278,8 @@ uniontype SimVar
     String unit;
     String displayUnit;
     Integer index;
+    Option<DAE.Exp> minValue;
+    Option<DAE.Exp> maxValue;
     Option<DAE.Exp> initialValue;
     Option<DAE.Exp> nominalValue;
     Boolean isFixed;
@@ -670,7 +672,7 @@ algorithm
         //errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
   end matchcontinue;
 end cref2simvar;
 
@@ -6762,6 +6764,7 @@ algorithm
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
+      Option<DAE.Exp> minVal, maxVal;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.Type type_;
@@ -6770,17 +6773,17 @@ algorithm
       DAE.ElementSource source;
       Option<Integer> variable_index;
       list <String> numArrayElement;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE(),numArrayElement))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE(),numArrayElement))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, source,_,NONE(),numArrayElement))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, source,_,NONE(),numArrayElement))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
   end match;
 end derVarFromStateVar;
 
@@ -7047,6 +7050,7 @@ algorithm
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
+      Option<DAE.Exp> minVal, maxVal;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.Type type_;
@@ -7060,10 +7064,10 @@ algorithm
       Option<Integer> variable_index;
       list <String> numArrayElement;
     case ({},_) then {};
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest2);
   end match;
 end rewriteIndex;
 
@@ -7154,6 +7158,7 @@ algorithm
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
+      Option<DAE.Exp> minVal, maxVal;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.Type type_;
@@ -7166,13 +7171,13 @@ algorithm
       Causality causality;
       Option<Integer> variable_index;
       list <String> numArrayElement;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), initCrefs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), initCrefs)
       equation
         (_ :: _) = List.select1(initCrefs, ComponentReference.crefEqualNoStringCompare, name);
         varNameStr = ComponentReference.printComponentRefStr(name);
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement);
     case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
@@ -9016,6 +9021,7 @@ algorithm
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
       String  commentStr,  unit, displayUnit,NumarrayElement,idxs_str1;
+      Option<DAE.Exp> minValue, maxValue;
       Option<DAE.Exp> initVal;
       Option<DAE.Exp> nomVal;
       Boolean isFixed;
@@ -9041,6 +9047,7 @@ algorithm
       equation
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
+        (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getInitialValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
         checkInitVal(initVal,source);
@@ -9053,7 +9060,7 @@ algorithm
         numArrayElement=arraydim1(inst_dims);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
   end match;
 end dlowvarToSimvar;
 
@@ -9971,6 +9978,38 @@ algorithm
   end matchcontinue;
 end extractVarUnit;
 
+protected function getMinMaxValues
+"extract min/max values from BackendDAE.Variable and check whether they are constant"
+  input BackendDAE.Var inDAELowVar;
+  output Option<DAE.Exp> outMinValue;
+  output Option<DAE.Exp> outMaxValue;
+algorithm
+  (outMinValue, outMaxValue) := matchcontinue(inDAELowVar)
+    local
+      Option<DAE.VariableAttributes> dae_var_attr;
+      DAE.Exp minValue, maxValue;
+
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (SOME(minValue), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+      true = Expression.isConst(minValue);
+      true = Expression.isConst(maxValue);
+    then (SOME(minValue), SOME(maxValue));
+      
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (SOME(minValue), NONE()) = DAEUtil.getMinMaxValues(dae_var_attr);
+      true = Expression.isConst(minValue);
+    then (SOME(minValue), NONE());
+      
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
+      (NONE(), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+      true = Expression.isConst(maxValue);
+    then (NONE(), SOME(maxValue));
+      
+    case (_) equation
+    then (NONE(), NONE());
+  end matchcontinue;
+end getMinMaxValues;
+
 protected function getInitialValue
 "Extract initial value from BackendDAE.Variable, if it has any
 
@@ -10084,7 +10123,6 @@ algorithm
   nomVal := matchcontinue(daelowVar)
     local
       Option<DAE.VariableAttributes> dae_var_attr;
-      Values.Value value;
       DAE.Exp e;
 
     case (BackendDAE.VAR(varType = DAE.T_REAL(source = _), values = dae_var_attr)) equation
@@ -11206,6 +11244,8 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     BackendDAE.VarKind varKind;
     String comment,unit,displayUnit;
     Integer index;
+    Option<DAE.Exp> minValue;
+    Option<DAE.Exp> maxValue;
     Option<DAE.Exp> initialValue;
     Option<DAE.Exp> nominalValue;
     Boolean isFixed,isDiscrete;
@@ -11219,14 +11259,14 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     Option<Integer> variable_index;
     list <String> numArrayElement;
     BackendDAE.EqSystems eqsystems;
-  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
+  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
      equation
       Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low,eqsystems);
       new_index=stateindex(name,ordered_states);
            
     then 
-     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
 end matchcontinue;
 end stateindex2;
 
@@ -11275,6 +11315,8 @@ algorithm
       String comment;
       String unit;
       String displayUnit;
+      Option<DAE.Exp> minValue;
+      Option<DAE.Exp> maxValue;
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
@@ -11290,11 +11332,11 @@ algorithm
       list<SimVar> rest,indexed_vector;
       list <String> numArrayElement;
     case({},_) then {};
-    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement) :: rest,index)
+    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement) :: rest,index)
       equation
         indexed_vector = setStatesVectorIndex2(rest,index+1);
       then 
-        SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index),numArrayElement)::indexed_vector;
+        SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index),numArrayElement)::indexed_vector;
   end matchcontinue;
 end setStatesVectorIndex2;
 
@@ -11388,6 +11430,8 @@ algorithm
       String comment;
       String unit;
       String displayUnit;
+      Option<DAE.Exp> minValue;
+      Option<DAE.Exp> maxValue;
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
@@ -11427,13 +11471,13 @@ algorithm
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
        */
-     case(SIMVAR(name,varKind,comment,unit,displayUnit,i,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+     case(SIMVAR(name,varKind,comment,unit,displayUnit,i,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.T_REAL_DEFAULT,{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,i,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,i,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
     /*case (SIMVAR(name,_,_,_,_,i,_,_,_,_,_,_,_,_,_,_,_))
       equation
         name_str = ComponentReference.printComponentRefStr(name);
@@ -11462,6 +11506,8 @@ algorithm
       String unit;
       String displayUnit;
       Integer index,index1;
+      Option<DAE.Exp> minValue;
+      Option<DAE.Exp> maxValue;
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
@@ -11476,13 +11522,13 @@ algorithm
       SimVar v,newvar1;
       list <String> numArrayElement;
   
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
     equation
       Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
     then 
-      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1),numArrayElement);
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),_::rest1)
+      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1),numArrayElement);
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),_::rest1)
     equation
        newvar1=replaceindex(v,rest1);
     then newvar1;

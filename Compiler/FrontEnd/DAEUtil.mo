@@ -722,6 +722,28 @@ algorithm oExps := matchcontinue(inVariableAttributesOption)
   end matchcontinue;
 end getMinMax;
 
+public function getMinMaxValues
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  output Option<DAE.Exp> outMinValue;
+  output Option<DAE.Exp> outMaxValue;
+algorithm (outMinValue, outMaxValue) := matchcontinue(inVariableAttributesOption)
+  local
+    Option<DAE.Exp> minValue, maxValue;
+    
+  case(SOME(DAE.VAR_ATTR_ENUMERATION(min=(minValue, maxValue)))) equation
+  then (minValue, maxValue);
+    
+  case(SOME(DAE.VAR_ATTR_INT(min=(minValue, maxValue)))) equation
+  then (minValue, maxValue);
+    
+  case(SOME(DAE.VAR_ATTR_REAL(min=(minValue, maxValue)))) equation
+  then (minValue, maxValue);
+    
+  case(_)
+  then (NONE(), NONE());
+  end matchcontinue;
+end getMinMaxValues;
+
 public function setMinMax "
   sets the minmax attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;

@@ -317,6 +317,8 @@ package SimCode
       String unit;
       String displayUnit;
       Integer index;
+      Option<DAE.Exp> minValue;
+      Option<DAE.Exp> maxValue;
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
