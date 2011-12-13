@@ -1849,25 +1849,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getClassNamesRecursive");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        resstr = getClassNamesRecursive(SOME(path), p, "  ");
-        Print.clearErrorBuf();
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getClassNamesRecursive");
-        {} = getApiFunctionArgs(istmts);
-        resstr = getClassNamesRecursive(NONE(), p, "  ");
-        Print.clearErrorBuf();
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "refactorClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
@@ -1933,16 +1914,6 @@ algorithm
       then
         ("error",st);
     
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getClassComment");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        Absyn.CLASS(_,_,_,_,_,cdef,_) = getPathedClassInProgram(path, p);
-        resstr = getClassComment(cdef);
-      then
-        (resstr,st);
-
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getClassRestriction");
@@ -8271,7 +8242,7 @@ algorithm
   str_ecol := intString(ec);
   dim_str := getClassDimensions(cdef);
   res_1 := stringAppendList(
-          {"{\"",res,"\",",cmt,",\"",file,"\",{",strPartial,",",
+          {"{\"",res,"\",\"",cmt,"\",\"",file,"\",{",strPartial,",",
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
           str_scol,",",str_eline,",",str_ecol,"},",dim_str,"}"}) "composing the final returned string" ;
 end getClassInformation;
@@ -8327,13 +8298,13 @@ algorithm
   str_ecol := intString(ec);
   res_1 := stringAppendList(
           {"{ rec(name=\"",name,"\", partial=",strPartial,", final=",
-          strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=",
-          cmt,", file=\"",file,"\", readonly=\"",str_readonly,"\", startLine=",
+          strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=\"",
+          cmt,"\", file=\"",file,"\", readonly=\"",str_readonly,"\", startLine=",
           str_sline,", startColumn=",str_scol,", endLine=",str_eline,", endColumn=",
           str_ecol,") }"}) "composing the final returned string" ;
 end getClassAttributes;
 
-protected function getClassComment
+public function getClassComment
 "function: getClassComment
   author: PA
   Returns the class comment of a Absyn.ClassDef"
@@ -8343,8 +8314,7 @@ protected
   String s;
 algorithm
   s := getClassComment2(cdef);
-  s := System.unescapedString(s);
-  res := stringAppendList({"\"",s,"\""});
+  res := System.unescapedString(s);
 end getClassComment;
 
 protected function getClassComment2
@@ -13433,10 +13403,14 @@ algorithm
       list<Absyn.ElementArg> arglst;
       String info, revisions;
       String s;
+      Boolean partialInst;
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       equation
+        partialInst = System.getPartialInstantiation();
+        System.setPartialInstantiation(true);
         info = getDocumentationAnnotationInfo(arglst);
         revisions = getDocumentationAnnotationRevision(arglst);
+        System.setPartialInstantiation(partialInst);
       then ((info,revisions));
   end match;
 end getDocumentationAnnotationString;
@@ -13458,7 +13432,7 @@ algorithm
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
-        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, false, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
         // ss = getDocumentationAnnotationInfo(xs);
       then s;
@@ -13486,7 +13460,7 @@ algorithm
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
-        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, false, Prefix.NOPRE(), Absyn.dummyInfo);
+        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, true, Prefix.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -19089,16 +19063,16 @@ algorithm
   end match;
 end joinPaths;
 
-protected function getClassNamesRecursive
+public function getClassNamesRecursive
 "function: getClassNamesRecursive
   Returns a string with all the classes for a given path."
   input Option<Absyn.Path> inPath;
   input Absyn.Program inProgram;
-  input String indent;
-  output String outString;
+  input list<Absyn.Path> acc;
+  output Option<Absyn.Path> opath;
+  output list<Absyn.Path> paths;
 algorithm
-  outString:=
-  matchcontinue (inPath,inProgram,indent)
+  (opath,paths) := matchcontinue (inPath,inProgram,acc)
     local
       Absyn.Class cdef;
       String s1,res, parent_string, result;
@@ -19107,30 +19081,25 @@ algorithm
       Absyn.Program p;
       list<Absyn.Class> classes;
       list<Option<Absyn.Path>> result_path_lst;
-    case (SOME(pp),p,indent)
+    case (SOME(pp),p,acc)
       equation
+        acc = pp::acc;
         cdef = getPathedClassInProgram(pp, p);
         strlst = getClassnamesInClassList(pp, p, cdef);
-        parent_string = Absyn.pathString(pp);
         result_path_lst = List.map(List.map1(strlst, joinPaths, pp),Util.makeOption);
-        indent = indent +& "  ";
-        result = stringAppendList(List.map2(result_path_lst,
-          getClassNamesRecursive, p, indent));
-        res = stringAppendList({indent, parent_string,"\n",result});
-      then
-        res;
-    case (NONE(),p as Absyn.PROGRAM(classes=classes),indent)
+        (_,acc) = List.map1Fold(result_path_lst, getClassNamesRecursive, p, acc);
+      then (inPath,acc);
+    case (NONE(),p as Absyn.PROGRAM(classes=classes),acc)
       equation
         strlst = List.map(classes, Absyn.getClassName);
         result_path_lst = List.mapMap(strlst, Absyn.makeIdentPathFromString, Util.makeOption);
-      then stringAppendList(List.map2(result_path_lst, getClassNamesRecursive, p, indent));
-    case (SOME(pp),_,indent)
+        (_,acc) = List.map1Fold(result_path_lst, getClassNamesRecursive, p, acc);
+      then (inPath,acc);
+    case (SOME(pp),_,_)
       equation
-        parent_string = Absyn.pathString(pp);
-        indent = indent +& "  ";
-        s1 = Error.printMessagesStr();
-        res = stringAppendList({indent, parent_string,"\n","PROBLEM GETTING CLASS NAMES: ", s1});
-      then res;
+        s1 = Absyn.pathString(pp);
+        Error.addMessage(Error.LOOKUP_ERROR, {s1,"<TOP>"});
+      then (inPath,{});
   end matchcontinue;
 end getClassNamesRecursive;
 

@@ -1288,6 +1288,14 @@ function strtok "Splits the strings at the places given by the token, for exampl
 external "builtin";
 end strtok;
 
+public function stringReplace
+  input String str;
+  input String source;
+  input String target;
+  output String res;
+external "builtin";
+end stringReplace;
+
 function list "Lists the contents of the given class, or all loaded classes"
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output String contents;
@@ -1363,7 +1371,9 @@ end setClassComment;
 
 function getClassNames
   input TypeName class_ := $TypeName(AllLoadedClasses);
-  output TypeName classNames[:];
+  input Boolean recursive := false;
+  input Boolean qualified := false;
+  output TypeName classNames[:]; 
 external "builtin";
 end getClassNames;
 
@@ -1757,6 +1767,18 @@ function typeNameString
   output String out;
 external "builtin";
 end typeNameString;
+
+function typeNameStrings
+  input TypeName cl;
+  output String out[:];
+external "builtin";
+end typeNameStrings;
+
+function getClassComment
+  input TypeName cl;
+  output String comment;
+external "builtin";
+end getClassComment;
 
 end Scripting;
 

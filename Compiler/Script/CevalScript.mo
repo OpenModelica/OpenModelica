@@ -741,6 +741,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       DAE.Type tp;
       Absyn.Class absynClass;
+      Absyn.ClassDef cdef;
       DAE.DAElist dae;
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
@@ -833,7 +834,7 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         paths = Interactive.getTopClassnames(p);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -841,12 +842,41 @@ algorithm
         (cache,ValuesUtil.makeArray(vals),st);
 
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         paths = Interactive.getClassnamesInPath(path, p);
+        paths = Debug.bcallret3(b,List.map1r,paths,Absyn.joinPaths,path,paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
+
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,{});
+        paths = listReverse(paths);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+
+
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,{});
+        paths = listReverse(paths);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+        
+    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, p);
+        str = Interactive.getClassComment(cdef);
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      then
+        (cache,Values.STRING(""),st);
 
     case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
@@ -1454,6 +1484,11 @@ algorithm
         str = Absyn.pathString(path);
       then (cache,Values.STRING(str),st);
 
+    case (cache,env,"typeNameStrings",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
+      equation
+        v = ValuesUtil.makeArray(List.map(Absyn.pathToStringList(path),ValuesUtil.makeString));
+      then (cache,v,st);
+
     case (cache,env,"generateHeader",{Values.STRING(filename)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Tpl.tplString(Unparsing.programExternalHeader, SCodeUtil.translateAbsyn2SCode(p));
@@ -1636,6 +1671,11 @@ algorithm
         vals = List.map(System.strtok(str,token), ValuesUtil.makeString);
         i = listLength(vals);
       then (cache,Values.ARRAY(vals,{i}),st);
+
+    case (cache,env,"stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)},st,msg)
+      equation
+        str = System.stringReplace(str1, str2, str3);
+      then (cache,Values.STRING(str),st);
 
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,msg)
