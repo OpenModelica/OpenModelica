@@ -12597,19 +12597,19 @@ algorithm
        
     case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
       equation
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e,impl,st,doVect,pre,info);    
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);    
       then
         (cache,SOME((exp_1,prop)),st_1);
         
     case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
       equation        
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e,impl,st,doVect,pre,info);     
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);     
       then
         (cache,SOME((exp_1,prop)),st_1);
         
     case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
       equation        
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e,impl,st,doVect,pre,info);     
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);     
       then
         (cache,SOME((exp_1,prop)),st_1);  
         
@@ -12721,8 +12721,170 @@ algorithm
 end userDefOperatorDeoverloadUnary;
 
 
-
 protected function userDefOperatorDeoverloadBinary
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp1;
+  input Absyn.Operator inOper;
+  input Absyn.Exp inExp2;
+  input Boolean inImplicit;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  
+algorithm
+  
+  (outCache,expProps,outInteractiveInteractiveSymbolTableOption) :=
+  matchcontinue (inCache,inEnv,inExp1,inOper,inExp2,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+    local
+      Boolean impl,doVect;
+      String str1;
+      Absyn.Path path,path2;
+      list<Absyn.Path> operNames;
+      Env.Env operatorEnv,env;
+      SCode.Element operatorCl;
+      Env.Cache cache,cache2;
+      list<DAE.Type> types;
+      Option<Interactive.SymbolTable> st,st_1;
+      DAE.Exp exp_1;
+      DAE.Properties prop;
+      Absyn.Exp e,e1,e2;
+      Absyn.Operator op;
+      Prefix.Prefix pre;
+      DAE.Dimensions dims;
+      Absyn.ComponentRef comRef;
+  
+    //Arrays of Complex types. Expand.
+    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),dims,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
+  
+      // Try left side first == L + R -> L.'+'(L,R)
+    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
+    
+    //Try constructing the right side(implicit) and then evaluate == L + r -> L.'+'(L,L(r))
+    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        
+        str1 = "'constructor'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        
+        (cache2,SOME((exp_1 as DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache2,env,types,path2,{e2},{},impl,st_1,pre,info);     
+        
+        comRef = Absyn.pathToCref(path2);
+        e2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({e2}, {}));
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path2,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
+        
+    //left side did not resolve. Try right side == L + R -> R.'+'(L,R)
+    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      equation
+                
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
+        
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1); 
+        
+    //Try constructing the right side(implicit) and then evaluate == l + R -> R.'+'(R(l),R)
+    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
+        
+        str1 = "'constructor'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        
+        (cache2,SOME((exp_1 as DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache2,env,types,path2,{e1},{},impl,st_1,pre,info);     
+        
+        comRef = Absyn.pathToCref(path2);
+        e1 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({e1}, {}));
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path2,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
+        
+  end matchcontinue;        
+  
+end userDefOperatorDeoverloadBinary;
+
+
+/*
+protected function userDefOperatorDeoverloadBinary2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -12742,7 +12904,7 @@ algorithm
     local
       Boolean impl,doVect;
       String str1;
-      Absyn.Path path;
+      Absyn.Path path,path2;
       list<Absyn.Path> operNames;
       Env.Env operatorEnv,env;
       SCode.Element operatorCl;
@@ -12754,12 +12916,29 @@ algorithm
       Absyn.Exp e,e1,e2;
       Absyn.Operator op;
       Prefix.Prefix pre;
+      DAE.Dimensions dims;
+      Absyn.ComponentRef comRef;
   
+    //Arrays of Complex types. Expand.
+    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),dims,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
   
       // Try left side first (specification ?????)  r + s, s + r
       // are operators Comutative?? (+, and ....) ,  r + 1 == 1 + r
-    
-      //automaticaly try overloaded constructor to resolve operation????? r + 1 ==> r + R(1);      
     case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
       equation
         (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
@@ -12774,6 +12953,38 @@ algorithm
         (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
                
         (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+      then
+        (cache,SOME((exp_1,prop)),st_1);
+    
+    //Try overloaded constructor (implicit)
+    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
+      equation
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        
+        str1 = "'constructor'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        
+        (cache2,SOME((exp_1 as DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache2,env,types,path2,{e2},{},impl,st_1,pre,info);     
+        
+        comRef = Absyn.pathToCref(path2);
+        e2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({e2}, {}));
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+               
+        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path2,{e1,e2},{},impl,st_1,pre,info);     
       then
         (cache,SOME((exp_1,prop)),st_1);
         
@@ -12867,7 +13078,8 @@ algorithm
         (cache,SOME((exp_1,prop)),st_1);
    end matchcontinue;     
   
-end userDefOperatorDeoverloadBinary;
+end userDefOperatorDeoverloadBinary2;
+*/
 
 
 protected function operatorDeoverloadBinary

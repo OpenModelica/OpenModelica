@@ -14501,7 +14501,8 @@ algorithm
       DAE.Exp exp;
       Values.Value val;
 
-    case (_, _, _) then fail();
+    //mahge: Is this correct??? Should it be the first case
+    //case (_, _, _) then fail();
 
     // Array type and each prefix => return the expression and value.
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), eqModOption = 
@@ -14521,6 +14522,17 @@ algorithm
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption = 
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))), _, _)
       then (exp, val);
+    
+    
+    // Scalar type and no each prefix => bindings given by expressions myRecord(v1 = inV1, v2 = inV2)
+    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption = 
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE()))))), _, _)
+      then (exp, Values.OPTION(NONE()));
+    
+    
+    //mahge: Moved from top.    
+    case (_, _, _) then fail();
+      
   end match;
 end makeRecordBinding3;
     
