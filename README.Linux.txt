@@ -153,10 +153,9 @@ Example Session
 Here is a short example session.
 
 $ cd trunk/build/bin
-$ export OPENMODELICALIBRARY=/path/to/ModelicaLibrary
 $ ./OMShell-terminal
-OpenModelica 1.4.4
-Copyright (c) OSMC 2002-2008
+OpenModelica 1.8.0
+Copyright (c) OSMC 2002-2011
 To get help on using OMShell and OpenModelica, type "help()" and press enter.
 >> loadModel(Modelica)
 true
