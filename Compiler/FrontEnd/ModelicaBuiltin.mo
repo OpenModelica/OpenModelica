@@ -1363,7 +1363,7 @@ end setClassComment;
 
 function getClassNames
   input TypeName class_ := $TypeName(AllLoadedClasses);
-  output TypeName classNames[:]; 
+  output TypeName classNames[:];
 external "builtin";
 end getClassNames;
 
@@ -1647,6 +1647,7 @@ function getAlgorithmCount "Counts the number of Algorithm sections in a class"
   input TypeName class_;
   output Integer count;
 external "builtin";
+annotation(preferredView="text");
 end getAlgorithmCount;
 
 function getNthAlgorithm "Returns the Nth Algorithm section"
@@ -1654,12 +1655,14 @@ function getNthAlgorithm "Returns the Nth Algorithm section"
   input Integer index;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end getNthAlgorithm;
 
 function getInitialAlgorithmCount "Counts the number of Initial Algorithm sections in a class"
   input TypeName class_;
   output Integer count;
 external "builtin";
+annotation(preferredView="text");
 end getInitialAlgorithmCount;
 
 function getNthInitialAlgorithm "Returns the Nth Initial Algorithm section"
@@ -1667,12 +1670,14 @@ function getNthInitialAlgorithm "Returns the Nth Initial Algorithm section"
   input Integer index;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end getNthInitialAlgorithm;
 
 function getEquationCount "Counts the number of Equation sections in a class"
   input TypeName class_;
   output Integer count;
 external "builtin";
+annotation(preferredView="text");
 end getEquationCount;
 
 function getNthEquation "Returns the Nth Equation section"
@@ -1680,12 +1685,14 @@ function getNthEquation "Returns the Nth Equation section"
   input Integer index;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end getNthEquation;
 
 function getInitialEquationCount "Counts the number of Initial Equation sections in a class"
   input TypeName class_;
   output Integer count;
 external "builtin";
+annotation(preferredView="text");
 end getInitialEquationCount;
 
 function getNthInitialEquation "Returns the Nth Initial Equation section"
@@ -1693,12 +1700,14 @@ function getNthInitialEquation "Returns the Nth Initial Equation section"
   input Integer index;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end getNthInitialEquation;
 
 function getAnnotationCount "Counts the number of Annotation sections in a class"
   input TypeName class_;
   output Integer count;
 external "builtin";
+annotation(preferredView="text");
 end getAnnotationCount;
 
 function getNthAnnotationString "Returns the Nth Annotation section as string"
@@ -1706,7 +1715,23 @@ function getNthAnnotationString "Returns the Nth Annotation section as string"
   input Integer index;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end getNthAnnotationString;
+
+function getImportCount "Counts the number of Import sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getImportCount;
+
+function getNthImport "Returns the Nth Import as string"
+  input TypeName class_;
+  input Integer index;
+  output String out[3] "{\"Path\",\"Id\",\"Kind\"}";
+external "builtin";
+annotation(preferredView="text");
+end getNthImport;
 
 function iconv "The iconv() function converts one multibyte characters from one character
   set to another.

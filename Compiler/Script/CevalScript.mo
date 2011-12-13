@@ -2047,6 +2047,24 @@ algorithm
         (cache,Values.STRING(str),st);
     
     case (cache,env,"getNthAnnotationString",_,st,msg) then (cache,Values.STRING(""),st);
+    
+    case (cache,env,"getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = getImportCount(absynClass);
+      then
+        (cache,Values.INTEGER(n),st);
+    
+    case (cache,env,"getImportCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+
+    case (cache,env,"getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        vals = getNthImport(absynClass, n);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+    
+    case (cache,env,"getNthImport",_,st,msg) then (cache,ValuesUtil.makeArray({}),st);
                 
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
@@ -5072,5 +5090,254 @@ algorithm
     case ({},_) then fail();
   end matchcontinue;
 end getNthAnnotationStringInAlgorithms;
+
+protected function getImportCount
+"function: getImportCount
+  Counts the number of Import sections in a class."
+  input Absyn.Class inClass;
+  output Integer outInteger;
+algorithm
+  outInteger := match (inClass)
+    local
+      list<Absyn.ClassPart> parts;
+      Integer count;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        count = getImportsInClassParts(parts);
+      then
+        count;
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        count = getImportsInClassParts(parts);
+      then
+        count;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then 0;
+  end match;
+end getImportCount;
+
+protected function getImportsInClassParts
+"function: getImportsInClassParts
+  Helper function to getImportCount"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.ElementItem> els;
+      list<Absyn.ClassPart> xs;
+      Integer c1, c2, res;
+    case (Absyn.PUBLIC(contents = els) :: xs)
+      equation
+        c1 = getImportsInElementItems(els);
+        c2 = getImportsInClassParts(xs);
+      then
+        c1 + c2;
+    case (Absyn.PROTECTED(contents = els) :: xs)
+      equation
+        c1 = getImportsInElementItems(els);
+        c2 = getImportsInClassParts(xs);
+      then
+        c1 + c2;
+    case ((_ :: xs))
+      equation
+        res = getImportsInClassParts(xs);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end getImportsInClassParts;
+
+protected function getImportsInElementItems
+"function: getImportsInElementItems
+  Helper function to getImportCount"
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inAbsynElementItemLst)
+    local
+      Absyn.Import import_;
+      list<Absyn.ElementItem> els;
+      Integer c1, res;
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: els)
+      equation
+        c1 = getImportsInElementItems(els);
+      then
+        c1 + 1;
+    case ((_ :: els))
+      equation
+        res = getImportsInElementItems(els);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end getImportsInElementItems;
+
+protected function getNthImport
+"function: getNthImport
+  Returns the Nth Import String from a class."
+  input Absyn.Class inClass;
+  input Integer inInteger;
+  output list<Values.Value> outValue;
+algorithm
+  outValue := match (inClass,inInteger)
+    local
+      list<Absyn.ClassPart> parts;
+      list<Values.Value> vals;
+      Integer n;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
+      equation
+        vals = getNthImportInClassParts(parts,n);
+      then
+        vals;
+    // check also the case model extends X end X;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
+      equation
+        vals = getNthImportInClassParts(parts,n);
+      then
+        vals;
+  end match;
+end getNthImport;
+
+protected function getNthImportInClassParts
+"function: getNthImportInClassParts
+  Helper function to getNthImport"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Integer inInteger;
+  output list<Values.Value> outValue;
+algorithm
+  outValue := matchcontinue (inAbsynClassPartLst,inInteger)
+    local
+      list<Values.Value> vals;
+      list<Absyn.ElementItem> els;
+      list<Absyn.ClassPart> xs;
+      Integer n,c1,newn;
+    case ((Absyn.PUBLIC(contents = els) :: xs),n)
+      equation
+        vals = getNthImportInElementItems(els, n);
+      then
+        vals;
+    case ((Absyn.PUBLIC(contents = els) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
+      equation
+        c1 = getImportsInElementItems(els);
+        newn = n - c1;
+        vals = getNthImportInClassParts(xs, newn);
+      then
+        vals;
+    case ((Absyn.PROTECTED(contents = els) :: xs),n)
+      equation
+        vals = getNthImportInElementItems(els, n);
+      then
+        vals;
+    case ((Absyn.PROTECTED(contents = els) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
+      equation
+        c1 = getImportsInElementItems(els);
+        newn = n - c1;
+        vals = getNthImportInClassParts(xs, newn);
+      then
+        vals;
+    case ((_ :: xs),n)
+      equation
+        vals = getNthImportInClassParts(xs, n);
+      then
+        vals;
+  end matchcontinue;
+end getNthImportInClassParts;
+
+protected function getNthImportInElementItems
+"function: getNthImportInElementItems
+   This function takes an Element list and an int
+   and returns the nth import as string.
+   If the number is larger than the number of annotations
+   in the list, the function fails. Helper function to getNthImport."
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Integer inInteger;
+  output list<Values.Value> outValue;
+algorithm
+  outValue := matchcontinue (inAbsynElementItemLst,inInteger)
+    local
+      list<Values.Value> vals;
+      Absyn.Import import_;
+      list<Absyn.ElementItem> els;
+      Integer newn,n;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: els), 1)
+      equation
+        vals = unparseNthImport(import_);
+      then
+        vals;
+    case ((_ :: els),n)
+      equation
+        newn = n - 1;
+        vals = getNthImportInElementItems(els, newn);
+      then
+        vals;
+    case ({},_) then fail();
+  end matchcontinue;
+end getNthImportInElementItems;
+
+public function unparseNthImport
+"function: unparseNthImport
+   helperfunction to getNthImport."
+  input Absyn.Import inImport;
+  output list<Values.Value> outValue;
+algorithm
+  outValue := match (inImport)
+    local
+      list<Values.Value> vals;
+      list<Absyn.GroupImport> gi;
+      String path_str,id;
+      Absyn.Path path;
+    case (Absyn.NAMED_IMPORT(name = id,path = path))
+      equation
+        path_str = Absyn.pathString(path);
+        vals = {Values.STRING(path_str),Values.STRING(id),Values.STRING("named")};
+      then
+        vals;
+    case (Absyn.QUAL_IMPORT(path = path))
+      equation
+        path_str = Absyn.pathString(path);
+        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("qualified")};
+      then
+        vals;
+    case (Absyn.UNQUAL_IMPORT(path = path))
+      equation
+        path_str = Absyn.pathString(path);
+        path_str = stringAppendList({path_str, ".*"});
+        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("unqualified")};
+      then
+        vals;
+    case (Absyn.GROUP_IMPORT(prefix = path, groups = gi))
+      equation
+        path_str = Absyn.pathString(path);
+        id = stringDelimitList(unparseGroupImport(gi),",");
+        path_str = stringAppendList({path_str,".{",id,"}"});
+        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("multiple")};
+      then
+        vals;
+  end match;
+end unparseNthImport;
+
+protected function unparseGroupImport
+  input list<Absyn.GroupImport> inAbsynGroupImportLst;
+  output list<String> outList;
+algorithm
+  outList := matchcontinue (inAbsynGroupImportLst)
+  local
+    list<Absyn.GroupImport> rest;
+    list<String> lst;
+    String str;
+    case {} then {};
+    case (Absyn.GROUP_IMPORT_NAME(name = str) :: rest)
+      equation
+        lst = unparseGroupImport(rest);
+      then
+        (str::lst);
+    case ((_ :: rest))
+      equation
+        lst = unparseGroupImport(rest);
+      then
+        lst;
+  end matchcontinue;
+end unparseGroupImport;
 
 end CevalScript;
