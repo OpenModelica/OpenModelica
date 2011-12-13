@@ -1448,7 +1448,12 @@ algorithm
         
     case (cache,env,"runScript",_,st,msg)
     then (cache,Values.STRING("Failed"),st);
-        
+    
+    case (cache,env,"typeNameString",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
+      equation
+        str = Absyn.pathString(path);
+      then (cache,Values.STRING(str),st);
+
     case (cache,env,"generateHeader",{Values.STRING(filename)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Tpl.tplString(Unparsing.programExternalHeader, SCodeUtil.translateAbsyn2SCode(p));

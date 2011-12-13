@@ -1039,6 +1039,9 @@ algorithm
     
     case Values.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
     
+    case Values.CODE(A=Absyn.C_TYPENAME(path=_))
+      then DAE.T_CODE(DAE.C_TYPENAME(), {});
+
     case (v)
       equation
         str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);

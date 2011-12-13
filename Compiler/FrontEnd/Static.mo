@@ -9278,7 +9278,7 @@ algorithm
 
     case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
       equation
-        e_1 = elabCodeExp(e,ct,info);
+        e_1 = elabCodeExp(e,cache,env,ct,info);
         (cache,slots_1,clist,polymorphicBindings) =
         elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings, pre, info);
         newslots = fillSlot(farg, e_1, {}, slots_1,checkTypes,pre,info);
@@ -13607,11 +13607,13 @@ end slotAnd;
 
 protected function elabCodeExp
   input Absyn.Exp exp;
+  input Env.Cache cache;
+  input Env.Env env;
   input DAE.CodeType ct;
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (exp,ct,info)
+  outExp := matchcontinue (exp,cache,env,ct,info)
     local
       String s1,s2;
       Absyn.ComponentRef cr;
@@ -13622,35 +13624,40 @@ algorithm
       Integer i;
       DAE.Exp dexp;
     
+    // Type Name stored as Code in the environment
+    case (Absyn.CREF(componentRef=Absyn.CREF_IDENT(name=s1, subscripts={})),_,_,DAE.C_TYPENAME(),_)
+      equation
+        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(s1, DAE.T_ANYTYPE_DEFAULT, {}));
+      then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
     // Type Name
-    case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME(),_)
+    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_)
       equation
         path = Absyn.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
 
     // Variable Names
-    case (Absyn.ARRAY(es),DAE.C_VARIABLENAMES(),info)
+    case (Absyn.ARRAY(es),cache,env,DAE.C_VARIABLENAMES(),info)
       equation
-        es_1 = List.map2(es,elabCodeExp,DAE.C_VARIABLENAME(),info);
+        es_1 = List.map4(es,elabCodeExp,cache,env,DAE.C_VARIABLENAME(),info);
         i = listLength(es);
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
       then DAE.ARRAY(et,false,es_1);
     
-    case (exp,DAE.C_VARIABLENAMES(),info)
+    case (exp,cache,env,DAE.C_VARIABLENAMES(),info)
       equation
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
-        dexp = elabCodeExp(exp,DAE.C_VARIABLENAME(),info);
+        dexp = elabCodeExp(exp,cache,env,DAE.C_VARIABLENAME(),info);
       then DAE.ARRAY(et,false,{dexp});
 
     // Variable Name
-    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME(),_)
+    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT);
     
-    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),DAE.C_VARIABLENAME(),_)
+    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF(componentRef=cr)},argNames={})),_,_,DAE.C_VARIABLENAME(),_)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure
-    case (exp,ct,info)
+    case (exp,_,_,ct,info)
       equation
         failure(DAE.C_VARIABLENAMES() = ct);
         s1 = Dump.printExpStr(exp);

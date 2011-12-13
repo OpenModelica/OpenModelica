@@ -1727,6 +1727,12 @@ function getDocumentationAnnotation "
 external "builtin";
 end getDocumentationAnnotation;
 
+function typeNameString
+  input TypeName cl;
+  output String out;
+external "builtin";
+end typeNameString;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
