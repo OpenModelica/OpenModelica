@@ -13481,11 +13481,13 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
       String ss;
+      DAE.Exp dexp;
     case ({}) then "";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
-        s = Dump.printExpStr(exp);
+        (_,dexp,_) = Static.elabGraphicsExp(Env.emptyCache(), Env.emptyEnv, exp, false, Prefix.NOPRE(), Absyn.dummyInfo);
+        (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
       equation
