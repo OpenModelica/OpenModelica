@@ -662,7 +662,7 @@ end loadFileInteractive;
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: bash -c $callStr";
   output Integer retval "Return value of the system call; usually 0 on success";
-external "builtin";
+external "builtin" annotation(__OpenModelica_Impure=true);
 end system;
 
 function saveAll "save the entire loaded AST to file"
@@ -885,7 +885,7 @@ function readFile
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
   output String contents;
-external "builtin";
+external "builtin" annotation(__OpenModelica_Impure=true);
 end readFile;
 
 function writeFile
@@ -893,7 +893,7 @@ function writeFile
   input String fileName;
   input String data;
   output Boolean success;
-external "builtin";
+external "builtin" annotation(__OpenModelica_Impure=true);
 end writeFile;
 
 function readFileShowLineNumbers "
