@@ -6784,11 +6784,11 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeIntegerMinAttribute(minValue)%> <%ScalarVariableTypeIntegerMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeRealMinAttribute(minValue)%> <%ScalarVariableTypeRealMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
@@ -6800,14 +6800,6 @@ match initialValue
   case NONE() then 'start="0.0"'
 end ScalarVariableTypeStartAttribute;
 
-template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
- "generates code for nominal attribute"
-::=
-match nominalValue
-  case SOME(exp) then 'nominal="<%initValXml(exp)%>"' 
-  case NONE() then 'nominal="1.0"'
-end ScalarVariableTypeNominalAttribute;
-
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)
  "generates code for fixed attribute"
 ::=
@@ -6815,6 +6807,14 @@ template ScalarVariableTypeFixedAttribute(Boolean isFixed)
 fixed="<%isFixed%>"
 >>
 end ScalarVariableTypeFixedAttribute;
+
+template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
+ "generates code for nominal attribute"
+::=
+match nominalValue
+  case SOME(exp) then 'nominal="<%initValXml(exp)%>"' 
+  case NONE() then 'nominal="1.0"'
+end ScalarVariableTypeNominalAttribute;
 
 template ScalarVariableTypeUnitAttribute(String unit)
  "generates code for unit attribute"
@@ -6834,21 +6834,41 @@ let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"' else ''
 >>
 end ScalarVariableTypeDisplayUnitAttribute;
 
-template ScalarVariableTypeMinAttribute(Option<DAE.Exp> minValue)
+template ScalarVariableTypeIntegerMinAttribute(Option<DAE.Exp> minValue)
  "generates code for min attribute"
 ::=
 match minValue
   case SOME(exp) then 'min="<%initValXml(exp)%>"' 
-  case NONE() then ''
-end ScalarVariableTypeMinAttribute;
+  // replace bei modelica limits
+  case NONE() then 'min="-2147483648"'
+end ScalarVariableTypeIntegerMinAttribute;
 
-template ScalarVariableTypeMaxAttribute(Option<DAE.Exp> maxValue)
+template ScalarVariableTypeIntegerMaxAttribute(Option<DAE.Exp> maxValue)
  "generates code for max attribute"
 ::=
 match maxValue
   case SOME(exp) then 'max="<%initValXml(exp)%>"' 
-  case NONE() then ''
-end ScalarVariableTypeMaxAttribute;
+  // replace bei modelica limits
+  case NONE() then 'max="2147483647"'
+end ScalarVariableTypeIntegerMaxAttribute;
+
+template ScalarVariableTypeRealMinAttribute(Option<DAE.Exp> minValue)
+ "generates code for min attribute"
+::=
+match minValue
+  case SOME(exp) then 'min="<%initValXml(exp)%>"' 
+  // replace bei modelica limits
+  case NONE() then 'min="-1.7976931348623157E+308"'
+end ScalarVariableTypeRealMinAttribute;
+
+template ScalarVariableTypeRealMaxAttribute(Option<DAE.Exp> maxValue)
+ "generates code for max attribute"
+::=
+match maxValue
+  case SOME(exp) then 'max="<%initValXml(exp)%>"' 
+  // replace bei modelica limits
+  case NONE() then 'max="1.7976931348623157E+308"'
+end ScalarVariableTypeRealMaxAttribute;
 
 template addRootsTempArray()
 ::=
