@@ -484,12 +484,14 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer v;
     output Integer o;
   external "builtin" o=abs(v);
+  annotation(preferredView="text");
   end intAbs;
 
   function realAbs
     input Real v;
     output Real o;
   external "builtin" o=abs(v);
+  annotation(preferredView="text");
   end realAbs;
 
   function intDiv
@@ -497,6 +499,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer y;
     output Integer z;
   external "builtin" z=div(x,y);
+  annotation(preferredView="text");
   end intDiv;
 
   function realDiv
@@ -504,6 +507,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real y;
     output Real z;
   external "builtin" z=div(x,y);
+  annotation(preferredView="text");
   end realDiv;
 
   function intMod
@@ -511,6 +515,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer y;
     output Integer z;
   external "builtin" z=mod(x,y);
+  annotation(preferredView="text");
   end intMod;
 
   function realMod
@@ -518,6 +523,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real y;
     output Real z;
   external "builtin" z=mod(x,y);
+  annotation(preferredView="text");
   end realMod;
 
   function intRem
@@ -525,6 +531,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer y;
     output Integer z;
   external "builtin" z=rem(x,y);
+  annotation(preferredView="text");
   end intRem;
 
   function realRem
@@ -532,6 +539,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real y;
     output Real z;
   external "builtin" z=rem(x,y);
+  annotation(preferredView="text");
   end realRem;
 
   function outerProductInt
@@ -543,6 +551,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
   */
+  annotation(preferredView="text");
   end outerProductInt;
 
   function outerProductReal
@@ -554,6 +563,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
   */
+  annotation(preferredView="text");
   end outerProductReal;
 
   function crossInt
@@ -566,6 +576,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   algorithm
     z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
   */
+  annotation(preferredView="text");
   end crossInt;
 
   function crossReal
@@ -578,12 +589,14 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   algorithm
     z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
   */
+  annotation(preferredView="text");
   end crossReal;
 
   function skewInt
     input Integer[3] x;
     output Integer[3,3] y;
     external "builtin" skew(x,y);
+  annotation(preferredView="text");
   end skewInt;
 
   function skewReal
@@ -591,7 +604,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real[3,3] y;
     external "builtin" skew(x,y);
   end skewReal;
-
+annotation(preferredView="text");
 end Internal;
 
 package Scripting
@@ -608,17 +621,20 @@ record CheckSettingsResult
   String OS, SYSTEM_INFO,SENDDATALIBS,C_COMPILER;
   Boolean C_COMPILER_RESPONDING;
   String CONFIGURE_CMDLINE;
+annotation(preferredView="text");
 end CheckSettingsResult;
 
 function checkSettings "Display some diagnostics"
   output CheckSettingsResult result;
 external "builtin";
+annotation(preferredView="text");
 end checkSettings;
 
 function loadFile "load file (*.mo) and merge it with the loaded AST"
   input String fileName;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end loadFile;
  
 function loadString "Parses the data and merges the resulting AST with the
@@ -632,6 +648,7 @@ was read in binary format from a file with the same name.
   input String encoding := "UTF-8";
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end loadString;
 
 function parseString
@@ -639,36 +656,42 @@ function parseString
   input String filename := "<interactive>";
   output TypeName names[:];
 external "builtin";
+annotation(preferredView="text");
 end parseString;
 
 function parseFile
   input String filename;
   output TypeName names[:];
 external "builtin";
+annotation(preferredView="text");
 end parseFile;
 
 function loadFileInteractiveQualified
   input String filename;
   output TypeName names[:];
 external "builtin";
+annotation(preferredView="text");
 end loadFileInteractiveQualified;
 
 function loadFileInteractive
   input String filename;
   output TypeName names[:];
 external "builtin";
+annotation(preferredView="text");
 end loadFileInteractive;
 
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: bash -c $callStr";
   output Integer retval "Return value of the system call; usually 0 on success";
 external "builtin" annotation(__OpenModelica_Impure=true);
+annotation(preferredView="text");
 end system;
 
 function saveAll "save the entire loaded AST to file"
   input String fileName;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end saveAll;
 
 function help "display the OpenModelica help text"
@@ -676,16 +699,19 @@ function help "display the OpenModelica help text"
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   helpText := readFile(getInstallationDirectoryPath() + "/share/doc/omc/omc_helptext.txt");
+annotation(preferredView="text");
 end help;
 
 function clear
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end clear;
 
 function clearVariables
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end clearVariables;
 
 function enableSendData
@@ -698,69 +724,81 @@ function setDataPort
   input Integer port;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setDataPort;
 
 function generateHeader
   input String fileName;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end generateHeader;
 
 function generateSeparateCode
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end generateSeparateCode;
 
 function setLinker
   input String linker;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setLinker;
 
 function setLinkerFlags
   input String linkerFlags;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setLinkerFlags;
 
 function setCompiler
   input String compiler;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCompiler;
 
 function setCXXCompiler
   input String compiler;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCXXCompiler;
 
 function verifyCompiler
   output Boolean compilerWorks;
 external "builtin";
+annotation(preferredView="text");
 end verifyCompiler;
 
 function setCompilerPath
   input String compilerPath;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCompilerPath;
 
 function getCompileCommand
   output String compileCommand;
 external "builtin";
+annotation(preferredView="text");
 end getCompileCommand;
 
 function setCompileCommand
   input String compileCommand;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCompileCommand;
 
 function setPlotCommand
   input String plotCommand;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setPlotCommand;
 
 function getSettings
@@ -772,23 +810,27 @@ algorithm
     "Temp folder path: " + getTempDirectoryPath() + "\n" +
     "Installation folder: " + getInstallationDirectoryPath() + "\n" +
     "Modelica path: " + getModelicaPath() + "\n";
+annotation(preferredView="text");
 end getSettings;
 
 function setTempDirectoryPath
   input String tempDirectoryPath;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setTempDirectoryPath;
 
 function getTempDirectoryPath
   output String tempDirectoryPath;
 external "builtin";
+annotation(preferredView="text");
 end getTempDirectoryPath;
 
 function getEnvironmentVar
   input String var;
   output String value "returns empty string on failure";
 external "builtin";
+annotation(preferredView="text");
 end getEnvironmentVar;
 
 function setEnvironmentVar
@@ -796,6 +838,7 @@ function setEnvironmentVar
   input String value;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setEnvironmentVar;
 
 function appendEnvironmentVar
@@ -805,34 +848,40 @@ function appendEnvironmentVar
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   result := if setEnvironmentVar(var,getEnvironmentVar(var)+value) then getEnvironmentVar(var) else "error";
+annotation(preferredView="text");
 end appendEnvironmentVar;
         
 function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar"
   input String installationDirectoryPath;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setInstallationDirectoryPath;
 
 function getInstallationDirectoryPath "This returns OPENMODELICAHOME if it is set; on some platforms the default path is returned if it is not set."
   output String installationDirectoryPath;
 external "builtin";
+annotation(preferredView="text");
 end getInstallationDirectoryPath;
 
 function setModelicaPath "The Modelica Library Path - MODELICAPATH in the language specification; OPENMODELICALIBRARY in OpenModelica."
   input String modelicaPath;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setModelicaPath;
 
 function getModelicaPath "The Modelica Library Path - MODELICAPATH in the language specification; OPENMODELICALIBRARY in OpenModelica."
   output String modelicaPath;
 external "builtin";
+annotation(preferredView="text");
 end getModelicaPath;
 
 function setCompilerFlags
   input String compilerFlags;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCompilerFlags;
 
 function setDebugFlags "example input: failtrace,-noevalfunc"
@@ -841,6 +890,7 @@ function setDebugFlags "example input: failtrace,-noevalfunc"
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+d=" + debugFlags);
+annotation(preferredView="text");
 end setDebugFlags;
 
 function setPreOptModules "example input: removeFinalParameters,removeSimpleEquations,expandDerOperator"
@@ -849,6 +899,7 @@ function setPreOptModules "example input: removeFinalParameters,removeSimpleEqua
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+preOptModules=" + modules);
+annotation(preferredView="text");
 end setPreOptModules;
 
 function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations"
@@ -857,6 +908,7 @@ function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpl
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+pastOptModules=" + modules);
+annotation(preferredView="text");
 end setPastOptModules;
 
 function setIndexReductionMethod "example input: dummyDerivative"
@@ -865,6 +917,7 @@ function setIndexReductionMethod "example input: dummyDerivative"
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+indexReductionMethod=" + method);
+annotation(preferredView="text");
 end setIndexReductionMethod;
 
 function setCommandLineOptions
@@ -872,12 +925,14 @@ function setCommandLineOptions
   input String option;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setCommandLineOptions;
 
 function getVersion
   "Returns the version of the Modelica compiler"
   output String version;
 external "builtin";
+annotation(preferredView="text");
 end getVersion;
 
 function readFile
@@ -886,6 +941,7 @@ function readFile
   input String fileName;
   output String contents;
 external "builtin" annotation(__OpenModelica_Impure=true);
+annotation(preferredView="text");
 end readFile;
 
 function writeFile
@@ -894,6 +950,7 @@ function writeFile
   input String data;
   output Boolean success;
 external "builtin" annotation(__OpenModelica_Impure=true);
+annotation(preferredView="text");
 end writeFile;
 
 function readFileShowLineNumbers "
@@ -910,6 +967,7 @@ algorithm
     out := out + String(num) + ": " + line + "\n";
     num := num + 1;
   end for;
+annotation(preferredView="text");
 end readFileShowLineNumbers;
 
 function readFilePostprocessLineDirective "
@@ -954,6 +1012,7 @@ algorithm
       lineNumInOutputFile := lineNumInOutputFile + 1;
     end if;
   end for;
+annotation(preferredView="text");
 end readFilePostprocessLineDirective;
 
 function regex  "Sets the error buffer and returns -1 if the regex does not compile.
@@ -974,6 +1033,7 @@ function regex  "Sets the error buffer and returns -1 if the regex does not comp
   output Integer numMatches "-1 is an error, 0 means no match, else returns a number 1..maxMatches";
   output String matchedSubstrings[maxMatches] "unmatched strings are returned as empty";
 external "builtin";
+annotation(preferredView="text");
 end regex;
 
 function regexBool "Returns true if the string matches the regular expression"
@@ -987,6 +1047,7 @@ protected
 algorithm
   numMatches := regex(str,re,0,extended,caseInsensitive);
   matches := numMatches == 1;
+annotation(preferredView="text");
 end regexBool;
 
 function readFileNoNumeric
@@ -997,24 +1058,28 @@ function readFileNoNumeric
   input String fileName;
   output String contents;
 external "builtin";
+annotation(preferredView="text");
 end readFileNoNumeric;
 
 function getErrorString
   "[file.mo:n:n-n:n:b] Error: message"
   output String errorString;
 external "builtin";
+annotation(preferredView="text");
 end getErrorString;
 
 function getMessagesString
   "see getErrorString()"
   output String messagesString;
 external "builtin" messagesString=getErrorString();
+annotation(preferredView="text");
 end getMessagesString;
 
 record SourceInfo
   String filename;
   Boolean readonly;
   Integer lineStart,columnStart,lineEnd,columnEnd;
+annotation(preferredView="text");
 end SourceInfo;
 
 type ErrorKind = enumeration(
@@ -1033,39 +1098,46 @@ record ErrorMessage
   ErrorKind kind;
   ErrorLevel level;
   Integer id "Internal ID of the error (just ignore this)";
+annotation(preferredView="text");
 end ErrorMessage;
 
 function getMessagesStringInternal
   "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}"
   output ErrorMessage[:] messagesString;
 external "builtin";
+annotation(preferredView="text");
 end getMessagesStringInternal;
 
 function clearMessages "Clears the error buffer"
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end clearMessages;
 
 function runScript "Runs the mos-script specified by the filename."
   input String fileName "*.mos";
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end runScript;
 
 function echo "echo(false) disables Interactive output, echo(true) enables it again."
   input Boolean setEcho;
   output Boolean newEcho;
 external "builtin";
+annotation(preferredView="text");
 end echo;
 
 function getClassesInModelicaPath "MathCore-specific or not? Who knows!"
   output String classesInModelicaPath;
 external "builtin";
+annotation(preferredView="text");
 end getClassesInModelicaPath;
 
 function strictRMLCheck "Checks if any loaded function"
   output String message "empty if there was no problem";
 external "builtin";
+annotation(preferredView="text");
 end strictRMLCheck;
 
 /* These don't influence anything...
@@ -1084,6 +1156,7 @@ end setClassNamesForSimulation;
 function getAnnotationVersion
   output String annotationVersion;
 external "builtin";
+annotation(preferredView="text");
 end getAnnotationVersion;
 
 function setAnnotationVersion
@@ -1092,22 +1165,26 @@ function setAnnotationVersion
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+annotationVersion=" + annotationVersion);
+annotation(preferredView="text");
 end setAnnotationVersion;
 
 function getNoSimplify
   output Boolean noSimplify;
 external "builtin";
+annotation(preferredView="text");
 end getNoSimplify;
 
 function setNoSimplify
   input Boolean noSimplify;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setNoSimplify;
 
 function getVectorizationLimit
   output Integer vectorizationLimit;
 external "builtin";
+annotation(preferredView="text");
 end getVectorizationLimit;
 
 function setVectorizationLimit
@@ -1116,17 +1193,20 @@ function setVectorizationLimit
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+v=" + String(vectorizationLimit));
+annotation(preferredView="text");
 end setVectorizationLimit;
 
 function setShowAnnotations
   input Boolean show;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setShowAnnotations;
 
 function getShowAnnotations
   output Boolean show;
 external "builtin";
+annotation(preferredView="text");
 end getShowAnnotations;
 
 function setOrderConnections
@@ -1135,11 +1215,13 @@ function setOrderConnections
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+orderConnections=" + String(orderConnections));
+annotation(preferredView="text");
 end setOrderConnections;
 
 function getOrderConnections
   output Boolean orderConnections;
 external "builtin";
+annotation(preferredView="text");
 end getOrderConnections;
 
 function setLanguageStandard
@@ -1148,11 +1230,13 @@ function setLanguageStandard
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   success := setCommandLineOptions("+std=" + inVersion);
+annotation(preferredView="text");
 end setLanguageStandard;
 
 function getLanguageStandard
   output String outVersion;
 external "builtin";
+annotation(preferredView="text");
 end getLanguageStandard;
 
 function getAstAsCorbaString "Print the whole AST on the CORBA format for records, e.g.
@@ -1164,6 +1248,7 @@ function getAstAsCorbaString "Print the whole AST on the CORBA format for record
   input String fileName := "<interactive>";
   output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
 external "builtin";
+annotation(preferredView="text");
 end getAstAsCorbaString;
 
 function cd "change directory to the given path (which may be either relative or absolute)
@@ -1173,36 +1258,42 @@ function cd "change directory to the given path (which may be either relative or
   input String newWorkingDirectory := "";
   output String workingDirectory;
 external "builtin";
+annotation(preferredView="text");
 end cd;
 
 function checkModel
   input TypeName className;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end checkModel;
 
 function checkAllModelsRecursive
   input TypeName className;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end checkAllModelsRecursive;
 
 function typeOf
   input VariableName variableName;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end typeOf;
 
 function instantiateModel
   input TypeName className;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end instantiateModel;
 
 function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
   input TypeName className;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end generateCode;
 
 function loadModel "Parses the getModelicaPath(), and finds the package to load.
@@ -1215,12 +1306,14 @@ If none of the searched versions exist, false is returned and an error is added 
   input String[:] priorityVersion := {"default"};
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end loadModel;
 
 function deleteFile "Deletes a file with the given name"
   input String fileName;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end deleteFile;
 
 function saveModel
@@ -1228,6 +1321,7 @@ function saveModel
   input TypeName className;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end saveModel;
 
 function saveTotalModel
@@ -1235,12 +1329,14 @@ function saveTotalModel
   input TypeName className;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end saveTotalModel;
 
 function save
   input TypeName className;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end save;
 
 function saveTotalSCode
@@ -1248,18 +1344,21 @@ function saveTotalSCode
   input TypeName className;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end saveTotalSCode;
 
 function translateGraphics
   input TypeName className;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end translateGraphics;
 
 function codeToString
   input Code className;
   output String string;
 external "builtin";
+annotation(preferredView="text");
 end codeToString;
 
 function dumpXMLDAE
@@ -1273,11 +1372,13 @@ function dumpXMLDAE
   input Boolean storeInTemp := false;
   output String result[2] "Contents, Message/Filename; why is this an array and not 2 output arguments?";
 external "builtin";
+annotation(preferredView="text");
 end dumpXMLDAE;
 
 function listVariables "Lists the names of the active variables in the scripting environment."
   output TypeName variables[:];
 external "builtin";
+annotation(preferredView="text");
 end listVariables;
 
 function strtok "Splits the strings at the places given by the token, for example:
@@ -1286,6 +1387,7 @@ function strtok "Splits the strings at the places given by the token, for exampl
   input String token;
   output String[:] strings;
 external "builtin";
+annotation(preferredView="text");
 end strtok;
 
 public function stringReplace
@@ -1294,12 +1396,14 @@ public function stringReplace
   input String target;
   output String res;
 external "builtin";
+annotation(preferredView="text");
 end stringReplace;
 
 function list "Lists the contents of the given class, or all loaded classes"
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output String contents;
 external "builtin";
+annotation(preferredView="text");
 end list;
 
 function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
@@ -1307,6 +1411,7 @@ function uriToFilename "Handles modelica:// and file:// URI's. The result is an 
   input String uri;
   output String filename;
 external "builtin";
+annotation(preferredView="text");
 end uriToFilename;
 
 type LinearSystemSolver = enumeration(dgesv,lpsolve55);
@@ -1321,6 +1426,7 @@ function solveLinearSystem
   output Real[size(B,1)] X;
   output Integer info;
 external "builtin";
+annotation(preferredView="text");
 end solveLinearSystem;
 
 type StandardStream = enumeration(stdin,stdout,stderr);
@@ -1329,6 +1435,7 @@ function reopenStandardStream
   input String filename;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end reopenStandardStream;
 
 function importFMU "Imports the Functional Mockup Unit
@@ -1347,12 +1454,14 @@ algorithm
   // create the list of arguments for fmigenerator
   call := exe + " " + "--fmufile=\"" + filename + "\" --outputdir=\"" + workdir + "\"";
   success := 0 == system(call);
+annotation(preferredView="text");
 end importFMU;
 
 function getSourceFile
   input TypeName class_;
   output String filename "empty on failure";
 external "builtin";
+annotation(preferredView="text");
 end getSourceFile;
 
 function setSourceFile
@@ -1360,6 +1469,7 @@ function setSourceFile
   input String filename;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setSourceFile;
 
 function setClassComment
@@ -1367,6 +1477,7 @@ function setClassComment
   input String filename;
   output Boolean success;
 external "builtin";
+annotation(preferredView="text");
 end setClassComment;
 
 function getClassNames
@@ -1375,12 +1486,14 @@ function getClassNames
   input Boolean qualified := false;
   output TypeName classNames[:]; 
 external "builtin";
+annotation(preferredView="text");
 end getClassNames;
 
 function getPackages
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output TypeName classNames[:]; 
 external "builtin";
+annotation(preferredView="text");
 end getPackages;
 
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
@@ -1401,6 +1514,7 @@ partial function basePlotFunction "Extending this does not seem to work at the m
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
+annotation(preferredView="text");
 end basePlotFunction;
 
 function plot "Launches a plot window using OMPlotWindow. Returns true on success.
@@ -1430,6 +1544,7 @@ function plot "Launches a plot window using OMPlotWindow. Returns true on succes
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plot;
 
 function plot3 "Launches a plot window using OMPlot. Returns true on success.
@@ -1454,6 +1569,7 @@ function plot3 "Launches a plot window using OMPlot. Returns true on success.
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plot3;
 
 function plotAll "Works in the same way as plot(), but does not accept any
@@ -1481,6 +1597,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plotAll;
 
 function plotAll3 "Works in the same way as plot(), but does not accept any
@@ -1504,6 +1621,7 @@ function plotAll3 "Works in the same way as plot(), but does not accept any
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plotAll3;
 
 function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
@@ -1518,6 +1636,7 @@ function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
   input String fileName := "<default>";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plot2;
 
 function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
@@ -1529,6 +1648,7 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   "
   input TypeName classToVisualize;
   output Boolean success "Returns true on success";
+annotation(preferredView="text");
 end visualize;
 
 function visualize2 "Uses the 3D visualization package, SimpleVisual.mo, to
@@ -1545,6 +1665,7 @@ function visualize2 "Uses the 3D visualization package, SimpleVisual.mo, to
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   output Boolean success "Returns true on success";
   external "builtin";
+annotation(preferredView="text");
 end visualize2;
 
 function plotParametric "Plots the y-variables as a function of the x-variable.
@@ -1573,6 +1694,7 @@ function plotParametric "Plots the y-variables as a function of the x-variable.
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plotParametric;
 
 function plotParametric2 "Plots the y-variables as a function of the x-variable.
@@ -1586,6 +1708,7 @@ function plotParametric2 "Plots the y-variables as a function of the x-variable.
   input String fileName := "<default>";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plotParametric2;
 
 function plotParametric3 "Launches a plotParametric window using OMPlot. Returns true on success.
@@ -1610,6 +1733,7 @@ function plotParametric3 "Launches a plotParametric window using OMPlot. Returns
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
+annotation(preferredView="text");
 end plotParametric3;
 
 function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
@@ -1618,18 +1742,21 @@ function readSimulationResult "Reads a result file, returning a matrix correspon
   input Integer size := 0 "0=read any size... If the size is not the same as the result-file, this function fails";
   output Real result[:,:];
 external "builtin";
+annotation(preferredView="text");
 end readSimulationResult;
 
 function readSimulationResultSize "The number of intervals that are present in the output file"
   input String fileName;
   output Integer sz;
 external "builtin";
+annotation(preferredView="text");
 end readSimulationResultSize;
 
 function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names"
   input String fileName;
   output String[:] vars;
 external "builtin";
+annotation(preferredView="text");
 end readSimulationResultVars;
 
 public function compareSimulationResults "compare simulation results"
@@ -1641,6 +1768,7 @@ public function compareSimulationResults "compare simulation results"
   input String[:] vars;
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end compareSimulationResults;
 
 function val "Works on the filename pointed to by the scripting variable currentSimulationResult.
@@ -1651,6 +1779,7 @@ function val "Works on the filename pointed to by the scripting variable current
   input Real time;
   output Real valAtTime;
 external "builtin";
+annotation(preferredView="text");
 end val;
 
 function getAlgorithmCount "Counts the number of Algorithm sections in a class"
@@ -1752,6 +1881,7 @@ function iconv "The iconv() function converts one multibyte characters from one 
   input String to := "UTF-8";
   output String result;
 external "builtin";
+annotation(preferredView="text");
 end iconv;
 
 function getDocumentationAnnotation "
@@ -1760,27 +1890,32 @@ function getDocumentationAnnotation "
   input TypeName cl;
   output String out[2] "{info,revision}";
 external "builtin";
+annotation(preferredView="text");
 end getDocumentationAnnotation;
 
 function typeNameString
   input TypeName cl;
   output String out;
 external "builtin";
+annotation(preferredView="text");
 end typeNameString;
 
 function typeNameStrings
   input TypeName cl;
   output String out[:];
 external "builtin";
+annotation(preferredView="text");
 end typeNameStrings;
 
 function getClassComment
   input TypeName cl;
   output String comment;
 external "builtin";
+annotation(preferredView="text");
 end getClassComment;
-
+annotation(preferredView="text");
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
+annotation(preferredView="text");
 end OpenModelica;
