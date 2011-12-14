@@ -292,15 +292,15 @@ constant DebugFlag VAR_INDEX = DEBUG_FLAG(64, "varIndex",
 constant DebugFlag VAR_INDEX2 = DEBUG_FLAG(65, "varIndex2",
   "");
 constant DebugFlag BLT_DUMP = DEBUG_FLAG(66, "bltdump",
-  "");
+  "Dumps information from index reduction.");
 constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(67, "dummyselect",
   "");
 constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(68, "dumpdaelow",
-  "");
+  "Dumps the equation system at the beginning of the back end.");
 constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(69, "dumpindxdae",
-  "");
+  "Dumps the equation system after index reduction and optimisation.");
 constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(70, "optdaedump",
-  "");
+  "Dumps information from the optimisation modules.");
 constant DebugFlag EXEC_HASH = DEBUG_FLAG(71, "execHash",
   "");
 constant DebugFlag EXEC_FILES = DEBUG_FLAG(72, "execFiles",
