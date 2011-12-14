@@ -1485,6 +1485,7 @@ function getClassNames
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean recursive := false;
   input Boolean qualified := false;
+  input Boolean sort := false;
   output TypeName classNames[:]; 
 external "builtin";
 annotation(preferredView="text");

@@ -5349,4 +5349,48 @@ algorithm
   end match;
 end isInputOrOutput;
 
+public function pathLt
+  input Path path1;
+  input Path path2;
+  output Boolean lt;
+algorithm
+  lt := match (path1,path2)
+    local
+      Path p1,p2;
+      String s1,s2;
+      Integer cmp;
+    case (FULLYQUALIFIED(p1),FULLYQUALIFIED(p2)) then pathLt(p1,p2);
+    case (FULLYQUALIFIED(_),_) then false;
+    case (_,FULLYQUALIFIED(_)) then true;
+    case (QUALIFIED(name=s1,path=p1),QUALIFIED(name=s2,path=p2))
+      equation
+        cmp = stringCompare(s1,s2);
+        lt = Debug.bcallret2(cmp==0,pathLt,p1,p2,cmp==-1);
+      then lt;
+    case (QUALIFIED(name=s1),IDENT(name=s2))
+      equation
+        cmp = stringCompare(s1,s2);
+        lt = cmp == -1;
+      then lt;
+    case (IDENT(name=s1),QUALIFIED(name=s2))
+      equation
+        cmp = stringCompare(s1,s2);
+        lt = not (cmp == -1);
+      then lt;
+    case (IDENT(name=s1),IDENT(name=s2))
+      equation
+        cmp = stringCompare(s1,s2);
+        lt = cmp == -1;
+      then lt;
+  end match;
+end pathLt;
+
+public function pathGe
+  input Path path1;
+  input Path path2;
+  output Boolean ge;
+algorithm
+  ge := not pathLt(path1,path2);
+end pathGe;
+
 end Absyn;
