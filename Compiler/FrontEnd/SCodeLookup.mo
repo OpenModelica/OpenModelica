@@ -215,8 +215,7 @@ algorithm
     // Look among the locally declared components.
     case (_, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
-        item = SCodeEnv.avlTreeGet(cls_and_vars, inName);
-        item = SCodeEnv.resolveAlias(item, cls_and_vars);
+        item = lookupInTree(inName, cls_and_vars);
       then
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 
@@ -257,6 +256,16 @@ algorithm
 
   end matchcontinue;
 end lookupInLocalScope;
+
+public function lookupInTree
+  "Looks up an identifier in an AvlTree."
+  input Absyn.Ident inName;
+  input AvlTree inTree;
+  output Item outItem;
+algorithm
+  outItem := SCodeEnv.avlTreeGet(inTree, inName);
+  outItem := SCodeEnv.resolveAlias(outItem, inTree);
+end lookupInTree;
 
 public function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."
@@ -785,7 +794,8 @@ algorithm
     case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)), _, _, _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.REDECLARE_CLASS_AS_VAR, {name}, info);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS, 
+          {"component", name, "a class"}, info);
       then
         fail();
 

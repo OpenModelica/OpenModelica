@@ -298,9 +298,12 @@ public function checkModifierIfRedeclare
   input Absyn.Info inInfo;
 algorithm
   _ := match(inItem, inModifier, inInfo)
-    case (_, SCode.REDECL(elementLst = _), _)
+    local
+      SCode.Element el;
+
+    case (_, SCode.REDECL(elementLst = {el}), _)
       equation
-        checkRedeclaredElementPrefix(inItem, inInfo);
+        checkRedeclaredElementPrefix(inItem, el, inInfo);
       then
         ();
 
@@ -312,52 +315,70 @@ public function checkRedeclaredElementPrefix
   "Checks that an element that is being redeclared is declared as replaceable
   and non-final, otherwise an error is printed."
   input SCodeEnv.Item inItem;
+  input SCode.Element inReplacement;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inItem, inInfo)
+  _ := match(inItem, inReplacement, inInfo)
     local
       SCode.Replaceable repl;
       SCode.Final fin;
       SCode.Ident name;
       Absyn.Info info;
-      SCode.Visibility vis;
       SCode.Variability var;
       SCode.Restriction res;
+      SCode.Visibility vis1, vis2;
       String ty;
       Integer err_count;
 
-    case (SCodeEnv.VAR(var = SCode.COMPONENT(
-          name = name, 
-          prefixes = SCode.PREFIXES(
-            finalPrefix = fin, 
-            replaceablePrefix = repl,
-            visibility = vis), 
-          attributes = SCode.ATTR(variability = var), 
-          info = info)), _)
+    case (SCodeEnv.VAR(var = 
+        SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
+            visibility = vis1, finalPrefix = fin, replaceablePrefix = repl), 
+          attributes = SCode.ATTR(variability = var), info = info)), 
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = "component";
         checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
         checkRedeclarationVariability(name, ty, var, inInfo, info);
+        //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
         true = intEq(err_count, Error.getNumErrorMessages());
       then
         ();
 
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(
-          name = name, 
-          prefixes = SCode.PREFIXES(
-            finalPrefix = fin, 
-            replaceablePrefix = repl,
-            visibility = vis),
-          restriction = res,
-          info = info)), _)
+    case (SCodeEnv.CLASS(cls = 
+        SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
+          visibility = vis1, finalPrefix = fin, replaceablePrefix = repl), 
+          restriction = res, info = info)),
+        SCode.CLASS(prefixes = SCode.PREFIXES(visibility = vis2)), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = SCodeDump.restrictionStringPP(res);
         checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
+        //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
         true = intEq(err_count, Error.getNumErrorMessages());
+      then
+        ();
+
+    case (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)),
+          SCode.CLASS(restriction = res), _)
+      equation
+        ty = SCodeDump.restrictionStringPP(res);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {ty, name, "a component"}, info);
+      then
+        ();
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
+          SCode.COMPONENT(name = name), _)
+      equation
+        ty = SCodeDump.restrictionStringPP(res);
+        ty = "a " +& ty;
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"component", name, ty}, info);
       then
         ();
 
@@ -394,16 +415,13 @@ protected function checkRedeclarationFinal
   input Absyn.Info inInfo;
 algorithm
   _ := match(inName, inType, inFinal, inOriginInfo, inInfo)
-    local
-      String err_str;
-
     case (_, _, SCode.NOT_FINAL(), _, _) then ();
 
     case (_, _, SCode.FINAL(), _, _)
       equation
-        err_str = "final " +& inType +& " " +& inName;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE, {err_str}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE, 
+          {"final", inType, inName}, inInfo);
       then
         ();
   end match;
@@ -417,20 +435,47 @@ protected function checkRedeclarationVariability
   input Absyn.Info inInfo;
 algorithm
   _ := match(inName, inType, inVariability, inOriginInfo, inInfo)
-    local
-      String err_str;
-
     case (_, _, SCode.CONST(), _, _)
       equation
-        err_str = "constant " +& inType +& " " +& inName;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE, {err_str}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE, 
+          {"constant", inType, inName}, inInfo);
       then
         ();
 
     else ();
   end match;
 end checkRedeclarationVariability;
+
+protected function checkRedeclarationVisibility
+  input SCode.Ident inName;
+  input String inType;
+  input SCode.Visibility inOriginalVisibility;
+  input SCode.Visibility inNewVisibility;
+  input Absyn.Info inOriginInfo;
+  input Absyn.Info inNewInfo;
+algorithm
+  _ := match(inName, inType, inOriginalVisibility, inNewVisibility,
+      inOriginInfo, inNewInfo)
+    case (_, _, SCode.PUBLIC(), SCode.PROTECTED(), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"public element", inName, "protected"}, inOriginInfo);
+      then
+        fail();
+
+    case (_, _, SCode.PROTECTED(), SCode.PUBLIC(), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"protected element", inName, "public"}, inOriginInfo);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkRedeclarationVisibility;
 
 public function checkValidEnumLiteral
   input String inLiteral;

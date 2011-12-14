@@ -200,8 +200,8 @@ public constant Message INST_PARTIAL_CLASS = MESSAGE(38, TRANSLATION(), ERROR(),
   "Illegal to instantiate partial class %s");
 public constant Message LOOKUP_BASECLASS_ERROR = MESSAGE(39, TRANSLATION(), ERROR(),
   "Base class %s not found in scope %s");
-public constant Message REDECLARE_CLASS_AS_VAR = MESSAGE(40, TRANSLATION(), ERROR(),
-  "Trying to redeclare the class %s as a variable");
+public constant Message INVALID_REDECLARE_AS = MESSAGE(40, TRANSLATION(), ERROR(),
+  "Invalid redeclaration of %s %s as %s.");
 public constant Message REDECLARE_NON_REPLACEABLE = MESSAGE(41, TRANSLATION(), ERROR(),
   "Trying to redeclare %1 %2 but %1 not declared as replaceable");
 public constant Message COMPONENT_INPUT_OUTPUT_MISMATCH = MESSAGE(42, TRANSLATION(), ERROR(),
@@ -492,7 +492,7 @@ public constant Message EXTERNAL_FUNCTION_RESULT_NOT_VAR = MESSAGE(176, TRANSLAT
 public constant Message EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE = MESSAGE(177, TRANSLATION(), ERROR(),
   "The lhs (result) of the external function declaration has array type (%s), but this is not allowed in the specification. You need to pass it as an input to the function (preferably also with a size()-expression to avoid out-of-bounds errors in the external call).");
 public constant Message INVALID_REDECLARE = MESSAGE(178, TRANSLATION(), ERROR(),
-  "Redeclaration of %s is not allowed.");
+  "Redeclaration of %s %s %s is not allowed.");
 public constant Message INVALID_TYPE_PREFIX = MESSAGE(179, TRANSLATION(), ERROR(),
   "Invalid type prefix '%s' on variable %s, due to existing type prefix '%s'.");
 public constant Message LINEAR_SYSTEM_INVALID = MESSAGE(180, SYMBOLIC(), ERROR(),

@@ -1457,7 +1457,6 @@ protected
   Option<String> name;
   FrameType ty;
   AvlTree tree;
-  ExtendsTable ext;
   ImportTable imps;
   Util.StatefulBoolean is_used;
   Env rest_env;
@@ -1465,6 +1464,22 @@ algorithm
   FRAME(name, ty, tree, _, imps, is_used) :: rest_env := inEnv;
   outEnv := FRAME(name, ty, tree, inExtendsTable, imps, is_used) :: rest_env;
 end setEnvExtendsTable;
+
+public function setEnvClsAndVars
+  input AvlTree inTree;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  ExtendsTable ext;
+  ImportTable imps;
+  Util.StatefulBoolean is_used;
+  Env rest_env;
+algorithm
+  FRAME(name, ty, _, ext, imps, is_used) :: rest_env := inEnv;
+  outEnv := FRAME(name, ty, inTree, ext, imps, is_used) :: rest_env;
+end setEnvClsAndVars;
 
 public function mergePathWithEnvPath
   "Merges a path with the environment path."

@@ -45,6 +45,7 @@ public import SCodeEnv;
 protected import Dump;
 protected import List;
 protected import SCode;
+protected import SCodeDump;
 protected import SCodeLookup;
 protected import SCodeFlattenRedeclare;
 protected import System;
@@ -181,16 +182,17 @@ algorithm
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
             typeSpec = Absyn.TPATH(path = path), modifications = mod, info = info), _, _)
       equation
+        //print("Component: " +& name +& "\n");
+        //print("Modifier: " +& printMod(mod) +& "\n");
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
         // Apply the redeclarations.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mod, inEnv);
         (item, env) =
           SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
         prefix = (name, ad) :: inPrefix;
-        prefix = inPrefix;
         var_count = instClassItem(item, env, prefix);
         // Print the variable if it's a basic type.
-        //printVar(prefix, path, var_count);
+        printVar(prefix, inVar, path, var_count);
         dim_count = countVarDims(ad);
 
         // Set var_count to one if it's zero, since it counts as an element by
@@ -219,6 +221,79 @@ algorithm
   end match;
 end instElement;
 
+protected function printMod
+  input SCode.Mod inMod;
+  output String outString;
+algorithm
+  outString := match(inMod)
+    local
+      SCode.Final fp;
+      SCode.Each ep;
+      list<SCode.SubMod> submods;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+      list<SCode.Element> el;
+      String fstr, estr, submod_str, bind_str, el_str;
+
+    case SCode.MOD(fp, ep, submods, binding)
+      equation
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
+        bind_str = printBinding(binding);
+      then
+        "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
+
+    case SCode.REDECL(fp, ep, el)
+      equation
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        el_str = stringDelimitList(List.map(el, SCodeDump.unparseElementStr), ", ");
+      then
+        "REDECL(" +& fstr +& estr +& "{" +& el_str +& "})";
+
+    case SCode.NOMOD() then "NOMOD()";
+  end match;
+end printMod;
+
+protected function printSubMod
+  input SCode.SubMod inSubMod;
+  output String outString;
+algorithm
+  outString := match(inSubMod)
+    local
+      SCode.Mod mod;
+      list<SCode.Subscript> subs;
+      String id, mod_str, subs_str;
+
+    case SCode.NAMEMOD(ident = id, A = mod)
+      equation
+        mod_str = printMod(mod);
+      then
+        "NAMEMOD(" +& id +& " = " +& mod_str +& ")";
+
+    case SCode.IDXMOD(subscriptLst = subs, an = mod)
+      equation
+        subs_str = Dump.printSubscriptsStr(subs);
+        mod_str = printMod(mod);
+      then
+        "IDXMOD(" +& subs_str +& ", " +& mod_str +& ")";
+
+  end match;
+end printSubMod;
+
+protected function printBinding
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  output String outString;
+algorithm
+  outString := match(inBinding)
+    local
+      Absyn.Exp exp;
+
+    case SOME((exp, _)) then " = " +& Dump.printExpStr(exp);
+    else "";
+  end match;
+end printBinding;
+        
 protected function showProgress
   input Integer count;
   input String name;
@@ -238,21 +313,34 @@ end showProgress;
 
 protected function printVar
   input Prefix inName;
+  input SCode.Element inVar;
   input Absyn.Path inClassPath;
   input Integer inVarCount;
 algorithm
-  _ := match(inName, inClassPath, inVarCount)
+  _ := match(inName, inVar, inClassPath, inVarCount)
     local
       String name, cls;
+      SCode.Element var;
+      SCode.Prefixes pf;
+      SCode.Flow fp;
+      SCode.Stream sp;
+      SCode.Variability vp;
+      Absyn.Direction dp;
+      SCode.Mod mod;
+      Option<SCode.Comment> cmt;
+      Option<Absyn.Exp> cond;
+      Absyn.Info info;
 
     // Only print the variable if it doesn't contain any components, i.e. if
     // it's of basic type. This needs to be better checked, since some models
     // might be empty.
-    case (_, _, 0)
+    case (_, SCode.COMPONENT(_, pf, 
+        SCode.ATTR(_, fp, sp, vp, dp), _, mod, cmt, cond, info), _, 0)
       equation
-        cls = Absyn.pathString(inClassPath);
         name = printPrefix(inName);
-        print("  " +& cls +& " " +& name +& ";\n");
+        var = SCode.COMPONENT(name, pf, SCode.ATTR({}, fp, sp, vp, dp), 
+          Absyn.TPATH(inClassPath, NONE()), mod, cmt, cond, info);
+        print("  " +& SCodeDump.unparseElementStr(var) +& ";\n");
       then
         ();
 

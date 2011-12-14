@@ -668,11 +668,11 @@ algorithm
 
     // A processed redeclared class definition.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = replacement as SCodeEnv.CLASS(
-        cls = SCode.CLASS(name = name, info = info))), _)
+        cls = e as SCode.CLASS(name = name, info = info))), _)
       equation
         (item, path, env) =
           SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
-        SCodeCheck.checkRedeclaredElementPrefix(item, info);
+        SCodeCheck.checkRedeclaredElementPrefix(item, e, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, replacement, inEnv);
       then
@@ -680,11 +680,11 @@ algorithm
 
     // A processed redeclared component.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = replacement as SCodeEnv.VAR(
-        var = SCode.COMPONENT(name = name, info = info))), _)
+        var = e as SCode.COMPONENT(name = name, info = info))), _)
       equation
         (item, path, env) =
           SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
-        SCodeCheck.checkRedeclaredElementPrefix(item, info);
+        SCodeCheck.checkRedeclaredElementPrefix(item, e, info);
         path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
         env = replaceElementInEnv(path, replacement, inEnv);
       then
@@ -717,7 +717,7 @@ protected function replaceElementInEnv
   frame to replace the element in. If it's not we need to look up the correct
   class in the environment and continue into the class's environment."
   input Absyn.Path inPath;
-  input SCodeEnv.Item inElement;
+  input Item inElement;
   input Env inEnv;
   output Env outEnv;
 protected
@@ -757,7 +757,7 @@ end checkNextScopeAvailability;
 protected function replaceElementInEnv2
   "Helper function to replaceClassInEnv."
   input Absyn.Path inPath;
-  input SCodeEnv.Item inElement;
+  input Item inElement;
   input Env inEnv;
   output Env outEnv;
 algorithm
@@ -768,7 +768,7 @@ end replaceElementInEnv2;
 protected function replaceElementInEnv3
   "Helper function to replaceClassInEnv."
   input Absyn.Path inPath;
-  input SCodeEnv.Item inElement;
+  input Item inElement;
   input Env inEnv;
   input Boolean inNextScopeAvailable;
   output Env outEnv;
@@ -821,44 +821,215 @@ end replaceElementInEnv3;
 protected function replaceElementInScope
   "Replaces an element in the current scope."
   input SCode.Ident inElementName;
-  input SCodeEnv.Item inElement;
+  input Item inElement;
   input Env inEnv;
   output Env outEnv;
 algorithm
   outEnv := match(inElementName, inElement, inEnv)
     local
-      Option<String> name;
-      SCodeEnv.FrameType ty;
       SCodeEnv.AvlTree tree;
-      SCodeEnv.ExtendsTable exts;
-      SCodeEnv.ImportTable imps;
-      Env env, class_env;
-      Util.StatefulBoolean is_used;
       Item old_item, new_item;
 
-    case (_, SCodeEnv.CLASS(cls = _), 
-        SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env)
+    case (_, _, SCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
         old_item = SCodeEnv.avlTreeGet(tree, inElementName);
-        new_item = SCodeEnv.linkItemUsage(old_item, inElement);
+        new_item = propagateItemPrefixes(old_item, inElement);
+        new_item = SCodeEnv.linkItemUsage(old_item, new_item);
         tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);
       then
-        SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env;
-
-    case (_, SCodeEnv.VAR(var = _),
-        SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env)
-      equation
-        tree = SCodeEnv.avlTreeReplace(tree, inElementName, inElement);
-      then
-        SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env;
+        SCodeEnv.setEnvClsAndVars(tree, inEnv);
 
   end match;
 end replaceElementInScope;
 
+protected function propagateItemPrefixes
+  input Item inOriginalItem;
+  input Item inNewItem;
+  output Item outNewItem;
+algorithm
+  outNewItem := match(inOriginalItem, inNewItem)
+    local
+      SCode.Element el1, el2;
+      Util.StatefulBoolean iu1, iu2;
+      Env env1, env2;
+      SCodeEnv.ClassType ty1, ty2;
+      String name, res_str;
+      Absyn.Info info1, info2;
+      SCode.Restriction res;
+
+    case (SCodeEnv.VAR(var = el1, isUsed = iu1), 
+          SCodeEnv.VAR(var = el2, isUsed = iu2))
+      equation
+        el2 = propagateAttributesVar(el1, el2);
+      then
+        SCodeEnv.VAR(el2, iu2);
+
+    case (SCodeEnv.CLASS(cls = el1, env = env1, classType = ty1),
+          SCodeEnv.CLASS(cls = el2, env = env2, classType = ty2))
+      equation
+        el2 = propagateAttributesClass(el1, el2);
+      then
+        SCodeEnv.CLASS(el2, env2, ty2);
+
+    case (SCodeEnv.ALIAS(path = _), _) then inNewItem;
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeFlattenRedeclare.propagateAttributes failed on unknown item."});
+      then
+        fail();
+  end match;
+end propagateItemPrefixes;
+
+protected function propagateAttributesVar
+  input SCode.Element inOriginalVar;
+  input SCode.Element inNewVar;
+  output SCode.Element outNewVar;
+protected
+  SCode.Ident name;
+  SCode.Prefixes pref1, pref2;
+  SCode.Attributes attr1, attr2;
+  Absyn.TypeSpec ty;
+  SCode.Mod mod;
+  Option<SCode.Comment> cmt;
+  Option<Absyn.Exp> cond;
+  Absyn.Info info;
+algorithm
+  SCode.COMPONENT(prefixes = pref1, attributes = attr1) := inOriginalVar;
+  SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) := inNewVar;
+  pref2 := propagatePrefixes(pref1, pref2);
+  attr2 := propagateAttributes(attr1, attr2);
+  outNewVar := SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info);
+end propagateAttributesVar;
+
+protected function propagateAttributesClass
+  input SCode.Element inOriginalClass;
+  input SCode.Element inNewClass;
+  output SCode.Element outNewClass;
+protected
+  SCode.Ident name;
+  SCode.Prefixes pref1, pref2;
+  SCode.Encapsulated ep;
+  SCode.Partial pp;
+  SCode.Restriction res;
+  SCode.ClassDef cdef;
+  Absyn.Info info;
+algorithm
+  SCode.CLASS(prefixes = pref1) := inOriginalClass;
+  SCode.CLASS(name, pref2, ep, pp, res, cdef, info) := inNewClass;
+  pref2 := propagatePrefixes(pref1, pref2);
+  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
+end propagateAttributesClass;
+    
+protected function propagatePrefixes
+  input SCode.Prefixes inOriginalPrefixes;
+  input SCode.Prefixes inNewPrefixes;
+  output SCode.Prefixes outNewPrefixes;
+protected
+  SCode.Visibility vis1, vis2;
+  Absyn.InnerOuter io1, io2;
+  SCode.Redeclare rdp;
+  SCode.Final fp;
+  SCode.Replaceable rpp;
+algorithm
+  SCode.PREFIXES(visibility = vis1, innerOuter = io1) := inOriginalPrefixes;
+  SCode.PREFIXES(vis2, rdp, fp, io2, rpp) := inNewPrefixes;
+  io2 := propagatePrefixInnerOuter(io1, io2);
+  outNewPrefixes := SCode.PREFIXES(vis2, rdp, fp, io2, rpp);
+end propagatePrefixes;
+
+protected function propagatePrefixInnerOuter
+  input Absyn.InnerOuter inOriginalIO;
+  input Absyn.InnerOuter inIO;
+  output Absyn.InnerOuter outIO;
+algorithm
+  outIO := match(inOriginalIO, inIO)
+    case (_, Absyn.NOT_INNER_OUTER()) then inOriginalIO;
+    else inIO;
+  end match;
+end propagatePrefixInnerOuter;
+
+protected function propagateAttributes
+  input SCode.Attributes inOriginalAttributes;
+  input SCode.Attributes inNewAttributes;
+  output SCode.Attributes outNewAttributes;
+protected
+  Absyn.ArrayDim dims1, dims2;
+  SCode.Flow fp1, fp2;
+  SCode.Stream sp1, sp2;
+  SCode.Variability var1, var2;
+  Absyn.Direction dir1, dir2;
+algorithm
+  SCode.ATTR(dims1, fp1, sp1, var1, dir1) := inOriginalAttributes;
+  SCode.ATTR(dims2, fp2, sp2, var2, dir2) := inNewAttributes;
+  dims2 := propagateArrayDimensions(dims1, dims2);
+  fp2 := propagateFlowPrefix(fp1, fp2);
+  sp2 := propagateStreamPrefix(sp1, sp2);
+  var2 := propagateVariability(var1, var2);
+  dir2 := propagateDirection(dir1, dir2);
+  outNewAttributes := SCode.ATTR(dims2, fp2, sp2, var2, dir2);
+end propagateAttributes;
+
+protected function propagateArrayDimensions
+  input Absyn.ArrayDim inOriginalDims;
+  input Absyn.ArrayDim inNewDims;
+  output Absyn.ArrayDim outNewDims;
+algorithm
+  outNewDims := match(inOriginalDims, inNewDims)
+    case (_, {}) then inOriginalDims;
+    else inNewDims;
+  end match;
+end propagateArrayDimensions;
+
+protected function propagateFlowPrefix
+  input SCode.Flow inOriginalFlow;
+  input SCode.Flow inNewFlow;
+  output SCode.Flow outNewFlow;
+algorithm
+  outNewFlow := match(inOriginalFlow, inNewFlow)
+    case (_, SCode.NOT_FLOW()) then inOriginalFlow;
+    else inNewFlow;
+  end match;
+end propagateFlowPrefix;
+
+protected function propagateStreamPrefix
+  input SCode.Stream inOriginalStream;
+  input SCode.Stream inNewStream;
+  output SCode.Stream outNewStream;
+algorithm
+  outNewStream := match(inOriginalStream, inNewStream)
+    case (_, SCode.NOT_STREAM()) then inOriginalStream;
+    else inNewStream;
+  end match;
+end propagateStreamPrefix;
+
+protected function propagateVariability
+  input SCode.Variability inOriginalVariability;
+  input SCode.Variability inNewVariability;
+  output SCode.Variability outNewVariability;
+algorithm
+  outNewVariability := match(inOriginalVariability, inNewVariability)
+    case (_, SCode.VAR()) then inOriginalVariability;
+    else inNewVariability;
+  end match;
+end propagateVariability;
+
+protected function propagateDirection
+  input Absyn.Direction inOriginalDirection;
+  input Absyn.Direction inNewDirection;
+  output Absyn.Direction outNewDirection;
+algorithm
+  outNewDirection := match(inOriginalDirection, inNewDirection)
+    case (_, Absyn.BIDIR()) then inOriginalDirection;
+    else inNewDirection;
+  end match;
+end propagateDirection;
+  
 protected function replaceElementInClassEnv
   "Replaces an element in the environment of a class."
   input Absyn.Path inClassPath;
-  input SCodeEnv.Item inElement;
+  input Item inElement;
   input Env inEnv;
   output Env outEnv;
 algorithm
@@ -906,15 +1077,15 @@ protected function replaceElementInClassEnv2
   "Helper function to replaceElementInClassEnv. Makes sure that the replacement
   is done in the correct class with regards to aliases."
   input String inName;
-  input SCodeEnv.Item inItem;
+  input Item inItem;
   input SCodeEnv.AvlTree inTree;
   output String outName;
-  output SCodeEnv.Item outItem;
+  output Item outItem;
 algorithm
   (outName, outItem) := match(inName, inItem, inTree)
     local
       String name;
-      SCodeEnv.Item item;
+      Item item;
 
     // An alias. Resolve it and return the correct name of the aliased class.
     case (_, SCodeEnv.ALIAS(path = Absyn.IDENT(name)), _)
