@@ -396,6 +396,28 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   return 0;
 }
 
+/* returns 0 on success */
+int SystemImpl__appendFile(const char* filename, const char *data)
+{
+  FILE *file = NULL;
+  file = fopen(filename, "a");
+
+  if(file == NULL) {
+    const char *c_tokens[1] = {filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      ErrorType_scripting, ErrorLevel_error,
+      "Error appending to file %s.",
+      c_tokens,
+      1);
+    return 1;
+  }
+
+  fwrite(data, strlen(data), 1, file);
+  fflush(file);
+  fclose(file);
+  return 0;
+}
+
 static int str_contain_char( const char* chars, const char chr)
 {
   int length_of_chars = strlen(chars);
