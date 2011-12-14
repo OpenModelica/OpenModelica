@@ -1253,7 +1253,7 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
 {
     mpParentMainWindow = pParent;
     // get MSL recursive
-    mMSLItemsList = mpParentMainWindow->mpOMCProxy->getClassNamesRecursive(tr("Modelica"));
+    mMSLItemsList = mpParentMainWindow->mpOMCProxy->getClassNames(tr(""), tr("true"));
     // create search controls
     mpSearchTextBox = new MSLSearchBox(this);
     connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(searchMSL()));

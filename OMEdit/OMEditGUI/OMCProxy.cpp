@@ -737,10 +737,15 @@ void OMCProxy::loadStandardLibrary()
 
 //! Gets the list of classes from OMC.
 //! @param className is the name of the class whose sub classes are retrieved.
+//! @param recursive recursively retrieve all the sub classes.
+//! @param qualified returns the class names as qualified path.
 //! @return QStringList the list of classes
-QStringList OMCProxy::getClassNames(QString className)
+QStringList OMCProxy::getClassNames(QString className, QString recursive, QString qualified)
 {
-    sendCommand("getClassNames(" + className + ")");
+    if (className.isEmpty())
+        sendCommand("getClassNames(recursive=" + recursive + ", qualified=" + qualified + ")");
+    else
+        sendCommand("getClassNames(" + className + ", recursive=" + recursive + ", qualified=" + qualified + ")");
     QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
     QStringList list = result.split(",", QString::SkipEmptyParts);
     return list;
@@ -754,16 +759,6 @@ QStringList OMCProxy::getClassInformation(QString modelName)
     sendCommand("getClassInformation(" + modelName + ")");
     QString result = getResult();
     QStringList list = StringHandler::unparseStrings(result);
-    return list;
-}
-
-//! Gets the list of classes from OMC recursively.
-//! @param className is the name of the class whose sub classes are retrieved.
-//! @return QStringList the list of classes
-QStringList OMCProxy::getClassNamesRecursive(QString className)
-{
-    sendCommand("getClassNamesRecursive(" + className + ")");
-    QStringList list = getResult().split(" ", QString::SkipEmptyParts);
     return list;
 }
 
