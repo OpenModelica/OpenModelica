@@ -2,7 +2,7 @@ AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
-CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../ -I../Compiler/runtime/
+CPPFLAGS = -I. -Iinteractive/ -Imeta/ -Imeta/gc -I../ -I../Compiler/runtime/
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
@@ -12,13 +12,12 @@ meta/meta_modelica_builtin.o \
 meta/meta_modelica_real.o \
 meta/meta_modelica_string_lit.o \
 meta/meta_modelica_catch.o \
-meta/meta_modelica_gc.o \
-meta/meta_modelica_gc_list.o \
-meta/meta_modelica_gc_stack.o \
-meta/meta_modelica_gc_roots.o \
-meta/meta_modelica_gc_pages.o \
-meta/meta_modelica_gc_stats.o \
-meta/meta_modelica_gc_settings.o \
+meta/gc/gc.o \
+meta/gc/common.o \
+meta/gc/roots.o \
+meta/gc/generational.o \
+meta/gc/marksweep.o \
+meta/gc/roots.o  \
 meta/realString.o
 
 OBJS = boolean_array.o index_spec.o integer_array.o memory_pool.o \
@@ -54,16 +53,14 @@ META_HFILES = \
 meta/rml_compatibility.h \
 meta/meta_modelica_builtin.h \
 meta/meta_modelica_builtin_boxptr.h \
-meta/meta_modelica_gc.h \
 meta/meta_modelica_real.h \
 meta/meta_modelica_string_lit.h \
 meta/meta_modelica.h \
-meta/meta_modelica_gc_stack.h \
-meta/meta_modelica_gc_list.h \
-meta/meta_modelica_gc_roots.h \
-meta/meta_modelica_gc_pages.h \
-meta/meta_modelica_gc_stats.h \
-meta/meta_modelica_gc_settings.h
+meta/gc/gc.h \
+meta/gc/common.h \
+meta/gc/generational.h \
+meta/gc/marksweep.h \
+meta/gc/roots.h \
 
 HFILES = \
 base_array.h \

@@ -31,7 +31,7 @@
 
 encapsulated package Algorithm
 "
-  file:         Algorithm.mo
+  file:        Algorithm.mo
   package:     Algorithm
   description: Algorithm datatypes
 
@@ -182,6 +182,8 @@ algorithm
       then
         fail();
 
+    /*
+    adrpo: this is now done in Static.checkAssignmentToInput
     // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
     case (lhs,_,rhs,_,DAE.ATTR(direction=Absyn.INPUT()),_,source)
       equation
@@ -189,7 +191,7 @@ algorithm
         lhs_str = ExpressionDump.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
-        fail();
+        fail();*/
 
     // assignment to parameter ok in initial algorithm
     case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),source)
@@ -458,18 +460,24 @@ end makeIf;
 
 public function optimizeIf
   "Every time we re-create/walk an if-statement, we optimize a bit :)"
-  input DAE.Exp cond;
-  input list<Statement> stmts;
-  input DAE.Else els;
-  input DAE.ElementSource source;
+  input DAE.Exp icond;
+  input list<Statement> istmts;
+  input DAE.Else iels;
+  input DAE.ElementSource isource;
   output list<Statement> ostmts "can be empty or selected branch";
 algorithm
-  ostmts := match (cond,stmts,els,source)
+  ostmts := match (icond,istmts,iels,isource)
+    local 
+      list<Statement> stmts; 
+      DAE.Else els; 
+      DAE.ElementSource source;
+      DAE.Exp cond;
+      
     case (DAE.BCONST(true),stmts,_,source) then stmts;
     case (DAE.BCONST(false),stmts,DAE.NOELSE(),source) then {};
     case (DAE.BCONST(false),_,DAE.ELSE(stmts),source) then stmts;
     case (DAE.BCONST(false),_,DAE.ELSEIF(cond,stmts,els),source) then optimizeIf(cond,stmts,els,source);
-    else DAE.STMT_IF(cond,stmts,els,source)::{};
+    else DAE.STMT_IF(icond,istmts,iels,isource)::{};
   end match;
 end optimizeIf;
 

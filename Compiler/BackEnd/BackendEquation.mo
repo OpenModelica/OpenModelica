@@ -1285,14 +1285,14 @@ public function equationAlgorithmEqnsNr
 "Retrieve a list equation numbers for a given algorithm index"
   input list<BackendDAE.Equation> eqlst;
   input Integer index;
-  input Integer count;
+  input Integer icount;
   output list<Integer> out;
 algorithm
-  out := matchcontinue (eqlst,index,count)
+  out := matchcontinue (eqlst,index,icount)
     local 
       BackendDAE.Equation e;
       list<BackendDAE.Equation> rest;
-      Integer i, count_1;
+      Integer i, count_1,count;
       list<Integer> res;
     case ({},_,_) then {};
     case ((BackendDAE.ALGORITHM(index=i)::rest),index,count)

@@ -1999,10 +1999,11 @@ end doBalance;
 protected function doBalance2 
 "help function to doBalance"
   input Boolean inDiffIsNegative;
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match(inDiffIsNegative,bt)
+  outBt := match(inDiffIsNegative,inBt)
+    local AvlTree bt;
     case(true,bt) 
       equation
         bt = doBalance3(bt);
@@ -2017,36 +2018,36 @@ algorithm
 end doBalance2;
 
 protected function doBalance3 "help function to doBalance2"
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := matchcontinue(inBt)
     local
-      AvlTree rr;
+      AvlTree rr,bt;
     case(bt)
       equation
         true = differenceInHeight(Util.getOption(rightNode(bt))) > 0;
         rr = rotateRight(Util.getOption(rightNode(bt)));
         bt = setRight(bt,SOME(rr));
       then bt;
-    else bt;
+    else inBt;
   end matchcontinue;
 end doBalance3;
 
 protected function doBalance4 "help function to doBalance2"
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := matchcontinue(inBt)
     local
-      AvlTree rl;
+      AvlTree rl,bt;
     case (bt)
       equation
         true = differenceInHeight(Util.getOption(leftNode(bt))) < 0;
         rl = rotateLeft(Util.getOption(leftNode(bt)));
         bt = setLeft(bt,SOME(rl));
       then bt;
-    else bt;
+    else inBt;
   end matchcontinue;
 end doBalance4;
 

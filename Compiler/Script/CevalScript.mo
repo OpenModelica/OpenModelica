@@ -261,7 +261,7 @@ algorithm
 end buildCurrentSimulationResultExp;
 
 protected function cevalCurrentSimulationResultExp
-  input Env.Cache cache;
+  input Env.Cache inCache;
   input Env.Env env;
   input String inputFilename;
   input Interactive.SymbolTable st;
@@ -269,12 +269,13 @@ protected function cevalCurrentSimulationResultExp
   output Env.Cache outCache;
   output String filename;
 algorithm
-  (outCache,filename) := match (cache,env,inputFilename,st,msg)
-    case (_,_,"<default>",_,_)
+  (outCache,filename) := match (inCache,env,inputFilename,st,msg)
+    local Env.Cache cache;
+    case (cache,_,"<default>",_,_)
       equation
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),msg);
       then (cache,filename);
-    else (cache,inputFilename);
+    else (inCache,inputFilename);
   end match;
 end cevalCurrentSimulationResultExp;
 
@@ -583,19 +584,22 @@ algorithm
 end simOptionsAsString;
 
 protected function loadModel
-  input list<tuple<Absyn.Path,list<String>>> modelsToLoad;
+  input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
   input String modelicaPath;
-  input Absyn.Program p;
+  input Absyn.Program ip;
   input Boolean forceLoad;
   output Absyn.Program pnew;
   output Boolean success;
 algorithm
-  (pnew,success) := matchcontinue (modelsToLoad,modelicaPath,p,forceLoad)
+  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad)
     local
       Absyn.Path path;
       String pathStr,versions;
       list<String> strings;
       Boolean b,b1,b2;
+      Absyn.Program p;
+      list<tuple<Absyn.Path,list<String>>> modelsToLoad;
+      
     case ({},_,p,_) then (p,true);
     case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad)
       equation
@@ -2274,11 +2278,13 @@ end cevalInteractiveFunctions2;
 
 protected function visualizationVarShouldBeAdded
   input String var;
-  input list<String> ids;
+  input list<String> inIds;
 algorithm
-  _ := matchcontinue (var,ids)
+  _ := matchcontinue (var,inIds)
     local
       String id;
+      list<String> ids;
+      
     case (var,id::ids)
       equation
         false = 0 == stringLength(id);
@@ -2792,7 +2798,7 @@ algorithm
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
-        omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
+        omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
         win_call = stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         make = System.getMakeCommand();
@@ -4126,13 +4132,13 @@ algorithm
 end cevalGenerateFunction;
 
 protected function generateFunctions
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<SCode.Element> sp;
-  input list<tuple<String,list<String>>> acc;
+  input Env.Cache icache;
+  input Env.Env ienv;
+  input list<SCode.Element> isp;
+  input list<tuple<String,list<String>>> iacc;
   output list<tuple<String,list<String>>> deps;
 algorithm
-  deps := match (cache,env,sp,acc)
+  deps := match (icache,ienv,isp,iacc)
     local
       String name;
       list<String> names,dependencies;
@@ -4140,6 +4146,11 @@ algorithm
       list<SCode.Element> elementLst;
       DAE.FunctionTree funcs;
       list<DAE.Function> d;
+      list<tuple<String,list<String>>> acc;
+      list<SCode.Element> sp;
+      Env.Cache cache;
+      Env.Env env;
+
     case (cache,env,{},acc) then acc;
     case (cache,env,SCode.CLASS(name="OpenModelica")::sp,acc)
       equation
@@ -4198,14 +4209,16 @@ algorithm
 end matchQualifiedCalls;
 
 protected function instantiateDaeFunctions
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.Path> paths;
+  input Env.Cache icache;
+  input Env.Env ienv;
+  input list<Absyn.Path> ipaths;
   output Env.Cache outCache;
 algorithm
-  outCache := matchcontinue (cache,env,paths)
+  outCache := matchcontinue (icache,ienv,ipaths)
     local
       Absyn.Path path;
+      Env.Cache cache; Env.Env env;
+      list<Absyn.Path> paths;
     case (cache,env,{}) then cache;
     case (cache,env,path::paths)
       equation
@@ -4217,15 +4230,15 @@ end instantiateDaeFunctions;
 
 protected function getBasePathFromUri "Handle modelica:// URIs"
   input String scheme;
-  input String name;
+  input String iname;
   input String modelicaPath;
   input Boolean printError;
   output String basePath;
 algorithm
-  basePath := matchcontinue (scheme,name,modelicaPath,printError)
+  basePath := matchcontinue (scheme,iname,modelicaPath,printError)
     local
       list<String> mps,names;
-      String gd,mp,bp,str;
+      String gd,mp,bp,str,name;
     case ("modelica://",name,mp,_)
       equation
         names = System.strtok(name,".");
@@ -4244,13 +4257,15 @@ algorithm
 end getBasePathFromUri;
 
 protected function findModelicaPath "Handle modelica:// URIs"
-  input list<String> mps;
+  input list<String> imps;
   input list<String> names;
   output String basePath;
 algorithm
-  basePath := matchcontinue (mps,names)
+  basePath := matchcontinue (imps,names)
     local
       String mp;
+      list<String> mps;
+      
     case (mp::_,names)
       then findModelicaPath2(mp,names,false);
     case (_::mps,names)

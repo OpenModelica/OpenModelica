@@ -104,13 +104,14 @@ algorithm
 end insert;
 
 function meld
-  input T ts1;
-  input T ts2;
+  input T its1;
+  input T its2;
   output T ts;
 algorithm
-  ts := match (ts1,ts2)
+  ts := match (its1,its2)
     local
       Tree t1,t2;
+      T ts1,ts2;
     case (ts1,{}) then ts1;
     case ({},ts2) then ts2;
     case (t1::ts1,t2::ts2) then meld2(rank(t1) < rank(t2),rank(t2) < rank(t1),t1,ts1,t2,ts2);
@@ -121,12 +122,15 @@ function meld2
   input Boolean b1;
   input Boolean b2;
   input Tree t1;
-  input T ts1;
+  input T inTs1;
   input Tree t2;
-  input T ts2;
+  input T inTs2;
   output T ts;
 algorithm
-  ts := match (b1,b2,t1,ts1,t2,ts2)
+  ts := match (b1,b2,t1,inTs1,t2,inTs2)
+    local
+      T ts1,ts2;
+      
     case (true,_,t1,ts1,t2,ts2)
       equation
         ts = meld(ts1,t2::ts2);
@@ -135,18 +139,20 @@ algorithm
       equation
         ts = meld(t1::ts1,ts2);
       then t2::ts;
-    else ins(link(t1,t2), meld(ts1,ts2));
+    else ins(link(t1,t2), meld(inTs1,inTs2));
   end match;
 end meld2;
 
 function findMin
-  input T ts;
+  input T inTs;
   output Element elt;
 algorithm
-  elt := match ts
+  elt := match inTs
     local
       Tree t;
       Element x,y;
+      T ts;
+      
     case {t} then root(t);
     case t::ts
       equation
@@ -185,13 +191,14 @@ algorithm
 end elements;
 
 function elements2
-  input T ts;
+  input T its;
   input list<Element> acc;
   output list<Element> elts;
 algorithm
-  elts := match (ts,acc)
+  elts := match (its,acc)
     local
       Element elt;
+      T ts;
     case ({},acc) then listReverse(acc);
     case (ts,acc)
       equation
@@ -253,12 +260,13 @@ end link;
 
 function ins
   input Tree t;
-  input T ts;
+  input T its;
   output T ots;
 algorithm
-  ots := match (t,ts)
+  ots := match (t,its)
     local
       Tree t1,t2;
+      T ts;
     case (t,{}) then {t};
     case (t1,t2::ts) then
       Util.if_(rank(t1) < rank(t2),t1::t2::ts,ins(link(t1,t2),ts));

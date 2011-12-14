@@ -69,7 +69,6 @@ typedef void* modelica_fnptr;
  #define WIN32_LEAN_AND_MEAN
 #if !defined(NOMINMAX)
  #define NOMINMAX
- #include <Windows.h>
 #endif
 #endif
 

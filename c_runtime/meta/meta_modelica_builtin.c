@@ -429,6 +429,7 @@ modelica_metatype listReverse(modelica_metatype lst)
 modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
   int length,i;
+  mmc_uint_t sz = 0;
   struct mmc_cons_struct *res;
   struct mmc_cons_struct *p;
   if (MMC_NILTEST(lst2)) /* If lst2 is empty, simply return lst1; huge performance gain for some uses of listAppend */
@@ -436,7 +437,10 @@ modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
   length = listLength(lst1);
   if (length == 0) /* We need to check for empty lst1 */
     return lst2;
-  res = (struct mmc_cons_struct*) mmc_alloc_bytes(length*sizeof(struct mmc_cons_struct)); /* Do one single big alloc. It's cheaper */
+  sz = length*sizeof(struct mmc_cons_struct);
+  assert(!(sz % 4));
+  res = (struct mmc_cons_struct*) mmc_alloc_words(sz/4); /* Do one single big alloc. It's cheaper */
+  //res = (struct mmc_cons_struct*) mmc_alloc_words(length*3); /* Do one single big alloc. It's cheaper, 1 for header, 2 for car and cdr */
   for (i=0; i<length-1; i++) { /* Write all except the last element... */
     struct mmc_cons_struct *p = res+i;
     p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
@@ -604,6 +608,27 @@ modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modeli
   if (ix < 1 || ix > nelts)
     MMC_THROW();
   MMC_STRUCTDATA(arr)[ix-1] = val;
+#if defined(_MMC_GC_)
+  /* save it in the array trail! */
+  if (!MMC_IS_IMMEDIATE(val))
+  {
+    mmc_uint_t idx;
+    /* also check here if the array is not already in the trail */
+    for (idx = mmc_GC_state->gen.array_trail_size; &mmc_GC_state->gen.array_trail[idx] >= mmc_GC_state->gen.ATP; idx--)
+    if (mmc_GC_state->gen.array_trail[idx] == val) /* if found, do not add again */
+    {
+      return arr;
+    }
+    /* add the address of the array into the roots to be
+    taken into consideration at the garbage collection time */
+    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail ) 
+    {
+      (void)fprintf(stderr, "Array Trail Overflow!\n");
+      mmc_exit(1);
+    }
+    *--mmc_GC_state->gen.ATP = arr;
+  }
+#endif
   return arr;
 }
 

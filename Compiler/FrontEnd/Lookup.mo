@@ -278,18 +278,21 @@ starts to traverse."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Path> inUniontypePaths;
-  input HashTableStringToPath.HashTable ht;
-  input list<DAE.Type> acc;
+  input HashTableStringToPath.HashTable inHt;
+  input list<DAE.Type> inAcc;
   output Env.Cache outCache;
   output HashTableStringToPath.HashTable outHt;
   output list<DAE.Type> outMetarecordTypes;
 algorithm
-  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, inUniontypePaths, ht, acc)
+  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, inUniontypePaths, inHt, inAcc)
     local
       Env.Cache cache;
       Env.Env env;
       Absyn.Path first;
       list<Absyn.Path>  rest;
+      HashTableStringToPath.HashTable ht;
+      list<DAE.Type> acc;
+      
     case (cache, _, {}, ht, acc) then (cache, ht, acc);
     case (cache, env, first::rest, ht, acc)
       equation
@@ -307,19 +310,22 @@ starts to traverse."
   input Env.Env inEnv;
   input Absyn.Path path;
   input String str;
-  input HashTableStringToPath.HashTable ht;
-  input list<DAE.Type> acc;
+  input HashTableStringToPath.HashTable inHt;
+  input list<DAE.Type> inAcc;
   output Env.Cache outCache;
   output HashTableStringToPath.HashTable outHt;
   output list<DAE.Type> outMetarecordTypes;
 algorithm
-  (outCache,outHt,outMetarecordTypes) := matchcontinue (inCache, inEnv, path, str, ht, acc)
+  (outCache,outHt,outMetarecordTypes) := matchcontinue (inCache, inEnv, path, str, inHt, inAcc)
     local
       Env.Cache cache;
       Env.Env env;
       list<Absyn.Path> uniontypePaths;
       list<DAE.Type>    uniontypeTypes;
       DAE.Type ty;
+      list<DAE.Type> acc;
+      HashTableStringToPath.HashTable ht;
+      
     case (cache, env, path, str, ht, acc)
       equation
         _ = BaseHashTable.get(str, ht);
@@ -445,7 +451,7 @@ protected function lookupClassQualified
   input Env.Env inEnv;
   input String id;
   input Absyn.Path path;
-  input Option<Env.Frame> optFrame;
+  input Option<Env.Frame> inOptFrame;
   input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
   input Boolean msg "Print error messages";
@@ -454,13 +460,14 @@ protected function lookupClassQualified
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,path,optFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,path,inOptFrame,inPrevFrames,inState,msg)
     local
       SCode.Element c;
       Absyn.Path scope;
       Env.Cache cache;
       Env.Env env,prevFrames;
       Env.Frame frame;
+      Option<Env.Frame> optFrame;
     
     // Qualified names first identifier cached in previous frames
     case (cache,env,id,path,SOME(frame),prevFrames,inState,msg)
@@ -499,7 +506,7 @@ protected function lookupClassQualified2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path path;
-  input SCode.Element c;
+  input SCode.Element inC;
   input Option<Env.Frame> optFrame;
   input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
@@ -509,7 +516,7 @@ protected function lookupClassQualified2
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,path,c,optFrame,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := match (inCache,inEnv,path,inC,optFrame,inPrevFrames,inState,msg)
     local
       Env.Cache cache;
       Env.Env env,prevFrames;
@@ -518,6 +525,7 @@ algorithm
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       String id;
+      SCode.Element c;
     
     case (cache,env,path,_,SOME(frame),prevFrames,inState,msg)
       equation
@@ -535,7 +543,7 @@ algorithm
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, c, SCode.PUBLIC(), {});
+          ci_state, inC, SCode.PUBLIC(), {});
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
         // ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -910,19 +918,21 @@ end lookupUnqualifiedImportedClassInFrame;
 
 public function lookupRecordConstructorClass "function: lookupRecordConstructorClass  
   Searches for a record constructor implicitly defined by a record class."
-  input Env.Cache cache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
-  (outCache,outClass,outEnv) := match (cache,inEnv,inPath)
+  (outCache,outClass,outEnv) := match (inCache,inEnv,inPath)
     local
       SCode.Element c;
-      list<Env.Frame> env,env_1;
+      Env.Env env,env_1;
       Absyn.Path path;
       String name;
+      Env.Cache cache;
+      
     case (cache,env,path)
       equation
         (cache,c,env_1) = lookupClass(cache,env, path, false);
@@ -935,14 +945,14 @@ end lookupRecordConstructorClass;
 
 public function lookupConnectorVar "looks up a connector variable, but takes InnerOuter attribute from component if
 inside connector, i.e. for connector reference a.b the innerOuter attribute is fetched from a."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input DAE.ComponentRef cr;
   output Env.Cache outCache;
   output DAE.Attributes attr;
   output DAE.Type tp;
 algorithm
-  (outCache,attr,tp) := match(cache,env,cr)
+  (outCache,attr,tp) := match(inCache,inEnv,cr)
     local 
       DAE.ComponentRef cr1;
       SCode.Flow f;
@@ -952,6 +962,8 @@ algorithm
       Absyn.InnerOuter io;
       DAE.Type ty1;
       DAE.Attributes attr1;
+      Env.Cache cache;
+      Env.Env env;
     
     // unqualified component reference
     case(cache,env,cr as DAE.CREF_IDENT(ident=_)) 
@@ -1550,14 +1562,14 @@ end lookupIdent;
 public function lookupFunctionsInEnv
 "function: lookupFunctionsInEnv
   Returns a list of types that the function has."
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.Path id;
-  input Absyn.Info info;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inId;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (cache,env,id,info)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inId,inInfo)
     local
       Env.Env env_1;
       Env.Frame f;
@@ -1566,6 +1578,10 @@ algorithm
       Env.AvlTree httypes;
       Env.AvlTree ht;
       String str;
+      Env.Cache cache;
+      Env.Env env;
+      Absyn.Path id;
+      Absyn.Info info;
       
     /* Builtin operators are looked up in top frame directly */
     case (cache,env,(id as Absyn.IDENT(name = str)),info)
@@ -1615,19 +1631,24 @@ algorithm
 end lookupFunctionsInEnv;
 
 public function lookupFunctionsListInEnv
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.Path> ids;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Path> inIds;
   input Absyn.Info info;
-  input list<DAE.Type> acc;
+  input list<DAE.Type> inAcc;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (cache,env,ids,info,acc)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inIds,info,inAcc)
     local
       Absyn.Path id;
       list<DAE.Type> res;
       String str;
+      Env.Cache cache;
+      Env.Env env;
+      list<Absyn.Path> ids;
+      list<DAE.Type> acc;
+      
     case (cache,_,{},_,acc) then (cache,listReverse(acc));
     case (cache,env,id::ids,info,acc)
       equation
@@ -1972,15 +1993,16 @@ end lookupFunctionsInFrame;
 protected function buildRecordType ""
   input Env.Cache cache;
   input Env.Env env;
-  input SCode.Element cdef;
+  input SCode.Element icdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output Types.Type ftype;
 protected
   String name;
   Env.Env env_1;
+  SCode.Element cdef;
 algorithm
-  (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
+  (outCache,_,cdef) := buildRecordConstructorClass(cache,env,icdef);
   name := SCode.className(cdef);
   // Debug.fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& Env.printEnvPathStr(env) +& "." +& name);
   (outCache,outEnv,_) := Inst.implicitFunctionTypeInstantiation(
@@ -1993,7 +2015,7 @@ public function buildRecordConstructorClass
 
   Creates the record constructor class, i.e. a function, from the record
   class given as argument."
-  input Env.Cache cache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Element inClass;
   output Env.Cache outCache;
@@ -2001,14 +2023,15 @@ public function buildRecordConstructorClass
   output SCode.Element outClass;
 algorithm
   (outCache,outEnv,outClass) :=
-  matchcontinue (cache,inEnv,inClass)
+  matchcontinue (inCache,inEnv,inClass)
     local
       list<SCode.Element> funcelts,elts;
       SCode.Element reselt;
       SCode.Element cl;
       String id;
-      list<Env.Frame> env;
       Absyn.Info info;
+      Env.Cache cache;
+      Env.Env env;
 
     case (cache,env,cl as SCode.CLASS(name=id,info=info))
       equation
@@ -2025,8 +2048,8 @@ algorithm
 end buildRecordConstructorClass;
 
 protected function buildRecordConstructorClass2
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input SCode.Element cl;
   input DAE.Mod mods;
   output Env.Cache outCache;
@@ -2034,14 +2057,15 @@ protected function buildRecordConstructorClass2
   output list<SCode.Element> funcelts;
   output list<SCode.Element> elts;
 algorithm
-  (outCache,outEnv,funcelts,elts) := matchcontinue(cache,env,cl,mods)
+  (outCache,outEnv,funcelts,elts) := matchcontinue(inCache,inEnv,cl,mods)
     local
       list<SCode.Element> cdefelts,classExtendsElts,extendsElts,compElts;
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
-      Env.Env env1;
       String name;
       Absyn.Path fpath;
       Absyn.Info info;
+      Env.Cache cache;
+      Env.Env env,env1;
 
     /* a class with parts */
     case (cache,env,cl as SCode.CLASS(name = name,info = info),mods)
@@ -2919,26 +2943,27 @@ algorithm
 end assertPackage;
 
 protected function buildMetaRecordType "common function when looking up the type of a metarecord"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input SCode.Element cdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output Types.Type ftype;
 protected
   String id;
-  Env.Env env_1;
+  Env.Env env_1,env;
   Absyn.Path utPath,path;
   Integer index;
   list<DAE.Var> varlst;
   list<SCode.Element> els;
   Boolean singleton;
   DAE.TypeSource ts;
+  Env.Cache cache;
 algorithm
   SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index,singleton),classDef=SCode.PARTS(elementLst = els)) := cdef;
-  env := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(Env.CLASS_SCOPE()));
+  env := Env.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(Env.CLASS_SCOPE()));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& "\n");
-  (cache,utPath) := Inst.makeFullyQualified(cache,env,utPath);
+  (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,

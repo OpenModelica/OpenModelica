@@ -6573,11 +6573,11 @@ end setSubmodifierInElementargs;
 
 protected function findCrefModification
   input Absyn.ComponentRef cr;
-  input list<Absyn.ElementArg> rest;
+  input list<Absyn.ElementArg> lst;
   output Boolean found;
 algorithm
-  found := matchcontinue(cr,rest)
-    local Absyn.ComponentRef cr2;
+  found := matchcontinue(cr,lst)
+    local Absyn.ComponentRef cr2; list<Absyn.ElementArg> rest;
     case (cr,Absyn.MODIFICATION(componentRef = cr2)::_)
       equation
         true = Absyn.crefEqual(cr,cr2);
@@ -7696,11 +7696,11 @@ end classHasLocalClasses;
 
 protected function partsHasLocalClass
 "Help function to classHasLocalClass"
-  input list<Absyn.ClassPart> parts;
+  input list<Absyn.ClassPart> inParts;
   output Boolean res;
 algorithm
-  res := matchcontinue(parts)
-  local list<Absyn.ElementItem> elts;
+  res := matchcontinue(inParts)
+  local list<Absyn.ElementItem> elts; list<Absyn.ClassPart> parts; 
     case(Absyn.PUBLIC(elts)::parts) equation
       true = eltsHasLocalClass(elts);
     then true;
@@ -7714,10 +7714,11 @@ end partsHasLocalClass;
 
 protected function eltsHasLocalClass
 "help function to partsHasLocalClass"
-  input list<Absyn.ElementItem> elts;
+  input list<Absyn.ElementItem> inElts;
   output Boolean res;
 algorithm
-  res := matchcontinue(elts)
+  res := matchcontinue(inElts) 
+    local list<Absyn.ElementItem> elts;
     case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=_)))::elts) then true;
     case(_::elts) then eltsHasLocalClass(elts);
     case(_) then false;
@@ -9162,7 +9163,7 @@ algorithm
     
     case ({}, _) then {};
       
-    case (_, {}) then {};
+    case (cf, {}) then cf;
     
     case (cf, functionName::functionNames)
       equation
@@ -9192,7 +9193,7 @@ algorithm
     
     case ({}, _) then {};
     
-    case ((CFunction(functionInCf,t,funcHandle,_,_) :: rest), _)
+    case (CFunction(functionInCf,t,funcHandle,_,_) :: rest, _)
       equation
         true = Absyn.pathEqual(functionInCf, functionName);
         tmp = Absyn.pathStringReplaceDot(functionName, "_");
@@ -9201,11 +9202,11 @@ algorithm
       then
         res;
     
-    case ((item :: rest), _)
+    case (item :: rest, _)
       equation
         res = removeCf(rest, functionName);
       then
-        (item :: res);
+        item :: res;
   end matchcontinue;
 end removeCf;
 
@@ -9403,7 +9404,7 @@ algorithm
       String id1,id2,id3;
       Values.Value v;
       list<Variable> rest;
-      list<String> comp;
+      list<String> comp,srest;
       list<Values.Value> vals;
       DAE.Type t;
     
@@ -9414,12 +9415,12 @@ algorithm
       then
         v;
 
-    case (id1::id2::ids, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
+    case (id1::id2::srest, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
       equation
         true = stringEq(id1, id3);
         ix = List.positionOnTrue(id2, comp, stringEq);
         v = listNth(vals, ix);
-        v = getVariableValueLst(id2::ids, {IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
+        v = getVariableValueLst(id2::srest, {IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
         v;
     
@@ -10241,11 +10242,11 @@ protected function getNthInheritedClass
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
-  input SymbolTable st;
+  input SymbolTable ist;
   output String outString;
   output SymbolTable outSt;
 algorithm
-  (outString,outSt) := matchcontinue (inComponentRef,inInteger,st)
+  (outString,outSt) := matchcontinue (inComponentRef,inInteger,ist)
     local
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
@@ -10260,6 +10261,7 @@ algorithm
       Absyn.Program p;
       list<Absyn.ElementSpec> extends_;
       Env.Cache cache;
+      SymbolTable st;
 
     case (model_,n,st as SYMBOLTABLE(ast=p))
       equation
@@ -10281,7 +10283,7 @@ algorithm
         s = Absyn.pathString(path);
       then
         (s,st);
-    else ("Error",st);
+    else ("Error",ist);
   end matchcontinue;
 end getNthInheritedClass;
 
@@ -10787,11 +10789,11 @@ protected function getComponents2
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
-  input SymbolTable st;
+  input SymbolTable ist;
   output String outString;
   output SymbolTable outSt;
 algorithm
-  (outString,outSt) := matchcontinue (inComponentRef,inBoolean,st)
+  (outString,outSt) := matchcontinue (inComponentRef,inBoolean,ist)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -10807,6 +10809,7 @@ algorithm
       Absyn.Program p;
       Env.Cache cache;
       Boolean b;
+      SymbolTable st;
 
     case (model_,b,st as SYMBOLTABLE(ast=p))
       equation
@@ -10828,7 +10831,7 @@ algorithm
         res = stringAppendList({"{",str,"}"});
       then
         (res,st);
-    case (_,_,_) then ("Error",st);
+    case (_,_,st) then ("Error",st);
   end matchcontinue;
 end getComponents2;
 
@@ -15694,16 +15697,16 @@ protected function suffixInfos
   Helper function to getComponentInfo.
   Add suffix info (from each component) to element names, dimensions, etc."
   input list<String> eltInfo;
-  input list<String> dims;
+  input list<String> idims;
   input String typeAd;
   input String suffix;
   input Boolean inBoolean;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  match (eltInfo,dims,typeAd,suffix,inBoolean)
+  match (eltInfo,idims,typeAd,suffix,inBoolean)
     local
-      list<String> res,rest;
+      list<String> res,rest,dims;
       String str_1,str;
       String dim,s1;
       Boolean b;
@@ -19068,11 +19071,11 @@ public function getClassNamesRecursive
   Returns a string with all the classes for a given path."
   input Option<Absyn.Path> inPath;
   input Absyn.Program inProgram;
-  input list<Absyn.Path> acc;
+  input list<Absyn.Path> inAcc;
   output Option<Absyn.Path> opath;
   output list<Absyn.Path> paths;
 algorithm
-  (opath,paths) := matchcontinue (inPath,inProgram,acc)
+  (opath,paths) := matchcontinue (inPath,inProgram,inAcc)
     local
       Absyn.Class cdef;
       String s1,res, parent_string, result;
@@ -19081,6 +19084,8 @@ algorithm
       Absyn.Program p;
       list<Absyn.Class> classes;
       list<Option<Absyn.Path>> result_path_lst;
+      list<Absyn.Path> acc;
+      
     case (SOME(pp),p,acc)
       equation
         acc = pp::acc;
@@ -19186,12 +19191,14 @@ algorithm
   funcs := matchcontinue (classes,acc)
     local
       Absyn.Class cl;
+      list<Absyn.Class> rest;
+      
     case ({},acc) then acc;
-    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION()))::classes,acc)
+    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION()))::rest,acc)
       equation
-        funcs = getFunctionsInClasses(classes,cl::acc);
+        funcs = getFunctionsInClasses(rest,cl::acc);
       then funcs;
-    case (_::classes,acc) then getFunctionsInClasses(classes,acc);
+    case (_::rest,acc) then getFunctionsInClasses(rest,acc);
   end matchcontinue;
 end getFunctionsInClasses;
 
@@ -19265,9 +19272,10 @@ protected
 algorithm
   CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
   compiledFunctionStr := Absyn.pathString(path) +& 
-                         " ty: " +& Types.printTypeStr(retType) +& 
-                         " build: " +& realString(buildTime) +&
-                         " file: " +& loadedFromFile;
+                         " ty[" +& Types.printTypeStr(retType) +&
+                         "] hndl[" +& intString(funcHandle) +& 
+                         "] build[" +& realString(buildTime) +&
+                         "] file[" +& loadedFromFile +& "]";
 end dumpCompiledFunction;
 
 end Interactive;

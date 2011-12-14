@@ -206,28 +206,13 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
 #define isinf !_finite
 #endif
 
-modelica_string realString(modelica_real r)
+modelica_string _old_realString(modelica_real r)
 {
-  if (isinf(r) && r < 0)
-    return MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
-  else if (isinf(r))
-    return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
-  else if (isnan(r))
-    return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-  return dtostr(r);
-}
-/*
-static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
-static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
-static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
-
-modelica_string realString(modelica_real r)
-{
-  / NOTE: The RML runtime uses the same code as this function.
+  /* NOTE: The RML runtime uses the same code as this function.
    * If you update one, you must update the other or the testsuite might break
    *
    * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
-   * Add safety margin in case some C runtime is trigger happy. /
+   * Add safety margin in case some C runtime is trigger happy. */
   static char buffer[32];
   modelica_string res;
   // fprintf(stderr, "\nrealString(%g)\n", r);
@@ -244,7 +229,7 @@ modelica_string realString(modelica_real r)
     if (ix < 0)
       MMC_THROW();
     errno = 0;
-    / If it looks like an integer, we need to append .0 so it looks like real /
+    /* If it looks like an integer, we need to append .0 so it looks like real */
     ignore = strtol(buffer,&endptr,10);
     if (errno == 0 && *endptr == '\0') {
       if (ix > 30)
@@ -257,7 +242,22 @@ modelica_string realString(modelica_real r)
   }
   return res;
 }
-*/
+
+modelica_string realString(modelica_real r)
+{
+  if (isinf(r) && r < 0)
+    return MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
+  else if (isinf(r))
+    return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
+  else if (isnan(r))
+    return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return _old_realString(r);
+#else /* Linux seems to know how to handle this */
+  return dtostr(r);
+#endif
+}
+
 
 #ifdef REAL_STRING_TEST_MAIN
 #define c 15

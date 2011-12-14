@@ -112,11 +112,12 @@ algorithm outProp := matchcontinue(inProps)
     Properties prop,prop2;
     Const c,c2;
     Type ty,ty2;
+    list<Properties> props;
 
   case(prop::{}) then prop;
-  case((prop as DAE.PROP(ty,c))::inProps)
+  case((prop as DAE.PROP(ty,c))::props)
     equation
-      (prop2 as DAE.PROP(ty2,c2)) = propsAnd(inProps);
+      (prop2 as DAE.PROP(ty2,c2)) = propsAnd(props);
       c = constAnd(c,c2);
       true = equivtypes(ty,ty2);
     then
@@ -327,10 +328,11 @@ end isComplexConnector;
 public function isComplexType "
 Author: BZ, 2008-11
 This function checks wheter a type is complex AND not extending a base type."
-  input Type ty;
+  input Type ity;
   output Boolean b;
 algorithm
-  b := matchcontinue(ty)
+  b := matchcontinue(ity) 
+    local Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then isComplexType(ty);
     case (DAE.T_COMPLEX(varLst = _::_)) then true; // not derived from baseclass
     case(_) then false;
@@ -2280,11 +2282,11 @@ end printTypeStr;
 public function printConnectorTypeStr 
 "Author BZ, 2009-09
  Print the connector-type-name"
-  input Type t;
+  input Type it;
   output String s "Connector type";
   output String s2 "Components of connector";
 algorithm 
-  (s,s2) := matchcontinue(t)
+  (s,s2) := matchcontinue(it)
     local
       ClassInf.State st;
       Absyn.Path connectorName;
@@ -2294,6 +2296,7 @@ algorithm
       list<String> varNames;
       Boolean isExpandable;
       String isExpandableStr;
+      Type t;
       
     case(DAE.T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars, source = ts))
       equation
@@ -4323,16 +4326,15 @@ end typeConvert;
 protected function liftExpType "help funciton to typeConvert. Changes the DAE.Type stored
 in expression (which is typically a CAST) by adding a dimension to it, making it into an array
 type."
- input DAE.Exp e;
+ input DAE.Exp ie;
  input DAE.Dimension dim;
  output DAE.Exp res;
 algorithm
-  res := matchcontinue(e,dim)
-  local DAE.Type ty,ty1;
+  res := matchcontinue(ie,dim)
+    local DAE.Type ty,ty1; DAE.Exp e;
     case(DAE.CAST(ty,e),dim)
       equation
         ty1 = Expression.liftArrayR(ty,dim);
-
       then DAE.CAST(ty1,e);
 
     case(e,dim) then e;
@@ -5035,12 +5037,13 @@ algorithm
 end boxIfUnboxedType;
 
 public function unboxedType
-  input Type ty;
+  input Type ity;
   output Type out;
 algorithm
-  out := matchcontinue (ty)
+  out := matchcontinue (ity)
     local
       list<Type> tys;
+      Type ty;
     
     case DAE.T_METABOXED(ty = ty) then unboxedType(ty);
     
@@ -5078,23 +5081,25 @@ end unboxedType;
 public function listMatchSuperType "Takes lists of Exp,Type and calculates the
 supertype of the list, then converts the expressions to this type.
 "
-  input list<DAE.Exp> elist;
+  input list<DAE.Exp> ielist;
   input list<Type> typeList;
   input Boolean printFailtrace;
   output list<DAE.Exp> out;
   output Type t;
 algorithm
-  (out,t) := matchcontinue (elist,typeList,printFailtrace)
+  (out,t) := matchcontinue (ielist,typeList,printFailtrace)
     local
       DAE.Exp e;
       Type ty, st;
+      list<DAE.Exp> elist;
+      
     case ({},{},_) then ({}, DAE.T_UNKNOWN_DEFAULT);
     case (e :: _, ty :: _,printFailtrace)
       equation
         st = List.reduce(typeList, superType);
         st = superType(st,st);
         st = unboxedType(st);
-        elist = listMatchSuperType2(elist,typeList,st,printFailtrace);
+        elist = listMatchSuperType2(ielist,typeList,st,printFailtrace);
       then (elist, st);
     case (_,_,_)
       equation
@@ -5225,21 +5230,22 @@ end superType;
 
 public function matchTypePolymorphic "Like matchType, except we also
 bind polymorphic variabled. Used when elaborating calls."
-  input DAE.Exp exp;
-  input Type actual;
-  input Type expected;
+  input DAE.Exp iexp;
+  input Type iactual;
+  input Type iexpected;
   input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
-  input PolymorphicBindings polymorphicBindings;
+  input PolymorphicBindings ipolymorphicBindings;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Type outType;
   output PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outBindings):=
-  matchcontinue (exp,actual,expected,envPath,polymorphicBindings,printFailtrace)
+  matchcontinue (iexp,iactual,iexpected,envPath,ipolymorphicBindings,printFailtrace)
     local
-      DAE.Exp e,e_1;
-      Type e_type,expected_type,e_type_1;
+      DAE.Exp e,e_1,exp;
+      Type e_type,expected_type,e_type_1,actual,expected;
+      PolymorphicBindings polymorphicBindings;
 
     case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
@@ -5307,18 +5313,20 @@ end matchType;
 
 public function matchTypes
 "matchType, list of actual types, one  expected type."
-  input list<DAE.Exp> exps;
-  input list<Type> tys;
+  input list<DAE.Exp> iexps;
+  input list<Type> itys;
   input Type expected;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExps;
   output list<Type> outTys;
 algorithm
-  (outExps,outTys) := matchcontinue (exps,tys,expected,printFailtrace)
+  (outExps,outTys) := matchcontinue (iexps,itys,expected,printFailtrace)
     local
       DAE.Type ty;
-      list<DAE.Type> otys;
+      list<DAE.Type> otys,tys;
       DAE.Exp e;
+      list<DAE.Exp> exps;
+      
     case ({},{},_,_) then ({},{});
     case (e::exps,ty::tys,expected,printFailtrace)
       equation
@@ -5508,21 +5516,21 @@ end getAllInnerTypesOfType;
 protected function getAllInnerTypes
 "Traverses all the types the input Type contains."
   input list<Type> inTypes;
-  input list<Type> acc;
+  input list<Type> inAcc;
   input TypeFn fn;
   output list<Type> outTypes;
   partial function TypeFn
     input Type fnInType;
   end TypeFn;
 algorithm
-  outTypes := matchcontinue (inTypes,acc,fn)
+  outTypes := matchcontinue (inTypes,inAcc,fn)
     local
       Type ty,first;
-      list<Type> tys,rest;
+      list<Type> tys,rest,acc;
       list<Var> fields;
       list<FuncArg> funcArgs;
     
-    case ({},_,_) then acc;
+    case ({},_,_) then inAcc;
     
     case ((first as DAE.T_ARRAY(ty = ty))::rest,acc,fn)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
@@ -5759,16 +5767,18 @@ end polymorphicTypeName;
 
 protected function addPolymorphicBinding
   input String id;
-  input Type ty;
+  input Type ity;
   input PolymorphicBindings bindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := matchcontinue (id,ty,bindings)
+  outBindings := matchcontinue (id,ity,bindings)
     local
       String id1,id2;
       list<Type> tys;
       PolymorphicBindings rest;
       tuple<String,list<Type>> first;
+      Type ty;
+    
     case (id,ty,{})
       equation
         ty = unboxedType(ty);
@@ -5830,13 +5840,13 @@ algorithm
 end checkValidBindings;
 
 protected function solvePolymorphicBindingsLoop
-  input PolymorphicBindings bindings;
-  input PolymorphicBindings solvedBindings;
-  input PolymorphicBindings unsolvedBindings;
+  input PolymorphicBindings ibindings;
+  input PolymorphicBindings isolvedBindings;
+  input PolymorphicBindings iunsolvedBindings;
   output PolymorphicBindings outSolvedBindings;
   output PolymorphicBindings outUnsolvedBindings;
 algorithm
-  (outSolvedBindings,outUnsolvedBindings) := matchcontinue (bindings,solvedBindings,unsolvedBindings)
+  (outSolvedBindings,outUnsolvedBindings) := matchcontinue (ibindings,isolvedBindings,iunsolvedBindings)
     /* Fail by returning crap :) */
     local
       tuple<String, list<Type>> first;
@@ -5845,6 +5855,8 @@ algorithm
       list<Type> tys;
       String id;
       Integer len1, len2;
+      PolymorphicBindings bindings,solvedBindings,unsolvedBindings;
+      
     case ({}, solvedBindings, unsolvedBindings) then (solvedBindings, unsolvedBindings);
 
     case ((id,{ty})::rest,solvedBindings,unsolvedBindings)
@@ -5890,16 +5902,16 @@ protected function solveBindings
 Uses unification to solve the system, but the algorithm is slow (possibly quadratic).
 The good news is we don't have functions with many unknown types in the compiler.
 Horribly complicated function to keep track of what happens..."
-  input list<Type> tys1;
-  input list<Type> tys2;
-  input PolymorphicBindings solvedBindings;
+  input list<Type> itys1;
+  input list<Type> itys2;
+  input PolymorphicBindings isolvedBindings;
   output list<Type> outTys;
   output PolymorphicBindings outSolvedBindings;
 algorithm
-  (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,solvedBindings)
+  (outTys,outSolvedBindings) := matchcontinue (itys1,itys2,isolvedBindings)
     local
       Type ty,ty1,ty2;
-      list<Type> tys,rest;
+      list<Type> tys,rest,tys1,tys2;
       String id,id1,id2;
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
@@ -5907,6 +5919,7 @@ algorithm
       DAE.TypeSource ts1;
       Boolean fromOtherFunction;
       list<DAE.Const> cs1;
+      PolymorphicBindings solvedBindings;
     
     case ((ty1 as DAE.T_METAPOLYMORPHIC(name = id1))::tys1,(ty2 as DAE.T_METAPOLYMORPHIC(name = id2))::tys2,solvedBindings)
       equation
@@ -5969,7 +5982,7 @@ algorithm
         ty1 = DAE.T_FUNCTION(args1,ty1,functionAttributes1,ts1);
       then (ty1::rest,solvedBindings);
     
-    case (tys1,ty::tys2,_)
+    case (tys1,ty::tys2,solvedBindings)
       equation
         (tys,solvedBindings) = solveBindings(tys1,tys2,solvedBindings);
       then (ty::tys,solvedBindings);
@@ -5982,16 +5995,19 @@ Uses unification to solve the system, but the algorithm is slow (possibly quadra
 The good news is we don't have functions with many unknown types in the compiler.
 
 Horribly complicated function to keep track of what happens..."
-  input list<Type> tys1;
-  input list<Type> tys2;
+  input list<Type> itys1;
+  input list<Type> itys2;
   input Boolean changed "if true, something changed and the function will succeed";
-  input PolymorphicBindings solvedBindings;
+  input PolymorphicBindings isolvedBindings;
   output list<Type> outTys;
   output PolymorphicBindings outSolvedBindings;
 algorithm
-  (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,changed,solvedBindings)
+  (outTys,outSolvedBindings) := matchcontinue (itys1,itys2,changed,isolvedBindings)
     local
       Type ty1,ty2;
+      PolymorphicBindings solvedBindings;
+      list<Type> tys1, tys2;
+      
     case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
@@ -6006,14 +6022,17 @@ algorithm
 end solveBindingsThread;
 
 protected function replaceSolvedBindings
-  input list<Type> tys;
-  input PolymorphicBindings solvedBindings;
+  input list<Type> itys;
+  input PolymorphicBindings isolvedBindings;
   input Boolean changed "if true, something changed and the function will succeed";
   output list<Type> outTys;
 algorithm
-  outTys := matchcontinue (tys, solvedBindings, changed)
+  outTys := matchcontinue (itys, isolvedBindings, changed)
     local
       Type ty;
+      list<Type> tys;
+      PolymorphicBindings solvedBindings;
+      
     case ({},_,true) then {};
     case (ty::tys,solvedBindings,changed)
       equation
@@ -6028,11 +6047,11 @@ algorithm
 end replaceSolvedBindings;
 
 protected function replaceSolvedBinding
-  input Type ty;
-  input PolymorphicBindings solvedBindings;
+  input Type ity;
+  input PolymorphicBindings isolvedBindings;
   output Type outTy;
 algorithm
-  outTy := match (ty,solvedBindings)
+  outTy := match (ity,isolvedBindings)
     local
       list<DAE.FuncArg> args;
       list<Type> tys;
@@ -6042,26 +6061,28 @@ algorithm
       DAE.TypeSource ts;
       list<Option<DAE.Exp>> oe;
       DAE.FunctionAttributes functionAttributes;
+      DAE.Type ty;
+      PolymorphicBindings solvedBindings;
     
-    case (DAE.T_METALIST(listType = ty),_)
+    case (DAE.T_METALIST(listType = ty),solvedBindings)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
       then ty;
     
-    case (DAE.T_METAARRAY(ty = ty),_)
+    case (DAE.T_METAARRAY(ty = ty),solvedBindings)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = DAE.T_METAARRAY(ty,DAE.emptyTypeSource);
       then ty;
     
-    case (DAE.T_METAOPTION(optionType = ty),_)
+    case (DAE.T_METAOPTION(optionType = ty),solvedBindings)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = DAE.T_METAOPTION(ty,DAE.emptyTypeSource);
       then ty;
     
-    case (DAE.T_METATUPLE(types = tys),_)
+    case (DAE.T_METATUPLE(types = tys),solvedBindings)
       equation
         tys = replaceSolvedBindings(tys,solvedBindings,false);
         ty = DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
@@ -6080,7 +6101,7 @@ algorithm
         ty = DAE.T_FUNCTION(args,ty,functionAttributes,ts);
       then ty;
     
-    case (DAE.T_METAPOLYMORPHIC(name = id),_)
+    case (DAE.T_METAPOLYMORPHIC(name = id),solvedBindings)
       equation
         {ty} = polymorphicBindingsLookup(id, solvedBindings);
       then ty;
@@ -6094,10 +6115,10 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
   input Type actual;
   input Type expected;
   input Option<Absyn.Path> envPath;
-  input PolymorphicBindings bindings;
+  input PolymorphicBindings ibindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := matchcontinue (actual,expected,envPath,bindings)
+  outBindings := matchcontinue (actual,expected,envPath,ibindings)
     local
       String id,prefix;
       Type ty,ty1,ty2;
@@ -6105,6 +6126,7 @@ algorithm
       list<Type> tList1,tList2,tys;
       Absyn.Path path1,path2;
       list<String> ids;
+      PolymorphicBindings bindings;
     
     case (actual,DAE.T_METAPOLYMORPHIC(name = id),envPath,bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);
@@ -6194,13 +6216,14 @@ protected function subtypePolymorphicList
   input list<Type> actual;
   input list<Type> expected;
   input Option<Absyn.Path> envPath;
-  input PolymorphicBindings bindings;
+  input PolymorphicBindings ibindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := match (actual,expected,envPath,bindings)
+  outBindings := match (actual,expected,envPath,ibindings)
     local
       Type ty1,ty2;
       list<Type> tList1,tList2;
+      PolymorphicBindings bindings;
     case ({},{},envPath,bindings) then bindings;
     case (ty1::tList1,ty2::tList2,envPath,bindings)
       equation
@@ -6340,16 +6363,16 @@ algorithm
 end makeExpDimensionsUnknown;
 
 public function traverseType
-  input tuple<Type,A> tpl;
+  input tuple<Type,A> itpl;
   input Func fn;
   output tuple<Type,A> otpl;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<Type,A> tpl;
+    input tuple<Type,A> itpl;
     output tuple<Type,A> otpl;
   end Func;
 algorithm
-  otpl := match (tpl,fn)
+  otpl := match (itpl,fn)
     local
       list<Type> tys;
       Type ty;
@@ -6365,19 +6388,20 @@ algorithm
       list<DAE.FuncArg> farg;
       DAE.FunctionAttributes functionAttributes;
       Boolean singleton;
+      tuple<Type,A> tpl;
     
-    case ((DAE.T_INTEGER(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_REAL(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_STRING(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_BOOL(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_ENUMERATION(source = _),_),_) equation tpl = fn(tpl); then tpl;
+    case ((DAE.T_INTEGER(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_REAL(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_STRING(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_BOOL(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_ENUMERATION(source = _),_),_) equation tpl = fn(itpl); then tpl;
     
-    case ((DAE.T_NORETCALL(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_UNKNOWN(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_ANYTYPE(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_METAUNIONTYPE(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_METABOXED(source = _),_),_) equation tpl = fn(tpl); then tpl;
-    case ((DAE.T_METAPOLYMORPHIC(source = _),_),_) equation tpl = fn(tpl); then tpl;
+    case ((DAE.T_NORETCALL(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_UNKNOWN(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_ANYTYPE(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_METAUNIONTYPE(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_METABOXED(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case ((DAE.T_METAPOLYMORPHIC(source = _),_),_) equation tpl = fn(itpl); then tpl;
     
     case ((DAE.T_ARRAY(ty,ad,ts),a),_)
       equation
@@ -6465,8 +6489,8 @@ algorithm
 end traverseType;
 
 protected function traverseTupleType
-  input list<Type> tys;
-  input A a;
+  input list<Type> itys;
+  input A ia;
   input Func fn;
   output list<Type> otys;
   output A oa;
@@ -6476,9 +6500,12 @@ protected function traverseTupleType
     output tuple<Type,A> otpl;
   end Func;
 algorithm
-  (otys,oa) := match (tys,a,fn)
+  (otys,oa) := match (itys,ia,fn)
     local
       Type ty;
+      list<Type> tys;
+      A a;
+
     case ({},a,fn) then ({},a);
     case (ty::tys,a,fn)
       equation
@@ -6489,8 +6516,8 @@ algorithm
 end traverseTupleType;
 
 protected function traverseVarTypes
-  input list<DAE.Var> vars;
-  input A a;
+  input list<DAE.Var> ivars;
+  input A ia;
   input Func fn;
   output list<DAE.Var> ovars;
   output A oa;
@@ -6500,10 +6527,13 @@ protected function traverseVarTypes
     output tuple<Type,A> otpl;
   end Func;
 algorithm
-  (ovars,oa) := match (vars,a,fn)
+  (ovars,oa) := match (ivars,ia,fn)
     local
       DAE.Var var;
       DAE.Type ty;
+      list<DAE.Var> vars;
+      A a;
+      
     case ({},a,fn) then ({},a);
     case (var::vars,a,fn)
       equation
@@ -6516,8 +6546,8 @@ algorithm
 end traverseVarTypes;
 
 protected function traverseFuncArg
-  input list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> args;
-  input A a;
+  input list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> iargs;
+  input A ia;
   input Func fn;
   output list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> oargs;
   output A oa;
@@ -6527,12 +6557,15 @@ protected function traverseFuncArg
     output tuple<Type,A> otpl;
   end Func;
 algorithm
-  (oargs,oa) := match (args,a,fn)
+  (oargs,oa) := match (iargs,ia,fn)
     local
       DAE.Type ty;
       String b;
       DAE.Const c;
       Option<DAE.Exp> d;
+      list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> args;
+      A a;
+            
     case ({},a,fn) then ({},a);
     case ((b,ty,c,d)::args,a,fn)
       equation
@@ -6563,10 +6596,10 @@ algorithm
 end makeRegularTupleFromMetaTupleOnTrue;
 
 public function allTuple
-  input list<Type> tys;
+  input list<Type> itys;
   output Boolean b;
 algorithm
-  b := match tys
+  b := match itys local list<Type> tys;
     case {} then true;
     case (DAE.T_TUPLE(tupleType = _)::tys) then allTuple(tys);
     else false;
@@ -6630,11 +6663,12 @@ end varHasMetaRecordType;
 
 public function scalarSuperType
   "Checks that the givens types are scalar and that one is subtype of the other (in the case of integers)."
-  input Type ty1;
-  input Type ty2;
+  input Type ity1;
+  input Type ity2;
   output Type ty;
 algorithm
-  ty := matchcontinue (ty1,ty2)
+  ty := matchcontinue (ity1,ity2)
+    local Type ty1, ty2;
     case (DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _)) then DAE.T_INTEGER_DEFAULT;
     case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _))       then DAE.T_REAL_DEFAULT;
     case (DAE.T_INTEGER(varLst = _),DAE.T_REAL(varLst = _))    then DAE.T_REAL_DEFAULT;
@@ -6788,14 +6822,15 @@ end makeNthDimUnknown;
 
 public function arraySuperType
   "Selects the supertype out of two array-types. Integer may be promoted to Real."
-  input Type ty1;
+  input Type ity1;
   input Absyn.Info info;
-  input Type ty2;
+  input Type ity2;
   output Type ty;
 algorithm
-  ty := matchcontinue (ty1,info,ty2)
+  ty := matchcontinue (ity1,info,ity2)
     local
       String str1,str2;
+      Type ty1, ty2; 
     case (ty1,_,ty2)
       equation
         true = isInteger(arrayElementType(ty1));

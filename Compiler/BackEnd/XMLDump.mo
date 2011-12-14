@@ -528,13 +528,15 @@ XML format. The output is something like:
 </ALGORITHM>
   ...
 "
-  input list<DAE.Algorithm> algs;
+  input list<DAE.Algorithm> ialgs;
   input Integer inAlgNo;
 algorithm
-  _ := match(algs,inAlgNo)
+  _ := match(ialgs,inAlgNo)
     local
       list<Algorithm.Statement> stmts;
       Integer algNo,algNo_1;
+      list<DAE.Algorithm> algs;
+      
     case({},_) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
       equation

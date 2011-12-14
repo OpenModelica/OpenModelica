@@ -514,18 +514,19 @@ public function negate
 "function: negate
   author: PA
   Negates an expression."
-  input DAE.Exp e;
+  input DAE.Exp inExp;
   output DAE.Exp outExp;
 protected
   Type t;
 algorithm
-  outExp := matchcontinue(e)
+  outExp := matchcontinue(inExp)
     local 
       Type t;
       Operator op;
       Boolean b,b_1;
       Real r,r_1;
       Integer i,i_1;
+      DAE.Exp e;
     
     // to avoid unnessecary --e
     case(DAE.UNARY(DAE.UMINUS(t),e)) then e;
@@ -796,14 +797,15 @@ expressions given the original expression and then simplify them.
 Note: The subscripts must be INDEX
 
 alternative names: subsriptExp (but already taken), subscriptToAsub"
-  input DAE.Exp e;
-  input list<DAE.Subscript> subs;
+  input DAE.Exp inExp;
+  input list<DAE.Subscript> inSubs;
   output DAE.Exp res;
 algorithm
-  res := match(e,subs)
+  res := match(inExp,inSubs)
     local 
-      DAE.Exp s;
+      DAE.Exp s,e;
       DAE.Subscript sub;
+      list<DAE.Subscript> subs;
     
     case(e,{}) then e;
       
@@ -816,7 +818,7 @@ algorithm
       then 
         res;
   end match;
-end applyExpSubscripts ;
+end applyExpSubscripts;
 
 public function unliftArray
 "function: unliftArray
@@ -1021,12 +1023,13 @@ end subscriptsAppend;
 public function unliftArrayTypeWithSubs "
 helper function for renameVarsToUnderlineVar2 unlifts array type as much as we have subscripts"
   input list<Subscript> subs;
-  input Type ty;
+  input Type ity;
   output Type oty;
 algorithm  
-  oty := match(subs,ty)
+  oty := match(subs,ity)
     local
       list<Subscript> rest;
+      Type ty;
     
     case({},ty) then ty;
     
@@ -1226,11 +1229,11 @@ end getBoolConst;
 
 public function getRealConst "returns the expression as a Real value.
 Integer constants are cast to Real"
-input DAE.Exp e;
-output Real v;
+  input DAE.Exp ie;
+  output Real v;
 algorithm
-  v := match (e)
-  local Integer i;
+  v := match (ie)
+    local Integer i; DAE.Exp e;
     case(DAE.RCONST(v)) then v;
     case(DAE.CAST(_,e)) then getRealConst(e);
     case(DAE.ICONST(i)) then intReal(i);
@@ -1256,14 +1259,14 @@ end unboxExpType;
 
 public function unboxExp
 "takes an expression and unboxes it if it is boxed"
-  input DAE.Exp e;
+  input DAE.Exp ie;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (e)
+  outExp := match (ie)
     local
-      DAE.Type ty;
+      DAE.Type ty; DAE.Exp e;
     case (DAE.BOX(e)) then unboxExp(e);
-    else e;
+    else ie;
   end match;
 end unboxExp;
 
@@ -1991,15 +1994,16 @@ end terms;
 protected function terms2
   "Returns the terms of the expression if any as a list of expressions"
   input DAE.Exp inExp;
-  input list<DAE.Exp> acc;
+  input list<DAE.Exp> inAcc;
   input Boolean neg;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match (inExp,acc,neg)
+  outExpLst := match (inExp,inAcc,neg)
     local
       list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
       ComponentRef cr;
+      list<DAE.Exp> acc;
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2),acc,neg)
       equation
@@ -2066,17 +2070,19 @@ protected function factorsWork
 "function: factors
   Returns the factors of the expression if any as a list of expressions"
   input DAE.Exp inExp;
-  input list<DAE.Exp> acc;
+  input list<DAE.Exp> inAcc;
   input Boolean noFactors "Decides if the default is the empty list or not";
   input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match (inExp,acc,noFactors,doInverseFactors)
+  outExpLst := match (inExp,inAcc,noFactors,doInverseFactors)
     local
       DAE.Exp e1,e2,e;
       ComponentRef cr;
       Real r;
       Boolean b;
+      list<DAE.Exp> acc;
+      
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
       equation
         acc = factorsWork(e1,acc,true,doInverseFactors);
@@ -2322,13 +2328,13 @@ end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
 guared expressions and a default value (the else branch)"
-  input list<DAE.Exp> conds "conditions";
-  input list<DAE.Exp> tbExps " guarded expressions, for each condition";
+  input list<DAE.Exp> inConds "conditions";
+  input list<DAE.Exp> inTbExps " guarded expressions, for each condition";
   input DAE.Exp fExp "default value, else branch";
   output DAE.Exp ifExp;
 algorithm
-  ifExp := matchcontinue(conds,tbExps,fExp)
-  local DAE.Exp c,tbExp;
+  ifExp := matchcontinue(inConds,inTbExps,fExp)
+    local DAE.Exp c,tbExp; list<DAE.Exp> conds, tbExps; 
     case({c},{tbExp},fExp)
     then DAE.IFEXP(c,tbExp,fExp);
     case(c::conds,tbExp::tbExps,fExp)
@@ -3148,9 +3154,9 @@ end replaceExp;
 
 public function replaceExpWork
   input tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp,Integer>> inTpl;
-  output tuple<DAE.Exp,Boolean,tuple<DAE.Exp,DAE.Exp,Integer>> tpl;
+  output tuple<DAE.Exp,Boolean,tuple<DAE.Exp,DAE.Exp,Integer>> otpl;
 algorithm
-  tpl := matchcontinue inTpl
+  otpl := matchcontinue inTpl
     local
       tuple<DAE.Exp,DAE.Exp,Integer> tpl;
       DAE.Exp expr,source,target;
@@ -3604,17 +3610,18 @@ public function traverseExpList
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input funcType rel;
-  input Type_a ext_arg;
+  input Type_a iext_arg;
   output tuple<list<DAE.Exp>, Type_a> outTpl;
   partial function funcType
     input tuple<DAE.Exp, Type_a> tpl1;
     output tuple<DAE.Exp, Type_a> tpl2;
   end funcType;
 algorithm
-  outTpl := match(inExpl,rel,ext_arg)
+  outTpl := match(inExpl,rel,iext_arg)
     local 
       DAE.Exp e,e1;
       list<DAE.Exp> expl,expl1;
+      Type_a ext_arg;
     
     case({},_,ext_arg) then ((inExpl,ext_arg));
     
@@ -3936,17 +3943,17 @@ public function traverseExpListTopDown
  author PA:
  Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
-  input list<DAE.Exp> expl;
+  input list<DAE.Exp> inExpl;
   input funcType rel;
-  input Type_a ext_arg;
+  input Type_a inExt_arg;
   output tuple<list<DAE.Exp>, Type_a> outTpl;
   partial function funcType
     input tuple<DAE.Exp, Type_a> inTpl;
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end funcType;
 algorithm
-  outTpl := match(expl,rel,ext_arg)
-  local DAE.Exp e,e1; list<DAE.Exp> expl1;
+  outTpl := match(inExpl,rel,inExt_arg)
+    local DAE.Exp e,e1; list<DAE.Exp> expl1, expl; Type_a ext_arg;
     case ({},_,ext_arg) then (({},ext_arg));
     case (e::expl,rel,ext_arg)
       equation
@@ -3969,11 +3976,11 @@ public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing
   replaceable type Type_a subtypeof Any;
 algorithm
   outTpl:= match (inExp,func,inTypeA)
-  local DAE.Exp e;
-    case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
-    case(SOME(e),func,inTypeA) equation
-      ((e,inTypeA)) = traverseExp(e,func,inTypeA);
-     then ((SOME(e),inTypeA));
+    local DAE.Exp e; Type_a a;
+    case(NONE(),_,a) then ((NONE(),a));
+    case(SOME(e),func,a) equation
+      ((e,a)) = traverseExp(e,func,a);
+     then ((SOME(e),a));
   end match;
 end traverseExpOpt;
 
@@ -3990,12 +3997,12 @@ public function traverseExpOptTopDown "Calls traverseExpTopDown for SOME(exp) an
   replaceable type Type_a subtypeof Any;
 algorithm
   outTpl:= match (inExp,func,inTypeA)
-  local DAE.Exp e;
-    case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
-    case(SOME(e),func,inTypeA)
+    local DAE.Exp e; Type_a a;
+    case(NONE(),_,a) then ((NONE(),a));
+    case(SOME(e),func,a)
       equation
-        ((e,inTypeA)) = traverseExpTopDown(e,func,inTypeA);
-      then ((SOME(e),inTypeA));
+        ((e,a)) = traverseExpTopDown(e,func,a);
+      then ((SOME(e),a));
   end match;
 end traverseExpOptTopDown;
 
@@ -4585,7 +4592,7 @@ public function traverseExpCref
   component reference (i.e. in it's subscripts)."
   input ComponentRef inCref;
   input FuncType rel;
-  input Type_a arg;
+  input Type_a iarg;
   output ComponentRef outCref;
   output Type_a outArg;
 
@@ -4596,12 +4603,13 @@ public function traverseExpCref
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outCref, outArg) := match(inCref, rel, arg)
+  (outCref, outArg) := match(inCref, rel, iarg)
     local
       Ident name;
       ComponentRef cr,cr_1;
       Type ty;
       list<DAE.Subscript> subs,subs_1;
+      Type_a arg;
 
     case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), rel, arg)
       equation
@@ -4625,7 +4633,7 @@ end traverseExpCref;
 protected function traverseExpSubs
   input list<Subscript> inSubscript;
   input FuncType rel;
-  input Type_a arg;
+  input Type_a iarg;
   output list<Subscript> outSubscript;
   output Type_a outArg;
 
@@ -4636,13 +4644,14 @@ protected function traverseExpSubs
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outSubscript, outArg) := match(inSubscript, rel, arg)
+  (outSubscript, outArg) := match(inSubscript, rel, iarg)
     local
       DAE.Exp sub_exp,sub_exp_1;
       list<Subscript> rest,res;
+      Type_a arg;
 
     case ({}, _, arg) then (inSubscript,arg);
-    case (DAE.WHOLEDIM()::rest, _, _)
+    case (DAE.WHOLEDIM()::rest, _, arg)
       equation
         (res,arg) = traverseExpSubs(rest,rel,arg);
         res = Util.if_(referenceEq(rest,res),inSubscript,DAE.WHOLEDIM()::rest);
@@ -4678,7 +4687,7 @@ end traverseExpSubs;
 protected function traverseExpTopDownCrefHelper
   input ComponentRef inCref;
   input FuncType rel;
-  input Argument arg;
+  input Argument iarg;
   output ComponentRef outCref;
   output Argument outArg;
 
@@ -4689,12 +4698,13 @@ protected function traverseExpTopDownCrefHelper
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outCref, outArg) := match(inCref, rel, arg)
+  (outCref, outArg) := match(inCref, rel, iarg)
     local
       Ident name;
       ComponentRef cr;
       Type ty;
       list<DAE.Subscript> subs;
+      Argument arg;
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), rel, arg)
       equation
@@ -4709,7 +4719,7 @@ algorithm
       then
         (DAE.CREF_IDENT(name, ty, subs), arg);
 
-    case (DAE.WILD(), _, _) then (inCref, arg);
+    case (DAE.WILD(), _, arg) then (inCref, arg);
   end match;
 end traverseExpTopDownCrefHelper;
 
@@ -4759,7 +4769,7 @@ end traverseExpBidirSubs;
 protected function traverseExpTopDownSubs
   input list<Subscript> inSubscript;
   input FuncType rel;
-  input Argument arg;
+  input Argument iarg;
   output list<Subscript> outSubscript;
   output Argument outArg;
 
@@ -4770,13 +4780,14 @@ protected function traverseExpTopDownSubs
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outSubscript, outArg) := match(inSubscript, rel, arg)
+  (outSubscript, outArg) := match(inSubscript, rel, iarg)
     local
       DAE.Exp sub_exp;
       list<Subscript> rest;
+      Argument arg;
 
     case ({}, _, arg) then ({},arg);
-    case (DAE.WHOLEDIM()::rest, _, _)
+    case (DAE.WHOLEDIM()::rest, _, arg)
       equation
         (rest,arg) = traverseExpTopDownSubs(rest,rel,arg);
       then (DAE.WHOLEDIM()::rest, arg);
@@ -4994,13 +5005,13 @@ end isConstWork;
 
 public function isConstWorkList
 "Returns true if a list of expressions is constant"
-  input list<DAE.Exp> exps;
+  input list<DAE.Exp> inExps;
   input Boolean inBoolean;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (exps,inBoolean)
+  outBoolean := match (inExps,inBoolean)
     local
-      DAE.Exp e;
+      DAE.Exp e; list<DAE.Exp> exps;
     case (_,false) then false;
     case ({},_) then true;
     case (e::exps,_) then isConstWorkList(exps,isConstWork(e,true));
@@ -5140,13 +5151,14 @@ algorithm b := matchcontinue(t1,t2)
 end equalTypes;
 
 protected function equalTypesComplexVars ""
-input list<DAE.Var> vars1,vars2;
-output Boolean b;
+  input list<DAE.Var> inVars1,inVars2;
+  output Boolean b;
 algorithm
-  b := matchcontinue(vars1,vars2)
+  b := matchcontinue(inVars1,inVars2)
     local
       DAE.Type t1,t2;
       String s1,s2;
+      list<DAE.Var> vars1,vars2;
     
     case({},{}) then true;
     
@@ -6531,10 +6543,11 @@ end subscriptEqual;
 
 public function subscriptConstants "
 returns true if all subscripts are constant values (no slice or wholedim "
-  input list<Subscript> subs;
+  input list<Subscript> inSubs;
   output Boolean areConstant;
 algorithm
-  areConstant := matchcontinue(subs)
+  areConstant := matchcontinue(inSubs)
+    local list<Subscript> subs;
     case({}) then true;
     case(DAE.INDEX(exp = DAE.ICONST(integer = _)):: subs) 
       equation
@@ -6757,7 +6770,7 @@ algorithm
 end traverseReductionIteratorTopDown;
 
 protected function traverseReductionIteratorsTopDown
-  input DAE.ReductionIterators iters;
+  input DAE.ReductionIterators inIters;
   input FuncExpType func;
   input Type_a inArg;
   output DAE.ReductionIterators outIters;
@@ -6770,7 +6783,7 @@ protected function traverseReductionIteratorsTopDown
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIters,outArg) := match (iters,func,inArg)
+  (outIters,outArg) := match (inIters,func,inArg)
     local
       String id;
       DAE.Exp exp;
@@ -6778,6 +6791,8 @@ algorithm
       DAE.Type ty;
       Type_a arg;
       DAE.ReductionIterator iter;
+      DAE.ReductionIterators iters;
+      
     case ({},_,arg) then ({},arg);
     case (iter::iters,func,arg)
       equation
@@ -6790,7 +6805,7 @@ end traverseReductionIteratorsTopDown;
 protected function traverseReductionIterator
   input DAE.ReductionIterator iter;
   input FuncExpType func;
-  input Type_a arg;
+  input Type_a iarg;
   output DAE.ReductionIterator outIter;
   output Type_a outArg;
 
@@ -6800,13 +6815,15 @@ protected function traverseReductionIterator
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIter,outArg) := match (iter,func,arg)
+  (outIter,outArg) := match (iter,func,iarg)
     local
       String id;
       DAE.Exp exp;
       Option<DAE.Exp> gexp;
       DAE.Type ty;
-    case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,_)
+      Type_a arg;
+      
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,arg)
       equation
         ((exp, arg)) = traverseExp(exp, func, arg);
         ((gexp, arg)) = traverseExpOpt(gexp, func, arg);
@@ -6815,9 +6832,9 @@ algorithm
 end traverseReductionIterator;
 
 protected function traverseReductionIterators
-  input DAE.ReductionIterators iters;
+  input DAE.ReductionIterators inIters;
   input FuncExpType func;
-  input Type_a arg;
+  input Type_a inArg;
   output DAE.ReductionIterators outIters;
   output Type_a outArg;
 
@@ -6827,11 +6844,14 @@ protected function traverseReductionIterators
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIters,outArg) := match (iters,func,arg)
+  (outIters,outArg) := match (inIters,func,inArg)
     local
       DAE.ReductionIterator iter;
+      DAE.ReductionIterators iters;
+      Type_a arg;
+      
     case ({},_,arg) then ({},arg);
-    case (iter::iters,_,_)
+    case (iter::iters,_,arg)
       equation
         (iter, arg) = traverseReductionIterator(iter, func, arg);
         (iters, arg) = traverseReductionIterators(iters, func, arg);

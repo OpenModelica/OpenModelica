@@ -151,13 +151,14 @@ algorithm
 end derivativeOrder;
 
 public function getDerivativePaths " collects all paths representing derivative functions for a list of FunctionDefinition's"
-  input list<DAE.FunctionDefinition> funcDefs;
+  input list<DAE.FunctionDefinition> inFuncDefs;
   output list<Absyn.Path> paths;
 algorithm
-  paths := matchcontinue(funcDefs)
+  paths := matchcontinue(inFuncDefs)
     local 
       list<Absyn.Path> pLst1,pLst2;
       Absyn.Path p1,p2;
+      list<DAE.FunctionDefinition> funcDefs;
     
     case({}) then {};
     
@@ -2163,12 +2164,12 @@ algorithm
 end getNamedFunction;
 
 public function getNamedFunctionFromList "Is slow; PartFn.mo should be rewritten using the FunctionTree"
-  input Absyn.Path path;
-  input list<DAE.Function> fns;
+  input Absyn.Path ipath;
+  input list<DAE.Function> ifns;
   output DAE.Function fn;
 algorithm
-  fn := matchcontinue (path,fns)
-    local
+  fn := matchcontinue (ipath,ifns)
+    local Absyn.Path path; list<DAE.Function> fns;
     case (path,fn::fns)
       equation
         true = Absyn.pathEqual(functionName(fn),path);
@@ -2241,18 +2242,21 @@ end verifyWhenEquation;
 
 protected function verifyWhenEquationStatements2 ""
   input list<DAE.Exp> inExps;
-  input list<DAE.ComponentRef> acc;
+  input list<DAE.ComponentRef> inAcc;
   input DAE.ElementSource source "the element origin";
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs := match(inExps,acc,source)
+  leftSideCrefs := match(inExps,inAcc,source)
     local
       DAE.Exp e;
+      list<DAE.ComponentRef> acc;
+      list<DAE.Exp> exps;
+      
     case ({},acc,_) then acc;
-    case (e::inExps,acc,source)
+    case (e::exps,acc,source)
       equation
         acc = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)},acc);
-      then verifyWhenEquationStatements2(inExps,acc,source);
+      then verifyWhenEquationStatements2(exps,acc,source);
   end match;
 end verifyWhenEquationStatements2;
 
@@ -2261,10 +2265,10 @@ Author BZ, 2008-09
 Helper function for verifyWhenEquation
 TODO: add some error reporting for this."
   input list<DAE.Element> inElems;
-  input list<DAE.ComponentRef> acc;
+  input list<DAE.ComponentRef> inAcc;
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs:= match (inElems,acc)
+  leftSideCrefs:= match (inElems,inAcc)
     local
       String msg;
       list<DAE.Exp> exps,exps1;
@@ -2273,7 +2277,7 @@ algorithm
       DAE.Element el;
       list<DAE.Element> eqsfalseb,rest;
       list<list<DAE.Element>> eqstrueb;
-      list<DAE.ComponentRef> crefs1,crefs2;
+      list<DAE.ComponentRef> crefs1,crefs2,acc;
       DAE.ElementSource source "the element origin";
       list<list<DAE.ComponentRef>> crefslist;
       Boolean b;
@@ -2345,19 +2349,21 @@ algorithm
 end verifyWhenEquationStatements;
 
 protected function compareCrefList ""
-  input list<list<DAE.ComponentRef>> inrefs;
+  input list<list<DAE.ComponentRef>> inCrefs;
   output list<DAE.ComponentRef> outrefs;
   output Boolean matching;
-algorithm (outrefs,matching) := matchcontinue(inrefs)
+algorithm (outrefs,matching) := matchcontinue(inCrefs)
   local
     list<DAE.ComponentRef> crefs,recRefs;
     Integer i;
     Boolean b1,b2,b3;
+    list<list<DAE.ComponentRef>> llrefs;
+    
   case({}) then ({},true);
   case(crefs::{}) then (crefs,true);
-  case(crefs::inrefs) // this case will allways have revRefs >=1 unless we are supposed to have 0
+  case(crefs::llrefs) // this case will allways have revRefs >=1 unless we are supposed to have 0
     equation
-      (recRefs,b3) = compareCrefList(inrefs);
+      (recRefs,b3) = compareCrefList(llrefs);
       i = listLength(recRefs);
       b1 = (0 == intMod(listLength(crefs),listLength(recRefs)));
       crefs = List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
@@ -2388,17 +2394,18 @@ end transformIfEqToExpr;
 protected function transformIfEqToExpr2
 "function: transformIfEqToExpr
   transform all if equations to ordinary equations involving if-expressions"
-  input list<DAE.Element> elts;
+  input list<DAE.Element> inElts;
   input Boolean onlyConstantEval "if true, only perform the constant evaluation part, not transforming to if-expr";
-  input list<DAE.Element> acc;
+  input list<DAE.Element> inAcc;
   output list<DAE.Element> outElts;
 algorithm
-  outElts := match (elts,onlyConstantEval,acc)
+  outElts := match (inElts,onlyConstantEval,inAcc)
     local
-      list<DAE.Element> rest_result,rest,sublist_result,sublist,res,res2;
+      list<DAE.Element> rest_result,rest,sublist_result,sublist,res,res2,acc,elts;
       DAE.Element subresult,el;
       String name;
       DAE.ElementSource source "the origin of the element";
+      
     case ({},onlyConstantEval,acc) then listReverse(acc);
     case (DAE.COMP(ident = name,dAElist = sublist,source=source) :: rest,onlyConstantEval,acc)
       equation
@@ -3371,7 +3378,7 @@ Author: BZ, 2008-12
 Traverse an optional expression, helper function for traverseDAE"
   input Option<DAE.Exp> oexp;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output Option<DAE.Exp> ooexp;
   output Type_a oextraArg;
   partial function FuncExpType 
@@ -3380,9 +3387,10 @@ Traverse an optional expression, helper function for traverseDAE"
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (ooexp,oextraArg) := match(oexp,func,extraArg)
+  (ooexp,oextraArg) := match(oexp,func,iextraArg)
     local 
       DAE.Exp e;
+      Type_a extraArg;
     
     case(NONE(),func,extraArg) then (NONE(),extraArg);
     
@@ -3397,9 +3405,9 @@ end traverseDAEOptExp;
 protected function traverseDAEExpList "
 Author: BZ, 2008-12
 Traverse an list of expressions, helper function for traverseDAE"
-  input list<DAE.Exp> exps;
+  input list<DAE.Exp> iexps;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output list<DAE.Exp> oexps;
   output Type_a oextraArg;
   partial function FuncExpType 
@@ -3408,9 +3416,11 @@ Traverse an list of expressions, helper function for traverseDAE"
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (oexps,oextraArg) := match(exps,func,extraArg)
+  (oexps,oextraArg) := match(iexps,func,iextraArg)
     local 
       DAE.Exp e;
+      Type_a extraArg;
+      list<DAE.Exp> exps;
     
     case({},func,extraArg) then ({},extraArg);
     
@@ -3426,9 +3436,9 @@ end traverseDAEExpList;
 protected function traverseDAEList "
 Author: BZ, 2008-12
 Helper function for traverseDAE, traverses a list of dae element list."
-  input list<list<DAE.Element>> daeList;
+  input list<list<DAE.Element>> idaeList;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output list<list<DAE.Element>> traversedDaeList;
   output Type_a oextraArg;
   partial function FuncExpType 
@@ -3437,10 +3447,11 @@ Helper function for traverseDAE, traverses a list of dae element list."
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  (traversedDaeList,oextraArg) := match(daeList,func,extraArg)
+  (traversedDaeList,oextraArg) := match(idaeList,func,iextraArg)
     local
       list<DAE.Element> branch,branch2;
-      list<list<DAE.Element>> recRes;
+      list<list<DAE.Element>> recRes,daeList;
+      Type_a extraArg;
     
     case({},func,extraArg) then ({},extraArg);
     
@@ -3501,18 +3512,19 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input DAE.DAElist dae;
   input DAE.FunctionTree functionTree;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output DAE.DAElist traversedDae;
   output DAE.FunctionTree outTree;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDae,outTree,oextraArg) := match(dae,functionTree,func,extraArg)
+  (traversedDae,outTree,oextraArg) := match(dae,functionTree,func,iextraArg)
   local
     list<DAE.Element> elts;
      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
      DAE.FunctionTree funcs;
+     Type_a extraArg;
 
   case(DAE.DAE(elts),funcs,func,extraArg) equation
      (elts,extraArg) = traverseDAE2(elts,func,extraArg);
@@ -3523,19 +3535,21 @@ algorithm
 end traverseDAE;
 
 protected function traverseDAEFuncLst "help function to traverseDae. Traverses the functions "
-  input list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
+  input list<tuple<DAE.AvlKey,DAE.AvlValue>> ifuncLst;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output list<tuple<DAE.AvlKey,DAE.AvlValue>> outFuncLst;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 
 algorithm
-  (outFuncLst,oextraArg) := match(funcLst,func,extraArg)
+  (outFuncLst,oextraArg) := match(ifuncLst,func,iextraArg)
     local
       Absyn.Path p;
       DAE.Function daeFunc;
+      Type_a extraArg;
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
 
     case({},func,extraArg) then ({},extraArg);
     case((p,SOME(daeFunc))::funcLst,func,extraArg)
@@ -3553,17 +3567,20 @@ end traverseDAEFuncLst;
 public function traverseDAEFunctions "Traverses the functions.
 Note: Only calls the top-most expressions If you need to also traverse the
 expression, use an extra helper function."
-  input list<DAE.Function> funcLst;
+  input list<DAE.Function> ifuncLst;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output list<DAE.Function> outFuncLst;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outFuncLst,oextraArg) := match(funcLst,func,extraArg)
+  (outFuncLst,oextraArg) := match(ifuncLst,func,iextraArg)
     local
       DAE.Function daeFunc;
+      list<DAE.Function> funcLst;
+      Type_a extraArg;
+      
     case({},func,extraArg) then ({},extraArg);
     case(daeFunc::funcLst,func,extraArg)
       equation
@@ -3576,13 +3593,13 @@ end traverseDAEFunctions;
 protected function traverseDAEFunc
   input DAE.Function daeFn;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output DAE.Function traversedFn;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedFn,oextraArg) := match (daeFn,func,extraArg)
+  (traversedFn,oextraArg) := match (daeFn,func,iextraArg)
     local
       list<DAE.Element> elist,elist2;
       DAE.Type ftp,tp;
@@ -3593,6 +3610,7 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
+      Type_a extraArg;
     
     case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),func,extraArg)
       equation
@@ -3631,17 +3649,18 @@ protected function traverseDAE2_tail
   NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input list<DAE.Element> daeList;
   input FuncExpType func;
-  input Type_a extraArg;
-  input list<DAE.Element> accumulator;
+  input Type_a iextraArg;
+  input list<DAE.Element> iaccumulator;
   output list<DAE.Element> traversedDaeList;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDaeList,oextraArg) := match (daeList,func,extraArg,accumulator)
+  (traversedDaeList,oextraArg) := match (daeList,func,iextraArg,iaccumulator)
     local
-      list<DAE.Element> dae,dae2;
+      list<DAE.Element> dae,dae2,accumulator;
       DAE.Element elt;
+      Type_a extraArg;
   
     case({},_,extraArg,accumulator)
       equation
@@ -3662,19 +3681,19 @@ protected function traverseDAE2_tail2
 "@uthor: adrpo, 2010-12
   This function is a tail recursive function that traverses all dae exps.
   NOTE, it also traverses DAE.VAR(componenname) as an expression."
-  input DAE.Element elt;
+  input DAE.Element ielt;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output DAE.Element outElt;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outElt,oextraArg) := match (elt,func,extraArg)
+  (outElt,oextraArg) := match (ielt,func,iextraArg)
     local
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
       list<DAE.Element> elist,elist2,elist22;
-      DAE.Element elt2;
+      DAE.Element elt2,elt;
       DAE.Function f1,f2;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -3695,7 +3714,8 @@ algorithm
       list<DAE.Exp> conds,conds_1;
       Absyn.Path path;
       list<DAE.Exp> expl;
-      DAE.ElementSource source "the origin of the element";      
+      DAE.ElementSource source "the origin of the element";
+      Type_a extraArg;      
   
     case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io),func,extraArg)
       equation
@@ -3894,13 +3914,13 @@ public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
   Handles the traversing of DAE.Statement."
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output list<DAE.Statement> outStmts;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
+  (outStmts,oextraArg) := matchcontinue(inStmts,func,iextraArg)
     local
       DAE.Exp e_1,e_2,e,e2;
       list<DAE.Exp> expl1,expl2;
@@ -3913,6 +3933,7 @@ algorithm
       list<Integer> li;
       DAE.ElementSource source;
       Algorithm.Else algElse;
+      Type_a extraArg;
       
     case ({},_,extraArg) then ({},extraArg);
       
@@ -4062,17 +4083,18 @@ Helper function for traverseDAEEquationsStmts
 "
   input Algorithm.Else inElse;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output Algorithm.Else outElse;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outElse,oextraArg) := match(inElse,func,extraArg)
+  (outElse,oextraArg) := match(inElse,func,iextraArg)
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
     Algorithm.Else el,el_1;
+    Type_a extraArg;
   case (DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
   case (DAE.ELSEIF(e,st,el),func,extraArg)
     equation
@@ -4093,17 +4115,18 @@ Help function to traverseDAE
 "
   input Option<DAE.VariableAttributes> attr;
   input FuncExpType func;
-  input Type_a extraArg;
+  input Type_a iextraArg;
   output Option<DAE.VariableAttributes> traversedDaeList;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (traversedDaeList,oextraArg) := match(attr,func,extraArg)
+  (traversedDaeList,oextraArg) := match(attr,func,iextraArg)
     local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb;
       Option<DAE.StateSelect> stateSelect;
       Option<Boolean> ip,fn;
+      Type_a extraArg;
     case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),func,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
@@ -4531,12 +4554,13 @@ algorithm
 end joinDaes;
 
 public function joinDaeLst "joins a list of daes by using joinDaes"
-  input list<DAE.DAElist> daeLst;
+  input list<DAE.DAElist> idaeLst;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(daeLst)
+  outDae := matchcontinue(idaeLst)
     local
       DAE.DAElist dae,dae1;
+      list<DAE.DAElist> daeLst;
     case({dae}) then dae;
     case(dae::daeLst)
       equation
@@ -4601,14 +4625,16 @@ algorithm
 end avlTreeToList2;
 
 public function avlTreeAddLst "Adds a list of (key,value) pairs"
-  input list<tuple<DAE.AvlKey,DAE.AvlValue>> values;
+  input list<tuple<DAE.AvlKey,DAE.AvlValue>> inValues;
   input DAE.AvlTree inTree;
   output DAE.AvlTree outTree;
 algorithm
-  outTree := match(values,inTree)
-  local DAE.AvlKey key;
-    DAE.AvlValue val;
-    DAE.AvlTree tree;
+  outTree := match(inValues,inTree)
+    local 
+      DAE.AvlKey key; 
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> values;
+      DAE.AvlValue val;
+      DAE.AvlTree tree;
     case({},tree) then tree;
     case((key,val)::values,tree) equation
       tree = avlTreeAdd(tree,key,val);
@@ -4691,11 +4717,11 @@ algorithm
 end nodeValue;
 
 protected function balance "Balances a DAE.AvlTree"
-  input DAE.AvlTree bt;
+  input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
-  local Integer d;
+  outBt := matchcontinue(inBt)
+    local Integer d; DAE.AvlTree bt;
     case(bt) equation
       d = differenceInHeight(bt);
       bt = doBalance(d,bt);
@@ -4707,11 +4733,12 @@ algorithm
 end balance;
 
 protected function doBalance "perform balance if difference is > 1 or < -1"
-input Integer difference;
-input DAE.AvlTree bt;
-output DAE.AvlTree outBt;
+  input Integer difference;
+  input DAE.AvlTree inBt;
+  output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(difference,bt)
+  outBt := matchcontinue(difference,inBt)
+    local DAE.AvlTree bt;
     case(-1,bt) then computeHeight(bt);
     case(0,bt) then computeHeight(bt);
     case(1,bt) then computeHeight(bt);
@@ -4725,10 +4752,11 @@ end doBalance;
 
 protected function doBalance2 "help function to doBalance"
   input Integer difference;
-  input DAE.AvlTree bt;
+  input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(difference,bt)
+  outBt := matchcontinue(difference,inBt)
+    local DAE.AvlTree bt;
     case(difference,bt) equation
       true = difference < 0;
       bt = doBalance3(bt);
@@ -4743,11 +4771,11 @@ algorithm
 end doBalance2;
 
 protected function doBalance3 "help function to doBalance2"
-  input DAE.AvlTree bt;
+  input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
-  local DAE.AvlTree rr;
+  outBt := matchcontinue(inBt)
+  local DAE.AvlTree rr,bt;
     case(bt) equation
       true = differenceInHeight(getOption(rightNode(bt))) > 0;
       rr = rotateRight(getOption(rightNode(bt)));
@@ -4758,12 +4786,12 @@ algorithm
 end doBalance3;
 
 protected function doBalance4 "help function to doBalance2"
-  input DAE.AvlTree bt;
+  input DAE.AvlTree inBt;
   output DAE.AvlTree outBt;
 algorithm
-  outBt := match(bt)
-  local DAE.AvlTree rl;
- case(bt) equation
+  outBt := match(inBt)
+  local DAE.AvlTree rl,bt;
+  case(bt) equation
       true = differenceInHeight(getOption(leftNode(bt))) < 0;
       rl = rotateLeft(getOption(leftNode(bt)));
       bt = setLeft(bt,SOME(rl));
@@ -4817,13 +4845,13 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-  input DAE.AvlTree node;
-  input DAE.AvlTree parent;
+  input DAE.AvlTree inode;
+  input DAE.AvlTree iparent;
   output DAE.AvlTree outParent "updated parent";
 algorithm
-  outParent := match(node,parent)
+  outParent := match(inode,iparent)
     local
-      DAE.AvlTree bt;
+      DAE.AvlTree bt,node,parent;
 
     case(node,parent) equation
       parent = setRight(parent,leftNode(node));
@@ -4835,12 +4863,12 @@ algorithm
 end exchangeLeft;
 
 protected function exchangeRight "help function to balance"
-input DAE.AvlTree node;
-input DAE.AvlTree parent;
-output DAE.AvlTree outParent "updated parent";
+  input DAE.AvlTree inode;
+  input DAE.AvlTree iparent;
+  output DAE.AvlTree outParent "updated parent";
 algorithm
-  outParent := match(node,parent)
-  local DAE.AvlTree bt;
+  outParent := match(inode,iparent)
+    local DAE.AvlTree bt,node,parent;
     case(node,parent) equation
       parent = setLeft(parent,rightNode(node));
       parent = balance(parent);
@@ -5043,12 +5071,12 @@ public function splitElements_dispatch
    variables, initial equations, initial algorithms, 
    equations, algorithms, external objects"
   input list<DAE.Element> inElements;
-  input list<DAE.Element> v_acc;
-  input list<DAE.Element> ie_acc;
-  input list<DAE.Element> ia_acc;
-  input list<DAE.Element> e_acc;
-  input list<DAE.Element> a_acc;
-  input list<DAE.Element> o_acc;
+  input list<DAE.Element> in_v_acc;
+  input list<DAE.Element> in_ie_acc;
+  input list<DAE.Element> in_ia_acc;
+  input list<DAE.Element> in_e_acc;
+  input list<DAE.Element> in_a_acc;
+  input list<DAE.Element> in_o_acc;
   output list<DAE.Element> v;
   output list<DAE.Element> ie;
   output list<DAE.Element> ia;
@@ -5056,10 +5084,10 @@ public function splitElements_dispatch
   output list<DAE.Element> a;
   output list<DAE.Element> o;
 algorithm
-  (v,ie,ia,e,a,o) := match(inElements,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
+  (v,ie,ia,e,a,o) := match(inElements,in_v_acc,in_ie_acc,in_ia_acc,in_e_acc,in_a_acc,in_o_acc)
     local
       DAE.Element el;
-      list<DAE.Element> rest, ell;
+      list<DAE.Element> rest, ell, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc;
       
     // handle empty case
     case ({}, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) 
@@ -5172,7 +5200,7 @@ algorithm
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
 
-    case ((el as DAE.COMP(dAElist = ell)) :: rest, _, _, _, _, _, _)
+    case ((el as DAE.COMP(dAElist = ell)) :: rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
         v_acc = listAppend(ell, v_acc);
         (v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc) =
@@ -5349,11 +5377,11 @@ algorithm
 end transformationsBeforeBackend;
 
 protected function makeEvaluatedParamFinal
-  input DAE.Element elt;
+  input DAE.Element ielt;
   input HashTable.HashTable ht;
   output DAE.Element oelt;
 algorithm
-  oelt := matchcontinue (elt,ht)
+  oelt := matchcontinue (ielt,ht)
     local
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> varOpt;
@@ -5361,17 +5389,18 @@ algorithm
       list<DAE.Element> elts;
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
+      DAE.Element elt;
     case (DAE.VAR(componentRef=cr,kind=DAE.PARAM(),variableAttributesOption=varOpt),ht)
       equation
         _ = BaseHashTable.get(cr,ht);
         // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
-        elt = setVariableAttributes(elt,setFinalAttr(varOpt,true));
+        elt = setVariableAttributes(ielt,setFinalAttr(varOpt,true));
       then elt;
     case (DAE.COMP(id,elts,source,cmt),ht)
       equation
         elts = List.map1(elts,makeEvaluatedParamFinal,ht);
       then DAE.COMP(id,elts,source,cmt);
-    else elt;
+    else ielt;
   end matchcontinue;
 end makeEvaluatedParamFinal;
 
@@ -5461,13 +5490,15 @@ algorithm
 end collectFunctionRefVarPaths;
 
 public function addDaeFunction "add functions present in the element list to the function tree"
-  input list<DAE.Function> funcs;
-  input DAE.FunctionTree tree;
+  input list<DAE.Function> ifuncs;
+  input DAE.FunctionTree itree;
   output DAE.FunctionTree outTree;
 algorithm
-  outTree := match(funcs,tree)
+  outTree := match(ifuncs,itree)
     local
       DAE.Function func;
+      list<DAE.Function> funcs;
+      DAE.FunctionTree tree;
 
     case ({},tree) then tree;
     case (func::funcs,tree)
@@ -5482,13 +5513,16 @@ end addDaeFunction;
 public function addDaeExtFunction "add extermal functions present in the element list to the function tree
 Note: normal functions are skipped.
 See also addDaeFunction"
-  input list<DAE.Function> funcs;
-  input DAE.FunctionTree tree;
+  input list<DAE.Function> ifuncs;
+  input DAE.FunctionTree itree;
   output DAE.FunctionTree outTree;
 algorithm
-  outTree := matchcontinue(funcs,tree)
+  outTree := matchcontinue(ifuncs,itree)
     local
       DAE.Function func;
+      list<DAE.Function> funcs;
+      DAE.FunctionTree tree;
+      
 
     case ({},tree) then tree;
     case (func::funcs,tree)

@@ -966,14 +966,14 @@ end checkDerivativeFunctionInputs;
 protected function differentiateFunctionTime1"
 Author: Frenkel TUD"
   input Absyn.Path inFuncName;
-  input DAE.FunctionDefinition mapper;
-  input DAE.Type tp;
+  input DAE.FunctionDefinition inMapper;
+  input DAE.Type inTp;
   input list<DAE.Exp> expl;
   input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
   output Absyn.Path outFuncName;
   output list<Boolean> blst;
 algorithm    
-  (outFuncName,blst) := matchcontinue (inFuncName,mapper,tp,expl,inVarsandFuncs)
+  (outFuncName,blst) := matchcontinue (inFuncName,inMapper,inTp,expl,inVarsandFuncs)
     local 
       BackendDAE.Variables timevars;
       DAE.FunctionTree functions;
@@ -984,6 +984,9 @@ algorithm
       list<DAE.Type> tplst;
       list<Boolean> bl,bl1,bl2,bl3;
       list<Absyn.Path> lowerOrderDerivatives;
+      DAE.FunctionDefinition mapper;
+      DAE.Type tp;
+      
     // check conditions, order=1  
     case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),expl,inVarsandFuncs)
       equation
@@ -1022,18 +1025,19 @@ end differentiateFunctionTime1;
 protected function checkDerFunctionConds "
 Author: Frenkel TUD"
   input list<Boolean> inblst;
-  input list<tuple<Integer,DAE.derivativeCond>> crlst;
+  input list<tuple<Integer,DAE.derivativeCond>> icrlst;
   input list<DAE.Exp> expl;
   input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
   output list<Boolean> outblst;
 algorithm
-  outblst := matchcontinue(inblst,crlst,expl,inVarsandFuncs)
+  outblst := matchcontinue(inblst,icrlst,expl,inVarsandFuncs)
     local 
       Integer i,i_1;
       DAE.Exp e,de;
       list<Boolean> bl,bl1;
       array<Boolean> ba;
       Absyn.Path p1,p2;
+      list<tuple<Integer,DAE.derivativeCond>> crlst;
     
     // no conditions
     case(inblst,{},expl,inVarsandFuncs) then inblst;
@@ -1143,13 +1147,15 @@ end getFunctionMapper;
 
 public function getFunctionMapper1"
 Author: Frenkel TUD"
-  input list<DAE.FunctionDefinition> funcDefs;
+  input list<DAE.FunctionDefinition> inFuncDefs;
   output DAE.FunctionDefinition mapper;
 algorithm
-  mapper := matchcontinue(funcDefs)
-  local 
-    DAE.FunctionDefinition m;
-    Absyn.Path p1;
+  mapper := matchcontinue(inFuncDefs)
+    local 
+      DAE.FunctionDefinition m;
+      Absyn.Path p1;
+      list<DAE.FunctionDefinition> funcDefs;
+    
     case((m as DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1))::funcDefs) then m;
     case(_::funcDefs)
     equation

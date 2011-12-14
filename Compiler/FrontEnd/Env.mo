@@ -310,11 +310,11 @@ algorithm
 end inForIterLoopScope;
 
 public function stripForLoopScope "strips for loop scopes"
-  input Env env;
+  input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(env)
-    local String name;
+  outEnv := matchcontinue(inEnv)
+    local String name; Env env;
     case(FRAME(optName = SOME(name))::env) 
       equation
         true = stringEq(name, forScopeName);
@@ -1391,6 +1391,14 @@ algorithm
   outCache := matchcontinue(inCache,id,env)
     local
       Absyn.Path path;
+    
+    // +d=noCache
+    case (inCache,id,env)
+      equation
+        true = Flags.isSet(Flags.NO_CACHE);
+      then 
+        inCache;
+    
     case (inCache as CACHE(envCache=NONE()),id,env) then inCache;
 
     case (inCache,id,env)
@@ -1479,20 +1487,20 @@ algorithm
 end cacheGetEnv2;
 
 protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in tree for env."
-  input Absyn.Path path;
-  input list<CacheTree> children;
+  input Absyn.Path inPath;
+  input list<CacheTree> inChildren;
   output Env env;
 algorithm
-  env := match (path,children)
+  env := match (inPath,inChildren)
     local
       Ident id1, id2;
-      Absyn.Path path1,path2;
-      list<CacheTree> children1,children2;
+      Absyn.Path path1,path2,path;
+      list<CacheTree> children1,children2,children;
       Boolean b;
     
     // found matching simple name
     case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::children)
-      then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, path, children, env);
+      then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, inPath, children, env);
     
     // found matching qualified name
     case (path2 as Absyn.QUALIFIED(id1,path1),CACHETREE(id2,_,children1)::children2)
@@ -1554,17 +1562,18 @@ algorithm
 end cacheAddEnv;
 
 protected function cacheAddEnv2
-  input Absyn.Path path;
+  input Absyn.Path inPath;
   input list<CacheTree> inChildren;
   input Env env;
   output list<CacheTree> outChildren;
 algorithm
-  outChildren := matchcontinue(path,inChildren,env)
+  outChildren := matchcontinue(inPath,inChildren,env)
     local
       Ident id1,id2;
       list<CacheTree> children,children2;
       CacheTree child;
       Env env2;
+      Absyn.Path path;
 
     // qualified name, found matching
     case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,env)
@@ -1965,11 +1974,11 @@ algorithm
 end nodeValue;
 
 protected function balance "Balances a AvlTree"
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match (bt)
-  local Integer d;
+  outBt := match (inBt)
+    local Integer d; AvlTree bt;
     case (bt)
       equation
         d = differenceInHeight(bt);
@@ -1980,10 +1989,11 @@ end balance;
 
 protected function doBalance "perform balance if difference is > 1 or < -1"
   input Integer difference;
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match (difference,bt)
+  outBt := match (difference,inBt) 
+    local AvlTree bt;
     case(-1,bt) then computeHeight(bt);
     case(0,bt) then computeHeight(bt);
     case(1,bt) then computeHeight(bt);
@@ -1997,10 +2007,11 @@ end doBalance;
 
 protected function doBalance2 "help function to doBalance"
   input Boolean differenceIsNegative;
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match (differenceIsNegative,bt)
+  outBt := match (differenceIsNegative,inBt)
+    local AvlTree bt;
     case (true,bt)
       equation
         bt = doBalance3(bt);
@@ -2015,36 +2026,36 @@ algorithm
 end doBalance2;
 
 protected function doBalance3 "help function to doBalance2"
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := matchcontinue(inBt)
     local
-      AvlTree rr;
+      AvlTree rr,bt;
     case(bt)
       equation
         true = differenceInHeight(getOption(rightNode(bt))) > 0;
         rr = rotateRight(getOption(rightNode(bt)));
         bt = setRight(bt,SOME(rr));
       then bt;
-    else bt;
+    else inBt;
   end matchcontinue;
 end doBalance3;
 
 protected function doBalance4 "help function to doBalance2"
-  input AvlTree bt;
+  input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(bt)
+  outBt := matchcontinue(inBt)
     local
-      AvlTree rl;
+      AvlTree rl,bt;
     case (bt)
       equation
         true = differenceInHeight(getOption(leftNode(bt))) < 0;
         rl = rotateLeft(getOption(leftNode(bt)));
         bt = setLeft(bt,SOME(rl));
       then bt;
-    else bt;
+    else inBt;
   end matchcontinue;
 end doBalance4;
 
@@ -2074,7 +2085,6 @@ algorithm
   end match;
 end setLeft;
 
-
 protected function leftNode "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
@@ -2094,13 +2104,13 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-  input AvlTree node;
-  input AvlTree parent;
+  input AvlTree inNode;
+  input AvlTree inParent;
   output AvlTree outParent "updated parent";
 algorithm
-  outParent := match(node,parent)
+  outParent := match(inNode,inParent)
     local
-      AvlTree bt;
+      AvlTree bt,node,parent;
 
     case(node,parent) equation
       parent = setRight(parent,leftNode(node));
@@ -2112,12 +2122,12 @@ algorithm
 end exchangeLeft;
 
 protected function exchangeRight "help function to balance"
-input AvlTree node;
-input AvlTree parent;
-output AvlTree outParent "updated parent";
+  input AvlTree inNode;
+  input AvlTree inParent;
+  output AvlTree outParent "updated parent";
 algorithm
-  outParent := match(node,parent)
-  local AvlTree bt;
+  outParent := match(inNode,inParent)
+  local AvlTree bt,node,parent;
     case(node,parent) equation
       parent = setLeft(parent,rightNode(node));
       parent = balance(parent);

@@ -225,12 +225,14 @@ end checkIfModsAreBasicTypeMods;
 protected function checkIfSubmodsAreBasicTypeMods "
   Verifies that a list of submods only have named modifications that could be
   used for basic types."
-  input list<SCode.SubMod> subs;
+  input list<SCode.SubMod> inSubs;
 algorithm
-  _ := match subs
+  _ := match inSubs
     local
       SCode.Mod mod;
       String ident;
+      list<SCode.SubMod> subs;
+      
     case {} then ();
     case SCode.NAMEMOD(ident = ident)::subs
       equation
@@ -251,12 +253,12 @@ protected function elabModRedeclareElements
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Final finalPrefix;
-  input list<SCode.Element> elts;
+  input list<SCode.Element> inElts;
   input Boolean impl;
   input Absyn.Info info;
   output list<tuple<SCode.Element, DAE.Mod>> modElts "the elaborated modifiers";
 algorithm
-  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
+  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,inElts,impl,info)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre;
       SCode.Final f,fi;
@@ -281,6 +283,7 @@ algorithm
       list<SCode.Enum> enumLst;
       Option<SCode.Comment> comment;
       SCode.Element element;
+      list<SCode.Element> elts;
 
     /* the empty case */
     case(cache,env,_,pre,f,{},_,_) then ({});
@@ -1275,19 +1278,23 @@ algorithm
 end lookupComplexCompModification;
 
 protected function lookupComplexCompModification2 "Help function to lookupComplexCompModification"
-  input list<Values.Value> values;
-  input list<Ident> names;
-  input list<DAE.Var> vars;
+  input list<Values.Value> inValues;
+  input list<Ident> inNames;
+  input list<DAE.Var> inVars;
   input String name;
   input SCode.Final finalPrefix;
   input SCode.Each each_;
   output DAE.Mod mod;
 algorithm
-  mod := matchcontinue(values,names,vars,name,finalPrefix,each_)
+  mod := matchcontinue(inValues,inNames,inVars,name,finalPrefix,each_)
     local 
       DAE.Type tp;
-      Values.Value v; String name1,name2;
+      Values.Value v; 
+      String name1,name2;
       DAE.Exp e;
+      list<Values.Value> values;
+      list<Ident> names;
+      list<DAE.Var> vars;
       
     case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,name,finalPrefix,each_) 
       equation
@@ -2270,15 +2277,17 @@ algorithm
 end modEqual;
 
 protected function subModsEqual "Returns true if two submod lists are equal."
-  input list<DAE.SubMod> subModLst1;
-  input list<DAE.SubMod> subModLst2;
+  input list<DAE.SubMod> inSubModLst1;
+  input list<DAE.SubMod> inSubModLst2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(subModLst1,subModLst2)
+  equal := matchcontinue(inSubModLst1,inSubModLst2)
     local
       DAE.Ident id1,id2;
       DAE.Mod mod1,mod2;
       list<Integer> indx1,indx2;
+      list<DAE.SubMod> subModLst1, subModLst2;
+      
     
     case ({},_) then true;
     
@@ -2507,25 +2516,27 @@ algorithm str := matchcontinue(inSubs,depth)
     DAE.SubMod s;
     DAE.Mod m;
     list<Integer> li;
+    list<DAE.SubMod> subs;
+    
   case({},_) then "";
-  case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::inSubs,depth)
+  case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::subs,depth)
     equation
-      //s1 = prettyPrintSubs(inSubs);
+      //s1 = prettyPrintSubs(subs);
       //s2  = prettyPrintMod(m,depth+1);
       //s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
       s2 = " redeclare(" +& id +&  "), class or component " +& id;
     then
       s2;
-  case((s as DAE.NAMEMOD(id,m))::inSubs,depth)
+  case((s as DAE.NAMEMOD(id,m))::subs,depth)
     equation
       s2  = prettyPrintMod(m,depth+1);
       s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
       s2 = "(" +& id +& s2 +& "), class or component " +& id;
     then
       s2;
-  case((s as DAE.IDXMOD(li,m))::inSubs,depth)
+  case((s as DAE.IDXMOD(li,m))::subs,depth)
     equation
-      //s1 = prettyPrintSubs(inSubs);
+      //s1 = prettyPrintSubs(subs);
       s2  = prettyPrintMod(m,depth+1);
       s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
     then
@@ -3397,13 +3408,14 @@ end removeFirstSubsRedecl;
 protected function removeRedecl "
 Author BZ
 helper function for removeFirstSubsRedecl"
-  input list<SubMod> subs;
+  input list<SubMod> isubs;
   output list<SubMod> osubs;
 algorithm 
-  osubs := matchcontinue(subs)
+  osubs := matchcontinue(isubs)
     local
       SubMod sm;
       String s;
+      list<SubMod> subs;
   
     case({}) then {};
     case(DAE.NAMEMOD(s,DAE.REDECL(_,_,_))::subs) then removeRedecl(subs);
@@ -3482,20 +3494,21 @@ algorithm
       SCode.Element comp;
       DAE.Mod mod;
       String s1;
+      list<tuple<SCode.Element, DAE.Mod>> lst;
     
     case({},_) then {};
     
-    case((comp,mod)::inLst,currComp)
+    case((comp,mod)::lst,currComp)
       equation
-        outLst = removeRedeclareMods(inLst,currComp);
+        outLst = removeRedeclareMods(lst,currComp);
         s1 = SCode.elementName(comp);
         true = stringEq(s1,currComp);
       then
         outLst;
     
-    case((comp,mod)::inLst,currComp)
+    case((comp,mod)::lst,currComp)
       equation
-        outLst = removeRedeclareMods(inLst,currComp);
+        outLst = removeRedeclareMods(lst,currComp);
       then
         (comp,mod)::outLst;
   
@@ -3510,27 +3523,27 @@ protected function removeModInSubs "
 Author BZ, 2009-05
 Helper function for removeMod, removes modifiers in submods;
 "
-  input list<SubMod> insubs;
+  input list<SubMod> inSubs;
   input String componentName;
   output list<SubMod> outsubs;
-algorithm outsubs := match(insubs,componentName)
+algorithm outsubs := match(inSubs,componentName)
   local
     DAE.Mod m1;
-    list<SubMod> subs1,subs2;
+    list<SubMod> subs1,subs2,subs;
     String s1;
     SubMod sub;
   case({},_) then {};
-  case((sub as DAE.NAMEMOD(s1,m1))::insubs,componentName)
+  case((sub as DAE.NAMEMOD(s1,m1))::subs,componentName)
     equation
       subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
-      subs2 = removeModInSubs(insubs,componentName) "check for multiple mod on same comp";
+      subs2 = removeModInSubs(subs,componentName) "check for multiple mod on same comp";
       outsubs = listAppend(subs1,subs2);
     then
       outsubs;
-  case((sub as DAE.IDXMOD(_,m1))::insubs,componentName)
+  case((sub as DAE.IDXMOD(_,m1))::subs,componentName)
     equation
       //TODO: implement check for idxmod?
-      subs2 = removeModInSubs(insubs,componentName);
+      subs2 = removeModInSubs(subs,componentName);
     then
       sub::subs2;
 end match;

@@ -80,7 +80,7 @@ public function lower
   inputs:  daeList: DAE.DAElist, simplify: bool)
   outputs: BackendDAE.BackendDAE"
   input DAE.DAElist lst;
-  input DAE.FunctionTree functionTree;
+  input DAE.FunctionTree inFunctionTree;
   input Boolean addDummyDerivativeIfNeeded;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -98,9 +98,10 @@ protected
   Boolean daeContainsNoStates, shouldAddDummyDerivative;
   BackendDAE.EventInfo einfo;
   list<DAE.Element> elems;
-  list<BackendDAE.ZeroCrossing> zero_crossings;  
+  list<BackendDAE.ZeroCrossing> zero_crossings;
+  DAE.FunctionTree functionTree;
 algorithm
-  (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,functionTree);
+  (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,inFunctionTree);
   s := states(elems, BackendDAE.emptyBintree);
   vars := BackendDAEUtil.emptyVars();
   knvars := BackendDAEUtil.emptyVars();
@@ -1990,15 +1991,16 @@ end lowerStatementInputsOutputs;
 protected function lowerElseAlgorithmInputsOutputs
 "Helper function to lowerStatementInputsOutputs"
   input BackendDAE.Variables vars;
-  input Algorithm.Else elseBranch;
+  input Algorithm.Else inElseBranch;
   output list<DAE.Exp> inputs;
   output list<DAE.Exp> outputs;
 algorithm
-  (inputs,outputs) := match (vars,elseBranch)
+  (inputs,outputs) := match (vars,inElseBranch)
     local
       list<Algorithm.Statement> stmts;
       list<DAE.Exp> inputs1,inputs2,inputs3,outputs1,outputs2;
       DAE.Exp e;
+      Algorithm.Else elseBranch;
 
     case(vars,DAE.NOELSE()) then ({},{});
 
@@ -2080,14 +2082,15 @@ end traversingstatesExpFinder;
 protected function processDelayExpressions
 "Assign each call to delay() with a unique id argument"
   input DAE.DAElist inDAE;
-  input DAE.FunctionTree functionTree;
+  input DAE.FunctionTree inFunctionTree;
   output DAE.DAElist outDAE;
   output DAE.FunctionTree outTree;
 algorithm
-  (outDAE,outTree) := match(inDAE,functionTree)
+  (outDAE,outTree) := match(inDAE,inFunctionTree)
     local
       DAE.DAElist dae;
       HashTableExpToIndex.HashTable ht;
+      DAE.FunctionTree functionTree;
     case (dae,functionTree)
       equation
         ht = HashTableExpToIndex.emptyHashTableSized(100);
@@ -2480,14 +2483,15 @@ protected function extractAlgebraicAndDifferentialEqn
   Splits the equation list into two lists. One that only contain differential
   equations and one that only contain algebraic equations."
   input list<BackendDAE.Equation> inEquationLst;
-  input list<BackendDAE.Equation> accAlg;
-  input list<BackendDAE.Equation> accResDiff;
-  input list<BackendDAE.Equation> accArr;
+  input list<BackendDAE.Equation> inAccAlg;
+  input list<BackendDAE.Equation> inAccResDiff;
+  input list<BackendDAE.Equation> inAccArr;
   output list<BackendDAE.Equation> outEquationLst1;
   output list<BackendDAE.Equation> outEquationLst2;
   output list<BackendDAE.Equation> outEquationLst3;
 algorithm
-  (outEquationLst1,outEquationLst2,outEquationLst3):= match (inEquationLst,accAlg,accResDiff,accArr)
+  (outEquationLst1,outEquationLst2,outEquationLst3):= 
+  match (inEquationLst,inAccAlg,inAccResDiff,inAccArr)
     local
       list<BackendDAE.Equation> resAlgEqn,resDiffEqn,rest,resArrayEqns;
       BackendDAE.Equation eqn,alg;
@@ -2495,6 +2499,9 @@ algorithm
       BackendDAE.Value indx;
       list<DAE.Exp> expl;
       Boolean isalg;
+      list<BackendDAE.Equation> accAlg,accResDiff,accArr;
+
+
     case ({},accAlg,accResDiff,accArr) then (listReverse(accAlg),listReverse(accResDiff),listReverse(accArr));
       /* algebraic equations differential equations */
     case (((eqn as BackendDAE.EQUATION(exp = exp1,scalar = exp2)) :: rest),accAlg,accResDiff,accArr) /* scalar equation */
@@ -2688,15 +2695,17 @@ end expandDerExp;
 
 protected function updateStatesVars
 "Help function to expandDerExp"
-  input BackendDAE.Variables vars;
-  input list<DAE.ComponentRef> newStates;
+  input BackendDAE.Variables inVars;
+  input list<DAE.ComponentRef> inNewStates;
   output BackendDAE.Variables outVars;
 algorithm
-  outVars := matchcontinue(vars,newStates)
+  outVars := matchcontinue(inVars,inNewStates)
     local
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       String str;
+      list<DAE.ComponentRef> newStates;
+      BackendDAE.Variables vars;
 
     case(vars,{}) then vars;
     case(vars,cr::newStates)
@@ -2827,10 +2836,8 @@ algorithm
 end differentZeroCrossing;
 
 public function findZeroCrossings "function: findZeroCrossings
-
   This function finds all zerocrossings in the list of equations and
-  the list of when clauses.
-"
+  the list of when clauses."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -2841,10 +2848,8 @@ algorithm
 end findZeroCrossings;
 
 protected function findZeroCrossings1 "function: findZeroCrossings
-
   This function finds all zerocrossings in the list of equations and
-  the list of when clauses.
-"
+  the list of when clauses."
     input BackendDAE.EqSystem syst;
     input BackendDAE.Shared shared;
     output BackendDAE.EqSystem osyst;
@@ -3186,7 +3191,7 @@ protected function traverseStmtsExps "function: traverseStmtExps
   modified: 2011-01 by wbraun"
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> iextraArg;
   input BackendDAE.Variables knvars;
   output tuple<list<DAE.Statement>, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplStmtTypeA;
   partial function FuncExpType 
@@ -3194,7 +3199,7 @@ protected function traverseStmtsExps "function: traverseStmtExps
     output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg;
   end FuncExpType;
 algorithm
-  (outTplStmtTypeA) := match(inStmts,func,extraArg,knvars)
+  (outTplStmtTypeA) := match(inStmts,func,iextraArg,knvars)
     local
       DAE.Exp e_1,e_2,e,e2,iteratorExp;
       Integer le;
@@ -3212,6 +3217,7 @@ algorithm
       Absyn.MatchType matchType;
       DAE.Pattern pattern;
       BackendDAE.Variables vars;
+      tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
       
     case ({},_,extraArg,knvars) then (({},extraArg));
       
@@ -3356,7 +3362,7 @@ to find ZeroCrosssings in algorithm Else statements
 modified: 2011-01 by wbraun"
   input Algorithm.Else inElse;
   input FuncExpType func;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> iextraArg;
   input BackendDAE.Variables knvars;
   output tuple<Algorithm.Else, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplStmtTypeA;
   partial function FuncExpType 
@@ -3364,11 +3370,13 @@ modified: 2011-01 by wbraun"
     output tuple<DAE.Exp,Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg;
   end FuncExpType;
 algorithm
-  outTplStmtTypeA := matchcontinue(inElse,func,extraArg,knvars)
+  outTplStmtTypeA := matchcontinue(inElse,func,iextraArg,knvars)
     local
       DAE.Exp e,e_1;
       list<DAE.Statement> st,st_1;
       Algorithm.Else el,el_1;
+      tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
+      
     case(DAE.NOELSE(),_,extraArg,knvars) then ((DAE.NOELSE(),extraArg));
     case(DAE.ELSEIF(e,st,el),func,extraArg,knvars)
       equation
@@ -3385,10 +3393,8 @@ end traverseStmtsElseExps;
 
 
 protected function collectZCAlgsFor "function: collectZeroCrossings
-
   Collects zero crossings in for loops  
-  added: 2011-01 by wbraun 
-"
+  added: 2011-01 by wbraun"
   input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplExpExpTplExpExpLstVariables;
 algorithm
@@ -3508,14 +3514,14 @@ protected function traverseStmtsForExps
   input list<DAE.Statement> inStmts;
   input BackendDAE.Variables knvars;
   input FuncExpType func;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> iextraArg;
   output tuple<list<DAE.Statement>, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> outTplStmtTypeA;
   partial function FuncExpType 
     input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> arg;
     output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> oarg;
   end FuncExpType;
 algorithm
-  outTplStmtTypeA := matchcontinue (inIteratorExp,inExplst,inRange,inStmts,knvars,func,extraArg)
+  outTplStmtTypeA := matchcontinue (inIteratorExp,inExplst,inRange,inStmts,knvars,func,iextraArg)
     local
       list<DAE.Statement> statementLst,statementLst1,statementLst2,statementLst3,statementLst4;
       DAE.Exp e,ie,range;
@@ -3526,6 +3532,8 @@ algorithm
       list<BackendDAE.ZeroCrossing> zcl,zcs;
       Integer idx,alg_idx;
       String s1;
+      tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>> extraArg;
+      
     case (_,{},_,statementLst,knvars,_,extraArg) then ((statementLst,extraArg));
     case (ie,inExplst,range,statementLst,knvars,func,(_,_,_,(zcs,idx),(alg_idx,v,kn,eqn)))
       equation

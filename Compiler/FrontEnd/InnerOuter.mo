@@ -138,7 +138,7 @@ public function handleInnerOuterEquations
  in this equation to unique vars, while we want to keep
  them with this prefix for the inner part of the innerouter."
   input Absyn.InnerOuter io;
-  input DAE.DAElist dae;
+  input DAE.DAElist inDae;
   input InstHierarchy inIH;
   input ConnectionGraph.ConnectionGraph inGraphNew;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -146,9 +146,9 @@ public function handleInnerOuterEquations
   output InstHierarchy outIH;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (odae,outIH,outGraph) := matchcontinue(io,dae,inIH,inGraphNew,inGraph)
+  (odae,outIH,outGraph) := matchcontinue(io,inDae,inIH,inGraphNew,inGraph)
     local
-      DAE.DAElist dae1,dae2;
+      DAE.DAElist dae1,dae2,dae;
       ConnectionGraph.ConnectionGraph graphNew,graph;
       InstHierarchy ih;
     // is an outer, remove equations
@@ -782,23 +782,24 @@ protected function addOuterConnectIfEmpty
  inner component. In that is case the outer
  connection (from inside sub-components) forms
  a connection set of their own."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Connect.Sets inSets;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
-  input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter iio1;
   input Connect.Face f1;
   input DAE.ComponentRef cr2;
-  input Absyn.InnerOuter io2;
+  input Absyn.InnerOuter iio2;
   input Connect.Face f2;
   input Absyn.Info info;
   output Connect.Sets outSets;
 algorithm
-  outSets := match(cache,env,inIH,pre,inSets,added,cr1,io1,f1,cr2,io2,f2,info)
-     local SCode.Variability vt1,vt2;
+  outSets := match(inCache,inEnv,inIH,pre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info)
+     local 
+       SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
        SCode.Flow flowPrefix;
        SCode.Stream streamPrefix;
@@ -809,6 +810,9 @@ algorithm
        list<Connect.SetConnection> cl;
        list<DAE.ComponentRef> cc;
        list<Connect.OuterConnect> oc;
+       Env.Cache cache;
+       Env.Env env;
+       Absyn.InnerOuter io1,io2;      
 
     // if it was added, return the same
     case(cache,env,ih,pre,_,true,_,_,_,_,_,_,_)
@@ -848,22 +852,22 @@ protected function addOuterConnectIfEmptyNoEnv
  2008-12: This is an extension of addOuterConnectIfEmpty,
           with the difference that we only need to find
           one variable in the enviroment."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input Prefix.Prefix inPre;
   input Connect.Sets inSets;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
-  input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter iio1;
   input Connect.Face f1;
   input DAE.ComponentRef cr2;
-  input Absyn.InnerOuter io2;
+  input Absyn.InnerOuter iio2;
   input Connect.Face f2;
   input Absyn.Info info;
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue(cache,env,inIH,pre,inSets,added,cr1,io1,f1,cr2,io2,f2,info)
+  outSets := matchcontinue(inCache,inEnv,inIH,inPre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info)
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
@@ -876,6 +880,10 @@ algorithm
        list<Connect.SetConnection> cl;
        list<DAE.ComponentRef> cc;
        list<Connect.OuterConnect> oc;
+       Env.Cache cache;
+       Env.Env env;
+       Absyn.InnerOuter io1,io2;
+       Prefix.Prefix pre;      
 
     // if it was added, return the same
     case(cache,env,ih,pre,_,true,_,_,_,_,_,_,_) then inSets;

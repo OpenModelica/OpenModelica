@@ -3946,7 +3946,7 @@ algorithm
       ElementInType e1;
       list<ElementInType> rest_e1;
       ElementOutType res;
-      list<ElementOutType> rest_res;
+      list<ElementOutType> rest_res, acc;
       FoldType arg;
 
     case ({}, _, _, _) then (listReverse(inAccumList), inArg);
@@ -3954,8 +3954,8 @@ algorithm
     case (e1 :: rest_e1, _, _, _)
       equation
         (res, arg) = inFunc(e1, inArg);
-        inAccumList = res :: inAccumList;
-        (rest_res, arg) = mapFold_tail(rest_e1, inFunc, arg, inAccumList);
+        acc = res :: inAccumList;
+        (rest_res, arg) = mapFold_tail(rest_e1, inFunc, arg, acc);
       then
         (rest_res, arg);
 
@@ -4007,15 +4007,17 @@ algorithm
       ElementInType e1;
       list<ElementInType> rest_e1;
       ElementOutType res;
-      list<ElementOutType> rest_res;
+      list<ElementOutType> rest_res, acc;
+      FoldType arg;
+      
     case ({}, _, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _, _)
       equation
-        (res, inArg) = inFunc(e1, inConstArg, inArg);
-        inAccumList = res :: inAccumList;
-        (rest_res, inArg) = map1Fold_tail(rest_e1, inFunc, inConstArg, inArg, inAccumList);
+        (res, arg) = inFunc(e1, inConstArg, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map1Fold_tail(rest_e1, inFunc, inConstArg, arg, acc);
       then
-        (rest_res, inArg);
+        (rest_res, arg);
   end match;
 end map1Fold_tail;
 
@@ -4057,7 +4059,7 @@ algorithm
       ElementInType e1;
       list<ElementInType> rest_e1;
       ElementOutType res;
-      list<ElementOutType> rest_res;
+      list<ElementOutType> rest_res, acc;
       FoldType arg;
 
     case ({}, _, _, _) then (listReverse(inAccumList), inArg);
@@ -4065,9 +4067,9 @@ algorithm
     case (e1 :: rest_e1, _, _, _)
       equation
         ((res, arg)) = inFunc((e1, inArg));
-        inAccumList = res :: inAccumList;
+        acc = res :: inAccumList;
         (rest_res, arg) = 
-          mapFoldTuple_tail(rest_e1, inFunc, arg, inAccumList);
+          mapFoldTuple_tail(rest_e1, inFunc, arg, acc);
       then
         (rest_res, arg);
 
@@ -5030,7 +5032,7 @@ algorithm
       list<ElementType1> rest_e1;
       list<ElementType2> rest_e2;
       ElementOutType res;
-      list<ElementOutType> rest_res;
+      list<ElementOutType> rest_res, acc;
       FoldType arg;
 
     case ({}, {}, _, _, _) then (listReverse(inAccumList), inArg);
@@ -5038,8 +5040,8 @@ algorithm
     case (e1 :: rest_e1, e2 :: rest_e2, _, _, _)
       equation
         (res, arg) = inFunc(e1, e2, inArg);
-        inAccumList = res :: inAccumList;
-        (rest_res, arg) = threadMapFold_tail(rest_e1, rest_e2, inFunc, arg, inAccumList);
+        acc = res :: inAccumList;
+        (rest_res, arg) = threadMapFold_tail(rest_e1, rest_e2, inFunc, arg, acc);
       then
         (rest_res, arg);
 

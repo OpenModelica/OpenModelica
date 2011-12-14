@@ -646,7 +646,7 @@ fmiStatus fmiTerminate(fmiComponent c){
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiTerminate");
 
-  deinitDelay(comp->fmuData);
+  /* deinitDelay(comp->fmuData); */
   callExternalObjectDestructors(comp->fmuData);
   DeinitializeXDataStruc(comp->fmuData);
   free(comp->fmuData);

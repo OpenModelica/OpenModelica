@@ -1004,17 +1004,15 @@ algorithm
 end getFlipAnn;
 
 protected function getRotationAnn"function: getRotationAnn
-
-  Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the rotation
-  annotation.
-"
-
+  Helper function to getIconTransformation and getDiagramTransformation. 
+  This function calculates and returns the rotation annotation."
   input Real rot;
   output Absyn.ElementArg rotation;
-
+protected
+  Real r;
 algorithm
-  rot := rot *. (-1.0);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(rot),Absyn.dummyInfo))),NONE());
+  r := rot *. (-1.0);
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(r),Absyn.dummyInfo))),NONE());
 end getRotationAnn;
 
 
@@ -2014,14 +2012,13 @@ end isLineGraphic;
 protected function cleanStyleAttrs2 "function: cleanStyleAttrs
 
   Helperfunction to the transform functions. The old style attribute and it's
-  contents needs to be adjusted according to priorities before beeing transformed.
-"
+  contents needs to be adjusted according to priorities before beeing transformed."
   input list<Absyn.ElementArg> inArgs;
-  input list<Absyn.ElementArg > resultList;
+  input list<Absyn.ElementArg> inResultList;
   input Context inCon;
   output list<Absyn.ElementArg> outArgs;
 algorithm
-  outArgs := matchcontinue (inArgs,resultList,inCon)
+  outArgs := matchcontinue (inArgs,inResultList,inCon)
     local
       list<Absyn.ElementArg> args,outList,rest;
       Absyn.ElementArg arg;
@@ -2031,6 +2028,7 @@ algorithm
       Option<Absyn.Modification> m;
       Option<String> com;
       list<Absyn.Subscript> s;
+      list<Absyn.ElementArg> resultList;
 
     case({},resultList,_) then resultList;
 

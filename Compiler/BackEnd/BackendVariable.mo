@@ -1955,16 +1955,17 @@ author: Frenkel TUD
   input list<Type_a> inTypeALst;
   input Integer inType;
   input Integer inPlace;
-  input list< tuple<Type_a,Integer,Integer> > acc;
+  input list< tuple<Type_a,Integer,Integer> > inAcc;
   output list< tuple<Type_a,Integer,Integer> > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outlist := match (inTypeALst,inType,inPlace,acc)
+  outlist := match (inTypeALst,inType,inPlace,inAcc)
     local
       list<Type_a> rest;
       Type_a item;
       Integer value,place;
-      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst;
+      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst,acc;
+      
     case ({},value,place,acc) then acc;
     case (item::rest,value,place,acc)
       equation
@@ -1983,16 +1984,16 @@ author: Frenkel TUD
   of the list in a list of tuples (element,type,place)"
   input list<list<Type_a>> inTypeALst;
   input Integer inType;
-  input list< tuple<Type_a,Integer,Integer> > acc;
+  input list< tuple<Type_a,Integer,Integer> > inAcc;
   output list< tuple<Type_a,Integer,Integer> > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outlist := match (inTypeALst,inType,acc)
+  outlist := match (inTypeALst,inType,inAcc)
     local
       list<list<Type_a>> rest;
       list<Type_a> item;
       Integer value,place;
-      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst;
+      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst,acc;
     case ({},value,acc) then acc;
     case (item::rest,value,acc)
       equation
@@ -2474,7 +2475,7 @@ protected function calculateIndexes2
   input Integer inInteger10; //y_str
   input Integer inInteger11; //p_str
   input Integer inInteger12; //dummy_str
-  input list<tuple<BackendDAE.Var,Integer,Integer> > acc;
+  input list<tuple<BackendDAE.Var,Integer,Integer> > inAcc;
 
   output list<tuple<BackendDAE.Var,Integer,Integer> > outVarLst1;
   output Integer outInteger2;
@@ -2491,11 +2492,11 @@ protected function calculateIndexes2
   output Integer outInteger12; //dummy_str
 algorithm
   (outVarLst1,outInteger2,outInteger3,outInteger4,outInteger5,outInteger6,outInteger7,outInteger8,outInteger9,outInteger10,outInteger11,outInteger12):=
-  match (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7,inInteger8,inInteger9,inInteger10,inInteger11,inInteger12,acc)
+  match (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7,inInteger8,inInteger9,inInteger10,inInteger11,inInteger12,inAcc)
     local
       BackendDAE.Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext1,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
       BackendDAE.Value x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1;
-      list< tuple<BackendDAE.Var,Integer,Integer> > vars_1,vs;
+      list< tuple<BackendDAE.Var,Integer,Integer> > vars_1,vs,acc;
       DAE.ComponentRef cr;
       DAE.VarDirection d;
       BackendDAE.Type tp;
@@ -3457,13 +3458,13 @@ end getVar2;
 protected function getVar3
 "Helper function to getVar"
   input DAE.ComponentRef cr;
-  input list<BackendDAE.CrefIndex> vs;
+  input list<BackendDAE.CrefIndex> ivs;
   input Boolean firstMatches;
   output Integer outInteger;
 algorithm
-  outInteger := match (cr,vs,firstMatches)
+  outInteger := match (cr,ivs,firstMatches)
     local
-      BackendDAE.Value v;
+      BackendDAE.Value v; list<BackendDAE.CrefIndex> vs;
     case (cr,BackendDAE.CREFINDEX(index = v)::_,true) then v;
     case (cr,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
   end match;
@@ -3883,10 +3884,10 @@ end traversingisStateVarFinder;
 
 public function mergeVariableOperations
   input BackendDAE.Var var;
-  input list<DAE.SymbolicOperation> ops;
+  input list<DAE.SymbolicOperation> iops;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := match (var,ops)
+  outVar := match (var,iops)
     local
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
@@ -3903,6 +3904,7 @@ algorithm
       DAE.Flow t;
       DAE.Stream streamPrefix;
       Boolean fixed;
+      list<DAE.SymbolicOperation> ops;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -3916,9 +3918,9 @@ algorithm
               values = oattr,
               comment = s,
               flowPrefix = t,
-              streamPrefix = streamPrefix),ops)
+              streamPrefix = streamPrefix),iops)
       equation
-        ops = listReverse(ops);
+        ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
       then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
   end match;

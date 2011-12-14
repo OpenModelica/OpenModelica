@@ -1091,19 +1091,19 @@ public function setTimeStampBool ""
   input Boolean which "true for edit time, false for build time";
   output TimeStamp ots;
 algorithm ots := match(its,which)
-  local Real timer;
+  local Real timer; TimeStamp ts; 
   case(its,true)
     equation
       timer = System.getCurrentTime();
-      its = setTimeStampEdit(its,timer);
+      ts = setTimeStampEdit(its,timer);
     then
-      its;
+      ts;
   case(its,false)
     equation
       timer = System.getCurrentTime();
-      its = setTimeStampBuild(its,timer);
+      ts = setTimeStampBuild(its,timer);
     then
-      its;
+      ts;
 end match;
 end setTimeStampBool;
 
@@ -1635,7 +1635,7 @@ public function traverseExpElseIfBranch
   Help function for traverseExp"
   input list<tuple<Exp,Exp>> inLst;
   input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
+  input Type_a iext_arg;
   output tuple<list<tuple<Exp,Exp>>, Type_a> outTplExpTypeA;
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
@@ -1644,12 +1644,12 @@ public function traverseExpElseIfBranch
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= match(inLst,rel,ext_arg)
-   local Exp e1,e2,e11,e21;
+  outTplExpTypeA:= match(inLst,rel,iext_arg)
+   local Exp e1,e2,e11,e21; Type_a ext_arg;
      list<tuple<Exp,Exp>> lst;
     case({},rel,ext_arg) then (({},ext_arg));
-    case((e1,e2)::inLst,rel,ext_arg) equation
-      ((lst,ext_arg)) = traverseExpElseIfBranch(inLst,rel,ext_arg);
+    case((e1,e2)::lst,rel,ext_arg) equation
+      ((lst,ext_arg)) = traverseExpElseIfBranch(lst,rel,iext_arg);
       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
       ((e21,ext_arg)) = traverseExp(e2, rel, ext_arg);
     then (((e11,e21)::lst,ext_arg));
@@ -1661,7 +1661,7 @@ public function traverseExpFunctionArgs
   Help function for traverseExp"
   input FunctionArgs inArgs;
   input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
+  input Type_a iext_arg;
   output tuple<FunctionArgs, Type_a> outTplExpTypeA;
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
@@ -1670,11 +1670,12 @@ public function traverseExpFunctionArgs
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= match(inArgs,rel,ext_arg)
+  outTplExpTypeA:= match(inArgs,rel,iext_arg)
     local Exp e1,forExp;
       list<NamedArg> nargs;
       list<Exp> expl,expl_1;
       ForIterators iterators;
+      Type_a ext_arg;
     case(FUNCTIONARGS(expl,nargs),rel,ext_arg)
       equation
         ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
@@ -1690,9 +1691,9 @@ algorithm
 end traverseExpFunctionArgs;
 
 protected function traverseExpNamedArgs "Help function to traverseExpFunctionArgs"
-  input list<NamedArg> nargs;
+  input list<NamedArg> inargs;
   input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
+  input Type_a iext_arg;
   output tuple<list<NamedArg>, Type_a> outTplExpTypeA;
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
@@ -1701,10 +1702,12 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= match(nargs,rel,ext_arg)
+  outTplExpTypeA:= match(inargs,rel,iext_arg)
     local
       Exp e1,e11;
       Ident id;
+      Type_a ext_arg;
+      list<NamedArg> nargs;
     case({},rel,ext_arg) then (({},ext_arg));
     case(NAMEDARG(id,e1)::nargs,rel,ext_arg)
       equation
@@ -1715,9 +1718,9 @@ algorithm
 end traverseExpNamedArgs;
 
 protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
-  input list<Exp> pargs;
+  input list<Exp> ipargs;
   input FuncTypeTplExpType_aToTplExpType_a rel;
-  input Type_a ext_arg;
+  input Type_a iext_arg;
   output tuple<list<Exp>, Type_a> outTplExpTypeA;
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
@@ -1726,9 +1729,11 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTplExpTypeA:= match(pargs,rel,ext_arg)
+  outTplExpTypeA:= match(ipargs,rel,iext_arg)
     local
       Exp e1,e11;
+      list<Exp> pargs;
+      Type_a ext_arg;
     case({},rel,ext_arg) then (({},ext_arg));
     case(e1::pargs,rel,ext_arg)
       equation
@@ -2923,16 +2928,16 @@ algorithm
 end pathReplaceFirstIdent;
 
 public function addSubscriptsLast "
-Function for appending subscripts at end on last ident
-"
-  input ComponentRef cr;
+Function for appending subscripts at end on last ident"
+  input ComponentRef icr;
   input list<Subscript> i;
   output ComponentRef ocr;
 algorithm
-  ocr := match(cr,i)
+  ocr := match(icr,i)
     local
       list<Subscript> subs;
       String id;
+      ComponentRef cr;
     case (CREF_IDENT(id,subs),i)
       equation
         subs = listAppend(subs,i);
@@ -2956,14 +2961,14 @@ public function crefReplaceFirstIdent "
   (a[4].b.c[3], d.e) => d.e[4].b.c[3]
   (a[3], b.c.d) => b.c.d[3]
 "
-  input ComponentRef cref;
+  input ComponentRef icref;
   input Path replPath;
   output ComponentRef outCref;
 algorithm
-  outCref := match(cref,replPath)
+  outCref := match(icref,replPath)
     local
       list<Subscript> subs;
-      ComponentRef cr;
+      ComponentRef cr,cref;
     case (CREF_FULLYQUALIFIED(componentRef = cr),replPath)
       equation
         cr = crefReplaceFirstIdent(cr,replPath);
@@ -3223,12 +3228,13 @@ public function getCrefsFromSubs "
 Author BZ 2009-08
 Function for getting ComponentRefs out from Subscripts
 "
-  input list<Subscript> subs;
+  input list<Subscript> isubs;
   output list<ComponentRef> crefs;
-algorithm crefs := match(subs)
+algorithm crefs := match(isubs)
   local
     list<ComponentRef> crefs1;
     Exp exp;
+    list<Subscript> subs;
     case({}) then {};
     case(NOSUB()::subs) then getCrefsFromSubs(subs);
     case(SUBSCRIPT(exp)::subs)
@@ -4135,14 +4141,16 @@ public function crefEqual "function: crefEqual
  Checks if the name of a ComponentRef is
  equal to the name of another ComponentRef, including subscripts.
  See also crefEqualNoSubs."
-  input ComponentRef cr1;
-  input ComponentRef cr2;
+  input ComponentRef iCr1;
+  input ComponentRef iCr2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (cr1,cr2)
+  outBoolean := matchcontinue (iCr1,iCr2)
     local
       Ident id,id2;
       list<Subscript> ss1,ss2;
+      ComponentRef cr1,cr2;
+      
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
       equation
         true = stringEq(id, id2);
@@ -4166,12 +4174,15 @@ end crefEqual;
 public function subscriptsEqual "
 Checks if two subscript lists are equal.
 See also crefEqual."
-  input list<Subscript> ss1;
-  input list<Subscript> ss2;
+  input list<Subscript> inSs1;
+  input list<Subscript> inSs2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(ss1,ss2)
-  local Exp e1,e2;
+  equal := matchcontinue(inSs1,inSs2)
+    local 
+      Exp e1,e2;
+      list<Subscript> ss1,ss2;
+     
     case({},{}) then true;
     case(NOSUB()::ss1, NOSUB()::ss2) then subscriptsEqual(ss1,ss2);
     case(SUBSCRIPT(e1)::ss1,SUBSCRIPT(e2)::ss2) equation
@@ -4935,12 +4946,13 @@ end makeFullyQualified;
 
 public function makeNotFullyQualified
 "Makes a path not fully qualified unless it already is."
-  input Path path;
+  input Path inPath;
   output Path outPath;
 algorithm
-  outPath := match path
+  outPath := match inPath
+    local Path path;
     case FULLYQUALIFIED(path) then path;
-    else path;
+    else inPath;
   end match;
 end makeNotFullyQualified;
 
@@ -4975,14 +4987,15 @@ algorithm
 end importEqual;
 
 public function canonIfExp "Transforms an if-expression to canonical form (without else-if branches)"
-  input Exp e;
+  input Exp inExp;
   output Exp outExp;
 algorithm
-  outExp := match e
+  outExp := match inExp
     local
-      Exp cond,tb,eb,ei_cond,ei_tb;
+      Exp cond,tb,eb,ei_cond,ei_tb,e;
       list<tuple<Exp,Exp>> eib;
-    case IFEXP(elseIfBranch={}) then e;
+      
+    case IFEXP(elseIfBranch={}) then inExp;
     case IFEXP(ifExp=cond,trueBranch=tb,elseBranch=eb,elseIfBranch=(ei_cond,ei_tb)::eib)
       equation
         e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));

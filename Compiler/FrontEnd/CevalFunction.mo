@@ -2644,13 +2644,16 @@ algorithm
 end getElementDependenciesTraverserExit;
 
 protected function compareIterators
-  input DAE.ReductionIterators riters;
-  input list<String> iters;
+  input DAE.ReductionIterators inRiters;
+  input list<String> inIters;
   output list<String> outIters;
 algorithm
-  outIters := matchcontinue(riters,iters)
+  outIters := matchcontinue(inRiters,inIters)
     local
       String id1,id2;
+      DAE.ReductionIterators riters;
+      list<String> iters;
+
     case (DAE.REDUCTIONITER(id=id1)::riters, id2::iters)
       equation
         true = stringEqual(id1,id2);

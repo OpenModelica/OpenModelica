@@ -525,15 +525,15 @@ end elabElements;
 protected function elabElement
 "function: elabElements
   goes through a list of DAE.Element for partevalfunction"
-  input DAE.Element el;
-  input list<DAE.Function> dae;
+  input DAE.Element iel;
+  input list<DAE.Function> idae;
   output DAE.Element oel;
   output list<DAE.Function> odae;
 algorithm
-  (oel,odae) := match (el,dae)
+  (oel,odae) := match (iel,idae)
     local
       DAE.Function f1,f2;
-      DAE.Element el_1;
+      DAE.Element el_1,el;
       list<DAE.Element> cdr,cdr_1,elts,elts_1;
       list<list<DAE.Element>> elm,elm_1;
       DAE.ComponentRef cref;
@@ -555,6 +555,7 @@ algorithm
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAE.Algorithm alg,alg_1;
       DAE.ElementSource source "the origin of the element";
+      list<DAE.Function> dae;
 
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter),dae)
@@ -699,15 +700,15 @@ end elabElement;
 
 protected function elabFunctions
   input list<DAE.Function> fns;
-  input list<DAE.Function> dae;
+  input list<DAE.Function> idae;
   output list<DAE.Function> ofn;
   output list<DAE.Function> odae;
 algorithm
-  (ofn,odae) := matchcontinue (fns,dae)
+  (ofn,odae) := matchcontinue (fns,idae)
     local
       list<DAE.Element> elts,elts_1;
       DAE.Function fn;
-      list<DAE.Function> cdr,cdr_1;
+      list<DAE.Function> cdr,cdr_1,dae;
       DAE.Type fullType;
       Absyn.Path p;
       Boolean pp;

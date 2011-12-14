@@ -93,6 +93,9 @@ testmeta:
 	(cd testsuite/meta; time $(MAKE) -f Makefile)
 	(cd testsuite/records; time $(MAKE) -f Makefile)
 
+testboot:
+	(cd testsuite/bootstrapping; time ../../build/bin/omc MainTest.mos)
+
 t:
 	(cd testsuite/meta; time ../rtest -v SimplifyTest.mos)
 

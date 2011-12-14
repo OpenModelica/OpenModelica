@@ -75,6 +75,9 @@ public import Util;
 
 public type Ident = String;
 
+public constant Boolean bAllowTopLevelInputs = true;
+public constant Boolean bDisallowTopLevelInputs = false;
+
 public
 uniontype Slot
   record SLOT
@@ -284,6 +287,121 @@ function: elabExp
 algorithm
   (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
+
+public function checkAssignmentToInput
+  input Absyn.Ident inName;
+  input Absyn.Direction inDirection;
+  input Absyn.Info inInfo;
+  input Boolean allowTopLevelInputs;
+algorithm
+  _ := matchcontinue(inName, inDirection, inInfo, allowTopLevelInputs)
+    // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
+    case (inName, Absyn.INPUT(), inInfo, false)
+      equation
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",inName}, inInfo);
+      then
+        fail();
+    case (inName, _, inInfo, _) then ();
+  end matchcontinue;
+end checkAssignmentToInput;
+
+public function checkAssignmentToInputs
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inExpsCrefs;
+  input list<DAE.Attributes> inAttributes;
+  input Prefix.Prefix inPre;
+  input Absyn.Info inInfo;
+  input Boolean impl;
+algorithm
+  _ := matchcontinue(inCache, inEnv, inExpsCrefs, inAttributes, inPre, inInfo, impl)
+    local
+      Absyn.ComponentRef cr;
+      list<Absyn.Exp> rest;
+      Absyn.Direction direction;
+      list<DAE.Attributes> restAttr;
+    
+    case (inCache, inEnv, {}, {}, inPre, inInfo, impl) then ();
+      
+    case (inCache, inEnv, Absyn.CREF(cr)::rest, DAE.ATTR(direction=direction)::restAttr,inPre, inInfo, impl)
+      equation
+        checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, inInfo, bDisallowTopLevelInputs);
+        checkAssignmentToInputs(inCache, inEnv, rest, restAttr, inPre, inInfo, impl);
+      then
+        ();
+        
+    case (inCache, inEnv, _::rest, _::restAttr, inPre, inInfo, impl)
+      equation
+        checkAssignmentToInputs(inCache, inEnv, rest, restAttr, inPre, inInfo, impl);
+      then
+        ();
+  end matchcontinue;
+end checkAssignmentToInputs;
+
+public function elabExpCrefList
+"elaborates a list of expressions that are only component references."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inExpLst;
+  input Boolean inImplicit;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  input Integer numErrorMessages;
+  output Env.Cache outCache;
+  output list<DAE.Exp> outExpLst;
+  output list<DAE.Properties> outPropertiesLst;
+  output list<DAE.Attributes> outAttributesLst;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outExpLst,outPropertiesLst,outAttributesLst,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpLst,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Boolean impl,doVect;
+      Option<Interactive.SymbolTable> st;
+      list<Absyn.Exp> rest;
+      Absyn.Exp aExp;
+      Prefix.Prefix pre;
+      Absyn.Info info;
+      Absyn.ComponentRef cr;
+      list<DAE.Attributes> attrLst;
+      list<DAE.Exp> expLst;
+      DAE.Exp exp;
+      DAE.Attributes attr; 
+      list<DAE.Properties> propLst;
+      DAE.Properties prop;
+      String msg;
+      DAE.Type ty;
+    
+    case (cache,env,{},impl,st,doVect,pre,info,_) then (cache,{},{},{},st);
+    
+    case (cache,env,Absyn.CREF(componentRef = cr)::rest,impl,st,doVect,pre,info,_) // BoschRexroth specifics
+      equation
+        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
+        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),attr))) = elabCref(cache,env, cr, impl, doVect, pre, info);
+        (cache, expLst, propLst, attrLst, st) = elabExpCrefList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages); 
+      then
+        (cache,exp::expLst,DAE.PROP(ty,DAE.C_VAR())::propLst,attr::attrLst,st);
+
+    case (cache,env,Absyn.CREF(componentRef = cr)::rest,impl,st,doVect,pre,info,_)
+      equation
+        (cache,SOME((exp,prop,attr))) = elabCref(cache, env, cr, impl, doVect, pre, info);
+        (cache, expLst, propLst, attrLst, st) = elabExpCrefList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages);
+      then
+        (cache,exp::expLst,prop::propLst,attr::attrLst,st);
+        
+   case (cache,env,aExp::_,_,_,_,pre,info,numErrorMessages)
+     equation
+       true = numErrorMessages == Error.getNumErrorMessages();
+       msg = Dump.printExpStr(aExp);
+       Error.addSourceMessage(Error.GENERIC_ELAB_EXPRESSION,{msg},info);
+     then
+       fail();
+  end matchcontinue;
+end elabExpCrefList;
 
 protected function elabExp2 "
 function: elabExp
@@ -692,14 +810,14 @@ protected function elabIfExp
 the condition is parameter or constant; it is evaluated and the correct branch is selected.
 This is a dirty hack to make MSL CombiTable models work!
 Note: Because of this, the function has to rollback or delete an ErrorExt checkpoint."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input DAE.Exp condExp;
   input DAE.Properties condProp;
   input Absyn.Exp trueExp;
   input Absyn.Exp falseExp;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Boolean vect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
@@ -708,11 +826,15 @@ Note: Because of this, the function has to rollback or delete an ErrorExt checkp
   output DAE.Properties prop;
   output Option<Interactive.SymbolTable> outSt;
 algorithm
-  (outCache,outExp,prop,outSt) := matchcontinue (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
+  (outCache,outExp,prop,outSt) := matchcontinue (inCache,inEnv,condExp,condProp,trueExp,falseExp,impl,inSt,vect,pre,info)
     local
       DAE.Exp etrueExp,efalseExp;
       DAE.Properties trueProp,falseProp;
       Boolean b;
+      Option<Interactive.SymbolTable> st;
+      Env.Cache cache;
+      Env.Env env;
+      
     case (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
       equation
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP");
@@ -742,8 +864,7 @@ end elabIfExp;
 public function elabListExp "function: elabListExp
 Function that elaborates the MetaModelica list type,
 for instance list<Integer>.
-This is used by Inst.mo when handling a var := {...} statement
-"
+This is used by Inst.mo when handling a var := {...} statement"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inExpList;
@@ -805,8 +926,7 @@ public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssig
  equation
      (var1,_,MYREC(...)) = func(...);
     fail();
- then 1;
- "
+ then 1;"
   input list<Absyn.EquationItem> eqsIn;
   input list<Absyn.AlgorithmItem> accList;
   input Env.Cache cache;
@@ -870,15 +990,16 @@ protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssig
   input Absyn.Equation eq;
   input Option<Absyn.Comment> comment;
   input Absyn.Info info;
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output list<Absyn.AlgorithmItem> algStatement;
 algorithm
-  (outCache,algStatement) := matchcontinue (eq,comment,info,cache,env,inPrefix)
+  (outCache,algStatement) := matchcontinue (eq,comment,info,inCache,inEnv,inPrefix)
     local
-      Env.Cache localCache;
+      Env.Cache localCache,cache;
+      Env.Env env;
       Prefix.Prefix pre;
       String str,strLeft,strRight;
       Absyn.Exp left,right,e;
@@ -953,10 +1074,8 @@ algorithm
 end fromEquationToAlgAssignment;
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
-
   Helper function to elab_exp (MATRIX). Calculates the dimensions of the
-  matrix by investigating the elaborated expression.
-"
+  matrix by investigating the elaborated expression."
   input DAE.Exp inExp;
   output Integer outInteger1;
   output Integer outInteger2;
@@ -1025,13 +1144,11 @@ algorithm
 end elabMatrixToMatrixExp2;
 
 protected function matrixConstrMaxDim "function: matrixConstrMaxDim
-
   Helper function to elab_exp (MATRIX).
   Determines the maximum dimension of the array arguments to the matrix
   constructor as.
   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
-  A, B, C, ...
-"
+  A, B, C, ..."
   input list<DAE.Type> inTypesTypeLst;
   output Integer outInteger;
 algorithm
@@ -1134,11 +1251,11 @@ algorithm
 end elabCallReduction;
 
 protected function elabCallReductionIterators
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.ForIterators iterators;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ForIterators inIterators;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Boolean doVect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
@@ -1150,7 +1267,8 @@ protected function elabCallReductionIterators
   output Boolean hasGuardExp;
   output Option<Interactive.SymbolTable> outST;
 algorithm
-  (outCache,envWithIterators,outIterators,outDims,const,hasGuardExp,outST) := matchcontinue (cache,env,iterators,impl,st,doVect,pre,info)
+  (outCache,envWithIterators,outIterators,outDims,const,hasGuardExp,outST) := 
+  matchcontinue (inCache,inEnv,inIterators,impl,inSt,doVect,pre,info)
     local
       String iter;
       Option<Absyn.Exp> aguardExp;
@@ -1162,10 +1280,14 @@ algorithm
       list<DAE.ReductionIterator> diters;
       DAE.Dimensions dims;
       Boolean hasGuardExp;
-      Env.Env envWithIterators;
+      Env.Cache cache;
+      Env.Env envWithIterators,env;
       DAE.Const iterconst,guardconst;
       DAE.Type fulliterty,iterty;
-    case (_,env,{},_,st,_,_,_) then (cache,env,{},{},DAE.C_CONST(),false,st);
+      Option<Interactive.SymbolTable> st;
+      Absyn.ForIterators iterators;
+    
+    case (cache,env,{},_,st,_,_,_) then (cache,env,{},{},DAE.C_CONST(),false,st);
     case (cache,env,Absyn.ITERATOR(iter,aguardExp,SOME(aiterExp))::iterators,impl,st,doVect,pre,info)
       equation
         (cache,iterExp,DAE.PROP(fulliterty,iterconst),st) = elabExp(cache, env, aiterExp, impl, st, doVect,pre,info);
@@ -1191,21 +1313,23 @@ algorithm
 end elabCallReductionIterators;
 
 protected function makeReductionFoldExp
-  input Env.Env env;
+  input Env.Env inEnv;
   input Absyn.Path path;
   input DAE.Type expty;
   output Env.Env outEnv;
   output Option<Absyn.Exp> afoldExp;
 algorithm
-  (outEnv,afoldExp) := match (env,path,expty)
+  (outEnv,afoldExp) := match (inEnv,path,expty)
     local
       Absyn.Exp exp;
       Absyn.ComponentRef cr,cr1,cr2;
       String iterator;
-    case (_,Absyn.IDENT("array"),_) then (env,NONE());
-    case (_,Absyn.IDENT("list"),_) then (env,NONE());
-    case (_,Absyn.IDENT("listReverse"),_) then (env,NONE());
-    case (_,Absyn.IDENT("sum"),_)
+      Env.Env env;
+      
+    case (env,Absyn.IDENT("array"),_) then (env,NONE());
+    case (env,Absyn.IDENT("list"),_) then (env,NONE());
+    case (env,Absyn.IDENT("listReverse"),_) then (env,NONE());
+    case (env,Absyn.IDENT("sum"),_)
       equation
         cr = Absyn.pathToCref(path);
         env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
@@ -1214,7 +1338,7 @@ algorithm
         cr2 = Absyn.CREF_IDENT("$reductionFoldTmpB",{});
         exp = Absyn.BINARY(Absyn.CREF(cr1),Absyn.ADD(),Absyn.CREF(cr2));
       then (env,SOME(exp));
-    case (_,Absyn.IDENT("product"),_)
+    case (env,Absyn.IDENT("product"),_)
       equation
         cr = Absyn.pathToCref(path);
         env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
@@ -1225,6 +1349,7 @@ algorithm
       then (env,SOME(exp));
     else
       equation
+        env = inEnv;
         cr = Absyn.pathToCref(path);
         // print("makeReductionFoldExp => " +& Absyn.pathString(path) +& Types.unparseType(expty) +& "\n");
         env = Env.extendFrameForIterator(env, "$reductionFoldTmpA", expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
@@ -1237,8 +1362,8 @@ algorithm
 end makeReductionFoldExp;
 
 protected function reductionType
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path fn;
   input DAE.Exp inExp;
   input DAE.Type inType;
@@ -1252,7 +1377,8 @@ protected function reductionType
   output Option<Values.Value> defaultValue;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outExp,outType,defaultValue,outPath) := match (cache, env, fn, inExp, inType, unboxedType, dims, hasGuardExp, info)
+  (outCache,outExp,outType,defaultValue,outPath) := 
+  match (inCache, inEnv, fn, inExp, inType, unboxedType, dims, hasGuardExp, info)
     local
       Boolean b;
       Integer i;
@@ -1263,141 +1389,144 @@ algorithm
       DAE.Type ty,typeA,typeB,resType;
       Absyn.Path path;
       Values.Value v;
+      DAE.Exp exp;
+      Env.Cache cache;
+      Env.Env env;
     
-    case (cache,env,Absyn.IDENT(name = "array"), _, ty, _, dims, b, _)
+    case (cache,env,Absyn.IDENT(name = "array"), exp, ty, _, dims, b, _)
       equation
         ty = List.foldr(dims,Types.liftArray,ty);
-      then (cache,inExp, ty, SOME(Values.ARRAY({}, {0})),fn);
+      then (cache,exp,ty,SOME(Values.ARRAY({},{0})),fn);
     
-    case (cache,env,Absyn.IDENT(name = "list"), inExp, _, _, _, _, _)
+    case (cache,env,Absyn.IDENT(name = "list"), exp, ty, _, _, _, _)
       equation
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_METABOXED_DEFAULT, true);
-      then (cache,inExp,DAE.T_METALIST(inType, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
+      then (cache,exp,DAE.T_METALIST(ty, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
     
-    case (cache,env,Absyn.IDENT(name = "listReverse"), inExp, _, _, _, _, _)
+    case (cache,env,Absyn.IDENT(name = "listReverse"), exp, ty, _, _, _, _)
       equation
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_METABOXED_DEFAULT, true);
-      then (cache,inExp,DAE.T_METALIST(inType, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_METABOXED_DEFAULT, true);
+      then (cache,exp,DAE.T_METALIST(ty, DAE.emptyTypeSource),SOME(Values.LIST({})),fn);
     
-    case (cache,env,Absyn.IDENT("min"),inExp, _, DAE.T_REAL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("min"),exp, ty, DAE.T_REAL(varLst = _),_,_,info)
       equation
         r = System.realMaxLit();
         v = Values.REAL(r);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("min"),inExp,_,DAE.T_INTEGER(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("min"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,info)
       equation
         i = System.intMaxLit();
         v = Values.INTEGER(i);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("min"),inExp,_,DAE.T_BOOL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("min"),exp,ty,DAE.T_BOOL(varLst = _),_,_,info)
       equation
         v = Values.BOOL(true);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("min"),inExp,_,DAE.T_STRING(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("min"),exp,ty,DAE.T_STRING(varLst = _),_,_,info)
       equation
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
-      then (cache,inExp,inType,NONE(),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
+      then (cache,exp,ty,NONE(),fn);
 
-    case (cache,env,Absyn.IDENT("max"),inExp,_,DAE.T_REAL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("max"),exp,ty,DAE.T_REAL(varLst = _),_,_,info)
       equation
         r = realNeg(System.realMaxLit());
         v = Values.REAL(r);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("max"),inExp,_,DAE.T_INTEGER(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("max"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,info)
       equation
         i = intNeg(System.intMaxLit());
         v = Values.INTEGER(i);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("max"),inExp,_,DAE.T_BOOL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("max"),exp,ty,DAE.T_BOOL(varLst = _),_,_,info)
       equation
         v = Values.BOOL(false);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("max"),inExp,_,DAE.T_STRING(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("max"),exp,ty,DAE.T_STRING(varLst = _),_,_,info)
       equation
         v = Values.STRING("");
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
 
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,DAE.T_REAL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("sum"),exp,ty,DAE.T_REAL(varLst = _),_,_,info)
       equation
         v = Values.REAL(0.0);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,DAE.T_INTEGER(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("sum"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,info)
       equation
         v = Values.INTEGER(0);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,DAE.T_BOOL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("sum"),exp,ty,DAE.T_BOOL(varLst = _),_,_,info)
       equation
         v = Values.BOOL(false);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,DAE.T_STRING(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("sum"),exp,ty,DAE.T_STRING(varLst = _),_,_,info)
       equation
         v = Values.STRING("");
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_STRING_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("sum"),inExp,_,DAE.T_ARRAY(ty =_),_,_,info)
-      then (cache,inExp,inType,NONE(),fn);
+    case (cache,env,Absyn.IDENT("sum"),exp,ty,DAE.T_ARRAY(ty =_),_,_,info)
+      then (cache,exp,ty,NONE(),fn);
 
-    case (cache,env,Absyn.IDENT("product"),inExp,_,DAE.T_REAL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("product"),exp,ty,DAE.T_REAL(varLst = _),_,_,info)
       equation
         v = Values.REAL(1.0);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_REAL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_REAL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("product"),inExp,_,DAE.T_INTEGER(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("product"),exp,ty,DAE.T_INTEGER(varLst = _),_,_,info)
       equation
         v = Values.INTEGER(1);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_INTEGER_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_INTEGER_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("product"),inExp,_,DAE.T_BOOL(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("product"),exp,ty,DAE.T_BOOL(varLst = _),_,_,info)
       equation
         v = Values.BOOL(true);
-        (inExp,inType) = Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
-      then (cache,inExp,inType,SOME(v),fn);
+        (exp,ty) = Types.matchType(exp, ty, DAE.T_BOOL_DEFAULT, true);
+      then (cache,exp,ty,SOME(v),fn);
     
-    case (cache,env,Absyn.IDENT("product"),inExp,_,DAE.T_STRING(varLst = _),_,_,info)
+    case (cache,env,Absyn.IDENT("product"),exp,ty,DAE.T_STRING(varLst = _),_,_,info)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"product reduction not defined for String"},info);
       then fail();
     
-    case (cache,env,Absyn.IDENT("product"),inExp,_,DAE.T_ARRAY(ty = _),_,_,info)
+    case (cache,env,Absyn.IDENT("product"),exp,ty,DAE.T_ARRAY(ty = _),_,_,info)
       equation
-      then (cache,inExp,inType,NONE(),fn);
+      then (cache,exp,ty,NONE(),fn);
 
-    case (cache,env,path,inExp,_,_,_,_,info)
+    case (cache,env,path,exp,ty,_,_,_,info)
       equation
         (cache,fnTypes) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         (typeA,typeB,resType,path) = checkReductionType1(env,path,fnTypes,info);
-        inExp = checkReductionType2(inExp,inType,typeA,typeB,resType,Types.equivtypes(typeA,typeB),Types.equivtypes(typeB,resType),info);
+        (exp,ty) = checkReductionType2(exp,ty,typeA,typeB,resType,Types.equivtypes(typeA,typeB),Types.equivtypes(typeB,resType),info);
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, path, false, NONE(), true);
         Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
-      then (cache,inExp,resType,NONE(),path);
+      then (cache,exp,ty,NONE(),path);
   end match;
 end reductionType;
 
 protected function checkReductionType1
-  input Env.Env env;
-  input Absyn.Path path;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
   input list<DAE.Type> fnTypes;
   input Absyn.Info info;
   output DAE.Type typeA;
@@ -1405,10 +1534,12 @@ protected function checkReductionType1
   output DAE.Type resType;
   output Absyn.Path outPath;
 algorithm
-  (typeA,typeB,resType,outPath) := match (env,path,fnTypes,info)
+  (typeA,typeB,resType,outPath) := match (inEnv,inPath,fnTypes,info)
     local
       String str1,str2;
       DAE.TypeSource ts;
+      Absyn.Path path;
+      Env.Env env;
     
     case (env, path, {}, info)
       equation
@@ -1429,7 +1560,7 @@ algorithm
 end checkReductionType1;
 
 protected function checkReductionType2
-  input DAE.Exp exp;
+  input DAE.Exp inExp;
   input DAE.Type expType;
   input DAE.Type typeA;
   input DAE.Type typeB;
@@ -1438,10 +1569,18 @@ protected function checkReductionType2
   input Boolean equivBC;
   input Absyn.Info info;
   output DAE.Exp outExp;
+  output DAE.Type outTy;
 algorithm
-  outExp := matchcontinue (exp,expType,typeA,typeB,typeC,equivAB,equivBC,info)
+  (outExp,outTy) := matchcontinue (inExp,expType,typeA,typeB,typeC,equivAB,equivBC,info)
     local
       String str1,str2;
+      DAE.Exp exp;
+      
+    case (exp,expType,typeA,_,_,true,true,info)
+      equation
+        // print("Casting " +& ExpressionDump.printExpStr(exp) +& " of " +& Types.unparseType(expType) +& " to " +& Types.unparseType(typeA) +& "\n");
+        (exp,outTy) = Types.matchType(exp,expType,typeA,true);
+      then (exp,outTy);
     case (_,_,_,_,_,_,false,info)
       equation
         str1 = Types.unparseType(typeB);
@@ -1454,11 +1593,6 @@ algorithm
         str2 = Types.unparseType(typeB);
         Error.addSourceMessage(Error.REDUCTION_TYPE_ERROR,{"first", "second arguments", "identical", str1, str2},info);
       then fail();
-    case (exp,expType,typeA,_,_,true,true,info)
-      equation
-        // print("Casting " +& ExpressionDump.printExpStr(exp) +& " of " +& Types.unparseType(expType) +& " to " +& Types.unparseType(typeA) +& "\n");
-        (exp,_) = Types.matchType(exp,expType,typeA,true);
-      then exp;
     case (_,_,_,_,_,true,true,info)
       equation
         str1 = Types.unparseType(expType);
@@ -2250,11 +2384,12 @@ protected function elabArrayHasInt
 "function: elabArrayHasInt
   author :PA
   Helper function to elabArray."
-  input list<DAE.Properties> props;
+  input list<DAE.Properties> inProps;
 algorithm
-  _ := matchcontinue (props)
+  _ := matchcontinue (inProps)
     local
       DAE.Type tp;
+      list<DAE.Properties> props;
     
     case (DAE.PROP(tp,_) :: props)
       equation
@@ -2362,14 +2497,14 @@ protected function elabArray2
 "function: elabArray2
   Helper function to elabArray, checks that all elements are equivalent."
   input list<DAE.Exp> es;
-  input list<DAE.Properties> props;
+  input list<DAE.Properties> inProps;
   input Prefix.Prefix pre;
   input Absyn.Info info;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
 algorithm
   (outExpExpLst,outProperties):=
-  matchcontinue (es,props,pre,info)
+  matchcontinue (es,inProps,pre,info)
     local
       DAE.Exp e_1;
       DAE.Properties prop;
@@ -2379,6 +2514,7 @@ algorithm
       Ident e_str,str,elt_str,t1_str,t2_str,sp;
       list<Ident> strs;
       Prefix.Prefix pre;
+      list<DAE.Properties> props;
 
     case ({}, {}, _, _)
       then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
@@ -2476,7 +2612,7 @@ protected function elabMatrixComma "function elabMatrixComma
   input Env.Cache inCache;
   input Env.Env inEnv1;
   input list<DAE.Exp> es;
-  input list<DAE.Properties> props;
+  input list<DAE.Properties> inProps;
   input Boolean inBoolean3;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
@@ -2491,7 +2627,7 @@ protected function elabMatrixComma "function elabMatrixComma
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4):=
-  matchcontinue (inCache,inEnv1,es,props,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,es,inProps,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
       DAE.Exp el,el_1,el_2;
       DAE.Properties prop,prop1,prop1_1,prop2;
@@ -2505,6 +2641,8 @@ algorithm
       list<DAE.Exp> els_1,els;
       Env.Cache cache;
       Prefix.Prefix pre;
+      list<DAE.Properties> props;
+      
     case (cache,env,{el_1},{prop as DAE.PROP(t1,_)},impl,st,havereal,nmax,doVect,pre,info) /* implicit inst. have real nmax dim1 dim2 */
       equation
         t1_dim1 = Types.numberOfDimensions(t1);
@@ -2541,12 +2679,10 @@ end elabMatrixComma;
 
 protected function elabMatrixCatTwoExp "function: elabMatrixCatTwoExp
   author: PA
-
   This function takes an array expression of dimension >=3 and
   concatenates each array element along the second dimension.
   For instance
-  elab_matrix_cat_two( {{1,2;5,6}, {3,4;7,8}}) => {1,2,3,4;5,6,7,8}
-"
+  elab_matrix_cat_two( {{1,2;5,6}, {3,4;7,8}}) => {1,2,3,4;5,6,7,8}"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -2570,10 +2706,8 @@ end elabMatrixCatTwoExp;
 
 protected function elabMatrixCatTwo "function: elabMatrixCatTwo
   author: PA
-
   Concatenates a list of matrix(or higher dim) expressions along
-  the second dimension.
-"
+  the second dimension."
   input list<DAE.Exp> inExpExpLst;
   output DAE.Exp outExp;
 algorithm
@@ -2604,11 +2738,9 @@ algorithm
 end elabMatrixCatTwo;
 
 protected function elabMatrixCatTwo2 "function: elabMatrixCatTwo2
-
-  Helper function to elab_matrix_cat_two
+  Helper function to elabMatrixCatTwo
   Concatenates two array expressions that are matrices (or higher dimension)
-  along the first dimension (row).
-"
+  along the first dimension (row)."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   output DAE.Exp outExp;
@@ -2631,9 +2763,7 @@ algorithm
 end elabMatrixCatTwo2;
 
 protected function elabMatrixCatTwo3 "function: elabMatrixCatTwo3
-
-  Helper function to elab_matrix_cat_two_2
-"
+  Helper function to elabMatrixCatTwo2"
   input list<DAE.Exp> inExpExpLst1;
   input list<DAE.Exp> inExpExpLst2;
   output list<DAE.Exp> outExpExpLst;
@@ -2658,11 +2788,9 @@ end elabMatrixCatTwo3;
 
 protected function elabMatrixCatOne "function: elabMatrixCatOne
   author: PA
-
   Concatenates a list of matrix(or higher dim) expressions along
   the first dimension.
-  i.e. elabMatrixCatOne( { {1,2;3,4}, {5,6;7,8} }) => {1,2;3,4;5,6;7,8}
-"
+  i.e. elabMatrixCatOne( { {1,2;3,4}, {5,6;7,8} }) => {1,2;3,4;5,6;7,8}"
   input list<DAE.Exp> inExpLst;
   output DAE.Exp outExp;
 algorithm
@@ -2713,8 +2841,7 @@ protected function promoteExp "function: promoteExp
   For instance
   promote_exp( {1,2},1) => {{1},{2}}
   promote_exp( {1,2},2) => { {{1}},{{2}} }
-  See also promote_real_array in real_array.c
-"
+  See also promote_real_array in real_array.c"
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input Integer inInteger;
@@ -2826,7 +2953,7 @@ protected function elabMatrixSemi
   input Env.Cache inCache;
   input Env.Env inEnv1;
   input list<list<DAE.Exp>> expss;
-  input list<list<DAE.Properties>> propss;
+  input list<list<DAE.Properties>> inPropss;
   input Boolean inBoolean3;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
@@ -2841,7 +2968,7 @@ protected function elabMatrixSemi
   output DAE.Dimension outInteger4;
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4) :=
-  matchcontinue (inCache,inEnv1,expss,propss,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv1,expss,inPropss,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
     local
       DAE.Exp exp,el,el_1,el_2;
       DAE.Properties prop,prop1,prop2;
@@ -2859,6 +2986,7 @@ algorithm
       Boolean doVect;
       Prefix.Prefix pre;
       list<DAE.Properties> props;
+      list<list<DAE.Properties>> propss;
 
     case (cache,env,{els},{props},impl,st,havereal,maxn,doVect,pre,info) /* implicit inst. contain real maxn */
       equation
@@ -2911,8 +3039,8 @@ protected function verifyBuiltInHandlerType "
  Author BZ, 2009-02
   This function validates that arguments to function are of a correct type.
   Then call elabCallArgs to vectorize/type-match."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean impl;
   input extraFunc typeChecker;
@@ -2927,7 +3055,7 @@ protected function verifyBuiltInHandlerType "
     output Boolean outp1;
   end extraFunc;
 algorithm
-  (outCache,outExp,outProperties) := match (cache,env,inAbsynExpLst,impl,typeChecker,fnName,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,impl,typeChecker,fnName,inPrefix,info)
     local
       DAE.Type ty,ty2;
       Absyn.Exp s1;
@@ -2935,6 +3063,8 @@ algorithm
       DAE.Const c;
       DAE.Properties prop;
       Prefix.Prefix pre;
+      Env.Cache cache;
+      Env.Env env;
     
     case (cache,env,{s1},impl,typeChecker,fnName,pre,info) /* impl */
       equation
@@ -3641,10 +3771,8 @@ end elabBuiltinTranspose2;
 
 protected function elabBuiltinTranspose3 "function: elabBuiltinTranspose3
   author: PA
-
   Helper function to elab_builtin_transpose. Tries to symbolically transpose
-  a MATRIX expression list
-"
+  a MATRIX expression list"
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -4348,9 +4476,7 @@ algorithm
 end sameDimensions3;
 
 protected function elabBuiltinOnes "function: elabBuiltinOnes
-
-  This function elaborates on the builtin opeator \'ones(n)\'.
-"
+  This function elaborates on the builtin opeator ones(n)."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4513,14 +4639,15 @@ algorithm
       DAE.Exp s1_1,s2_1,s3_1,call;
       DAE.Const c1,c2,c3;
       DAE.Type ty1,ty2,ty3,ty;
-      list<Env.Frame> env;
       Absyn.Exp s1,s2,s3;
       Boolean impl;
+      Env.Env env;
       Env.Cache cache;
       String errorString,sp;
       Prefix.Prefix pre;
       DAE.Properties prop;
       Integer i;
+    
     case (cache,env,args,nargs,impl,pre,info)
       equation
         i = listLength(args);
@@ -7600,8 +7727,8 @@ end elabCallArgs2;
 
 protected function elabCallArgs3
   "Elaborates the input given a set of viable function candidates, and vectorizes the arguments+performs type checking"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<DAE.Type> typelist;
   input Absyn.Path fn;
   input list<Absyn.Exp> args;
@@ -7629,6 +7756,8 @@ protected
   list<Slot> slots,slots2;
   DAE.FunctionTree functionTree;
   Util.Status status;
+  Env.Cache cache;
+  Env.Env env;
 algorithm
   (cache,
    args_1,
@@ -7636,20 +7765,20 @@ algorithm
    restype,
    functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),
    vect_dims,
-   slots) := elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
+   slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
   const := Util.if_((Flags.isSet(Flags.RML) and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
-  (cache,const) := determineConstSpecialFunc(cache,env,const,fn_1);
+  (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
   tp := Types.simplifyType(restype);
   // adrpo: 2011-09-30 NOTE THAT THIS WILL NOT ADD DEFAULT ARGS
   //                   FROM extends (THE BASE CLASS)
-  (cache,args_2,slots2) := addDefaultArgs(cache,env,args_1,fn_1,slots,impl,pre,info);
+  (cache,args_2,slots2) := addDefaultArgs(cache,inEnv,args_1,fn_1,slots,impl,pre,info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
   callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
@@ -7662,9 +7791,9 @@ algorithm
   //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
   (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
   /* Instantiate the function and add to dae function tree*/
-  (cache,status) := instantiateDaeFunction(cache,env,fn_1,builtin,NONE(),true);
+  (cache,status) := instantiateDaeFunction(cache,inEnv,fn_1,builtin,NONE(),true);
   /* Instantiate any implicit record constructors needed and add them to the dae function tree */
-  cache := instantiateImplicitRecordConstructors(cache, env, args_1, st);
+  cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
   functionTree := Env.getFunctionTree(cache);
   ((call_exp,_)) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
@@ -7672,7 +7801,7 @@ algorithm
 end elabCallArgs3;
 
 protected function elabCallArgsMetarecord
-  input Env.Cache cache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Type inType;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -7686,11 +7815,12 @@ protected function elabCallArgsMetarecord
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
   (outCache,expProps) :=
-  matchcontinue (cache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+  matchcontinue (inCache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.Type t;
       list<DAE.FuncArg> fargs;
-      list<Env.Frame> env;
+      Env.Cache cache;
+      Env.Env env;
       list<Slot> slots,newslots;
       list<DAE.Exp> args_1,args_2;
       list<DAE.Const> constlist;
@@ -7781,8 +7911,8 @@ end instantiateDaeFunction;
 protected function instantiateDaeFunction2 "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
   input Env.Cache inCache;
-  input Env.Env env;
-  input Absyn.Path name;
+  input Env.Env inEnv;
+  input Absyn.Path inName;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Integer numError "if errors were added, do not add a generic error message";
@@ -7790,12 +7920,14 @@ functiontree of a newly created dae"
   output Env.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := matchcontinue(inCache,env,name,builtin,clOpt,numError,printErrorMsg)
+  (outCache,status) := matchcontinue(inCache,inEnv,inName,builtin,clOpt,numError,printErrorMsg)
     local
       Env.Cache cache;
+      Env.Env env;
       SCode.Element cl;
       String pathStr,envStr;
       DAE.ComponentRef cref;
+      Absyn.Path name;
     
     // Builtin functions skipped
     case(cache,env,name,true,_,_,_) then (cache,Util.SUCCESS());
@@ -7955,16 +8087,19 @@ algorithm
 end determineConstSpecialFunc;
 
 public function isExternalObjectFunction
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.Path path;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
   output Env.Cache outCache;
   output Boolean res;
 algorithm
-  (outCache,res) := matchcontinue(cache,env,path)
+  (outCache,res) := matchcontinue(inCache,inEnv,inPath)
     local
-      Env.Env env_1;
+      Env.Cache cache;
+      Env.Env env_1,env;
+      Absyn.Path path;
       list<SCode.Element> els;
+      
     case (cache,env,path) equation
       (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),env_1)
           = Lookup.lookupClass(cache,env, path, false);
@@ -7982,7 +8117,6 @@ constant String vectorizeArg = "$vectorizeArg";
 
 protected function vectorizeCall "function: vectorizeCall
   author: PA
-
   Takes an expression and a list of array dimensions and the Slot list.
   It will vectorize the expression over the dimension given as array dim
   for the slots which have that dimension.
@@ -8109,18 +8243,22 @@ end vectorizeCall;
 
 protected function vectorizeCallUnknownDimension
   "Returns the new call arguments and a reduction iterator argument"
-  input list<DAE.Exp> es;
-  input list<Slot> slots;
-  input list<DAE.Exp> acc;
+  input list<DAE.Exp> inEs;
+  input list<Slot> inSlots;
+  input list<DAE.Exp> inAcc;
   input Option<DAE.Exp> found;
   input Absyn.Info info;
   output list<DAE.Exp> oes;
   output DAE.Exp ofound;
 algorithm
-  (oes,ofound) := match (es,slots,acc,found,info)
+  (oes,ofound) := match (inEs,inSlots,inAcc,found,info)
     local
       DAE.Exp e,e1,e2;
       String s1,s2;
+      list<DAE.Exp> es;
+      list<Slot> slots;
+      list<DAE.Exp> acc;
+
     case ({},{},acc,SOME(e),info) then (listReverse(acc),e);
     case ({},{},_,NONE(),info)
       equation
@@ -8146,7 +8284,6 @@ end vectorizeCallUnknownDimension;
 protected function vectorizeCallArray
 "function : vectorizeCallArray
   author: PA
-
   Helper function to vectorize_call, vectoriezes ARRAY expression to
   an array of array expressions."
   input DAE.Exp inExp;
@@ -8204,9 +8341,7 @@ end vectorizeCallArray2;
 
 protected function vectorizeCallArray3 "function: vectorizeCallArray3
   author: PA
-
-  Helper function to vectorize_call_array_2
-"
+  Helper function to vectorizeCallArray2"
   input DAE.Exp inExp;
   input DAE.Type inType;
   input Integer inInteger;
@@ -8236,7 +8371,6 @@ end vectorizeCallArray3;
 protected function vectorizeCallScalar
 "function: vectorizeCallScalar
   author: PA
-
   Helper function to vectorizeCall, vectorizes CALL expressions to
   array expressions."
   input DAE.Exp inExp "e.g. abs(v)";
@@ -8277,7 +8411,6 @@ end vectorizeCallScalar;
 protected function vectorizeCallScalar2
 "function: vectorizeCallScalar2
   author: PA
-
   Iterates through vectorized dimension an creates argument list according
   to vectorized dimension in corresponding slot."
   input list<DAE.Exp> inExpExpLst1;
@@ -8298,7 +8431,8 @@ algorithm
       DAE.InlineType inl;
       DAE.Type tp;
       DAE.CallAttributes attr;
-    case (expl,slots,cur_dim,dim,DAE.CALL(fn,args,attr)) /* cur_dim - current indx in dim dim - dimension size */
+    // cur_dim - current indx in dim dim - dimension size
+    case (expl,slots,cur_dim,dim,DAE.CALL(fn,args,attr)) 
       equation
         (cur_dim <= dim) = true;
         callargs = vectorizeCallScalar3(expl, slots, cur_dim);
@@ -8314,7 +8448,6 @@ end vectorizeCallScalar2;
 protected function vectorizeCallScalar3
 "function: vectorizeCallScalar3
   author: PA
-
   Helper function to vectorizeCallScalar2"
   input list<DAE.Exp> inExpExpLst;
   input list<Slot> inSlotLst;
@@ -8352,7 +8485,6 @@ end vectorizeCallScalar3;
 
 protected function deoverloadFuncname
 "function: deoverloadFuncname
-
   This function is used to deoverload function calls. It investigates the
   type of the function to see if it has the optional functionname set. If
   so this is returned. Otherwise return input."
@@ -8490,7 +8622,6 @@ end createActualFunctype;
 protected function slotsVectorizable
 "function: slotsVectorizable
   author: PA
-
   This function checks all vectorized array dimensions in the slots and
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
@@ -8524,7 +8655,6 @@ end slotsVectorizable;
 protected function sameSlotsVectorizable
 "function: sameSlotsVectorizable
   author: PA
-
   This function succeds if all slots in the list either has the array
   dimension as given by the second argument or no array dimension at all.
   The array dimension must match both in dimension size and number of
@@ -8555,7 +8685,6 @@ end sameSlotsVectorizable;
 protected function sameArraydimLst
 "function: sameArraydimLst
   author: PA
-
   Helper function to sameSlotsVectorizable. "
   input DAE.Dimensions inTypesArrayDimLst1;
   input DAE.Dimensions inTypesArrayDimLst2;
@@ -8638,10 +8767,8 @@ end getProperties;
 protected function buildTupleConst
 "function: buildTupleConst
   author: LS
-
   Build a TUPLE_CONST (DAE.TupleConst) for a PROP_TUPLE for a function call
   from a list of bools derived from arguments
-
   We should check functions actual arguments instead of their formal
   parameters as done below"
   input list<DAE.Const> blist;
@@ -8741,8 +8868,7 @@ protected function checkConst "function: checkConst
   LS: but it says true?
   LS: Adapted to check one type instead of funcarg, since it just checks
   return type
-  LS: Update: const is derived from the input arguments and sent here
-"
+  LS: Update: const is derived from the input arguments and sent here"
   input DAE.Type inType;
   input DAE.Const inConst;
   output DAE.TupleConst outTupleConst;
@@ -8793,7 +8919,7 @@ end splitProps;
 
 protected function getTypes
 "function: getTypes
-  This relatoin returns the types of a DAE.FuncArg list."
+  This function returns the types of a DAE.FuncArg list."
   input list<DAE.FuncArg> farg;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
@@ -8806,7 +8932,6 @@ protected function functionParams
   components are declared as either inpu or outpu.  This
   function_ find all those components and_ separates them into two
   separate lists.
-
   LS: This can probably replaced by Types.getInputVars and Types.getOutputVars"
   input list<DAE.Var> inTypesVarLst;
   output list<DAE.FuncArg> outTypesFuncArgLst1;
@@ -8867,12 +8992,11 @@ protected function elabInputArgs
   This function_ elaborates on a number of expressions and_ matches
   them to a number of `DAE.Var\' objects, applying type_ conversions
   on the expressions when necessary to match the type_ of the
-  `DAE.Var\'.
-
+  DAE.Var.
   PA: Positional arguments and named arguments are filled in the argument slots as:
- 1. Positional arguments fill the first slots according to their position.
- 2. Named arguments fill slots with the same name as the named argument.
- 3. Unfilled slots are checks so that they have default values, otherwise error."
+  1. Positional arguments fill the first slots according to their position.
+  2. Named arguments fill slots with the same name as the named argument.
+  3. Unfilled slots are checks so that they have default values, otherwise error."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -8880,7 +9004,7 @@ protected function elabInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
-  input Types.PolymorphicBindings polymorphicBindings;
+  input Types.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -8890,7 +9014,7 @@ protected function elabInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
     local
       list<DAE.FuncArg> farg;
       list<Slot> slots_1,newslots,slots;
@@ -8902,6 +9026,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
+      Types.PolymorphicBindings polymorphicBindings;
 
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,pre,info)
@@ -8934,7 +9059,8 @@ algorithm
 
     // fail trace
     else
-      /* FAILTRACE REMOVE equation Debug.fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */ then fail();
+      /* FAILTRACE REMOVE equation Debug.fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */ 
+      then fail();
   end match;
 end elabInputArgs;
 
@@ -8985,11 +9111,11 @@ end funcargLstFromSlots;
 protected function complexTypeFromSlots
 "Creates an DAE.T_COMPLEX type from a list of slots.
  Used to create type of record constructors "
-  input list<Slot> slots;
+  input list<Slot> inSlots;
   input ClassInf.State complexClassType;
   output DAE.Type tp;
 algorithm
-  tp := match(slots,complexClassType)
+  tp := match(inSlots,complexClassType)
     local
       DAE.Type etp;
       DAE.Type ty;
@@ -9000,6 +9126,7 @@ algorithm
       DAE.TypeSource ts;
       DAE.EqualityConstraint ec;
       DAE.Var tv;
+      list<Slot> slots;
       
     case({},complexClassType)
       equation
@@ -9244,7 +9371,7 @@ protected function elabPositionalInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
-  input Types.PolymorphicBindings polymorphicBindings;
+  input Types.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9253,7 +9380,7 @@ protected function elabPositionalInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
     local
       list<Slot> slots,slots_1,newslots;
       Boolean impl;
@@ -9273,6 +9400,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.CodeType ct;
       Option<DAE.Exp> oe;
+      Types.PolymorphicBindings polymorphicBindings;
 
     // the empty case
     case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
@@ -9370,7 +9498,7 @@ protected function elabNamedInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
-  input Types.PolymorphicBindings polymorphicBindings;
+  input Types.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9379,7 +9507,7 @@ protected function elabNamedInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
-  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
     local
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
@@ -9395,6 +9523,7 @@ algorithm
       Env.Cache cache;
       DAE.Dimensions ds;
       Prefix.Prefix pre;
+      Types.PolymorphicBindings polymorphicBindings;
 
     // the empty case
     case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings,_,_)
@@ -9569,8 +9698,7 @@ algorithm
 end elabCref;
 
 public function elabCrefNoEval "
-  Some functions expect a DAE.ComponentRef back and use this instead of elabCref :)
-"
+  Some functions expect a DAE.ComponentRef back and use this instead of elabCref :)"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -9809,19 +9937,21 @@ protected function evaluateEmptyVariable
   "A variable with a 0-length dimension can be evaluated.
   This is good to do because otherwise the C-code contains references to non-existing variables"
   input Boolean hasZeroSizeDim;
-  input DAE.Exp exp;
+  input DAE.Exp inExp;
   input DAE.Type ty;
   input DAE.Const c;
   output DAE.Exp oexp;
   output DAE.Const oc;
 algorithm
-  (oexp,oc) := matchcontinue (hasZeroSizeDim,exp,ty,c)
+  (oexp,oc) := matchcontinue (hasZeroSizeDim,inExp,ty,c)
     local
       Boolean sc,a;
       DAE.Type et;
       list<DAE.Subscript> ss;
       DAE.ComponentRef cr;
       list<DAE.Exp> sub;
+      DAE.Exp exp;
+      
     case (true,DAE.ASUB(sub=sub),ty,c)
       equation
         // TODO: Use a DAE.ERROR() or something if this has subscripts?
@@ -11150,9 +11280,9 @@ protected function elabCrefSubs
   input Env.Cache inCache;
   input Env.Env inCrefEnv "search for the cref in this environment";  
   input Absyn.ComponentRef inComponentRef;
-  input Prefix.Prefix crefPrefix "the accumulated cref, required for lookup";
+  input Prefix.Prefix inCrefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
-  input Boolean hasZeroSizeDim;
+  input Boolean inHasZeroSizeDim;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
@@ -11161,7 +11291,7 @@ protected function elabCrefSubs
   not mean that the variable x[1,2] is constant)";
   output Boolean outHasZeroSizeDim;
 algorithm
-  (outCache,outComponentRef,outConst,outHasZeroSizeDim) := matchcontinue (inCache,inCrefEnv,inComponentRef,crefPrefix,inBoolean,hasZeroSizeDim,info)
+  (outCache,outComponentRef,outConst,outHasZeroSizeDim) := matchcontinue (inCache,inCrefEnv,inComponentRef,inCrefPrefix,inBoolean,inHasZeroSizeDim,info)
     local
       DAE.Type t;
       DAE.Dimensions sl;
@@ -11169,7 +11299,7 @@ algorithm
       list<Env.Frame> crefEnv, subscriptsEnv;
       Ident id;
       list<Absyn.Subscript> ss;
-      Boolean impl;
+      Boolean impl, hasZeroSizeDim;
       DAE.ComponentRef cr;
       Absyn.ComponentRef absynCr;
       DAE.Type ty;
@@ -11177,6 +11307,7 @@ algorithm
       Absyn.ComponentRef restCref,absynCref;
       Env.Cache cache;
       SCode.Variability vt;
+      Prefix.Prefix crefPrefix;
     
     // IDENT
     case (cache,crefEnv,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,hasZeroSizeDim,info)
@@ -13127,19 +13258,17 @@ algorithm
 end operatorDeoverloadUnary;
 
 protected function operatorsBinary "function: operators
-
   This function relates the operators in the abstract syntax to the
   de-overloaded operators in the SCode. It produces a list of available
   types for a specific operator, that the overload function chooses from.
   Therefore, in order for the builtin type conversion from Integer to
   Real to work, operators that work on both Integers and Reals must
-  return the Integer type -before- the Real type in the list.
-"
+  return the Integer type -before- the Real type in the list."
   input Absyn.Operator inOperator1;
   input DAE.Type inType3;
-  input DAE.Exp e1;
+  input DAE.Exp inE1;
   input DAE.Type inType4;
-  input DAE.Exp e2;
+  input DAE.Exp inE2;
   output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
   output DAE.Type oty1;
   output DAE.Exp oe1;
@@ -13147,7 +13276,7 @@ protected function operatorsBinary "function: operators
   output DAE.Exp oe2;
 algorithm
   (ops,oty1,oe1,oty2,oe2) :=
-  matchcontinue (inOperator1,inType3,e1,inType4,e2)
+  matchcontinue (inOperator1,inType3,inE1,inType4,inE2)
     local
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
@@ -13156,6 +13285,7 @@ algorithm
       DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
       Absyn.Operator op;
       DAE.Type defaultExpType;
+      DAE.Exp e1,e2;
 
     // arithmetical operators
     case (Absyn.ADD(),t1,e1,t2,e2)
@@ -13565,26 +13695,27 @@ algorithm
   outOp := matchcontinue(inOp, inType1, inType2)
     local
       DAE.Type op_ty;
+      DAE.Operator op;
     
     case (_, DAE.T_ENUMERATION(path = _), DAE.T_ENUMERATION(path = _))
       equation
         op_ty = Types.simplifyType(inType1);
-        inOp = Expression.setOpType(inOp, op_ty);
-      then ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
+        op = Expression.setOpType(inOp, op_ty);
+      then ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
     
     case (_, DAE.T_ENUMERATION(path = _), _)
       equation
         op_ty = Types.simplifyType(inType1);
-        inOp = Expression.setOpType(inOp, op_ty);
+        op = Expression.setOpType(inOp, op_ty);
       then
-        ((inOp, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
+        ((op, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
     
     case (_, _, DAE.T_ENUMERATION(path = _))
       equation
         op_ty = Types.simplifyType(inType1);
-        inOp = Expression.setOpType(inOp, op_ty);
+        op = Expression.setOpType(inOp, op_ty);
       then
-        ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
+        ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
     
     case (_, _, _)
       then ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
@@ -13660,8 +13791,7 @@ end nTypes;
 
 protected function operatorReturn "function: operatorReturn
   This function collects the types and operator lists into a tuple list, suitable
-  for the deoverloading function for binary operations.
-"
+  for the deoverloading function for binary operations."
   input DAE.Operator inOperator1;
   input list<DAE.Type> inTypesTypeLst2;
   input list<DAE.Type> inTypesTypeLst3;
@@ -13689,8 +13819,7 @@ end operatorReturn;
 protected function operatorReturnUnary "function: operatorReturnUnary
   This function collects the types and operator lists into a tuple list,
   suitable for the deoverloading function to be used for unary
-  expressions.
-"
+  expressions."
   input DAE.Operator inOperator1;
   input list<DAE.Type> inTypesTypeLst2;
   input list<DAE.Type> inTypesTypeLst3;
@@ -13716,8 +13845,7 @@ end operatorReturnUnary;
 
 protected function arrayTypeList "function: arrayTypeList
   This function creates a list of types using the original type passed as input, but
-  as array types up to n dimensions.
-"
+  as array types up to n dimensions."
   input Integer inInteger;
   input DAE.Type inType;
   output list<DAE.Type> outTypesTypeLst;
@@ -13779,8 +13907,7 @@ end warnUnsafeRelations;
 
 protected function verifyOp "
 Helper function for warnUnsafeRelations
-We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations.
-"
+We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations."
 input DAE.Operator op;
 algorithm _ := match(op)
   case(DAE.EQUAL(_)) then ();

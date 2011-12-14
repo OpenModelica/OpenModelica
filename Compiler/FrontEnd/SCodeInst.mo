@@ -104,17 +104,16 @@ algorithm
       Env env;
       Absyn.Info info;
       SCodeEnv.AvlTree cls_and_vars;
+      String name;
 
     // A class with parts, instantiate all elements in it.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = SCode.PARTS(elementLst = el)), 
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = el)), 
         env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _)
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         var_counts = List.map2(el, instElement, env, inPrefix);
-        // Add a 0 so we have something to reduce if the class is empty.
-        var_counts = 0 :: var_counts;
-        var_count = List.reduce(var_counts, intAdd);
+        var_count = List.fold(var_counts, intAdd, 0);
       then
         var_count;
 
@@ -165,7 +164,7 @@ protected function instElement
 algorithm
   outVarCount := match(inVar, inEnv, inPrefix)
     local
-      String name;
+      String name,str;
       Absyn.TypeSpec ty;
       Absyn.Info info;
       Item item;
@@ -188,16 +187,19 @@ algorithm
         (item, env) =
           SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
         prefix = (name, ad) :: inPrefix;
+        prefix = inPrefix;
         var_count = instClassItem(item, env, prefix);
         // Print the variable if it's a basic type.
-        printVar(prefix, path, var_count);
+        //printVar(prefix, path, var_count);
         dim_count = countVarDims(ad);
 
         // Set var_count to one if it's zero, since it counts as an element by
         // itself if it doesn't contain any components.
         var_count = intMax(1, var_count);
+        var_count = var_count * dim_count;
+        //showProgress(var_count, name, inPrefix, path);
       then
-        var_count * dim_count;
+        var_count;
 
     // An extends, look up the extended class and instantiate it.
     case (SCode.EXTENDS(baseClassPath = path, modifications = mod, info = info),
@@ -216,6 +218,23 @@ algorithm
     else 0;
   end match;
 end instElement;
+
+protected function showProgress
+  input Integer count;
+  input String name;
+  input Prefix prefix;
+  input Absyn.Path path;
+algorithm
+  _ := matchcontinue(count, name, prefix, path)
+    // show only top level components!
+    case(count, name, {}, path)
+      equation
+        print("done: " +& Absyn.pathString(path) +& " " +& name +& "; " +& intString(count) +& " containing variables.\n");
+      then ();
+    else 
+      then ();  
+  end matchcontinue;
+end showProgress;
 
 protected function printVar
   input Prefix inName;

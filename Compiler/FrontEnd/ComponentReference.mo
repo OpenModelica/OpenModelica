@@ -1008,14 +1008,15 @@ end crefEqualWithoutSubs;
 
 protected function crefEqualWithoutSubs2
   input Boolean refEq;
-  input DAE.ComponentRef cr1;
-  input DAE.ComponentRef cr2;
+  input DAE.ComponentRef icr1;
+  input DAE.ComponentRef icr2;
   output Boolean res;
 algorithm
-  res := match(refEq, cr1, cr2)
+  res := match(refEq, icr1, icr2)
     local
       DAE.Ident n1, n2;
       Boolean r;
+      DAE.ComponentRef cr1,cr2;
 
     case (true, _, _) then true;
 
@@ -1491,15 +1492,16 @@ crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
 
 alternative names: crefAddSuffix, crefAddIdent
 "
-  input DAE.ComponentRef cr;
+  input DAE.ComponentRef icr;
   input String ident;
   input list<DAE.Subscript> subs;
   input DAE.Type tp;
   output DAE.ComponentRef newCr;
 algorithm
-  newCr := match(cr,ident,subs,tp)
+  newCr := match(icr,ident,subs,tp)
     local 
       DAE.Type tp1; String id1; list<DAE.Subscript> subs1;
+      DAE.ComponentRef cr;
     
     case(DAE.CREF_IDENT(id1,tp1,subs1),ident,subs,tp) 
       then 
@@ -2109,15 +2111,17 @@ algorithm
 end printComponentRefListStr;
 
 public function replaceWholeDimSubscript
-  input DAE.ComponentRef cr;
+  input DAE.ComponentRef icr;
   input Integer index;
   output DAE.ComponentRef ocr;
 algorithm
-  ocr := matchcontinue (cr,index)
+  ocr := matchcontinue (icr,index)
     local
       String id;
       DAE.Type et;
       list<DAE.Subscript> ss;
+      DAE.ComponentRef cr;
+      
     case (DAE.CREF_QUAL(id,et,ss,cr),index)
       equation
         ss = replaceWholeDimSubscript2(ss,index);
@@ -2134,13 +2138,15 @@ algorithm
 end replaceWholeDimSubscript;
 
 public function replaceWholeDimSubscript2
-  input list<DAE.Subscript> subs;
+  input list<DAE.Subscript> isubs;
   input Integer index;
   output list<DAE.Subscript> osubs;
 algorithm
-  osubs := match (subs,index)
+  osubs := match (isubs,index)
     local
       DAE.Subscript sub;
+      list<DAE.Subscript> subs;
+      
     case (DAE.WHOLEDIM()::subs,index)
       equation
         sub = DAE.INDEX(DAE.ICONST(index));

@@ -485,7 +485,7 @@ static void *value_to_mmc(void* value)
       i++;
       data = MMC_CDR(data);
     }
-    return mmc_mk_box_arr(i+1, index_int+3, (const void**) data_mmc);
+    return mmc_mk_box_arr(i+1, index_int+3, (void**) data_mmc);
   }; break;
   case Values__OPTION_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -529,7 +529,7 @@ static void *value_to_mmc(void* value)
       data_mmc[len++] = value_to_mmc(RML_CAR(tmp));
       tmp = RML_CDR(tmp);
     }
-    res = mmc_mk_box_arr(len, 0, (const void**) data_mmc);
+    res = mmc_mk_box_arr(len, 0, (void**) data_mmc);
     free(data_mmc);
     return res;
   };

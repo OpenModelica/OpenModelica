@@ -355,10 +355,11 @@ algorithm
   matchcontinue(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,errorCount)
     local
       String s;
+      ClassInf.State state;
     case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
       equation
-        inState = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
-        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph);
+        state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
+        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
         (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
     case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
@@ -960,13 +961,13 @@ into its condensed form. By default, most array variables are vectorized,
 i.e. v becomes {v[1],v[2],..,v[n]}. But for array equations containing function calls this is not wanted.
 This function detect this case and elaborates expressions without vectorization."
   input Env.Cache inCache;
-  input Env.Env env;
-  input Absyn.Exp e1;
-  input Absyn.Exp e2;
+  input Env.Env inEnv;
+  input Absyn.Exp ie1;
+  input Absyn.Exp ie2;
   input DAE.Exp elabedE1;
   input DAE.Exp elabedE2;
-  input DAE.Properties prop "To determine if array equation";
-  input DAE.Properties prop2 "To determine if array equation";
+  input DAE.Properties iprop "To determine if array equation";
+  input DAE.Properties iprop2 "To determine if array equation";
   input Boolean impl;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -975,12 +976,16 @@ This function detect this case and elaborates expressions without vectorization.
   output DAE.Exp outE2;
   output DAE.Properties oprop "If we have an expandable tuple";
 algorithm
-  (outCache,outE1,outE2,oprop) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,inPrefix,info)
-    local Env.Cache cache;
+  (outCache,outE1,outE2,oprop) := matchcontinue(inCache,inEnv,ie1,ie2,elabedE1,elabedE2,iprop,iprop2,impl,inPrefix,info)
+    local 
+      Env.Cache cache;
+      Env.Env env;
       Boolean b3,b4;
       DAE.Exp elabedE1_2, elabedE2_2;
-      DAE.Properties prop1;
+      DAE.Properties prop1,prop,prop2;
       Prefix.Prefix pre;
+      Absyn.Exp e1,e2;
+      
     case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,pre,info) equation
       b3 = Types.isPropTupleArray(prop);
       b4 = Types.isPropTupleArray(prop2);
@@ -1529,18 +1534,20 @@ end assignComplexConstantConstruct;
 
 protected function assignComplexConstantConstructToArray "
 Helper function for assignComplexConstantConstruct
-Does array indexing and assignement 
-"
-input list<Values.Value> arr;
-input DAE.ComponentRef assigned;
-input DAE.ElementSource source;
-input Integer subPos;
-output list<DAE.Element> eqns;
-algorithm eqns := matchcontinue(arr,assigned,source,subPos)
+Does array indexing and assignement "
+  input list<Values.Value> iarr;
+  input DAE.ComponentRef iassigned;
+  input DAE.ElementSource source;
+  input Integer subPos;
+  output list<DAE.Element> eqns;
+algorithm eqns := matchcontinue(iarr,iassigned,source,subPos)
   local
     Values.Value v;
     list<Values.Value> arrVals;
     list<DAE.Element> eqns2;
+    list<Values.Value> arr;
+    DAE.ComponentRef assigned;
+  
   case({},_,_,_) then {};
   case((v  as Values.ARRAY(valueLst = arrVals))::arr,assigned,source,subPos)
     equation      
@@ -2007,14 +2014,15 @@ protected function instForStatement_dispatch
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := 
+  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
@@ -2034,6 +2042,7 @@ algorithm
       tuple<Absyn.ComponentRef, Integer> tpl;
       DAE.Const cnst;
       InstanceHierarchy ih;
+      DAE.ElementSource source;
 
     // one iterator
     case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
@@ -2386,7 +2395,7 @@ function: instStatement
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
   input SCode.Statement inAlgorithm;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
@@ -2394,7 +2403,8 @@ function: instStatement
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "more statements due to loop unrolling";
 algorithm 
-  (outCache,outStatements) := matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inAlgorithm,source,initial_,inBoolean,unrollForLoops,numErrorMessages)
+  (outCache,outStatements) := 
+  matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inAlgorithm,inSource,initial_,inBoolean,unrollForLoops,numErrorMessages)
     local
       DAE.Properties cprop,prop,msgprop,varprop,valprop;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2;
@@ -2422,6 +2432,7 @@ algorithm
       DAE.Type tp;
       String str;
       DAE.CallAttributes attr;
+      DAE.ElementSource source;
 
     case (cache,env,ih,pre,ci_state,SCode.ALG_ASSIGN(info = _),source,initial_,impl,unrollForLoops,_)
       equation
@@ -3068,16 +3079,18 @@ algorithm
     DAE.Const const;
     Prefix.Prefix pre;
     String s1;
+    list<Absyn.ComponentRef> refs;
+  
   case({},_,_,_,_,_) then ();
-  case(cr::inrefs,cache,env,affectedConnector,pre,info)
+  case(cr::refs,cache,env,affectedConnector,pre,info)
     equation
       (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.propertiesListToConst({prop});
       true = Types.isParameterOrConstant(const);
-      checkConstantVariability(inrefs,cache,env,affectedConnector,pre,info);
+      checkConstantVariability(refs,cache,env,affectedConnector,pre,info);
     then
       ();
-  case(cr::inrefs,cache,env,affectedConnector,pre,info)
+  case(cr::refs,cache,env,affectedConnector,pre,info)
     equation
       (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.propertiesListToConst({prop});
@@ -4476,6 +4489,8 @@ algorithm
   end matchcontinue;
 end instAssignment;
 
+
+
 protected function instAssignment2
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4485,14 +4500,14 @@ protected function instAssignment2
   input DAE.Exp value;
   input DAE.Properties props;
   input Absyn.Info info;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   output Env.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
 algorithm
-  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,source,initial_,inBoolean,unrollForLoops)
+  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inBoolean,unrollForLoops)
     local
       DAE.ComponentRef ce,ce_1;
       DAE.Type t;
@@ -4506,6 +4521,7 @@ algorithm
       list<Absyn.Exp> expl;
       list<DAE.Exp> expl_1,expl_2;
       list<DAE.Properties> cprops, eprops;
+      list<DAE.Attributes> attrs;
       DAE.Type lt,rt;
       String s,lhs_str,rhs_str,lt_str,rt_str;
       list<DAE.Statement> stmts;
@@ -4518,11 +4534,14 @@ algorithm
       Absyn.Exp left;
       DAE.Pattern pattern;
       DAE.Attributes attr;
+      Absyn.Direction direction;
+      DAE.ElementSource source;
    
-    /* v := expr; */
+    // v := expr;
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops) 
       equation     
-        (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(ce,t),cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache, env, cr, impl, false, pre, info);
+        Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4532,7 +4551,7 @@ algorithm
       then
         (cache,{stmt});
 
-        /* der(x) := ... */
+    // der(x) := ...
     case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation 
         (cache,SOME((_,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
@@ -4548,7 +4567,8 @@ algorithm
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation 
-        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((cre,cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -4563,7 +4583,8 @@ algorithm
         true = MetaUtil.onlyCrefExpressions(expl);
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
+        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -4578,7 +4599,8 @@ algorithm
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
+        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -4590,7 +4612,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
-        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info,Patternm.bDisallowTopLevelInputs);
+        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info,Static.bDisallowTopLevelInputs);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});
@@ -4600,7 +4622,8 @@ algorithm
       equation 
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), Ceval.MSG(info));
-        (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefList(cache,env, expl, impl,NONE(),false,pre,info, Error.getNumErrorMessages());
+        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);
         source = DAEUtil.addElementSourceFileInfo(source, info);

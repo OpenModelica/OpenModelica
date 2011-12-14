@@ -239,17 +239,19 @@ protected function inlineWhenEq
   inlines function calls in when equations"
   input BackendDAE.WhenEquation inWhenEquation;
   input Functiontuple inElementList;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   output BackendDAE.WhenEquation outWhenEquation;
   output DAE.ElementSource outSource;
 algorithm
-  (outWhenEquation,outSource) := matchcontinue(inWhenEquation,inElementList,source)
+  (outWhenEquation,outSource) := matchcontinue(inWhenEquation,inElementList,inSource)
     local
       Functiontuple fns;
       Integer i;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
       BackendDAE.WhenEquation weq,weq_1;
+      DAE.ElementSource source;
+      
     case (BackendDAE.WHEN_EQ(i,cref,e,NONE()),fns,source)
       equation
         (e_1,source) = inlineExp(e,fns,source);
@@ -889,16 +891,18 @@ protected function inlineElse
   inlines calls in an Algorithm.Else"
   input Algorithm.Else inElse;
   input Functiontuple inElementList;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   output Algorithm.Else outElse;
   output DAE.ElementSource outSource;
 algorithm
-  (outElse,outSource) := matchcontinue(inElse,inElementList,source)
+  (outElse,outSource) := matchcontinue(inElse,inElementList,inSource)
     local
       Functiontuple fns;
       Algorithm.Else a_else,a_else_1;
       DAE.Exp e,e_1;
       list<Algorithm.Statement> stmts,stmts_1;
+      DAE.ElementSource source;
+      
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       equation
         (e_1,source) = inlineExp(e,fns,source);
@@ -920,15 +924,17 @@ function: inlineExp
   inlines calls in an DAE.Exp"
   input DAE.Exp inExp;
   input Functiontuple inElementList;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
 algorithm
-  (outExp,outSource) := matchcontinue (inExp,inElementList,source)
+  (outExp,outSource) := matchcontinue (inExp,inElementList,inSource)
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
       Boolean b;
+      DAE.ElementSource source;
+      
     case (e,fns,source)
       equation
         ((e_1,(fns,b))) = Expression.traverseExp(e,inlineCall,(fns,false));
@@ -937,7 +943,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
       then
         (e_2,source);
-    else (inExp,source);
+    else (inExp,inSource);
   end matchcontinue;
 end inlineExp;
 
@@ -946,15 +952,17 @@ function: inlineExp
   inlines calls in an DAE.Exp"
   input DAE.Exp inExp;
   input Functiontuple inElementList;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
 algorithm
-  (outExp,outSource) := matchcontinue (inExp,inElementList,source)
+  (outExp,outSource) := matchcontinue (inExp,inElementList,inSource)
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
       Boolean b;
+      DAE.ElementSource source;
+      
     case (e,fns,source)
       equation
         ((e_1,(fns,b))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
@@ -963,7 +971,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
       then
         (e_2,source);
-    else (inExp,source);
+    else (inExp,inSource);
   end matchcontinue;
 end forceInlineExp;
 
@@ -972,15 +980,17 @@ function: inlineExp
   inlines calls in an DAE.Exp"
   input list<DAE.Exp> inExps;
   input Functiontuple inElementList;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   output list<DAE.Exp> outExps;
   output DAE.ElementSource outSource;
 algorithm
-  (outExps,outSource) := match (inExps,inElementList,source)
+  (outExps,outSource) := match (inExps,inElementList,inSource)
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
       list<DAE.Exp> exps;
+      DAE.ElementSource source;
+      
     case ({},_,source) then ({},source);
     case (e::exps,fns,source)
       equation
@@ -1290,18 +1300,19 @@ protected function boxIfUnboxedFunRef
   (2) Need to box the output if it was not done before
   This function handles (2)
   "
-  input DAE.Exp exp;
+  input DAE.Exp iexp;
   input DAE.Type ty;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (exp,ty)
+  outExp := match (iexp,ty)
     local
       DAE.Type t;
+      DAE.Exp exp;
     case (exp,DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(funcResultType=t)))
       equation
         exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
       then exp;
-    else exp;
+    else iexp;
   end match;
 end boxIfUnboxedFunRef;
 

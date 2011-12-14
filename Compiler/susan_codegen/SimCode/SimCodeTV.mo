@@ -44,6 +44,12 @@ package builtin
     input TypeVar[:] arr;
     output list<TypeVar> lst;
   end arrayList;
+  
+  function stringEq
+    input String s1;
+    input String s2;
+    output Boolean b;
+  end stringEq;  
  
 end builtin;
 
@@ -1190,6 +1196,8 @@ package DAE
       Binding binding;
     end TYPES_VAR;
   end Var;
+  
+  type FuncArg = tuple<Ident, Type, Const, Option<Exp>> "Function Argument; name, type, variability and default binding (should probably be constant)" ;
 
   type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
 

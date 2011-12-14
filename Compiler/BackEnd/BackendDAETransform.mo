@@ -99,8 +99,8 @@ public function matchingAlgorithm
   outputs: (int vector /* vector of equation indices */ ,
               int vector /* vector of variable indices */,
               BackendDAE,IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input daeHandlerFunc daeHandler;
   input DAE.FunctionTree inFunctions;
@@ -126,7 +126,7 @@ public function matchingAlgorithm
   end daeHandlerFunc; 
 algorithm
   (osyst,oshared) :=
-  matchcontinue (syst,shared,inMatchingOptions,daeHandler,inFunctions)
+  matchcontinue (isyst,ishared,inMatchingOptions,daeHandler,inFunctions)
     local
       BackendDAE.Value nvars,neqns,memsize;
       String ns,ne;
@@ -139,8 +139,10 @@ algorithm
       BackendDAE.DAEHandlerArg arg,arg1,arg2;
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
-    /* fail case if daelow is empty */
+    // fail case if daelow is empty
     case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,_,_,_)
       equation
         nvars = arrayLength(m);
@@ -401,8 +403,8 @@ public function matchingAlgorithm2
   outputs: (Assignments, /* assignments, array of equation indices */
               Assignments, /* assignments, list of variable indices */
               BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input Integer inInteger4;
   input Integer inInteger5;
   input Integer inInteger6;
@@ -441,7 +443,7 @@ public function matchingAlgorithm2
   end daeHandlerFunc;
 algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (syst,shared,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,daeHandler,inArg,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  matchcontinue (isyst,ishared,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,daeHandler,inArg,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
       BackendDAE.BackendDAE dae;
@@ -457,6 +459,8 @@ algorithm
       BackendDAE.DAEHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;      
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared,nv,nf,i,ass1,ass2,_,_,inArg,_,derivedAlgs,derivedMultiEqn)
       equation
@@ -528,15 +532,12 @@ end matchingAlgorithm2;
 
 protected function pathFound "function: pathFound
   author: PA
-
   This function is part of the matching algorithm.
   It tries to find a matching for the equation index given as
   third argument, i.
-
   inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int /* equation */,
                Assignments, Assignments)
-  outputs: (Assignments, Assignments)
-"
+  outputs: (Assignments, Assignments)"
   input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
   input Integer inInteger3;
@@ -567,9 +568,7 @@ end pathFound;
 
 protected function assignOneInEqn "function: assignOneInEqn
   author: PA
-
-  Helper function to path_found.
-"
+  Helper function to pathFound."
   input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
   input Integer inInteger3;
@@ -905,8 +904,8 @@ protected function analyseStrongComponentBlock"function: analyseStrongComponentB
   input list<BackendDAE.Value> inComp;  
   input list<BackendDAE.Equation> inEqnLst;
   input list<tuple<BackendDAE.Var,BackendDAE.Value>> inVarVarindxLst; 
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
   input array<Integer> inAss1;
@@ -915,7 +914,7 @@ protected function analyseStrongComponentBlock"function: analyseStrongComponentB
   output BackendDAE.StrongComponent outComp;
 algorithm
   outComp:=
-  matchcontinue (inComp,inEqnLst,inVarVarindxLst,syst,shared,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2,inLoop)
+  matchcontinue (inComp,inEqnLst,inVarVarindxLst,isyst,ishared,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2,inLoop)
     local
       Integer i;
       BackendDAE.Value compelem,v;
@@ -935,7 +934,10 @@ algorithm
       array<DAE.Algorithm> al;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-      BackendDAE.StrongComponent sc;      
+      BackendDAE.StrongComponent sc;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+            
     case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2,false)
       equation
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
@@ -2160,8 +2162,8 @@ public function reduceIndexDynamicStateSelection
   author: Frenkel TUD 2011-05
   index reduction by using dynamic state selection."
   input BackendDAE.DAEHandlerJop inJop;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree inFunctions;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;
@@ -2177,7 +2179,7 @@ public function reduceIndexDynamicStateSelection
   output BackendDAE.DAEHandlerArg outArg;
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (inJop,syst,shared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
+  matchcontinue (inJop,isyst,ishared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,deqns,reqns,changedeqns,eqnsindxs;
       BackendDAE.BackendDAE dae;
@@ -2203,6 +2205,9 @@ algorithm
       BackendDAE.Assignments ass1,ass2; 
       array<BackendDAE.Value> vec1,vec2;
       String smeqs;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared as BackendDAE.SHARED(arrayEqs=ae),inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
@@ -2305,14 +2310,14 @@ protected function replaceScalarArrayEqns
   author: Frenkel TUD 2011-05
   replaces array eqns like matrix=matrix with the scalar equations."
   input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
   (osyst,oshared) :=
-  matchcontinue (inOrgEqns,syst,shared,inFunctions)
+  matchcontinue (inOrgEqns,isyst,ishared,inFunctions)
     local
       BackendDAE.BackendDAE dae,dae1;
       BackendDAE.IncidenceMatrix m,m1;
@@ -2320,6 +2325,9 @@ algorithm
       array<list<BackendDAE.Equation>> arrayListeqns;  
       array<BackendDAE.MultiDimEquation> ae; 
       list<Integer> updateeqns;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;      
+      
     case ({},syst,shared,_)
        then (syst,shared);
     case (inOrgEqns,syst,shared as BackendDAE.SHARED(arrayEqs=ae),inFunctions)
@@ -2683,15 +2691,15 @@ protected function addOrgEqntoDAE
   author: Frenkel TUD
   add the orgeqns to the dae"  
   input BackendDAE.ConstraintEquations inOrgEqns;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.StateOrder inStateOrd; 
   input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> outOrgEqns;
 algorithm
-  (osyst,oshared,outOrgEqns) := matchcontinue (inOrgEqns,syst,shared,inStateOrd,inFunctions)
+  (osyst,oshared,outOrgEqns) := matchcontinue (inOrgEqns,isyst,ishared,inStateOrd,inFunctions)
     local
       list<tuple<BackendDAE.Equation,Boolean>> eqns;
       BackendDAE.ConstraintEquations rest;
@@ -2702,6 +2710,9 @@ algorithm
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgeqns;
       list<tuple<Integer,Integer,Boolean>> eqns_1;
       BackendDAE.StateOrder so;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},syst,shared,_,_)
        then (syst,shared,{});
     case ((e,eqns)::rest,syst,shared,so,inFunctions)
@@ -2718,8 +2729,8 @@ protected function addOrgEqntoDAE1
   author: Frenkel TUD
   helper for addOrgEqntoDAE"  
   input list<tuple<BackendDAE.Equation,Boolean>> inOrgEqns;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.StateOrder inStateOrd;  
   input DAE.FunctionTree inFunctions;
   input Integer e;
@@ -2728,7 +2739,7 @@ protected function addOrgEqntoDAE1
   output list<tuple<Integer,Integer,Boolean>> outOrgEqns;
 algorithm
   (osyst,oshared,outOrgEqns):=
-  matchcontinue (inOrgEqns,syst,shared,inStateOrd,inFunctions,e)
+  matchcontinue (inOrgEqns,isyst,ishared,inStateOrd,inFunctions,e)
     local
       Integer ep,l;
       BackendDAE.Equation orgeqn;
@@ -2749,6 +2760,9 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},syst,shared,_,_,_) 
       then (syst,shared,{});
     case ((orgeqn,false)::rest,syst as BackendDAE.EQSYSTEM(v,eqnsarr,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),so,inFunctions,e)
@@ -2877,8 +2891,8 @@ protected function processOrgEnqs
   tries to get all dummystates form the orgeqns"
   input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
   input BackendDAE.StateOrder inStateOrd;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree inFunctionTree;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;  
@@ -2888,7 +2902,7 @@ protected function processOrgEnqs
   output BackendDAE.Assignments outAssignments2;  
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2):=
-  matchcontinue (inOrgEqns,inStateOrd,syst,shared,inFunctionTree,inAssignments1,inAssignments2)
+  matchcontinue (inOrgEqns,inStateOrd,isyst,ishared,inFunctionTree,inAssignments1,inAssignments2)
     local
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgEqns,orgEqns1;
       list<tuple<Integer,Integer,Integer>> orgEqnLevel;
@@ -2902,6 +2916,9 @@ algorithm
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates;
       list<list<tuple<Integer,Option<DAE.Exp>>>> sysjac;
       BackendDAE.StateOrder so;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},_,syst,shared,inFunctionTree,ass1,ass2)
       then (syst,shared,ass1,ass2);
     case (orgEqns,inStateOrd,syst,shared as BackendDAE.SHARED(arrayEqs=ae),inFunctionTree,ass1,ass2)
@@ -3059,8 +3076,8 @@ protected function processAlliasStates
   author: Frenkel TUD 2011-05
   processes all Equations like state = state"
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;  
   input BackendDAE.StateOrder inStateOrd;  
@@ -3078,7 +3095,7 @@ protected function processAlliasStates
   output Integer outReplaced;
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outStateOrd,outStates,outOrgEqns,outOrgEqnsLst,outReplaced):=
-  matchcontinue (inOrgEqns,syst,shared,inAssignments1,inAssignments2,inStateOrd,inStates,inOrgEqns1,inOrgEqnsLst)
+  matchcontinue (inOrgEqns,isyst,ishared,inAssignments1,inAssignments2,inStateOrd,inStates,inOrgEqns1,inOrgEqnsLst)
     local
       Integer e,ep,l,stateno,ev,ast,e_1,r;
       BackendDAE.Equation orgeqn;
@@ -3101,6 +3118,9 @@ algorithm
       list<BackendDAE.Value> slst;
       BackendDAE.Assignments ass1,ass2;
       BackendVarTransform.VariableReplacements repl;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},syst,shared,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst) 
       then (syst,shared,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst,0);
     case ((e,ep,l)::rest,syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,m=SOME(m),mT=SOME(mt)),shared,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst)
@@ -3163,8 +3183,8 @@ protected function processEqnsLevel
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
   input list<list<tuple<Integer,Option<DAE.Exp>>>> inSysjac;  
   input BackendDAE.StateOrder inStateOrd;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;   
   input DAE.FunctionTree inFunctionTree;  
@@ -3176,7 +3196,7 @@ protected function processEqnsLevel
   output list<tuple<DAE.ComponentRef,Integer>> outStates; 
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outStates):=
-  matchcontinue (inOrgEqns,inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inFunctionTree,inStates)
     local
       Integer e,ep,i,stateno,ast,ev,l;
       list<tuple<Integer,Integer,Integer>> rest,orgeqns;
@@ -3192,6 +3212,8 @@ algorithm
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates;
       list<tuple<tuple<Integer,Integer,Integer>,list<tuple<Integer,Option<DAE.Exp>>>>> orgeqnssysjac;
       BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
       then (syst,shared,inAssignments1,inAssignments2,inStates);
     case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
@@ -3271,8 +3293,8 @@ protected function processOneStateEqns
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
   input list<list<tuple<Integer,Option<DAE.Exp>>>> inSysjac;  
   input BackendDAE.StateOrder inStateOrd;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;   
   input DAE.FunctionTree inFunctionTree;  
@@ -3287,7 +3309,7 @@ protected function processOneStateEqns
   output list<Integer> removedStates;
 algorithm
   (outOrgEqns,outSysjac,osyst,oshared,outAssignments1,outAssignments2,outStates,removedStates):=
-  matchcontinue (inOrgEqns,inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inFunctionTree,inStates)
     local
       Integer e,ep,stateno,ast,ev,l;
       list<tuple<Integer,Integer,Integer>> rest,orgeqns;
@@ -3303,6 +3325,8 @@ algorithm
       list<Integer> rs;
       BackendDAE.Var var;
       BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
       then ({},inSysjac,syst,shared,inAssignments1,inAssignments2,inStates,{});
     case ((e,ep,l)::rest,((stateno,_)::{})::sysjac,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedVars=v),shared,ass1,ass2,inFunctionTree,inStates)
@@ -3403,14 +3427,14 @@ protected function replaceDummyStateInOrgEqns
   replaces a state with it alias state in the orgeqns"
   input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
   input BackendVarTransform.VariableReplacements repl;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> outOrgEqns;
 algorithm
   (osyst,oshared,outOrgEqns):=
-  matchcontinue (inOrgEqns,repl,syst,shared)
+  matchcontinue (inOrgEqns,repl,isyst,ishared)
     local
       list<tuple<Integer,Integer,Boolean>> eqns,eqns_1;
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> rest,orgeqns;
@@ -3420,6 +3444,9 @@ algorithm
       Integer e;
       BackendDAE.StateOrder so;
       BackendDAE.Assignments ass1,ass2;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+            
     case ({},_,syst,shared) then (syst,shared,{});
     case ((e,eqns)::rest,repl,syst,shared)
       equation
@@ -3436,14 +3463,14 @@ protected function replaceDummyStateInOrgEqns1
   helper for replaceDummyStateInOrgEqns"
   input list<tuple<Integer,Integer,Boolean>> inOrgEqns;
   input BackendVarTransform.VariableReplacements repl;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,Integer,Boolean>> outOrgEqns;
 algorithm
   (osyst,oshared,outOrgEqns):=
-  matchcontinue (inOrgEqns,repl,syst,shared)
+  matchcontinue (inOrgEqns,repl,isyst,ishared)
     local
       Integer ep,l,i,e_1;
       Boolean b,negate;
@@ -3467,10 +3494,12 @@ algorithm
       DAE.Exp exp1,exp2;
       list<BackendDAE.Value> slst;
       list<Integer> dims;
-      DAE.ElementSource source;      
-      BackendDAE.Shared shared;
+      DAE.ElementSource source;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case ({},_,syst,shared) 
       then (syst,shared,{});
     case ((ep,l,b)::rest,repl,BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching),shared as BackendDAE.SHARED(arrayEqs=ae))
@@ -3507,14 +3536,14 @@ protected function replaceDummyStateInOrgEqns2
   helper for replaceDummyStateInOrgEqns"
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
   input BackendVarTransform.VariableReplacements repl;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,Integer,Integer>> outOrgEqns;
 algorithm
   (osyst,oshared,outOrgEqns):=
-  matchcontinue (inOrgEqns,repl,syst,shared)
+  matchcontinue (inOrgEqns,repl,isyst,ishared)
     local
       Integer e,ep,l,i,e_1;
       BackendDAE.Equation orgeqn;
@@ -3539,9 +3568,11 @@ algorithm
       list<BackendDAE.Value> slst;
       list<Integer> dims;
       DAE.ElementSource source;      
+      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
+      
     case ({},_,syst,shared) 
       then (syst,shared,{});
     case ((e,ep,l)::rest,repl,BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching),shared as BackendDAE.SHARED(arrayEqs=ae,eventInfo=BackendDAE.EVENT_INFO(wclst,zc)))
@@ -4167,14 +4198,14 @@ protected function makeDummyState "function: makeDummyState
   author: Frenkel TUD 20-11"
   input DAE.ComponentRef dummystate;
   input Integer stateindx;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   output DAE.ComponentRef outDerDummyState;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
   (outDerDummyState,osyst,oshared) := 
-   matchcontinue (dummystate,stateindx,syst,shared)
+   matchcontinue (dummystate,stateindx,isyst,ishared)
     local
       list<DAE.ComponentRef> dummystates;
       list<tuple<DAE.ComponentRef,Integer>> states;
@@ -4185,6 +4216,8 @@ algorithm
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
     case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared)
       equation
@@ -4650,8 +4683,8 @@ public function reduceIndexDummyDer
              int /* number of vars */, int /* number of eqns */, int /* i */)
   outputs: (BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.DAEHandlerJop inJop;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree inFunctions;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;
@@ -4667,7 +4700,7 @@ public function reduceIndexDummyDer
   output BackendDAE.DAEHandlerArg outArg;
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (inJop,syst,shared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
+  matchcontinue (inJop,isyst,ishared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<BackendDAE.Key> states;
@@ -4682,6 +4715,8 @@ algorithm
       DAE.Exp stateexp,stateexpcall,dummyderexp;
       DAE.Type tp;
       BackendDAE.Assignments ass1,ass2;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
       equation
@@ -4933,14 +4968,14 @@ protected function replaceDummyDer
              IncidenceMatrixT)"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input list<Integer> inIntegerLst6;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
   (osyst,oshared):=
-  matchcontinue (inExp1,inExp2,syst,shared,inIntegerLst6)
+  matchcontinue (inExp1,inExp2,isyst,ishared,inIntegerLst6)
     local
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
@@ -4958,6 +4993,9 @@ algorithm
       DAE.Exp stateexpcall,dummyderexp;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;      
+      
     case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),ie,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp),{})
       equation
         ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
@@ -5650,8 +5688,8 @@ end ssPrioTupleMin;
 
 protected function calculateVarPriorities
 "Calculates state selection priorities"
-  input list<DAE.ComponentRef> varCrefs;
-  input list<Integer> varIndices;
+  input list<DAE.ComponentRef> inVarCrefs;
+  input list<Integer> inVarIndices;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
   input BackendDAE.EquationArray eqns;
@@ -5659,12 +5697,16 @@ protected function calculateVarPriorities
   input BackendDAE.IncidenceMatrixT mt;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := match(varCrefs,varIndices,vars,knvars,eqns,m,mt)
-  local DAE.ComponentRef varCref;
-    Integer varIndx;
-    BackendDAE.Var v;
-    Real prio,prio1,prio2;
-    list<tuple<DAE.ComponentRef,Integer,Real>> prios;
+  tuples := match(inVarCrefs,inVarIndices,vars,knvars,eqns,m,mt)
+    local 
+      DAE.ComponentRef varCref;
+      Integer varIndx;
+      BackendDAE.Var v;
+      Real prio,prio1,prio2;
+      list<tuple<DAE.ComponentRef,Integer,Real>> prios;
+      list<DAE.ComponentRef> varCrefs;
+      list<Integer> varIndices;    
+    
     case ({},{},_,_,_,_,_) then {};
     case (varCref::varCrefs,varIndx::varIndices,vars,knvars,eqns,m,mt)
       equation
@@ -5844,14 +5886,17 @@ protected function varStateSelectHeuristicPrio1
   author:  PA
   Helper function to varStateSelectHeuristicPrio"
   input DAE.ComponentRef cr;
-  input list<Integer> eqnLst;
+  input list<Integer> inEqnLst;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
   input BackendDAE.EquationArray eqns;
   output Real prio;
 algorithm
-  prio := matchcontinue(cr,eqnLst,vars,knvars,eqns)
-    local Integer e; BackendDAE.Equation eqn;
+  prio := matchcontinue(cr,inEqnLst,vars,knvars,eqns)
+    local 
+      Integer e; BackendDAE.Equation eqn;
+      list<Integer> eqnLst;
+      
     case(cr,{},_,_,_) then 0.0;
     case(cr,e::eqnLst,vars,_,eqns)
       equation
@@ -6136,8 +6181,8 @@ protected function differentiateEqns
             int, /* number of vars */
             int, /* number of eqns */
             int list /* differentiated equations */)"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input list<Integer> inIntegerLst6;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -6149,7 +6194,7 @@ protected function differentiateEqns
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 algorithm
   (osyst,oshared,outIntegerLst6,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (syst,shared,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  matchcontinue (isyst,ishared,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
@@ -6167,6 +6212,8 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
     case (syst,shared,{},_,inDerivedAlgs,inDerivedMultiEqn) then (syst,shared,{},inDerivedAlgs,inDerivedMultiEqn);
 

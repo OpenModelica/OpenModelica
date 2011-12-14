@@ -451,11 +451,11 @@ public function isDer
 algorithm
   _:=
   match (inPath)
+    local Absyn.Path path;
     case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isDer(inPath); then ();
+    case (Absyn.FULLYQUALIFIED(path)) equation isDer(path); then ();
   end match;
 end isDer;
-
 
 public function simpleInitialEnv "
 val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},

@@ -2969,8 +2969,6 @@ case FUNCTION(__) then
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/) ; empty /* increase the counter! */
     )
-  let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
-  let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls /*BUFD*/) ;separator="\n")
   let &outVarInits = buffer ""
@@ -2990,8 +2988,6 @@ case FUNCTION(__) then
     /* functionBodyRegularFunction: GC: save roots mark when you enter the function */    
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>  
-    /* functionBodyRegularFunction: GC: adding inputs as roots! */
-    <%if acceptMetaModelicaGrammar() then '<%addRootsInputs%>'%>
     
     /* functionBodyRegularFunction: GC: do garbage collection */
     <%if acceptMetaModelicaGrammar() then 'mmc_GC_collect(mmc_GC_local_state);'%>
@@ -3000,6 +2996,8 @@ case FUNCTION(__) then
     <%funArgs%>
     /* functionBodyRegularFunction: locals */
     <%varDecls%>
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_local_state_type mmc_GC_local_state_locals = mmc_GC_save_roots_state("_<%fname%>_locals");'%>  
     _tailrecursive:
     /* functionBodyRegularFunction: out inits */
     <%outVarInits%>
@@ -3019,6 +3017,10 @@ case FUNCTION(__) then
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     /* functionBodyRegularFunction: out var assign */
     <%outVarAssign%>
+    
+    /* GC: pop the locals mark! */
+    <%if acceptMetaModelicaGrammar() 
+      then 'mmc_GC_undo_roots_state(mmc_GC_local_state_locals);'%>
     
     /* GC: pop the mark! */
     <%if acceptMetaModelicaGrammar() 
@@ -5470,7 +5472,14 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
     match vs
     case v::vrest then
       let exp = daeExp(e,context,&preExp,&varDecls)
-      '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+      match e
+      case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
+        // adrpo: ignore _x = _x!
+        if stringEq(v, crefStr(cr))
+        then '<%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+      case _ then
+        '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
 end daeExpTailCall;
 
 template daeExpCallBuiltinPrefix(Boolean builtin)

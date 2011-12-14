@@ -938,11 +938,13 @@ algorithm
       Absyn.Exp e;
       list<SCode.Statement> stmts;
       list<Absyn.AlgorithmItem> al;
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> rest;
+      
     case {} then {};
-    case ((e,al)::branches)
+    case ((e,al)::rest)
       equation
         stmts = translateClassdefAlgorithmitems(al);
-        sbranches = translateBranches(branches);
+        sbranches = translateBranches(rest);
       then (e,stmts)::sbranches;
   end match;
 end translateBranches;
@@ -1176,12 +1178,15 @@ algorithm
 end translateElement;
 
 protected function translateDefineunitParam " help function to translateElement"
-  input list<Absyn.NamedArg> args;
-  input String arg;
+  input list<Absyn.NamedArg> inArgs;
+  input String inArg;
   output Option<String> expOpt;
 algorithm
-  (expOpt) := matchcontinue(args,arg)
-    local String str,name;
+  (expOpt) := matchcontinue(inArgs,inArg)
+    local 
+      String str,name, arg;
+      list<Absyn.NamedArg> args;
+      
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
       true = name ==& arg;
     then SOME(str);
@@ -1191,12 +1196,15 @@ algorithm
 end translateDefineunitParam;
 
 protected function translateDefineunitParam2 " help function to translateElement"
-  input list<Absyn.NamedArg> args;
-  input String arg;
+  input list<Absyn.NamedArg> inArgs;
+  input String inArg;
   output Option<Real> weightOpt;
 algorithm
-  weightOpt := matchcontinue(args,arg)
-    local String name; Real r;
+  weightOpt := matchcontinue(inArgs,inArg)
+    local 
+      String name, arg; Real r;
+      list<Absyn.NamedArg> args;
+      
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;
     then SOME(r);
@@ -1215,10 +1223,10 @@ protected function translateElementspec
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
   input SCode.Visibility inVisibility;
   input Absyn.ElementSpec inElementSpec4;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inVisibility,inElementSpec4,info)
+  outElementLst := match (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inVisibility,inElementSpec4,inInfo)
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
@@ -1246,7 +1254,7 @@ algorithm
       Absyn.Annotation absann;
       SCode.Annotation ann;
       Absyn.Variability variability;
-      Absyn.Info i;
+      Absyn.Info i,info;
       String str;
       SCode.Element cls;
       SCode.Redeclare sRed;
@@ -1604,10 +1612,10 @@ protected function translateEquation
   PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
   input Option<SCode.Comment> inComment;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output SCode.EEquation outEEquation;
 algorithm
-  outEEquation := matchcontinue (inEquation,inComment,info)
+  outEEquation := matchcontinue (inEquation,inComment,inInfo)
     local
       list<SCode.EEquation> tb_1,fb_1,eb_1,l_1;
       Absyn.Exp e,ee,econd_1,cond,econd,e1,e2;
@@ -1624,6 +1632,7 @@ algorithm
       list<Absyn.Exp> conditions;
       list<list<Absyn.EquationItem>> trueBranches;
       list<list<SCode.EEquation>> trueEEquations;
+      Absyn.Info info;
 
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info)
       equation

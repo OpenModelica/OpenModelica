@@ -823,14 +823,15 @@ algorithm
 end dumpBackendDAEType;
 
 public function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
-  input list<DAE.Algorithm> algs;
+  input list<DAE.Algorithm> ialgs;
   input Integer indx;
 algorithm
-  _ := match(algs,indx)
+  _ := match(ialgs,indx)
     local 
       list<Algorithm.Statement> stmts;
       IOStream.IOStream myStream;
       String is;
+      list<DAE.Algorithm> algs;
       
     case({},_) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs,indx) 
@@ -970,15 +971,17 @@ protected function dumpEqnsStr2
   Helper function to dump_eqns"
   input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
-  input list<String> acc;
+  input list<String> inAcc;
   output list<String> strs;
 algorithm
-  strs := match (inEquationLst,inInteger,acc)
+  strs := match (inEquationLst,inInteger,inAcc)
     local
       String es,is,str;
       BackendDAE.Value index_1,index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
+      list<String> acc;
+      
     case ({},_,acc) then listReverse(acc);
     case ((eqn :: eqns),index,acc)
       equation

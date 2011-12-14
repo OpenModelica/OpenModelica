@@ -201,12 +201,12 @@ public function unparseClassStr
     // if the order is not the one above on re-parse will give errors!"
   input Integer indent;
   input Absyn.Class ourClass;
-  input String finalStr;
+  input String inFinalStr;
   input tuple<String,String> redeclareKeywords;
   input String innerouterStr;
   output String outString;
 algorithm
-  outString := match (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
+  outString := match (indent,ourClass,inFinalStr,redeclareKeywords,innerouterStr)
     local
       Ident is,s4,s5,str,n,fi,io,s6,s8,s9,baseClassName;
       Integer i_1,i;
@@ -224,7 +224,7 @@ algorithm
       list<Ident> vars,typeVars;
       tuple<String,String> re;
       list<Absyn.Path> paths;
-      String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs;
+      String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs, finalStr;
       
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name

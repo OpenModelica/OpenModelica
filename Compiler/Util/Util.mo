@@ -416,7 +416,7 @@ end arrayMap;
 
 protected function arrayMapHelp1 "help function to arrayMap"
   input array<Type_a> array;
-  input array<Type_b> newArray;
+  input array<Type_b> inNewArray;
   input FuncType func;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
@@ -428,9 +428,10 @@ protected function arrayMapHelp1 "help function to arrayMap"
     output Type_b y;
   end FuncType;
 algorithm
-  outArray := matchcontinue(array,newArray,func,pos,len)
+  outArray := matchcontinue(array,inNewArray,func,pos,len)
     local 
       Type_b newElt;
+      array<Type_b> newArray;
     
     case(array,newArray,func,pos,len) equation 
       true = pos > len;
@@ -1451,12 +1452,12 @@ public function intSign
   input Integer i;
   output Integer o;
 algorithm
-  o := match i
+  o := match i local Integer j;
     case 0 then 0;
     case i
       equation
-        i = if_(i>0,1,-1);
-      then i;
+        j = if_(i>0,1,-1);
+      then j;
   end match;
 end intSign;
 
@@ -1855,11 +1856,14 @@ algorithm
   match (inBools,inList,inFalse)
     local
       Type_a x,head;
-      case({},{},x) then x;
+      list<Boolean> bools;
+      list<Type_a> lst;
+      
+    case({},{},x) then x;
     case (true::_,head::_,_) then head;
-    case (false::inBools,_::inList,x)
+    case (false::bools,_::lst,x)
       equation
-        head = selectList(inBools,inList,x);
+        head = selectList(bools,lst,x);
       then head;
   end match;
 end selectList;
@@ -2052,8 +2056,8 @@ protected function splitUniqueOnBoolWork
 "
   input list<TypeA> sorted;
   input Comp comp;
-  input list<TypeA> uniqueAcc;
-  input list<TypeA> duplicateAcc;
+  input list<TypeA> inUniqueAcc;
+  input list<TypeA> inDuplicateAcc;
   output list<TypeA> uniqueLst;
   output list<TypeA> duplicateLst;
   replaceable type TypeA subtypeof Any;
@@ -2063,11 +2067,13 @@ protected function splitUniqueOnBoolWork
     output Boolean b;
   end Comp;
 algorithm
-  (uniqueLst,duplicateLst) := match (sorted,comp,uniqueAcc,duplicateAcc)
+  (uniqueLst,duplicateLst) := match (sorted,comp,inUniqueAcc,inDuplicateAcc)
     local
       TypeA a1,a2;
-      list<TypeA> rest;
+      list<TypeA> rest, uniqueAcc, duplicateAcc;
       Boolean b;
+      
+      
     case ({},comp,uniqueAcc,duplicateAcc)
       equation
         uniqueAcc = listReverse(uniqueAcc);
@@ -2101,7 +2107,9 @@ algorithm
     local
       Key k1,k2;
       Val v;
-    case (k1,(k2,v)::lst) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, lst, v);
+      list<tuple<Key,Val>> rest;
+      
+    case (k1,(k2,v)::rest) then Debug.bcallret2(not valueEq(k1,k2), assoc, k1, rest, v);
   end match;
 end assoc;
 
@@ -2169,13 +2177,15 @@ protected function allCombinations2
   The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
   
   This function screams WARNING I USE COMBINATORIAL EXPLOSION."
-  input list<list<Type_a>> lst;
+  input list<list<Type_a>> ilst;
   output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
-  out := match (lst)
+  out := match (ilst)
     local
       list<Type_a> x;
+      list<list<Type_a>> lst;
+      
     case {} then {};
     case (x::lst)
       equation
@@ -2186,16 +2196,21 @@ algorithm
 end allCombinations2;
 
 protected function allCombinations3
-  input list<Type_a> lst1;
-  input list<list<Type_a>> lst2;
-  input list<list<Type_a>> acc;
+  input list<Type_a> ilst1;
+  input list<list<Type_a>> ilst2;
+  input list<list<Type_a>> iacc;
   output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
-  out := match (lst1,lst2,acc)
+  out := match (ilst1,ilst2,iacc)
     local
       Type_a x;
       list<list<Type_a>> acc2;
+      list<Type_a> lst1;
+      list<list<Type_a>> lst2;
+      list<list<Type_a>> acc;
+
+      
     case ({},_,acc) then listReverse(acc);
     case (x::lst1,lst2,acc)
       equation
@@ -2207,14 +2222,16 @@ end allCombinations3;
 
 protected function allCombinations4
   input Type_a x;
-  input list<list<Type_a>> lst;
-  input list<list<Type_a>> acc;
+  input list<list<Type_a>> ilst;
+  input list<list<Type_a>> iacc;
   output list<list<Type_a>> out;
   replaceable type Type_a subtypeof Any;
 algorithm
-  out := match (x,lst,acc)
+  out := match (x,ilst,iacc)
     local
       list<Type_a> l;
+      list<list<Type_a>> lst;
+      list<list<Type_a>> acc;      
     
     case (x,{},acc) then {x}::acc;
     case (x,{l},acc) then (x::l)::acc;

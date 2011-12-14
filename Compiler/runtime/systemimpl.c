@@ -32,9 +32,6 @@
 extern "C" {
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#define NOMINMAX
-#endif
 #include "systemimpl.h"
 
 /*
@@ -907,11 +904,17 @@ static int SystemImpl__freeFunction(int funcIndex, int printDebug)
 {
   modelica_ptr_t func = NULL, lib = NULL;
 
+  //fprintf(stderr,"freeFunction(%d,%d)\n", funcIndex, printDebug);
+
   func = lookup_ptr(funcIndex);
+
+  //fprintf(stderr,"freeFunction(%d,%d) lookup: func: %p\n", func);
 
   if (func == NULL) return 1;
 
   lib = lookup_ptr(func->data.func.lib);
+
+  //fprintf(stderr,"freeFunction(%d,%d) lookup: lib %p\n", lib);
 
   if (lib == NULL) {
     free_function(func);

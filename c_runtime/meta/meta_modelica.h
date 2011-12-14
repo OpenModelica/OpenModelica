@@ -39,7 +39,7 @@
 #define META_MODELICA_H_
 
 #include "modelica.h"
-#include "meta_modelica_gc.h"
+#include "gc.h"
 #include "meta_modelica_string_lit.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,7 +62,7 @@ extern "C" {
 #else
 #define MMC_DEBUG_ASSERT(x)
 #endif
-#define MMC_CHECK_STRING(x) MMC_DEBUG_ASSERT(MMC_STRLEN(x) == strlen(MMC_STRINGDATA(x)))
+#define MMC_CHECK_STRING(x) MMC_DEBUG_ASSERT(!((MMC_STRLEN(x) != strlen(MMC_STRINGDATA(x))) && (MMC_STRLEN(x) >=0)))
 
 
 #define MMC_SIZE_META sizeof(modelica_metatype)
@@ -113,6 +113,7 @@ typedef int mmc_sint_t;
 #define MMC_TAGFIXNUM(i)  ((i) << 1)
 #define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) (X)) >> 1)
 #define MMC_REALHDR    (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
+#define MMC_HDR_IS_FORWARD(hdr)	(((hdr) & 3) == 3)
 /*
 #define MMC_REALDATA(x) (*((double*)(((mmc_uint_t*)MMC_UNTAGPTR(x))+1)))
 */
@@ -162,7 +163,13 @@ typedef int mmc_sint_t;
     } NAME = { MMC_STRINGHDR(LEN), VAL }
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
-#define MMC_DEFREALLIT(NAME,VAL) struct mmc_real NAME = {MMC_REALHDR,VAL}
+/* adrpo: assume RML_DBL_PAD always! */
+struct mmc_real_lit {	/* there must be no padding between `header' and `data' */
+    mmc_uint_t filler;
+    mmc_uint_t header;
+    double data;
+};
+#define MMC_DEFREALLIT(NAME,VAL) struct mmc_real_lit NAME = {0,MMC_REALHDR,VAL}
 #define MMC_REFREALLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
 struct mmc_header {
@@ -179,9 +186,10 @@ struct mmc_cons_struct {
     void *data[2];  /* `slots' elements */
 };
 
+/* adrpo: assume RML_DBL_STRICT always! */
 struct mmc_real {
     mmc_uint_t header;  /* MMC_REALHDR */
-    double data;
+    mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
 };
 
 struct mmc_string {
@@ -199,6 +207,26 @@ static inline void* mmc_mk_icon(mmc_sint_t i)
 }
 
 void* mmc_mk_rcon(double d);
+
+union mmc_double_as_words {
+    double d;
+    mmc_uint_t data[2];
+};
+static inline double mmc_prim_get_real(void *p)
+{
+  union mmc_double_as_words u;
+  u.data[0] = MMC_REALDATA(p)[0];
+  u.data[1] = MMC_REALDATA(p)[1];
+  return u.d;
+}
+
+static inline void mmc_prim_set_real(struct mmc_real *p, double d)
+{
+  union mmc_double_as_words u;
+  u.d = d;
+  p->data[0] = u.data[0];
+  p->data[1] = u.data[1];
+}
 
 static inline void* mmc_mk_scon(const char *s)
 {
@@ -419,17 +447,17 @@ static const MMC_DEFSTRUCT0LIT(mmc_none,1);
 
 #define MMC_CONS_CTOR 1
 
-static inline void *mmc_mk_cons(const void *car, const void *cdr)
+static inline void *mmc_mk_cons(void *car, void *cdr)
 {
     return mmc_mk_box2(MMC_CONS_CTOR, car, cdr);
 }
 
-static inline void *mmc_mk_some(const void *x)
+static inline void *mmc_mk_some(void *x)
 {
     return mmc_mk_box1(1, x);
 }
 
-void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args);
+void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 modelica_boolean valueEq(modelica_metatype,modelica_metatype);
@@ -474,7 +502,7 @@ struct record_description {
 
 #define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)
 #define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
-#define mmc_unbox_real(X) MMC_REALDATA(X)
+#define mmc_unbox_real(X) mmc_prim_get_real(X)
 #define mmc_unbox_string(X) MMC_STRINGDATA(X)
 #define mmc_unbox_array(X) (*((base_array_t*)X))
 

@@ -64,7 +64,9 @@ static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error m
 static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
 static string lastDeletedCheckpoint = "";
 
+extern "C" {
 int showErrorMessages = 0;
+}
 
 static void push_message(ErrorMessage *msg)
 {

@@ -354,13 +354,13 @@ algorithm
 end simplify1FixP;
 
 protected function simplifyReductionIterators
-  input list<DAE.ReductionIterator> iters;
-  input list<DAE.ReductionIterator> acc;
-  input Boolean change;
+  input list<DAE.ReductionIterator> inIters;
+  input list<DAE.ReductionIterator> inAcc;
+  input Boolean inChange;
   output list<DAE.ReductionIterator> outIters;
   output Boolean outChange;
 algorithm
-  (outIters,outChange) := match (iters,acc,change)
+  (outIters,outChange) := match (inIters,inAcc,inChange)
     local
       Boolean b;
       String id;
@@ -368,6 +368,9 @@ algorithm
       DAE.Type ty;
       Option<DAE.Exp> ogexp;
       DAE.ReductionIterator iter;
+      list<DAE.ReductionIterator> iters,acc;
+      Boolean change;
+      
     case ({},acc,change) then (listReverse(acc),change);
 
     case (DAE.REDUCTIONITER(id,exp,SOME(DAE.BCONST(true)),ty)::iters,acc,_)
@@ -817,14 +820,14 @@ end simplifyBuiltinCalls;
 
 protected function simplifyCat
   input Integer dim;
-  input list<DAE.Exp> es;
+  input list<DAE.Exp> ies;
   input list<DAE.Exp> acc;
   input Boolean changed;
   output list<DAE.Exp> oes;
 algorithm
-  oes := matchcontinue (dim,es,acc,changed)
+  oes := matchcontinue (dim,ies,acc,changed)
     local
-      list<DAE.Exp> es1,es2,esn;
+      list<DAE.Exp> es1,es2,esn,es;
       DAE.Exp e;
       DAE.Dimension ndim,dim1,dim2,dim11,dim21;
       DAE.Dimensions dims;
@@ -938,16 +941,18 @@ stringAppendList({abc,def,String(time),ghi,jkl}) => stringAppendList({abcdef,Str
 stringAppendList({abc,def,ghi,jkl}) => abcdefghijkl
 stringAppendList({}) => abcdefghijkl
 "
-  input list<DAE.Exp> expl;
-  input list<DAE.Exp> acc;
-  input Boolean change;
+  input list<DAE.Exp> iexpl;
+  input list<DAE.Exp> iacc;
+  input Boolean ichange;
   output DAE.Exp exp;
 algorithm
-  exp := match (expl,acc,change)
+  exp := match (iexpl,iacc,ichange)
     local
       String s1,s2,s;
-      DAE.Exp exp,exp1,exp2;
-      list<DAE.Exp> rest;
+      DAE.Exp exp,exp1,exp2;      
+      list<DAE.Exp> rest,expl,acc;
+      Boolean change;
+      
     case ({},{},_) then DAE.SCONST("");
     case ({},{exp},_) then exp;
     case ({},{exp1,exp2},_)
@@ -2629,11 +2634,11 @@ end simplifyBinaryMulCoeff2;
 protected function simplifyAsub0 "simplifies asub when expression already has been simplified with simplify1
 Earlier these cases were directly in simplify1, but now they are here so simplify1 only is called once for 
 the subexpression"
-  input DAE.Exp e;
+  input DAE.Exp ie;
   input Integer sub;
   output DAE.Exp res;
 algorithm
-  res := match(e,sub)
+  res := match(ie,sub)
     local 
       Type t,t1,t2;
       Boolean b,sc, bstart, bstop;
@@ -2641,7 +2646,7 @@ algorithm
       list<Boolean> bls;
       list<list<DAE.Exp>> mexps;
       list<DAE.Exp> mexpl;
-      DAE.Exp e1,e2,cond,exp,start,stop,step;
+      DAE.Exp e1,e2,cond,exp,start,stop,step,e;
       Integer istart,istop,istep,ival;
       Real rstart,rstop,rstep,rval;
       DAE.ComponentRef c,c_1;
@@ -3919,15 +3924,16 @@ end simplifyUnary;
 
 protected function simplifyVectorScalarMatrix "Help function to simplifyVectorScalar,
 handles MATRIX expressions"
-  input list<list<DAE.Exp>> mexpl;
+  input list<list<DAE.Exp>> imexpl;
   input Operator op;
   input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
   output list<list<DAE.Exp>> outExp;
 algorithm
-  outExp := match(mexpl,op,s1,arrayScalar)
+  outExp := match(imexpl,op,s1,arrayScalar)
     local
       list<DAE.Exp> row;
+      list<list<DAE.Exp>> mexpl;
     case ({},op,s1,arrayScalar) then {};
     case (row::mexpl,op,s1,arrayScalar)
       equation
@@ -3939,14 +3945,14 @@ end simplifyVectorScalarMatrix;
 
 protected function simplifyVectorScalarMatrixRow "Help function to simplifyVectorScalarMatrix,
 handles MATRIX row"
-  input list<DAE.Exp> row;
+  input list<DAE.Exp> irow;
   input Operator op;
   input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
   output list<DAE.Exp> outExp;
 algorithm
-  outExp := match(row,op,s1,arrayScalar)
-  local DAE.Exp e; Boolean scalar;
+  outExp := match(irow,op,s1,arrayScalar)
+    local DAE.Exp e; Boolean scalar; list<DAE.Exp> row;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
     case(e::row,op,s1,true)
@@ -4205,10 +4211,11 @@ algorithm
 end simplifyReductionFoldPhase;
 
 protected function hasZeroLengthIterator
-  input list<DAE.ReductionIterator> iters;
+  input list<DAE.ReductionIterator> inIters;
   output Boolean b;
 algorithm
-  b := match iters
+  b := match inIters
+    local list<DAE.ReductionIterator> iters;
     case {} then false;
     case DAE.REDUCTIONITER(guardExp=SOME(DAE.BCONST(false)))::_ then true;
     case DAE.REDUCTIONITER(exp=DAE.LIST({}))::_ then true;

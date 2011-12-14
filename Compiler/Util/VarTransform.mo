@@ -1565,11 +1565,11 @@ algorithm
 end replaceExp;
 
 public function replaceExpList
-  input list<DAE.Exp> expl;
+  input list<DAE.Exp> iexpl;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
-  input list<DAE.Exp> acc1;
-  input Boolean acc2;
+  input list<DAE.Exp> iacc1;
+  input Boolean iacc2;
   output list<DAE.Exp> outExpl;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
@@ -1577,10 +1577,14 @@ public function replaceExpList
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outExpl,replacementPerformed) := match (expl,repl,cond,acc1,acc2)
+  (outExpl,replacementPerformed) := match (iexpl,repl,cond,iacc1,iacc2)
     local
       DAE.Exp exp;
       Boolean c;
+      list<DAE.Exp> expl;
+      list<DAE.Exp> acc1;
+      Boolean acc2;
+      
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (exp::expl,repl,cond,acc1,acc2)
       equation
@@ -1591,11 +1595,11 @@ algorithm
 end replaceExpList;
 
 protected function replaceExpIters
-  input list<DAE.ReductionIterator> iters;
+  input list<DAE.ReductionIterator> inIters;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> cond;
-  input list<DAE.ReductionIterator> acc1;
-  input Boolean acc2;
+  input list<DAE.ReductionIterator> iacc1;
+  input Boolean iacc2;
   output list<DAE.ReductionIterator> outIter;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
@@ -1603,13 +1607,17 @@ protected function replaceExpIters
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  (outIter,replacementPerformed) := matchcontinue (iters,repl,cond,acc1,acc2)
+  (outIter,replacementPerformed) := matchcontinue (inIters,repl,cond,iacc1,iacc2)
     local
       String id;
       DAE.Exp exp,gexp;
       DAE.Type ty;
       Boolean b1,b2;
       DAE.ReductionIterator iter;
+      list<DAE.ReductionIterator> iters;
+      list<DAE.ReductionIterator> acc1;
+      Boolean acc2;
+      
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
     case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,repl,cond,acc1,_)
       equation
@@ -1660,14 +1668,12 @@ end replaceExpCond;
 
 protected function replaceExpMatrix "function: replaceExpMatrix
   author: PA
-
-  Helper function to replace_exp, traverses Matrix expression list.
-"
+  Helper function to replaceExp, traverses Matrix expression list."
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input list<list<DAE.Exp>> acc1;
-  input Boolean acc2;
+  input list<list<DAE.Exp>> iacc1;
+  input Boolean iacc2;
   output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
@@ -1676,13 +1682,16 @@ protected function replaceExpMatrix "function: replaceExpMatrix
   end FuncTypeExp_ExpToBoolean;
 algorithm
   (outTplExpExpBooleanLstLst,replacementPerformed) :=
-  match (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc1,acc2)
+  match (inTplExpExpBooleanLstLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,iacc1,iacc2)
     local
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       list<DAE.Exp> e_1,e;
       list<list<DAE.Exp>> es_1,es;
       Boolean c;
+      list<list<DAE.Exp>> acc1;
+      Boolean acc2;
+      
     case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
@@ -1694,10 +1703,8 @@ algorithm
 end replaceExpMatrix;
 
 protected function bintreeToExplist "function: bintree_to_list
-
   This function takes a BinTree and transform it into a list
-  representation, i.e. two lists of keys and values
-"
+  representation, i.e. two lists of keys and values"
   input BinTree inBinTree;
   output list<DAE.Exp> outExpExpLst1;
   output list<DAE.Exp> outExpExpLst2;

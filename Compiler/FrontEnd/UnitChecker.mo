@@ -50,10 +50,10 @@ protected import HashTable;
 
 public function check "Check if a list of unit terms are consistent"
   input UnitAbsyn.UnitTerms tms;
-  input UnitAbsyn.InstStore st;
+  input UnitAbsyn.InstStore ist;
   output UnitAbsyn.InstStore outSt;
 algorithm
-  (outSt) := matchcontinue(tms,st)
+  (outSt) := matchcontinue(tms,ist)
     local
       UnitAbsyn.Store st1,st2;
       UnitAbsyn.UnitTerms rest1;
@@ -62,6 +62,7 @@ algorithm
       UnitAbsyn.SpecUnit su1,su2;
       String s1,s2,s3;
       HashTable.HashTable ht;
+      UnitAbsyn.InstStore st;
     
     case (_,st) 
       equation
@@ -121,17 +122,18 @@ algorithm
 end isComplete;
 
 protected function completeCheck "help function to isComplete"
-  input list<Option<UnitAbsyn.Unit>> lst;
+  input list<Option<UnitAbsyn.Unit>> ilst;
   input Integer indx;
   input UnitAbsyn.Store st;
   output Boolean isComplete;
   output UnitAbsyn.Store stout;
 algorithm
-  (isComplete,stout) := matchcontinue(lst,indx,st)
+  (isComplete,stout) := matchcontinue(ilst,indx,st)
     local
       UnitAbsyn.Unit u1,u2;
       Boolean comp1;
       UnitAbsyn.Store st2,st3,st4;
+      list<Option<UnitAbsyn.Unit>> lst;
     
     case ({},_,st2) then (true,st2);
     

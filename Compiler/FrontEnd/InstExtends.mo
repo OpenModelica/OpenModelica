@@ -704,21 +704,24 @@ protected function getLocalIdentList
 " Analyzes the elements of a class and fetches a list of components and classdefs,
   as well as aliases from imports to paths.
 "
-  input list<Type_A> elts;
-  input HashTableStringToPath.HashTable ht;
+  input list<Type_A> ielts;
+  input HashTableStringToPath.HashTable inHt;
   input getIdentFn getIdent;
   output HashTableStringToPath.HashTable outHt;
   
   replaceable type Type_A subtypeof Any;
   partial function getIdentFn
     input Type_A inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output HashTableStringToPath.HashTable outHt;
   end getIdentFn;
 algorithm
-  (outHt) := match (elts,ht,getIdent)
+  (outHt) := match (ielts,inHt,getIdent)
     local
       Type_A elt;
+      HashTableStringToPath.HashTable ht;
+      list<Type_A> elts;
+      
     case ({},ht,getIdent) then ht;
     case (elt::elts,ht,getIdent)
       equation
@@ -748,13 +751,14 @@ protected function getLocalIdentElement
   as well as aliases from imports to paths.
 "
   input SCode.Element elt;
-  input HashTableStringToPath.HashTable ht;
+  input HashTableStringToPath.HashTable inHt;
   output HashTableStringToPath.HashTable outHt;
 algorithm
-  (outHt) := match (elt,ht)
+  (outHt) := match (elt,inHt)
     local
       String id;
       Absyn.Path p;
+      HashTableStringToPath.HashTable ht;
     
     case (SCode.COMPONENT(name = id),ht)
       equation
@@ -794,20 +798,23 @@ end getLocalIdentElement;
 protected function fixLocalIdents
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<tuple<SCode.Element,DAE.Mod,Boolean>> elts;
-  input HashTableStringToPath.HashTable ht;
+  local lookup or fully qualified in the environment."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<tuple<SCode.Element,DAE.Mod,Boolean>> inElts;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output list<tuple<SCode.Element,DAE.Mod,Boolean>> outElts;
 algorithm
-  (outCache,outElts) := matchcontinue (cache,env,elts,ht)
+  (outCache,outElts) := matchcontinue (inCache,inEnv,inElts,inHt)
     local
       SCode.Element elt;
       DAE.Mod mod;
       Boolean b;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      list<tuple<SCode.Element,DAE.Mod,Boolean>> elts;
     
     case (cache,env,{},ht) then (cache,{});
     case (cache,env,(elt,mod,false)::elts,ht)
@@ -838,14 +845,14 @@ protected function fixElement
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.Element elt;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.Element inElt;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.Element outElts;
 algorithm
-  (outCache,outElts) := matchcontinue (cache,env,elt,ht)
+  (outCache,outElts) := matchcontinue (inCache,inEnv,inElt,inHt)
     local
       String id,name,str;
       Absyn.InnerOuter innerOuter;
@@ -869,6 +876,10 @@ algorithm
       SCode.Stream sp;
       SCode.Variability var;
       Absyn.Direction dir;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.Element elt;
     
     case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, fp, sp, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
@@ -902,7 +913,7 @@ algorithm
       then 
         (cache,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
     
-    case (cache,env,SCode.IMPORT(imp = _),ht) then (cache,elt);
+    case (cache,env,SCode.IMPORT(imp = _),ht) then (cache,inElt);
 
     case (cache,env,elt,ht)
       equation
@@ -916,14 +927,14 @@ protected function fixClassdef
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.ClassDef cd;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.ClassDef inCd;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.ClassDef outCd;
 algorithm
-  (outCache,outCd) := matchcontinue (cache,env,cd,ht)
+  (outCache,outCd) := matchcontinue (inCache,inEnv,inCd,inHt)
     local
       list<SCode.Element> elts;
       list<SCode.Equation> ne,ie;
@@ -935,6 +946,10 @@ algorithm
       SCode.Attributes attr;
       String name;
       SCode.Mod mod;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.ClassDef cd;
     
     case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,ed,ann,c),ht)
       equation
@@ -961,9 +976,9 @@ algorithm
         (cache,mod) = fixModifications(cache,env,mod,ht);
       then (cache,SCode.DERIVED(ts,mod,attr,c));
 
-    case (cache,env,SCode.ENUMERATION(comment = _),ht) then (cache,cd);
-    case (cache,env,SCode.OVERLOAD(comment = _),ht) then (cache,cd);
-    case (cache,env,SCode.PDER(comment = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.ENUMERATION(comment = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.OVERLOAD(comment = _),ht) then (cache,cd);
+    case (cache,env,cd as SCode.PDER(comment = _),ht) then (cache,cd);
 
     case (cache,env,cd,ht)
       equation
@@ -979,16 +994,21 @@ protected function fixEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.Equation eq;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.Equation inEq;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.Equation outEq;
 algorithm
-  (outCache,outEq) := match (cache,env,eq,ht)
+  (outCache,outEq) := match (inCache,inEnv,inEq,inHt)
     local
       SCode.EEquation eeq;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.Equation eq;
+      
     case (cache,env,SCode.EQUATION(eeq),ht)
       equation
         (cache,eeq) = fixEEquation(cache,env,eeq,ht);
@@ -1007,14 +1027,14 @@ protected function fixEEquation
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.EEquation eeq;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.EEquation inEeq;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.EEquation outEeq;
 algorithm
-  (outCache,outEeq) := match (cache,env,eeq,ht)
+  (outCache,outEeq) := match (inCache,inEnv,inEeq,inHt)
     local
       String id;
       Absyn.ComponentRef cref,cref1,cref2;
@@ -1026,6 +1046,11 @@ algorithm
       Option<SCode.Comment> comment;
       Absyn.FunctionArgs fargs;
       Absyn.Info info;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.EEquation eeq;
+      
     case (cache,env,SCode.EQ_IF(expl,eqll,eql,comment,info),ht)
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
@@ -1095,16 +1120,21 @@ protected function fixAlgorithm
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.AlgorithmSection alg;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.AlgorithmSection inAlg;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.AlgorithmSection outAlg;
 algorithm
-  (outCache,outAlg) := match (cache,env,alg,ht)
+  (outCache,outAlg) := match (inCache,inEnv,inAlg,inHt)
     local
       list<SCode.Statement> stmts;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.AlgorithmSection alg;
+
     case (cache,env,SCode.ALGORITHM(stmts),ht)
       equation
         (cache,stmts) = fixList(cache,env,stmts,ht,fixStatement);
@@ -1132,14 +1162,14 @@ protected function fixStatement
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.Statement stmt;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.Statement inStmt;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.Statement outStmt;
 algorithm
-  (outCache,outStmt) := matchcontinue (cache,env,stmt,ht)
+  (outCache,outStmt) := matchcontinue (inCache,inEnv,inStmt,inHt)
     local
       Absyn.Exp exp,exp1,exp2;
       Absyn.ComponentRef cref;
@@ -1149,6 +1179,10 @@ algorithm
       Absyn.ForIterators iterators;
       Option<SCode.Comment> comment;
       Absyn.Info info;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.Statement stmt;
       
     case (cache,env,SCode.ALG_ASSIGN(exp1,exp2,comment,info),ht)
       equation
@@ -1203,16 +1237,21 @@ protected function fixArrayDim
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Option<Absyn.ArrayDim> ad;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Option<Absyn.ArrayDim> inAd;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Option<Absyn.ArrayDim> outAd;
 algorithm
-  (outCache,outAd) := match (cache,env,ad,ht)
+  (outCache,outAd) := match (inCache,inEnv,inAd,inHt)
     local
       list<Absyn.Subscript> ads;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      Option<Absyn.ArrayDim> ad;
+
     case (cache,env,NONE(),ht) then (cache,NONE());
     case (cache,env,SOME(ads),ht)
       equation
@@ -1226,16 +1265,21 @@ protected function fixSubscript
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.Subscript sub;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Subscript inSub;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.Subscript outSub;
 algorithm
-  (outCache,outSub) := match (cache,env,sub,ht)
+  (outCache,outSub) := match (inCache,inEnv,inSub,inHt)
     local
       Absyn.Exp exp;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      Absyn.Subscript sub;
+
     case (cache,env,Absyn.NOSUB(),ht) then (cache,Absyn.NOSUB());
     case (cache,env,Absyn.SUBSCRIPT(exp),ht)
       equation
@@ -1249,18 +1293,23 @@ protected function fixTypeSpec
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.TypeSpec ts;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.TypeSpec inTs;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.TypeSpec outTs;
 algorithm
-  (outCache,outTs) := match (cache,env,ts,ht)
+  (outCache,outTs) := match (inCache,inEnv,inTs,inHt)
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> arrayDim;
       list<Absyn.TypeSpec> typeSpecs;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      Absyn.TypeSpec ts;
+
     case (cache,env,Absyn.TPATH(path,arrayDim),ht)
       equation
         (cache,arrayDim) = fixArrayDim(cache,env,arrayDim,ht);
@@ -1280,17 +1329,20 @@ protected function fixPath
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.Path path;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.Path outPath;
 algorithm
-  (outCache,outPath) := matchcontinue (cache,env,path,ht)
+  (outCache,outPath) := matchcontinue (inCache,inEnv,inPath,inHt)
     local
       String id;
-      Absyn.Path path1,path2;
+      Absyn.Path path1,path2,path;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
     
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht)
       equation
@@ -1364,18 +1416,22 @@ protected function fixCref
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.ComponentRef cref;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inCref;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.ComponentRef outCref;
 algorithm
-  (outCache,outCref) := matchcontinue (cache,env,cref,ht)
+  (outCache,outCref) := matchcontinue (inCache,inEnv,inCref,inHt)
     local
       String id;
       Absyn.Path path;
       DAE.ComponentRef cref_;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      Absyn.ComponentRef cref;
     
     case (cache,env,cref,ht)
       equation
@@ -1443,14 +1499,14 @@ protected function fixModifications
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.Mod mod;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.Mod inMod;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output SCode.Mod outMod;
 algorithm
-  (outCache,outMod) := matchcontinue (cache,env,mod,ht)
+  (outCache,outMod) := matchcontinue (inCache,inEnv,inMod,inHt)
     local
       SCode.Final finalPrefix "final prefix";
       SCode.Each eachPrefix;
@@ -1458,6 +1514,10 @@ algorithm
       Absyn.Exp exp;
       Boolean b;
       list<SCode.Element> elts; 
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      SCode.Mod mod;
     
     case (cache,env,SCode.NOMOD(),ht) then (cache,SCode.NOMOD());
     
@@ -1499,33 +1559,36 @@ protected function fixSubModList
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<SCode.SubMod> inSubMods;
-  input HashTableStringToPath.HashTable ht;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output list<SCode.SubMod> outSubMods;
 algorithm
-  (outCache, outSubMods) := match (cache, env, inSubMods, ht)
+  (outCache, outSubMods) := match (inCache, inEnv, inSubMods, inHt)
     local
       SCode.Mod mod;
       list<SCode.SubMod> rest_mods;
       Absyn.Ident ident;
       list<SCode.Subscript> subs;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
     
-    case (_, _, {}, _) then (cache, {});
+    case (_, _, {}, _) then (inCache, {});
     
     case (_, _, SCode.NAMEMOD(ident = ident, A = mod) :: rest_mods, _)
       equation
-        (cache, mod) = fixModifications(cache, env, mod, ht);
-        (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
+        (cache, mod) = fixModifications(inCache, inEnv, mod, inHt);
+        (cache, rest_mods) = fixSubModList(cache, inEnv, rest_mods, inHt);
       then
         (cache, SCode.NAMEMOD(ident, mod) :: rest_mods);
     
     case (_, _, SCode.IDXMOD(subscriptLst = subs, an = mod) :: rest_mods, _)
       equation
-        (cache, mod) = fixModifications(cache, env, mod, ht);
-        (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
+        (cache, mod) = fixModifications(inCache, inEnv, mod, inHt);
+        (cache, rest_mods) = fixSubModList(cache, inEnv, rest_mods, inHt);
       then
         (cache, SCode.IDXMOD(subs, mod) :: rest_mods);
     
@@ -1537,23 +1600,26 @@ protected function fixExp
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.Exp exp;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue (cache,env,exp,ht)
+  (outCache,outExp) := matchcontinue (inCache,inEnv,inExp,inHt)
     local
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
-      Absyn.Exp exp1,exp2,ifexp,truebranch,elsebranch;
+      Absyn.Exp exp1,exp2,ifexp,truebranch,elsebranch,exp;
       list<Absyn.Exp> expl;
       Option<Absyn.Exp> optExp;
       list<list<Absyn.Exp>> expll;
       list<tuple<Absyn.Exp,Absyn.Exp>> elseifbranches;
       Absyn.Operator op;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
     
     case (cache,env,Absyn.CREF(cref),ht)
       equation
@@ -1612,10 +1678,10 @@ algorithm
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
       then (cache,Absyn.TUPLE(expl));
-    case (cache,env,Absyn.INTEGER(_),ht) then (cache,exp);
-    case (cache,env,Absyn.REAL(_),ht) then (cache,exp);
-    case (cache,env,Absyn.STRING(_),ht) then (cache,exp);
-    case (cache,env,Absyn.BOOL(_),ht) then (cache,exp);
+    case (cache,env,exp as Absyn.INTEGER(_),ht) then (cache,exp);
+    case (cache,env,exp as Absyn.REAL(_),ht) then (cache,exp);
+    case (cache,env,exp as Absyn.STRING(_),ht) then (cache,exp);
+    case (cache,env,exp as Absyn.BOOL(_),ht) then (cache,exp);
     case (cache,env,exp,ht)
       equation
         Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
@@ -1628,19 +1694,24 @@ protected function fixFarg
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.FunctionArgs fargs;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.FunctionArgs inFargs;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.FunctionArgs outFarg;
 algorithm
-  (outCache,outFarg) := match (cache,env,fargs,ht)
+  (outCache,outFarg) := match (inCache,inEnv,inFargs,inHt)
     local
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> argNames;
       Absyn.ForIterators iterators;
       Absyn.Exp exp;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+      Absyn.FunctionArgs fargs;
+
     case (cache,env,Absyn.FUNCTIONARGS(args,argNames),ht)
       equation
         (cache,args) = fixList(cache,env,args,ht,fixExp);
@@ -1659,18 +1730,23 @@ protected function fixForIterator
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.ForIterator iter;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ForIterator inIter;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.ForIterator outIter;
 algorithm
-  (outCache,outIter) := match (cache,env,iter,ht)
+  (outCache,outIter) := match (inCache,inEnv,inIter,inHt)
     local
       String id;
       Absyn.Exp exp;
       Option<Absyn.Exp> guardExp;
+      Absyn.ForIterator iter;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,Absyn.ITERATOR(id,guardExp,SOME(exp)),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
@@ -1685,17 +1761,22 @@ protected function fixNamedArg
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.NamedArg narg;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.NamedArg inNarg;
+  input HashTableStringToPath.HashTable inHt;
   output Env.Cache outCache;
   output Absyn.NamedArg outNarg;
 algorithm
-  (outCache,outNarg) := match (cache,env,narg,ht)
+  (outCache,outNarg) := match (inCache,inEnv,inNarg,inHt)
     local
       String id;
       Absyn.Exp exp;
+      Absyn.NamedArg inNarg;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,Absyn.NAMEDARG(id,exp),ht)
       equation
         //print("Fixing named: id:" +& id +& " exp:" +& Dump.printExpStr(exp));
@@ -1707,27 +1788,31 @@ end fixNamedArg;
 
 protected function fixOption
 " Generic function to fix an optional element."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Option<Type_A> inA;
-  input HashTableStringToPath.HashTable ht;
+  input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
   output Env.Cache outCache;
   output Option<Type_A> outA;
   
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache cache;
-    input Env.Env env;
+    input Env.Cache inCache;
+    input Env.Env inEnv;
     input Type_A inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output Env.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := match (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (inCache,inEnv,inA,inHt,fixA)
     local
       Type_A A;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,NONE(),ht,fixA) then (cache,NONE());
     case (cache,env,SOME(A),ht,fixA)
       equation
@@ -1738,74 +1823,84 @@ end fixOption;
 
 protected function fixList
 " Generic function to fix a list of elements."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<Type_A> inA;
-  input HashTableStringToPath.HashTable ht;
+  input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
   output Env.Cache outCache;
   output list<Type_A> outA;
   
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache cache;
-    input Env.Env env;
+    input Env.Cache inCache;
+    input Env.Env inEnv;
     input Type_A inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output Env.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := match (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (inCache,inEnv,inA,inHt,fixA)
     local
       Type_A A;
+      list<Type_A> lstA;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,{},ht,fixA) then (cache,{});
-    case (cache,env,A::inA,ht,fixA)
+    case (cache,env,A::lstA,ht,fixA)
       equation
         (cache,A) = fixA(cache,env,A,ht);
-        (cache,inA) = fixList(cache,env,inA,ht,fixA);
-      then (cache,A::inA);
+        (cache,lstA) = fixList(cache,env,lstA,ht,fixA);
+      then (cache,A::lstA);
   end match;
 end fixList;
 
 protected function fixListList
 " Generic function to fix a list of elements."
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<list<Type_A>> inA;
-  input HashTableStringToPath.HashTable ht;
+  input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
   output Env.Cache outCache;
   output list<list<Type_A>> outA;
   
   replaceable type Type_A subtypeof Any;
   partial function FixAFn
-    input Env.Cache cache;
-    input Env.Env env;
+    input Env.Cache inCache;
+    input Env.Env inEnv;
     input Type_A inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output Env.Cache outCache;
     output Type_A outTypeA;
   end FixAFn;
 algorithm
-  (outCache,outA) := match (cache,env,inA,ht,fixA)
+  (outCache,outA) := match (inCache,inEnv,inA,inHt,fixA)
     local
       list<Type_A> A;
+      list<list<Type_A>> lstA;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,{},ht,fixA) then (cache,{});
-    case (cache,env,A::inA,ht,fixA)
+    case (cache,env,A::lstA,ht,fixA)
       equation
         (cache,A) = fixList(cache,env,A,ht,fixA);
-        (cache,inA) = fixListList(cache,env,inA,ht,fixA);
-      then (cache,A::inA);
+        (cache,lstA) = fixListList(cache,env,lstA,ht,fixA);
+      then (cache,A::lstA);
   end match;
 end fixListList;
 
 protected function fixListTuple2
 " Generic function to fix a list of elements."
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<tuple<Type_A,Type_B>> rest;
-  input HashTableStringToPath.HashTable ht;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<tuple<Type_A,Type_B>> inRest;
+  input HashTableStringToPath.HashTable inHt;
   input FixAFn fixA;
   input FixBFn fixB;
   output Env.Cache outCache;
@@ -1814,26 +1909,31 @@ protected function fixListTuple2
   replaceable type Type_A subtypeof Any;
   replaceable type Type_B subtypeof Any;
   partial function FixAFn
-    input Env.Cache cache;
-    input Env.Env env;
+    input Env.Cache inCache;
+    input Env.Env inEnv;
     input Type_A inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output Env.Cache outCache;
     output Type_A outLst;
   end FixAFn;
   partial function FixBFn
-    input Env.Cache cache;
-    input Env.Env env;
+    input Env.Cache inCache;
+    input Env.Env inEnv;
     input Type_B inA;
-    input HashTableStringToPath.HashTable ht;
+    input HashTableStringToPath.HashTable inHt;
     output Env.Cache outCache;
     output Type_B outTypeA;
   end FixBFn;
 algorithm
-  (outCache,outA) := match (cache,env,rest,ht,fixA,fixB)
+  (outCache,outA) := match (inCache,inEnv,inRest,inHt,fixA,fixB)
     local
       Type_A a;
       Type_B b;
+      list<tuple<Type_A,Type_B>> rest;
+      Env.Cache cache;
+      Env.Env env;
+      HashTableStringToPath.HashTable ht;
+
     case (cache,env,{},ht,fixA,fixB) then (cache,{});
     case (cache,env,(a,b)::rest,ht,fixA,fixB)
       equation

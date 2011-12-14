@@ -4,8 +4,10 @@ RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=
-CPPFLAGS=-I$(COMPILERHOME) -I../c_runtime -I../c_runtime/meta $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../testsuite/bootstrapping/
-CC=cl /O2 $(CPPFLAGS) 
+CPPFLAGS=-I$(COMPILERHOME) -I../c_runtime -I../c_runtime/meta -I../c_runtime/meta/gc $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../testsuite/bootstrapping/
+CCDEBUG = cl /Od /ZI /Fd".\vc100.pdb" /D "_DEBUG" /D "_CONSOLE" $(CPPFLAGS)
+CCOPTIM = cl /O2 /Fd".\vc100.pdb" /D "_CONSOLE" $(CPPFLAGS)
+CC = $(CCOPTIM)
 
 .PHONY: all
 all: libantlr3.lib libomparse.lib
@@ -13,7 +15,7 @@ all: libantlr3.lib libomparse.lib
 libantlr3.lib: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	REM build the ANTLR3 C library
 	$(CC) -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C	
-	LINK /LIB /LTCG /OUT:$@ antlr3*.obj wsock32.lib	
+	LINK /LIB /LTCG /OUT:$@ antlr3*.obj wsock32.lib
 	@del /F /S antlr3*.obj
 
 HFILES = \
@@ -22,11 +24,14 @@ HFILES = \
   MetaModelica_Lexer.h \
   MetaModelica_Lexer_BaseModelica_Lexer.h \
   Modelica_3_Lexer.h \
-  Modelica_3_Lexer_BaseModelica_Lexer.h
+  Modelica_3_Lexer_BaseModelica_Lexer.h \
+  ParModelica_Lexer.h \
+  ParModelica_Lexer_BaseModelica_Lexer.h
 
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.obj MetaModelica_Lexer.obj \
-Modelica_3_Lexer_BaseModelica_Lexer.obj Modelica_3_Lexer.obj 
+Modelica_3_Lexer_BaseModelica_Lexer.obj Modelica_3_Lexer.obj ParModelica_Lexer.obj \
+ParModelica_Lexer_BaseModelica_Lexer.obj
 
 MetaModelica_Lexer.obj: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer.obj: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
@@ -42,11 +47,12 @@ parse.obj: Parser_omc.cpp
 libomparse.lib: parse.obj $(OBJS) ModelicaParser.obj libantlr3.lib
 	@del /F /S $@
 	REM build the OMC Parser library that includes libantlr3.lib (the ANTLR3 C library) 
-	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) ModelicaParser.obj libantlr3.lib 
+	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) ModelicaParser.obj libantlr3.lib
 
 parsergen = ModelicaParser.c ModelicaParser.h
 modelica3gen = Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h
 metamodelicagen = MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h
+pmodelica = ParModelica_Lexer.h ParModelica_Lexer.c ParModelica_Lexer_BaseModelica_Lexer.h ParModelica_Lexer_BaseModelica_Lexer.c
 
 $(parsergen) : Modelica.g
 	$(ANTLRCMD) Modelica.g
@@ -57,8 +63,12 @@ $(modelica3gen) : Modelica_3_Lexer.g BaseModelica_Lexer.g
 $(metamodelicagen) : MetaModelica_Lexer.g BaseModelica_Lexer.g
 	$(ANTLRCMD) MetaModelica_Lexer.g BaseModelica_Lexer.g
 
+$(pmodelica) : ParModelica_Lexer.g BaseModelica_Lexer.g
+  $(ANTLRCMD) ParModelica_Lexer.g BaseModelica_Lexer.g
+
+
 clean:
 	del /F *.obj *.lib libomparse.* libantlr3.* \
 ModelicaParser.c ModelicaParser.h \
 *Modelica*_Lexer.c *Modelica*_Lexer.h \
-*.tokens 
+*.tokens *.pdb

@@ -102,11 +102,9 @@ public function ceval "
   This function is used when the value of a constant expression is
   needed.  It takes an environment and an expression and calculates
   its value.
-
   The third argument indicates whether the evaluation is performed in the
   interactive environment (implicit instantiation), in which case function
   calls are evaluated.
-
   The last argument is an optional dimension."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -268,9 +266,9 @@ algorithm
     // MetaModelica Option type. sjoelund 2009-07-01 
     case (cache,env,DAE.META_OPTION(NONE()),impl,stOpt,msg)
       then (cache,Values.OPTION(NONE()),stOpt);
-    case (cache,env,DAE.META_OPTION(SOME(inExp)),impl,stOpt,msg)
+    case (cache,env,DAE.META_OPTION(SOME(expExp)),impl,stOpt,msg)
       equation
-        (cache,value,stOpt) = ceval(cache,env,inExp,impl,stOpt,msg);
+        (cache,value,stOpt) = ceval(cache,env,expExp,impl,stOpt,msg);
       then (cache,Values.OPTION(SOME(value)),stOpt);
 
     // MetaModelica Tuple. sjoelund 2009-07-02 
@@ -1314,6 +1312,7 @@ algorithm
       String error_Str;
       DAE.Function func;
       SCode.Restriction res;
+      Interactive.SymbolTable syt;
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
@@ -1361,6 +1360,7 @@ algorithm
         
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        //print("CALL: [func from file] CF LIST:\n\t" +& stringDelimitList(List.map(cflist, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
       then
         (cache,newval,st);
     
@@ -1391,7 +1391,7 @@ algorithm
 
     // not in CF list, we have a symbol table, generate function and update symtab
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,
-          SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
+          SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
         false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
@@ -1401,10 +1401,13 @@ algorithm
         // remove it and all its dependencies as it might be there with an older build time.
         // get dependencies!
         (_, functionDependencies, _) = CevalScript.getFunctionDependencies(cache, funcpath);
+        //print("\nFunctions before:\n\t" +& stringDelimitList(List.map(cf, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
+        //print("\nFunctions after remove:\n\t" +& stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
         
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
-          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));        
+          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));
+        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
         
         // now is safe to generate code 
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
@@ -1426,11 +1429,16 @@ algorithm
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
         
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
+        syt = Interactive.SYMBOLTABLE(
+                p, aDep, a, b, c,
+                Interactive.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF, 
+                lf);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list [finished]: " +& 
+          Absyn.pathString(funcpath));
+        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt));
       then
-        (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c,
-          Interactive.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF, lf)));
-
+        (cache,newval,SOME(syt));
     
     // no symtab, WE SHOULD NOT EVALUATE! 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
@@ -5610,42 +5618,46 @@ end dimensionSliceInRange;
 protected function cevalReduction
   "Help function to ceval. Evaluates reductions calls, such as
     'sum(i for i in 1:5)'"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path opPath;
-  input Option<Values.Value> curValue;
+  input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
   input DAE.Type exprType;
   input Option<DAE.Exp> foldExp;
   input list<String> iteratorNames;
-  input list<list<Values.Value>> valueMatrix;
+  input list<list<Values.Value>> inValueMatrix;
   input list<DAE.Type> iterTypes;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache, result, newSymbolTable) := matchcontinue (cache, env, opPath, curValue, exp, exprType, foldExp, iteratorNames, valueMatrix, iterTypes, impl, st, msg)
+  (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg)
     local
       Values.Value value, value2, reduced_value;
       list<Values.Value> rest_values,vals;
-      Env.Env new_env;
-      Env.Cache new_cache;
+      Env.Env new_env,env;
+      Env.Cache new_cache,cache;
       Option<Interactive.SymbolTable> new_st;
       DAE.Type exp_type;
       DAE.Type iter_type;
       list<Integer> dims;
       Boolean guardFilter;
-    case (_, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), exp, exprType, foldExp, iteratorNames, {}, iterTypes, impl, st, msg)
+      Option<Interactive.SymbolTable> st;
+      list<list<Values.Value>> valueMatrix;
+      Option<Values.Value> curValue;
+      
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), exp, exprType, foldExp, iteratorNames, {}, iterTypes, impl, st, msg)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (_, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, iterTypes, impl, st, msg)
+    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, iterTypes, impl, st, msg)
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
-    case (_, _, _, curValue, _, _, _, _, {}, iterTypes, impl, st, msg)
+    case (cache, _, _, curValue, _, _, _, _, {}, iterTypes, impl, st, msg)
       then (cache, curValue, st);
 
     case (cache, env, _, curValue, _, _, _, iteratorNames, vals :: valueMatrix, iterTypes, impl, st, msg)
@@ -5685,23 +5697,28 @@ algorithm
 end cevalReductionEvalGuard;
 
 protected function cevalReductionEvalAndFold "Evaluate the reduction body and fold"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path opPath;
-  input Option<Values.Value> curValue;
+  input Option<Values.Value> inCurValue;
   input DAE.Exp exp;
   input DAE.Type exprType;
   input Option<DAE.Exp> foldExp;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,exp,exprType,foldExp,impl,st,msg)
+  (newCache,result,newSymbolTable) := match (inCache,inEnv,opPath,inCurValue,exp,exprType,foldExp,impl,inSt,msg)
     local
       Values.Value value;
+      Option<Values.Value> curValue;
+      Env.Cache cache;
+      Env.Env env;
+      Option<Interactive.SymbolTable> st;
+      
     case (cache,env,_,curValue,exp,exprType,foldExp,impl,st,msg)
       equation
         (cache, value, st) = ceval(cache, env, exp, impl, st, msg);
@@ -5712,26 +5729,32 @@ algorithm
 end cevalReductionEvalAndFold;
 
 protected function cevalReductionFold "Fold the reduction body"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path opPath;
-  input Option<Values.Value> curValue;
+  input Option<Values.Value> inCurValue;
   input Values.Value inValue;
   input Option<DAE.Exp> foldExp;
   input DAE.Type exprType;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
   output Env.Cache newCache;
   output Option<Values.Value> result;
   output Option<Interactive.SymbolTable> newSymbolTable;
 algorithm
-  (newCache,result,newSymbolTable) := match (cache,env,opPath,curValue,inValue,foldExp,exprType,impl,st,msg)
+  (newCache,result,newSymbolTable) := 
+  match (inCache,inEnv,opPath,inCurValue,inValue,foldExp,exprType,impl,inSt,msg)
     local
       DAE.Exp exp;
       DAE.Type exp_type;
       DAE.Type iter_type;
       Values.Value value;
+      Option<Values.Value> curValue;
+      Env.Cache cache;
+      Env.Env env;
+      Option<Interactive.SymbolTable> st;
+      
     case (cache,_,Absyn.IDENT("array"),SOME(value),_,_,_,_,st,_)
       equation
         value = valueArrayCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
@@ -5782,15 +5805,16 @@ end valueArrayCons;
 
 protected function valueCons
   "Returns the cons of two values. Used by cevalReduction for list reductions."
-  input Values.Value v1;
-  input Values.Value v2;
+  input Values.Value inV1;
+  input Values.Value inV2;
   output Values.Value res;
 algorithm
-  res := match(v1, v2)
+  res := match(inV1, inV2)
     local
       list<Values.Value> vals;
       Integer dim_size;
       list<Integer> rest_dims;
+      Values.Value v1,v2;
 
     case (Values.META_BOX(v1), Values.LIST(vals)) then Values.LIST(v1::vals);
     case (v1, Values.LIST(vals)) then Values.LIST(v1::vals);
@@ -6338,11 +6362,11 @@ end valueArrayNth;
 
 
 protected function cevalReductionIterators
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<DAE.ReductionIterator> iterators;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.ReductionIterator> inIterators;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
   output Env.Cache outCache;
   output list<list<Values.Value>> vals;
@@ -6351,7 +6375,7 @@ protected function cevalReductionIterators
   output list<DAE.Type> tys;
   output Option<Interactive.SymbolTable> outSt;
 algorithm
-  (outCache,vals,names,dims,tys,outSt) := match (cache,env,iterators,impl,st,msg)
+  (outCache,vals,names,dims,tys,outSt) := match (inCache,inEnv,inIterators,impl,inSt,msg)
     local
       Values.Value val;
       list<Values.Value> iterVals;
@@ -6360,6 +6384,11 @@ algorithm
       String id;
       DAE.Exp exp;
       Option<DAE.Exp> guardExp;
+      Env.Cache cache;
+      Env.Env env;
+      Option<Interactive.SymbolTable> st;
+      list<DAE.ReductionIterator> iterators;
+      
     case (cache,env,{},_,st,_) then (cache,{},{},{},{},st);
     case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,impl,st,msg)
       equation
@@ -6373,26 +6402,30 @@ algorithm
 end cevalReductionIterators;
 
 protected function filterReductionIterator
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input String id;
   input DAE.Type ty;
-  input list<Values.Value> vals;
+  input list<Values.Value> inVals;
   input Option<DAE.Exp> guardExp;
   input Boolean impl;
-  input Option<Interactive.SymbolTable> st;
+  input Option<Interactive.SymbolTable> inSt;
   input Msg msg;
   output Env.Cache outCache;
   output list<Values.Value> outVals;
   output Option<Interactive.SymbolTable> outSt;
 algorithm
-  (outCache,outVals,outSt) := match (cache,env,id,ty,vals,guardExp,impl,st,msg)
+  (outCache,outVals,outSt) := match (inCache,inEnv,id,ty,inVals,guardExp,impl,inSt,msg)
     local
       DAE.Exp exp;
       Values.Value val;
       Boolean b;
-      Env.Env new_env;
-    case (cache,env,_,_,{},_,_,st,_) then (cache,{},st);
+      Env.Env new_env,env;
+      Env.Cache cache;
+      list<Values.Value> vals;
+      Option<Interactive.SymbolTable> st;
+    
+   case (cache,env,_,_,{},_,_,st,_) then (cache,{},st);
     case (cache,env,id,ty,val::vals,SOME(exp),impl,st,msg)
       equation
         new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
@@ -6405,17 +6438,22 @@ algorithm
 end filterReductionIterator;
 
 protected function extendFrameForIterators
-  input Env.Env env;
-  input list<String> names;
-  input list<Values.Value> vals;
-  input list<DAE.Type> tys;
+  input Env.Env inEnv;
+  input list<String> inNames;
+  input list<Values.Value> inVals;
+  input list<DAE.Type> inTys;
   output Env.Env outEnv;
 algorithm
-  outEnv := match (env,names,vals,tys)
+  outEnv := match (inEnv,inNames,inVals,inTys)
     local
       String name;
       Values.Value val;
       DAE.Type ty;
+      Env.Env env;
+      list<String> names;
+      list<Values.Value> vals;
+      list<DAE.Type> tys;
+
     case (env,{},{},{}) then env;
     case (env,name::names,val::vals,ty::tys)
       equation
@@ -6427,34 +6465,38 @@ end extendFrameForIterators;
 
 protected function backpatchArrayReduction
   input Absyn.Path path;
-  input Values.Value value;
+  input Values.Value inValue;
   input list<Integer> dims;
   output Values.Value outValue;
 algorithm
-  outValue := match (path,value,dims)
+  outValue := match (path,inValue,dims)
     local
       Integer dim;
       list<Values.Value> vals;
+      Values.Value value;
     case (_,value,{_}) then value;
     case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),dims)
       equation
         value = backpatchArrayReduction3(vals,listReverse(dims));
         // print(ValuesUtil.valString(value));print("\n");
       then value;
-    else value;
+    else inValue;
   end match;
 end backpatchArrayReduction;
 
 protected function backpatchArrayReduction3
-  input list<Values.Value> vals;
-  input list<Integer> dims;
+  input list<Values.Value> inVals;
+  input list<Integer> inDims;
   output Values.Value outValue;
 algorithm
-  outValue := match (vals,dims)
+  outValue := match (inVals,inDims)
     local
       Integer dim;
       list<list<Values.Value>> valMatrix;
       Values.Value value;
+      list<Values.Value> vals;
+      list<Integer> dims;
+      
     case (vals,{dim}) then ValuesUtil.makeArray(vals);
     case (vals,dim::dims)
       equation

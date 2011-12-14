@@ -517,18 +517,19 @@ protected function valueArrayList2 "Helper function to valueArrayList"
   input Boolean posEq;
   input Integer inInteger2;
   input Integer inInteger3;
-  input list<tuple<Key,Value>> acc;
+  input list<tuple<Key,Value>> iacc;
   output list<tuple<Key,Value>> outVarLst;
 
   replaceable type Key subtypeof Any;
   replaceable type Value subtypeof Any;
 algorithm
-  outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, acc)
+  outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
     local
       tuple<Key,Value> v;
       array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
+      list<tuple<Key,Value>> acc;
     
     case (arr,true,pos,lastpos,acc)
       equation

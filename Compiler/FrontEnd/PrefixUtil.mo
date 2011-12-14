@@ -362,15 +362,15 @@ protected function prefixToCref2 "function: prefixToCref2
   Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference is an error because a component reference cannot be
   empty"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  (outCache,outComponentRef) := match (cache,env,inIH,inPrefix,inExpComponentRefOption)
+  (outCache,outComponentRef) := match (inCache,inEnv,inIH,inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1,cref_2,cref_;
       String i;
@@ -378,7 +378,8 @@ algorithm
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
-      
+      Env.Cache cache;
+      Env.Env env;
     
     case (cache,env,inIH,Prefix.NOPRE(),NONE()) then fail();
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
@@ -475,19 +476,23 @@ algorithm
 end makeCrefFromPrefixNoFail;
 
 protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
-  input DAE.ComponentRef cr;
+  input DAE.ComponentRef inCr;
   output Env.Cache outCache;
   output DAE.ComponentRef outCr;
 algorithm
-  (outCache,outCr) := match (cache,env,inIH,pre,cr)
+  (outCache,outCr) := match (inCache,inEnv,inIH,pre,inCr)
   local 
     DAE.Ident id;
     DAE.Type tp;
     list<DAE.Subscript> subs;
+    Env.Cache cache;
+    Env.Env env;
+    DAE.ComponentRef cr;
+    
     
     case(cache,env,inIH,pre,DAE.CREF_IDENT(id,tp,subs)) equation
      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
@@ -501,16 +506,20 @@ algorithm
 end prefixSubscriptsInCref;
 
 protected function prefixSubscripts "help function to prefixSubscriptsInCref, adds prefix to subscripts"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
-  input list<DAE.Subscript> subs;
+  input list<DAE.Subscript> inSubs;
   output Env.Cache outCache;
   output list<DAE.Subscript> outSubs;
 algorithm
-  (outCache,outSubs) := match(cache,env,inIH,pre,subs)
-  local DAE.Subscript sub;
+  (outCache,outSubs) := match(inCache,inEnv,inIH,pre,inSubs)
+    local 
+      DAE.Subscript sub;
+      Env.Cache cache;
+      Env.Env env;
+      list<DAE.Subscript> subs;
   
     case(cache,env,inIH,pre,{}) then (cache,{});
   
@@ -522,16 +531,19 @@ algorithm
 end prefixSubscripts;
 
 protected function prefixSubscript "help function to prefixSubscripts, adds prefix to one subscript, if it is an expression"
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Subscript sub;
   output Env.Cache outCache;
   output DAE.Subscript outSub;
 algorithm
-  (outCache,outSub) := match(cache,env,inIH,pre,sub)
-  local DAE.Exp exp;
+  (outCache,outSub) := match(inCache,inEnv,inIH,pre,sub)
+    local 
+      DAE.Exp exp;
+      Env.Cache cache;
+      Env.Env env;
     
     case(cache,env,inIH,pre,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
     
@@ -877,20 +889,24 @@ algorithm
 end prefixExp;
 
 protected function prefixIterators
-  input Env.Cache cache;
-  input Env.Env env;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input InstanceHierarchy ih;
-  input DAE.ReductionIterators iters;
+  input DAE.ReductionIterators inIters;
   input Prefix.Prefix pre;
   output Env.Cache outCache;
   output DAE.ReductionIterators outIters;
 algorithm
-  (outCache,outIters) := match (cache,env,ih,iters,pre)
+  (outCache,outIters) := match (inCache,inEnv,ih,inIters,pre)
     local
       String id;
       DAE.Exp exp,gexp;
       DAE.Type ty;
       DAE.ReductionIterator iter;
+      Env.Cache cache;
+      Env.Env env;
+      DAE.ReductionIterators iters;
+
     case (cache,env,ih,{},pre) then (cache,{});
     case (cache,env,ih,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,pre)
       equation

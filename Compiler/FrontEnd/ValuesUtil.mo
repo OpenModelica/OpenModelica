@@ -2194,13 +2194,15 @@ protected function valRecordString
 "function: valRecordString
   This function returns a textual representation of a record,
  separating each value with a comma."
-  input list<Value> xs;
-  input list<String> ids;
+  input list<Value> inValues;
+  input list<String> inIds;
 algorithm
-  _ := matchcontinue (xs,ids)
+  _ := matchcontinue (inValues,inIds)
     local
       String id;
       Value x;
+      list<Value> xs;
+      list<String> ids;
     
     case ({},{}) then ();
             
@@ -2616,12 +2618,12 @@ algorithm
 end boxIfUnboxedVal;
 
 public function unboxIfBoxedVal
-  input Values.Value v;
+  input Values.Value iv;
   output Values.Value ov;
 algorithm
-  ov := match v
+  ov := match iv local Values.Value v;
     case Values.META_BOX(v) then v;
-    else v;
+    else iv;
   end match;
 end unboxIfBoxedVal;
 

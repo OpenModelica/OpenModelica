@@ -66,11 +66,11 @@ protected import System;
 protected import SCodeUtil;
 
 public function getTotalProgramLastClass "Retrieves a total program for the last class in the program"
-input Absyn.Program p;
+input Absyn.Program ip;
 output Absyn.Program outP;
 algorithm
-  outP := match(p)
-  local String id; list<Absyn.Class> cls;
+  outP := match(ip)
+  local String id; list<Absyn.Class> cls; Absyn.Program p;
     case(p as Absyn.PROGRAM(classes = cls)) equation
       Absyn.CLASS(name=id) = List.last(cls);
       p = getTotalProgram(Absyn.IDENT(id),p);
@@ -81,11 +81,11 @@ end getTotalProgramLastClass;
 public function getTotalProgram "
 Retrieves a total program for a model by only building dependencies for the affected class"
   input Absyn.Path modelName;
-  input Absyn.Program p;
+  input Absyn.Program ip;
   output Absyn.Program outP;
 algorithm
-  outP := matchcontinue(modelName,p)
-  local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1;
+  outP := matchcontinue(modelName,ip)
+  local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1,p;
     case(modelName,p) equation
 
       true = Flags.isSet(Flags.USEDEP); // do dependency ONLY if this flag is true
@@ -138,17 +138,20 @@ algorithm
 end getTotalProgram2;
 
 protected function getTotalProgramDep "Help function to getTotalProgram2"
-  input AbsynDep.Depends dep;
-  input Absyn.Path className;
-  input Absyn.Program p;
+  input AbsynDep.Depends idep;
+  input Absyn.Path iclassName;
+  input Absyn.Program ip;
   input Env.Env env;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := matchcontinue(dep,className,p,env)
+  outDep := matchcontinue(idep,iclassName,ip,env)
     local
       Absyn.Class cl;
       Option<Absyn.Path> optPath;
       Absyn.ElementSpec comp;
+      Absyn.Program p;
+      AbsynDep.Depends dep;
+      Absyn.Path className;
 
     case(dep,Absyn.FULLYQUALIFIED(className),p,env) then getTotalProgramDep(dep,className,p,env);
     /* If already added, skip to prevent infinite recursion */
@@ -181,14 +184,18 @@ algorithm
 end getTotalProgramDep;
 
 protected function getTotalProgramDep2 "help function to getTotalProgramDep"
- input AbsynDep.Depends dep;
- input Absyn.Path className;
- input Absyn.Program p;
+ input AbsynDep.Depends idep;
+ input Absyn.Path iclassName;
+ input Absyn.Program ip;
  input Env.Env env;
  output AbsynDep.Depends outDep;
  algorithm
-   outDep := matchcontinue(dep,className,p,env)
-   local AbsynDep.AvlTree classUses; list<Absyn.Path> v;
+   outDep := matchcontinue(idep,iclassName,ip,env)
+     local 
+       AbsynDep.AvlTree classUses; list<Absyn.Path> v;
+       Absyn.Program p;
+       AbsynDep.Depends dep;
+       Absyn.Path className;
      case(dep as AbsynDep.DEPENDS(classUses,_),className as Absyn.IDENT(_),p,env) equation
       v = AbsynDep.avlTreeGet(classUses,className);
       dep = getTotalProgramDepLst(dep,v,p,env);
@@ -208,14 +215,18 @@ protected function getTotalProgramDep2 "help function to getTotalProgramDep"
 end getTotalProgramDep2;
 
 protected function getTotalProgramDepLst "Help function to getTotalProgramDep"
-  input AbsynDep.Depends dep;
-  input list<Absyn.Path> classNameLst;
-  input Absyn.Program p;
+  input AbsynDep.Depends idep;
+  input list<Absyn.Path> iclassNameLst;
+  input Absyn.Program ip;
   input Env.Env env;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := match(dep,classNameLst,p,env)
-  local Absyn.Path className;
+  outDep := match(idep,iclassNameLst,ip,env)
+    local 
+      Absyn.Path className;
+      Absyn.Program p;
+      AbsynDep.Depends dep;
+      list<Absyn.Path> classNameLst;
 
     case(dep,{},p,env) then dep;
 
@@ -227,11 +238,11 @@ algorithm
 end getTotalProgramDepLst;
 
 protected function getClassScope "help function to getTotalProgramDep"
-input Absyn.Path className;
-output Option<Absyn.Path> scope;
+  input Absyn.Path iclassName;
+  output Option<Absyn.Path> scope;
 algorithm
-  scope := matchcontinue(className)
-    local String id;
+  scope := matchcontinue(iclassName)
+    local String id; Absyn.Path className;
     case(Absyn.FULLYQUALIFIED(className)) then getClassScope(className);
 
     case(Absyn.IDENT(id)) then NONE();
@@ -280,15 +291,16 @@ end A_B_Examples_test1;
 
 Added to the top scope.
 "
-  input Absyn.Program p;
+  input Absyn.Program ip;
   input Absyn.Path modelName;
   output Absyn.Program outP;
 algorithm
-  outP := match(p,modelName)
+  outP := match(ip,modelName)
     local
       String id;
       Absyn.TimeStamp timeStamp;
       Absyn.Class cl,cl2;
+      Absyn.Program p;
 
     case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),modelName as Absyn.IDENT(id)) equation
       cl = Interactive.getPathedClassInProgram(modelName,p);
@@ -367,18 +379,20 @@ end  buildClassDependsInEltSpec;
 
 protected function buildClassDependsInComponentItems "build class dependencies from component items,
 e.g. redeclaration modifiers, etc."
-  input list<Absyn.ComponentItem> citems;
+  input list<Absyn.ComponentItem> icitems;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := matchcontinue(citems,optPath,cname,dep)
+  outDep := matchcontinue(icitems,optPath,cname,dep)
     local
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       Option<Absyn.Modification> optMod;
       Option<Absyn.Exp> optExp; Absyn.ArrayDim ad;
       HashTable2.HashTable ht;
+      list<Absyn.ComponentItem> citems;
+    
     case({},optPath,cname,(d,p,env,ht)) then d;
 
     case(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification=optMod,arrayDim=ad),condition=optExp)::citems,optPath,cname,(d,p,env,ht)) equation
@@ -437,13 +451,13 @@ algorithm
 end buildClassDependsInModification;
 
 protected function buildClassDependsInElementargs "build class dependencies from elementargs"
-  input list<Absyn.ElementArg> eltArgs;
+  input list<Absyn.ElementArg> ieltArgs;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := matchcontinue(eltArgs,optPath,cname,dep)
+  outDep := matchcontinue(ieltArgs,optPath,cname,dep)
     local
       AbsynDep.Depends d;
       Absyn.Program p;
@@ -451,6 +465,8 @@ algorithm
       Absyn.Modification mod;
       Absyn.ElementSpec eltSpec;
       HashTable2.HashTable ht;
+      list<Absyn.ElementArg> eltArgs;
+    
     case({},optPath,cname,(d,p,env,ht)) then d;
     case(Absyn.MODIFICATION(modification=SOME(mod))::eltArgs,optPath,cname,(d,p,env,ht)) equation
       d = buildClassDependsInModification(mod,optPath,cname,(d,p,env,ht));
@@ -531,19 +547,21 @@ algorithm
 end buildClassDependsVisitor;
 
 protected function buildClassDependsinParts " help function to buildClassDependsInClassDef"
-  input list<Absyn.ClassPart> parts;
+  input list<Absyn.ClassPart> iparts;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := match(parts,optPath,cname,dep)
+ outDep := match(iparts,optPath,cname,dep)
  local
    list<Absyn.ElementItem> elts;
    list<Absyn.EquationItem> eqns;
    list<Absyn.AlgorithmItem> algs;
    AbsynDep.Depends d; Absyn.Program p; Env.Env env;
    HashTable2.HashTable ht;
+   list<Absyn.ClassPart> parts;
+   
    case({},optPath,cname,(d,p,env,ht)) then d;
 
    case (Absyn.PUBLIC(contents = elts)::parts,optPath,cname,(d,p,env,ht)) equation
@@ -583,16 +601,17 @@ algorithm
 end buildClassDependsinParts;
 
 protected function buildClassDependsinAlgs "Build class dependencies from algorithms"
-  input  list<Absyn.AlgorithmItem> algs;
+  input list<Absyn.AlgorithmItem> ialgs;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := matchcontinue(algs,optPath,cname,dep)
-   local  AbsynDep.Depends d; Absyn.Program p; Env.Env env;
+ outDep := matchcontinue(ialgs,optPath,cname,dep)
+   local  AbsynDep.Depends d; Absyn.Program p; Env.Env env; 
      Absyn.Algorithm alg;
      HashTable2.HashTable ht;
+     list<Absyn.AlgorithmItem> algs;
    case({},optPath,cname,(d,p,env,ht)) then d;
    case(Absyn.ALGORITHMITEM(algorithm_=alg)::algs,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInAlg(alg,optPath,cname,(d,p,env,ht));
@@ -658,17 +677,19 @@ algorithm
 end buildClassDependsInAlg;
 
 protected function buildClassDependsInAlgElseifBranch "help function to buildClassDependsInAlg"
-  input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> elsifb;
+  input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> ielsifb;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := match(elsifb,optPath,cname,dep)
+ outDep := match(ielsifb,optPath,cname,dep)
  local AbsynDep.Depends d; Absyn.Program p; Env.Env env;
    Absyn.Exp e;
    list<Absyn.AlgorithmItem> eb;
    HashTable2.HashTable ht;
+   list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> elsifb;
+   
    case({},_,_,(d,_,_,_)) then d;
 
    case((e,eb)::elsifb,optPath,cname,(d,p,env,ht)) equation
@@ -688,13 +709,13 @@ algorithm
 end extractProgram;
 
 protected function buildClassDependsinEqns "Build class dependencies from equations"
-  input  list<Absyn.EquationItem> eqns;
+  input list<Absyn.EquationItem> ieqns;
   input Option<Absyn.Path> optPath;
-  input Absyn.Path cname;
+  input Absyn.Path icname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := matchcontinue(eqns,optPath,cname,dep)
+ outDep := matchcontinue(ieqns,optPath,icname,dep)
    local  
      AbsynDep.Depends d;
      Absyn.Program p;
@@ -704,8 +725,9 @@ algorithm
      list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifeqns,elseWhenEqns;
      Absyn.FunctionArgs fargs;
      Absyn.ComponentRef cr;
-     Absyn.Path path,usesName,cname2;
+     Absyn.Path path,usesName,cname2,cname;
      HashTable2.HashTable ht;
+     list<Absyn.EquationItem> eqns;
    
    case({},optPath,cname,(d,p,env,ht)) then d;
 
@@ -778,13 +800,13 @@ algorithm
 end buildClassDependsinEqns;
 
 protected function buildClassDependsinElseIfEqns ""
-  input list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifeqns;
+  input list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> ielseifeqns;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := match(elseifeqns,optPath,cname,dep)
+ outDep := match(ielseifeqns,optPath,cname,dep)
    local
      AbsynDep.Depends d;
      Absyn.Program p;
@@ -792,6 +814,8 @@ algorithm
      Absyn.Exp e;
      list<Absyn.EquationItem> eqns;
      HashTable2.HashTable ht;
+     list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifeqns;
+     
    case({},optPath,cname,(d,p,env,ht)) then d;
 
    case((e,eqns)::elseifeqns,optPath,cname,(d,p,env,ht))
@@ -825,19 +849,21 @@ algorithm
 end buildClassDependsInFuncargs;
 
 protected function buildClassDependsInNamedArgs "build class dependencies from named arguments"
-  input list<Absyn.NamedArg> nargs;
+  input list<Absyn.NamedArg> inargs;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := match(nargs,optPath,cname,dep)
+ outDep := match(inargs,optPath,cname,dep)
    local
      AbsynDep.Depends d;
      Absyn.Program p;
      Env.Env env;
      Absyn.Exp e;
      HashTable2.HashTable ht;
+     list<Absyn.NamedArg> nargs;
+     
    case({},optPath,cname,(d,p,env,ht)) then d;
 
    case(Absyn.NAMEDARG(_,e)::nargs,optPath,cname,(d,p,env,ht)) equation
@@ -915,17 +941,18 @@ algorithm
 end buildClassDependsinArrayDimOpt;
 
 protected function buildClassDependsInExpList "build class dependencies from exp list"
-  input list<Absyn.Exp> expl;
+  input list<Absyn.Exp> iexpl;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := match(expl,optPath,cname,dep)
+  outDep := match(iexpl,optPath,cname,dep)
     local
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       Absyn.Exp e;
       HashTable2.HashTable ht;
+      list<Absyn.Exp> expl;
     
     case({},optPath,cname,(d,p,env,ht)) then d;
           
@@ -938,19 +965,20 @@ algorithm
 end buildClassDependsInExpList;
 
 protected function buildClassDependsinElts "help function to buildClassDependsinParts"
-  input list<Absyn.ElementItem> elts;
+  input list<Absyn.ElementItem> ielts;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := matchcontinue(elts,optPath,cname,dep)
+ outDep := matchcontinue(ielts,optPath,cname,dep)
    local 
      Absyn.ElementSpec eltSpec;
      AbsynDep.Depends d;
      Absyn.Program p;
      Env.Env env;
      HashTable2.HashTable ht;
+     list<Absyn.ElementItem> elts;
    
    case({},optPath,cname,(d,p,env,ht)) then d;
    
@@ -1103,19 +1131,21 @@ algorithm
 end buildClassDependsInEqMod;
 
 protected function buildClassDependsinArrayDim " help function to e.g buildClassDependsInTypeSpec"
-  input Absyn.ArrayDim ad;
+  input Absyn.ArrayDim iad;
   input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
-  outDep := match(ad,optPath,cname,dep)
+  outDep := match(iad,optPath,cname,dep)
     local
       AbsynDep.Depends d;
       Absyn.Program p;
       Env.Env env;
       Absyn.Exp e;
       HashTable2.HashTable ht;
+      Absyn.ArrayDim ad;
+    
     case({},optPath,cname,(d,p,env,ht)) then d;
     case(Absyn.NOSUB()::ad,optPath,cname,(d,p,env,ht)) then buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
     case(Absyn.SUBSCRIPT(e)::ad,optPath,cname,(d,p,env,ht)) equation
@@ -1289,13 +1319,14 @@ algorithm
 end absynMakeFullyQualified;
 
 protected function getClassEnvNoElaborationScope "uses getClassEnvNoElaboration if in a scope, otherwise return top env"
-input Absyn.Program p;
-input Option<Absyn.Path> optPath;
-input Env.Env env;
-output Env.Env outEnv;
+  input Absyn.Program ip;
+  input Option<Absyn.Path> optPath;
+  input Env.Env ienv;
+  output Env.Env outEnv;
 algorithm
-  outEnv := matchcontinue(p,optPath,env)
-  local Absyn.Path path;
+  outEnv := matchcontinue(ip,optPath,ienv)
+  local Absyn.Path path; Absyn.Program p; Env.Env env;
+    
     case(p,NONE(),env) then env;
     case(p,SOME(path),env) then getClassEnvNoElaboration(p,path,env);
 

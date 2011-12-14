@@ -435,13 +435,13 @@ end checkInitialSystem;
 protected function checkInitialSystemWork "function: checkInitialSystem
   author: Frenkel TUD 2010-12
   - check if the inital conditions are fully specified and fix them if not."
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inSyst;
   input DAE.FunctionTree funcs;
-  input BackendDAE.Shared shared;
+  input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (syst,funcs,shared)
+  (osyst,oshared) := matchcontinue (inSyst,funcs,inShared)
     local
       BackendDAE.Variables variables,knvars,exObj,aliasVars;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
@@ -454,6 +454,8 @@ algorithm
       list<BackendDAE.WhenClause> whenClauseLst;
       list<DAE.ComponentRef> vars,varsws,states,statesws;
       BackendDAE.AliasVariables av;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
    
     case (syst as BackendDAE.EQSYSTEM(orderedVars=variables,orderedEqs=orderedEqs),funcs,shared as BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses))
@@ -482,8 +484,8 @@ protected function checkInitialSystem1"function: checkInitialSystem
   author: Frenkel TUD 2010-12"
   input Integer inUnfixed;
   input Integer inInitialEqns;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
   input DAE.FunctionTree funcs;
   input list<DAE.ComponentRef> inVars;
   input list<DAE.ComponentRef> inVarsWS;
@@ -492,7 +494,7 @@ protected function checkInitialSystem1"function: checkInitialSystem
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (inUnfixed,inInitialEqns,syst,shared,funcs,inVars,inVarsWS,inStates,inStatesWS)
+  (osyst,oshared) := matchcontinue (inUnfixed,inInitialEqns,inSyst,inShared,funcs,inVars,inVarsWS,inStates,inStatesWS)
     local
       BackendDAE.Variables vars,knvars,exObj,vars1,knvars1;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
@@ -505,6 +507,8 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;      
    
     // unfixed equal equations
     case (inUnfixed,inInitialEqns,syst,shared,_,_,_,_,_)
@@ -1006,14 +1010,15 @@ end numberOfZeroCrossings;
 
 protected function calculateNumberZeroCrossings
   input list<BackendDAE.ZeroCrossing> zcLst;
-  input Integer zc_index;
-  input Integer sample_index;
+  input Integer inZc_index;
+  input Integer inSample_index;
   output Integer zc;
   output Integer sample;
 algorithm
-  (zc,sample) := matchcontinue (zcLst,zc_index,sample_index)
+  (zc,sample) := matchcontinue (zcLst,inZc_index,inSample_index)
     local
       list<BackendDAE.ZeroCrossing> xs;
+      Integer sample_index, zc_index;
     
     case ({},zc_index,sample_index) then (zc_index,sample_index);
 
@@ -1541,18 +1546,20 @@ algorithm
       DAE.Type ty;
       DAE.ComponentRef cref;
       Boolean b;
-    // case a=a
-   case (inExp1,inExp2)
+      DAE.Exp e1,e2;
+      
+   // case a=a
+   case (e1,e2)
      equation
-       true = Expression.expEqual(inExp1,inExp2);
+       true = Expression.expEqual(e1,e2);
      then (true,false, inExp2);
-    // case a=-a
-   case (DAE.UNARY(DAE.UMINUS(ty),inExp1),inExp2)
+   // case a=-a
+   case (DAE.UNARY(DAE.UMINUS(ty),e1),e2)
      equation
-       ty = Expression.typeof(inExp2);
-       true = Expression.expEqual(inExp1,inExp2);
-     then (true,true, DAE.UNARY(DAE.UMINUS(ty),inExp2));
-   case (inExp1,_) then (false,false,inExp1);
+       ty = Expression.typeof(e2);
+       true = Expression.expEqual(e1,e2);
+     then (true,true, DAE.UNARY(DAE.UMINUS(ty),e2));
+   case (e1,_) then (false,false,e1);
    end matchcontinue;
 end compareExpAlias;
 
@@ -3070,13 +3077,14 @@ protected function treeGet3
   input BackendDAE.BinTree inBinTree;
   input String keystr;
   input Integer keyhash;
-  input Integer compResult;
+  input Integer inCompResult;
   output BackendDAE.Value outValue;
 algorithm
-  outValue := match (inBinTree,keystr,keyhash,compResult)
+  outValue := match (inBinTree,keystr,keyhash,inCompResult)
     local
       BackendDAE.Value rval;
       BackendDAE.BinTree right, left;
+      Integer compResult;
       
     // found it
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,keyhash,0) then rval;
@@ -3654,14 +3662,14 @@ public function collateArrExpList
 "function collateArrExpList
  author Frenkel TUD:
   replace {a[1],a[2],a[3]} for Real a[3] with a"
-  input list<DAE.Exp> expl;
+  input list<DAE.Exp> iexpl;
   input Option<DAE.FunctionTree> optfunc;
   output list<DAE.Exp> outexpl;
 algorithm
-  outexpl := match(expl,optfunc)
+  outexpl := match(iexpl,optfunc)
     local 
       DAE.Exp e,e1;
-      list<DAE.Exp> expl1;
+      list<DAE.Exp> expl1,expl;
     
     case({},_) then {};
     
@@ -3733,16 +3741,18 @@ end traversingcollateArrExp;
 
 public function dimensionsToRange
   "Converts a list of dimensions to a list of integer ranges."
-  input list<DAE.Dimension> dims;
+  input list<DAE.Dimension> idims;
   output list<list<DAE.Subscript>> outRangelist;
 algorithm
-  outRangelist := matchcontinue(dims)
+  outRangelist := matchcontinue(idims)
   local 
     Integer i;
     list<list<DAE.Subscript>> rangelist;
     list<Integer> range;
     list<DAE.Subscript> subs;
     DAE.Dimension d;
+    list<DAE.Dimension> dims;
+    
     case({}) then {};
     case(DAE.DIM_UNKNOWN()::dims) 
       equation
@@ -4879,15 +4889,17 @@ end getArrayEquationSub;
 
 protected function arrayDimensionsToRange "
 Author: Frenkel TUD 2010-05"
-  input list<Option<Integer>> dims;
+  input list<Option<Integer>> idims;
   output list<list<DAE.Subscript>> outRangelist;
 algorithm
-  outRangelist := match(dims)
+  outRangelist := match(idims)
   local 
     Integer i;
     list<list<DAE.Subscript>> rangelist;
     list<Integer> range;
     list<DAE.Subscript> subs;
+    list<Option<Integer>> dims;
+    
     case({}) then {};
     case(NONE()::dims) equation
       rangelist = arrayDimensionsToRange(dims);
@@ -4954,11 +4966,9 @@ end calculateJacobianRow2;
 
 public function analyzeJacobian "function: analyzeJacobian
   author: PA
-
   Analyze the jacobian to find out if the jacobian of system of equations
   can be solved at compiletime or runtime or if it is a nonlinear system
-  of equations.
-"
+  of equations."
   input BackendDAE.BackendDAE inBackendDAE;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output BackendDAE.JacobianType outJacobianType;
@@ -4988,10 +4998,8 @@ end analyzeJacobian;
 
 protected function rhsConstant "function: rhsConstant
   author: PA
-
   Determines if the right hand sides of an equation system,
-  represented as a BackendDAE, is constant.
-"
+  represented as a BackendDAE, is constant."
   input BackendDAE.BackendDAE inBackendDAE;
   output Boolean outBoolean;
 algorithm
@@ -5269,16 +5277,17 @@ end getEqnsysRhsExp;
 public function ifBranchesFreeFromVar "
   Retrieves if-branches free from any of the variables passed as argument.
   This is done by replacing the variables with zero."
-  input list<DAE.Exp> expl;
+  input list<DAE.Exp> iexpl;
   input BackendDAE.Variables vars;
   output list<DAE.Exp> outExpl;
 algorithm
-  outExpl := matchcontinue(expl,vars)
-    local DAE.Exp cond,t,f,e1,e2;
+  outExpl := matchcontinue(iexpl,vars)
+    local 
+      DAE.Exp cond,t,f,e1,e2;
       VarTransform.VariableReplacements repl;
       DAE.Operator op;
       Absyn.Path path;
-      list<DAE.Exp> expl2;
+      list<DAE.Exp> expl2,expl;
       Boolean tpl ;
       Boolean b;
       DAE.InlineType i;
@@ -6275,8 +6284,8 @@ protected function mapTransformDAE
   Run the matching Algorithm and the sorting algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
-  input list<BackendDAE.EqSystem> systs;
-  input BackendDAE.Shared shared;
+  input list<BackendDAE.EqSystem> isysts;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<daeHandlerFunc,String> daeHandler;
@@ -6284,7 +6293,7 @@ protected function mapTransformDAE
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
 algorithm
-  (osysts,oshared) := matchcontinue (systs,shared,functionTree,inMatchingOptions,daeHandler,acc)
+  (osysts,oshared) := matchcontinue (isysts,ishared,functionTree,inMatchingOptions,daeHandler,acc)
     local 
       BackendDAE.BackendDAE dae,ode,ode2;
       DAE.FunctionTree funcs;
@@ -6296,6 +6305,9 @@ algorithm
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
       BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
+      
     case ({},shared,funcs,inMatchingOptions,daeHandler,acc) then (listReverse(acc),shared);
     case (syst::systs,shared,funcs,inMatchingOptions,daeHandler,acc)
       equation
@@ -6310,15 +6322,15 @@ protected function transformDAEWork
   Run the matching Algorithm and the sorting algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (syst,shared,functionTree,inMatchingOptions,daeHandler)
+  (osyst,oshared) := matchcontinue (isyst,ishared,functionTree,inMatchingOptions,daeHandler)
     local 
       BackendDAE.BackendDAE dae,ode,ode2;
       DAE.FunctionTree funcs;
@@ -6329,6 +6341,9 @@ algorithm
       BackendDAE.StrongComponents comps;
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
     case (syst,shared,funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
         (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
@@ -6355,15 +6370,16 @@ end transformDAEWork;
 protected function restartMatching
   "Restarts matching if cond is true."
   input Boolean cond;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions opts;
   input daeHandlerFunc daeHandler;
   input DAE.FunctionTree funcs;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := match (cond,syst,shared,opts,daeHandler,funcs)
+  (osyst,oshared) := match (cond,isyst,ishared,opts,daeHandler,funcs)
+    local BackendDAE.EqSystem syst; BackendDAE.Shared shared;
     case (false,syst,shared,_,_,_) then (syst,shared);
     case (true,syst,shared,opts,daeHandler,funcs)
       equation

@@ -401,9 +401,9 @@ public function getReinitInfo
   input Integer loopIndex;
   input list<BackendDAE.WhenClause> wcIn;
   input BackendDAE.Variables vars;
-  input list<Integer> tempOutListWhens;
-  input list<list<Integer>> tempOutIncidenceMat;
-  input list<Integer> tempOutVars;
+  input list<Integer> inTempOutListWhens;
+  input list<list<Integer>> inTempOutIncidenceMat;
+  input list<Integer> inTempOutVars;
   
   output list<Integer> whenReinitClausesInd;
   output list<list<Integer>> whenReinitIncidenceMatList;
@@ -411,14 +411,14 @@ public function getReinitInfo
   
 algorithm
   (whenReinitClausesInd, whenReinitIncidenceMatList, whenReinitOutVars) :=
-  matchcontinue (loopIndex, wcIn, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars)
+  matchcontinue (loopIndex, wcIn, vars, inTempOutListWhens, inTempOutIncidenceMat, inTempOutVars)
     local
       
       list<BackendDAE.WhenOperator> cur_list;
       list<BackendDAE.WhenClause> rest_clauses;  
       list<BackendDAE.WhenClause> wc;
-      list<Integer> row;
-      list<list<Integer>> tempList, tempList2;
+      list<Integer> row, tempOutListWhens, tempOutVars;
+      list<list<Integer>> tempList, tempList2, tempOutIncidenceMat;
     
     case (loopIndex, {}, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) then (listReverse(tempOutListWhens), tempOutIncidenceMat, tempOutVars);   
     
@@ -456,21 +456,23 @@ public function getReinitInfo2
 "
   input list<BackendDAE.WhenOperator> cur_ReinitList;
   input BackendDAE.Variables vars;
-  input list<list<Integer>> tempOutIncidenceMat;
-  input list<Integer> tempOutVars;
+  input list<list<Integer>> inTempOutIncidenceMat;
+  input list<Integer> inTempOutVars;
   
   output list<list<Integer>> whenReinitIncidenceMatList;
   output list<Integer> whenReinitOutVars;
   
 algorithm
   (whenReinitIncidenceMatList,whenReinitOutVars) :=
-  matchcontinue (cur_ReinitList, vars, tempOutIncidenceMat, tempOutVars)
+  matchcontinue (cur_ReinitList, vars, inTempOutIncidenceMat, inTempOutVars)
     local   
       list<BackendDAE.WhenOperator> rest_reinits;
       DAE.ComponentRef leftHand;  
       DAE.Exp rightHand;
-      list<Integer> row, lst1, lst2;
+      list<Integer> row, lst1, lst2, tempOutVars;
       Integer elem;
+      list<list<Integer>> tempOutIncidenceMat;
+      
     case ({}, vars, tempOutIncidenceMat, tempOutVars) then (listReverse(tempOutIncidenceMat), listReverse(tempOutVars));   
     
     case (BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutVars) 
@@ -562,9 +564,9 @@ protected function getWhenEqClausesInfo3
   input Integer size;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars; 
-  input list<Integer> eqnList_temp;
-  input list<Integer> whenClausesList_temp;
-  input list<list<Integer>> whenIncidenceMatList_temp;
+  input list<Integer> inEqnList_temp;
+  input list<Integer> inWhenClausesList_temp;
+  input list<list<Integer>> inWhenIncidenceMatList_temp;
   
   output list<Integer> eqnLst;
   output list<Integer> whenClausesList;
@@ -572,11 +574,15 @@ protected function getWhenEqClausesInfo3
    
 algorithm
   (eqnLst, whenClausesList, whenIncidenceMatList) := 
-  matchcontinue(i,size,eqns,vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp)
+  matchcontinue(i,size,eqns,vars, inEqnList_temp, inWhenClausesList_temp, inWhenIncidenceMatList_temp)
     local
       BackendDAE.WhenEquation whenEq;
       Integer tempInd;
       list<Integer> row;
+      list<Integer> eqnList_temp;
+      list<Integer> whenClausesList_temp;
+      list<list<Integer>> whenIncidenceMatList_temp;
+
       
     case(i,size,eqns, vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp) 
       equation
@@ -688,10 +694,10 @@ public function getListofZeroCrossings2
   input Integer loopIndex;
   input list<BackendDAE.ZeroCrossing> zc;
   input BackendDAE.Variables vars;
-  input list<list<Integer>> zc_inVarsTemp;
-  input list<BackendDAE.ZeroCrossing> zcOnlyTemp;
-  input list<BackendDAE.ZeroCrossing> zcSamplesTemp;
-  input list<Integer> zcSamplesIndTemp;
+  input list<list<Integer>> inZc_inVarsTemp;
+  input list<BackendDAE.ZeroCrossing> inZcOnlyTemp;
+  input list<BackendDAE.ZeroCrossing> inZcSamplesTemp;
+  input list<Integer> inZcSamplesIndTemp;
   
   output list<BackendDAE.ZeroCrossing> zcOnly;
   output list<list<Integer>> zc_inVars;
@@ -700,12 +706,17 @@ public function getListofZeroCrossings2
   
 algorithm
   (zcOnly, zc_inVars, zcSamples, zcSamplesInd):=
-  matchcontinue (loopIndex, zc, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
+  matchcontinue (loopIndex, zc, vars, inZc_inVarsTemp, inZcOnlyTemp, inZcSamplesTemp, inZcSamplesIndTemp)
     local
       list<BackendDAE.Value> tempInVars;
       BackendDAE.ZeroCrossing cur_zc;
       list<BackendDAE.ZeroCrossing> rest_zeroCrossings;
       DAE.Exp e;
+      list<list<Integer>> zc_inVarsTemp;
+      list<BackendDAE.ZeroCrossing> zcOnlyTemp;
+      list<BackendDAE.ZeroCrossing> zcSamplesTemp;
+      list<Integer> zcSamplesIndTemp;
+
     
     case (loopIndex, {}, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp)
       equation
@@ -1197,15 +1208,16 @@ protected function findEqInBlocks
 " 
   input list<Integer> eqInd;
   input array<list<Integer>> mappedEquationsMat;
-  input list<Integer> blocksInd_temp;
+  input list<Integer> inBlocksInd_temp;
+  
   output list<Integer> blocksInd_out;
  
 algorithm
   (blocksInd_out):=
-  matchcontinue (eqInd, mappedEquationsMat, blocksInd_temp)
+  matchcontinue (eqInd, mappedEquationsMat, inBlocksInd_temp)
     local
       Integer curEq;
-      list<Integer> restEq, curBlocks;
+      list<Integer> restEq, curBlocks, blocksInd_temp;
       
     case ({}, mappedEquationsMat, blocksInd_temp)
       equation
@@ -1393,19 +1405,21 @@ protected function updateEventsAsInputs2
 " 
   input Integer eventBlockInd;
   input list<Integer> inBlocksInd;
-  input array<list<list<Integer>>> DEVS_struct_inLinks;
-  input array<list<list<Integer>>> DEVS_struct_inVars;
+  input array<list<list<Integer>>> inDEVS_struct_inLinks;
+  input array<list<list<Integer>>> inDEVS_struct_inVars;
+  
   output array<list<list<Integer>>> DEVS_struct_inLinksOut;
   output array<list<list<Integer>>> DEVS_struct_inVarsOut;
 
  
 algorithm
   (DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
-  matchcontinue (eventBlockInd, inBlocksInd, DEVS_struct_inLinks, DEVS_struct_inVars )
+  matchcontinue (eventBlockInd, inBlocksInd, inDEVS_struct_inLinks, inDEVS_struct_inVars)
     local
       list<list<Integer>> curBlock_inLinks, curBlock_inVars;
       list<Integer> tempList, restBlocks;
       Integer curBlockIn, portIn;
+      array<list<list<Integer>>> DEVS_struct_inLinks,DEVS_struct_inVars;
       
     case (eventBlockInd, {}, DEVS_struct_inLinks, DEVS_struct_inVars)
       equation
@@ -1718,9 +1732,9 @@ protected function findWhereOutVarIsNeeded
   input Integer outBlockIndex;
   input list<Integer> blocksToBeChecked;
   input list<list<Integer>> DEVS_blocks_inVars;
-  input array<list<list<Integer>>> DEVS_struct_inLinks;
-  input array<list<list<Integer>>> DEVS_struct_inVars;
-  input list<Integer> curOutVarLinks;
+  input array<list<list<Integer>>> inDEVS_struct_inLinks;
+  input array<list<list<Integer>>> inDEVS_struct_inVars;
+  input list<Integer> inCurOutVarLinks;
   output list<Integer> outLinks;
   output array<list<list<Integer>>> DEVS_struct_inLinksOut;
   output array<list<list<Integer>>> DEVS_struct_inVarsOut;
@@ -1728,13 +1742,13 @@ protected function findWhereOutVarIsNeeded
  
 algorithm
   (outLinks, DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
-  matchcontinue (curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,curOutVarLinks)
+  matchcontinue (curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, inDEVS_struct_inLinks, inDEVS_struct_inVars, inCurOutVarLinks)
     local
       array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
       Integer curOutVar, inBlockIndex;
-      list<Integer> restOutVars, curBlock_inVars, restBlocksToBeChecked;
+      list<Integer> restOutVars, curBlock_inVars, restBlocksToBeChecked, curOutVarLinks;
       list<list<Integer>> restBlocks_inVars, curOutBlock_outLinks, curOutBlock_outVars, curInBlock_inLinks, curInBlock_inVars;
-      DevsStruct DEVS_structure_temp;   
+      DevsStruct DEVS_structure_temp;
 
     case (curOutVar, discreteVarIndices, outBlockIndex, {}, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
       equation
@@ -1928,18 +1942,21 @@ protected function selectVarsInOut
   input list<Integer> curBlock_flatEq;
   input BackendDAE.IncidenceMatrix incidenceMat;
   input array<Integer> ass2;
-  input list<Integer> varIndicesIn_temp;
-  input list<Integer> varIndicesOut_temp;
+  input list<Integer> inVarIndicesIn_temp;
+  input list<Integer> inVarIndicesOut_temp;
   
   output list<Integer> varIndicesIn;
   output list<Integer> varIndicesOut;
   
 algorithm
   (varIndicesIn, varIndicesOut):=
-  matchcontinue (curBlock_flatEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
+  matchcontinue (curBlock_flatEq, incidenceMat, ass2, inVarIndicesIn_temp, inVarIndicesOut_temp)
     local     
       Integer curEq, curOutVar, ind;
-      list<Integer> restEq, curInVars, curRow;      
+      list<Integer> restEq, curInVars, curRow;
+      list<Integer> varIndicesIn_temp;
+      list<Integer> varIndicesOut_temp;
+    
     case ( {}, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp) then (listReverse(varIndicesIn_temp), listReverse(varIndicesOut_temp));
                
     case (curEq::restEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
@@ -3326,14 +3343,14 @@ public  function generateConnections2
   input tuple< array<list<list<Integer>>>, array<list<list<Integer>>>, array<list<list<Integer>>>, array<list<list<Integer>>> > DEVSstructureMatsIn; 
   input Integer blockIndex;
   input Integer nBlocks;
-  input list<list<Integer>> conns_temp;
+  input list<list<Integer>> inConns_temp;
   output list<list<Integer>> connsOut;
 algorithm
   connsOut := 
-    match (DEVSstructureMatsIn, blockIndex, nBlocks, conns_temp)
+    match (DEVSstructureMatsIn, blockIndex, nBlocks, inConns_temp)
       local        
         array<list<list<Integer>>> outLinks, outVars, inLinks, inVars;
-        list<list<Integer>> curBlock_conns, curBlock_outEdges, curBlock_outVars;
+        list<list<Integer>> curBlock_conns, curBlock_outEdges, curBlock_outVars, conns_temp;
         
       case (_, _, 0, conns_temp)
         equation 
@@ -3370,16 +3387,16 @@ protected function getDEVSblock_conns
   input list<list<Integer>> curBlock_outVars;
   input array<list<list<Integer>>> inVars;
   input Integer loopIndex;
-  input list<list<Integer>> curBlock_conns_temp;
+  input list<list<Integer>> inCurBlock_conns_temp;
   output list<list<Integer>> curBlock_conns_out;
   
 algorithm
   (curBlock_conns_out):=
-  matchcontinue (blockIndex, curBlock_outEdges, curBlock_outVars, inVars, loopIndex, curBlock_conns_temp)
+  matchcontinue (blockIndex, curBlock_outEdges, curBlock_outVars, inVars, loopIndex, inCurBlock_conns_temp)
     local 
       Integer blockOut, portOut, curOutVar;
       list<Integer> cur_out_edges, cur_out_names, in_edges, blocksIn;
-      list<list<Integer>> rest_out_edges, rest_out_names, curOutVarConnections;
+      list<list<Integer>> rest_out_edges, rest_out_names, curOutVarConnections, curBlock_conns_temp;
             
     case(blockIndex, {}, {}, inVars, loopIndex, curBlock_conns_temp)
       equation
@@ -3415,18 +3432,18 @@ protected function getDEVSblock_conns2
   input Integer portOut;
   input list<Integer> blocksIn;
   input array<list<list<Integer>>> inVars;
-  input list<list<Integer>> curOutVar_conns_temp;
+  input list<list<Integer>> inCurOutVar_conns_temp;
   output list<list<Integer>> curOutVar_conns_out; 
   
 algorithm
   (curOutVar_conns_out):=
-  matchcontinue (curOutVar, blockOut, portOut, blocksIn, inVars, curOutVar_conns_temp)
+  matchcontinue (curOutVar, blockOut, portOut, blocksIn, inVars, inCurOutVar_conns_temp)
     local     
       Integer portIn, curBlockIn;       
       array<Integer> row;
       list<Integer> out_edges, out_edges_names, restOutVars,restBlocksIn, unique_inputNames, inNames;
       Integer curOutVar, nInputs;
-      list<list<Integer>> column;
+      list<list<Integer>> column, curOutVar_conns_temp;
     
     // If the current output variable is an EVENT (0)
     //case(0, _, _, _, _, curOutVar_conns_temp)
@@ -3576,14 +3593,14 @@ public function constructEmptyList
   author: florosx
 "
   input Integer nEquations; 
-  input list<list<Integer>> tempList;
+  input list<list<Integer>> inTempList;
   
   output list<list<Integer>> emptyListofLists; 
   
 algorithm
   (emptyListofLists):=
-  matchcontinue(nEquations, tempList)
-       
+  matchcontinue(nEquations, inTempList)
+     local list<list<Integer>> tempList;
      case(0, tempList) then listReverse(tempList);
          
      case (nEquations, tempList)
@@ -3600,14 +3617,14 @@ public function constructEmptyListList
   author: florosx
 "
   input Integer nEquations; 
-  input list<list<list<Integer>>> tempList;
+  input list<list<list<Integer>>> inTempList;
   
   output list<list<list<Integer>>> emptyListofLists; 
   
 algorithm
   (emptyListofLists):=
-  matchcontinue(nEquations, tempList)
-       
+  matchcontinue(nEquations, inTempList)
+     local  list<list<list<Integer>>> tempList;
      case(0, tempList) then listReverse(tempList);
          
      case (nEquations, tempList)
@@ -3804,17 +3821,18 @@ protected function replaceRowsArray
   connected to sample statements.
   author: florosx
 "
-  input BackendDAE.IncidenceMatrix incidenceMat;
+  input BackendDAE.IncidenceMatrix inIncidenceMat;
   input list<Integer> rowsInd;
   input list<list<Integer>> newRows;
   output BackendDAE.IncidenceMatrix incidenceMatOut;
 
 algorithm
-  incidenceMatOut := matchcontinue (incidenceMat, rowsInd, newRows)
+  incidenceMatOut := matchcontinue (inIncidenceMat, rowsInd, newRows)
     local
       Integer cur_ind;
       list<Integer> rest_ind, cur_row;
       list<list<Integer>> rest_rows;
+      BackendDAE.IncidenceMatrix incidenceMat;
              
     case(incidenceMat,{},{})
       equation
@@ -3845,16 +3863,16 @@ protected function mergeListsLists
   input list<list<Integer>> inList1;
   input list<Integer> indList2;
   input list<list<Integer>> inList2;
-  input list<list<Integer>> outListIn;
+  input list<list<Integer>> inOutListIn;
   output list<list<Integer>> outList;
  
 algorithm
   (outList):=
-  matchcontinue (allInds, indList1, inList1, indList2, inList2, outListIn)
+  matchcontinue (allInds, indList1, inList1, indList2, inList2, inOutListIn)
     local
       Integer curInd, foundInd;
       list<Integer> restInds, curList;
-      
+      list<list<Integer>> outListIn;
     
     case ({},_, _, _, _, outListIn)
       equation        

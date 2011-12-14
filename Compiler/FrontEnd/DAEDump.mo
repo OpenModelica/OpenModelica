@@ -1387,10 +1387,10 @@ algorithm
 end dumpInlineTypeStr;
 
 protected function printRecordConstructorInputsStr "help function to dumpFunction. Prints the inputs of a record constructor"
-  input DAE.Type tp;
+  input DAE.Type itp;
   output String str;
 algorithm
-  str := matchcontinue(tp)
+  str := matchcontinue(itp)
     local
       list<Absyn.Path> lstPath;
       Option<DAE.Type> optTp;
@@ -1399,6 +1399,7 @@ algorithm
       ClassInf.State cistate;
       String name,s1,s2;
       list<DAE.Var> varLst;
+      DAE.Type tp;
 
     // handle empty
     case(DAE.T_COMPLEX(varLst={})) then "";
@@ -2970,16 +2971,18 @@ algorithm
 end dumpEquationsStream;
 
 protected function dumpIfEquationsStream ""
-  input list<DAE.Exp> conds;
-  input list<list<DAE.Element>> tbs;
+  input list<DAE.Exp> iconds;
+  input list<list<DAE.Element>> itbs;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm 
-  outStream := match(conds,tbs,inStream)
+  outStream := match(iconds,itbs,inStream)
     local
       DAE.Exp c;
       list<DAE.Element> tb;
       IOStream.IOStream str;
+      list<DAE.Exp> conds;
+      list<list<DAE.Element>> tbs;
 
   case({},{},str) then str;
 

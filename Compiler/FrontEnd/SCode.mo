@@ -1437,13 +1437,14 @@ end equationEqual2;
 protected function equationEqual22
 "Author BZ
  Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.)"
-  input list<list<EEquation>> tb1;
-  input list<list<EEquation>> tb2;
+  input list<list<EEquation>> inTb1;
+  input list<list<EEquation>> inTb2;
   output Boolean bOut;
 algorithm
-  bOut := matchcontinue(tb1,tb2)
+  bOut := matchcontinue(inTb1,inTb2)
     local
       list<EEquation> tb_1,tb_2;
+      list<list<EEquation>> tb1,tb2;
     
     case({},{}) then true;
     case(_,{}) then false;
@@ -1508,15 +1509,16 @@ end modEqual;
 protected function subModsEqual
 "function subModsEqual
   Return true if two subModifier lists are equal"
-  input list<SubMod>  subModLst1;
-  input list<SubMod>  subModLst2;
+  input list<SubMod>  inSubModLst1;
+  input list<SubMod>  inSubModLst2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(subModLst1,subModLst2)
+  equal := matchcontinue(inSubModLst1,inSubModLst2)
     local
       Ident id1,id2;
       Mod mod1,mod2;
       list<Subscript> ss1,ss2;
+      list<SubMod>  subModLst1,subModLst2;
 
     case ({},{}) then true;
     
@@ -1543,13 +1545,14 @@ end subModsEqual;
 protected function subscriptsEqual
 "function subscriptsEqual
   Returns true if two subscript lists are equal"
-  input list<Subscript> ss1;
-  input list<Subscript> ss2;
+  input list<Subscript> inSs1;
+  input list<Subscript> inSs2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(ss1,ss2)
+  equal := matchcontinue(inSs1,inSs2)
     local
       Absyn.Exp e1,e2;
+      list<Subscript> ss1,ss2;
 
     case({},{}) then true;
     
@@ -1631,13 +1634,14 @@ end directionEqual;
 protected function arrayDimEqual
 "function arrayDimEqual
   Return true if two arraydims are equal"
- input Absyn.ArrayDim ad1;
- input Absyn.ArrayDim ad2;
+ input Absyn.ArrayDim iad1;
+ input Absyn.ArrayDim iad2;
  output Boolean equal;
  algorithm
-   equal := matchcontinue(ad1,ad2)
+   equal := matchcontinue(iad1,iad2)
      local
        Absyn.Exp e1,e2;
+       Absyn.ArrayDim ad1,ad2;
      
      case({},{}) then true;
      
