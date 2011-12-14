@@ -1439,9 +1439,15 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1)},st,msg)
+    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(false)},st,msg)
       equation
         System.writeFile(str,str1);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(true)},st,msg)
+      equation
+        System.appendFile(str, str1);
       then
         (cache,Values.BOOL(true),st);
         

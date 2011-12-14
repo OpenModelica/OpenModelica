@@ -948,6 +948,7 @@ function writeFile
   "Write the data to file. Returns true on success."
   input String fileName;
   input String data;
+  input Boolean append := false;
   output Boolean success;
 external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
