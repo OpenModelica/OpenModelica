@@ -17,7 +17,12 @@ b:=getClassNames(recursive=true,sort=true);
 loadString("
 function filename
   input String str;
-  output String ostr := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),\"/\",\"Division\");
+  output String ostr := 
+    OpenModelica.Scripting.stringReplace(
+      OpenModelica.Scripting.stringReplace(
+        OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),
+        \"/\",\"Division\"),
+       \"*\",\"Multiplication\");
 end filename;
 ");
 
