@@ -1390,7 +1390,7 @@ algorithm
       Absyn.Class cls,refactoredClass;
       list<DAE.Exp> simOptions;
       Absyn.ClassDef cdef;
-      Absyn.Within within_;
+      Env.Env env;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -2311,6 +2311,19 @@ algorithm
         (top_names_str) = getDefinitions(p, addFunctions);
       then
         (top_names_str, st);
+        
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getLocalVariables");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
+        b1 = useQuotes(nargs);
+        path = Absyn.crefToPath(cr);
+        cls = getPathedClassInProgram(path, p);
+        env = buildEnvFromSymboltable(st);
+        resstr = getLocalVariables(cls, b1, env);
+      then
+        (resstr,st);
 
     /* adrpo added 2006-10-16
      * - i think this function is needed here!
@@ -18384,6 +18397,113 @@ algorithm
       then res;
   end match;
 end getDefinitions;
+
+protected function getLocalVariables
+"function: getLocalVariables
+  Returns the string list of local varibales defined with in the algorithm."
+  input Absyn.Class inClass;
+  input Boolean inBoolean;
+  input Env.Env inEnv;
+  output String outList;
+algorithm 
+  outList := match(inClass, inBoolean, inEnv)
+    local
+      String strList;
+      Env.Env env;
+      Boolean b;
+      list<Absyn.ClassPart> parts;
+      case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), b, env)
+      equation
+        strList = getLocalVariablesInClassParts(parts, b, env);
+      then
+        strList;
+    // check also the case model extends X end X;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)), b, env)
+      equation
+        strList = getLocalVariablesInClassParts(parts, b, env);
+      then
+        strList;
+  end match;
+end getLocalVariables;
+
+protected function getLocalVariablesInClassParts
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Boolean inBoolean;
+  input Env.Env inEnv;
+  output String outList;
+algorithm
+  outList := matchcontinue (inAbsynClassPartLst, inBoolean, inEnv)
+    local
+      Env.Env env;
+      Boolean b;
+      list<Absyn.AlgorithmItem> algs;
+      list<Absyn.ClassPart> xs;
+      String strList, strList1, strList2;
+    case (Absyn.ALGORITHMS(contents = algs) :: xs, b, env)
+      equation
+        strList1 = getLocalVariablesInAlgorithmsItems(algs, b, env);
+        strList = getLocalVariablesInClassParts(xs, b, env);
+        strList2 = Util.if_(strList ==& "", strList1, stringAppendList({strList1, ",", strList}));
+      then
+        strList2;
+    case ((_ :: xs), b, env)
+      equation
+        strList = getLocalVariablesInClassParts(xs, b, env);
+      then
+        strList;
+    case ({}, b, env) then "";
+  end matchcontinue;
+end getLocalVariablesInClassParts;
+
+protected function getLocalVariablesInAlgorithmsItems
+  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  input Boolean inBoolean;
+  input Env.Env inEnv;
+  output String outList;
+algorithm
+  outList := matchcontinue (inAbsynAlgorithmItemLst, inBoolean, inEnv)
+    local
+      Env.Env env;
+      Boolean b;
+      String strList;
+      list<Absyn.AlgorithmItem> xs;
+      Absyn.Algorithm alg;
+    case (Absyn.ALGORITHMITEM(algorithm_ = alg) :: xs, b, env)
+      equation
+        strList = getLocalVariablesInAlgorithmItem(alg, b, env);
+      then
+        strList;
+    case ((_ :: xs), b, env)
+      equation
+        strList = getLocalVariablesInAlgorithmsItems(xs, b, env);
+      then
+        strList;
+    case ({}, b, env) then "";
+  end matchcontinue;
+end getLocalVariablesInAlgorithmsItems;
+
+protected function getLocalVariablesInAlgorithmItem
+  input Absyn.Algorithm inAbsynAlgorithmItem;
+  input Boolean inBoolean;
+  input Env.Env inEnv;
+  output String outList;
+algorithm
+  outList := match (inAbsynAlgorithmItem, inBoolean, inEnv)
+    local
+      Env.Env env;
+      Boolean b;
+      String strList;
+      list<Absyn.ElementItem> elsItems;
+      list<Absyn.Element> els;
+    case (Absyn.ALG_ASSIGN(value = Absyn.MATCHEXP(localDecls = elsItems)), b, env)
+      equation
+        els = getComponentsInElementitems(elsItems);
+        strList = getComponentsInfo(els, b, "public", env);
+      then
+        strList;
+    case (_, b, env) then "";
+  end match;
+end getLocalVariablesInAlgorithmItem;
 
 protected function printWithNewline
   input String s;
