@@ -150,5 +150,5 @@ done
 ");
 system("bash FindFiles.sh");
 system("rm -f MSL.tar.xz");
-system("tar cJf MSL.tar.xz *.html *.png GenerateDoc.mos");
+system("tar cJf MSL.tar.xz --dereference *.html *.png GenerateDoc.mos");
 getErrorString();
