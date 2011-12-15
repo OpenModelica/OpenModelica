@@ -918,6 +918,16 @@ algorithm
         (cache,Values.STRING(str),st);
      */
      
+    case (cache,env,"basename",{Values.STRING(str)},st,msg)
+      equation
+        str = System.basename(str);
+      then (cache,Values.STRING(str),st);
+    
+    case (cache,env,"dirname",{Values.STRING(str)},st,msg)
+      equation
+        str = System.dirname(str);
+      then (cache,Values.STRING(str),st);
+    
     case (cache,env,"codeToString",{Values.CODE(codeNode)},st,msg)
       equation
         str = Dump.printCodeStr(codeNode);

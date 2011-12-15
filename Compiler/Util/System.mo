@@ -790,6 +790,15 @@ See man 3 basename."
   external "C" base = System_basename(filename) annotation(Library = "omcruntime");
 end basename;
 
+public function dirname
+"Returns the name of the file without any leading directory path.
+See man 3 dirname."
+  input String filename;
+  output String base;
+  // We need to strdup the input, so we can't use basename() directly
+  external "C" base = System_dirname(filename) annotation(Library = "omcruntime");
+end dirname;
+
 public function escapedString
 "Because list() requires escape-sequences to be in the AST, we need to be
 able to unescape them in some places of the code."

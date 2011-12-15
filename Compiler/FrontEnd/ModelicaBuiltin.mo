@@ -1915,6 +1915,21 @@ function getClassComment
 external "builtin";
 annotation(preferredView="text");
 end getClassComment;
+
+function dirname
+  input String path;
+  output String dirname;
+external "builtin";
+annotation(preferredView="text");
+end dirname;
+
+function basename
+  input String path;
+  output String basename;
+external "builtin";
+annotation(preferredView="text");
+end basename;
+
 annotation(preferredView="text");
 end Scripting;
 

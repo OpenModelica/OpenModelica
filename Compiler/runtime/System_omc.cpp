@@ -153,6 +153,14 @@ extern const char* System_basename(const char* str)
   return strdup(SystemImpl__basename(str));
 }
 
+extern const char* System_dirname(const char* str)
+{
+  char *cpy = strdup(str);
+  char *res = strdup(dirname(cpy));
+  free(cpy);
+  return res;
+}
+
 extern const char* System_configureCommandLine()
 {
   return CONFIGURE_COMMANDLINE;

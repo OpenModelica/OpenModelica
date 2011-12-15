@@ -263,6 +263,16 @@ RML_BEGIN_LABEL(System__basename)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__dirname)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  char *cpy = strdup(str);
+  rmlA0 = mk_scon(dirname(cpy));
+  free(cpy);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__stringFind)
 {
   char *str = RML_STRINGDATA(rmlA0);
