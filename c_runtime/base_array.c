@@ -44,7 +44,7 @@
  ** sets all fields in a base_array, i.e. data, ndims and dim_size.
  **/
 
-void base_array_create(base_array_t *dest, void *data, int ndims, const va_list ap)
+void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
 {
     int i;
 
@@ -230,7 +230,7 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
     dest->data = data;
 }
 
-size_t alloc_base_array(base_array_t *dest, int ndims, const va_list ap)
+size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
 {
     int i;
 
@@ -314,7 +314,7 @@ size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *a
 }
 
 /* One based index*/
-size_t calc_base_index_va(const base_array_t *source, int ndims, const va_list ap)
+size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
 {
     int i;
     size_t index;

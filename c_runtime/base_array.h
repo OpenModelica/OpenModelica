@@ -47,7 +47,7 @@ struct base_array_s
 typedef struct base_array_s base_array_t;
 
 /* Settings the fields of a base_array */
-extern void base_array_create(base_array_t *dest, void *data, int ndims, const va_list ap);
+extern void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);
 
 /* Allocation of a vector */
 extern void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data);
@@ -56,7 +56,7 @@ extern void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data);
 extern void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data);
 
 /* Allocate array */
-extern size_t alloc_base_array(base_array_t *dest, int ndims, const va_list ap);
+extern size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap);
 
 /* Number of elements in array. */
 extern size_t base_array_nr_of_elements(const base_array_t *a);
@@ -79,7 +79,7 @@ extern int base_array_one_element_ok(const base_array_t *a);
 extern size_t calc_base_index_spec(int ndims, const _index_t* idx_vec,
                                    const base_array_t *arr, const index_spec_t *spec);
 extern size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *arr);
-extern size_t calc_base_index_va(const base_array_t *source, int ndims, const va_list ap);
+extern size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap);
 
 extern int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a);
 
