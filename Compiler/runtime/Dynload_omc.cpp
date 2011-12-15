@@ -31,6 +31,10 @@
 
 extern "C" {
 
+#if defined(_MSC_VER)
+#include <Windows.h>
+#endif
+
 #include "modelica.h"
 #include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"

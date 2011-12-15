@@ -30,13 +30,16 @@
 
 extern "C" {
 
+#if defined(_MSC_VER)
+#include <Windows.h>
+#endif
+
 #include <ctype.h> /* for toupper */
 #include "modelica.h"
 #include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINTIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 #include "systemimpl.c"
-
 
 extern void System_writeFile(const char* filename, const char* data)
 {
@@ -156,7 +159,15 @@ extern const char* System_basename(const char* str)
 extern const char* System_dirname(const char* str)
 {
   char *cpy = strdup(str);
-  char *res = strdup(dirname(cpy));
+  char *res = NULL;
+#if defined(_MSC_VER)
+  char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
+  _splitpath(str, drive, dir, filename, extension);
+  sprintf(cpy, "%s/%s/",drive,dir);
+  res = strdup(cpy);
+#else
+  res = strdup(dirname(cpy));
+#endif
   free(cpy);
   return res;
 }

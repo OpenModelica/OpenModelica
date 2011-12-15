@@ -56,7 +56,20 @@ extern "C" {
 #include "rtclock.h"
 #include "config.h"
 #include "errorext.h"
+
+#if defined(_MSC_VER) /* no iconv for VS! */
+
+typedef void* iconv_t;
+#define iconv_open(tocode, fromcode)  (0)
+#define iconv_close(cd) (0)
+#define iconv(cd,  inbuf, inbytesleft, outbuf, outbytesleft) (0)
+
+#else /* real compilers */
+
 #include "iconv.h"
+
+#endif
+
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define getFunctionPointerFromDLL  GetProcAddress
