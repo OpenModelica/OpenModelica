@@ -1,6 +1,7 @@
 # includes
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta/gc)
 
 # OMDEV PATH
 IF(NOT OMDEV)
@@ -49,7 +50,8 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
-  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta/gc)
+
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
@@ -94,7 +96,8 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
-  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta/gc)
+
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
@@ -142,6 +145,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta/gc)
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -196,6 +200,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta/gc)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -279,7 +284,7 @@ SET(c_runtime_sources  boolean_array.c index_spec.c integer_array.c
 					   hybrd.c   lsame.c   newuob.c   r1mpyq.c
 					   update.c division.c java_interface.c
 					   rtclock.c ModelicaUtilities.c simulation_varinfo.c
-					   read_matlab4.c read_csv.cpp)
+					   read_matlab4.c read_csv.cpp ringbuffer.c)
 
 SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
                        modelica_string.h base_array.h inline.h real_array.h
@@ -288,7 +293,7 @@ SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
 					   java_interface.h jni.h division.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
 					   rtclock.h ModelicaUtilities.h simulation_varinfo.h read_matlab4.h read_csv.h
-					   sendData/sendData.h inline.h)				 
+					   sendData/sendData.h inline.h ringbuffer.h)				 
 						 
 SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input_xml.cpp 
                 simulation_events.cpp linearize.cpp solver_main.cpp

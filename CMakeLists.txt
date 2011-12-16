@@ -18,13 +18,13 @@ ADD_SUBDIRECTORY(testsuite)
 ENDIF(RUN_TESTS)
 
 # Subdirectorys
-#ADD_SUBDIRECTORY(c_runtime)
+ADD_SUBDIRECTORY(c_runtime)
 #ADD_SUBDIRECTORY(modelica_parser)
 #ADD_SUBDIRECTORY(flat_modelica_parser)
 #ADD_SUBDIRECTORY(Compiler)
 #ADD_SUBDIRECTORY(doc)
 #ADD_SUBDIRECTORY(Examples)
-ADD_SUBDIRECTORY(SimulationRuntime)
+#ADD_SUBDIRECTORY(SimulationRuntime)
 
 # -------------------------------------------------------------
 # Models
@@ -38,5 +38,7 @@ SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omc.exe)
 #BUILDMODEL(WheelLoader_der_state ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")
 #BUILDMODELFMU(Test ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU +d=bltdump "")
 #BUILDMODEL(Test1 ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU +d=bltdump "")
-#BUILDMODELMOS(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum D:/Software/OpenModelicaProject/OpenModelica/build/bin/Test/Pendulum.mos +d= "")
-BUILDMODELMOS(BouncingBall BouncingBall.mos ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mosfiles  +simCodeTarget=c "")
+#BUILDMODELMOS(SingularSystem D:/Programming/OPENMODELICA/OpenModelica/build/bin/Test/SingularSystem.mos +d= "")
+#BUILDMODELMOS(BouncingBall BouncingBall.mos ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mosfiles  +simCodeTarget=c "")
+#BUILDMODELFMUMOS(WheelLoader D:/Temp/Modell/Radlader-CNH/WheelLoader.mos +d=bltdump "")
+#BUILDMODELFMUMOS(Weidemann_CX60_Sarturis D:/Programming/Models/Radlader_Hexapod/FMU/fmu.mos +d=bltdump "")
