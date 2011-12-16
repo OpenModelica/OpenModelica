@@ -68,6 +68,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import Builtin;
 protected import ClassInf;
 protected import ClassLoader;
 protected import Config;
@@ -762,7 +763,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
       Interactive.Statements istmts;
-      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort;
+      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -838,17 +839,18 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         paths = Interactive.getTopClassnames(p);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         paths = Interactive.getClassnamesInPath(path, p);
         paths = Debug.bcallret3(b,List.map1r,paths,Absyn.joinPaths,path,paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
@@ -856,8 +858,9 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
@@ -865,9 +868,9 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
+        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);

@@ -29,23 +29,31 @@
  *
  */
 
-function der "type for builtin operator der has unit type parameter to be able to express that
-derivative of expression means an addition of 1/s on the unit dimension"
+function der "derivative of the input expression"
   input Real x(unit="'p");
   output Real dx(unit="'p/s");
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'der()'\">der()</a>
+</html>"));
 end der;
 
 function initial
   output Boolean isInitial;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
+</html>"));
 end initial;
 
 function terminal
   output Boolean isTerminal;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
+</html>"));
 end terminal;
 
 type AssertionLevel = enumeration(error, warning);
@@ -71,6 +79,9 @@ function sample
   output Boolean isSample;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
+</html>"));
 end sample;
 
 function ceil
@@ -221,6 +232,7 @@ function homotopy
   input Real simplified;
   output Real outValue;
 external "builtin";
+annotation(version="Modelica 3.2");
 end homotopy;
 
 function linspace
@@ -295,6 +307,7 @@ function cardinality
   input Real c;
   output Integer numOccurances;
   external "builtin";
+annotation(version="Deprecated since Modelica 3.1");
 end cardinality;
 
 function array
@@ -400,15 +413,17 @@ encapsulated package Subtask
   end lastInterval;
 end Subtask;
 
-function print "Not standard Modelica, but very useful for debugging."
+function print "Prints to stdout, useful for debugging."
   input String str;
   annotation(__OpenModelica_Impure = true);
 external "builtin";
+annotation(version="OpenModelica extension");
 end print;
 
-function classDirectory "Not standard Modelica"
+function classDirectory "No clue what it does, used by MSL 2.2.1"
   output String str;
 external "builtin";
+annotation(version="Dymola extension");
 end classDirectory;
 
 function getInstanceName
@@ -447,10 +462,10 @@ If no class was being simulated, the last simulated class or a default will be u
 (applicable for functions called from the scripting environment).
 </p>
 </html>
-"));
+"),version="Modelica 3.3");
 end getInstanceName;
 
-function spatialDistribution "Modelica 3.3 operator; not yet implemented"
+function spatialDistribution "Not yet implemented"
   input Real in0;
   input Real x;
   input Real initialPoints[:];
@@ -459,6 +474,7 @@ function spatialDistribution "Modelica 3.3 operator; not yet implemented"
   input Boolean positiveVelocity;
   output Real val;
 external "builtin";
+annotation(version="Modelica 3.3");
 end spatialDistribution;
 
 /* Actually contains more...
@@ -468,7 +484,7 @@ record SimulationResult
   String messages;
 end SimulationResult; */
 
-encapsulated package OpenModelica
+encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions are defined here."
 
 type Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
 Besides, it has special semantics."
@@ -1487,6 +1503,7 @@ function getClassNames
   input Boolean recursive := false;
   input Boolean qualified := false;
   input Boolean sort := false;
+  input Boolean builtin := false "List also builtin classes if true";
   output TypeName classNames[:]; 
 external "builtin";
 annotation(preferredView="text");
@@ -1934,6 +1951,6 @@ end basename;
 annotation(preferredView="text");
 end Scripting;
 
-annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
+annotation(Documentation(__Dymola_DocumentationClass = true));
 annotation(preferredView="text");
 end OpenModelica;
