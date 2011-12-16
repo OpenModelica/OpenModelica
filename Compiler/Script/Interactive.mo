@@ -421,7 +421,7 @@ algorithm
     // Type check the function
     case (Absyn.PROGRAM(classes = {absyn_class}),st)
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         scode_class = SCodeUtil.translateClass(absyn_class);
         scode_class = SCodeFlatten.flattenClass(scode_class);
 
@@ -534,7 +534,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
           (st as SYMBOLTABLE(ast = p)))
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true,SOME(st_1),Ceval.MSG(info));
       then
@@ -544,7 +544,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
           (st as SYMBOLTABLE(ast = p)))
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true,SOME(st_1),Ceval.MSG(info));
       then
@@ -552,7 +552,7 @@ algorithm
 
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)),st)
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
         (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,_,SOME(st_2)) = Ceval.ceval(cache, env, sexp, true,SOME(st_1),Ceval.MSG(info));
@@ -578,7 +578,7 @@ algorithm
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),
         (st as SYMBOLTABLE(ast = p)))
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info));
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
@@ -593,7 +593,7 @@ algorithm
         Absyn.TUPLE(expressions = crefexps),value = rexp)),
         (st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         idents = List.map(crefexps, getIdentFromTupleCrefexp);
@@ -909,7 +909,7 @@ algorithm
 
     case (exp,(st as SYMBOLTABLE(ast = p)),info)
       equation
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true,
             SOME(st_1),Ceval.MSG(info));
@@ -931,7 +931,7 @@ protected
   DAE.Properties prop;
   SymbolTable st_1;
 algorithm
-  env := buildEnvFromSymboltable(st);
+  (env,st) := buildEnvFromSymboltable(st);
   (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),Absyn.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
@@ -1228,8 +1228,9 @@ public function buildEnvFromSymboltable
    interactive variables and their bindings to the environment."
   input SymbolTable inSymbolTable;
   output Env.Env outEnv;
+  output SymbolTable st;
 algorithm
-  outEnv := match (inSymbolTable)
+  (outEnv,st) := match (inSymbolTable)
     local
       list<SCode.Element> p_1,sp;
       list<Env.Frame> env,env_1;
@@ -1237,20 +1238,15 @@ algorithm
       list<InstantiatedClass> ic;
       list<Variable> vars;
       list<CompiledCFunction> cf;
-    case (SYMBOLTABLE(explodedAst = SOME(p_1), lstVarVal = vars))
+      list<LoadedFile> loadedFiles;
+      AbsynDep.Depends depends;
+    case (st as SYMBOLTABLE(lstVarVal = vars))
       equation
+        (p_1,st) = symbolTableToSCode(st);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         env_1 = addVarsToEnv(vars, env);
       then
-        env_1;
-      
-    case (SYMBOLTABLE(ast = p, lstVarVal = vars))
-      equation
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        env_1 = addVarsToEnv(vars, env);
-      then
-        env_1;
+        (env_1,st);
   end match;
 end buildEnvFromSymboltable;
 
@@ -2324,7 +2320,7 @@ algorithm
         b1 = useQuotes(nargs);
         path = Absyn.crefToPath(cr);
         cls = getPathedClassInProgram(path, p);
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         resstr = getLocalVariables(cls, b1, env);
       then
         (resstr,st);
@@ -2365,7 +2361,7 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = exp_list),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         filenameprefix = Absyn.pathLastIdent(modelpath);
-        env = buildEnvFromSymboltable(st);
+        (env,st) = buildEnvFromSymboltable(st);
         Config.setRemoveTerms(true);
         Config.setGenerateLabeledDAE(false);
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
