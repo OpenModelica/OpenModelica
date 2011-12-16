@@ -660,7 +660,7 @@ algorithm
     /* for-statement - not an array type */
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(range = SOME(exp))})),st)
       equation
-        estr = stringRepresOfExpr(exp, st);
+        (estr,_) = stringRepresOfExpr(exp, st);
         Error.addSourceMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr}, info);
       then
         fail();
@@ -766,7 +766,7 @@ algorithm
         st;
     case (value,exp,_,st,info) // The condition value was not a boolean
       equation
-        estr = stringRepresOfExpr(exp, st);
+        (estr,_) = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr},info);
@@ -811,7 +811,7 @@ algorithm
         st_1;
     case (value,exp,_,_,st,info) /* Report type error */
       equation
-        estr = stringRepresOfExpr(exp, st);
+        (estr,_) = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr}, info);
@@ -923,15 +923,16 @@ protected function stringRepresOfExpr
    This function returns a string representation of an expression. For example expression
    33+22 will result in \"55\" and expression: \"my\" + \"string\" will result in  \"\"my\"+\"string\"\". "
   input Absyn.Exp exp;
-  input SymbolTable st;
+  input SymbolTable ist;
   output String estr;
+  output SymbolTable st;
 protected
   list<Env.Frame> env;
   DAE.Exp sexp;
   DAE.Properties prop;
   SymbolTable st_1;
 algorithm
-  (env,st) := buildEnvFromSymboltable(st);
+  (env,st) := buildEnvFromSymboltable(ist);
   (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),Absyn.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
