@@ -301,6 +301,30 @@ algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
 end simCodeTarget;
 
+public function generateLabeledDAE
+  output Boolean generate;
+algorithm
+  generate := Flags.getConfigBool(Flags.GENERATE_LABELED_DAE);
+end generateLabeledDAE;
+
+public function setGenerateLabeledDAE
+  input Boolean generateLabeledDAE;
+algorithm
+  Flags.setConfigBool(Flags.GENERATE_LABELED_DAE, generateLabeledDAE);
+end setGenerateLabeledDAE;
+
+public function removeTerms
+  output Boolean remove;
+algorithm
+  remove := Flags.getConfigBool(Flags.REMOVE_TERMS);
+end removeTerms;
+
+public function setRemoveTerms
+  input Boolean removeTerms;
+algorithm
+  Flags.setConfigBool(Flags.REMOVE_TERMS, removeTerms);
+end setRemoveTerms;
+
 public function getLanguageStandard
   output LanguageStandard outStandard;
 algorithm

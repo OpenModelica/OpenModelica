@@ -2434,7 +2434,7 @@ algorithm
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt)
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
-          SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+          SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
 
@@ -2783,7 +2783,8 @@ algorithm
   end matchcontinue;
 end getFileDir;
 
-protected function compileModel "function: compileModel
+//protected function compileModel "function: compileModel
+public function compileModel "function: compileModel
   author: PA, x02lucpo
   Compiles a model given a file-prefix, helper function to buildModel."
   input String inFilePrefix;

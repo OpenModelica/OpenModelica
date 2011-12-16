@@ -114,7 +114,7 @@ protected import System;
 protected import Util;
 protected import ValuesUtil;
 protected import VarTransform;
-
+//protected import ReduceDAE;
 
 public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
@@ -191,6 +191,7 @@ uniontype ModelInfo
     VarInfo varInfo;
     SimVars vars;
     list<Function> functions;
+    list<String> labels;
     //Files files "all the files from Absyn.Info and DAE.ELementSource";
   end MODELINFO;
 end ModelInfo;
@@ -956,7 +957,7 @@ algorithm
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
@@ -1052,6 +1053,7 @@ public function generateModelCode
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimulationSettings> simSettingsOpt;
+  input Absyn.FunctionArgs args;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -1078,7 +1080,7 @@ algorithm
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, 
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
@@ -1194,6 +1196,7 @@ public function translateModel
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimulationSettings> inSimSettingsOpt;
+  input Absyn.FunctionArgs args "labels for remove terms";
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
@@ -1203,7 +1206,7 @@ public function translateModel
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt, args)
     local
       String filenameprefix,file_dir,resstr;
       list<SCode.Element> p_1;
@@ -1219,7 +1222,7 @@ algorithm
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
 
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt,args)
       equation
         // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
@@ -1235,7 +1238,7 @@ algorithm
         dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt);
+          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1247,7 +1250,7 @@ algorithm
         //        resstr = "SimCode: The model has been translated";
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
-    case (_,_,className,_,_,_, _)
+    case (_,_,className,_,_,_,_,_)
       equation        
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
@@ -2135,10 +2138,11 @@ protected function createSimCode
   input Option<SimulationSettings> simSettingsOpt;
   input list<RecordDeclaration> recordDecls;
   input tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  input Absyn.FunctionArgs args;
   output SimCode simCode;
 algorithm
   simCode :=
-  matchcontinue (functionTree,inBackendDAE2,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
+  matchcontinue (functionTree,inBackendDAE2,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
@@ -2184,14 +2188,18 @@ algorithm
       array<DAE.Algorithm> algs;
       
       list<DAE.Exp> lits;
+      list<String> labels;
       
-    case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
+/*  //create simCode for labeled DAE  
+		case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
-         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        true = Config.generateLabeledDAE();
         cname = Absyn.pathStringNoQual(class_);
-               
+         
+        (dlow,labels) = ReduceDAE.buildLabel(dlow);
         (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
         (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
@@ -2207,7 +2215,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir,ifcpp);
+        modelInfo = createModelInfo(class_, dlow2, functions, labels, n_h, nres, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
@@ -2258,7 +2266,218 @@ algorithm
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
         simCode = SIMCODE(modelInfo,
-          {} /* Set by the traversal below... */,
+          {}, // Set by the traversal below... 
+          recordDecls,
+          externalFunctionIncludes,
+          allEquations,
+          odeEquations,
+          algebraicEquations,
+          residualEquations,
+          initialEquations,
+          parameterEquations,
+          removedEquations,
+          algorithmAndEquationAsserts,
+          zeroCrossings,
+          sampleConditions,
+          sampleEquations,
+          helpVarInfo,
+          whenClauses,
+          discreteModelVars,
+          extObjInfo,
+          makefileParams,
+          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          LinearMatrices,
+          simSettingsOpt,
+          filenamePrefix,
+          crefToSimVarHT);
+        (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
+        simCode = setSimCodeLiterals(simCode,listReverse(lits));
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+        // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
+        // simCode = collectAllFiles(simCode);
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+      then
+        simCode; 
+    //create simCode for removed terms     
+    case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
+      equation
+        System.tmpTickReset(0);
+        ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
+        //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        true = Config.removeTerms();
+        cname = Absyn.pathStringNoQual(class_);
+         
+        dlow = ReduceDAE.removeTerms(dlow,args);
+        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
+        (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        
+        residualEquations = createResidualEquations(dlow2);
+        nres = listLength(residualEquations);
+        extObjInfo = createExtObjInfo(shared);
+        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
+        zeroCrossings = createZeroCrossings(dlow2);
+        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
+        sampleEquations = createSampleEquations(sampleEqns);
+        n_h = listLength(helpVarInfo);
+        
+        // Add model info
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, nres, fileDir,ifcpp);
+        
+        // equation generation for euler, dassl2, rungekutta
+        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
+        
+        odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
+
+        // Assertions and crap
+        initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
+        parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
+        parameterEquations = createParameterEquations(shared,parameterEquations);
+        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
+        
+        algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
+        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
+        makefileParams = createMakefileParams(includeDirs,libs);
+        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        
+        // replace div operator with div operator with check of Division by zero
+        orderedVars = List.map(systs,BackendVariable.daeVars);
+        knownVars = BackendVariable.daeKnVars(shared);
+        varlst = List.mapFlat(orderedVars,BackendDAEUtil.varList);
+        varlst1 = BackendDAEUtil.varList(knownVars);        
+        varlst2 = listAppend(varlst,varlst1);    
+        vars = BackendDAEUtil.listVar(varlst2);
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        // add equations with only parameters as division expression
+        allDivStmts = List.map(divLst,generateParameterDivisionbyZeroTestEqn);
+        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
+        
+        // Replace variables in nonlinear equation systems with xloc[index]
+        // variables.
+        allEquations = List.map(allEquations,applyResidualReplacements);
+
+        // generate jacobian or linear model matrices
+        // can be activeted by debug flag "+d=jacobian|linearization"        
+        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
+        modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
+        
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+        
+        simCode = SIMCODE(modelInfo, 
+          {}, // Set by the traversal below... 
+         recordDecls,
+          externalFunctionIncludes,
+          allEquations,
+          odeEquations,
+          algebraicEquations,
+          residualEquations,
+          initialEquations,
+          parameterEquations,
+          removedEquations,
+          algorithmAndEquationAsserts, 
+          zeroCrossings,
+          sampleConditions,
+          sampleEquations,
+          helpVarInfo,
+          whenClauses,
+          discreteModelVars,
+          extObjInfo,
+          makefileParams,
+          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          LinearMatrices,
+          simSettingsOpt,
+          filenamePrefix,
+          crefToSimVarHT);
+        (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
+        simCode = setSimCodeLiterals(simCode,listReverse(lits));
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+        // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
+        // simCode = collectAllFiles(simCode);
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+      then
+        simCode;  */
+    case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
+      equation
+        System.tmpTickReset(0);
+        ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
+         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        cname = Absyn.pathStringNoQual(class_);
+       
+        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
+        (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        
+        residualEquations = createResidualEquations(dlow2);
+        nres = listLength(residualEquations);
+        
+        extObjInfo = createExtObjInfo(shared);
+        
+        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
+        zeroCrossings = createZeroCrossings(dlow2);
+        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
+        sampleEquations = createSampleEquations(sampleEqns);
+        n_h = listLength(helpVarInfo);
+        
+        // Add model info
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, nres, fileDir,ifcpp);
+        
+        // equation generation for euler, dassl2, rungekutta
+        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
+        
+        odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
+
+        // Assertions and crap
+        initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
+        parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
+        parameterEquations = createParameterEquations(shared,parameterEquations);
+        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
+        
+        algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
+        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
+        makefileParams = createMakefileParams(includeDirs,libs);
+        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        
+        // replace div operator with div operator with check of Division by zero
+        orderedVars = List.map(systs,BackendVariable.daeVars);
+        knownVars = BackendVariable.daeKnVars(shared);
+        varlst = List.mapFlat(orderedVars,BackendDAEUtil.varList);
+        varlst1 = BackendDAEUtil.varList(knownVars);        
+        varlst2 = listAppend(varlst,varlst1);    
+        vars = BackendDAEUtil.listVar(varlst2);
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        // add equations with only parameters as division expression
+        allDivStmts = List.map(divLst,generateParameterDivisionbyZeroTestEqn);
+        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
+        
+        // Replace variables in nonlinear equation systems with xloc[index]
+        // variables.
+        allEquations = List.map(allEquations,applyResidualReplacements);
+
+        // generate jacobian or linear model matrices
+        // can be activeted by debug flag "+d=jacobian|linearization"        
+        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
+        modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
+        
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+        
+        simCode = SIMCODE(modelInfo,  
+          {}, // Set by the traversal below... 
           recordDecls,
           externalFunctionIncludes,
           allEquations,
@@ -2361,12 +2580,13 @@ algorithm
       String dir;
       VarInfo varinfo;
       list<Function> functions;
+      list<String> labels;
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
       Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool, na_string;
       Integer njacvars;
       Option<Integer> dim1,dim2;
       case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions)))
+          nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions,labels)))
         equation
           jacvars = appendAllVars(inJacs);
           jacvars = List.unionOnTrue(jacvars,jacvars,compareSimVarName);
@@ -2375,7 +2595,7 @@ algorithm
           linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},jacvars,{},{},{},{});
           simvarsandlinearvars = mergeVars(vars,linearVars);
         then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions);
+          nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions,labels);
    end match;
 end expandModelInfoVars;
 
@@ -6436,6 +6656,7 @@ protected function createModelInfo
   input Absyn.Path class_;
   input BackendDAE.BackendDAE dlow;
   input list<Function> functions;
+  input list<String> labels;
   input Integer numHelpVars;
   input Integer numResiduals;
   input String fileDir;
@@ -6443,7 +6664,7 @@ protected function createModelInfo
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir,ifcpp)
+  matchcontinue (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir,ifcpp)
     local
       String directory;
       VarInfo varInfo;
@@ -6474,7 +6695,7 @@ algorithm
       list<SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimVar> states_2,derivatives_2,derivative;
     
-    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir, true)
+    case (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6518,9 +6739,9 @@ algorithm
       then
         MODELINFO(class_, directory, varInfo, SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars), 
-                  functions);
+                  functions, labels);
     
-    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir, false)
+    case (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir, false)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6548,7 +6769,7 @@ algorithm
         varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
       then
-        MODELINFO(class_, directory, varInfo, vars, functions);
+        MODELINFO(class_, directory, varInfo, vars, functions, labels);
     
     else
       equation
@@ -12208,6 +12429,7 @@ algorithm
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
       list<JacobianMatrix> jacobianMatrixes;
+      list<String> labels;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       HashTableCrefToSimVar crefToSimVarHT;
@@ -12228,7 +12450,7 @@ algorithm
                  parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                  discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT)
       equation
-        MODELINFO(name, directory, varInfo, vars, functions) = modelInfo;
+        MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
         files = getFilesFromSimVars(vars, files);
         files = getFilesFromFunctions(functions, files);
@@ -12239,7 +12461,7 @@ algorithm
         files = getFilesFromExtObjInfo(extObjInfo, files);
         files = getFilesFromJacobianMatrixes(jacobianMatrixes, files);
         files = List.sort(files, greaterFileInfo);
-        modelInfo = MODELINFO(name, directory, varInfo, vars, functions);
+        modelInfo = MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
         SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations, 
                   parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,

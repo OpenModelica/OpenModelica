@@ -574,6 +574,12 @@ constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(33,
 constant ConfigFlag ENV_CACHE = CONFIG_FLAG(34,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
+constant ConfigFlag GENERATE_LABELED_DAE = CONFIG_FLAG(35,
+  "generateLabeledDAE", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "");
+constant ConfigFlag REMOVE_TERMS = CONFIG_FLAG(36,
+  "removeTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "");
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -612,7 +618,9 @@ constant list<ConfigFlag> allConfigFlags = {
   CEVAL_EQUATION,
   UNIT_CHECKING,
   TRANSLATE_DAE_STRING,
-  ENV_CACHE
+  ENV_CACHE,
+  GENERATE_LABELED_DAE,
+  REMOVE_TERMS
 };
 
 public function new

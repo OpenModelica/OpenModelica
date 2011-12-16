@@ -250,6 +250,7 @@ package SimCode
       VarInfo varInfo;
       SimVars vars;
       list<Function> functions;
+      list<String> labels;
     end MODELINFO;
   end ModelInfo;
   
