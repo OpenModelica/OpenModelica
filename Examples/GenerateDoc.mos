@@ -70,7 +70,7 @@ searchPaths := "";
 filetmp := "index.html";
 writeFile(filetmp, "<html><head><title>Modelica Documentation</title></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<h2>Contents</h2>\n", append = true);
-writeFile(filetmp, "<table><tr><td>Name</td><td>Description</td></tr>", append = true);
+writeFile(filetmp, "<table><tr><td>Name</td><td>Description</td><td>Version</td></tr>", append = true);
 for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
@@ -81,7 +81,8 @@ for cl in classNames loop
   contentStrToks := strtok(contentStr,".");
   comment := getClassComment(cl);
   fileName := filename(contentStr);
-  writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td></tr>", append = true);
+  modelVersion := getVersion(cl);
+  writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
 end for;
 writeFile(filetmp, "</table>\n", append = true);
 writeFile(filetmp, version + " (<a href=\"MSL.tar.xz\">Offline version</a>)", append = true);
