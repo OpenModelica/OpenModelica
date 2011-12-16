@@ -1429,9 +1429,17 @@ algorithm
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"getVersion",{},st,msg)
+    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("OpenModelica")))},st,msg)
       equation
         str_1 = Settings.getVersionNr();
+      then
+        (cache,Values.STRING(str_1),st);
+        
+    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        Config.setEvaluateParametersInAnnotations(true);
+        Absyn.STRING(str_1) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+        Config.setEvaluateParametersInAnnotations(false);
       then
         (cache,Values.STRING(str_1),st);
         

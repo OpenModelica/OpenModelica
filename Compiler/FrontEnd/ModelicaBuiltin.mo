@@ -930,6 +930,7 @@ end setCommandLineOptions;
 
 function getVersion
   "Returns the version of the Modelica compiler"
+  input TypeName cl := $TypeName(OpenModelica);
   output String version;
 external "builtin";
 annotation(preferredView="text");

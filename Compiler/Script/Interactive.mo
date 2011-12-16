@@ -13379,6 +13379,13 @@ algorithm
   end matchcontinue;
 end getAnnotationValue;
 
+public function getAnnotationExp
+  input Option<Absyn.Modification> mod;
+  output Absyn.Exp exp;
+algorithm
+  SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=exp))) := mod;
+end getAnnotationExp;
+
 public function getAnnotationStringValueOrFail
   input Option<Absyn.Modification> mod;
   output String str;
