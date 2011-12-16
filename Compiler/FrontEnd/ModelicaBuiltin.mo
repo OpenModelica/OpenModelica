@@ -71,6 +71,7 @@ function constrain
   input Real i3;
   output Real o1;
 external "builtin";
+annotation(version="Dymola / MSL 1.6");
 end constrain;
 
 function sample
@@ -88,34 +89,45 @@ function ceil
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>the smallest integral value not less than <pre>x</pre>.</html>"));
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ceil()'\">ceil()</a>
+</html>"));
 end ceil;
 
 function floor
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>the largest integral value not less than <pre>x</pre>.</html>"));
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'floor()'\">floor()</a>
+</html>"));
 end floor;
 
 function integer
   input Real x;
   output Integer y;
 external "builtin";
-annotation(Documentation(info="<html>the largest integral value not less than <pre>x</pre>.</html>"));
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'integer()'\">integer()</a>
+</html>"));
 end integer;
 
 function sqrt
   input Real x(unit="'p");
   output Real y(unit="'p(1/2)");
 external "builtin";
-annotation(Documentation(info="<html>the square root function is defined for <pre>x >= 0</pre></html>"));
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sqrt()'\">sqrt()</a>
+</html>"));
 end sqrt;
 
 function sign
   input Real v;
   output Integer _sign;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sign()'\">sign()</a>
+</html>"));
 /* We do this with external "builtin" for now. But maybe we should inline it instead...
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
@@ -127,6 +139,9 @@ function identity
   input Integer arraySize;
   output Integer[arraySize,arraySize] outArray;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'identity()'\">identity()</a>
+</html>"));
 end identity;
 
 function semiLinear
@@ -135,6 +150,9 @@ function semiLinear
   input Real negativeSlope;
   output Real result;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'semiLinear()'\">semiLinear()</a>
+</html>"));
 end semiLinear;
 
 function edge
@@ -142,60 +160,90 @@ function edge
   output Boolean edgeEvent;
   // TODO: Ceval parameters? Needed to remove the builtin handler
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'edge()'\">edge()</a>
+</html>"));
 end edge;
 
 function sin
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sin()'\">sin()</a>
+</html>"));
 end sin;
 
 function cos
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'cos()'\">cos()</a>
+</html>"));
 end cos;
 
 function tan
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'tan()'\">tan()</a>
+</html>"));
 end tan;
 
 function sinh
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sinh()'\">sinh()</a>
+</html>"));
 end sinh;
 
 function cosh
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'cosh()'\">cosh()</a>
+</html>"));
 end cosh;
 
 function tanh
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'tanh()'\">tanh()</a>
+</html>"));
 end tanh;
 
 function asin
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'asin()'\">asin()</a>
+</html>"));
 end asin;
 
 function acos
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'acos()'\">acos()</a>
+</html>"));
 end acos;
 
 function atan
   input Real x;
   output Real y;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'atan()'\">atan()</a>
+</html>"));
 end atan;
 
 function atan2
@@ -204,8 +252,7 @@ function atan2
   output Real z;
 external "builtin";
 annotation(Documentation(info="<html>
-calculates the principal value of the arc tangent of <pre>y/x</pre>, using
-the signs of the two arguments to determine the quadrant of the result.
+  See <a href=\"modelica://ModelicaReference.Operators.'atan2()'\">atan2()</a>
 </html>"));
 end atan2;
 
@@ -213,18 +260,27 @@ function exp "base-e exponential function"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'exp()'\">exp()</a>
+</html>"));
 end exp;
 
 function log "natural logarithmic function (base-e)"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'log()'\">log()</a>
+</html>"));
 end log;
 
 function log10 "base-10 logarithmic function"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'log10()'\">log10()</a>
+</html>"));
 end log10;
 
 function homotopy
@@ -240,24 +296,48 @@ function linspace
   input Real x2 "end";
   input Integer n "number";
   output Real v[n];
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>
+</html>"));
 algorithm
   assert(n >= 2, "linspace requires n>=2 but got " + String(n));
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
 end linspace;
 
-function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv);
+function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'div()'\">div()</a>
+</html>"));
 
-function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod);
+function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'mod()'\">mod()</a>
+</html>"));
 
-function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem);
+function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'rem()'\">rem()</a>
+</html>"));
 
-function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs);
+function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'abs()'\">abs()</a>
+</html>"));
 
-function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal);
+function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'outerProduct()'\">outerProduct()</a>
+</html>"));
 
-function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal);
+function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
+</html>"));
 
-function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal);
+function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal)
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>
+</html>"));
 
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
@@ -265,105 +345,172 @@ function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.ske
 
 function delay
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
+</html>"));
 end delay;
 
 function min
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
+</html>"));
 end min;
 
 function max
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'max()'\">max()</a>
+</html>"));
 end max;
 
 function sum
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'sum()'\">sum()</a>
+</html>"));
 end sum;
 
 function product
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'product()'\">product()</a>
+</html>"));
 end product;
 
 function transpose
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'transpose()'\">transpose()</a>
+</html>"));
 end transpose;
 
 function symmetric
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'symmetric()'\">symmetric()</a>
+</html>"));
 end symmetric;
 
 function smooth
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'smooth()'\">smooth()</a>
+</html>"));
 end smooth;
 
 function diagonal
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'diagonal()'\">diagonal()</a>
+</html>"));
 end diagonal;
 
 function cardinality
-  annotation(Documentation(info="<html>
-  The cardinality operator is <b>deprecated</b>. It will be removed in a future Modelica release.
-  Returns the number of (inside and outside) occurrences of connector instance c in a connect-equation as an Integer number.
-  </html>"));
   input Real c;
   output Integer numOccurances;
   external "builtin";
-annotation(version="Deprecated since Modelica 3.1");
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'cardinality()'\">cardinality()</a>
+</html>"),version="Deprecated since Modelica 3.1");
 end cardinality;
 
 function array
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'array()'\">array()</a>
+</html>"));
 end array;
 
 function zeros
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
+</html>"));
 end zeros;
 
 function ones
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>
+</html>"));
 end ones;
 
 function fill
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'fill()'\">fill()</a>
+</html>"));
 end fill;
 
 function noEvent
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'noEvent()'\">noEvent()</a>
+</html>"));
 end noEvent;
 
 function pre
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'pre()'\">pre()</a>
+</html>"));
 end pre;
 
 function change
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'change()'\">change()</a>
+</html>"));
 end change;
 
 function reinit
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'reinit()'\">reinit()</a>
+</html>"));
 end reinit;
 
 function ndims
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'ndims()'\">ndims()</a>
+</html>"));
 end ndims;
 
 function size
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'size()'\">size()</a>
+</html>"));
 end size;
 
 function scalar
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'scalar()'\">scalar()</a>
+</html>"));
 end scalar;
 
 function vector
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'vector()'\">vector()</a>
+</html>"));
 end vector;
 
 function matrix
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'matrix()'\">matrix()</a>
+</html>"));
 end matrix;
 
 function cat
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'cat()'\">cat()</a>
+</html>"));
 end cat;
 
 function rooted "Not standard Modelica"
@@ -376,6 +523,9 @@ end actualStream;
 
 function inStream
   external "builtin";
+  annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'inStream()'\">inStream()</a>
+</html>"));
 end inStream;
 
 encapsulated package Connections
