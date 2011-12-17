@@ -5422,9 +5422,20 @@ algorithm
   oelts := match (part,elts)
     local
       list<ElementItem> elts1,elts2;
-    case (PUBLIC(elts1),elts2) then listAppend(elts1,elts2);
+    case (PUBLIC(elts1),elts2)
+      equation
+        elts1 = List.filter(elts1,filterAnnotationItem);
+      then listAppend(elts1,elts2);
     case (_,elts) then elts;
   end match;
 end getFunctionInterfaceParts;
+
+protected function filterAnnotationItem
+  input ElementItem elt;
+algorithm
+  _ := match elt
+    case ELEMENTITEM(element=_) then ();
+  end match;
+end filterAnnotationItem;
 
 end Absyn;
