@@ -986,15 +986,16 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Dump.unparseStr(p,false);
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
+        absynClass = Debug.bcallret1(b,Absyn.getFunctionInterface,absynClass,absynClass);
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),false) ;
       then
         (cache,Values.STRING(str),st);

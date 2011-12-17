@@ -5393,4 +5393,38 @@ algorithm
   ge := not pathLt(path1,path2);
 end pathGe;
 
+public function getFunctionInterface "Strips out the parts of a function definition that are not needed for the interface"
+  input Class cl;
+  output Class o;
+algorithm
+  o := match cl
+    local
+      Ident name;
+      Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
+      Restriction restriction;
+      ClassDef body;
+      Info info;
+      list<String> typeVars;
+      list<ClassPart> classParts;
+      list<ElementItem> elts;
+    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,classParts,_),info)
+      equation
+        elts = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
+      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,PUBLIC(elts)::{},NONE()),info);
+  end match;
+end getFunctionInterface;
+
+protected function getFunctionInterfaceParts
+  input ClassPart part;
+  input list<ElementItem> elts;
+  output list<ElementItem> oelts;
+algorithm
+  oelts := match (part,elts)
+    local
+      list<ElementItem> elts1,elts2;
+    case (PUBLIC(elts1),elts2) then listAppend(elts1,elts2);
+    case (_,elts) then elts;
+  end match;
+end getFunctionInterfaceParts;
+
 end Absyn;

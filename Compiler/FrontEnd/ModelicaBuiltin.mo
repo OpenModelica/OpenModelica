@@ -1506,8 +1506,8 @@ annotation(Documentation(info="<html>
 Loads a Modelica library.
 <h4>Syntax</h4>
 <blockquote>
-<pre><b>loadModel</b>(Modelica)</pre> // loads MSL
-<pre><b>loadModel</b>(Modelica,{\"3.2\"})</pre> // loads MSL 3.2
+<pre><b>loadModel</b>(Modelica)</pre>
+<pre><b>loadModel</b>(Modelica,{\"3.2\"})</pre>
 </blockquote>
 <h4>Description</h4>
 <p>loadModel() begins by parsing the getModelicaPath(), and looking for candidate packages to load in the given paths (separated by : or ; depending on OS).</p>
@@ -1525,7 +1525,7 @@ If none of the searched versions exist, false is returned and an error is added 
 </table>
 
 <h4>Bugs</h4>
-<p>If loadModel(Modelica.XXX), loadModel(Modelica) is called, loading the complete library.</p>
+<p>If loadModel(Modelica.XXX) is called, loadModel(Modelica) is executed instead, loading the complete library.</p>
 <p>There is a special exception that prefers Modelica 3.1 over any other MSL version since this is the preferred version for OpenModelica.</p>
 </html>"),
 preferredView="text");
@@ -1623,9 +1623,29 @@ end stringReplace;
 
 function list "Lists the contents of the given class, or all loaded classes"
   input TypeName class_ := $TypeName(AllLoadedClasses);
+  input Boolean interfaceOnly := false;
   output String contents;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+Pretty-prints a class definition.
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>list</b>(Modelica.Math.sin)</pre>
+<pre><b>list</b>(Modelica.Math.sin,interfaceOnly=true)</pre>
+<h4>Description</h4>
+<p>list() pretty-prints the whole of the loaded AST while list(className) lists a class and its children.
+It keeps all annotations and comments intact but strips out any comments and normalizes white-space.</p>
+<p>list(className,interfaceOnly=true) works on functions and pretty-prints only the interface parts
+(annotations and protected sections removed). String-comments on public variables are kept.</p>
+<p>If the specified class does not exist (or is not a function when interfaceOnly is given), the
+empty string is returned.</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>10756</td><td>sjoelund.se</td><td>Added interfaceOnly option</td></tr>
+</table>
+</html>"),
+  preferredView="text");
 end list;
 
 function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
