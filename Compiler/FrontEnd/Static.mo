@@ -4899,7 +4899,7 @@ algorithm
         cref_list = listAppend(cref_list1, cref_list2);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_REAL_DEFAULT);
-        gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
+        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
         (cache,s2_1,st,_) = elabExp(cache,gen_env, s2, impl,NONE(),true,pre,info);
         call = Expression.makeBuiltinCall("differentiate", {s1_1, s2_1}, DAE.T_REAL_DEFAULT);
@@ -4950,7 +4950,7 @@ algorithm
         cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_REAL_DEFAULT);
-        gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
+        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
         s1_1 = Expression.makeBuiltinCall("simplify", {s1_1}, DAE.T_REAL_DEFAULT);
       then
@@ -4960,7 +4960,7 @@ algorithm
         cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_INTEGER_DEFAULT);
-        gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
+        (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl,NONE(),true,pre,info);
         s1_1 = Expression.makeBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
       then
