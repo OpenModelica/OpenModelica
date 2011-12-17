@@ -3818,19 +3818,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     'fabs(<%var1%>)'
   
     //sqrt 
-  case CALL(attr=CALL_ATTR(__),path=IDENT(name="sqrt"),
-            expLst={e1}) then
-    //relation = DAE.LBINARY(e1,DAE.GREATEREQ(T_REAL(__)),DAE.RCONST(0))
-    //string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
-    //let retPre = assertCommon(relation,s, context, &varDecls)
+  case CALL(path=IDENT(name="sqrt"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let retPre = assertCommon(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let &preExp += '<%retPre%>'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    'sqrt(<%argStr%>)'
   
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
