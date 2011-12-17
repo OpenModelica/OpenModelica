@@ -516,14 +516,25 @@ end cat;
 function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
   external "builtin";
   annotation(Documentation(info="<html>
-  <p>The operator \"rooted\" was introduced to improve efficiency: 
-     A tool that constructs the graph with the Connections.branch/.root etc. 
-     built-in operators has to cut the graph in order to arrive at \"spanning trees\". 
-     If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true, 
-     if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned. 
-     For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
-  See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a>
-</html>"));
+<p><b>Not yet standard Modelica, but in the MSL since 3-4 years now.</b></p>
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>rooted</b>(<i>x</i>)</pre>
+</blockquote>
+<h4>Description</h4>
+<p>The operator \"rooted\" was introduced to improve efficiency: 
+A tool that constructs the graph with the Connections.branch/.root etc. 
+built-in operators has to cut the graph in order to arrive at \"spanning trees\". 
+If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns <pre>true</pre>, 
+if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise <pre>false</pre> is returned. 
+For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
+</p>
+<h4>Known Bugs</h4>
+<p>
+OpenModelica, <pre><b>rooted</b>(x)</pre> always returns <pre>true</pre>.
+See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
+</p>
+</html>"),version="Dymola / MSL 3");
 end rooted;
 
 function actualStream
