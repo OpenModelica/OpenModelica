@@ -513,8 +513,17 @@ function cat
 </html>"));
 end cat;
 
-function rooted "Not standard Modelica"
+function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
   external "builtin";
+  annotation(Documentation(info="<html>
+  <p>The operator \"rooted\" was introduced to improve efficiency: 
+     A tool that constructs the graph with the Connections.branch/.root etc. 
+     built-in operators has to cut the graph in order to arrive at \"spanning trees\". 
+     If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true, 
+     if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned. 
+     For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
+  See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a>
+</html>"));
 end rooted;
 
 function actualStream
