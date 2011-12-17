@@ -165,7 +165,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end edge;
 
-function sin
+function sin "Sine"
   input Real x;
   output Real y;
 external "builtin";
@@ -174,7 +174,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end sin;
 
-function cos
+function cos "Cosine"
   input Real x;
   output Real y;
 external "builtin";
@@ -183,8 +183,8 @@ annotation(Documentation(info="<html>
 </html>"));
 end cos;
 
-function tan
-  input Real x;
+function tan "Tangent (u shall not be -pi/2, pi/2, 3*pi/2, ...)"
+  input Real u;
   output Real y;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -192,7 +192,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end tan;
 
-function sinh
+function sinh "Hyperbolic sine"
   input Real x;
   output Real y;
 external "builtin";
@@ -201,7 +201,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end sinh;
 
-function cosh
+function cosh "Hyperbolic cosine"
   input Real x;
   output Real y;
 external "builtin";
@@ -210,7 +210,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end cosh;
 
-function tanh
+function tanh "Hyperbolic tangent"
   input Real x;
   output Real y;
 external "builtin";
@@ -219,8 +219,8 @@ annotation(Documentation(info="<html>
 </html>"));
 end tanh;
 
-function asin
-  input Real x;
+function asin "Inverse sine (-1 <= u <= 1)"
+  input Real u;
   output Real y;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -228,8 +228,8 @@ annotation(Documentation(info="<html>
 </html>"));
 end asin;
 
-function acos
-  input Real x;
+function acos "Inverse cosine (-1 <= u <= 1)"
+  input Real u;
   output Real y;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -237,7 +237,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end acos;
 
-function atan
+function atan "Inverse tangent"
   input Real x;
   output Real y;
 external "builtin";
@@ -246,7 +246,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end atan;
 
-function atan2
+function atan2 "Four quadrant inverse tangent"
   input Real y;
   input Real x;
   output Real z;
@@ -256,7 +256,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end atan2;
 
-function exp "base-e exponential function"
+function exp "Exponential, base e"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
@@ -265,8 +265,8 @@ annotation(Documentation(info="<html>
 </html>"));
 end exp;
 
-function log "natural logarithmic function (base-e)"
-  input Real x(unit="1");
+function log "Natural (base e) logarithm (u shall be > 0)"
+  input Real u(unit="1");
   output Real y(unit="1");
 external "builtin";
 annotation(Documentation(info="<html>
@@ -274,8 +274,8 @@ annotation(Documentation(info="<html>
 </html>"));
 end log;
 
-function log10 "base-10 logarithmic function"
-  input Real x(unit="1");
+function log10 "Base 10 logarithm (u shall be > 0)"
+  input Real u(unit="1");
   output Real y(unit="1");
 external "builtin";
 annotation(Documentation(info="<html>
@@ -350,14 +350,14 @@ function delay
 </html>"));
 end delay;
 
-function min
+function min "Returns the smallest element"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
 </html>"));
 end min;
 
-function max
+function max "Returns the largest element"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'max()'\">max()</a>
@@ -412,7 +412,7 @@ function cardinality
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cardinality()'\">cardinality()</a>
-</html>"),version="Deprecated since Modelica 3.1");
+</html>"),version="Deprecated");
 end cardinality;
 
 function array
