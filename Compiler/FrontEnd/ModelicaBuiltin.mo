@@ -1061,13 +1061,19 @@ function setModelicaPath "The Modelica Library Path - MODELICAPATH in the langua
   input String modelicaPath;
   output Boolean success;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.
+</html>"),
+  preferredView="text");
 end setModelicaPath;
 
-function getModelicaPath "The Modelica Library Path - MODELICAPATH in the language specification; OPENMODELICALIBRARY in OpenModelica."
+function getModelicaPath "Get the Modelica Library Path"
   output String modelicaPath;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.
+</html>"),
+  preferredView="text");
 end getModelicaPath;
 
 function setCompilerFlags
@@ -1491,17 +1497,38 @@ external "builtin";
 annotation(preferredView="text");
 end generateCode;
 
-function loadModel "Parses the getModelicaPath(), and finds the package to load.
-If the input is Modelica.XXX, the complete Modelica AST is loaded.
-
-Default priority is: no version name > highest main release > highest pre-release > lexical sort of others.
-If none of the searched versions exist, false is returned and an error is added to the buffer.
-"
+function loadModel "Loads a Modelica library"
   input TypeName className;
   input String[:] priorityVersion := {"default"};
   output Boolean success;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+Loads a Modelica library.
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>loadModel</b>(Modelica)</pre> // loads MSL
+<pre><b>loadModel</b>(Modelica,{\"3.2\"})</pre> // loads MSL 3.2
+</blockquote>
+<h4>Description</h4>
+<p>loadModel() begins by parsing the getModelicaPath(), and looking for candidate packages to load in the given paths (separated by : or ; depending on OS).</p>
+<p>The candidate is selected by choosing the one with the highest priority, chosen by looking through the <i>priorityVersion</i> argument to the function.
+If the version searched for is \"default\", the following special priority is used: no version name > highest main release > highest pre-release > lexical sort of others (see table below for examples).
+If none of the searched versions exist, false is returned and an error is added to the buffer.</p>
+<p>A top-level package may either be defined in a file (\"Modelica 3.2.mo\") or directory (\"Modelica 3.2/package.mo\")</p>
+
+<table summary=\"Modelica version numbering\">
+<tr><th>Priority</th><th>Example</th></tr>
+<tr><td>No version name</td><td>Modelica</td></tr>
+<tr><td>Main release</td><td>Modelica 3.3</td></tr>
+<tr><td>Pre-release</td><td>Modelica 3.3 Beta 1</td></tr>
+<tr><td>Non-ordered</td><td>Modelica Trunk</td></tr>
+</table>
+
+<h4>Bugs</h4>
+<p>If loadModel(Modelica.XXX), loadModel(Modelica) is called, loading the complete library.</p>
+<p>There is a special exception that prefers Modelica 3.1 over any other MSL version since this is the preferred version for OpenModelica.</p>
+</html>"),
+preferredView="text");
 end loadModel;
 
 function deleteFile "Deletes a file with the given name"
