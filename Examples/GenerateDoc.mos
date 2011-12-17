@@ -61,7 +61,7 @@ a:=0;
 b:=getClassNames(builtin=true,recursive=true,sort=true);
 
 /* If we want to test on fewer classes */
-b := {$TypeName(Modelica),$TypeName(Modelica.Math.Matrices.LAPACK.dgglse_vec)};
+// b := {$TypeName(Modelica),$TypeName(Modelica.Math.Matrices.LAPACK.dgglse_vec)};
 // b := {$TypeName(Modelica),$TypeName(Modelica.Electrical.Analog.Basic),$TypeName(Modelica.Electrical.Analog.Basic.VariableInductor)};
 // b := {$TypeName(Modelica.UsersGuide.Overview)};
 
