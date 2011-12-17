@@ -127,7 +127,7 @@ for c in b loop
     file := compound+".html";
     writeFile(filetmp, "<a href = \""+file+"\">"+ident+"</a>.", append = true);
   end for;
-  writeFile(filetmp, clsEnd + "</h1>");
+  writeFile(filetmp, clsEnd + "</h1>", append = true);
   arr := getDocumentationAnnotation(c);
   docInfo := if arr[1] == "" then "<pre>" + OpenModelica.Scripting.getClassComment(c) + "</pre>" else arr[1];
   revisions := arr[2];

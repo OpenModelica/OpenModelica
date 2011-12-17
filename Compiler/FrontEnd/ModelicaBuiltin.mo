@@ -74,7 +74,7 @@ external "builtin";
 annotation(version="Dymola / MSL 1.6");
 end constrain;
 
-function sample
+function sample "Trigger time events"
   parameter input Real start(fixed=false);
   parameter input Real interval(fixed=false);
   output Boolean isSample;
@@ -85,7 +85,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end sample;
 
-function ceil
+function ceil "Round a real number towards plus infinity"
   input Real x;
   output Real y;
 external "builtin";
@@ -94,7 +94,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end ceil;
 
-function floor
+function floor "Round a real number towards minus infinity"
   input Real x;
   output Real y;
 external "builtin";
@@ -103,7 +103,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end floor;
 
-function integer
+function integer "Round a real number towards minus infinity"
   input Real x;
   output Integer y;
 external "builtin";
@@ -112,7 +112,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end integer;
 
-function sqrt
+function sqrt "Square root"
   input Real x(unit="'p");
   output Real y(unit="'p(1/2)");
 external "builtin";
@@ -305,36 +305,43 @@ algorithm
 end linspace;
 
 function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
+  "Integer part of a division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'div()'\">div()</a>
 </html>"));
 
 function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod)
+  "Integer modulus of a division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'mod()'\">mod()</a>
 </html>"));
 
 function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem)
+  "Integer remainder of the division of two Real numbers"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'rem()'\">rem()</a>
 </html>"));
 
 function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs)
+  "Absolute value"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'abs()'\">abs()</a>
 </html>"));
 
 function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal)
+  "Outer product of two vectors"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'outerProduct()'\">outerProduct()</a>
 </html>"));
 
 function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal)
+  "Cross product of two 3-vectors"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
 </html>"));
 
 function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal)
+  "The skew matrix associated with the vector"
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>
 </html>"));
@@ -343,7 +350,7 @@ function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.ske
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
-function delay
+function delay "Delay expression"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
@@ -385,28 +392,28 @@ function transpose
 </html>"));
 end transpose;
 
-function symmetric
+function symmetric "Returns a symmetric matrix"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'symmetric()'\">symmetric()</a>
 </html>"));
 end symmetric;
 
-function smooth
+function smooth "Indicate smoothness of expression"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'smooth()'\">smooth()</a>
 </html>"));
 end smooth;
 
-function diagonal
+function diagonal "Returns a diagonal matrix"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'diagonal()'\">diagonal()</a>
 </html>"));
 end diagonal;
 
-function cardinality
+function cardinality "Number of connectors in connection"
   input Real c;
   output Integer numOccurances;
   external "builtin";
@@ -422,63 +429,63 @@ function array
 </html>"));
 end array;
 
-function zeros
+function zeros "Returns a zero array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
 </html>"));
 end zeros;
 
-function ones
+function ones "Returns a one array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>
 </html>"));
 end ones;
 
-function fill
+function fill "Returns an array with all elements equal"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'fill()'\">fill()</a>
 </html>"));
 end fill;
 
-function noEvent
+function noEvent "Turn off event triggering"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noEvent()'\">noEvent()</a>
 </html>"));
 end noEvent;
 
-function pre
+function pre "Refer to left limit"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'pre()'\">pre()</a>
 </html>"));
 end pre;
 
-function change
+function change "Indicate discrete variable changing"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'change()'\">change()</a>
 </html>"));
 end change;
 
-function reinit
+function reinit "Reinitialize state variable"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'reinit()'\">reinit()</a>
 </html>"));
 end reinit;
 
-function ndims
+function ndims "Number of array dimensions"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ndims()'\">ndims()</a>
 </html>"));
 end ndims;
 
-function size
+function size "Returns dimensions of an array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'size()'\">size()</a>
@@ -519,19 +526,19 @@ function rooted "Not yet standard Modelica, but in the MSL since 3-4 years now."
 <p><b>Not yet standard Modelica, but in the MSL since 3-4 years now.</b></p>
 <h4>Syntax</h4>
 <blockquote>
-<pre><b>rooted</b>(<i>x</i>)</pre>
+<pre><b>rooted</b>(x)</pre>
 </blockquote>
 <h4>Description</h4>
 <p>The operator \"rooted\" was introduced to improve efficiency: 
 A tool that constructs the graph with the Connections.branch/.root etc. 
 built-in operators has to cut the graph in order to arrive at \"spanning trees\". 
-If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns <pre>true</pre>, 
-if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise <pre>false</pre> is returned. 
+If there is a statement \"Connections.branch(A,B)\", then \"rooted(A)\" returns true, 
+if \"A\" is closer to the root of the spanning tree as \"B\". Otherwise false is returned. 
 For the MultiBody library this allows to avoid unnecessary small linear systems of equations.
 </p>
 <h4>Known Bugs</h4>
 <p>
-OpenModelica, <pre><b>rooted</b>(x)</pre> always returns <pre>true</pre>.
+OpenModelica, <b>rooted</b>(x) always returns true.
 See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
 </p>
 </html>"),version="Dymola / MSL 3");
@@ -590,10 +597,10 @@ external "builtin";
 annotation(version="OpenModelica extension");
 end print;
 
-function classDirectory "No clue what it does, used by MSL 2.2.1"
+function classDirectory "No clue what it does as it's not standardized"
   output String str;
 external "builtin";
-annotation(version="Dymola extension");
+annotation(version="Dymola / MSL 2.2.1");
 end classDirectory;
 
 function getInstanceName
