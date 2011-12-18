@@ -202,7 +202,7 @@ for f in *.html.tmp ; do
   # Image sources (filenames) and links
   # Links to classnames
   # Make quoted identifiers pretty
-  sed -i -e 's&=\"modelica://[A-Za-z0-9/'\\''()._-]*/\\([A-Za-z0-9'\\''()._-]*\\.png\"\\)&=\"\\1&g' \\
+  sed -i -e 's&=\"modelica://[A-Za-z0-9/'\\''()._-]*/\\([A-Za-z0-9'\\''()._-]*\\.[a-z][a-z][a-z]\"\\)&=\"\\1&g' \\
          -e 's&href=\"modelica://\\([A-Za-z0-9'\\''()._]*\\)&href=\"\\1.html&g' \\
          -e 's&\\(href=\"[^\"'\\'']*\\)'\\''\\([^\"'\\'']*\\)'\\''&\\1\\2&g' \"$F\"
   tidy -modify -quiet \"$F\" 2>> tidy.log
