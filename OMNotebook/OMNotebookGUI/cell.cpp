@@ -115,6 +115,8 @@ namespace IAEX
     QPalette palette;
     palette.setColor(backgroundRole(), backgroundColor());
     setPalette(palette);
+	
+	qDebug()<<"Cell \n"
   }
 
   Cell::Cell(Cell &c) : QWidget()
