@@ -97,12 +97,49 @@ function last
   output String ostr := str[end];
 end last;
 
+function preSuffixIfNotEmpty
+  input String prefix;
+  input String str;
+  input String suffix;
+  output String out := if str <> \"\" then prefix + str + suffix else \"\";
+end preSuffixIfNotEmpty;
+
+function head
+  input String strs[:];
+  output String head;
+protected
+  String compound := \"\", file;
+algorithm
+  head := \"<title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>\n<h1><a href = \\\"index.html\\\">.</a>\";
+  for ident in strs[1:end-1] loop
+    compound := if compound == \"\" then ident else compound+\".\"+ident;
+    file := compound+\".html\";
+    head := head + \"<a href = \\\"\"+file+\"\\\">\"+ident+\"</a>.\";
+  end for;
+  head := head + strs[end] + \"</h1>\";
+end head;
+
+function itemString
+  input Item item;
+  input String version;
+  output String res;
+protected
+  String docInfo, revision;
+algorithm
+  docInfo := if item.docInfo[1] == \"\" then \"<pre>\" + item.comment + \"</pre>\" else item.docInfo[1];
+  docInfo := if OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\") then docInfo else \"\\n<pre>\" + docInfo + \"</pre>\";
+  revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions:</h2>\" + item.docInfo[2] else \"\";
+  res := item.head + docInfo + item.interface + item.contents + revision + version;
+end itemString;
+
+function itemFile
+  input Item item;
+  output String file := item.file;
+end itemFile;
+
 record Item
-  OpenModelica.Code.TypeName c;
-  String fullName;
   String file;
-  String lastName;
-  String packageNames[:];
+  String head;
   String docInfo[2];
   String contents;
   String comment;
@@ -110,22 +147,28 @@ record Item
 end Item;
 ");
 
-echo(false); // This array is too big :)
-b:={Item(
-      c,
-      OpenModelica.Scripting.typeNameString(c),
-      filename(OpenModelica.Scripting.typeNameString(c))+".html",
-      last(OpenModelica.Scripting.typeNameStrings(c)),
-      notLast(OpenModelica.Scripting.typeNameStrings(c)),
+"Start calculate items";
+echo(false);
+items:={Item(
+      filename(OpenModelica.Scripting.typeNameString(c))+".html.tmp",
+      head(OpenModelica.Scripting.typeNameStrings(c)),
       OpenModelica.Scripting.getDocumentationAnnotation(c),
-      sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+      preSuffixIfNotEmpty(
+        "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
+        sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
                     last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
                     "<td>" + filename(OpenModelica.Scripting.getClassComment(cl)) + "</td></tr>\n"
-                  for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
+                for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
+        "</table>"
+        ),
       OpenModelica.Scripting.getClassComment(c),
-      OpenModelica.Scripting.list(c,interfaceOnly=true)
+      preSuffixIfNotEmpty("\n<h4>Interface</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>")
     ) for c in b};
+print("Start writing items to file");
 echo(true);
+timing(writeFile(itemFile(items),itemString(items,version)));
+getErrorString();
+"Finished writing " + String(size(items,1)) + " items";
 
 searchPaths := "";
 filetmp := "index.html";
@@ -149,49 +192,6 @@ end for;
 writeFile(filetmp, "</table>\n", append = true);
 writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline version</a>)", append = true);
 writeFile(filetmp, "</body>\n</html>", append = true);
-
-i := 0;
-sz := size(b,1);
-for c in b loop
-  contents := c.contents;
-  cl := c.fullName;
-  compound := "";
-  clsEnd := c.lastName;
-  clsNotEnd := c.packageNames;
-  file := c.file;
-  filetmp := file + ".tmp";
-  writeFile(filetmp, "<title>"+cl+"</title>\n<h1><a href = \"index.html\">.</a>");
-  for ident in clsNotEnd loop
-    compound := if compound == "" then ident else compound+"."+ident;
-    file := compound+".html";
-    writeFile(filetmp, "<a href = \""+file+"\">"+ident+"</a>.", append = true);
-  end for;
-  writeFile(filetmp, clsEnd + "</h1>", append = true);
-  arr := c.docInfo;
-  docInfo := if arr[1] == "" then "<pre>" + OpenModelica.Scripting.getClassComment(c) + "</pre>" else arr[1];
-  revisions := arr[2];
-  if regexBool(docInfo,"^.*<[Hh][Tt][Mm][Ll]>.*$") then
-    writeFile(filetmp, "\n" + docInfo, append = true);
-  else
-    writeFile(filetmp, "\n<pre>" + docInfo + "</pre>", append = true);
-  end if;
-  interface := c.interface;
-  if interface <> "" then
-    writeFile(filetmp, "\n<h4>Interface</h4>\n<blockquote><pre>" + interface + "</pre></blockquote>", append = true);
-  end if;
-  if contents <> "" then
-    writeFile(filetmp, "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>", append = true);
-    writeFile(filetmp, contents, append = true);
-    // contentStrToks := strtok(contentStr,".");
-    writeFile(filetmp, "</table>", append = true);
-  end if;
-  if revisions <> "" then
-   writeFile(filetmp, "<h2>Revisions:</h2>" + revisions, append = true);
-  end if;
-  writeFile(filetmp, version, append = true);
-  i := i + 1;
-  print(cl + " (" + String(i) + "/" + String(sz) + ")" + "\n");
-end for;
 
 writeFile("Tidy.sh","#!/bin/bash
 rm -f tidy.log
@@ -224,6 +224,7 @@ cp -f \"$1\" \"$2\"
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
+rm -f *.png *.pdf
 grep -v http:// *.html | egrep -o \"[A-Za-z_0-9.-]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" > tmp
 for f in `cat tmp`; do
   #if test -f \"$f\"; then
