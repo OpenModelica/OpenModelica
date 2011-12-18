@@ -39,6 +39,7 @@
  * $Id$
  */
 
+setDebugFlags("nogen");
 if true then
   loadModel(Modelica,{"3.2"});
   loadModel(ModelicaReference);
@@ -85,6 +86,11 @@ function filename
     //\")\",\"\")
 ;
 end filename;
+
+function last
+  input String str[:];
+  output String ostr := str[end];
+end last;
 ");
 
 searchPaths := "";
@@ -113,7 +119,10 @@ writeFile(filetmp, "</body>\n</html>", append = true);
 i := 0;
 sz := size(b,1);
 for c in b loop
-  contents := getClassNames(c,qualified=true,sort=true);
+  contents := sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+                    last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
+                    "<td>" + filename(OpenModelica.Scripting.getClassComment(cl)) + "</td></tr>\n"
+                  for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true));
   cl := typeNameString(c);
   cls := typeNameStrings(c);
   compound := "";
@@ -140,16 +149,10 @@ for c in b loop
   if interface <> "" then
     writeFile(filetmp, "\n<h4>Interface</h4>\n<blockquote><pre>" + interface + "</pre></blockquote>", append = true);
   end if;
-  if size(contents,1)>0 then
-    writeFile(filetmp, "<h2>Contents</h2>\n", append = true);
-    writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th></tr>", append = true);
-    for content in contents loop
-      contentStr := typeNameString(content);
-      contentStrToks := strtok(contentStr,".");
-      comment := getClassComment(content);
-      fileName := filename(contentStr);
-      writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td></tr>", append = true);
-    end for;
+  if contents <> "" then
+    writeFile(filetmp, "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>", append = true);
+    writeFile(filetmp, contents, append = true);
+    // contentStrToks := strtok(contentStr,".");
     writeFile(filetmp, "</table>", append = true);
   end if;
   if revisions <> "" then
