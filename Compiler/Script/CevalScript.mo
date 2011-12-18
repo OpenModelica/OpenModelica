@@ -5439,9 +5439,9 @@ algorithm
     local
       Absyn.Path path;
       String s1;
-    case (Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(s1))),cache,env)
+    case (Values.CODE(Absyn.C_TYPENAME(path)),cache,env)
       equation
-        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(s1, DAE.T_ANYTYPE_DEFAULT, {}));
+        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.pathToCref(path));
       then Values.CODE(Absyn.C_TYPENAME(path));
     else val;    
   end matchcontinue;

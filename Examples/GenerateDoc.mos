@@ -59,8 +59,8 @@ end if;
 getErrorString();
 
 a:=0;
-b:=getClassNames(builtin=true,recursive=true,sort=true);
 
+b:=getClassNames(builtin=true,recursive=true,sort=true);
 /* If we want to test on fewer classes */
 // b := {$TypeName(Modelica),$TypeName(Modelica.Math.Matrices.LAPACK.dgglse_vec)};
 // b := {$TypeName(Modelica),$TypeName(Modelica.Electrical.Analog.Basic),$TypeName(Modelica.Electrical.Analog.Basic.VariableInductor)};
@@ -87,11 +87,45 @@ function filename
 ;
 end filename;
 
+function notLast
+  input String str[:];
+  output String ostr[:] := str[1:end];
+end notLast;
+
 function last
   input String str[:];
   output String ostr := str[end];
 end last;
+
+record Item
+  OpenModelica.Code.TypeName c;
+  String fullName;
+  String file;
+  String lastName;
+  String packageNames[:];
+  String docInfo[2];
+  String contents;
+  String comment;
+  String interface;
+end Item;
 ");
+
+echo(false); // This array is too big :)
+b:={Item(
+      c,
+      OpenModelica.Scripting.typeNameString(c),
+      filename(OpenModelica.Scripting.typeNameString(c))+".html",
+      last(OpenModelica.Scripting.typeNameStrings(c)),
+      notLast(OpenModelica.Scripting.typeNameStrings(c)),
+      OpenModelica.Scripting.getDocumentationAnnotation(c),
+      sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+                    last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
+                    "<td>" + filename(OpenModelica.Scripting.getClassComment(cl)) + "</td></tr>\n"
+                  for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
+      OpenModelica.Scripting.getClassComment(c),
+      OpenModelica.Scripting.list(c,interfaceOnly=true)
+    ) for c in b};
+echo(true);
 
 searchPaths := "";
 filetmp := "index.html";
@@ -119,16 +153,12 @@ writeFile(filetmp, "</body>\n</html>", append = true);
 i := 0;
 sz := size(b,1);
 for c in b loop
-  contents := sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
-                    last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
-                    "<td>" + filename(OpenModelica.Scripting.getClassComment(cl)) + "</td></tr>\n"
-                  for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true));
-  cl := typeNameString(c);
-  cls := typeNameStrings(c);
+  contents := c.contents;
+  cl := c.fullName;
   compound := "";
-  clsEnd := cls[end];
-  clsNotEnd := cls[1:end-1];
-  file := filename(cl) + ".html";
+  clsEnd := c.lastName;
+  clsNotEnd := c.packageNames;
+  file := c.file;
   filetmp := file + ".tmp";
   writeFile(filetmp, "<title>"+cl+"</title>\n<h1><a href = \"index.html\">.</a>");
   for ident in clsNotEnd loop
@@ -137,7 +167,7 @@ for c in b loop
     writeFile(filetmp, "<a href = \""+file+"\">"+ident+"</a>.", append = true);
   end for;
   writeFile(filetmp, clsEnd + "</h1>", append = true);
-  arr := getDocumentationAnnotation(c);
+  arr := c.docInfo;
   docInfo := if arr[1] == "" then "<pre>" + OpenModelica.Scripting.getClassComment(c) + "</pre>" else arr[1];
   revisions := arr[2];
   if regexBool(docInfo,"^.*<[Hh][Tt][Mm][Ll]>.*$") then
@@ -145,7 +175,7 @@ for c in b loop
   else
     writeFile(filetmp, "\n<pre>" + docInfo + "</pre>", append = true);
   end if;
-  interface := list(c, interfaceOnly = true);
+  interface := c.interface;
   if interface <> "" then
     writeFile(filetmp, "\n<h4>Interface</h4>\n<blockquote><pre>" + interface + "</pre></blockquote>", append = true);
   end if;
