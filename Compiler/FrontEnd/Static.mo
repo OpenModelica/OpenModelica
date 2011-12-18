@@ -13965,11 +13965,6 @@ algorithm
       Integer i;
       DAE.Exp dexp;
     
-    // Type Name stored as Code in the environment
-    case (Absyn.CREF(componentRef=Absyn.CREF_IDENT(name=s1, subscripts={})),_,_,DAE.C_TYPENAME(),_)
-      equation
-        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(s1, DAE.T_ANYTYPE_DEFAULT, {}));
-      then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
     // Type Name
     case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_)
       equation
