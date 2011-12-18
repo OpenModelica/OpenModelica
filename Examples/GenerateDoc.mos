@@ -166,27 +166,39 @@ for f in *.html.tmp ; do
   F=`echo $f | sed s/\\.tmp\\$//`
   echo Checking file $F >> tidy.log
   cp \"$f\" \"$F\"
-  # Image sources (filenames)
-  sed -i 's/src=\"modelica:\\/\\/[A-Za-z0-9/'\\''()._-]*\\/\\([A-Za-z0-9'\\''()._-]*\\.png\"\\)/src=\"\\1/g' \"$F\"
+  # Image sources (filenames) and links
   # Links to classnames
-  sed -i 's/href=\"modelica:\\/\\/\\([A-Za-z0-9'\\''()._]*\\)/href=\"\\1.html/g' \"$F\"
   # Make quoted identifiers pretty
-  sed -i 's/\\(href=\"[^\"'\\'']*\\)'\\''\\([^\"'\\'']*\\)'\\''/\\1\\2/g' \"$F\"
+  sed -i -e 's&=\"modelica://[A-Za-z0-9/'\\''()._-]*/\\([A-Za-z0-9'\\''()._-]*\\.png\"\\)&=\"\\1&g' \\
+         -e 's&href=\"modelica://\\([A-Za-z0-9'\\''()._]*\\)&href=\"\\1.html&g' \\
+         -e 's&\\(href=\"[^\"'\\'']*\\)'\\''\\([^\"'\\'']*\\)'\\''&\\1\\2&g' \"$F\"
   tidy -modify -quiet \"$F\" 2>> tidy.log
 done
 mkdir -p old-html-tmp
 mv *.html.tmp old-html-tmp
 ");
 
-writeFile("FindFiles.sh","#!/bin/bash
-egrep -o \"[A-Za-z_0-9.-]*\\.(png|jpg)\" *.html | cut -d: -f2- | sort -u | tr -d \\\" > tmp
-for f in `cat tmp`; do
-  if test -f \"$f\"; then
+writeFile("CopyReport.sh","#!/bin/bash
+if test -f \"$2\"; then
+  if cmp --quiet \"$1\" \"$2\"; then
+    # echo Found identical duplicate: $1
     true
   else
-    find " + searchPaths + " -name \"$f\" -exec cp '{}' '.' ';'
-    test -f \"$f\" && echo Found: $f || echo Not found: $f
+    echo Found duplicate file: $1
   fi
+fi
+cp -f \"$1\" \"$2\"
+");
+
+writeFile("FindFiles.sh","#!/bin/bash
+grep -v http:// *.html | egrep -o \"[A-Za-z_0-9.-]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" > tmp
+for f in `cat tmp`; do
+  #if test -f \"$f\"; then
+  #  true
+  #else
+    find " + searchPaths + " -name \"$f\" -exec sh 'CopyReport.sh' '{}' \"$f\" ';'
+    test -f \"$f\" || echo Not found: $f
+  #fi
 done
 ");
 
@@ -194,5 +206,5 @@ system("bash Tidy.sh");
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
 system("rm -f *.html.tmp");
-system("tar cJf ModelicaDocumentation.tar.xz --dereference *.html *.png GenerateDoc.mos");
+system("tar cJf ModelicaDocumentation.tar.xz --dereference *.html *.png *.pdf GenerateDoc.mos");
 getErrorString();
