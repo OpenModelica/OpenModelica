@@ -58,7 +58,25 @@ SOURCES += \
     ../Pltpkg2/variableData.cpp \
     ../Pltpkg2/variablewindow.cpp \
     ../3Dpkg/SimulationData.cpp \
-    ../3Dpkg/VisualizationWidget.cpp
+    ../3Dpkg/VisualizationWidget.cpp \
+    ../OMSketch/Tools.cpp \
+    ../OMSketch/Sketch_files.cpp \
+    ../OMSketch/Shapes.cpp \
+    ../OMSketch/Scene_Objects.cpp \
+    ../OMSketch/mainwindow.cpp \
+    ../OMSketch/Line.cpp \
+    ../OMSketch/Graph_Scene.cpp \
+    ../OMSketch/Draw_Triangle.cpp \
+    ../OMSketch/Draw_Text.cpp \
+    ../OMSketch/Draw_RoundRect.cpp \
+    ../OMSketch/Draw_Rectangle.cpp \
+    ../OMSketch/Draw_polygon.cpp \
+    ../OMSketch/Draw_LineArrow.cpp \
+    ../OMSketch/Draw_line.cpp \
+    ../OMSketch/Draw_Ellipse.cpp \
+    ../OMSketch/Draw_Arrow.cpp \
+    ../OMSketch/Draw_Arc.cpp \
+    ../OMSketch/CustomDailog.cpp
 
 HEADERS += \
     omc_communication.h \
@@ -136,7 +154,27 @@ HEADERS += \
     ../Pltpkg2/variablewindow.h \
     ../3Dpkg/SimulationData.h \
     ../3Dpkg/VisualizationWidget.h \
-    omc_communicator.h
+    omc_communicator.h \
+    ../OMSketch/Tools.h \
+    ../OMSketch/Sketch_files.h \
+    ../OMSketch/Shapes.h \
+    ../OMSketch/Scene_Objects.h \
+    ../OMSketch/mainwindow.h \
+    ../OMSketch/Line.h \
+    ../OMSketch/Label.h \
+    ../OMSketch/Graph_Scene.h \
+    ../OMSketch/Draw_Triangle.h \
+    ../OMSketch/Draw_Text.h \
+    ../OMSketch/Draw_RoundRect.h \
+    ../OMSketch/Draw_Rectangle.h \
+    ../OMSketch/Draw_polygon.h \
+    ../OMSketch/Draw_LineArrow.h \
+    ../OMSketch/Draw_Line.h \
+    ../OMSketch/Draw_ellipse.h \
+    ../OMSketch/Draw_Arrow.h \
+    ../OMSketch/Draw_Arc.h \
+    ../OMSketch/CustomDialog.h \
+    ../OMSketch/basic.h
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
@@ -167,7 +205,10 @@ LIBS += $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 INCLUDEPATH += $${CORBAINC} \
                ../Pltpkg2 \
                ../3Dpkg \
-               .
+               ../OMSketch \
+               ../../
+
+INCLUDEPATH += .
 
 RESOURCES += res_qt.qrc
 
@@ -182,3 +223,5 @@ MOC_DIR = ../generatedfiles/moc
 RCC_DIR = ../generatedfiles/rcc
 
 CONFIG += warn_off
+
+
