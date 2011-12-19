@@ -16,5 +16,47 @@
         <file>Resources/toolbarIcons/text_under.png</file>
         <file>Resources/toolbarIcons/undo.png</file>
         <file>Resources/omnotebook_png.png</file>
+        <file>Resources/sketchIcons/arrow.png</file>
+        <file>Resources/sketchIcons/bdiagpattern.png</file>
+        <file>Resources/sketchIcons/brush.png</file>
+        <file>Resources/sketchIcons/conicalgradientpattern.png</file>
+        <file>Resources/sketchIcons/crosspattern.png</file>
+        <file>Resources/sketchIcons/dense1pattern.png</file>
+        <file>Resources/sketchIcons/dense2pattern.png</file>
+        <file>Resources/sketchIcons/dense3pattern.png</file>
+        <file>Resources/sketchIcons/dense4pattern.png</file>
+        <file>Resources/sketchIcons/dense5pattern.png</file>
+        <file>Resources/sketchIcons/dense6pattern.png</file>
+        <file>Resources/sketchIcons/dense7pattern.png</file>
+        <file>Resources/sketchIcons/diagcrosspattern.png</file>
+        <file>Resources/sketchIcons/editcopy.png</file>
+        <file>Resources/sketchIcons/editcut.png</file>
+        <file>Resources/sketchIcons/editimage.jpg</file>
+        <file>Resources/sketchIcons/editpaste.png</file>
+        <file>Resources/sketchIcons/editredo.png</file>
+        <file>Resources/sketchIcons/editundo.png</file>
+        <file>Resources/sketchIcons/fdiagpattern.png</file>
+        <file>Resources/sketchIcons/filenew.png</file>
+        <file>Resources/sketchIcons/fileopen.png</file>
+        <file>Resources/sketchIcons/filesave.png</file>
+        <file>Resources/sketchIcons/fillcolor.png</file>
+        <file>Resources/sketchIcons/horpattern.png</file>
+        <file>Resources/sketchIcons/lineargradientpattern.png</file>
+        <file>Resources/sketchIcons/linearrow.png</file>
+        <file>Resources/sketchIcons/paint.png</file>
+        <file>Resources/sketchIcons/pencil.png</file>
+        <file>Resources/sketchIcons/qpainter-arc.png</file>
+        <file>Resources/sketchIcons/qpainter-ellipse.png</file>
+        <file>Resources/sketchIcons/qpainter-line.png</file>
+        <file>Resources/sketchIcons/qpainter-polygon.png</file>
+        <file>Resources/sketchIcons/qpainter-rectangle.png</file>
+        <file>Resources/sketchIcons/qpainter-roundrect.png</file>
+        <file>Resources/sketchIcons/radialgradientpattern.png</file>
+        <file>Resources/sketchIcons/solidpattern.png</file>
+        <file>Resources/sketchIcons/text.png</file>
+        <file>Resources/sketchIcons/triangle.png</file>
+        <file>Resources/sketchIcons/verpattern.png</file>
+        <file>Resources/toolbarIcons/sketch.png</file>
+        <file>Resources/toolbarIcons/editimage.png</file>
     </qresource>
 </RCC>

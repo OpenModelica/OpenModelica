@@ -97,42 +97,35 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 
 void Tools::button_action()
 {
-
-  QDir dir;
-
-  dir.setPath( dir.absolutePath() + "/Resources/sketchIcons" );
-
-  arc = new QAction(QIcon(dir.absolutePath()+"/qpainter-arc.png"),tr("&Arc"),this);
+  arc = new QAction(QIcon(":/Resources/sketchIcons/qpainter-arc.png"),tr("&Arc"),this);
   connect(arc,SIGNAL(triggered()), this, SLOT(draw_arc()));
 
-  arrow = new QAction(QIcon(dir.absolutePath()+"/arrow.png"),tr("&Arrow"),this);
+  arrow = new QAction(QIcon(":/Resources/sketchIcons/arrow.png"),tr("&Arrow"),this);
   connect(arrow,SIGNAL(triggered()), this, SLOT(draw_arrow()));
 
-  line = new QAction(QIcon(dir.absolutePath()+"/qpainter-line.png"),tr("&Line"),this);
+  line = new QAction(QIcon(":/Resources/sketchIcons/qpainter-line.png"),tr("&Line"),this);
   connect(line,SIGNAL(triggered()), this, SLOT(draw_line()));
 
-  rectangle = new QAction(QIcon(dir.absolutePath()+"/qpainter-rectangle.png"),tr("&Rectangle"),this);
+  rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-rectangle.png"),tr("&Rectangle"),this);
   connect(rectangle,SIGNAL(triggered()), this, SLOT(draw_rect()));
 
-  round_rectangle = new QAction(QIcon(dir.absolutePath()+"/qpainter-roundrect.png"),tr("&Rounded Rectangle"),this);
+  round_rectangle = new QAction(QIcon(":/Resources/sketchIcons/qpainter-roundrect.png"),tr("&Rounded Rectangle"),this);
   connect(round_rectangle,SIGNAL(triggered()), this, SLOT(draw_round_rect()));
 
-  ellipse = new QAction(QIcon(dir.absolutePath()+"/qpainter-ellipse.png"),tr("&Ellipse"),this);
+  ellipse = new QAction(QIcon(":/Resources/sketchIcons/qpainter-ellipse.png"),tr("&Ellipse"),this);
   connect(ellipse,SIGNAL(triggered()), this, SLOT(draw_ellipse()));
 
-  polygon = new QAction(QIcon(dir.absolutePath()+"/qpainter-polygon.png"),tr("&Polygon"),this);
+  polygon = new QAction(QIcon(":/Resources/sketchIcons/qpainter-polygon.png"),tr("&Polygon"),this);
   connect(polygon,SIGNAL(triggered()), this, SLOT(draw_polygon()));
 
-  linearrow = new QAction(QIcon(dir.absolutePath()+"/linearrow.png"),tr("&LineArrow"),this);
+  linearrow = new QAction(QIcon(":/Resources/sketchIcons/linearrow.png"),tr("&LineArrow"),this);
   connect(linearrow,SIGNAL(triggered()), this, SLOT(draw_linearrow()));
 
-  triangle = new QAction(QIcon(dir.absolutePath()+"/triangle.png"),tr("&Triangle"),this);
+  triangle = new QAction(QIcon(":/Resources/sketchIcons/triangle.png"),tr("&Triangle"),this);
   connect(triangle,SIGNAL(triggered()), this, SLOT(draw_triangle()));
 
-  text = new QAction(QIcon(dir.absolutePath()+"/text.png"),tr("&Text"),this);
+  text = new QAction(QIcon(":/Resources/sketchIcons/text.png"),tr("&Text"),this);
   connect(text,SIGNAL(triggered()), this, SLOT(draw_text()));
-
-
 
   file_new = new QAction(tr("&New"),this);
   connect(file_new,SIGNAL(triggered()), this, SLOT(draw_new()));
@@ -145,7 +138,6 @@ void Tools::button_action()
 
   file_image_save = new QAction(tr("&Export Image"),this);
   connect(file_image_save,SIGNAL(triggered()), this, SLOT(draw_image_save()));
-
   
   copy = new QAction(tr("&Copy"),this);
   copy->setShortcut(tr("Ctrl+C"));
@@ -158,9 +150,6 @@ void Tools::button_action()
   paste = new QAction(tr("&Paste"),this);
   paste->setShortcut(tr("Ctrl+v"));
   connect(paste,SIGNAL(triggered()), this, SLOT(draw_paste()));
-
-
-   
 }
 
 void Tools::action()
@@ -1597,11 +1586,7 @@ void Tools::pen_lineDashDotDotStyle()
 
 void Tools::brush_color()
 {
-	QDir dir;
-
-    dir.setPath( dir.absolutePath() + "/Resources/sketchIcons" );
-
-	color=color_dialog->getColor(QColor(255,255,255),this);
+    color=color_dialog->getColor(QColor(255,255,255),this);
     if(color.isValid())
     {
        brush.setColor(color);
@@ -2063,26 +2048,19 @@ void Tools::add_components()
 
 void Tools::file_components()
 {
-
     QGroupBox *file_box = new QGroupBox(tr("File"));
     file_box->setToolTip("File");
 
-
     file_layout = new QGridLayout();
-	 QDir dir;
 
-     dir.setPath( dir.absolutePath() + "/Resources/sketchIcons" );
+    new_file = new QPushButton(QIcon(":/Resources/sketchIcons/filenew.png"),tr("New"));
+    open_file = new QPushButton(QIcon(":/Resources/sketchIcons/fileopen.png"),tr("Open"));
 
+    save_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Save"));
+    saveas_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Saveas"));
 
-    new_file = new QPushButton(QIcon(dir.absolutePath()+"/filenew.png"),tr("New"));
-    open_file = new QPushButton(QIcon(dir.absolutePath()+"/fileopen.png"),tr("Open"));
-
-    save_file = new QPushButton(QIcon(dir.absolutePath()+"/filesave.png"),tr("Save"));
-    saveas_file = new QPushButton(QIcon(dir.absolutePath()+"/filesave.png"),tr("Saveas"));
-
-    export_file = new QPushButton(QIcon(dir.absolutePath()+"/filesave.png"),tr("Export"));
-    import_file = new QPushButton(QIcon(dir.absolutePath()+"/filesave.png"),tr("Import"));
-
+    export_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Export"));
+    import_file = new QPushButton(QIcon(":/Resources/sketchIcons/filesave.png"),tr("Import"));
 
     new_file->setFlat(true);
     new_file->setIconSize(size);
@@ -2139,20 +2117,12 @@ void Tools::edit_components()
     edit_box->setToolTip("Edit");
 
     edit_layout = new QGridLayout();
-	 QDir dir;
 
-  dir.setPath( dir.absolutePath() + "/Resources/sketchIcons" );
-
-
-    cut_shape = new QPushButton(QIcon(dir.absolutePath()+"/editcut.png"),tr("Cut"));
-    copy_shape = new QPushButton(QIcon(dir.absolutePath()+"/editcopy.png"),tr("Copy"));
-
-    paste_shape = new QPushButton(QIcon(dir.absolutePath()+"/editpaste.png"),tr("Paste"));
-
-
-    redo_shape = new QPushButton(QIcon(dir.absolutePath()+"/editredo.png"),tr("Redo"));
-    undo_shape = new QPushButton(QIcon(dir.absolutePath()+"/editundo.png"),tr("Undo"));
-
+    cut_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editcut.png"),tr("Cut"));
+    copy_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editcopy.png"),tr("Copy"));
+    paste_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editpaste.png"),tr("Paste"));
+    redo_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editredo.png"),tr("Redo"));
+    undo_shape = new QPushButton(QIcon(":/Resources/sketchIcons/editundo.png"),tr("Undo"));
 
     cut_shape->setFlat(true);
     cut_shape->setIconSize(size);
@@ -2201,48 +2171,45 @@ void Tools::color_pen_components()
     color_pen_box->setToolTip("Color & PenStyles");
 
     color_pen_layout = new QGridLayout();
-	 QDir dir;
 
-    dir.setPath( dir.absolutePath() + "/Resources/sketchIcons" );
-
-    select_color = new QPushButton(QIcon(dir.absolutePath()+"/paint.png"),"Colors");
+    select_color = new QPushButton(QIcon(":/Resources/sketchIcons/paint.png"),"Colors");
     select_color->setFlat(true);
     select_color->setIconSize(size);
     select_color->setToolTip("Select Colors");
 	select_color->setEnabled(false);
 
-    fill_color = new QPushButton(QIcon(dir.absolutePath()+"/fillcolor.png"),"Fill Colors");
+    fill_color = new QPushButton(QIcon(":/Resources/sketchIcons/fillcolor.png"),"Fill Colors");
     fill_color->setFlat(true);
     fill_color->setIconSize(size);
     fill_color->setToolTip("Select Fill Colors");
 	fill_color->setEnabled(false);
 
     select_pen = new QComboBox();
-    select_pen->addItem(QIcon(dir.absolutePath()+"/pencil.png"),"Solid Line");
-    select_pen->addItem(QIcon(dir.absolutePath()+"/pencil.png"),"Dash Line");
-    select_pen->addItem(QIcon(dir.absolutePath()+"/pencil.png"),"Dot Line");
-    select_pen->addItem(QIcon(dir.absolutePath()+"/pencil.png"),"Dash Dot Line");
-    select_pen->addItem(QIcon(dir.absolutePath()+"/pencil.png"),"Dash Dot Dot Line");
+    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Solid Line");
+    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Line");
+    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dot Line");
+    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Line");
+    select_pen->addItem(QIcon(":/Resources/sketchIcons/pencil.png"),"Dash Dot Dot Line");
     select_pen->setIconSize(size);
     select_pen->setToolTip("Select Pen Styles");
 	select_pen->setEnabled(false);
 
     select_brush = new QComboBox();
-    select_brush->addItem(QIcon(dir.absolutePath()+"/brush.png"),"No Brush");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/solidpattern.png"),"Solid Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense1pattern.png"),"Dense 1 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense2pattern.png"),"Dense 2 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense3pattern.png"),"Dense 3 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense4pattern.png"),"Dense 4 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense5pattern.png"),"Dense 5 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense6pattern.png"),"Dense 6 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/dense7pattern.png"),"Dense 7 Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/horpattern.png"),"Hor Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/verpattern.png"),"Ver Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/crosspattern.png"),"Cross Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/bdiagpattern.png"),"BDiag Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/fdiagpattern.png"),"FDiag Fill");
-    select_brush->addItem(QIcon(dir.absolutePath()+"/diagcrosspattern.png"),"Diag Cross Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/brush.png"),"No Brush");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/solidpattern.png"),"Solid Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense1pattern.png"),"Dense 1 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense2pattern.png"),"Dense 2 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense3pattern.png"),"Dense 3 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense4pattern.png"),"Dense 4 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense5pattern.png"),"Dense 5 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense6pattern.png"),"Dense 6 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/dense7pattern.png"),"Dense 7 Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/horpattern.png"),"Hor Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/verpattern.png"),"Ver Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/crosspattern.png"),"Cross Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/bdiagpattern.png"),"BDiag Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/fdiagpattern.png"),"FDiag Fill");
+    select_brush->addItem(QIcon(":/Resources/sketchIcons/diagcrosspattern.png"),"Diag Cross Fill");
     select_brush->setIconSize(size);
     select_brush->setToolTip("Select Brush Styles");
 	select_brush->setEnabled(false);
