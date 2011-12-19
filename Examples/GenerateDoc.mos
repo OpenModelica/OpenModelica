@@ -46,6 +46,7 @@ if true then
   loadModel(ObsoleteModelica3);
   loadModel(ModelicaTest);
   loadModel(Modelica_LinearSystems2);
+  loadModel(BioChem);
 end if;
 /*
   deleteClass(ModelicaServices);
@@ -60,7 +61,9 @@ getErrorString();
 
 a:=0;
 
+echo(false);
 b:=getClassNames(builtin=true,recursive=true,sort=true);
+echo(true);
 /* If we want to test on fewer classes */
 // b := {$TypeName(Modelica),$TypeName(Modelica.Math.Matrices.LAPACK.dgglse_vec)};
 // b := {$TypeName(Modelica),$TypeName(Modelica.Electrical.Analog.Basic),$TypeName(Modelica.Electrical.Analog.Basic.VariableInductor)};
@@ -126,8 +129,9 @@ function itemString
 protected
   String docInfo, revision;
 algorithm
-  docInfo := if item.docInfo[1] == \"\" then \"<pre>\" + item.comment + \"</pre>\" else item.docInfo[1];
-  docInfo := if OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\") then docInfo else \"\\n<pre>\" + docInfo + \"</pre>\";
+  docInfo := if item.docInfo[1] == \"\" or (not OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\"))
+    then preSuffixIfNotEmpty(\"<pre>\", item.comment, \"</pre>\")
+    else item.docInfo[1];
   revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions:</h2>\" + item.docInfo[2] else \"\";
   res := item.head + docInfo + item.interface + item.contents + revision + version;
 end itemString;
@@ -150,7 +154,7 @@ end Item;
 "Start calculate items";
 echo(false);
 items:={Item(
-      filename(OpenModelica.Scripting.typeNameString(c))+".html.tmp",
+      filename(OpenModelica.Scripting.typeNameString(c))+".html",
       head(OpenModelica.Scripting.typeNameStrings(c)),
       OpenModelica.Scripting.getDocumentationAnnotation(c),
       preSuffixIfNotEmpty(
@@ -166,11 +170,12 @@ items:={Item(
     ) for c in b};
 print("Start writing items to file");
 echo(true);
-timing(writeFile(itemFile(items),itemString(items,version)));
+writeFile(itemFile(items),itemString(items,version));
 getErrorString();
 "Finished writing " + String(size(items,1)) + " items";
 
-searchPaths := "";
+dirs := "";
+replaceCommands := "";
 filetmp := "index.html";
 writeFile(filetmp, "<html><head><title>Modelica Documentation</title></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, libraries shipped with OpenModelica and the documentation for OpenModelica-specific scripting.</p>\n", append = true);
@@ -179,66 +184,89 @@ writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th>
 for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
+  contentStrToks := typeNameStrings(cl);
+  modelVersion := getVersion(cl);
   if base == "package.mo" then
-    searchPaths := searchPaths + " \"" + dirname(file) + "\"";
+    replaceCommands := replaceCommands + "  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://" + contentStrToks[end] + "/&" + dirname(file) + "/&g;\n";
+    dirs := dirs + " \"" + contentStrToks[end] + (if modelVersion <> "" then " " + modelVersion else "") + "\" ";
   end if;
   contentStr := typeNameString(cl);
-  contentStrToks := strtok(contentStr,".");
   comment := getClassComment(cl);
   fileName := filename(contentStr);
-  modelVersion := getVersion(cl);
   writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
 end for;
 writeFile(filetmp, "</table>\n", append = true);
 writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline version</a>)", append = true);
 writeFile(filetmp, "</body>\n</html>", append = true);
 
-writeFile("Tidy.sh","#!/bin/bash
-rm -f tidy.log
-for f in *.html.tmp ; do
-  F=`echo $f | sed s/\\.tmp\\$//`
-  echo Checking file $F >> tidy.log
-  cp \"$f\" \"$F\"
-  # Image sources (filenames) and links
-  # Links to classnames
-  # Make quoted identifiers pretty
-  sed -i -e 's&=\"modelica://[A-Za-z0-9/'\\''()._-]*/\\([A-Za-z0-9'\\''()._-]*\\.[a-z][a-z][a-z]\"\\)&=\"\\1&g' \\
-         -e 's&href=\"modelica://\\([A-Za-z0-9'\\''()._]*\\)&href=\"\\1.html&g' \\
-         -e 's&\\(href=\"[^\"'\\'']*\\)'\\''\\([^\"'\\'']*\\)'\\''&\\1\\2&g' \"$F\"
-  tidy -modify -quiet \"$F\" 2>> tidy.log
-done
-mkdir -p old-html-tmp
-mv *.html.tmp old-html-tmp
-");
+writeFile("Tidy.pl","use strict;
+use HTML::Tree;
+use LWP::Simple;
 
-writeFile("CopyReport.sh","#!/bin/bash
-if test -f \"$2\"; then
-  if cmp --quiet \"$1\" \"$2\"; then
-    # echo Found identical duplicate: $1
-    true
-  else
-    echo Found duplicate file: $1
-  fi
-fi
-cp -f \"$1\" \"$2\"
+my @files = glob(\"*.html\");
+my %visited = ();
+for (@files) {
+
+my $file = $_;
+if ($visited{$file}!=1) {
+
+$visited{'$file'} = 1;
+system(\"echo Checking file \\\"$file\\\" >>tidy.log\");
+system(\"tidy -modify -quiet \\\"$file\\\" 2>>tidy.log\");
+
+my $tree = HTML::Tree->new();
+$tree->parse_file($file);
+
+for (@{  $tree->extract_links('a', 'img')  }) {
+  my($link, $element, $attr, $tag) = @$_;
+  my $link2 = $link;\n"
++replaceCommands+
+"  $link2 =~ s/.*\\/omlibrary\\///g;
+  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.'()_]*#)&\\1.html#&g;
+  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.'()_]*$)&\\1.html&g;
+  $link2 =~ s&'&&g;
+  # print \"$tag.$attr=$link2\\n\";
+  $element->attr(\"$attr\",\"$link2\");
+}
+
+open (MYFILE, \">$file\");
+print MYFILE $tree->as_HTML;
+close (MYFILE);
+
+system(\"echo Checking file \\\"$file\\\" >>tidy.2.log\");
+system(\"tidy -modify -quiet \\\"$file\\\" 2>>tidy.2.log\");
+
+}
+}
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
-rm -f *.png *.pdf
-grep -v http:// *.html | egrep -o \"[A-Za-z_0-9.-]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" > tmp
+rm -f *.png *.pdf FindFiles.log
+OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
+grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.:-]*/[A-Za-z_0-9%.:/-]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" > tmp
 for f in `cat tmp`; do
-  #if test -f \"$f\"; then
-  #  true
-  #else
-    find " + searchPaths + " -name \"$f\" -exec sh 'CopyReport.sh' '{}' \"$f\" ';'
-    test -f \"$f\" || echo Not found: $f
-  #fi
+  f=`echo $f | sed 's/%20/ /'`
+  if test -f \"$OMLIBRARY/$f\"; then
+    d=`dirname \"$f\"`
+    mkdir -p \"$d\"
+    cp \"$OMLIBRARY/$f\" \"$f\"
+  else
+    echo Not found: $f | tee -a FindFiles.log
+  fi
 done
 ");
 
-system("bash Tidy.sh");
+system("rm -f tidy.log tidy.2.log");
+system("mkdir -p old-html-tmp");
+system("cp *.html old-html-tmp/");
+"Tidy.pl";
+system("perl Tidy.pl");
+"FindFiles.sh";
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
-system("rm -f *.html.tmp");
-system("tar cJf ModelicaDocumentation.tar.xz --dereference *.html *.png *.pdf GenerateDoc.mos");
+system("mkdir -p " + dirs);
+"tar";
+dirs;
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.log";
+system(cmd);
 getErrorString();

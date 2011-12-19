@@ -2257,7 +2257,7 @@ algorithm
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
         tty = Types.unboxedFunctionType(tty);
-        (cache,args,_,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, pre, info);
+        (cache,args,_,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, NONE(), pre, info);
         {p} = Types.getTypeSource(tty);
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
@@ -5652,7 +5652,7 @@ algorithm
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
           listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.ICONST(6)),{})}),
           slots);
-        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre, info);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
@@ -5674,7 +5674,7 @@ algorithm
         slots = Util.if_(Types.isString(tp),
           listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.SCONST("s")),{})}),
           slots);
-        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre, info);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makeBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
@@ -7482,7 +7482,7 @@ algorithm
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{},pre,info);
+        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{},st,pre,info);
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -7564,7 +7564,7 @@ algorithm
         
         slots = makeEmptySlots(fargs);
         // here we get the constantness of INPUT ARGUMENTS!
-        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},pre,info);
+        (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},st,pre,info);
         //print(" args: " +& stringDelimitList(List.map(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
         (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
         // here we get the constantness of DEFAULT ARGUMENTS!
@@ -7664,7 +7664,7 @@ algorithm
       equation
         (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn, info);
         (cache,args_1,constlist,restype,functype,vect_dims,slots) =
-          elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl,pre,info);
+          elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl,st,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ")\nof type\n  " +& Types.unparseType(functype);
@@ -7765,7 +7765,7 @@ algorithm
    restype,
    functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),
    vect_dims,
-   slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,pre,info)
+   slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
@@ -7863,7 +7863,7 @@ algorithm
         tys = List.map(vars, Types.getVarType);
         fargs = List.thread4Tuple(fieldNames, tys, List.fill(DAE.C_VAR(),listLength(tys)), List.fill(NONE(),listLength(tys)));
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, {}, pre, info);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, {}, st, pre, info);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(t, const);
         t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
@@ -8533,6 +8533,7 @@ function: elabTypes
   input list<DAE.Type> inTypesTypeLst;
   input Boolean checkTypes "if True, checks types";
   input Boolean inBoolean;
+  input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -8544,7 +8545,7 @@ function: elabTypes
   output list<Slot> outSlotLst6;
 algorithm
   (outCache,outExpExpLst1,outTypesConstLst2,outType3,outType4,outTypesArrayDimLst5,outSlotLst6):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,checkTypes,inBoolean,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,checkTypes,inBoolean,st,inPrefix,info)
     local
       list<Slot> slots,newslots;
       list<DAE.Exp> args_1;
@@ -8565,10 +8566,10 @@ algorithm
       DAE.TypeSource ts;
 
     // We found a match.
-    case (cache,env,args,nargs,(t as DAE.T_FUNCTION(funcArg = params,funcResultType = restype, functionAttributes = functionAttributes, source = ts)) :: trest,checkTypes,impl,pre,info)
+    case (cache,env,args,nargs,(t as DAE.T_FUNCTION(funcArg = params,funcResultType = restype, functionAttributes = functionAttributes, source = ts)) :: trest,checkTypes,impl,st,pre,info)
       equation
         slots = makeEmptySlots(params);
-        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},pre,info);
+        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},st,pre,info);
         dims = slotsVectorizable(newslots);
         polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,ts);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
@@ -8578,14 +8579,14 @@ algorithm
         (cache,args_1,clist,restype,t,dims,newslots);
 
     // We did not found a match, try next function type
-    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg = params,funcResultType = restype) :: trest,checkTypes,impl,pre,info)
+    case (cache,env,args,nargs,DAE.T_FUNCTION(funcArg = params,funcResultType = restype) :: trest,checkTypes,impl,st,pre,info)
       equation
-        (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, checkTypes, impl, pre, info);
+        (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, checkTypes, impl, st, pre, info);
       then
         (cache,args_1,clist,restype,t,dims,slots);
 
     // failtrace
-    case (cache,env,_,_,t::_,_,_,_,_)
+    case (cache,env,_,_,t::_,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Static.elabTypes failed: " +& Types.unparseType(t));
       then
@@ -9005,6 +9006,7 @@ protected function elabInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings inPolymorphicBindings;
+  input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9014,7 +9016,7 @@ protected function elabInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
+  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,st,inPrefix,info)
     local
       list<DAE.FuncArg> farg;
       list<Slot> slots_1,newslots,slots;
@@ -9029,13 +9031,13 @@ algorithm
       Types.PolymorphicBindings polymorphicBindings;
 
     // impl const Fill slots with positional arguments
-    case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,pre,info)
+    case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,st,pre,info)
       equation
         farg = funcargLstFromSlots(slots);
         (cache,slots_1,clist1,polymorphicBindings) =
-          elabPositionalInputArgs(cache, env, exp, farg, slots, checkTypes, impl, polymorphicBindings,pre,info);
+          elabPositionalInputArgs(cache, env, exp, farg, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         (cache,_,newslots,clist2,polymorphicBindings) =
-          elabInputArgs(cache, env, {}, narg, slots_1, checkTypes, impl, polymorphicBindings,pre,info)
+          elabInputArgs(cache, env, {}, narg, slots_1, checkTypes, impl, polymorphicBindings,st,pre,info)
           "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
         explst = expListFromSlots(newslots);
@@ -9043,18 +9045,18 @@ algorithm
         (cache,explst,newslots,clist,polymorphicBindings);
 
     // Fill slots with named arguments
-    case (cache,env,{},narg as _::_,slots,checkTypes,impl,polymorphicBindings,pre,info)
+    case (cache,env,{},narg as _::_,slots,checkTypes,impl,polymorphicBindings,st,pre,info)
       equation
         farg = funcargLstFromSlots(slots);
         (cache,newslots,clist,polymorphicBindings) =
-          elabNamedInputArgs(cache, env, narg, farg, slots, checkTypes, impl, polymorphicBindings,pre,info);
+          elabNamedInputArgs(cache, env, narg, farg, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         newexp = expListFromSlots(newslots);
       then
         (cache,newexp,newslots,clist,polymorphicBindings);
 
     // Empty function call, e.g foo(), is always constant
     // arpo 2010-11-09: TODO! FIXME! this is not always true, RecordCall() can contain DEFAULT bindings that are par
-    case (cache,env,{},{},slots,checkTypes,impl,polymorphicBindings,_,_)
+    case (cache,env,{},{},slots,checkTypes,impl,polymorphicBindings,_,_,_)
       then (cache,{},slots,{DAE.C_CONST()},polymorphicBindings);
 
     // fail trace
@@ -9372,6 +9374,7 @@ protected function elabPositionalInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings inPolymorphicBindings;
+  input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9380,7 +9383,7 @@ protected function elabPositionalInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,st,inPrefix,info)
     local
       list<Slot> slots,slots_1,newslots;
       Boolean impl;
@@ -9403,61 +9406,61 @@ algorithm
       Types.PolymorphicBindings polymorphicBindings;
 
     // the empty case
-    case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
+    case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,_,pre,info)
       then (cache,slots,{},polymorphicBindings);
 
-    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,info)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,info);
         (cache,slots_1,clist,polymorphicBindings) =
-        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings, pre, info);
+        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings, st, pre, info);
         newslots = fillSlot(farg, e_1, {}, slots_1,checkTypes,pre,info);
       then
         (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // exact match
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         // TODO: Check const
         (cache,slots_1,clist,polymorphicBindings) =
-        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
+        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         newslots = fillSlot((id,vt,c1,NONE()), e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         // TODO: Check const...
         (cache,slots_1,clist,_) =
-          elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
+          elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,st,pre,info);
         newslots = fillSlot((id,vt,c1,NONE()), e_2, ds, slots_1, checkTypes,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // not checking types
-    case (cache, env, (e :: es), ((farg as (id,vt,_,_)) :: vs), slots, checkTypes as false, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (id,vt,_,_)) :: vs), slots, checkTypes as false, impl, polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (cache,slots_1,clist,polymorphicBindings) =
-          elabPositionalInputArgs(cache, env, es, vs, slots,checkTypes, impl, polymorphicBindings,pre,info);
+          elabPositionalInputArgs(cache, env, es, vs, slots,checkTypes, impl, polymorphicBindings,st,pre,info);
         /* fill slot with actual type for error message*/
         newslots = fillSlot((id,t,c1,NONE()), e_1, {}, slots_1, checkTypes,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check types and display error
-    case (cache, env, (e :: es), ((farg as (_,vt,_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (_,vt,_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,info)
       equation
         /* FAILTRACE REMOVE
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
@@ -9471,7 +9474,7 @@ algorithm
       then
         fail();
     // failtrace
-    case (cache, env, es, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
+    case (cache, env, es, _, slots, checkTypes, impl, polymorphicBindings,st,pre,info)
       equation
         /* FAILTRACE REMOVE
         Debug.fprint(Flags.FAILTRACE, "elabPositionalInputArgs failed: expl:");
@@ -9499,6 +9502,7 @@ protected function elabNamedInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings inPolymorphicBindings;
+  input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9507,7 +9511,7 @@ protected function elabNamedInputArgs
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
-  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,inPolymorphicBindings,st,inPrefix,info)
     local
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
@@ -9526,46 +9530,46 @@ algorithm
       Types.PolymorphicBindings polymorphicBindings;
 
     // the empty case
-    case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings,_,_)
+    case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings,_,_,_)
       then (cache,slots,{},polymorphicBindings);
 
     // check types exact match
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,pre,info)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         vt = findNamedArgType(id, farg);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot((id,vt,c1,NONE()), e_2, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
-          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,pre,info);
+          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,st,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check types vectorized argument
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,pre,info)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         vt = findNamedArgType(id, farg);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         slots_1 = fillSlot((id,vt,c1,NONE()), e_2, ds, slots, checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
-          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,pre,info);
+          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,st,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // do not check types
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as false,impl,polymorphicBindings,pre,info)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as false,impl,polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env, e, impl,st,true,pre,info);
         vt = findNamedArgType(id, farg);
         slots_1 = fillSlot((id,vt,c1,NONE()), e_1, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
-          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,pre,info);
+          elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,st,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // failure
-    case (cache,env,narg,farg,_,checkTypes,impl,polymorphicBindings,pre,info)
+    case (cache,env,narg,farg,_,checkTypes,impl,polymorphicBindings,_,pre,info)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr3(pre);
