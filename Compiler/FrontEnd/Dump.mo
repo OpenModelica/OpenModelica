@@ -1715,11 +1715,18 @@ algorithm
       Ident s1,s2,res;
       Absyn.ElementSpec spec;
       Option<Absyn.Comment> cmt;
-    case (Absyn.CONSTRAINCLASS(elementSpec = spec,comment = cmt))
+      Absyn.Path path;
+      list<Absyn.ElementArg> el;
+      String path_str, el_str, cmt_str;
+
+    case (Absyn.CONSTRAINCLASS(elementSpec = 
+        Absyn.EXTENDS(path = path, elementArg = el), comment = cmt))
       equation
-        s1 = unparseElementspecStr(0, spec, "", ("",""), "");
-        s2 = unparseCommentOption(cmt);
-        res = stringAppend(s1, s2);
+        path_str = Absyn.pathString(path);
+        cmt_str = unparseCommentOption(cmt);
+        el_str = getStringList(el, unparseElementArgStr, ", ");
+        el_str = Util.if_(Util.isEmptyString(el_str), el_str, "(" +& el_str +& ")");
+        res = stringAppendList({"constrainedby ", path_str, el_str, cmt_str});
       then
         res;
   end match;
