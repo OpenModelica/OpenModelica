@@ -171,7 +171,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	  _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
 	  _historyImpl = new HistoryImplType(globalSettings);
 	  <%arrayReindex(modelInfo)%>
-	 /* <%arrayInit(simCode)%> */
+	  <%arrayInit(simCode)%> 
 	 //Load Algloopsover library
 	 type_map types;
 	std::string algsover_name(SYSTEM_LIB);
@@ -1148,6 +1148,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initEventHandling%>
     _event_handling.init(this,<%helpvarlength(simCode)%>);
     saveAll();
+    vector<unsigned int> var_ouputs_idx;
     <%initOutputIndices%>;	
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
@@ -2752,15 +2753,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%initValst(vars.intAliasVars, simCode)%>
   <%initValst(vars.boolAliasVars, simCode)%>
   <%initValst(vars.constVars, simCode)%>
- /*
-  <%initValst(vars.intConstVars, simCode)%>
-  <%initValst(vars.boolConstVars, simCode)%>
-  <%initValst(vars.stringConstVars, simCode)%>
-  <%initValst(vars.paramVars, simCode)%>
-  <%initValst(vars.intParamVars, simCode)%>
-  <%initValst(vars.boolParamVars, simCode)%>
-  <%initValst(vars.stringParamVars, simCode)%>
-  */
  >>
 end initvar;
 
@@ -2794,13 +2786,12 @@ template boundParameters(list<SimEqSystem> parameterEquations,Text &varDecls,Sim
 end boundParameters;
 
 template outputIndices(ModelInfo modelInfo)
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
+::= match modelInfo
+case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
+    if varInfo.numOutVars then
     <<
-    vector<unsigned int> var_ouputs_idx;
-	var_ouputs_idx+=//<%vars.outputVars |> SIMVAR(__) => '<%index%>';separator=","%>
-	<%{(vars.algVars |> SIMVAR(__) => if isOutput(causality) then '<%index%>';separator=","),
+	var_ouputs_idx+=<%
+	{(vars.algVars |> SIMVAR(__) => if isOutput(causality) then '<%index%>';separator=","),
     (vars.intAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.boolAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.stateVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%index%>';separator=","),
@@ -3096,7 +3087,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
    			_algLoopSolver<%index%>->solve(command);
   	>>
   else
-    "NOT IMPLEMENTED EQUATION"
+    "NOT IMPLEMENTED EQUATION" 
 end equation_;
 
 template generateAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
