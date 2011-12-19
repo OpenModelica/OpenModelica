@@ -706,7 +706,7 @@ algorithm
     case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,msg)
       equation
         (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
-        valLst = List.map2(valLst,evalCodeTypeName,cache,env);
+        valLst = List.map1(valLst,evalCodeTypeName,env);
         st = Util.getOptionOrDefault(stOpt, st);
         (cache,value,st) = cevalInteractiveFunctions2(cache,env,name,valLst,st,msg);
       then 
@@ -5431,17 +5431,16 @@ end unparseGroupImport;
 
 protected function evalCodeTypeName
   input Values.Value val;
-  input Env.Cache cache;
   input Env.Env env;
   output Values.Value res;
 algorithm
-  res := matchcontinue (val,cache,env)
+  res := matchcontinue (val,env)
     local
       Absyn.Path path;
       String s1;
-    case (Values.CODE(Absyn.C_TYPENAME(path)),cache,env)
+    case (Values.CODE(Absyn.C_TYPENAME(path)),env)
       equation
-        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.pathToCref(path));
+        (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
       then Values.CODE(Absyn.C_TYPENAME(path));
     else val;    
   end matchcontinue;
