@@ -5409,7 +5409,7 @@ algorithm
       list<ElementItem> elts;
     case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,classParts,_),info)
       equation
-        elts = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
+        (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
       then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,PUBLIC(elts)::{},NONE()),info);
   end match;
 end getFunctionInterface;
