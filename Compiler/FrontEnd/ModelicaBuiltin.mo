@@ -63,6 +63,9 @@ function assert
   input String message;
   input AssertionLevel level;
 external "builtin";
+annotation(Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'assert()'\">terminal()</a>
+</html>"));
 end assert;
 
 function constrain
