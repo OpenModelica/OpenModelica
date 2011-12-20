@@ -165,7 +165,7 @@ items:={Item(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
         sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
                     last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
-                    "<td>" + filename(OpenModelica.Scripting.getClassComment(cl)) + "</td></tr>\n"
+                    "<td>" + OpenModelica.Scripting.getClassComment(cl) + "</td></tr>\n"
                 for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
         "</table>"
         ),
