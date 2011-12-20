@@ -103,17 +103,22 @@ public function unparseStr
 "function: unparseStr
   Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
-  input Boolean inBoolean "Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica. Contact peter.aronsson@mathcore.com for
-  explanation";
+  input Boolean markup "
+    Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica.
+    Contact peter.aronsson@mathcore.com for an explanation.
+    
+    Note: This will be used for a different purpose in OpenModelica once we redesign Dump to use templates
+          ... by sending in DumpOptions (for example to add markup, etc)
+    ";
   output String outString;
 algorithm
-  outString := matchcontinue (inProgram,inBoolean)
+  outString := matchcontinue (inProgram,markup)
     local
       Ident s1,s2,str;
       list<Absyn.Class> cs;
       Absyn.Within w;
     case (Absyn.PROGRAM(classes = {}),_) then "";
-    case (Absyn.PROGRAM(classes = cs,within_ = w),_)
+    case (Absyn.PROGRAM(classes = cs,within_ = w),markup)
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
@@ -124,7 +129,7 @@ algorithm
   end matchcontinue;
 end unparseStr;
 
-public function unparseClassList
+protected function unparseClassList
 "function: unparseClassList
   Prettyprints a list of classes"
   input Integer inInteger;

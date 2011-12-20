@@ -1627,6 +1627,7 @@ end stringReplace;
 function list "Lists the contents of the given class, or all loaded classes"
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean interfaceOnly := false;
+  input Boolean shortOnly := false "only short class definitions";
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1635,6 +1636,7 @@ Pretty-prints a class definition.
 <blockquote>
 <pre><b>list</b>(Modelica.Math.sin)</pre>
 <pre><b>list</b>(Modelica.Math.sin,interfaceOnly=true)</pre>
+</blockquote>
 <h4>Description</h4>
 <p>list() pretty-prints the whole of the loaded AST while list(className) lists a class and its children.
 It keeps all annotations and comments intact but strips out any comments and normalizes white-space.</p>

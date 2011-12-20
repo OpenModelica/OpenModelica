@@ -5393,6 +5393,53 @@ algorithm
   ge := not pathLt(path1,path2);
 end pathGe;
 
+public function getShortClass "Strips out long class definitions"
+  input Class cl;
+  output Class o;
+algorithm
+  o := match cl
+    local
+      Ident name;
+      Boolean pa, fi, en;
+      Restriction re;
+      ClassDef body;
+      Info info;
+    case CLASS(body=PARTS(comment=_)) then fail();
+    case CLASS(body=CLASS_EXTENDS(comment=_)) then fail();
+    case CLASS(name,pa,fi,en,re,body,info)
+      equation
+        body = stripClassDefComment(body);
+      then CLASS(name,pa,fi,en,re,body,info);
+  end match;
+end getShortClass;
+
+protected function stripClassDefComment "Strips out long class definitions"
+  input ClassDef cl;
+  output ClassDef o;
+algorithm
+  o := match cl
+    local
+      EnumDef enumLiterals;
+      TypeSpec typeSpec;
+      ElementAttributes attributes;
+      list<ElementArg> arguments;
+      list<Path> functionNames;
+      Path functionName;
+      list<Ident> vars;
+      list<String> typeVars;
+      Ident baseClassName;
+      list<ElementArg> modifications;
+      list<ClassPart> parts;
+    case PARTS(typeVars,parts,_) then PARTS(typeVars,parts,NONE());
+    case CLASS_EXTENDS(baseClassName,modifications,_,parts) then CLASS_EXTENDS(baseClassName,modifications,NONE(),parts);
+    case DERIVED(typeSpec,attributes,arguments,_) then DERIVED(typeSpec,attributes,arguments,NONE());
+    case ENUMERATION(enumLiterals,_) then ENUMERATION(enumLiterals,NONE());
+    case OVERLOAD(functionNames,_) then OVERLOAD(functionNames,NONE());
+    case PDER(functionName,vars,_) then PDER(functionName,vars,NONE());
+    else cl;
+  end match;
+end stripClassDefComment;
+
 public function getFunctionInterface "Strips out the parts of a function definition that are not needed for the interface"
   input Class cl;
   output Class o;

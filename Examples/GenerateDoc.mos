@@ -30,7 +30,7 @@
  */
 
 /*
- * Generates Modelica documentation automatically in about 30 minutes
+ * Generates Modelica documentation automatically in about 8 minutes on Linux, 30 on Windows
  *   Includes Modelica standard libraries
  *   Most Modelica builtin operators
  *   Some non-Modelica-but-used-in-MSL operators
@@ -113,7 +113,10 @@ function head
 protected
   String compound := \"\", file;
 algorithm
-  head := \"<title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>\n<h1><a href = \\\"index.html\\\">.</a>\";
+  head :=
+\"  <link href=\\\"style.css\\\" rel=\\\"stylesheet\\\" type=\\\"text/css\\\" />
+  <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
+  <h1><a href = \\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
     file := compound+\".html\";
@@ -130,10 +133,10 @@ protected
   String docInfo, revision;
 algorithm
   docInfo := if item.docInfo[1] == \"\" or (not OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\"))
-    then preSuffixIfNotEmpty(\"<pre>\", item.comment, \"</pre>\")
-    else item.docInfo[1];
+    then preSuffixIfNotEmpty(\"<h2>Information:</h2><pre>\", item.comment, \"</pre>\")
+    else \"<h2>Information:</h2>\" + item.docInfo[1];
   revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions:</h2>\" + item.docInfo[2] else \"\";
-  res := item.head + docInfo + item.interface + item.contents + revision + version;
+  res := item.head + docInfo + item.interface + item.short + item.contents + revision + version;
 end itemString;
 
 function itemFile
@@ -148,6 +151,7 @@ record Item
   String contents;
   String comment;
   String interface;
+  String short;
 end Item;
 ");
 
@@ -166,7 +170,8 @@ items:={Item(
         "</table>"
         ),
       OpenModelica.Scripting.getClassComment(c),
-      preSuffixIfNotEmpty("\n<h4>Interface</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>")
+      preSuffixIfNotEmpty("\n<h4>Interface</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
+      preSuffixIfNotEmpty("\n<h4>Definition</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
     ) for c in b};
 print("Start writing items to file");
 echo(true);
@@ -177,7 +182,7 @@ getErrorString();
 dirs := "";
 replaceCommands := "";
 filetmp := "index.html";
-writeFile(filetmp, "<html><head><title>Modelica Documentation</title></head><body><h1>Modelica Documentation</h1>\n");
+writeFile(filetmp, "<html><head><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, libraries shipped with OpenModelica and the documentation for OpenModelica-specific scripting.</p>\n", append = true);
 writeFile(filetmp, "<h2>Contents</h2>\n", append = true);
 writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
@@ -256,6 +261,31 @@ for f in `cat tmp`; do
 done
 ");
 
+writeFile("style.css","
+table
+{
+    border-color: black;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+table td,th
+{
+    border-color: black;
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    margin: 0;
+    padding: 4px;
+}
+
+pre
+{
+    white-space: pre-wrap; /* CSS 3 */
+}
+");
+
 system("rm -f tidy.log tidy.2.log");
 system("mkdir -p old-html-tmp");
 system("cp *.html old-html-tmp/");
@@ -267,6 +297,6 @@ system("rm -f ModelicaDocumentation.tar.xz");
 system("mkdir -p " + dirs);
 "tar";
 dirs;
-cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.log";
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.log";
 system(cmd);
 getErrorString();

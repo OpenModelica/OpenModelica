@@ -764,7 +764,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
       Interactive.Statements istmts;
-      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin;
+      Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -993,10 +993,11 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
-        absynClass = Debug.bcallret1(b,Absyn.getFunctionInterface,absynClass,absynClass);
+        absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
+        absynClass = Debug.bcallret1(b2,Absyn.getShortClass,absynClass,absynClass);
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),false) ;
       then
         (cache,Values.STRING(str),st);
