@@ -123,6 +123,7 @@ protected
   Boolean isDir;
 algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+  // print("System.getLoadModelPath: " +& id +& " {" +& stringDelimitList(prios,",") +& "} " +& stringDelimitList(mps,",") +& " => " +& mp +& " " +& name +& " " +& boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
   outProgram := loadClassFromMp(id, mp, name, isDir);
 end loadClassFromMps;

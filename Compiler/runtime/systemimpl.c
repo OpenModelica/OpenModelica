@@ -1505,6 +1505,8 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             if (versionLen == 3) version = NULL;
             cIsDir = 0;
             versionLen -= 3;
+          } else if (!(ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN)) {
+            continue;
           }
         } else if (ent->d_name[nlen] == '\0') {
           version = NULL;
