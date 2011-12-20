@@ -13090,6 +13090,12 @@ algorithm
       then
         SOME(res);
 
+    case (Absyn.CLASS(body = Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),id,f)
+      equation
+        SOME(res) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(res);
+
     case (Absyn.CLASS(body = Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),id,f)
       equation
         SOME(res) = getNamedAnnotationStr(annlst,id,f);
