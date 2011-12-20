@@ -133,9 +133,9 @@ protected
   String docInfo, revision;
 algorithm
   docInfo := if item.docInfo[1] == \"\" or (not OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\"))
-    then preSuffixIfNotEmpty(\"<h2>Information:</h2><pre>\", item.comment, \"</pre>\")
-    else \"<h2>Information:</h2>\" + item.docInfo[1];
-  revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions:</h2>\" + item.docInfo[2] else \"\";
+    then preSuffixIfNotEmpty(\"<h2>Information</h2><pre>\", item.comment, \"</pre>\")
+    else \"<h2>Information</h2>\" + item.docInfo[1];
+  revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions</h2>\" + item.docInfo[2] else \"\";
   res := item.head + docInfo + item.interface + item.short + item.contents + revision + version;
 end itemString;
 
