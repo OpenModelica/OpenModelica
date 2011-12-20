@@ -3346,14 +3346,16 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Absyn.ElementArg m;
       Env.Cache cache;
+      Absyn.Info mod_info;
+
     case (cache,env,{},_,_,msg,info) then (cache,{});
     /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg,info)
+    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,info)
       equation
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg, info);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
       then
-        (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt) :: res);
+        (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt,mod_info) :: res);
     case (cache,env,(m :: args),impl,st,msg,info) /* TODO: look through redeclarations for Eval(var) as well */
       equation
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);

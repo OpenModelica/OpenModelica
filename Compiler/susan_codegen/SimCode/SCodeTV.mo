@@ -373,7 +373,7 @@ package SCode
     record REDECL
       Final         finalPrefix;
       Each          eachPrefix;
-      list<Element> elementLst;
+      Element       element;
     end REDECL;
 
     record NOMOD end NOMOD;

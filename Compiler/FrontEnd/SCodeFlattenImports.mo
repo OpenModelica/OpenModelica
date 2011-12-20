@@ -469,18 +469,19 @@ algorithm
       SCode.Each ep;
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> opt_exp;
-      list<SCode.Element> el;
+      SCode.Element el;
+      Absyn.Info info;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp), _, inInfo)
+    case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, inInfo)
       equation
         opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
         sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
-        SCode.MOD(fp, ep, sub_mods, opt_exp);
+        SCode.MOD(fp, ep, sub_mods, opt_exp, info);
 
     case (SCode.REDECL(fp, ep, el), _, _)
       equation
-        el = List.map1(el, flattenRedeclare, inEnv);
+        el = flattenRedeclare(el, inEnv);
       then
         SCode.REDECL(fp, ep, el);
 

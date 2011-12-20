@@ -153,55 +153,55 @@ protected constant SCode.Element enumType = SCode.CLASS("EnumType",commonPrefixe
 
 protected constant SCode.Element unit = SCode.COMPONENT("unit",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
 protected constant SCode.Element quantity = SCode.COMPONENT("quantity",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element displayUnit = SCode.COMPONENT("displayUnit",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element min = SCode.COMPONENT("min",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element max = SCode.COMPONENT("max",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element realStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element integerStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element stringStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element booleanStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element fixed = SCode.COMPONENT("fixed",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo) "Should be true for variables" ;
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo) "Should be true for variables" ;
 
 protected constant SCode.Element nominal = SCode.COMPONENT("nominal",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
-          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE()),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE(), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
           SOME((
           Absyn.CREF(
-          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE(),NONE(),Absyn.dummyInfo);
+          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
 protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("never",commonPrefixes,

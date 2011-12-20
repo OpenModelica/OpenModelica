@@ -123,8 +123,8 @@ algorithm
       DAE.Properties prop;
       Option<Values.Value> e_val;
       Absyn.Exp e;
-      list<tuple<SCode.Element, DAE.Mod>> elist_1;
-      list<SCode.Element> elist;
+      tuple<SCode.Element, DAE.Mod> el_mod;
+      SCode.Element elem;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -161,12 +161,12 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e))));
 
     // redeclarations
-    case (cache,env,ih,pre,(m as SCode.REDECL(finalPrefix = finalPrefix, eachPrefix = each_, elementLst = elist)),impl,info)
+    case (cache,env,ih,pre,(m as SCode.REDECL(finalPrefix = finalPrefix, eachPrefix = each_, element = elem)),impl,info)
       equation
         //elist_1 = Inst.addNomod(elist);
-        (elist_1) = elabModRedeclareElements(cache,env,ih,pre,finalPrefix,elist,impl,info);
+        (el_mod) = elabModRedeclareElement(cache,env,ih,pre,finalPrefix,elem,impl,info);
       then
-        (cache,DAE.REDECL(finalPrefix,each_,elist_1));
+        (cache,DAE.REDECL(finalPrefix,each_,{el_mod}));
 
     // failure
     /*
@@ -247,18 +247,18 @@ algorithm
   end match;
 end checkIfSubmodsAreBasicTypeMods;
 
-protected function elabModRedeclareElements
+protected function elabModRedeclareElement
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Final finalPrefix;
-  input list<SCode.Element> inElts;
+  input SCode.Element inElt;
   input Boolean impl;
   input Absyn.Info info;
-  output list<tuple<SCode.Element, DAE.Mod>> modElts "the elaborated modifiers";
+  output tuple<SCode.Element, DAE.Mod> modElts "the elaborated modifiers";
 algorithm
-  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,inElts,impl,info)
+  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,info)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre;
       SCode.Final f,fi;
@@ -283,10 +283,6 @@ algorithm
       list<SCode.Enum> enumLst;
       Option<SCode.Comment> comment;
       SCode.Element element;
-      list<SCode.Element> elts;
-
-    /* the empty case */
-    case(cache,env,_,pre,f,{},_,_) then ({});
 
     // Only derived classdefinitions supported in redeclares for now. 
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet, 
@@ -294,41 +290,36 @@ algorithm
     //       replacing entire functions with PARTS and everything, so i added the case below
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1,cmt),i)::elts,impl,info)
+        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),impl,info)
       equation
        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-       (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
       then 
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),emod)::modElts);
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),emod));
 
     // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i)::elts,impl,info)
-      equation
-        (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
+        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i),impl,info)
       then 
-        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i),DAE.NOMOD())::modElts);
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst,comment),i),DAE.NOMOD()));
 
     // redeclare of component declaration
-    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i)::elts,impl,info) 
+    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),impl,info) 
       equation
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-        (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
       then 
-        ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod)::modElts);
+        ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod));
 
     // redeclare failure?
-    case(cache,env,ih,pre,f,element::elts,impl,info)
+    case(cache,env,ih,pre,f,element,impl,info)
       equation
         //print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element) +& "\n");
-        modElts = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
       then
-        (element,DAE.NOMOD())::modElts;
+        ((element,DAE.NOMOD()));
   end match;
-end elabModRedeclareElements;
+end elabModRedeclareElement;
 
 protected function elabModQualifyTypespec
 "Help function to elabModRedeclareElements.
@@ -403,8 +394,7 @@ algorithm
       list<DAE.SubMod> subs;
       Absyn.Exp e,e_1,absynExp;
       DAE.Properties p;
-      list<SCode.Element> elist_1;
-      list<tuple<SCode.Element, DAE.Mod>> elist;
+      SCode.Element elem;
       DAE.Exp dexp;
       String str;
       
@@ -413,12 +403,12 @@ algorithm
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,NONE());
+        SCode.MOD(finalPrefix,each_,subs_1,NONE(),Absyn.dummyInfo);
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))))
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false))); // Default type checking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),Absyn.dummyInfo); // Default type checking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         eqModOption = SOME(DAE.TYPED(_,_,p,SOME(absynExp))))))
@@ -427,7 +417,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = absynExp; //Expression.unelabExp(e);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),Absyn.dummyInfo); // default typechecking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         eqModOption = SOME(DAE.TYPED(dexp,_,p,NONE())))))
@@ -437,13 +427,12 @@ algorithm
         (dexp,_) = ExpressionSimplify.simplify1(dexp);
         e_1 = Expression.unelabExp(dexp);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),Absyn.dummyInfo); // default typechecking non-delayed
 
-    case ((m as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = elist)))
-      equation
-        elist_1 = List.map(elist, Util.tuple21);
+    case ((m as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = {(elem, _)})))
       then
-        SCode.REDECL(finalPrefix,each_,elist_1);
+        SCode.REDECL(finalPrefix,each_,elem);
+
     case (mod)
       equation
         str = "Mod.elabUntypedMod failed: " +& printModStr(mod) +& "\n";
@@ -692,8 +681,7 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Absyn.Exp e;
-      list<tuple<SCode.Element, DAE.Mod>> elist_1;
-      list<SCode.Element> elist;
+      SCode.Element elem;
       Ident s;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
     case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
@@ -706,11 +694,9 @@ algorithm
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e)));
-    case ((m as SCode.REDECL(finalPrefix = finalPrefix,eachPrefix = each_, elementLst = elist)),env,pre)
-      equation
-        elist_1 = Inst.addNomod(elist);
+    case ((m as SCode.REDECL(finalPrefix = finalPrefix,eachPrefix = each_, element = elem)),env,pre)
       then
-        DAE.REDECL(finalPrefix,each_,elist_1);
+        DAE.REDECL(finalPrefix,each_,{(elem, DAE.NOMOD())});
     case (mod,env,pre)
       equation
         print("- elab_untyped_mod ");

@@ -256,7 +256,7 @@ algorithm
       list<SCode.SubMod> subModLst;
       Option<tuple<Absyn.Exp, Boolean>> binding;      
       
-    case (inName, SCode.MOD(finalPrefix, eachPrefix, subModLst, binding), inEnv, inPathScope, inElementOrigin, inModType)
+    case (inName, SCode.MOD(finalPrefix, eachPrefix, subModLst, binding, _), inEnv, inPathScope, inElementOrigin, inModType)
       equation
         // TODO! add mod to hashtable
         hashTable = emptyHashTable();

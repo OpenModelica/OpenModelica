@@ -101,12 +101,13 @@ uniontype Mod "- Modifications"
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
     should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
     type checked -before- a is instantiated, which is the current design in instantiation process.";
+    Absyn.Info info;
   end MOD;
 
   record REDECL
     Final         finalPrefix "final prefix";    
-    Each          eachPrefix "each prefix";    
-    list<Element> elementLst  "elements";
+    Each          eachPrefix  "each prefix";    
+    Element       element     "The new element declaration.";
   end REDECL;
 
   record NOMOD end NOMOD;
@@ -592,22 +593,21 @@ protected import SCodeDump;
 
 
 public function stripSubmod
-"function: stripSubmod
-  author: PA
-  Removes all submodifiers from the Mod."
+  "Removes all submodifiers from the Mod."
   input Mod inMod;
   output Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod)
+  outMod := match(inMod)
     local
-      Final f;
-      Each each_;
-      list<SubMod> subs;
-      Option<tuple<Absyn.Exp,Boolean>> e;
-      Mod m;
-    case (MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,binding = e)) then MOD(f,each_,{},e);
-    case (m) then m;
-  end matchcontinue;
+      Final fp;
+      Each ep;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Absyn.Info info;
+
+    case MOD(fp, ep, _, binding, info) 
+      then MOD(fp, ep, {}, binding, info);
+    else inMod;
+  end match;
 end stripSubmod;
 
 public function getElementNamed
@@ -1472,9 +1472,9 @@ algorithm
       Each each1,each2;
       list<SubMod> submodlst1,submodlst2;
       Absyn.Exp e1,e2;
-      list<Element> elts1,elts2;
+      Element elt1,elt2;
 
-    case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))
+    case (MOD(f1,each1,submodlst1,SOME((e1,_)),_),MOD(f2,each2,submodlst2,SOME((e2,_)),_))
       equation
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
@@ -1483,7 +1483,7 @@ algorithm
       then 
         true;
     
-    case (MOD(f1,each1,submodlst1,NONE()),MOD(f2,each2,submodlst2,NONE()))
+    case (MOD(f1,each1,submodlst1,NONE(),_),MOD(f2,each2,submodlst2,NONE(),_))
       equation
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
@@ -1493,11 +1493,11 @@ algorithm
     
     case (NOMOD(),NOMOD()) then true;
     
-    case (REDECL(f1,each1,elts1),REDECL(f2,each2,elts2))
+    case (REDECL(f1,each1,elt1),REDECL(f2,each2,elt2))
       equation
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
-        List.threadMapAllValue(elts1,elts2,elementEqual,true);
+        true = elementEqual(elt1, elt2);
       then 
         true;
     
@@ -3721,6 +3721,19 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end getEvaluateAnnotation;
+
+public function getModifierInfo
+  input Mod inMod;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inMod)
+    local
+      Absyn.Info info;
+
+    case MOD(info = info) then info;
+    else Absyn.dummyInfo;
+  end match;
+end getModifierInfo;
 
 end SCode;
 

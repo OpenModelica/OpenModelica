@@ -826,8 +826,7 @@ template dumpRedeclModifier(SCode.Mod modifier)
 match modifier
   case REDECL(__) then
     let each_str = dumpEach(eachPrefix)
-    (elementLst |> e => 
-      '<%each_str%><%dumpElement(e)%>' ;separator=", ")
+    '<%each_str%><%dumpElement(element)%>'
 end dumpRedeclModifier;
     
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)

@@ -9197,7 +9197,7 @@ algorithm
       equation
         //(_, _, NONE(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         //print("here1\n");
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);
+        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((exp,_)))) = SCode.getElementNamed(id, cls);
       then
         exp;
     
@@ -9206,7 +9206,7 @@ algorithm
       equation
         (_, _, SOME((_,DAE.NOMOD())), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         print("here2");
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);
+        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((exp,_)))) = SCode.getElementNamed(id, cls);
       then
         exp;
     
@@ -9216,7 +9216,7 @@ algorithm
         (_, _, SOME((_,extendsMod)), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         print("here3");
         scodeMod = Mod.unelabMod(extendsMod);
-        SCode.MOD(_,_,_,SOME((exp,_))) = scodeMod;
+        SCode.MOD(binding = SOME((exp,_))) = scodeMod;
       then
         exp;
   end matchcontinue;
@@ -9309,7 +9309,7 @@ algorithm
       equation
         (cache,res,constLst,polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
+        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
         
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");

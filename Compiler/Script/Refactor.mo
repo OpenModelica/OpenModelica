@@ -609,6 +609,7 @@ algorithm
       list<Absyn.Subscript> s;
       Option<Real> rot;
       Env.Env env;
+      Absyn.Info info;
 
 
     case({},_,res,_,_,_,_) then res ;
@@ -620,7 +621,7 @@ algorithm
         Absyn.CREF_IDENT(name = "extent",subscripts = s),
       modification =
         SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
-      comment = com) :: rest,context as ("Component" :: c),res,cPath,path,p,env)
+      comment = com, info = info) :: rest,context as ("Component" :: c),res,cPath,path,p,env)
       equation
         Absyn.R_CONNECTOR() = getRestrictionFromPath(cPath,path,p,env)"Fails the case if we shouldn't have a iconTransformation";
         rot = getRotationDegree(listAppend(res,rest));
@@ -628,19 +629,16 @@ algorithm
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         trans = {diagramTrans,iconTrans};
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,Absyn.NOMOD())),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,Absyn.NOMOD())),/*NONE,*/com, info)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))
       then res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e,
-      componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s),
-      modification = SOME(Absyn.CLASSMOD(elementArgLst = args,
-      eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com) :: rest,
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com, info = info) :: rest,
       context as ("Component" :: c),res,cPath,path,p,env)
       equation
         rot = getRotationDegree(listAppend(res,rest));
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans},Absyn.NOMOD()))/*NONE*/,com)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))*/
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans},Absyn.NOMOD()))/*NONE*/,com, info)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))*/
       then res;
 
     case(arg :: rest,context,res,cPath,path,p,env)
@@ -796,7 +794,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -819,7 +817,7 @@ algorithm
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
         rotation = getRotationAnn(rot);
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
 
   end match;
 end getIconTransformation;
@@ -876,7 +874,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -901,7 +899,7 @@ algorithm
         rotation = getRotationAnn(rot);
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
 
   end match;
 end getDiagramTransformation;
@@ -930,7 +928,7 @@ algorithm
       equation
         aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(aspect),Absyn.dummyInfo))),NONE());
+      Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(aspect),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
   end match;
 end getAspectRatioAnn;
@@ -955,7 +953,7 @@ algorithm
       equation        
         value = (x1 +. x2) /. 2.0;
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(value),Absyn.dummyInfo))),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(value),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
   end match;
 end getXYAnn;
 
@@ -978,7 +976,7 @@ algorithm
       equation
         scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(scaleFac),Absyn.dummyInfo))),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(scaleFac),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
   end match;
 end getScaleAnn;
@@ -999,7 +997,7 @@ protected
 algorithm
 
   value := val1 >. val2;
-  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.BOOL(value),Absyn.dummyInfo))),NONE());
+  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.BOOL(value),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
 end getFlipAnn;
 
@@ -1012,7 +1010,7 @@ protected
   Real r;
 algorithm
   r := rot *. (-1.0);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(r),Absyn.dummyInfo))),NONE());
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(r),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 end getRotationAnn;
 
 
@@ -1437,30 +1435,30 @@ algorithm
       Option<String> com;
       list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
-      Absyn.Info info;
+      Absyn.Info info, mod_info;
 
     case({},_,res,p) then res ;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Connect" :: c),res,p)
       equation
         context = addContext(context,"Line");
         expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
-      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),NONE()) :: res,Absyn.NOMOD())),com)};//res;
+      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),NONE(),mod_info) :: res,Absyn.NOMOD())),com,mod_info)};//res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
         expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),com) :: res; //res;
+      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),com,mod_info) :: res; //res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Connect" :: c),res,p)
       equation
         context = addContext(context,"Line");
         args = cleanStyleAttrs(args,{},context);
         rest = listAppend(args,rest);
         res = transformConnectAnnList(rest,context,res,p);
-      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s),SOME(Absyn.CLASSMOD(res,eqMod)),com)};
+      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s),SOME(Absyn.CLASSMOD(res,eqMod)),com,mod_info)};
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args)), comment = com) :: rest,context as ("Line" :: c),res,p)
       equation
@@ -1470,36 +1468,35 @@ algorithm
       then res;
 
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "color",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.INTEGER(value = x),info))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "color",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.INTEGER(value = x),info))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
         (color1,color2,color3) = getMappedColor(x);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("color",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)}),info))),com):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("color",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)}),info))),com,mod_info):: res; 
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
         val = arrayGet(listArray(patternMapList),x+1);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("pattern",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),Absyn.dummyInfo))),com):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("pattern",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {}))),Absyn.dummyInfo))),com, mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "thickness",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "thickness",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
         thick = arrayGet(listArray(thicknessMapList),x);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("thickness",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(thick),Absyn.dummyInfo))),com):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("thickness",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.REAL(thick),Absyn.dummyInfo))),com,mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "smooth",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "smooth",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args , eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
-        res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("smooth",s), SOME(Absyn.CLASSMOD(args,eqMod)),com):: res;
+        res = transformConnectAnnList(rest,context,res,p); then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("smooth",s), SOME(Absyn.CLASSMOD(args,eqMod)),com, mod_info):: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "arrow",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "arrow",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(exp=Absyn.INTEGER(value = x)))), comment = com, info = mod_info) :: rest,context as ("Line" :: c),res,p)
       equation
         arrows = arrayGet(listArray(arrowMapList),x+1);
         val1 = arrayGet(listArray(arrows),1);
         val2 = arrayGet(listArray(arrows),2);
         res = transformConnectAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("arrow",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))}),Absyn.dummyInfo))),com):: res;
+      then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("arrow",s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))}),Absyn.dummyInfo))),com, mod_info):: res;
 
     case(arg :: rest,context,res,p)
       equation
@@ -1539,44 +1536,46 @@ algorithm
       Option<String> com;
       list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
-      Absyn.Info info;
+      Absyn.Info info, mod_info;
 
     case({},_,res,p) then res ;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Icon", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,context as ("Class" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Icon", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Class" :: c),res,p)
       equation
         c = addContext(context,"Layer");
         argRes = transAnnLstToCalls(args,c);
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE())}, eqMod)),com) :: res    ;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res    ;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,context as ("Class" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context as ("Class" :: c),res,p)
       equation
         c = addContext(context,"Layer");
         argRes = transAnnLstToCalls(args,c);
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE())}, eqMod)),com) :: res;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(Absyn.ARRAY(argRes),Absyn.dummyInfo)   )),NONE(),mod_info)}, eqMod)),com,mod_info) :: res;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,context,res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context,res,p)
       equation
         true = isLayerAnnInList(listAppend(res,rest))/*Fails the case if we have a coordsys without a layer definition*/;
-        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com) :: res;
+        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
-      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
+      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,context,res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context,res,p)
       equation
-        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com) :: res;
+        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info) :: res;
         coord = getCoordSysAnn(listAppend(res,rest),p);
-        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE()),Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE())},res);
+        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH(),
+        Absyn.CREF_IDENT("Diagram",{}),
+        SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info),Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info)},res);
         res = transformClassAnnList(rest,context,res,p);
-      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
+      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com) :: rest,context as ("Coordsys" :: c),res,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com, info = mod_info) :: rest,context as ("Coordsys" :: c),res,p)
       equation
-        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("extent",s), SOME(Absyn.CLASSMOD(args, Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}),info))),com) :: res;
+        res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("extent",s), SOME(Absyn.CLASSMOD(args, Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({x1,y1}),Absyn.ARRAY({x2,y2})}),info))),com,mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
       then res;
 
@@ -1671,18 +1670,19 @@ algorithm
       Option<String> com;
       list<Absyn.Subscript> s;
       Absyn.EqMod eqMod;
+      Absyn.Info info;
 
     case ({},_)
     then
       Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({},
       Absyn.EQMOD(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})}),Absyn.dummyInfo))),
-      NONE())},Absyn.NOMOD())),NONE())/*Create default*/;
+      NONE(),Absyn.dummyInfo)},Absyn.NOMOD())),NONE(),Absyn.dummyInfo)/*Create default*/;
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,p)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = info) :: rest,p)
       equation
         args = transformClassAnnList(args,"Coordsys"::{},{},p);
       then
-        Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("coordinateSystem", s), SOME(Absyn.CLASSMOD(args, eqMod)), com);
+        Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("coordinateSystem", s), SOME(Absyn.CLASSMOD(args, eqMod)), com, info);
 
     case(_ :: rest,p)
       equation
@@ -1943,7 +1943,7 @@ algorithm
         true = isLinebasedGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("lineColor",{}),
-        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE())::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
@@ -1952,7 +1952,7 @@ algorithm
         true = isLineGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("color",{}),
-        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE())::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
     case(inArgs,resultList, context)
@@ -1969,8 +1969,9 @@ algorithm
   res := matchcontinue(arg)
   local
     list<Absyn.ElementArg> eltargs;
-    case(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("color",{}),SOME(Absyn.CLASSMOD(eltargs,_)),_))
-    then true;
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("color",{}),
+        modification = SOME(Absyn.CLASSMOD(eltargs,_))))
+      then true;
     case(_) then false;
   end matchcontinue;
 end isLineColorModifier;
@@ -1980,7 +1981,7 @@ protected function isStyleModifier
   output Boolean res;
 algorithm
   res := matchcontinue(arg)
-    case(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("style",{}),_,_)) then true;
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("style",{}))) then true;
     case(_) then false;
   end matchcontinue;
 end isStyleModifier;
@@ -2235,7 +2236,8 @@ algorithm
 
     case(lst)
       equation
-        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(1),Absyn.dummyInfo))),NONE()) :: lst;
+        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH(),
+        Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(1),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo) :: lst;
       then lst;
   end match;
 end insertFillPatternInList;
@@ -2351,7 +2353,7 @@ algorithm
     case(oLst,tLst)
       equation
         false = isFillColorInList(listAppend(oLst,tLst));
-        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE())::tLst;
+        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::tLst;
       then (oLst,tLst);
 
     case(oLst,tLst) then (oLst,tLst);
@@ -2394,21 +2396,23 @@ algorithm
       Absyn.Each e;
       Option<String> com;
       list<Absyn.Subscript> s;
+      Absyn.Info info;
+
     case({}) then {};
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
       equation
         lst = setDefaultLineInList(rest);
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
       equation
         lst = setDefaultLineInList(rest);
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
       equation
         lst = setDefaultLineInList(rest);
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("color", s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.INTEGER(0),Absyn.dummyInfo))), com) :: lst;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("color", s), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.INTEGER(0),Absyn.dummyInfo))), com, info) :: lst;
 
     case(arg::rest)
       equation

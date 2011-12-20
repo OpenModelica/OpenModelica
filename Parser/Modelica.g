@@ -533,6 +533,7 @@ argument returns [void* ast] :
 
 element_modification_or_replaceable returns [void* ast] @init {
   ast = NULL;
+  em.ast = NULL;
 } :
     (e=EACH)? (f=FINAL)? (em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
       {
@@ -540,8 +541,10 @@ element_modification_or_replaceable returns [void* ast] @init {
       }
     ;
 
-element_modification [void *each, void *final] returns [void* ast] :
-  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt)); }
+element_modification [void *each, void *final] returns [void* ast] @init {
+  $ast = NULL;
+} :
+  cr=component_reference ( mod=modification )? cmt=string_comment { $ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt), INFO($start)); }
   ;
 
 element_redeclaration returns [void* ast]  @init {

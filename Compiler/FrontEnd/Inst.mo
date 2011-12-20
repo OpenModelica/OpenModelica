@@ -5665,7 +5665,7 @@ algorithm
       list<Absyn.Exp> be, se;
       Absyn.Exp e;
       list<SCode.SubMod> subs;
-      list<SCode.Element> els;
+      SCode.Element el;
     
     // no mods!
     case (SCode.NOMOD()) then ({}, {});
@@ -5685,7 +5685,7 @@ algorithm
         ({}, se);
     
     // redeclares
-    case (SCode.REDECL(elementLst = els))
+    case (SCode.REDECL(element = el))
       equation
         // TODO! get exps from mods in els!, i.e. redeclare X = Y(mods); redeclare X a(mods);
       then
@@ -6832,21 +6832,22 @@ algorithm
       list<SCode.SubMod> rest, subs;
       Option<tuple<Absyn.Exp, Boolean>> b;
       SCode.Mod sm;
-      list<SCode.Element> els;
+      Absyn.Info info;
       
-    case (inModOuter,SCode.REDECL(f, e, SCode.CLASS(name = _, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(name))))::els))
+    case (inModOuter,SCode.REDECL(f, e, SCode.CLASS(name = _, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(name))))))
       equation
         // lookup the class mod in the outer
         (DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(name));         
       then 
-        SCode.REDECL(f, e, cls::els);
+        SCode.REDECL(f, e, cls);
     
-    case (inModOuter, SCode.MOD(f, e, SCode.NAMEMOD(name, sm as SCode.REDECL(finalPrefix = _))::rest, b))
+    case (inModOuter, SCode.MOD(f, e, SCode.NAMEMOD(name, sm as SCode.REDECL(finalPrefix = _))::rest, b, info))
       equation
         // lookup the class mod in the outer
-        sm = chainRedeclares(inModOuter, sm); SCode.MOD(subModLst = subs) = chainRedeclares(inModOuter, SCode.MOD(f, e, rest, b));
+        sm = chainRedeclares(inModOuter, sm); 
+        SCode.MOD(subModLst = subs) = chainRedeclares(inModOuter, SCode.MOD(f, e, rest, b, info));
       then 
-        SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::subs, b);
+        SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::subs, b, info);
     
     case (_, inModInner) then inModInner;
     
@@ -7302,21 +7303,22 @@ algorithm
       Env.Cache cache;
       Integer cnt;
       Boolean delayTpCheck;
+      Absyn.Info info;
 
     // true to delay type checking/elabExp
-    case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_))))
+    case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_)), info))
       equation
         ((e1,(_,cnt))) = Absyn.traverseExp(e,removeSelfModReferenceExp,(id,0));
         (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
         delayTpCheck = cnt > 0;
       then 
-        (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck))));
+        (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck)), info));
 
-    case(cache,id,SCode.MOD(fi,ea,subs,NONE()))
+    case(cache,id,SCode.MOD(fi,ea,subs,NONE(), info))
       equation
         (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
       then 
-        (cache,SCode.MOD(fi,ea,subs,NONE()));
+        (cache,SCode.MOD(fi,ea,subs,NONE(), info));
     
     case(cache,id,inMod) then (cache,inMod);
     
@@ -9339,27 +9341,15 @@ algorithm
       SCode.Each each_;
       String n;
       SCode.Mod m,mod;
-      list<SCode.Element> xs;
       list<SCode.SubMod> submods;
       Absyn.Exp e;
 
     // For redeclarations e.g redeclare B2 b(cref=<expr>), find cref 
-    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = (SCode.COMPONENT(name = n,modifications = m) :: xs)))
+    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,element = SCode.COMPONENT(name = n,modifications = m)))
       equation
-        res1 = getCrefFromMod(SCode.REDECL(fin,each_,xs));
-        res2 = getCrefFromMod(m);
-        res = listAppend(res1, res2);
+        res = getCrefFromMod(m);
       then
         res;
-
-    // For redeclarations e.g redeclare B2 b(cref=<expr>), find cref
-    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = (_ :: xs)))
-      equation
-        res = getCrefFromMod(SCode.REDECL(fin,each_,xs));
-      then
-        res;
-    
-    case (SCode.REDECL(finalPrefix = fin,eachPrefix = each_,elementLst = {})) then {};
 
     /* Find in sub modifications e.g A(B=3) find B */
     case ((mod as SCode.MOD(subModLst = submods,binding = SOME((e,_)))))
@@ -11667,7 +11657,7 @@ algorithm
 
   case({},_,_,_,_,_,_,_) then {};
 
-  case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
+  case(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)) :: anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
      then getDeriveAnnotation3(smlst,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
   case(_::anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
@@ -11978,7 +11968,7 @@ algorithm
     
     case({}) then DAE.NO_INLINE();
 
-    case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
+    case(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)) :: cdr)
       equation
         res = isInlineFunc4(smlst);
         true = DAEUtil.convertInlineTypeToBool(res);
@@ -12006,21 +11996,21 @@ algorithm
       list<SCode.SubMod> cdr;
     case ({}) then DAE.NO_INLINE();
 
-    case (SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: cdr)
+    case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
       equation
         failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc4(cdr));
       then DAE.NORM_INLINE();
 
-    case(SCode.NAMEMOD("LateInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
 
-    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: cdr)
+    case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
       equation
         DAE.NO_INLINE() = isInlineFunc4(cdr);
       then DAE.EARLY_INLINE();
@@ -12051,6 +12041,7 @@ algorithm
       list<SCode.SubMod> modSubML;
       SCode.Element e;
       SCode.Mod modBla;
+      Absyn.Info mod_info;
       
     case (e as 
       SCode.COMPONENT(
@@ -12063,10 +12054,10 @@ algorithm
             replaceablePrefix = repPre),
           attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
-          modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_)),
+          modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, binding = SOME(_), info = mod_info),
           comment = comm, condition = cond, info = info))
       equation
-        modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());
+        modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE(),mod_info);
       then 
         SCode.COMPONENT(
           id, 
@@ -15461,24 +15452,25 @@ protected function traverseModAddFinal2
 algorithm 
   mod2 := matchcontinue(mod)
     local
-      list<SCode.Element> lelement;
+      SCode.Element element;
       SCode.Each each_;
       list<SCode.SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> eq;
+      Absyn.Info info;
   
     case(SCode.NOMOD()) then SCode.NOMOD();
   
-    case(SCode.REDECL(_,each_,lelement))
+    case(SCode.REDECL(eachPrefix = each_, element = element))
       equation
-        lelement = traverseModAddFinal3(lelement);
+        element = traverseModAddFinal3(element);
       then
-        SCode.REDECL(SCode.FINAL(),each_,lelement);
+        SCode.REDECL(SCode.FINAL(),each_,element);
   
-    case(SCode.MOD(_,each_,subs,eq))
+    case(SCode.MOD(_,each_,subs,eq,info))
       equation
         subs = traverseModAddFinal4(subs);
       then
-        SCode.MOD(SCode.FINAL(),each_,subs,eq);
+        SCode.MOD(SCode.FINAL(),each_,subs,eq,info);
   
     case(_) equation print(" we failed with traverseModAddFinal2\n"); then fail();
     
@@ -15487,13 +15479,11 @@ end traverseModAddFinal2;
 
 protected function traverseModAddFinal3
 "Helper function for traverseModAddFinal2"
-  input list<SCode.Element> ltuple;
-  output list<SCode.Element> oltuple;
+  input SCode.Element inElement;
+  output SCode.Element outElement;
 algorithm 
-  oltuple := matchcontinue(ltuple)
+  outElement := matchcontinue(inElement)
     local
-      list<SCode.Element> rest;
-      SCode.Element ele;
       SCode.Attributes attr;
       Absyn.TypeSpec tySpec;
       SCode.Mod mod, oldmod;
@@ -15506,34 +15496,22 @@ algorithm
       Option<SCode.Annotation> ann;
       Absyn.Info info;
       
-    case({}) then {};
-      
-    case( SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)::rest )
+    case SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)
       equation
-        rest = traverseModAddFinal3(rest);
         mod = traverseModAddFinal2(oldmod);
       then
-        SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info)::rest;
+        SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
         
-    case((ele as SCode.IMPORT(imp = _))::rest)
-      equation
-        rest = traverseModAddFinal3(rest);
-      then 
-        ele::rest;
+    case SCode.IMPORT(imp = _) then inElement;
+    case SCode.CLASS(name = _) then inElement;
         
-    case((ele as SCode.CLASS(name = _))::rest)
-      equation
-        rest = traverseModAddFinal3(rest);
-      then 
-        ele::rest;
-        
-    case(SCode.EXTENDS(p,vis,mod,ann,info)::rest)
+    case SCode.EXTENDS(p,vis,mod,ann,info)
       equation
         mod = traverseModAddFinal2(mod);
       then 
-        SCode.EXTENDS(p,vis,mod,ann,info)::rest;
+        SCode.EXTENDS(p,vis,mod,ann,info);
         
-    case(_) 
+    else
       equation 
         print(" we failed with traverseModAddFinal3\n"); 
       then 
@@ -15643,15 +15621,16 @@ algorithm
     Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
     list<list<Absyn.Exp>> exps;
     list<Option<Absyn.Exp>> expOpts;
+    Absyn.Info info;
     
     case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
     case (_,_,_,mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
-    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods,tup),exps,expOpts,_)
+    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods,tup, info),exps,expOpts,_)
       equation
         submods2 = traverseModAddDims5(cache,env,pre,submods,exps,expOpts);
         tup2 = insertSubsInTuple2(tup,exps);
       then
-        SCode.MOD(f, SCode.NOT_EACH(),submods2,tup2); 
+        SCode.MOD(f, SCode.NOT_EACH(),submods2,tup2, info); 
 /*    case (SCode.MOD(f, Absyn.EACH(),submods,tup),exps,expOpts,is_top)
       equation
         submods2 = traverseModAddDims3(submods,exps,expOpts);

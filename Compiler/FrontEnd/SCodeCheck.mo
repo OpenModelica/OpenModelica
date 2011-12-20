@@ -301,7 +301,7 @@ algorithm
     local
       SCode.Element el;
 
-    case (_, SCode.REDECL(elementLst = {el}), _)
+    case (_, SCode.REDECL(element = el), _)
       equation
         checkRedeclaredElementPrefix(inItem, el, inInfo);
       then

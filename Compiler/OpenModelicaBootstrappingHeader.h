@@ -1991,7 +1991,7 @@ extern struct record_description Absyn_EqMod_EQMOD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_MODIFICATION__desc_added
 #define Absyn_ElementArg_MODIFICATION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_ElementArg_MODIFICATION__desc__fields[5] = {"finalPrefix","eachPrefix","componentRef","modification","comment"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementArg_MODIFICATION__desc__fields[6] = {"finalPrefix","eachPrefix","componentRef","modification","comment","info"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementArg_MODIFICATION__desc = {
   "Absyn_ElementArg_MODIFICATION",
   "Absyn.ElementArg.MODIFICATION",
@@ -2001,8 +2001,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementArg_MODIFICATIO
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementArg_MODIFICATION__desc;
 #endif
-#define Absyn__MODIFICATION_3dBOX5 3
-#define Absyn__MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment) (mmc_mk_box6(3,&Absyn_ElementArg_MODIFICATION__desc,finalPrefix,eachPrefix,componentRef,modification,comment))
+#define Absyn__MODIFICATION_3dBOX6 3
+#define Absyn__MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment,info) (mmc_mk_box7(3,&Absyn_ElementArg_MODIFICATION__desc,finalPrefix,eachPrefix,componentRef,modification,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
 #define Absyn_ElementArg_REDECLARATION__desc_added

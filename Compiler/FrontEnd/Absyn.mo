@@ -607,6 +607,7 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
     ComponentRef componentRef "componentRef";
     Option<Modification> modification "modification";
     Option<String> comment "comment";
+    Info info;
   end MODIFICATION;
 
   record REDECLARATION

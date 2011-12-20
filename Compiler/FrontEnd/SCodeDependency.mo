@@ -912,7 +912,7 @@ protected function analyseModifier
 algorithm
   _ := match(inModifier, inEnv, inTypeEnv, inInfo)
     local
-      list<SCode.Element> el;
+      SCode.Element el;
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> bind_exp;
 
@@ -927,10 +927,10 @@ algorithm
       then
         ();
 
-    // A redeclaration modifier, analyse the redeclarations.
-    case (SCode.REDECL(elementLst = el), _, _, _)
+    // A redeclaration modifier, analyse the redeclaration.
+    case (SCode.REDECL(element = el), _, _, _)
       equation
-        List.map2_0(el, analyseRedeclareModifier, inEnv, inTypeEnv);
+        analyseRedeclareModifier(el, inEnv, inTypeEnv);
       then
         ();
   end match;

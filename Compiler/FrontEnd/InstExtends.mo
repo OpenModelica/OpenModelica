@@ -1513,38 +1513,39 @@ algorithm
       list<SCode.SubMod> subModLst;
       Absyn.Exp exp;
       Boolean b;
-      list<SCode.Element> elts; 
+      SCode.Element elt; 
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
       SCode.Mod mod;
+      Absyn.Info info;
     
     case (cache,env,SCode.NOMOD(),ht) then (cache,SCode.NOMOD());
     
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b))),ht)
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b)),info),ht)
       equation
         (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
         (cache,exp) = fixExp(cache,env,exp,ht);
       then 
-        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b))));
+        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b)),info));
     
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht)
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info),ht)
       equation
         (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
       then 
-        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
+        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info));
     
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht)
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info),ht)
       equation
         (cache, subModLst) = fixSubModList(cache, env, subModLst, ht); 
       then 
-        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
+        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info));
         
-    case (cache,env,SCode.REDECL(finalPrefix, eachPrefix, elts),ht)
+    case (cache,env,SCode.REDECL(finalPrefix, eachPrefix, elt),ht)
       equation
-        (cache,elts) = fixList(cache,env,elts,ht,fixElement);  
+        (cache, elt) = fixElement(cache, env, elt, ht);
       then 
-        (cache,SCode.REDECL(finalPrefix, eachPrefix, elts));
+        (cache,SCode.REDECL(finalPrefix, eachPrefix, elt));
         
     case (cache,env,mod,ht)
       equation

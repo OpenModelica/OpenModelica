@@ -338,7 +338,8 @@ algorithm
         // collect the modifiers!
         modifiers = getRedeclaresAndClassExtends(els, {});
         // redeclares are send down to extends
-        redeclareAsElementMods = Util.if_(valueEq({}, modifiers), SCode.NOMOD(), SCode.REDECL(SCode.NOT_FINAL(), SCode.NOT_EACH(), modifiers)); 
+        //redeclareAsElementMods = Util.if_(valueEq({}, modifiers), SCode.NOMOD(), SCode.REDECL(SCode.NOT_FINAL(), SCode.NOT_EACH(), modifiers)); 
+        redeclareAsElementMods = SCode.NOMOD();
         (cfp, oExtra) = flattenElements(els, redeclareAsElementMods, iExtra);
         //(cfp, oExtra) = flattenEqs(ne, oExtra, false); // non initial
         //(cfp, oExtra) = flattenEqs(ie, oExtra, true);  // initial

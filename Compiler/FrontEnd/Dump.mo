@@ -6578,7 +6578,7 @@ algorithm
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Info info;
-    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment)
+    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment,_)
       equation
         Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
         Print.printBuf(Util.if_(finalPrefix,"true","false"));

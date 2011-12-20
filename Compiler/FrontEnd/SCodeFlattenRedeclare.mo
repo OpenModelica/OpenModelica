@@ -627,8 +627,8 @@ algorithm
       SCodeEnv.Redeclaration redecl; 
 
     // Redeclaration of a class definition.
-    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst = 
-        {el as SCode.CLASS(name = _)})), _, _)
+    case (SCode.NAMEMOD(A = SCode.REDECL(element = 
+        el as SCode.CLASS(name = _))), _, _)
       equation
         redecl = SCodeEnv.RAW_MODIFIER(el);
         SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
@@ -636,8 +636,8 @@ algorithm
         redecl :: inRedeclares;
 
     // Redeclaration of a component.
-    case (SCode.NAMEMOD(A = SCode.REDECL(elementLst =
-        {el as SCode.COMPONENT(name = _)})), _, _)
+    case (SCode.NAMEMOD(A = SCode.REDECL(element =
+        el as SCode.COMPONENT(name = _))), _, _)
       equation
         redecl = SCodeEnv.RAW_MODIFIER(el);
         SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);

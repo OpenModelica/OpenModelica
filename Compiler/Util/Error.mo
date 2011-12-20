@@ -564,6 +564,8 @@ public constant Message SIMPLIFY_FIXPOINT_MAXIMUM = MESSAGE(209, TRANSLATION(), 
   "Expression simplification iterated to the fixpoint maximum, which may be a performance bottleneck. The last two iterations were: %s, and %s");
 public constant Message UNKNOWN_OPTION = MESSAGE(210, SCRIPTING(), ERROR(),
   "Unknown option %s.");
+public constant Message SUBSCRIPTED_MODIFIER = MESSAGE(211, TRANSLATION(), ERROR(),
+  "Subscripted modifier is illegal.");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),

@@ -440,7 +440,7 @@ algorithm
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating derived class: " +& Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH()) "TODO: attributes of derived classes";
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
       then
@@ -498,7 +498,7 @@ algorithm
         initals = translateClassdefInitialalgorithms(parts);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
         SCodeCheck.checkDuplicateElements(els);
       then
@@ -1132,7 +1132,7 @@ algorithm
       SCode.Mod m;
     case(Absyn.ANNOTATION(args))
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         res = SCode.ANNOTATION(m);
       then
         res;
@@ -1308,14 +1308,14 @@ algorithm
     case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (cc,finalPrefix,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         ann = translateAnnotation(absann);
       then
         {SCode.EXTENDS(path,vis,mod,SOME(ann),info)};
@@ -1332,7 +1332,7 @@ algorithm
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
           Absyn.COMPONENTS(attr,t,xs), info);
-        mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         pa_1 = translateVariability(variability);
         // PR. This adds the arraydimension that may be specified together with the type of the component. 
         tot_dim = listAppend(d, ad);
@@ -1467,7 +1467,7 @@ algorithm
         Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
       equation
         mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
-        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         cc_cmt = translateComment(cmt);
       then
         SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
@@ -1758,9 +1758,10 @@ public function translateMod
   input Option<Absyn.Modification> inAbsynModificationOption;
   input SCode.Final inFinalPrefix;
   input SCode.Each inEachPrefix;
+  input Absyn.Info inInfo;
   output SCode.Mod outMod;
 algorithm
-  outMod := match (inAbsynModificationOption,inFinalPrefix,inEachPrefix)
+  outMod := match (inAbsynModificationOption,inFinalPrefix,inEachPrefix,inInfo)
     local
       Absyn.Exp e;
       SCode.Final finalPrefix;
@@ -1768,22 +1769,22 @@ algorithm
       list<SCode.SubMod> subs;
       list<Absyn.ElementArg> l;
 
-    case (NONE(),_,_) then SCode.NOMOD();  /* final */
-    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix) 
-      then SCode.MOD(finalPrefix,eachPrefix,{},SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix) 
-      then SCode.MOD(finalPrefix,eachPrefix,{},NONE());
-    case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix)
+    case (NONE(),_,_,_) then SCode.NOMOD();  /* final */
+    case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_) 
+      then SCode.MOD(finalPrefix,eachPrefix,{},SOME((e,false)), inInfo);
+    case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_) 
+      then SCode.MOD(finalPrefix,eachPrefix,{},NONE(), inInfo);
+    case (SOME(Absyn.CLASSMOD(l,Absyn.EQMOD(exp=e))),finalPrefix,eachPrefix,_)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,eachPrefix,subs,SOME((e,false)));
+        SCode.MOD(finalPrefix,eachPrefix,subs,SOME((e,false)),inInfo);
 
-    case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix)
+    case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix,inInfo)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,eachPrefix,subs,NONE());
+        SCode.MOD(finalPrefix,eachPrefix,subs,NONE(), inInfo);
   end match;
 end translateMod;
 
@@ -1806,7 +1807,7 @@ algorithm
       Option<String> cmt;
       list<Absyn.ElementArg> xs;
       String n;
-      list<SCode.Element> elist;
+      SCode.Element elem;
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constropt;
@@ -1816,25 +1817,25 @@ algorithm
 
     case {} then {};
     
-    case ((Absyn.MODIFICATION(finalPrefix = finalPrefix,eachPrefix = each_,componentRef = cref,modification = mod,comment = cmt) :: xs))
+    case (Absyn.MODIFICATION(finalPrefix = finalPrefix,eachPrefix = each_,componentRef = cref,modification = mod,comment = cmt, info = info) :: xs)
       equation
         subs = translateArgs(xs);
-        mod_1 = translateMod(mod, SCode.boolFinal(finalPrefix), translateEach(each_));
+        mod_1 = translateMod(mod, SCode.boolFinal(finalPrefix), translateEach(each_), info);
         sub = translateSub(cref, mod_1);
       then
         (sub :: subs);
 
-    case ((Absyn.REDECLARATION(finalPrefix = finalPrefix,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec,constrainClass = constropt, info = info) :: xs))
+    case (Absyn.REDECLARATION(finalPrefix = finalPrefix,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec,constrainClass = constropt, info = info) :: xs)
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), SOME(keywords), SCode.PUBLIC(), spec, info)
+        {elem} = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), SOME(keywords), SCode.PUBLIC(), spec, info)
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false";
         scodeFinalPrefix = SCode.boolFinal(finalPrefix);
         scodeEachPrefix = translateEach(each_);
       then
-        (SCode.NAMEMOD(n,SCode.REDECL(scodeFinalPrefix,scodeEachPrefix,elist)) :: subs);
+        (SCode.NAMEMOD(n,SCode.REDECL(scodeFinalPrefix,scodeEachPrefix,elem)) :: subs);
 
   end match;
 end translateArgs;
@@ -1879,7 +1880,7 @@ algorithm
     case (Absyn.CREF_QUAL(name = i,subscripts = ss,componentRef = path),mod)
       equation
         sub = translateSub(path, mod);
-        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE());
+        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),Absyn.dummyInfo);
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
@@ -1897,10 +1898,15 @@ protected function translateSubSub
 algorithm
   outMod := match (inSubscriptLst,inMod)
     local
-      SCode.Mod m;
-      list<SCode.Subscript> l;
-    case ({},m) then m;
-    case (l,m) then SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{SCode.IDXMOD(l,m)},NONE());
+      Absyn.Info info;
+
+    case ({}, _) then inMod;
+    else
+      equation
+        info = SCode.getModifierInfo(inMod);
+        Error.addSourceMessage(Error.SUBSCRIPTED_MODIFIER, {}, info);
+      then
+        fail();
   end match;
 end translateSubSub;
 
@@ -2279,6 +2285,7 @@ algorithm
       Option<SCode.Annotation> ann "the extends annotation";
       Absyn.Info info;
       SCode.Mod redeclareMod;
+      list<SCode.SubMod> submods;
     
     // empty, return the same
     case (_, {}) then inElements;
@@ -2289,7 +2296,8 @@ algorithm
     // we got some
     case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
       equation
-        redeclareMod = SCode.REDECL(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
+        submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
+        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), Absyn.dummyInfo);
         mod = mergeSCodeMods(redeclareMod, mod);
         out = addRedeclareAsElementsToExtends(rest, redecls);
       then 
@@ -2323,27 +2331,35 @@ algorithm
       SCode.Final f1, f2;
       SCode.Each e1, e2;
       list<SCode.Element> els, redecls;
-      list<SCode.SubMod> subMods, newSubMods;
-      Option<tuple<Absyn.Exp, Boolean>> b;
+      list<SCode.SubMod> subMods1, subMods2;
+      Option<tuple<Absyn.Exp, Boolean>> b1, b2;
+      Absyn.Info info;
 
     // inner is NOMOD
-    case (SCode.REDECL(f1, e1, redecls), SCode.NOMOD()) then inModOuter; 
+    case (SCode.REDECL(finalPrefix = _), SCode.NOMOD()) then inModOuter; 
       
     // both are redeclarations
-    case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
-      equation
-        els = listAppend(redecls, els);
-      then
-        SCode.REDECL(f2, e2, els);
+    //case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
+    //  equation
+    //    els = listAppend(redecls, els);
+    //  then
+    //    SCode.REDECL(f2, e2, els);
          
     // inner is mod
-    case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b))
+    //case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b, info))
+    //  equation
+    //    // we need to make each redcls element into a submod!
+    //    newSubMods = makeElementsIntoSubMods(f1, e1, redecls);
+    //    newSubMods = listAppend(newSubMods, subMods);
+    //  then
+    //    SCode.MOD(f2, e2, newSubMods, b, info);
+    case (SCode.MOD(f1, e1, subMods1, b1, info), 
+          SCode.MOD(f2, e2, subMods2, b2, _))
       equation
-        // we need to make each redcls element into a submod!
-        newSubMods = makeElementsIntoSubMods(f1, e1, redecls);
-        newSubMods = listAppend(newSubMods, subMods);
+        subMods1 = listAppend(subMods1, subMods2);
+        b1 = Util.if_(Util.isSome(b1), b1, b2);
       then
-        SCode.MOD(f2, e2, newSubMods, b);
+        SCode.MOD(f1, e1, subMods1, b1, info);
          
     // failure
     case (_, _)
@@ -2391,7 +2407,7 @@ algorithm
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then 
-        SCode.NAMEMOD(n,SCode.REDECL(f,e,{el}))::newSubMods;
+        SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
         
     // class
     case (f, e, (el as SCode.CLASS(name = n))::rest)
@@ -2399,7 +2415,7 @@ algorithm
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then 
-        SCode.NAMEMOD(n,SCode.REDECL(f,e,{el}))::newSubMods;
+        SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
     
     // rest
     case (f, e, el::rest)

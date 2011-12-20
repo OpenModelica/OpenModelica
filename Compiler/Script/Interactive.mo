@@ -3134,27 +3134,27 @@ algorithm
       Absyn.ElementSpec element_spec_1,element_spec2_1,element_spec,element_spec2;
       Absyn.RedeclareKeywords redecl;
       Option<Absyn.Comment> c;
-      Absyn.Info info;
+      Absyn.Info info, mod_info;
     /* the old name for the component */
-    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str,info = mod_info),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,cr_1,
-          SOME(Absyn.CLASSMOD(element_args_1,Absyn.EQMOD(exp_1,info))),str);
-    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.NOMOD())),comment = str),old_comp,new_comp)
+          SOME(Absyn.CLASSMOD(element_args_1,Absyn.EQMOD(exp_1,info))),str,mod_info);
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.NOMOD())),comment = str, info = mod_info),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
-        Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,Absyn.NOMOD())),str);
-    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = NONE(),comment = str),old_comp,new_comp)
+        Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,Absyn.NOMOD())),str,mod_info);
+    case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,componentRef = cr,modification = NONE(),comment = str, info = mod_info),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
-        Absyn.MODIFICATION(b,each_,cr_1,NONE(),str);
+        Absyn.MODIFICATION(b,each_,cr_1,NONE(),str,mod_info);
     case (Absyn.REDECLARATION(finalPrefix = b,redeclareKeywords = redecl,eachPrefix = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c)),info = info),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
@@ -6462,7 +6462,7 @@ algorithm
           SOME(
           Absyn.CLASSMOD(
           {
-          Absyn.MODIFICATION(false,Absyn.NON_EACH(),submod,SOME(mod),NONE())},Absyn.NOMOD()))),cond,cmt) :: rest);
+          Absyn.MODIFICATION(false,Absyn.NON_EACH(),submod,SOME(mod),NONE(),Absyn.dummyInfo)},Absyn.NOMOD()))),cond,cmt) :: rest);
     
     case ((comp :: rest),varname,submodident,mod)
       equation
@@ -6526,37 +6526,38 @@ algorithm
       Absyn.Exp e;
       Absyn.ElementArg m;
       Absyn.EqMod eqMod;
+      Absyn.Info info;
     
     case ({},cref,Absyn.CLASSMOD({},Absyn.NOMOD())) then {}; // Empty modification.
-    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
+    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE(),Absyn.dummyInfo)};
     
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_)), info = info) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
       equation
         true = stringEq(name, submodident);
       then
-        Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,Absyn.NOMOD())),cmt)::rest;
+        Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,Absyn.NOMOD())),cmt,info)::rest;
     
     // Clear modification, m with no submodifiers
-    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_)), info = info) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},Absyn.NOMOD())))
       equation
         true = stringEq(name, submodident);
       then
         rest;
     
     // modfication, m=e
-    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=SOME(Absyn.CLASSMOD(submods,_)),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD({},eqMod as Absyn.EQMOD(exp=_)))) /* update modification */
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=SOME(Absyn.CLASSMOD(submods,_)),comment = cmt, info = info) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD({},eqMod as Absyn.EQMOD(exp=_)))) /* update modification */
       equation
         true = stringEq(name, submodident);
       then
-        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(Absyn.CLASSMOD(submods,eqMod)),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(Absyn.CLASSMOD(submods,eqMod)),cmt,info) :: rest);
     
     // modfication, m(...)=e
-    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt, info = info) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */
       equation
         true = stringEq(name, submodident);
       then
-        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt,info) :: rest);
     
     // Clear modification, m.n
      case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},Absyn.NOMOD()))
@@ -6574,35 +6575,35 @@ algorithm
         (rest);
    
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
+    case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())),comment = cmt, info = info) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = stringEq(name1, name2);
         {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},Absyn.NOMOD()));
       then
-        (Absyn.MODIFICATION(f,each_,cr,NONE(),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,cr,NONE(),cmt,info) :: rest);
 
    // Clear modification m(...)=expr
-   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod as Absyn.EQMOD(exp=_))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod as Absyn.EQMOD(exp=_))),comment = cmt,info = info) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},Absyn.NOMOD()))
       equation
         true = stringEq(name1, name2);
         {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},Absyn.NOMOD()));
       then
-        (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD({},eqMod)),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD({},eqMod)),cmt,info) :: rest);
 
    // modification, m for m.n
-   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,eqMod)),comment = cmt,info = info) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
       equation
         true = stringEq(name1, name2);
         args_1 = setSubmodifierInElementargs(args, cr1, mod);
       then
-        (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(args_1,eqMod)),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(args_1,eqMod)),cmt,info) :: rest);
    
    // modification, m.n for m.n
-   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr1,modification = SOME(Absyn.CLASSMOD(eqMod=_)),comment = cmt) :: rest),cr2,mod)
+   case ((Absyn.MODIFICATION(finalPrefix = f,eachPrefix = each_,componentRef = cr1,modification = SOME(Absyn.CLASSMOD(eqMod=_)),comment = cmt,info = info) :: rest),cr2,mod)
       equation
         true = Absyn.crefEqual(cr1,cr2);
       then
-        (Absyn.MODIFICATION(f,each_,cr1,SOME(mod),cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,cr1,SOME(mod),cmt,info) :: rest);
     
     // next element
     case ((m :: rest),cr,mod)
@@ -13897,7 +13898,7 @@ algorithm
     // handle empty
     case ({},info,inClass,inFullProgram,inModelPath) then {};
     
-    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_),SOME(Absyn.CLASSMOD(mod,_)),_) :: rest,info,inClass, inFullProgram, inModelPath)
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest,info,inClass, inFullProgram, inModelPath)
       equation
         lineProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(mod);
@@ -13910,7 +13911,7 @@ algorithm
         res = getConnectionAnnotationStrElArgs(rest, info, inClass, inFullProgram, inModelPath);
       then
         (gexpstr :: res);
-    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_), SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: rest,info,inClass,inFullProgram,inModelPath)
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_), modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD()))) :: rest,info,inClass,inFullProgram,inModelPath)
       equation
         gexpstr_1 = stringAppendList({annName,"(error)"});
         res = getConnectionAnnotationStrElArgs(rest, info, inClass, inFullProgram, inModelPath);
@@ -14293,15 +14294,17 @@ algorithm
       list<String> res;
       list<Absyn.ElementArg> mod, rest;
       Env.Cache cache;
+      Absyn.Info info;
 
     // handle empty
     case ({},env,inClass,inFullProgram,inModelPath) then {};
     
-    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_),SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: rest,env,inClass,inFullProgram,inModelPath)
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_),
+        modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,inClass,inFullProgram,inModelPath)
       equation
         
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT(annName), false);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,cs,t,state,_,_) =
@@ -14315,7 +14318,8 @@ algorithm
       then
         (gexpstr_1 :: res);
 
-    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_), SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: rest,env,inClass,inFullProgram,inModelPath)
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_),
+        modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD()))) :: rest,env,inClass,inFullProgram,inModelPath)
       equation
         gexpstr_1 = stringAppendList({annName,"(error)"});
         res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
@@ -14450,8 +14454,7 @@ algorithm
       list<Absyn.ElementArg> mod;
       list<Absyn.ComponentItem> rest;
     
-    case ((Absyn.COMPONENTITEM(
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),_,_) :: _)))),_))) ::
+    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("Placement",_)) :: _)))),_))) ::
       (rest as (_ :: _))),
       inClass,inFullProgram,inModelPath)
       equation
@@ -14460,8 +14463,7 @@ algorithm
         res = stringAppendList({"{", s1, "},", str});
       then
         res;
-    case ({Absyn.COMPONENTITEM(
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),_,_) :: _)))),_)))},
+    case ({Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("Placement",_)) :: _)))),_)))},
       inClass,inFullProgram,inModelPath)
       equation
         s1 = getAnnotationString(Absyn.ANNOTATION(mod),inClass,inFullProgram,inModelPath);
@@ -14654,8 +14656,9 @@ algorithm
       DAE.Properties prop;
       Absyn.Program graphicProgram;
       Env.Cache cache;
+      Absyn.Info info;
 
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
           inClass,
           inFullProgram,
           inModelPath)
@@ -14666,7 +14669,7 @@ algorithm
         
         // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
         
@@ -14692,7 +14695,7 @@ algorithm
         totstr;
 
     // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
           inClass,
           inFullProgram,
           inModelPath)
@@ -14700,7 +14703,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         
         // print("Annotation(Icon) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
@@ -14718,7 +14721,7 @@ algorithm
       then
         str;
 
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)),info = info)}),
           inClass,
           inFullProgram,
           inModelPath)
@@ -14726,7 +14729,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=graphicexp))))}) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         
         // print("Annotation(Diagram) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
@@ -14751,7 +14754,7 @@ algorithm
         totstr;
 
     // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
           inClass,
           inFullProgram,
           inModelPath)
@@ -14759,7 +14762,8 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())),
+        SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         
         // print("Annotation(Diagram) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
         
@@ -14777,7 +14781,7 @@ algorithm
       then
         str;
 
-    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
           inClass,
           inFullProgram,
           inModelPath)
@@ -14785,7 +14789,7 @@ algorithm
         // print(Dump.unparseStr(p, false));
         // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,gxmods) = stripGraphicsAndInteractionModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         
         // print("ANY Annotation(" +& anncname +& ") : " +& Dump.unparseMod1Str(mod) +& "\n");
 
@@ -17172,7 +17176,7 @@ algorithm
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))
       equation
         eltarglst = List.map(nargs, namedargToModification);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE());
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
@@ -17180,7 +17184,7 @@ algorithm
       equation
         eltarglst = List.map(nargs, namedargToModification);
         emod = recordConstructorToModification(e);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE());
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     case (e)
@@ -17210,14 +17214,14 @@ algorithm
       list<Absyn.NamedArg> nargs;
     case (Absyn.NAMEDARG(argName = id,argValue = (c as Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))))
       equation
-        Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(elts,_)),NONE()) = recordConstructorToModification(c);
+        Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(elts,_)), comment = NONE()) = recordConstructorToModification(c);
         cr_1 = Absyn.CREF_IDENT(id,{});
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr_1,SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE());
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr_1,SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     case (Absyn.NAMEDARG(argName = id,argValue = e))
       equation
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(id,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo /*Bad*/))),NONE());
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(id,{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo /*Bad*/))),NONE(),Absyn.dummyInfo);
       then
         res;
     case (_)
@@ -17768,12 +17772,14 @@ algorithm
       Absyn.ComponentRef cr,cr1;
       Option<Absyn.Modification> mod,mod1;
       Option<String> cmt;
-    case(Absyn.MODIFICATION(f,e,cr,mod,cmt))
+      Absyn.Info info;
+
+    case(Absyn.MODIFICATION(f,e,cr,mod,cmt,info))
       equation
         mod1 = transformFlatModificationOption(mod);
         cr1 = transformFlatComponentRef(cr);
       then
-        Absyn.MODIFICATION(f,e,cr1,mod1,cmt);
+        Absyn.MODIFICATION(f,e,cr1,mod1,cmt,info);
     // redeclarations not in flat Modelica
     case(eltArg as Absyn.REDECLARATION(finalPrefix = _))
       then eltArg;
