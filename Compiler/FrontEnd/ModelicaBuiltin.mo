@@ -1647,6 +1647,7 @@ empty string is returned.</p>
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>10796</td><td>sjoelund.se</td><td>Added shortOnly option</td></tr>
 <tr><td>10756</td><td>sjoelund.se</td><td>Added interfaceOnly option</td></tr>
 </table>
 </html>"),
