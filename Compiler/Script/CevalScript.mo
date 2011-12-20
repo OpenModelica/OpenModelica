@@ -987,7 +987,7 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         str = Dump.unparseStr(p,false);
       then
