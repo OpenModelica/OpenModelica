@@ -425,7 +425,7 @@ void initializeXDataStruc(_X_DATA *data)
   data->simulationInfo.initial = 0;
 
   /* initial delay */
-  data->simulationInfo.delayStructure = (RINGBUFFER**)calloc(data->modelData.nDelayExpressions, sizeof(RINGBUFFER*));
+  data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
   ASSERT(data->simulationInfo.delayStructure, "out of memory");
 
   for(i=0; i<data->modelData.nDelayExpressions; i++)
