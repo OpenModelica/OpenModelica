@@ -36,26 +36,81 @@
 #include <math.h>
 #include "openmodelica.h"
 
-extern int in_range_integer(modelica_integer i,
-         modelica_integer start,
-         modelica_integer stop);
 
-extern int in_range_real(modelica_real i,
+static inline int in_range_integer(modelica_integer i,
+         modelica_integer start,
+         modelica_integer stop)
+{
+  if (start <= stop) {
+      if ((i >= start) && (i <= stop)) {
+          return 1;
+      }
+  } else {
+      if ((i >= stop) && (i <= start)) {
+          return 1;
+      }
+  }
+  return 0;
+}
+
+static inline int in_range_real(modelica_real i,
       modelica_real start,
-      modelica_real stop);
+      modelica_real stop)
+{
+  if (start <= stop) {
+      if ((i >= start) && (i <= stop)) {
+          return 1;
+      }
+  } else {
+      if ((i >= stop) && (i <= start)) {
+          return 1;
+      }
+  }
+  return 0;
+}
+
 
 /* div is already defined in stdlib, so it's redefined here to modelica_div */
-extern modelica_real modelica_div(modelica_real x, modelica_real y);
+static inline modelica_real modelica_div(modelica_real x, modelica_real y)
+{
+  return (modelica_real)((modelica_integer)(x/y));
+}
+
+
 /* fmod in math.h does not work in the same way as mod defined by modelica, so
  * we need to define our own mod. */
-extern modelica_real modelica_mod_real(modelica_real x, modelica_real y);
-extern modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y);
+static inline modelica_real modelica_mod_real(modelica_real x, modelica_real y)
+{
+  return (x - (floor(x/y) * y));
+}
 
-extern modelica_real modelica_rem_real(modelica_real x, modelica_real y);
-extern modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y);
+static inline modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)
+{
+  return x % y;
+}
 
-extern modelica_integer modelica_integer_min(modelica_integer x, modelica_integer y);
-extern modelica_integer modelica_integer_max(modelica_integer x, modelica_integer y);
+
+static inline modelica_real modelica_rem_real(modelica_real x, modelica_real y)
+{
+  return x - (y * (modelica_div(x,y)));
+}
+
+static inline modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y)
+{
+  return x - (y * ((x / y)));
+}
+
+
+static inline modelica_integer modelica_integer_min(modelica_integer x,modelica_integer y)
+{
+  return (x < y) ? x : y;
+}
+
+static inline modelica_integer modelica_integer_max(modelica_integer x,modelica_integer y)
+{
+  return (x > y) ? x : y;
+}
+
 
 #define reduction_sum(X,Y) ((X)+(Y))
 #define reduction_product(X,Y) ((X)*(Y))
