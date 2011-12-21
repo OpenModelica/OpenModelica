@@ -47,7 +47,7 @@ newc_runtime: mkbuilddirs
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
-c_runtime: oldc_runtime newc_runtime
+c_runtime: oldc_runtime
 
 docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
