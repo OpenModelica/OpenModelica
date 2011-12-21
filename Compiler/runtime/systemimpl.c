@@ -457,7 +457,7 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
   int length;
   char *res;
   const char *str2;
-  
+
   //fprintf(stderr, "trimming '%s' with '%s'\n", str, chars_to_be_removed);
   str = trimStep(str, chars_to_be_removed, 1);
   //fprintf(stderr, "trim left '%s'\n", str);
@@ -541,7 +541,7 @@ int SystemImpl__systemCall(const char* str)
     c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
     return -1;
   } else {
-    
+
     if (waitpid(pID, &status, 0) == -1) {
       const char *tokens[2] = {strerror(errno),str};
       c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
@@ -562,11 +562,11 @@ int SystemImpl__systemCall(const char* str)
   else
     ret_val = -1;
 #endif
-  
+
   if (debug) {
     fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(NULL);
   }
-  
+
   return ret_val;
 }
 
@@ -1224,7 +1224,7 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
       free(dup);
     }
   }
-  
+
   regfree(&myregex);
 #endif /* !defined(_MSC_VER) crap compiler doesn't have regex */
   return lst;
@@ -1426,7 +1426,7 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   void *tmp = lB;
   lprec *lp;
   double inf,*vres;
-  
+
   while (RML_NILHDR != RML_GETHDR(tmp)) {
     sz++;
     tmp = RML_CDR(tmp);
@@ -1505,9 +1505,13 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             if (versionLen == 3) version = NULL;
             cIsDir = 0;
             versionLen -= 3;
-          } else if (!(ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN)) {
+          }
+#ifdef DT_DIR
+          /* dirent.d_type is a BSD extension, not part of POSIX */
+          else if (!(ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN)) {
             continue;
           }
+#endif
         } else if (ent->d_name[nlen] == '\0') {
           version = NULL;
         } else if (0 == strcmp(ent->d_name+nlen,".mo")) {
