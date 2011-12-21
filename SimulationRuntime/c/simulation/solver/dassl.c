@@ -35,7 +35,6 @@
 #include "solver_main.h"
 #include "openmodelica_func.h"
 #include "openmodelica.h"
-#include "fortran_types.h"
 
 #include <string.h>
 
