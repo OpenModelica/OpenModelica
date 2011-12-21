@@ -133,9 +133,9 @@ protected
   String docInfo, revision;
 algorithm
   docInfo := if item.docInfo[1] == \"\" or (not OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\"))
-    then preSuffixIfNotEmpty(\"<h2>Information</h2><pre>\", item.comment, \"</pre>\")
-    else \"<h2>Information</h2>\" + item.docInfo[1];
-  revision := if item.docInfo[2] <> \"\" then \"<h2>Revisions</h2>\" + item.docInfo[2] else \"\";
+    then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
+    else \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1];
+  revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
   res := item.head + docInfo + item.interface + item.short + item.contents + revision + version;
 end itemString;
 
@@ -164,14 +164,14 @@ items:={Item(
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
         sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
-                    last(OpenModelica.Scripting.strtok(OpenModelica.Scripting.typeNameString(cl),".")) + "</a></td>" + 
+                    last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + 
                     "<td>" + OpenModelica.Scripting.getClassComment(cl) + "</td></tr>\n"
                 for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
         "</table>"
         ),
       OpenModelica.Scripting.getClassComment(c),
-      preSuffixIfNotEmpty("\n<h4>Interface</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
-      preSuffixIfNotEmpty("\n<h4>Definition</h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
+      preSuffixIfNotEmpty("\n<h4><a name=\\\"text\\\">Interface</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
+      preSuffixIfNotEmpty("\n<h4><a name=\\\"text\\\">Definition</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
     ) for c in b};
 print("Start writing items to file");
 echo(true);
@@ -193,7 +193,8 @@ for cl in classNames loop
   modelVersion := getVersion(cl);
   if base == "package.mo" then
     replaceCommands := replaceCommands + "  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://" + contentStrToks[end] + "/&" + dirname(file) + "/&g;\n";
-    dirs := dirs + " \"" + contentStrToks[end] + (if modelVersion <> "" then " " + modelVersion else "") + "\" ";
+    dirpaths := strtok(dirname(file),"/");
+    dirs := dirs + " \"" + dirpaths[end] + "\" ";
   end if;
   contentStr := typeNameString(cl);
   comment := getClassComment(cl);
