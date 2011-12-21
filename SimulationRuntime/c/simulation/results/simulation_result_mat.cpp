@@ -127,7 +127,7 @@ void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
     fp.seekp(remember);
   } catch(...) {
     fp.close();
-    delete[] doubleMatrix;
+    free(doubleMatrix);
     throw;
   }
 };
@@ -192,14 +192,17 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, 0, sizeof(double));
 
     free(doubleMatrix);
+    free(intMatrix);
     doubleMatrix = NULL;
+    intMatrix = NULL;
     fp.flush();
 
   } catch(...) {
     fp.close();
     free(names); names=NULL;
-    delete[] stringMatrix;
-    delete[] doubleMatrix;
+    free(stringMatrix);
+    free(doubleMatrix);
+    free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
     THROW1("Error while writing mat file %s",filename);
   }
@@ -367,7 +370,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
   rows = nVars + nParams;
   cols = 4;
 
-  dataInfo = new int[rows*cols];
+  dataInfo = (int*) calloc(rows*cols,sizeof(int));
   ASSERT(dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
   for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1/* add one more for timeValue*/ ); ++i) {

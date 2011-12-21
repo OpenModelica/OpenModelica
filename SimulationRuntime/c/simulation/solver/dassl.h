@@ -75,6 +75,8 @@ dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
 int
 dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
-
+/* deinitial main dassl Data */
+int
+dasrt_deinitial(DASSL_DATA *dasslData);
 
 #endif

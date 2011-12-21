@@ -148,10 +148,10 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	copyStartValuestoInitValues(simData);
 	/* read input vars */
-    input_function(simData);
+  input_function(simData);
 	/* initial sample and delay before initial the system */
 	callExternalObjectConstructors(simData);
-	initSample(simData, simInfo->startTime, simInfo->stopTime);
+	//initSample(simData, simInfo->startTime, simInfo->stopTime);
 	initDelay(simData, simInfo->startTime);
 
 	/* will be removed -> DOPRI45 */
@@ -285,6 +285,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
       fclose(fmt);
       fmt = NULL;
     }
+    free(filename);
   }
 
   /*
@@ -490,6 +491,23 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     */
   }
 
+  /* deintialize solver related workspace */
+  if (flag == 2) {
+    /* free RK work arrays */
+    for (i = 0; i < ((RK4*)(solverInfo.solverData))->work_states_ndims + 1; i++)
+      free(((RK4*)(solverInfo.solverData))->work_states[i]);
+    free(((RK4*)(solverInfo.solverData))->work_states);
+  }else if (flag == 3){
+    /* De-Initial DASSL solver */
+    dasrt_deinitial(solverInfo.solverData);
+  } else if (flag == 4){
+    /* De-Initial inline solver */
+    for (i = 0; i < inline_work_states_ndims; i++)
+      free(work_states[i]);
+    free(work_states);
+  } else {
+    /* free other solver memory */
+  }
 
   if (fmt)
     fclose(fmt);

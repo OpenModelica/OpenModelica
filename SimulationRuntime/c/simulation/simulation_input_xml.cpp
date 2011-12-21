@@ -462,11 +462,11 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAlg[i]["fixed"], (signed char*)&(modelData->realVarsData[j].attribute.fixed));
     DEBUG_INFO2(LOG_SOLVER, "read fixed-value for %s = %s from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.fixed?"true":"false");
     read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal));
-    DEBUG_INFO2(LOG_SOLVER, "read nominal-value for %s = %s from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.nominal);
+    DEBUG_INFO2(LOG_SOLVER, "read nominal-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.nominal);
     read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min));
-    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s = %s from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.min);
+    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.min);
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max));
-    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s = %s from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.max);
+    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[j].info.name)]= j;

@@ -448,26 +448,59 @@ void DeinitializeXDataStruc(_X_DATA *data)
     free(tmpSimData->stringVars);
   }
   free(data->localData);
+  freeRingBuffer(data->simulationData);
 
   /* free modelData var arrays */
+  for(i=0; i < data->modelData.nVariablesReal;i++)
+    freeVarInfo(&((data->modelData.realVarsData[i]).info));
   free(data->modelData.realVarsData);
+
+  for(i=0; i < data->modelData.nVariablesInteger;i++)
+    freeVarInfo(&((data->modelData.integerVarsData[i]).info));
   free(data->modelData.integerVarsData);
+
+  for(i=0; i < data->modelData.nVariablesBoolean;i++)
+    freeVarInfo(&((data->modelData.booleanVarsData[i]).info));
   free(data->modelData.booleanVarsData);
+
+  for(i=0; i < data->modelData.nVariablesString;i++)
+    freeVarInfo(&((data->modelData.stringVarsData[i]).info));
   free(data->modelData.stringVarsData);
 
+  /* free modelica parameter static data */
+  for(i=0; i < data->modelData.nParametersReal;i++)
+    freeVarInfo(&((data->modelData.realParameterData[i]).info));
   free(data->modelData.realParameterData);
+
+  for(i=0; i < data->modelData.nParametersInteger;i++)
+    freeVarInfo(&((data->modelData.integerParameterData[i]).info));
   free(data->modelData.integerParameterData);
+
+  for(i=0; i < data->modelData.nParametersBoolean;i++)
+    freeVarInfo(&((data->modelData.booleanParameterData[i]).info));
   free(data->modelData.booleanParameterData);
+
+  for(i=0; i < data->modelData.nParametersString;i++)
+    freeVarInfo(&((data->modelData.stringParameterData[i]).info));
   free(data->modelData.stringParameterData);
 
+  /* free alias static data */
+  for(i=0; i < data->modelData.nAliasReal;i++)
+    freeVarInfo(&((data->modelData.realAlias[i]).info));
   free(data->modelData.realAlias);
+  for(i=0; i < data->modelData.nAliasInteger;i++)
+    freeVarInfo(&((data->modelData.integerAlias[i]).info));
   free(data->modelData.integerAlias);
+  for(i=0; i < data->modelData.nAliasBoolean;i++)
+    freeVarInfo(&((data->modelData.booleanAlias[i]).info));
   free(data->modelData.booleanAlias);
+  for(i=0; i < data->modelData.nAliasString;i++)
+    freeVarInfo(&((data->modelData.stringAlias[i]).info));
   free(data->modelData.stringAlias);
 
   /* free simulationInfo arrays */
-  free(data->simulationInfo.rawSampleExps);
   free(data->simulationInfo.sampleTimes);
+  free(data->simulationInfo.rawSampleExps);
 
   free(data->simulationInfo.helpVars);
   free(data->simulationInfo.helpVarsPre);
@@ -505,11 +538,15 @@ void DeinitializeXDataStruc(_X_DATA *data)
     free(data->modelData.equationInfo[i].vars);
   free(data->modelData.equationInfo);
 
+  free(data->modelData.equationInfo_reverse_prof_index);
+
   /* free delay structure */
   for(i=0; i<data->modelData.nDelayExpressions; i++)
     freeRingBuffer(data->simulationInfo.delayStructure[i]);
 
   free(data->simulationInfo.delayStructure);
+
+  pop_memory_states(NULL);
 
 }
 

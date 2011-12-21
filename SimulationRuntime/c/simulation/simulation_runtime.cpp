@@ -208,6 +208,8 @@ int verboseLevel(int argc, char**argv) {
     res = INT_MAX;
     globalDebugFlags = UINT_MAX;
   }
+
+  delete flags;
   return res;
 }
 

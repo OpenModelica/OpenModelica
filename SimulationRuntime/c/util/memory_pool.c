@@ -37,7 +37,7 @@
 /* 16 MB of data ought to be enough */
 #define NR_ELEMENTS    (4*1024*1024)
 
-static one_state *current_states;
+static one_state *current_states = NULL;
 
 void* push_memory_states(int maxThreads)
 {
@@ -59,7 +59,8 @@ void pop_memory_states(void* new_states)
 {
   if (current_states != NULL)
   {
-    free(current_states[0].buffer); /* TODO: Free all of them... */
+    free(current_states[0].buffer[0]); /* TODO: Free all of them... */
+    free(current_states[0].buffer);
     free(current_states);
   }
   current_states = new_states;

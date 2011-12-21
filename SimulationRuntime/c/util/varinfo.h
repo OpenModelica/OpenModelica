@@ -42,6 +42,8 @@ void printErrorEqSyst(equationSystemError, struct EQUATION_INFO, double var);
 
 void printInfo(FILE *stream, FILE_INFO info);
 
+void freeVarInfo(VAR_INFO* info);
+
 #ifdef __cplusplus
 }
 #endif

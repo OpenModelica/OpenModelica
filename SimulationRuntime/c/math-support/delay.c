@@ -95,7 +95,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
 
-  DEBUG_INFO4(LOG_EVENTS,"delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g\n", exprNumber, exprValue, time, delayTime);
+  DEBUG_INFO4(LOG_EVENTS,"delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
 
@@ -105,7 +105,6 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   if(time <= data->simulationInfo.tStart)
   {
     DEBUG_INFO1(LOG_EVENTS,"delayImpl: Entered at time < starting time: %g.", exprValue);
-    /* printf("delayImpl: Entered at time < starting time: %g.\n", exprValue); fflush(NULL);*/
     return (exprValue);
   }
 
@@ -119,7 +118,6 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   {
     /*  This occurs in the initialization phase */
     DEBUG_INFO1(LOG_EVENTS,"delayImpl: Missing initial value, using argument value %g instead.", exprValue);
-    /* printf("delayImpl: Missing initial value, using argument value %g instead.\n", exprValue); fflush(NULL);*/
     return (exprValue);
   }
 
@@ -136,7 +134,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   if(time <= data->simulationInfo.tStart + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    /*printf("findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber, res);fflush(NULL);*/
+    DEBUG_INFO2(LOG_EVENTS,"findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber, res);
     return res;
   }
   else
@@ -180,12 +178,10 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
     /* was it an exact match?*/
     if(time0 == timeStamp){
       DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value0);
-      /*printf("delayImpl: Exact match at %g = %g\n", timeStamp, value0);fflush(NULL);*/
 
       return value0;
     } else if(time1 == timeStamp) {
       DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value1);
-      /*printf("delayImpl: Exact match at %g = %g\n", timeStamp, value1);fflush(NULL);*/
 
       return value1;
     } else {
@@ -194,10 +190,10 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
       double dt0 = time1 - timeStamp;
       double dt1 = timeStamp - time0;
       double retVal = (value0 * dt0 + value1 * dt1) / timedif;
-      DEBUG_INFO3(LOG_EVENTS,"delayImpl: Linear interpolation of %g between %g and %g\n", timeStamp, time0, time1);
+      DEBUG_INFO3(LOG_EVENTS,"delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
 
-      DEBUG_INFO4(LOG_EVENTS,"delayImpl: Linear interpolation of %g value: %g and %g = %g\n", timeStamp, value0, value1, retVal);
-	  return (retVal);
+      DEBUG_INFO4(LOG_EVENTS,"delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
+      return retVal;
     }
   }
 }
