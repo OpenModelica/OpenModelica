@@ -801,8 +801,7 @@ algorithm
       BackendDAE.StrongComponents comps;
     case _
       equation
-        n = Config.noProc() "If modpar not enabled, nproc = 0, return" ;
-        (n == 0) = true;
+        true = 0==Config.noProc() or Flags.isSet(Flags.OPENMP) "If modpar not enabled, nproc = 0, return" ;
       then
         ();
     case (dae as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}))
