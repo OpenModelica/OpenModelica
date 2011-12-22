@@ -337,6 +337,8 @@ constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(87, "checkSimplify",
   "Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed.");
 constant DebugFlag SCODE_INST = DEBUG_FLAG(88, "scodeInst",
   "Enables experimental SCode instantiation phase.");
+constant DebugFlag DELAY_BREAK_LOOP = DEBUG_FLAG(89, "delayBreakLoop",
+  "Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization.");
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -430,7 +432,8 @@ constant list<DebugFlag> allDebugFlags = {
   STATIC,
   PERF_TIMES,
   CHECK_SIMPLIFY,
-  SCODE_INST
+  SCODE_INST,
+  DELAY_BREAK_LOOP
 };
 
 // CONFIGURATION FLAGS

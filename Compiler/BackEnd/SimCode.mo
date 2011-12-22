@@ -12655,7 +12655,7 @@ protected function calcPriority
 protected
   Integer i;
 algorithm
-  (_,i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 0, {});
+  (_,i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 1 /* Each system has cost 1 even if it's as simple as der(x)=1.0 */, {});
   prio := (i,eqs);
 end calcPriority;
 

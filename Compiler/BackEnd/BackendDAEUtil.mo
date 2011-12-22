@@ -4197,8 +4197,9 @@ algorithm
       list<BackendDAE.Value> p,p_1,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e;
+      DAE.Exp e,e1,e2;
       list<BackendDAE.Var> varslst;
+      Boolean b;
     
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
       equation
@@ -4224,6 +4225,12 @@ algorithm
     /* pre(v) is considered a known variable */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));
     
+    /* delay(e) can be used to break algebraic loops given some solver options */
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
+      equation
+        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+      then ((e,not b,(vars,pa)));
+
     case ((e,(vars,pa))) then ((e,true,(vars,pa)));
   end matchcontinue;
 end traversingincidenceRowExpFinder;
