@@ -2557,10 +2557,19 @@ The Functional Mockup Interface FMI 1.0 for model exchange import and export is 
 end '1.8.0';
 package trunk "Current version"
 annotation(Documentation(info="<html>
-Major changes:
+Major changes (up to r10819):
 <h4>OpenModelica Compiler (OMC)</h4>
 <ul>
 <li>Store the documentation as Modelica <a href=\"modelica://ModelicaReference.Annotations.Documentation\">Documentation</a> annotations.</li>
+<li>Re-implementation of the simulation runtime using C instead of C++ (this was needed to export FMI source-based packages).</li>
+<li>Changed the internal representation of various structures to share more memory. This significantly improved the performance for very large models that use records.</li>
+<li>New options to API calls <strong>list</strong>, <strong>loadFile</strong>, and more.</li>
+<li>Initial support for operator overloading (in progress).</li>
+<li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
+<li>Improved the scripting environment. <code>cl := $TypeName(Modelica)</code>;getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
+<li>Various bugfixes.</li>
+<h4>OMNotebook</h4>
+Added OMSketch (...).
 </ul>
 </html>"));
 end trunk;
