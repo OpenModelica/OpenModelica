@@ -151,7 +151,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   input_function(simData);
 	/* initial sample and delay before initial the system */
 	callExternalObjectConstructors(simData);
-	//initSample(simData, simInfo->startTime, simInfo->stopTime);
+	initSample(simData, simInfo->startTime, simInfo->stopTime);
 	initDelay(simData, simInfo->startTime);
 
 	/* will be removed -> DOPRI45 */
