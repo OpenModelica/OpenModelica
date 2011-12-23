@@ -62,5 +62,6 @@ public:
 
 	/// Provide the right hand side (according to the index)
 	virtual void giveRHS(double* doubleFuncs, int* intFuncs, bool* boolFuncs) = 0;
-
+	virtual void giveAMatrix(double* A_matrix) = 0;
+	virtual bool isLinear() = 0;
 };

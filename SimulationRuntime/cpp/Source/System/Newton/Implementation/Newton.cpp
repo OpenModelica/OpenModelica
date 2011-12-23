@@ -117,8 +117,15 @@ void Newton::solve(const IContinous::UPDATE command)
 			if(totStps < _newtonSettings->getNewtMax())
 			{
 				// Determination of Jacobian (Fortran-format)
-				calcJacobian();
-
+				if(_algLoop->isLinear())
+				{
+					calcFunction(_yHelp,_fHelp);
+					_algLoop->giveAMatrix(_jac);
+				}
+				else
+				{
+					calcJacobian();
+				}
 				// Solve linear System
 				dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
 
@@ -133,9 +140,15 @@ void Newton::solve(const IContinous::UPDATE command)
 				++ totStps;
 
 				// New solution
+				if(_algLoop->isLinear())
+				{
+					memcpy(_y,_f,_dimSys*sizeof(double));
+				}
+				else
+				{
 				for(int i=0; i<_dimSys; ++i)
 					_y[i] -= _newtonSettings->getDelta() * _f[i];
-
+				}
 				// New right hand side
 				calcFunction(_y,_f);
 			}
@@ -176,6 +189,7 @@ void Newton::calcJacobian()
 		for(int i=0; i<_dimSys; ++i)
 			_jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / 1e-6;
 	}
+
 }
 
 using boost::extensions::factory;

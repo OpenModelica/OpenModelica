@@ -1,18 +1,29 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
-
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
 SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost_1_45_0/")
 SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+
+#set mico paths 
 SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
 SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
-#Sundials solvers include and library directories
+#set sundials solvers include and library directories
 SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
-SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release)
+if(MSVC)
+SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+elseif(MINGW)
+SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw)
+endif()
+
 ENDIF( WIN32 )
+
+
+
+message(STATUS ${CVODES_LIB})
 
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
@@ -21,7 +32,7 @@ SET(MODELICA_MODEL "ModelicaSystem")
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
 SET(USE_SUNDIALS ON)
-
+SET(INSTALL_OMDEV_LIBS ON)
 
 
 find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
@@ -33,14 +44,14 @@ if(USE_SUNDIALS)
 
 find_path(SUNDIALS_INCLUDE_DIR cvode/cvode.h
 		PATHS ${SUNDIALS_INLCUDE_HOME})
- message(STATUS ${SUNDIALS_INCLUDE_DIR})
+message(STATUS ${SUNDIALS_INCLUDE_DIR})
 
-find_library(SUNDIALS_NVECSERIAL_LIB sundials_nvecserial
+find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial"
 		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
-find_library(SUNDIALS_CVODES_LIB sundials_cvodes
+find_library(SUNDIALS_CVODES_LIB "sundials_cvodes"
 		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
-find_library(SUNDIALS_IDAS_LIB sundials_idas
+find_library(SUNDIALS_IDAS_LIB "sundials_idas"
 		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
 set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB})
@@ -141,15 +152,21 @@ configure_file (
   )
 
 message(STATUS  ${SUNDIALS_CVODES_LIB})
-if(USE_SUNDIALS)
-	install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+
+if(INSTALL_OMDEV_LIBS)
+	if(USE_SUNDIALS)
+		install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+	endif()
+
+	if(USE_MICO)
+		install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
+	endif()
+
+	install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
+	install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
+	#install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 endif()
 
-if(USE_MICO)
-	install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-endif()
-
-install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION bin)
 install (FILES "DataExchange/Interfaces/IHistory.h" 
   DESTINATION include/omc/cpp/DataExchange/Interfaces)

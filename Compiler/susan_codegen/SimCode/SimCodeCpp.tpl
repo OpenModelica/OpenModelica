@@ -220,7 +220,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    let &arrayInit = buffer ""
    let constructorParams = ConstructorParamAlgloop(modelInfo)
    let iniAlgloopParamas = InitAlgloopParams(modelInfo,arrayInit)
+   
 match eq
+    case SES_LINEAR(__)
 	case SES_NONLINEAR(__) then
 	
   <<
@@ -231,10 +233,13 @@ match eq
    
     
     <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(
-    															<%constructorParams%>
+    															<%constructorParams%>,double* z,double* zDot
     															 ) 
    :AlgLoopDefaultImplementation()
    ,_residuals(NULL)
+   ,_z(z)
+   ,_zDot(zDot)
+   <%alocateLinearSystem(eq)%>
    <%iniAlgloopParamas%>
     { 
       
@@ -246,16 +251,19 @@ match eq
     { 
    			if(_residuals) delete [] _residuals;
     }
-   
+   <%algloopRHSCode(simCode,eq)%>
    <%initAlgloop(simCode,eq)%>
-   <%upateAlgloop(simCode,eq)%>  
+   <%upateAlgloopNonLinear(simCode,eq)%>
+   <%upateAlgloopLinear(simCode,eq)%>    
    <%AlgloopDefaultImplementationCode(simCode,eq)%>
+   <%getAMatrixCode(simCode,eq)%>
+   <%isLinearCode(simCode,eq)%>
     >>
 end algloopCppFile;
 
 
-template upateAlgloop( SimCode simCode,SimEqSystem eqn)
- "Generates functions in simulation file."
+template upateAlgloopNonLinear( SimCode simCode,SimEqSystem eqn)
+  "Generates functions in simulation file."
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -280,7 +288,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        ;separator="\n")
   
   <<
-   void <%modelname%>Algloop<%index%>::update(const IContinous::UPDATE command)
+  void <%modelname%>Algloop<%index%>::update(const IContinous::UPDATE command)
   {
 	    <%varDecls%>
 	   if(command & IContinous::CONTINOUS)
@@ -292,40 +300,64 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	  }
 	  
   }
-     
-     >>
-  
-end upateAlgloop;
-
-/*
-template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
- "Generates a non linear equation system."
-::=
-match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
-  <<
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
-  SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
-  #endif<%\n%>
-  start_nonlinear_system(<%size%>);
-  <%crefs |> name hasindex i0 =>
-    let namestr = cref(name)
-    <<
-    nls_x[<%i0%>] = extraPolate(<%namestr%>,$P$old<%namestr%>,$P$old2<%namestr%>);
-    nls_xold[<%i0%>] = $P$old<%namestr%>;
-    >>
-  ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, <%reverseLookupEquationNumber(index)%>);
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
-  end_nonlinear_system();<%inlineCrefs(context,crefs)%>
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-  #endif<%\n%>
   >>
-end equationNonlinear;
-*/
+end upateAlgloopNonLinear;
+  
+
+
+
+template upateAlgloopLinear( SimCode simCode,SimEqSystem eqn)
+ "Generates functions in simulation file."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let () = System.tmpTickReset(0)
+  let modelname = lastIdentOfPath(modelInfo.name)
+ match eqn
+ case SES_LINEAR(__) then
+  let uid = System.tmpTick()
+  let size = listLength(vars)
+  let aname = 'A<%uid%>'
+  let bname = 'b<%uid%>'
+    let &varDecls = buffer "" /*BUFD*/
+     let &preExp = buffer "" /*BUFD*/
+ let Amatrix= 
+    (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+      let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
+      '_A[<%row%>][<%col%>]=<%expPart%>;'
+  ;separator="\n")
+  
+ 
+ 
+ let bvector =  (beqs |> exp hasindex i0 =>
+    
+     let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     '_b[<%i0%>]=<%expPart%>;'
+  ;separator="\n")
+ 
+  
+ <<
+   void <%modelname%>Algloop<%index%>::update(const IContinous::UPDATE command)
+  {
+	  
+	  <%Amatrix%>
+	  <%bvector%>
+	  
+	 
+  }
+     
+     >>  
+  
+end upateAlgloopLinear;
+template inlineVars(Context context, list<SimVar> simvars)
+::= match context case INLINE_CONTEXT(__) then match simvars
+case {} then ''
+else <<
+
+<%simvars |> var => match var case SIMVAR(name = cr as CREF_QUAL(ident = "$DER")) then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
+>>
+end inlineVars;
+
 template functionBodies(list<Function> functions,SimCode simCode)
  "Generates the body for a set of functions."
 ::=
@@ -1170,12 +1202,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let initalgvars = initAlgloopvars(modelInfo,simCode)
   let &varDecls = buffer "" 
   match eq
- case SES_NONLINEAR(__) then
+  case SES_NONLINEAR(__) then
   <<
   void <%modelname%>Algloop<%index%>::init()
   {  
  		AlgLoopDefaultImplementation::init();
- 		<%initAlgloopEquation(eq,varDecls)%>
+ 		<%initAlgloopEquation(eq,varDecls,simCode)%>
  		if(_residuals) 
 		{
 			delete [] _residuals;
@@ -1186,10 +1218,105 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	// Update the equations once before start of simulation
 	update(IContinous::ALL);
    }
+  >>
+ case SES_LINEAR(__) then
+   <<
+	 void <%modelname%>Algloop<%index%>::init()
+     {  
+ 		AlgLoopDefaultImplementation::init();
+ 		<%initAlgloopEquation(eq,varDecls,simCode)%>
+ 		
+	    // Update the equations once before start of simulation
+	    update(IContinous::ALL);
+     }
    >>
+ 
 end initAlgloop;
 
-template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/)
+
+template getAMatrixCode(SimCode simCode,SimEqSystem eq)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  let initalgvars = initAlgloopvars(modelInfo,simCode)
+  let &varDecls = buffer "" 
+  match eq
+  case SES_NONLINEAR(__) then
+  <<
+  void <%modelname%>Algloop<%index%>::giveAMatrix(double* A_matrix)
+  {  
+ 		
+   }
+  >>
+ case SES_LINEAR(__) then
+   <<
+	 void <%modelname%>Algloop<%index%>::giveAMatrix(double* A_matrix)
+     {  
+ 		 memcpy(A_matrix,_A.data(),_dim[0]*_dim[0]*sizeof(double));
+     }
+   >>
+ 
+end getAMatrixCode;
+
+
+template algloopRHSCode(SimCode simCode,SimEqSystem eq)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  let initalgvars = initAlgloopvars(modelInfo,simCode)
+  let &varDecls = buffer "" 
+  match eq
+  case SES_NONLINEAR(__) then
+  <<
+  void <%modelname%>Algloop<%index%>::giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
+	{
+	if(doubleResiduals)
+		memcpy(doubleResiduals,_residuals,_dim[0]*sizeof(double));
+	}
+  >>
+ case SES_LINEAR(__) then
+   <<
+	void <%modelname%>Algloop<%index%>::giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
+	{
+		if(doubleResiduals)
+		memcpy(doubleResiduals,_b.data(),_dim[0]*sizeof(double));
+	}
+   >>
+ 
+end algloopRHSCode;
+
+
+
+
+template isLinearCode(SimCode simCode,SimEqSystem eq)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+  let initalgvars = initAlgloopvars(modelInfo,simCode)
+  let &varDecls = buffer "" 
+  match eq
+  case SES_NONLINEAR(__) then
+  <<
+  bool <%modelname%>Algloop<%index%>::isLinear()
+  {  
+ 		return false;
+   }
+  >>
+ case SES_LINEAR(__) then
+   <<
+	 bool <%modelname%>Algloop<%index%>::isLinear()
+     {  
+ 		 return true;
+     }
+   >>
+ 
+end isLinearCode;
+
+
+template initAlgloopEquation(SimEqSystem eq, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -1204,6 +1331,20 @@ case SES_NONLINEAR(__) then
      >>
   ;separator="\n"%>
    >>
+ case SES_LINEAR(__)then
+ <<
+  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
+     '<%preExp%>_A[<%row%>][<%col%>] = <%expPart%>;'
+  ;separator="\n"%>
+  <%beqs |> exp hasindex i0 =>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     '<%preExp%>_b[<%i0%>]= <%expPart%>;'
+  ;separator="\n"%>
+  >> 
+   
 end initAlgloopEquation;
 
 
@@ -1211,7 +1352,7 @@ end initAlgloopEquation;
 
 
 
-template giveAlgloopvars(SimEqSystem eq)
+template giveAlgloopvars(SimEqSystem eq,SimCode simCode)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -1226,6 +1367,12 @@ case SES_NONLINEAR(__) then
      >>
   ;separator="\n"%>
    >>
+ case SES_LINEAR(__) then
+   <<
+   
+      <%vars |> SIMVAR(__) hasindex i0 => 'doubleUnknowns[<%i0%>] =<%cref1(name,simCode)%>;' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
+   >>  
+ 
 end giveAlgloopvars;
 
 
@@ -1263,13 +1410,24 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
   ;separator="\n"%>
   
    >>
+  case e as SES_LINEAR(__) then
+    let size = listLength(vars)
+    let algloopid = index
+  <<
+   double algloopvars<%algloopid%>[<%size%>];
+   _algLoop<%index%>->giveVars(algloopvars<%algloopid%>,NULL,NULL);
+   
+    <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
+ 
+  
+   >>
  end writeAlgloopvars2;
 
 
 
 
 
-template setAlgloopvars(SimEqSystem eq)
+template setAlgloopvars(SimEqSystem eq,SimCode simCode)
  "Generates a non linear equation system."
 ::=
 match eq
@@ -1283,6 +1441,12 @@ case SES_NONLINEAR(__) then
     <%namestr%>  = doubleUnknowns[<%i0%>];
      >>
   ;separator="\n"%>
+   >>
+  case SES_LINEAR(__) then
+  <<
+   
+   <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode)%>=doubleUnknowns[<%i0%>];' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
+  
    >>
 end setAlgloopvars;
 
@@ -1298,9 +1462,31 @@ case SES_NONLINEAR(__) then
 	_dim[1] = 0;
 	_dim[2] = 0;
   >>
+  case SES_LINEAR(__) then
+  let size = listLength(vars)
+  <<
+    // Number of unknowns/equations according to type (0: double, 1: int, 2: bool)
+	_dim[0] = <%size%>;
+	_dim[1] = 0;
+	_dim[2] = 0;
+	fill_array(_A,0.0);
+	fill_array(_b,0.0);
+  >>
  
 end initAlgloopDimension;
 
+template alocateLinearSystem(SimEqSystem eq)
+ "Generates a non linear equation system."
+::=
+match eq
+case SES_LINEAR(__) then
+   let size = listLength(vars)
+  <<
+    ,_A(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order())
+   ,_b(boost::extents[<%size%>])
+  >>
+ 
+end alocateLinearSystem;
 
 template Update(SimCode simCode)
 ::=
@@ -1331,7 +1517,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	//Write the current values
 	else
 	{
-	<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
+	
 	HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
 	HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
 	 <%writeoutput2(modelInfo)%>
@@ -1339,21 +1525,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	}
    }
   >>
+  //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
 end writeoutput;
 
-/*
-template writeoutputAlgloop(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<  
-    writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IDAESystem::OUTPUT command)
-   {
-  	
-   }
-  >>
-end writeoutputAlgloop;
-*/
 
 template generateHeaderInlcudeString(SimCode simCode)
  "Generates header part of simulation file."
@@ -1455,6 +1629,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let algvars = MemberVariableAlgloop(modelInfo)
   let constructorParams = ConstructorParamAlgloop(modelInfo)
   match eq
+  	case SES_LINEAR(__)
 	case SES_NONLINEAR(__) then
   <<
   class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
@@ -1462,6 +1637,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   public: 
       <%modelname%>Algloop<%index%>(
       								 <%constructorParams%>
+      								 ,double* z,double* zDot
       								); 
       ~<%modelname%>Algloop<%index%>();
       
@@ -1470,6 +1646,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   private:    
     Functions _functions;
     double 		*_residuals;		///< Auxillary variables
+    //states
+    double* _z;
+    //state derivatives
+    double* _zDot;
+    // A matrix
+    boost::multi_array<double,2> _A;
+	//b vector
+	boost::multi_array<double,1> _b;
      <%algvars%>
    };
   >>
@@ -1609,6 +1793,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 let modelname = lastIdentOfPath(modelInfo.name)
 match eq
+case SES_LINEAR(__)
 case SES_NONLINEAR(__) then
 << 
 
@@ -1648,25 +1833,21 @@ void  <%modelname%>Algloop<%index%>::addOutputs(double* doubleOutputs, int* intO
 	AlgLoopDefaultImplementation::addOutputs(doubleOutputs, intOutputs, boolOutputs);;
 };
 
-void <%modelname%>Algloop<%index%>::giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
-{
-	if(doubleResiduals)
-		memcpy(doubleResiduals,_residuals,_dim[0]*sizeof(double));
-}
+
 
 /// Provide variables with given index to the system
 void  <%modelname%>Algloop<%index%>::giveVars(double* doubleUnknowns, int* intUnknowns, bool* boolUnknowns)
 {	
 	AlgLoopDefaultImplementation::giveVars(doubleUnknowns, intUnknowns, boolUnknowns);
 	//workaroud until names of algloop vars are replaced in simcode
-	<%giveAlgloopvars(eq)%>
+	<%giveAlgloopvars(eq,simCode)%>
 };
 
 /// Set variables with given index to the system
 void  <%modelname%>Algloop<%index%>::setVars(const double* doubleUnknowns, const int* intUnknowns, const bool* boolUnknowns)
 {
 	//workaroud until names of algloop vars are replaced in simcode  
-	<%setAlgloopvars(eq)%>
+	<%setAlgloopvars(eq,simCode)%>
 	AlgLoopDefaultImplementation::setVars(doubleUnknowns, intUnknowns, boolUnknowns);
 };
 
@@ -1791,6 +1972,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	/// Provide the right hand side (according to the index)
 	virtual void giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
 	/// Output routine (to be called by the solver after every successful integration step)
+	virtual void giveAMatrix(double* A_matrix);
+	virtual bool isLinear();
 	/// Set stream for output
 	virtual void setOutput(ostream* outputStream) 	;
 	
@@ -3080,6 +3263,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then equationWhen(e, context, &varDecls /*BUFD*/,simCode)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varDecls /*BUFD*/,simCode)
+  case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
     <<
@@ -3109,6 +3293,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   Residual equations are handled differently."
 ::=
   match eq
+  case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
@@ -3117,7 +3302,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   <<
   _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create());
   _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(
-  																																				<%CallAlgloopParams(modelInfo)%>
+  																																				<%CallAlgloopParams(modelInfo)%>,_z,_zDot
   																																				)
   																																);
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
@@ -3148,6 +3333,7 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
   Residual equations are handled differently."
 ::=
   match eq
+   case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
@@ -3183,6 +3369,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
   Residual equations are handled differently."
 ::=
   match eq
+   case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
@@ -3216,6 +3403,7 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
   Residual equations are handled differently."
 ::=
   match eq
+   case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
@@ -3247,6 +3435,7 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   Residual equations are handled differently."
 ::=
   match eq
+   case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
@@ -3280,6 +3469,7 @@ template algloopcppfilenames2(SimEqSystem eq, Context context, Text &varDecls, S
   Residual equations are handled differently."
 ::=
   match eq
+   case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index

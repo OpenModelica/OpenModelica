@@ -20,8 +20,7 @@ int ModelicaTables_CombiTimeTable_init(const char* tableName, const char* fileNa
                                         double const *table, int nRow, int nColumn,
                                         double startTime, int smoothness,
                                         int extrapolation) 
-{
-  return omcTableTimeIni(startTime, startTime, smoothness, extrapolation, 
+{  return omcTableTimeIni(startTime, startTime, smoothness, extrapolation, 
                          tableName, fileName, table, nRow, nColumn, 0);
 }
 

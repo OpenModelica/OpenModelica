@@ -45,6 +45,6 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 	else
 	{
 		// TODO: Throw an error message here.
-		throw   std::invalid_argument("No Newton solver found");
+		throw   std::invalid_argument("Algloop system is not of tpye real");
 	}
 }

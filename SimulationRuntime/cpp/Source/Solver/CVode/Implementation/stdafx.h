@@ -4,6 +4,13 @@
 //
 
 #pragma once
+#pragma once
+#ifndef BOOST_THREAD_USE_DLL
+#define BOOST_THREAD_USE_DLL
+#endif
+#ifndef BOOST_ALL_DYN_LINK
+#define BOOST_ALL_DYN_LINK
+#endif
 
 #include <map>
 #include <boost/ref.hpp>
@@ -13,9 +20,9 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
-//#include <boost/archive/xml_oarchive.hpp>
-//#include <boost/archive/xml_iarchive.hpp>
-//#include <boost/serialization/nvp.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <string>
 #include <fstream>
 #include <boost/extension/extension.hpp>
