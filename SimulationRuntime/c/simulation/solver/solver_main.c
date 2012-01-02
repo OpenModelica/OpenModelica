@@ -228,9 +228,6 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	/* initial sample and delay again, due to maybe change
 	 * parameters during Initialization */
-	/*
-	callExternalObjectConstructors(simData);
-	*/
 	initSample(simData, simInfo->startTime, simInfo->stopTime);
 	initDelay(simData, simInfo->startTime);
 

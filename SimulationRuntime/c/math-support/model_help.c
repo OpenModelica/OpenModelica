@@ -112,6 +112,7 @@ void copyStartValuestoInitValues(_X_DATA *data)
 
   /* just copy all start values to initial */
   storeStartValuesParam(data);
+  storeInitialValuesParam(data);
   storeStartValues(data);
   storePreValues(data);
   overwriteOldSimulationData(data);
@@ -212,7 +213,7 @@ void storeStartValues(_X_DATA* data)
     DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanVarsData[i].info.name, sData->booleanVars[i]?"true":"false");
   }
   for(i=0; i<mData->nVariablesString; ++i){
-    sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringVarsData[i].attribute.start);
+    sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
     DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
@@ -231,23 +232,24 @@ void storeStartValuesParam(_X_DATA *data)
   for(i=0; i<mData->nParametersReal; ++i){
     mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
     data->simulationInfo.realParameter[i] = mData->realParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Real var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
+    DEBUG_INFO2(LOG_INIT,"Set Real var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i){
     mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
     data->simulationInfo.integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Integer var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+    DEBUG_INFO2(LOG_INIT,"Set Integer var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i){
     mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
     data->simulationInfo.booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
+    DEBUG_INFO2(LOG_INIT,"Set Boolean var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
   }
   for(i=0; i<mData->nParametersString; ++i){
-    mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
-    data->simulationInfo.stringParameter[i] = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
-    DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+    mData->stringParameterData[i].attribute.initial = mData->stringParameterData[i].attribute.start;
+    data->simulationInfo.stringParameter[i] = mData->stringParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_INIT,"Set String var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
   }
+
 }
 
 /*! \fn void storeInitialValuesParam(_X_DATA *data)
@@ -263,20 +265,21 @@ void storeInitialValuesParam(_X_DATA *data)
 
   for(i=0; i<mData->nParametersReal; ++i){
     mData->realParameterData[i].attribute.initial = data->simulationInfo.realParameter[i];
-    DEBUG_INFO2(LOG_DEBUG,"Set Real Parameter var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
+    DEBUG_INFO2(LOG_INIT,"Set Real Parameter var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i){
     mData->integerParameterData[i].attribute.initial = data->simulationInfo.integerParameter[i];
-    DEBUG_INFO2(LOG_DEBUG,"Set Integer Parameter var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+    DEBUG_INFO2(LOG_INIT,"Set Integer Parameter var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i){
     mData->booleanParameterData[i].attribute.initial = data->simulationInfo.booleanParameter[i];
-    DEBUG_INFO2(LOG_DEBUG,"Set Boolean Parameter var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
+    DEBUG_INFO2(LOG_INIT,"Set Boolean Parameter var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
   }
   for(i=0; i<mData->nParametersString; ++i){
-    mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)data->simulationInfo.stringParameter[i]);
-    DEBUG_INFO2(LOG_DEBUG,"Set String Parameter var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+    mData->stringParameterData[i].attribute.initial = data->simulationInfo.stringParameter[i];
+    DEBUG_INFO2(LOG_INIT,"Set String initial Parameter var %s = %s",mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
   }
+
 }
 
 
@@ -418,6 +421,7 @@ void initializeXDataStruc(_X_DATA *data)
   /* buffer for external objects */
   data->simulationInfo.extObjs = NULL;
   data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
+
   ASSERT(data->simulationInfo.extObjs,"error allocating external objects");
 
   /* initial build calls terminal, initial */

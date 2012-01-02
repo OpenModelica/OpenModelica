@@ -78,7 +78,7 @@ void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, dou
 {
   TIME_AND_VALUE tpl;
 
-  DEBUG_INFO3(LOG_EVENTS,"storeDelayed[%d] %g:%g", exprNumber, time, exprValue);
+  DEBUG_INFO3(LOG_EVENTS, "storeDelayed[%d] %g:%g", exprNumber, time, exprValue);
 
   /* Allocate more space for expressions */
   ASSERT1(exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
@@ -95,7 +95,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
 
-  DEBUG_INFO4(LOG_EVENTS,"delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
+  DEBUG_INFO4(LOG_EVENTS, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
 
@@ -104,7 +104,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
 
   if(time <= data->simulationInfo.tStart)
   {
-    DEBUG_INFO1(LOG_EVENTS,"delayImpl: Entered at time < starting time: %g.", exprValue);
+    DEBUG_INFO1(LOG_EVENTS, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
   }
 
@@ -117,7 +117,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   if(length == 0)
   {
     /*  This occurs in the initialization phase */
-    DEBUG_INFO1(LOG_EVENTS,"delayImpl: Missing initial value, using argument value %g instead.", exprValue);
+    DEBUG_INFO1(LOG_EVENTS, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
     return (exprValue);
   }
 
@@ -134,7 +134,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
   if(time <= data->simulationInfo.tStart + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    DEBUG_INFO2(LOG_EVENTS,"findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber, res);
+    DEBUG_INFO2(LOG_EVENTS, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
     return res;
   }
   else
@@ -167,7 +167,7 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
       {
         if(0 < i && delayMax == delayTime)
           dequeueNFirstRingDatas(delayStruct, i-1);
-        DEBUG_INFO3(LOG_EVENTS,"delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, delayMax, delayTime);
+        DEBUG_INFO3(LOG_EVENTS, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, delayMax, delayTime);
         return value0;
       }
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
@@ -177,11 +177,11 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
     }
     /* was it an exact match?*/
     if(time0 == timeStamp){
-      DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value0);
+      DEBUG_INFO2(LOG_EVENTS, "delayImpl: Exact match at %g = %g", timeStamp, value0);
 
       return value0;
     } else if(time1 == timeStamp) {
-      DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value1);
+      DEBUG_INFO2(LOG_EVENTS, "delayImpl: Exact match at %g = %g", timeStamp, value1);
 
       return value1;
     } else {
@@ -190,11 +190,12 @@ double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, d
       double dt0 = time1 - timeStamp;
       double dt1 = timeStamp - time0;
       double retVal = (value0 * dt0 + value1 * dt1) / timedif;
-      DEBUG_INFO3(LOG_EVENTS,"delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
+      DEBUG_INFO3(LOG_EVENTS, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
 
-      DEBUG_INFO4(LOG_EVENTS,"delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
+      DEBUG_INFO4(LOG_EVENTS, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
       return retVal;
     }
   }
+
 }
 

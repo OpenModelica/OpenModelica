@@ -52,6 +52,7 @@
 #include "utility.h"
 
 #include "model_help.h"
+#include "delay.h"
 
 #ifdef __cplusplus
 extern "C" {
