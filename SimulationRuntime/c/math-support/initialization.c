@@ -41,68 +41,34 @@
 #include <math.h>
 #include <string.h> /* strcmp */
 
-/*
-#ifndef NEWUOA
-#define NEWUOA newuoa_
-#endif
-
-#ifndef NELMEAD
-#define NELMEAD nelmead_
-#endif
-
-void NEWUOA(long *nz,
-  long *NPT,
-  double *z,
-  double *RHOBEG,
-  double *RHOEND,
-  long *IPRINT,
-  long *MAXFUN,
-  double *W,
-  void (*leastSquare) (long *nz, double *z, double *funcValue));
-
-void NELMEAD(double *z,
-  double *STEP,
-  long *nz,
-  double *funcValue,
-  long *MAXF,
-  long *IPRINT,
-  double *STOPCR,
-  long *NLOOP,
-  long *IQUAD,
-  double *SIMP,
-  double *VAR,
-  void (*leastSquare) (long *nz, double *z, double *funcValue),
-  long *IFAULT);
-*/
-
 enum INIT_INIT_METHOD
 {
   IIM_UNKNOWN = 0,
-  IIM_STATE,
-  IIM_OLD
+  IIM_STATE
 };
 
-const char *initMethodStr[3] = {"unknown", "state", "old"};
+const char *initMethodStr[2] = {"unknown", "state"};
 
 enum INIT_OPTI_METHOD
 {
   IOM_UNKNOWN = 0,
-  IOM_SIMPLEX,
-  IOM_NELDER_MEAD_EX,
-  IOM_NEWUOA
+  IOM_NELDER_MEAD_EX
 };
 
-const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"};
+const char *optiMethodStr[2] = {"unknown", "nelder_mead_ex"};
 
-/*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
+/*! \fn leastSquareWithLambda
 *
 *  This function calculates the residual value
 *  as the sum of squared residual equations.
 *
-*  \param nz [in] number of variables
-*  \param z [in] vector of variables
-*  \param z [in] vector of scaling-factors or NULL
-*  \param lambda [in]
+*  \param [in]  [nz] number of unfixed states and unfixed parameters
+*  \param [in]  [z] vector of unfixed states and unfixed parameters
+*  \param [in]  [zNominal] vector of nominal-values for z or NULL
+*  \param [in]  [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals or NULL
+*  \param [in]  [lambda] E [0; 1]
+*  \param [in]  [data]
+*  \param [out] [initialResiduals]
 */
 static double leastSquareWithLambda(long nz, double* z, double* zNominal, double* initialResidualScalingCoefficients, double lambda, _X_DATA* data, double* initialResiduals)
 {
@@ -166,9 +132,19 @@ static double leastSquareWithLambda(long nz, double* z, double* zNominal, double
   return funcValue;
 }
 
-/*! \fn void computeInitialResidualScalingCoefficients(_X_DATA *data, double nz, double *z, double *initialResidualScalingCoefficients)
+/*! \fn computeInitialResidualScalingCoefficients
  *
- *  author: lochel
+ *  This function calculates coefficients for every initial_residual.
+ *  They describe the order of magnitude.
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [nz] number of unfixed states and unfixed parameters
+ *  \param [in]  [z] vector of unfixed states and unfixed parameters
+ *  \param [in]  [zNominal] vector of nominal-values for z or NULL
+ *  \param [in]  [lambda] E [0; 1]
+ *  \param [out] [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals
+ *
+ *  \author lochel
  */
 static void computeInitialResidualScalingCoefficients(_X_DATA *data, double nz, double *z, double *zNominal, double lambda, double *initialResidualScalingCoefficients)
 {
@@ -213,6 +189,27 @@ static void computeInitialResidualScalingCoefficients(_X_DATA *data, double nz, 
   free(states);
 }
 
+/*! \fn NelderMeadOptimization
+ *
+ *  This function performs a Nelder-Mead-Optimization with some
+ *  special changes for initialization.
+ *
+ *  \param [in]  [N] number of unfixed states and unfixed parameters
+ *  \param [in]  [var] vector of unfixed states and unfixed parameters
+ *  \param [in]  [scale] vector of nominal-values for var or NULL
+ *  \param [in]  [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals or NULL
+ *  \param [in]  [lambda_step]
+ *  \param [in]  [acc]
+ *  \param [in]  [maxIt]
+ *  \param [in]  [dump]
+ *  \param [in]  [pLambda]
+ *  \param [in]  [pIteration]
+ *  \param [in]  [leastSquare]
+ *  \param [in]  [data]
+ *  \param [in]  [initialResiduals]
+ *
+ *  \author lochel
+ */
 static void NelderMeadOptimization(long N,
   double* var,
   double* scale,
@@ -439,11 +436,13 @@ static void NelderMeadOptimization(long N,
   free(simplex);
 }
 
-/*! \fn int reportResidualValue(double funcValue)
+/*! \fn reportResidualValue
 *
 *  Returns 1 if residual is non-zero and prints appropriate error message.
 *
-*  \param funcValue [in] leastSquare-Value
+*  \param [in]  [funcValue] leastSquare-Value
+*  \param [in]  [data]
+*  \param [in]  [initialResiduals]
 */
 static int reportResidualValue(double funcValue, _X_DATA* data, double* initialResiduals)
 {
@@ -465,11 +464,19 @@ static int reportResidualValue(double funcValue, _X_DATA* data, double* initialR
   return 0;
 }
 
-/*! \fn int nelderMeadEx_initialization(_X_DATA* data, long nz, double *z)
+/*! \fn nelderMeadEx_initialization
 *
 *  This function performs initialization by using an extend version of the
 *  nelderMead algorithm.
 *  This does not require a jacobian for the residuals.
+*
+*  \param [in]  [data]
+*  \param [in]  [nz] number of unfixed states and unfixed parameters
+*  \param [in]  [z] vector of unfixed states and unfixed parameters
+*  \param [in]  [zNominal] vector of nominal-values for z
+*  \param [in]  [initialResiduals]
+*
+*  \author lochel
 */
 static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *zNominal, double* initialResiduals)
 {
@@ -537,9 +544,12 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
   return reportResidualValue(funcValue, data, initialResiduals);
 }
 
-/*! \fn int initialize(_X_DATA *data, int optiMethod)
+/*! \fn initialize
  *
- *  author: lochel
+ *  \param [in]  [data]
+ *  \param [in]  [optiMethod]
+ *
+ *  \author lochel
  */
 static int initialize(_X_DATA *data, int optiMethod)
 {
@@ -622,19 +632,7 @@ static int initialize(_X_DATA *data, int optiMethod)
   }
 
   if(optiMethod == IOM_NELDER_MEAD_EX)
-  {
     retVal = nelderMeadEx_initialization(data, nz, z, zNominal, initialResiduals);
-  }
-  /*
-  else if(optiMethod == IOM_SIMPLEX)
-  {
-    retVal = simplex_initialization(data, nz, z);
-  }
-  else if(optiMethod == IOM_NEWUOA)
-  {
-    retVal = newuoa_initialization(data, nz, z);
-  }
-  */
   else
   {
     WARNING1("unrecognized option -iom %s", optiMethodStr[optiMethod]);
@@ -648,9 +646,12 @@ static int initialize(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn int state_initialization(_X_DATA *data, int optiMethod)
+/*! \fn state_initialization
  *
- *  author: lochel
+ *  \param [in]  [data]
+ *  \param [in]  [optiMethod]
+ *
+ *  \author lochel
  */
 static int state_initialization(_X_DATA *data, int optiMethod)
 {
@@ -685,7 +686,6 @@ static int state_initialization(_X_DATA *data, int optiMethod)
 
   retVal = initialize(data, optiMethod);
 
-
   /* debug print */
   if (DEBUG_FLAG(LOG_DEBUG)){
     for (i=0; i<3;i++){
@@ -693,6 +693,7 @@ static int state_initialization(_X_DATA *data, int optiMethod)
       printAllVars(data,i);
     }
   }
+
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
@@ -709,14 +710,18 @@ static int state_initialization(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
+/*! \fn initialization
  *
- *  author: lochel
+ *  \param [ref] [data]
+ *  \param [in]  [pInitMethod] user defined initialization method
+ *  \param [in]  [pOptiMethod] user defined optimization method
+ *
+ *  \author lochel
  */
 int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
 {
-  int initMethod = IIM_STATE;			  /* default method */
-  int optiMethod = IOM_SIMPLEX;	    /* default method */
+  int initMethod = IIM_STATE;               /* default method */
+  int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
 
   /* if there are user-specified options, use them! */
   if(pInitMethod)
@@ -729,12 +734,8 @@ int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMeth
 
   if(pOptiMethod)
   {
-    if(!strcmp(pOptiMethod, "simplex"))
-      optiMethod = IOM_SIMPLEX;
-    else if(!strcmp(pOptiMethod, "nelder_mead_ex"))
+    if(!strcmp(pOptiMethod, "nelder_mead_ex"))
       optiMethod = IOM_NELDER_MEAD_EX;
-    else if(!strcmp(pOptiMethod, "newuoa"))
-      optiMethod = IOM_NEWUOA;
     else
       optiMethod = IOM_UNKNOWN;
   }
@@ -744,17 +745,7 @@ int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMeth
 
   /* select the right initialization-method */
   if(initMethod == IIM_STATE)
-  {
-    /* the 'new' initialization-method */
-    int result = state_initialization(data, optiMethod);
-
-    if(result)
-    {
-      WARNING("state-initialization fails");
-    }
-
-    return result;
-  }
+    return state_initialization(data, optiMethod);
 
   /* unrecognized initialization-method */
   WARNING1("unrecognized option -iim %s", initMethodStr[initMethod]);
