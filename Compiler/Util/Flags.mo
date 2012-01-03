@@ -1092,7 +1092,7 @@ algorithm
     case ({s}, STRING_FLAG(data = _), _) then STRING_FLAG(s);
 
     // A multiple-string value.
-    case (_ :: _, STRING_LIST_FLAG(data = _), _) then STRING_LIST_FLAG(inValues);
+    case (_, STRING_LIST_FLAG(data = _), _) then STRING_LIST_FLAG(inValues);
 
     // An enumeration value.
     case ({s}, ENUM_FLAG(validValues = enums), _)
