@@ -3629,7 +3629,7 @@ algorithm
       list<Integer> ilst;
     case (cr,inVariables)
       equation
-        DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
+        DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefTypeConsiderSubs(cr);
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         crefs1 = List.map1r(crefs,ComponentReference.joinCrefs,cr);
         (varslst,ilstlst) = List.map1_2(crefs1,getVar,inVariables);

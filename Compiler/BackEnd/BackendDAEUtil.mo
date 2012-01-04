@@ -4201,6 +4201,15 @@ algorithm
       list<BackendDAE.Var> varslst;
       Boolean b;
     
+    // special case for time, it is never part of the equation system  
+    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,pa))))
+      then ((e,false,(vars,{}))); 
+    
+    // case for functionpointers    
+    case (((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,pa))))
+      then
+        ((e,false,(vars,{})));    
+    
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
