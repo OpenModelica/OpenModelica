@@ -518,12 +518,13 @@ algorithm
   outComponentRef:=
   match (inVariableReplacements,inComponentRef)
     local
-      DAE.ComponentRef src;
+      DAE.ComponentRef src, src_1;
       DAE.Exp dst;
       HashTable2.HashTable ht;
     case (REPLACEMENTS(extendhashTable=ht),src)
       equation
-        dst = BaseHashTable.get(src,ht);
+        src_1 = ComponentReference.crefStripLastSubs(src);
+        dst = BaseHashTable.get(src_1,ht);
       then
         dst;
   end match;
@@ -1452,6 +1453,35 @@ algorithm
         ();
   end match;
 end dumpReplacements;
+
+public function dumpExtendReplacements
+"function: dumpReplacements
+  Prints the variable extendreplacements on form var1 -> var2"
+  input VariableReplacements inVariableReplacements;
+algorithm
+  _:=
+  match (inVariableReplacements)
+    local
+      String str,len_str;
+      Integer len;
+      HashTable2.HashTable ht;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
+    case (REPLACEMENTS(extendhashTable= ht))
+      equation
+        (tplLst) = BaseHashTable.hashTableList(ht);
+        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+        print("ExtendReplacements: (");
+        len = listLength(tplLst);
+        len_str = intString(len);
+        print(len_str);
+        print(")\n");
+        print("=============\n");
+        print(str);
+        print("\n");
+      then
+        ();
+  end match;
+end dumpExtendReplacements;
 
 protected function printReplacementTupleStr "help function to dumpReplacements"
   input tuple<DAE.ComponentRef,DAE.Exp> tpl;
