@@ -171,6 +171,8 @@ uniontype Event "- Events"
 
   record FOUND_CONSTRAINT "There are constranit (equations) inside the current definition" end FOUND_CONSTRAINT;
 
+  record FOUND_EXT_DECL "There is an external declaration inside the current definition" end FOUND_EXT_DECL;
+
   record NEWDEF "A definition with elements, i.e. a long definition" end NEWDEF;
 
   record FOUND_COMPONENT " A Definition that contains components"
@@ -362,10 +364,12 @@ algorithm
   str := match (inEvent)
     local
       String name;
-    case FOUND_EQUATION() then "FOUND_EQUATION";
-    case FOUND_CONSTRAINT() then "FOUND_CONSTRAINT";
-    case NEWDEF() then "NEWDEF";
-    case FOUND_COMPONENT(name) then "FOUND_COMPONENT(" +& name +& ")";
+    case FOUND_EQUATION() then "equation";
+    case FOUND_CONSTRAINT() then "constraint";
+    case NEWDEF() then "new definition";
+    case FOUND_COMPONENT(name) then "component " +& name;
+    case FOUND_EXT_DECL() then "external function declaration";
+    else "Unknown event";
   end match;
 end printEventStr;
 
@@ -484,6 +488,9 @@ algorithm
     case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_CONSTRAINT()) then HAS_RESTRICTIONS(p,b1,b2,true);
     case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_ALGORITHM()) then HAS_RESTRICTIONS(p,b1,true,b3);
 
+    case (FUNCTION(path = p),FOUND_EXT_DECL()) then inState;
+    case (_,FOUND_EXT_DECL()) then fail();
+
     case (_,FOUND_EQUATION()) then fail();
     case (_,FOUND_CONSTRAINT()) then fail();
 
@@ -586,6 +593,31 @@ algorithm
         fail();
   end matchcontinue;
 end assertValid;
+
+public function assertTrans "function: assertTrans
+  This function has the same semantical meaning as the function
+  `trans\'.  However, it prints an error message when it fails."
+  input State inState;
+  input Event event;
+  input Absyn.Info info;
+  output State outState;
+algorithm
+  outState := matchcontinue (inState,event,info)
+    local
+      State st;
+      String str1,str2,str3;
+    case (st,event,info)
+      then trans(st, event);
+    case (st,event,info)
+      equation
+        str1 = Absyn.pathString(getStateName(st));
+        str2 = printStateStr(st);
+        str3 = printEventStr(event);
+        Error.addSourceMessage(Error.TRANS_VIOLATION, {str1,str2,str3}, info);
+      then
+        fail();
+  end matchcontinue;
+end assertTrans;
 
 public function matchingState "function: matchingState
 

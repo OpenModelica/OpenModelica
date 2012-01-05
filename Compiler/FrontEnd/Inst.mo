@@ -3483,6 +3483,7 @@ algorithm
       list<DAE.ComponentRef> connect_crefs;
       Absyn.Path fullEnvPath;
       UnitAbsyn.InstStore store;
+      Option<SCode.ExternalDecl> ed;
       
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -3543,7 +3544,9 @@ algorithm
     case (cache,env,ih,store,mods,pre,ci_state,className,
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
-                      normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
+                      normalAlgorithmLst = alg, initialAlgorithmLst = initalg,
+                      externalDecl = ed
+                      ),
         re,vis,_,_,inst_dims,impl,callscope,graph,csets,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
@@ -3708,6 +3711,7 @@ algorithm
 
         // Search for equalityConstraint
         eqConstraint = equalityConstraint(env5, els, info);
+        ci_state6 = Debug.bcallret3(Util.isSome(ed),ClassInf.assertTrans,ci_state6,ClassInf.FOUND_EXT_DECL(),info,ci_state6);
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
