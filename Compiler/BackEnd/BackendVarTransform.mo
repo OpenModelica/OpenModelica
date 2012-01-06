@@ -1241,7 +1241,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e2_1,e2_2);
         (es_1,_) = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source):: es,true);
+        (DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source):: es_1,true);
     
     case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e1,source=source)::es),repl)
       equation
@@ -1255,16 +1255,20 @@ algorithm
     
     case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl)
       equation
-        (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
-        (e1_1,b2) = replaceExp(e1, repl,NONE());
-        (else_1,b3) = replaceElse(else_,repl);
-        true = b1 or b2 or b3;
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
-        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        (es_1,_) = replaceStatementLst(es, repl);
+        (e1_1,b1) = replaceExp(e1, repl,NONE());
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
+        (es_1,b2) = replaceSTMT_IF(e1_2,statementLst,else_,source,es,repl);
+         
+        //(statementLst_1,b2) = replaceStatementLst(statementLst, repl);
+        //(else_1,b3) = replaceElse(else_,repl);
+        //true = b1 or b2 or b3;
+        //(e1_2,b1) = ExpressionSimplify.simplify(e1_1);
+        //source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        //(es_1,_) = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1,true);
+        (es_1,b1 or b2);
+        //(DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1,b2);
     
     case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)::es),repl)
       equation
@@ -1409,13 +1413,12 @@ algorithm
       Boolean b1,b2,b3;
     case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl)
       equation
-        (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
-        (e1_1,b2) = replaceExp(e1, repl,NONE());
-        (else_1,b3) = replaceElse(else_,repl);
-        true = b1 or b2 or b3;
+        (e1_1,b1) = replaceExp(e1, repl,NONE());
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (else_1,b2) = replaceElse1(e1_2,statementLst,else_,repl);
+        true = b1 or b2;
       then
-        (DAE.ELSEIF(e1_2,statementLst_1,else_1),true);
+        (else_1,true);
     case (DAE.ELSE(statementLst=statementLst),repl) 
       equation
         (statementLst_1,true) = replaceStatementLst(statementLst, repl);
@@ -1424,6 +1427,97 @@ algorithm
     else (inElse,false);
   end matchcontinue;
 end replaceElse;
+
+protected function replaceElse1 "function: replaceElse1
+
+  Helper for replaceStatementLst.
+"
+  input DAE.Exp inExp;
+  input list<DAE.Statement> inStatementLst;
+  input DAE.Else inElse;
+  input VariableReplacements inVariableReplacements;
+  output DAE.Else outElse;
+  output Boolean replacementPerformed;
+algorithm
+  (outElse,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inVariableReplacements)
+    local
+      VariableReplacements repl;
+      list<DAE.Statement> statementLst,statementLst_1;
+      DAE.Exp e1;
+      DAE.Else else_,else_1;
+      Boolean b1,b2;
+    case (DAE.BCONST(true),statementLst,_,repl)
+      equation
+        (statementLst_1,_) = replaceStatementLst(statementLst, repl);
+      then
+        (DAE.ELSE(statementLst_1),true);
+    case (DAE.BCONST(false),_,else_,repl)
+      equation
+        (else_1,_) = replaceElse(else_, repl);
+      then
+        (else_1,true);
+    case (e1,statementLst,else_,repl)
+      equation
+        (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
+        (else_1,b2) = replaceElse(else_,repl);
+        true = b1 or b2;
+      then
+        (DAE.ELSEIF(e1,statementLst_1,else_1),true);
+    case (e1,statementLst,else_,repl)
+      then
+        (DAE.ELSEIF(e1,statementLst,else_),false);
+  end matchcontinue;
+end replaceElse1;
+
+protected function replaceSTMT_IF
+  input DAE.Exp inExp;
+  input list<DAE.Statement> inStatementLst;
+  input DAE.Else inElse;
+  input DAE.ElementSource inSource;
+  input list<DAE.Statement> inStatementRestLst;
+  input VariableReplacements inVariableReplacements;
+  output list<DAE.Statement> outStatementLst; 
+  output Boolean replacementPerformed;
+algorithm
+  (outStatementLst,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inSource,inStatementRestLst,inVariableReplacements)
+    local
+      DAE.Exp exp,exp_e;
+      list<DAE.Statement> statementLst,statementLst_e,statementLst_1,es,es_1;
+      DAE.Else else_,else_e,else_1;
+      DAE.ElementSource source;
+      VariableReplacements repl;
+      Boolean b1,b2;
+      case (DAE.BCONST(true),statementLst,_,_,es,repl)
+        equation
+          (statementLst_1,_) = replaceStatementLst(statementLst, repl);
+          (es_1,_) = replaceStatementLst(es, repl);         
+        then (listAppend(statementLst_1,es_1),true);
+      case (DAE.BCONST(false),_,else_ as DAE.NOELSE(),source,es,repl)
+        equation
+          (es_1,_) = replaceStatementLst(es, repl); 
+        then (es_1,true);
+      case (DAE.BCONST(false),_,else_ as DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e),source,es,repl)
+        equation        
+          (es_1,_) = replaceSTMT_IF(exp_e,statementLst_e,else_e,source,es,repl);
+        then (es_1,true);
+      case (DAE.BCONST(false),_,else_ as DAE.ELSE(statementLst=statementLst_e),source,es,repl)
+        equation
+          (statementLst_1,_) = replaceStatementLst(statementLst_e, repl);
+          (es_1,_) = replaceStatementLst(es, repl);         
+        then (listAppend(statementLst_1,es_1),true);
+      case (exp,statementLst,else_,source,es,repl)
+        equation
+          (statementLst_1,b1) = replaceStatementLst(statementLst, repl);
+          (else_1,b2) = replaceElse(else_,repl);
+          true = b1 or b2;
+          (es_1,_) = replaceStatementLst(es, repl);
+        then (DAE.STMT_IF(exp,statementLst_1,else_1,source)::es_1,true);
+      case (exp,statementLst,else_,source,es,repl)
+        equation
+          (es_1,b1) = replaceStatementLst(es, repl);
+        then ((DAE.STMT_IF(exp,statementLst,else_,source)::es_1),b1);
+   end matchcontinue;
+end replaceSTMT_IF; 
 
 public function dumpReplacements
 "function: dumpReplacements
