@@ -608,10 +608,10 @@ algorithm
     
     case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables as (timevars,_,_))
       equation
-        // if only parameters no derivative needed
+        // if only parameters or discrete no derivative needed
         crefslstls = List.map(expl,Expression.extractCrefsFromExp);
         crefs = List.flatten(crefslstls);
-        blst = List.map1(crefs,BackendVariable.existsVar,timevars);
+        blst = List.map2(crefs,BackendVariable.existsVar,timevars,true);
         false = Util.boolOrList(blst);
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then

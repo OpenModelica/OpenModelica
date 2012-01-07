@@ -3016,6 +3016,17 @@ algorithm
   end match;
 end whenClauseAddDAE;
 
+public function getStrongComponents
+"function: getStrongComponents
+  autor: Frenkel TUD 2011-11
+  This function returns the strongComponents of a BackendDAE.
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.StrongComponents outComps;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=outComps)) := syst;
+end getStrongComponents;
+
 /**************************
   BackendDAE.BinTree stuff
  **************************/
@@ -5104,7 +5115,7 @@ algorithm
     case (e,vars)
       equation
         crefs = Expression.extractCrefsFromExp(e);
-        b_lst = List.map1(crefs, BackendVariable.existsVar, vars);
+        b_lst = List.map2(crefs, BackendVariable.existsVar, vars, false);
         res = Util.boolOrList(b_lst);
         res_1 = boolNot(res);
       then

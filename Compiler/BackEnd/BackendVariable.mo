@@ -3186,10 +3186,11 @@ public function existsVar
   Return true if a variable exists in the vector"
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
+  input Boolean skipDiscrete;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inVariables)
+  matchcontinue (inComponentRef,inVariables,skipDiscrete)
     local
       BackendDAE.Value hval,hashindx,indx,bsize,n;
       list<BackendDAE.CrefIndex> indexes;
@@ -3198,7 +3199,7 @@ algorithm
       array<list<BackendDAE.CrefIndex>> hashvec;
       BackendDAE.VariableArray varr;
       String str;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),false)
       equation
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
@@ -3207,7 +3208,17 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         true;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),true)
+      equation
+        hashindx = HashTable2.hashFunc(cr, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr, indexes, getVar4(cr, indexes));
+        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+        false = isVarDiscrete(v);
+      then
+        true;        
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),_)
       equation
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
@@ -3219,7 +3230,7 @@ algorithm
         print("\n");
       then
         false;
-    case (_,_) then false;
+    case (_,_,_) then false;
   end matchcontinue;
 end existsVar;
 

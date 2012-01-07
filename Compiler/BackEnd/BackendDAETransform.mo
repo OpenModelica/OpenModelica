@@ -4727,7 +4727,7 @@ algorithm
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         // print("differentiating equations: ");print(stringDelimitList(List.map(eqns_1,intString),","));
         // print("\n");
-        // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
+        // print(BackendDump.dumpMarkedEqns(syst, eqns_1));
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
@@ -4749,10 +4749,11 @@ algorithm
         syst = makeAlgebraic(syst, state);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, changedeqns);
         // print("new DAE:");
-        // BackendDump.dump(dae);
+        // BackendDump.dump(BackendDAE.DAE({syst},shared));
         // print("new IM:");
+        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         // BackendDump.dumpIncidenceMatrix(m);
-        // BackendDump.dumpStateVariables(BackendVariable.daeVars(dae));
+        // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
       then
         (syst,shared,ass1,ass2,derivedAlgs1,derivedMultiEqn1,inArg);
 
