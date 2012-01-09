@@ -2536,7 +2536,7 @@ algorithm
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        DAE.T_ARRAY(t_1, {dim}, ts);
+        DAE.T_ARRAY(t_1, {DAE.DIM_UNKNOWN()}, ts);
 
     case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
