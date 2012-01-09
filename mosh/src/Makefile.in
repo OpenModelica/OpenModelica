@@ -30,7 +30,7 @@ CFLAGS = @CFLAGS@ $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = @LDFLAGS@
 
-LIBS = -lreadline -lncurses $(CORBALIB) -lm -lpthread
+LIBS = @LIBREADLINE@ -lncurses $(CORBALIB) -lm -lpthread
 
 
 OBJS += mosh.o options.o
