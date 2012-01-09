@@ -392,9 +392,16 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         if (sock) delete sock;
         server.close();
         
-        // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plottin view just return.
+        // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
         if (mpProgressDialog->isHidden())
             return;
+        if (mpSimulationProcess->CrashExit == QProcess::CrashExit)
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+                                  arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardError())),
+                                  tr("OK"));
+            return;
+        }
         // read the output file
         QString output_file = projectTab->mModelNameStructure;
         if (!mpFileNameTextBox->text().isEmpty())
