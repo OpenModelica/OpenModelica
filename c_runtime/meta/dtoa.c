@@ -188,10 +188,13 @@
 #include <float.h>
 
 /* OpenModelica x86/amd64 defines */
-#define Long int
-#define ULong unsigned int
-#define LLong long
-#define ULLong unsigned long
+#if defined(__x86_64__)
+  /* The code doesn't run properly on AMD64 unless we set these defines */
+  #define Long int
+  #define ULong unsigned int
+  #define LLong long
+  #define ULLong unsigned long
+#endif
 #define IEEE_8087
 /* End OpenModelica defines */
 
