@@ -4155,7 +4155,7 @@ else
 fi
 
 
-  if test "$WANT_STATIC_LPSOLVE" = "no"; then
+  if test "$WANT_STATIC_READLINE" = "no"; then
     LIBS=""
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing readline" >&5
 $as_echo_n "checking for library containing readline... " >&6; }

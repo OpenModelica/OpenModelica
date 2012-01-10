@@ -180,7 +180,7 @@ else
 
   AC_ARG_WITH(static-readline,  [  --with-static-readline=DIR  (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_READLINE="$withval"],[WANT_STATIC_READLINE="no"])
 
-  if test "$WANT_STATIC_LPSOLVE" = "no"; then
+  if test "$WANT_STATIC_READLINE" = "no"; then
     LIBS=""
     AC_SEARCH_LIBS(readline,readline,,[AC_MSG_ERROR([readline missing])])
     LIBREADLINE=$LIBS
