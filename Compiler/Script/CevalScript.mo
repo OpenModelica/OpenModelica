@@ -1680,6 +1680,12 @@ algorithm
         ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, "Documentation", SOME(("","")),Interactive.getDocumentationAnnotationString);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
+      
+    case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isPackage(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
 
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
@@ -3955,7 +3961,7 @@ algorithm
         // Absyn.CLASS(partialPrefix = false) = c; // do not filter partial classes
         cr = Absyn.pathToCref(className);
         // filter out packages
-        false = Interactive.isPackage(cr, p);
+        false = Interactive.isPackage(className, p);
         // filter out functions
         // false = Interactive.isFunction(cr, p);
         // filter out types

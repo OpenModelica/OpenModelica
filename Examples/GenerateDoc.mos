@@ -184,22 +184,40 @@ replaceCommands := "";
 filetmp := "index.html";
 writeFile(filetmp, "<html><head><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, libraries shipped with OpenModelica and the documentation for OpenModelica-specific scripting.</p>\n", append = true);
-writeFile(filetmp, "<h2>Contents</h2>\n", append = true);
+writeFile(filetmp, "<h2>Libraries</h2>\n", append = true);
 writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
 for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
-  contentStrToks := typeNameStrings(cl);
-  modelVersion := getVersion(cl);
-  if base == "package.mo" then
-    replaceCommands := replaceCommands + "  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://" + contentStrToks[end] + "/&" + dirname(file) + "/&g;\n";
-    dirpaths := strtok(dirname(file),"/");
-    dirs := dirs + " \"" + dirpaths[end] + "\" ";
+  if base <> "ModelicaBuiltin.mo" then
+    base := basename(file);
+    contentStrToks := typeNameStrings(cl);
+    modelVersion := getVersion(cl);
+    if base == "package.mo" then
+      replaceCommands := replaceCommands + "  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://" + contentStrToks[end] + "/&" + dirname(file) + "/&g;\n";
+      dirpaths := strtok(dirname(file),"/");
+      dirs := dirs + " \"" + dirpaths[end] + "\" ";
+    end if;
+    comment := getClassComment(cl);
+    contentStr := typeNameString(cl);
+    fileName := filename(contentStr);
+    writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
   end if;
-  contentStr := typeNameString(cl);
-  comment := getClassComment(cl);
-  fileName := filename(contentStr);
-  writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+end for;
+writeFile(filetmp, "</table>\n", append = true);
+writeFile(filetmp, "<h2>Builtin Environment</h2>\n", append = true);
+writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
+for cl in classNames loop
+  file := getSourceFile(cl);
+  base := basename(file);
+  if base == "ModelicaBuiltin.mo" then
+    contentStr := typeNameString(cl);
+    contentStrToks := typeNameStrings(cl);
+    modelVersion := getVersion(cl);
+    comment := getClassComment(cl);
+    fileName := filename(contentStr);
+    writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+  end if;
 end for;
 writeFile(filetmp, "</table>\n", append = true);
 writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline version</a>)", append = true);

@@ -2190,6 +2190,17 @@ annotation(
   preferredView="text");
 end basename;
 
+function isPackage
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given classname is a package.
+</html>"),
+  preferredView="text");
+end isPackage;
+
 annotation(preferredView="text");
 end Scripting;
 

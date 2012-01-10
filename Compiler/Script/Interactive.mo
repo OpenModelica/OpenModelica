@@ -1988,15 +1988,6 @@ algorithm
 
    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "isPackage");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isPackage(cr, p);
-        resstr = boolString(b1);
-      then
-        (resstr,st);
-
-   case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "isClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isClass(cr, p);
@@ -2089,7 +2080,7 @@ algorithm
         matchApiFunction(istmts, "existPackage");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = existClass(cr, p);
-        b2 = isPackage(cr, p);
+        b2 = isPackage(Absyn.crefToPath(cr), p);
         b = boolAnd(b1, b2);
         resstr = boolString(b);
       then
@@ -8583,23 +8574,21 @@ public function isPackage
    This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"package\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
       Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (path,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
-    case (cr,p) then false;
+    else false;
   end matchcontinue;
 end isPackage;
 
