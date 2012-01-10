@@ -568,6 +568,8 @@ public constant Message SUBSCRIPTED_MODIFIER = MESSAGE(211, TRANSLATION(), ERROR
   "Subscripted modifier is illegal.");
 public constant Message TRANS_VIOLATION = MESSAGE(212, TRANSLATION(), ERROR(),
   "Restriction violation: %s is a %s, which may not contain an %s.");
+public constant Message INSERT_CLASS = MESSAGE(213, SCRIPTING(), ERROR(),
+  "Failed to insert class %s %s the available classes were:%s");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),

@@ -9311,12 +9311,7 @@ algorithm
         newp_1 = updateProgram(Absyn.PROGRAM(c2,w,ts1), newp);
       then
         newp_1;
-    // failing
-    case (a,b)
-      equation
-        Print.printBuf("Further program merging not implemented yet\n");
-      then
-        b;
+
   end matchcontinue;
 end updateProgram;
 
@@ -16143,8 +16138,9 @@ algorithm
       Absyn.Class c2,c3,c1;
       Absyn.Program pnew,p;
       Absyn.Within w;
-      String n1,s1,name;
+      String n1,s1,s2,name;
       Absyn.TimeStamp ts;
+      list<Absyn.Path> paths;
 
     case (c1,(w as Absyn.WITHIN(path = Absyn.QUALIFIED(name = n1))),p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
@@ -16162,10 +16158,10 @@ algorithm
         pnew;
     case ((c1 as Absyn.CLASS(name = name)),w,p)
       equation
-        print("Error inserting class: " +& name +& " within: (");
         s1 = Dump.unparseWithin(0, w);
-        print(s1 +& ") program: \n");
-        print(Dump.unparseStr(p, false));
+        (_,paths) = getClassNamesRecursive(NONE(), p, {});
+        s2 = stringAppendList(List.map1r(List.map(paths,Absyn.pathString),stringAppend,"\n  "));
+        Error.addMessage(Error.INSERT_CLASS, {name,s1,s2});
       then
         fail();
   end matchcontinue;
