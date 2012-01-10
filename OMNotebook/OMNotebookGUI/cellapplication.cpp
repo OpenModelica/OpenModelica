@@ -52,7 +52,6 @@
 #include "stylesheet.h"
 #include "inputcell.h"
 #include "notebookcommands.h"
-#include "notebooksocket.h"
 
 #include <cstdlib>
 
@@ -101,49 +100,6 @@ namespace IAEX
     mainWindow = new QMainWindow();
 #endif
     QDir dir;
-
-    // 2006-05-03 AF, Notebook socket...
-    notebooksocket_ = new NotebookSocket( this );
-
-    try
-    {
-      if( notebooksocket_->connectToNotebook() )
-      {
-        // found another OMNotebook process
-        cout << "SOCKET: Connected" << endl;
-
-        if( argc > 1 )
-        {
-          QString fileToOpen( argv[1] );
-          if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
-          {
-            if( notebooksocket_->sendFilename( fileToOpen ))
-            {
-              cout << "SOCKET: sent filename" << endl;
-              exit( -1 );
-            }
-            else
-              cout << "SOCKET: unable to send filename" << endl;
-          }
-          else
-            cout << "SOCKET: Specified filename do not exist" << endl;
-
-
-        }
-        else
-          cout << "SOCKET: No filename specified" << endl;
-      }
-      else
-        cout << "SOCKET: Server" << endl;
-    }
-    catch( exception &e )
-    {
-      e.what();
-//      string msg = string( "Unable to create socket, the application will not work as supposed:\nTry restarting OMNotebook." )+ e.what();
-//      QMessageBox::warning( 0, "Socket Error", msg.c_str() );
-    }
-
-
 
     // 2005-10-25 AF, added a check if omc is running, otherwise
     // try to start it
@@ -354,10 +310,6 @@ namespace IAEX
    */
   CellApplication::~CellApplication()
   {
-    // 2006-05-03 AF, delete notebook socket
-    notebooksocket_->closeNotebookSocket();
-    delete notebooksocket_;
-
     // 2005-12-19 AF, stop highlighter thread
     HighlighterThread *thread = HighlighterThread::instance();
     thread->exit();

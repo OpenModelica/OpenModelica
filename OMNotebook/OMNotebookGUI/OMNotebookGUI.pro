@@ -40,7 +40,6 @@ SOURCES += \
     xmlparser.cpp \
     searchform.cpp \
     cellgroup.cpp \
-    notebooksocket.cpp \
     serializingvisitor.cpp \
     graphcell.cpp \
     evalthread.cpp \
@@ -85,7 +84,6 @@ HEADERS += \
     serializingvisitor.h \
     cellapplication.h \
     commandunit.h \
-    notebooksocket.h \
     stripstring.h \
     cellcommandcenter.h \
     cursorcommands.h \
