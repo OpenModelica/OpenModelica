@@ -32,7 +32,7 @@ endif
 
 LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_g -lpthread \
   $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
-  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@ -llapack -lblas @SQLITE3_LIBS@
+  -L../../build/lib/omc @RT_LDFLAGS@ -llapack -lblas @SQLITE3_LIBS@
 
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O1 #-Wr,-East,-Ecps,-Efol
@@ -44,5 +44,5 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 .testvariables:
 	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
-$(PROG): $(SRCO) $(SUBDIRS) $(top_builddir)/c_runtime/sendData/*.cpp
+$(PROG): $(SRCO) $(SUBDIRS)
 	$(CXX) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)

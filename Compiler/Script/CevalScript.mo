@@ -1368,12 +1368,6 @@ algorithm
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"setDataPort",{Values.INTEGER(i)},st,msg)
-      equation
-        System.setDataPort(i);
-      then
-        (cache,Values.BOOL(true),st);
-        
     case (cache,env,"setCompiler",{Values.STRING(str)},st,msg)
       equation
         System.setCCompiler(str);
@@ -1724,7 +1718,7 @@ algorithm
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,msg)
       equation
-        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath();
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
@@ -1738,7 +1732,7 @@ algorithm
         uname = System.readFile(touch_file);
         rm_res = 0 == System.systemCall("rm " +& touch_file);
         platform = System.platform();
-        senddata = System.getSendDataLibs();
+        senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null");
         confcmd = System.configureCommandLine();
@@ -1830,40 +1824,8 @@ algorithm
         // plot error
     case (cache,env,"plot2",_,st,msg) then (cache,Values.BOOL(false),st);
         
-        //plotAll(model)
-    case (cache,env,"plotAll",
-        {
-          Values.STRING(filename),
-          Values.STRING(interpolation),
-          Values.STRING(title),
-          Values.BOOL(legend),
-          Values.BOOL(grid),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.BOOL(points),
-          xRange,
-          yRange
-        },
-        st,
-        msg)
-      equation        
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        
-        vars_2 = List.setDifference(SimulationResults.readVariables(filename),{"time"});
-        vars_2 = "time" :: vars_2;
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,"plotAll",_,st,msg)
-      then (cache,Values.BOOL(false),st);
-
     //plotAll(model)
-    case (cache,env,"plotAll3",
+    case (cache,env,"plotAll",
         {
           Values.BOOL(externalWindow),
           Values.STRING(filename),
@@ -1899,50 +1861,11 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"plotAll3",_,st,msg)
+    case (cache,env,"plotAll",_,st,msg)
       then (cache,Values.BOOL(false),st);
-
-      // plot without sendData support is plot2()
-    case (cache,env,"plot",_,st,msg)
-      equation
-        false = System.getHasSendDataSupport();
-      then (cache,Values.STRING("OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile. Or use a command like plot2() that does not require Qt."),st);
 
     // plot(x, model)
     case (cache,env,"plot",
-        {
-          Values.ARRAY(valueLst = cvars),
-          Values.STRING(filename),
-          Values.STRING(interpolation),
-          Values.STRING(title),
-          Values.BOOL(legend),
-          Values.BOOL(grid),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.BOOL(points),
-          xRange,
-          yRange
-        },
-        st,msg)
-      equation
-        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        vars_2 = List.unionElt("time", vars_1);
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,"plot",_,st,msg)
-      then
-        (cache,Values.BOOL(false),st);
-    
-    // plot3(x, model)
-    case (cache,env,"plot3",
         {
           Values.ARRAY(valueLst = cvars),
           Values.BOOL(externalWindow),
@@ -1982,34 +1905,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"plot3",_,st,msg)
-      then
-        (cache,Values.BOOL(false),st);
-        
-        // he-mag, visualize
-        // visualize(model, x)
-    case (cache,env,"visualize",{Values.CODE(Absyn.C_TYPENAME(className))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
-      equation
-        //Jag måste få readptol att skicka alla variabler i .plt-filen, och en ide är
-        //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
-        //Kolla på senddata:emulateStreamData
-        (visvars,visvar_str) = Interactive.getElementsOfVisType(className, p);
-        filename = Absyn.pathString(className);
-        filename = stringAppendList({filename, "_res.plt"});
-        strVars = SimulationResults.readVariables(filename);
-        strVars = List.filter1(strVars, visualizationVarShouldBeAdded, visvars);
-        vars_2 = List.unionElt("time", strVars);
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        resI = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
-      then
-        (cache,Values.BOOL(true),st);        
-        
-    case (cache,env,"visualize",_,st,msg)
+    case (cache,env,"plot",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         
     // visualize2
-    case (cache,env,"visualize2",
+    case (cache,env,"visualize",
         {
           Values.CODE(Absyn.C_TYPENAME(className)),
           Values.BOOL(externalWindow),
@@ -2031,7 +1932,7 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"visualize2",_,st,msg)
+    case (cache,env,"visualize",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         
@@ -2176,48 +2077,8 @@ algorithm
         
     case (cache,env,"plotParametric2",_,st,msg) then (cache,Values.BOOL(false),st);
         
+    // plotParametric
     case (cache,env,"plotParametric",
-        {
-          cvar,
-          Values.ARRAY(valueLst = cvars),
-          Values.STRING(filename),
-          Values.STRING(interpolation),
-          Values.STRING(title),
-          Values.BOOL(legend),
-          Values.BOOL(grid),
-          Values.BOOL(logX),
-          Values.BOOL(logY),
-          Values.STRING(xLabel),
-          Values.STRING(yLabel),
-          Values.BOOL(points),
-          xRange,
-          yRange
-        },
-        st,msg)
-      equation
-        vars_1 = List.map(cvar::cvars, ValuesUtil.printCodeVariableName);
-        length = listLength(vars_1);
-        (length > 1) = true;
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        
-        value = ValuesUtil.readDataset(filename, vars_1, 0);
-        pwd = System.pwd();
-        cit = winCitation();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.trim(omhome, "\"");
-        pd = System.pathDelimiter();
-        plotCmd = stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
-        uniqueStr = intString(tick());
-        tmpPlotFile = stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        resI = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ValuesUtil.valString(xRange), ValuesUtil.valString(yRange));
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,"plotParametric",_,st,msg)
-      then (cache,Values.BOOL(false),st);
-        
-    // plotParametric3
-    case (cache,env,"plotParametric3",
         {
           cvar,
           cvar2,
@@ -2256,7 +2117,7 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"plotParametric3",_,st,msg)
+    case (cache,env,"plotParametric",_,st,msg)
       then (cache,Values.BOOL(false),st);
     
     case (cache,env,"echo",{v as Values.BOOL(bval)},st,msg)
@@ -2264,12 +2125,6 @@ algorithm
         setEcho(bval);
       then (cache,v,st);
 
-    case (cache,env,"enableSendData",{Values.BOOL(b)},st,msg)
-      equation
-        System.enableSendData(b);
-      then
-        (cache,Values.BOOL(true),st);
-        
     case (cache,env,"strictRMLCheck",_,st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         _ = List.map1r(List.map(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);

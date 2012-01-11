@@ -90,7 +90,6 @@ read_write.h \
 real_array.h \
 ringbuffer.h \
 rtclock.h \
-sendData/sendData.h \
 simulation_delay.h \
 simulation_events.h \
 simulation_init.h \
@@ -118,7 +117,7 @@ $(META_HFILES)
 LIBS = libSimulationRuntimeC.a libSimulationRuntimeQss.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a 
 
-.PHONY : libsendData.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
+.PHONY : interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
 
 all : install
 
@@ -168,12 +167,11 @@ simulation_input.o : simulation_input.cpp
 simulation_events.o : simulation_events.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
 
-install: libSimulationRuntimeC.a libSimulationRuntimeQss.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
+install: libSimulationRuntimeC.a libSimulationRuntimeQss.a $(LIBF2C) interactive/libinteractive.a omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp fmu_model_interface.c $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	test -z "$(LIBF2C)" || cp libf2c/libf2c.* $(builddir_lib)/
-	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
 	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install || \
@@ -186,8 +184,4 @@ clean :
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
 	rm -f libSimulationRuntimeC.a libSimulationRuntimeQss.a
 	rm -f $(OBJS) $(SIM_OBJS) $(QSS_OBJS)
-	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
-	rm -rf sendData/release sendData/debug
-	rm -f sendData.o sendData.a sendData/sendDataHumbug.o sendData/releasesendData.o sendData/Makefile solver_qss/*.o
-
-
+	rm -f solver_qss/*.o

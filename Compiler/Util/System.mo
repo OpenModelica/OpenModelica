@@ -274,42 +274,6 @@ public function freeLibrary
   external "C" System_freeLibrary(inLibHandle, inPrintDebug) annotation(Library = "omcruntime");
 end freeLibrary;
 
-public function sendData
-  input String data;
-  input String interpolation;
-  input String title;
-  input Boolean legend;
-  input Boolean grid;
-  input Boolean logX;
-  input Boolean logY;
-  input String xLabel;
-  input String yLabel;
-  input Boolean points;
-  input String range;
-  external "C" System_sendData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range) annotation(Library = "omcruntime");
-end sendData;
-
-public function enableSendData
-  input Boolean enable;
-  external "C" SystemImpl__enableSendData(enable) annotation(Library = "omcruntime");
-end enableSendData;
-
-public function getHasSendDataSupport
-  output Boolean hasSendData;
-  external "C" hasSendData=System_getHasSendDataSupport() annotation(Library = "omcruntime");
-end getHasSendDataSupport;
-
-public function setDataPort
-  input Integer port;
-  external "C" SystemImpl__setDataPort(port) annotation(Library = "omcruntime");
-end setDataPort;
-
-public function sendData2
-  input String info;
-  input String data;
-  external "C" System_sendData2(info, data, 7778) annotation(Library = "omcruntime");
-end sendData2;
-
 public function writeFile
 "This function will write to the file given by first argument the given string"
   input String fileNameToWrite "a filename where to write the data";
@@ -639,11 +603,11 @@ public function tmpTickResetIndex
   external "C" SystemImpl_tmpTickResetIndex(start,index) annotation(Library = "omcruntime");
 end tmpTickResetIndex;
 
-public function getSendDataLibs
-"Returns a string containing the compiler flags used for SENDDATALIBS"
-  output String sendDataLibs;
-  external "C" sendDataLibs=System_getSendDataLibs() annotation(Library = "omcruntime");
-end getSendDataLibs;
+public function getRTLibs
+"Returns a string containing the compiler flags used for real-time libraries"
+  output String libs;
+  external "C" libs=System_getRTLibs() annotation(Library = "omcruntime");
+end getRTLibs;
 
 public function getCorbaLibs
 "Returns a string containing the compiler flags used for Corba libraries.

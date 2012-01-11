@@ -101,9 +101,9 @@ extern double System_realtimeTock(int ix)
   return rt_tock(ix);
 }
 
-extern const char* System_getSendDataLibs()
+extern const char* System_getRTLibs()
 {
-  return LDFLAGS_SENDDATA;
+  return LDFLAGS_RT;
 }
 
 extern const char* System_getCCompiler()

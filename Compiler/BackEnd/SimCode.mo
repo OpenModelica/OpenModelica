@@ -3032,7 +3032,7 @@ algorithm
   cflags := System.getCFlags();
   cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP),stringAppend,cflags," -fopenmp",cflags);
   ldflags := System.getLDFlags();
-  senddatalibs := System.getSendDataLibs();
+  senddatalibs := System.getRTLibs();
   platform := System.modelicaPlatform();
   makefileParams := MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
         omhome, cflags, ldflags, senddatalibs, includes, libs, platform);

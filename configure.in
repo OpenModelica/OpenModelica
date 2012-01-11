@@ -25,9 +25,7 @@ AC_SUBST(IDLCMD)
 AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
-AC_SUBST(LIBSENDDATA)
-AC_SUBST(LIBSENDDATA_LDFLAGS)
-AC_SUBST(WITH_SENDDATA)
+AC_SUBST(RT_LDFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
@@ -443,38 +441,10 @@ else
   EXE=""
 fi
 
-AC_MSG_CHECKING([for sendData-Qt]);
-AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot().],
-[
-  if test -z "$QMAKE"; then
-    AC_MSG_ERROR("Cannot compile with libSendData unless qmake is present.");
-  fi
-  LIBSENDDATA="libsendData.a"
-  WITH_SENDDATA="#define CONFIG_WITH_SENDDATA 1"
-  #if test "Darwin" = `uname`; then
-  #  LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
-  #  if test -d /opt/local/Library/Frameworks/; then
-  #    LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
-  #  fi
-  #else
-    LIBSENDDATA_LDFLAGS="-lQtNetwork -lQtCore -lQtGui"
-  #fi
-  
-  LDFLAGS_BAK=$LDFLAGS
-  LDFLAGS+=" $LIBSENDDATA_LDFLAGS"
-  AC_LINK_IFELSE([AC_LANG_PROGRAM()],AC_MSG_RESULT([ok]),AC_MSG_ERROR([Compilation failed using LDFLAGS='$LDFLAGS'. Try specifying your own LDFLAGS to link to Qt.]))
-  LDFLAGS=$LDFLAGS_BAK
-  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendData $LIBSENDDATA_LDFLAGS"
-],
-[
-  LIBSENDDATA=""
-  LIBSENDDATA_LDFLAGS="$LDFLAGS"
-  WITH_SENDDATA="// #undef CONFIG_WITH_SENDDATA"
-  AC_MSG_RESULT([disabled])
-])
-
 if test "Darwin" != `uname`; then
-  LIBSENDDATA_LDFLAGS+=" -lrt"
+  RT_LDFLAGS="-lrt"
+else
+  RT_LDFLAGS=""
 fi
 
 dnl should we compile modpar

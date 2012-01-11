@@ -912,19 +912,6 @@ external "builtin";
 annotation(preferredView="text");
 end clearVariables;
 
-function enableSendData
-  input Boolean enabled;
-  output Boolean success;
-external "builtin";
-end enableSendData;
-
-function setDataPort
-  input Integer port;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end setDataPort;
-
 function generateHeader
   input String fileName;
   output Boolean success;
@@ -1769,37 +1756,7 @@ partial function basePlotFunction "Extending this does not seem to work at the m
 annotation(preferredView="text");
 end basePlotFunction;
 
-function plot "Launches a plot window using OMPlotWindow. Returns true on success.
-  If OpenModelica was compiled without sendData support, this function will return false.
-  
-  Example command sequences:
-  simulate(A);plot({x,y,z});
-  simulate(A);plot(x);
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);
-  "
-  input VariableNames vars "The variables you want to plot";
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String interpolation := "linear" "
-    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
-    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
-    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
-  ;
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
-  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end plot;
-
-function plot3 "Launches a plot window using OMPlot. Returns true on success.
+function plot "Launches a plot window using OMPlot. Returns true on success.
   Don't require sendData support.
   
   Example command sequences:
@@ -1822,37 +1779,9 @@ function plot3 "Launches a plot window using OMPlot. Returns true on success.
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");
-end plot3;
+end plot;
 
 function plotAll "Works in the same way as plot(), but does not accept any
-  variable names as input. Instead, all variables are part of the plot window.
-  
-  Example command sequences:
-  simulate(A);plotAll();
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");
-  "
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String interpolation := "linear" "
-    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
-    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
-    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
-  ;
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
-  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end plotAll;
-
-function plotAll3 "Works in the same way as plot(), but does not accept any
   variable names as input. Instead, all variables are part of the plot window.
   
   Example command sequences:
@@ -1874,7 +1803,7 @@ function plotAll3 "Works in the same way as plot(), but does not accept any
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");
-end plotAll3;
+end plotAll;
 
 function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
   similar to the plot() command. This command accepts fewer options, but works
@@ -1894,24 +1823,11 @@ end plot2;
 function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
   System Documentation for more details.
-  
-  Example command sequence:
-  simulate(A,outputFormat=\"plt\");visualize(A);
-  "
-  input TypeName classToVisualize;
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end visualize;
-
-function visualize2 "Uses the 3D visualization package, SimpleVisual.mo, to
-  visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
-  System Documentation for more details.
   Writes the visulizations objects into the file \"model_name.visualize\"
   Don't require sendData support.
   
   Example command sequence:
-  simulate(A,outputFormat=\"mat\");visualize2(A);visualize2(A,\"B.mat\");visualize2(A,\"B.mat\", true);
+  simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,\"B.mat\");visualize(A,\"B.mat\", true);
   "
   input TypeName className;
   input Boolean externalWindow := false "Opens the visualize in a new window";
@@ -1919,36 +1835,7 @@ function visualize2 "Uses the 3D visualization package, SimpleVisual.mo, to
   output Boolean success "Returns true on success";
   external "builtin";
 annotation(preferredView="text");
-end visualize2;
-
-function plotParametric "Plots the y-variables as a function of the x-variable.
-
-  Example command sequences:
-  simulate(A);plotParametric(x,y);
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plotParametric(x,{y1,y2,y3},fileName=\"B.mat\",yLabel=\"[V]\");
-  "
-  input VariableName xVariable;
-  input VariableNames yVariables;
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String interpolation := "linear" "
-    Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
-    \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
-    data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
-  ;
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
-  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end plotParametric;
+end visualize;
 
 function plotParametric2 "Plots the y-variables as a function of the x-variable.
 
@@ -1964,7 +1851,7 @@ external "builtin";
 annotation(preferredView="text");
 end plotParametric2;
 
-function plotParametric3 "Launches a plotParametric window using OMPlot. Returns true on success.
+function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
   Don't require sendData support.
   
   Example command sequences:
@@ -1987,7 +1874,7 @@ function plotParametric3 "Launches a plotParametric window using OMPlot. Returns
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");
-end plotParametric3;
+end plotParametric;
 
 function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
   input String filename;
@@ -2571,6 +2458,7 @@ package trunk "Current version"
 annotation(Documentation(info="<html>
 Major changes (up to r10819):
 <h4>OpenModelica Compiler (OMC)</h4>
+The feature sendData has been removed from OpenModelica. As a result, the kernel no longer depends on Qt. The <code>plot3()</code> family of functions have now replaced <code>plot()</code>, which in turn have been removed. The non-standard <code>visualize()</code> command has been removed in favour of more recent alternatives.
 <ul>
 <li>Store the documentation as Modelica <a href=\"modelica://ModelicaReference.Annotations.Documentation\">Documentation</a> annotations.</li>
 <li>Re-implementation of the simulation runtime using C instead of C++ (this was needed to export FMI source-based packages).</li>
@@ -2580,9 +2468,9 @@ Major changes (up to r10819):
 <li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
 <li>Improved the scripting environment. <code>cl := $TypeName(Modelica)</code>;getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
 <li>Various bugfixes.</li>
+</ul>
 <h4>OMNotebook</h4>
 Added OMSketch (...).
-</ul>
 </html>"));
 end trunk;
 annotation(Documentation(info="<html>

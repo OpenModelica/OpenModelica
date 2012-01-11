@@ -609,54 +609,6 @@ RML_BEGIN_LABEL(System__getVariableValue)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__sendData)
-{
-#ifdef CONFIG_WITH_SENDDATA
-  char* data = RML_STRINGDATA(rmlA0);
-  char* interpolation = RML_STRINGDATA(rmlA1);
- char* title = RML_STRINGDATA(rmlA2);
- int legend = RML_UNTAGFIXNUM(rmlA3); //RML_STRINGDATA(rmlA3);
- int grid = RML_UNTAGFIXNUM(rmlA4); //RML_STRINGDATA(rmlA4);
- int logX = RML_UNTAGFIXNUM(rmlA5); //RML_STRINGDATA(rmlA5);
- int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);
- char* xLabel = RML_STRINGDATA(rmlA7);
- char* yLabel = RML_STRINGDATA(rmlA8);
- int points = RML_UNTAGFIXNUM(rmlA9);
-  char* range = RML_STRINGDATA(rmlA10);
- //char* yRange = RML_STRINGDATA(rmlA11);
-//  emulateStreamData(data, 7778);
-
-
-//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear", 1);
-///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
-
-//  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
-
-  emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
-  RML_TAILCALLK(rmlSC);
-#else
-  addSendDataError("System.sendData");
-  RML_TAILCALLK(rmlFC);
-#endif
-
-//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__sendData2)
-{
-#ifdef CONFIG_WITH_SENDDATA
-  char* info = RML_STRINGDATA(rmlA0);
-  char* data = RML_STRINGDATA(rmlA1);
-  emulateStreamData2(info, data, 7778);
-  RML_TAILCALLK(rmlSC);
-#else
-  addSendDataError("System.sendData2");
-  RML_TAILCALLK(rmlFC);
-#endif
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__getCurrentTime)
 {
   rmlA0 = mk_rcon(SystemImpl__getCurrentTime());
@@ -694,17 +646,6 @@ RML_BEGIN_LABEL(System__freeLibrary)
   modelica_integer printDebug = RML_UNTAGFIXNUM(rmlA1);
   if (SystemImpl__freeLibrary(libIndex, printDebug))
     RML_TAILCALLK(rmlFC);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getHasSendDataSupport)
-{
-#ifdef CONFIG_WITH_SENDDATA
-  rmlA0 = RML_TRUE;
-#else
-  rmlA0 = RML_FALSE;
-#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1798,9 +1739,9 @@ RML_BEGIN_LABEL(System__getTimerStackIndex)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__getSendDataLibs)
+RML_BEGIN_LABEL(System__getRTLibs)
 {
-  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA);
+  rmlA0 = (void*) mk_scon(LDFLAGS_RT);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1836,21 +1777,6 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__os)
 {
   rmlA0 = (void*) mk_scon(CONFIG_OS);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__enableSendData)
-{
-  SystemImpl__enableSendData(RML_UNTAGFIXNUM(rmlA0));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__setDataPort)
-{
-  int port = RML_UNTAGFIXNUM(rmlA0);
-  SystemImpl__setDataPort(port);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1906,14 +1832,6 @@ RML_BEGIN_LABEL(System__setEnv)
   char* envvalue = RML_STRINGDATA(rmlA1);
   rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
   rmlA0 = mk_icon(setenv(envname, envvalue, overwrite));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__setVariableFilter)
-{
-  char* variables = RML_STRINGDATA(rmlA0);
-  setenv("sendDataFilter", variables, 1 /* overwrite */);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
