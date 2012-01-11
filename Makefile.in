@@ -31,7 +31,6 @@ omcd: difftool c_runtime docs fmi
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
-	rm -rf OMNotebook/bin/OMPlotWindow$(EXE) OMNotebook/OMPlotWindow/OMPlotWindow$(EXE)
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*
 ifeq ($(QMAKE),)
@@ -47,8 +46,6 @@ omnotebook: mkbuilddirs
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-omplotwindow: mkbuilddirs
-	$(MAKE) -C OMNotebook/OMPlotWindow -f Makefile.unix
 omplot: mkbuilddirs
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: mkbuilddirs omplot
@@ -61,11 +58,10 @@ omoptim: mkbuilddirs
 	$(MAKE) -C OMOptim/build -f Makefile.unix
 endif
 
-qtclients: omnotebook omshell omplotwindow omedit omplot omoptim
+qtclients: omnotebook omshell omedit omplot omoptim
 
 qtclean: qtclean-common
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
-	$(MAKE) -C OMNotebook/OMPlotWindow -f Makefile.unix clean
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean

@@ -150,7 +150,7 @@ clean: qtclean
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
-	rm -rf build/share build/lib build/include build/bin/OMPlotWindow* build/bin/OMShell* build/bin/OMNotebook* \
+	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omcd build/bin/omcd.exe build/bin/omcp build/bin/omcp.exe  build/bin/omc-diff build/bin/omc-diff.exe
 
 install-dirs:
