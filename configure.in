@@ -25,11 +25,6 @@ AC_SUBST(IDLCMD)
 AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
-AC_SUBST(COIN_LIBS)
-AC_SUBST(SOQT_LIBS)
-AC_SUBST(COIN_INCLUDE)
-AC_SUBST(SOQT_INCLUDE)
-AC_SUBST(HAVE_COIN)
 AC_SUBST(LIBSENDDATA)
 AC_SUBST(LIBSENDDATA_LDFLAGS)
 AC_SUBST(WITH_SENDDATA)
@@ -481,33 +476,6 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
 if test "Darwin" != `uname`; then
   LIBSENDDATA_LDFLAGS+=" -lrt"
 fi
-
-dnl Check for libCoin
-
-AC_MSG_CHECKING([for libCoin])
-AC_ARG_WITH(Coin, [  --with-Coin=[yes|no|static]     Compile with support for plotting in 3D.],
-[
-  if test -z "$QMAKE"; then
-    AC_MSG_ERROR("Cannot compile with libCoin unless qmake is present.");
-  fi
-  #Would be duplicated by soqt-libs...
-  #COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
-  SOQT_LIBS=`soqt-config --ldflags --libs | tr \\\\n \\ `
-  COIN_INCLUDE=`coin-config --includedir | tr \\\\n \\ `
-  SOQT_INCLUDE=`soqt-config --includedir | tr \\\\n \\ `
-  HAVE_COIN="HAVE_COIN"
-  if test "$withval" = "static" ; then
-    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lCoin/-Wl,-Bstatic -lCoin -Wl,-Bdynamic/"`
-    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lSoQt4/-Wl,-Bstatic -lSoQt4 -Wl,-Bdynamic/"`
-  fi
-  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$SOQT_LIBS"; then
-    AC_MSG_ERROR([failure]);
-  fi
-  AC_MSG_RESULT([ok])
-],
-[
-  AC_MSG_RESULT([disabled])
-])
 
 dnl should we compile modpar
 

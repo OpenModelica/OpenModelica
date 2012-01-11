@@ -1900,6 +1900,7 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   "
   input TypeName classToVisualize;
   output Boolean success "Returns true on success";
+external "builtin";
 annotation(preferredView="text");
 end visualize;
 
