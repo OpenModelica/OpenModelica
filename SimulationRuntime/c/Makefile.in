@@ -24,8 +24,6 @@ EXTERNALCMAKEFILE=Makefile
 
 include Makefile.common
 
-libsendData.a :
-	cd ./sendData && $(QMAKE) && $(MAKE) -f Makefile
 omdevinstall:
 
 

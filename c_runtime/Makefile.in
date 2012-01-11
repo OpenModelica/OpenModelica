@@ -26,8 +26,6 @@ LIBF2C=@LIBF2C@
 
 include Makefile.common
 
-libsendData.a :
-	cd ./sendData && $(QMAKE) && $(MAKE) -f Makefile
 omdevinstall:
 
 Makefile: Makefile.in
