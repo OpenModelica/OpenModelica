@@ -44,8 +44,6 @@ SOURCES += \
     graphcell.cpp \
     evalthread.cpp \
     indent.cpp \
-    ../3Dpkg/SimulationData.cpp \
-    ../3Dpkg/VisualizationWidget.cpp \
     ../OMSketch/Tools.cpp \
     ../OMSketch/Sketch_files.cpp \
     ../OMSketch/Shapes.cpp \
@@ -122,8 +120,6 @@ HEADERS += \
     graphcell.h \
     evalthread.h \
     indent.h \
-    ../3Dpkg/SimulationData.h \
-    ../3Dpkg/VisualizationWidget.h \
     omc_communicator.h \
     ../OMSketch/Tools.h \
     ../OMSketch/Sketch_files.h \
@@ -148,12 +144,7 @@ HEADERS += \
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
-    searchform.ui \
-    ../Pltpkg2/compoundWidget.ui\
-    ../Pltpkg2/dataSelect.ui\
-    ../Pltpkg2/graphWindow.ui\
-    ../Pltpkg2/preferences.ui \
-    ../Pltpkg2/newgraph.ui
+    searchform.ui
 # -------For OMNIorb
 win32 {
   DEFINES += __x86__ \
@@ -162,19 +153,15 @@ win32 {
              __WIN32__
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 -lomniORB414_rt -lomnithread34_rt
-  COIN_LIBS =
-  SOQT_LIBS =
   USE_CORBA = USE_OMNIORB
 } else {
   include(OMNotebook.config)
 }
 #---------End OMNIorb
 
-DEFINES += $${HAVE_COIN} $${USE_CORBA}
-LIBS += $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
+DEFINES += $${USE_CORBA}
+LIBS += $${CORBALIBS}
 INCLUDEPATH += $${CORBAINC} \
-               ../Pltpkg2 \
-               ../3Dpkg \
                ../OMSketch \
                ../../
 

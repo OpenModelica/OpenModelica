@@ -94,11 +94,7 @@ namespace IAEX
     : QObject()
   {
     app_ = new QApplication(argc, argv);
-#ifdef HAVE_COIN
-    mainWindow = SoQt::init(argc, argv, argv[0]);
-#else
     mainWindow = new QMainWindow();
-#endif
     QDir dir;
 
     // 2005-10-25 AF, added a check if omc is running, otherwise

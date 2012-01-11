@@ -128,8 +128,6 @@ namespace IAEX
 
     void delegateFinished();
     void setState(int state);
-    void showGraphics();
-
 
   protected:
     void resizeEvent(QResizeEvent *event);    //AF
@@ -168,7 +166,6 @@ namespace IAEX
     Document *document_;
 
   public:
-    bool showGraph;
     QPushButton* variableButton;
     QTemporaryFile* imageFile;
   };

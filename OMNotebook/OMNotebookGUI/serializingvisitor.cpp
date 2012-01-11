@@ -254,8 +254,6 @@ namespace IAEX
     else
       graphcell.setAttribute( XML_CLOSED, XML_FALSE );
 
-    graphcell.setAttribute( XML_GRAPHCELL_SHOWGRAPH, node->showGraph?XML_TRUE:XML_FALSE);
-
     // Create an text element (for input) and append it to the element
     QDomElement textelement = domdoc_.createElement( XML_INPUTPART );
     QDomText textnode = domdoc_.createTextNode( node->text() );

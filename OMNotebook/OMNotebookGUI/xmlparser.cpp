@@ -626,13 +626,6 @@ namespace IAEX
     else
       throw runtime_error( "Unknown closed value in inputcell" );
 
-    bool showGraphics = (element.attribute(XML_GRAPHCELL_SHOWGRAPH, XML_FALSE) == XML_TRUE)?true:false;
-    if(showGraphics)
-    {
-      gCell->showGraph = true;
-      gCell->showGraphics();
-    }
-
     parent->addChild( graphcell );
   }
 

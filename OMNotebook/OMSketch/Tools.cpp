@@ -13,7 +13,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     rect = new QToolButton();
     hlayout = new QVBoxLayout;
     main_widget = new QWidget;
-    file_dialog = new QFileDialog(this,"Open","c:",".skh");
+    file_dialog = new QFileDialog(this,"Open",QString(),".skh");
 
 	color_dialog = new QColorDialog(this);
 
@@ -389,7 +389,7 @@ void Tools::draw_new()
 
 	   if(msg->clickedButton()==msg_save)
        {
-          QString file_name=file_dialog->getSaveFileName(this,"Save","c:",tr("Image(*.png)"));
+          QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
           file_dialog->deleteLater();
 		  if(file_name.contains(".png"))
 			writeImage(file_name);
@@ -420,7 +420,7 @@ void Tools::draw_save()
 			  break;
 		  else if(opt==QMessageBox::Yes)
 		  {
-			  QString file_name=file_dialog->getSaveFileName(this,"Save","c:",tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
+			  QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
 			   
 			  QMessageBox::about(this,"file name ",file_name);  
 			  writeImage(file_name);
@@ -534,7 +534,7 @@ void Tools::draw_save()
 
 void Tools::draw_open()
 {
-    QString file_name=file_dialog->getOpenFileName(this,"Open","c:","*.png *.jpg *.bmp" );
+    QString file_name=file_dialog->getOpenFileName(this,"Open",QString(),"*.png *.jpg *.bmp" );
 
 	if(!isSaved)
 		draw_save();
@@ -1078,7 +1078,7 @@ void Tools::draw_shapes()
 void Tools::msg_save_file()
 {
    qDebug()<<"Entered \n";
-   QString file_name=file_dialog->getSaveFileName(this,"Save","c:","*.skh");
+   QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),"*.skh");
    file_dialog->deleteLater();
    scene->save_Scene(file_name);
    scene->new_Scene();
@@ -1379,7 +1379,7 @@ void Tools::closeEvent(QCloseEvent* event)
 		{
            if(!isSaved)
 		   {
-	   	      QString file_name=file_dialog->getSaveFileName(this,"Save","c:",tr("Image(*.png)"));
+	   	      QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
 		      if(file_name.contains(".png"))
 			     writeImage(file_name);
 		   }

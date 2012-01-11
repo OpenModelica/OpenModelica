@@ -525,8 +525,6 @@ namespace IAEX {
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
-    showGraph = false;
-
     imageFile=0;
   }
 
@@ -1293,12 +1291,6 @@ namespace IAEX {
     return evaluated_;
   }
 
-  void GraphCell::showGraphics()
-  {
-    showGraph = true;
-    contentChanged();
-  }
-
   bool GraphCell::isQtPlot(QString text)
   {
     QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
@@ -1422,16 +1414,11 @@ namespace IAEX {
       // remove plot.png if it already exist, don't want any
       // old plot.
       bool newPlot = isQtPlot(input_->toPlainText());
-      bool visualize = isVisualize(input_->toPlainText());
 
       if(newPlot)
       {
         setClosed(false);
       } 
-      else if (visualize)
-      {
-        showGraphics();
-      }
 
       // 2006-02-02 AF, Added try-catch
       QString res, error;
@@ -1456,7 +1443,7 @@ namespace IAEX {
           EvalThread* et = new EvalThread(getDelegate(), expr);
           connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));          
           et->start();
-          if (!visualize && !newPlot) { et->wait(); }
+          if (!newPlot) { et->wait(); }
         }
         catch( exception &e )
         {
