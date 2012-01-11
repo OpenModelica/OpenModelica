@@ -568,16 +568,8 @@ namespace IAEX
           text = e.text();
           GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
           gCell->setText(text);
-          gCell->compoundwidget->gwMain->currentExpr = e.text();
-          //fjass        gCell->setText( text );
         }
-        /*        else if( e.tagName() == XML_OUTPUTPART )
-        {
-        GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-
-        gCell->setTextOutput( e.text() );
-        }
-        */        else if( e.tagName() == XML_OUTPUTPART )
+        else if( e.tagName() == XML_OUTPUTPART )
         {
           GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
 
@@ -595,136 +587,9 @@ namespace IAEX
           graphcell->addRule(
             new Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
-        else if( e.tagName() == XML_GRAPHCELL_DATA )
-        {
-          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-          QString id, label;
-          id = e.attribute(XML_GRAPHCELL_ID);
-          label = e.attribute(XML_GRAPHCELL_LABEL);
-          VariableData *v = new VariableData(label, id, e.text());
-          gCell->compoundwidget->gwMain->variables[label] =v;
-
-          gCell->compoundwidget->gwMain->variableData.push_back(v);
-        }
-        else if( e.tagName() == XML_GRAPHCELL_GRAPH )
-        {
-          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-
-          bool points, line;
-          QColor color;
-          QString xVar, yVar, interpolation;
-
-          if(e.attribute(XML_GRAPHCELL_POINTS) == XML_TRUE)
-            points = true;
-          else
-            points = false;
-
-          if(e.attribute(XML_GRAPHCELL_LINE) == XML_TRUE)
-            line = true;
-          else
-            line = false;
-
-          color = QColor(e.attribute(XML_GRAPHCELL_COLOR));
-
-          interpolation = e.attribute(XML_GRAPHCELL_INTERPOLATION);
-
-          xVar = e.attribute(XML_GRAPHCELL_X);
-          yVar = e.attribute(XML_GRAPHCELL_Y);
-
-          int interpolation_;
-          if(interpolation == QString(XML_GRAPHCELL_LINEAR))
-          {
-            interpolation_= INTERPOLATION_LINEAR;
-          }
-          else if(interpolation == QString(XML_GRAPHCELL_CONSTANT))
-          {
-            interpolation_ = INTERPOLATION_CONSTANT;
-          }
-          else
-          {
-            interpolation_= INTERPOLATION_NONE;
-          }
-
-          LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 12);
-          ll->graphWidget = gCell->compoundwidget->gwMain;
-          gCell->compoundwidget->gwMain->legendFrame->setMinimumWidth(max(ll->fontMetrics().width(yVar)+41+4, gCell->compoundwidget->gwMain->legendFrame->minimumWidth()));
-          //          ll->setMaximumHeight(21);
-          gCell->compoundwidget->gwMain->legendLayout->addWidget(ll);
-          ll->show();
-
-          Curve* curve = new Curve(gCell->compoundwidget->gwMain->variables[xVar], gCell->compoundwidget->gwMain->variables[yVar], color, ll);
-          ll->setCurve(curve);
-          curve->visible = line;
-          curve->drawPoints = points;
-          curve->interpolation = interpolation_;
-
-          gCell->compoundwidget->gwMain->curves.push_back(curve);
-
-        }
-        else if( e.tagName() == XML_GRAPHCELL_SHAPE )
-        {
-          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-
-          QString type = e.attribute(XML_GRAPHCELL_SHAPETYPE);
-
-          QRectF rect;
-          QPen pen;
-          QBrush brush;
-          QLineF line_;
-
-          QByteArray ba = QByteArray::fromBase64( e.attribute(XML_GRAPHCELL_SHAPEDATA).toLatin1());
-          QBuffer b(&ba);
-          b.open(QBuffer::ReadOnly);
-          QDataStream ds(&b);
-          ds.setVersion(QDataStream::Qt_4_2);
-
-          if(type == XML_GRAPHCELL_RECT)
-          {
-            ds >> rect >> pen >> brush;
-            QGraphicsRectItem* r = new QGraphicsRectItem(rect);
-            r->show();
-            r->setPen(pen);
-            r->setBrush(brush);
-            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
-            gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
-          }
-          else if(type == XML_GRAPHCELL_ELLIPSE)
-          {
-            ds >> rect >> pen >> brush;
-            QGraphicsEllipseItem* r = new QGraphicsEllipseItem(rect);
-            r->show();
-            r->setPen(pen);
-            r->setBrush(brush);
-            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
-            gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
-
-
-            //            ds >> rect >> pen >> brush;
-            //            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addEllipse(rect, pen, brush));
-
-          }
-          else if(type == XML_GRAPHCELL_LINE)
-          {
-
-            //            ds.setVersion(QDataStream::Qt_3_3);
-            ds >> line_ >> pen;
-
-            QGraphicsLineItem* r = new QGraphicsLineItem(line_);
-
-            r->show();
-            r->setPen(pen);
-            //            r->setBrush(brush);
-            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
-            gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
-
-            //            gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addLine(line_, pen));
-          }
-
-          b.close();
-
-
-        }
-
+        else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
+        else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
+        else if( e.tagName() == XML_GRAPHCELL_SHAPE ) {}
         else
         {
           string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
@@ -743,32 +608,6 @@ namespace IAEX
 
     GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
 
-    gCell->compoundwidget->gwMain->variables.clear();
-
-    gCell->compoundwidget->plotTitle->setText(element.attribute(XML_GRAPHCELL_TITLE, "Plot by OpenModelica"));
-    gCell->compoundwidget->xLabel->setText(element.attribute(XML_GRAPHCELL_XLABEL,"" ));
-    gCell->compoundwidget->yLabel->setText(element.attribute(XML_GRAPHCELL_YLABEL, ""));
-    gCell->compoundwidget->gwMain->showGrid((element.attribute(XML_GRAPHCELL_GRID, XML_TRUE) == XML_TRUE)?true:false);
-
-    gCell->compoundwidget->gwMain->fixedXSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOX, XML_TRUE) == XML_TRUE)?false:true;
-    gCell->compoundwidget->gwMain->fixedYSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOY, XML_TRUE) == XML_TRUE)?false:true;
-
-    gCell->compoundwidget->gwMain->xMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORX, "1").toDouble();
-    gCell->compoundwidget->gwMain->xMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORX, ".1").toDouble();
-    gCell->compoundwidget->gwMain->yMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORY, "1").toDouble();
-    gCell->compoundwidget->gwMain->yMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORY, ".1").toDouble();
-
-    gCell->compoundwidget->gwMain->xLog = (element.attribute(XML_GRAPHCELL_LOGX, XML_FALSE) == XML_TRUE)?true:false;
-    gCell->compoundwidget->gwMain->yLog = (element.attribute(XML_GRAPHCELL_LOGY, XML_FALSE) == XML_TRUE)?true:false;
-    gCell->compoundwidget->legendFrame->setVisible((element.attribute(XML_GRAPHCELL_LEGEND, XML_TRUE) == XML_TRUE)?true:false);
-
-    if(element.attribute(XML_GRAPHCELL_AA, XML_FALSE) == XML_TRUE)
-    {
-      gCell->compoundwidget->gwMain->setRenderHint(QPainter::Antialiasing);
-      gCell->compoundwidget->gwMain->antiAliasing = true;
-      gCell->compoundwidget->gwMain->aaAction->setChecked(true);
-    }
-
     QByteArray ba = QByteArray::fromBase64( element.attribute(XML_GRAPHCELL_AREA).toLatin1());
     QBuffer b(&ba);
     b.open(QBuffer::ReadOnly);
@@ -777,12 +616,6 @@ namespace IAEX
     QRectF r;
     ds >> r;
     b.close();
-
-    gCell->compoundwidget->gwMain->setLogarithmic(false);
-    gCell->compoundwidget->gwMain->doFitInView = false;
-    gCell->compoundwidget->gwMain->doSetArea = true;
-    gCell->compoundwidget->gwMain->newRect = r;
-    gCell->compoundwidget->gwMain->originalArea = r;
 
     // 2006-01-17 AF, check if the inputcell is open or closed
     QString closed = element.attribute( XML_CLOSED, XML_FALSE );
@@ -798,13 +631,7 @@ namespace IAEX
     {
       gCell->showGraph = true;
       gCell->showGraphics();
-      gCell->compoundwidget->gwMain->resetZoom();
     }
-    else
-      gCell->compoundwidget->hide();
-
-    if(!gCell->isQtPlot())
-      gCell->compoundwidget->hide();
 
     parent->addChild( graphcell );
   }

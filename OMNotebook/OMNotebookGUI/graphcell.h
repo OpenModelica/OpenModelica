@@ -35,6 +35,7 @@
 
 
 //QT Headers
+#include <QtGui/QAction>
 #include <QtGui/QWidget>
 #include <QtGui/QTextBrowser>
 //Added by qt3to4:
@@ -42,7 +43,6 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QResizeEvent>
 #include <QtCore/QEvent>
-#include "../Pltpkg2/compoundWidget.h"
 #include <QPushButton>
 #include <QTemporaryFile>
 //IAEX Headers
@@ -168,7 +168,6 @@ namespace IAEX
     Document *document_;
 
   public:
-    CompoundWidget* compoundwidget;
     bool showGraph;
     QPushButton* variableButton;
     QTemporaryFile* imageFile;

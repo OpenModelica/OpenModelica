@@ -72,8 +72,6 @@
 #include "commandcompletion.h"
 #include "highlighterthread.h"
 #include "omcinteractiveenvironment.h"
-#include "../Pltpkg2/graphWidget.h"
-#include "../Pltpkg2/compoundWidget.h"
 #include "indent.h"
 
 #include "evalthread.h"
@@ -506,7 +504,7 @@ namespace IAEX {
   */
   GraphCell::GraphCell(Document *doc, QWidget *parent) : 
    Cell(parent), evaluated_(false), closed_(true), delegate_(0), 
-   oldHeight_( 0 ), document_(doc), compoundwidget(0)
+   oldHeight_( 0 ), document_(doc)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -522,15 +520,8 @@ namespace IAEX {
 
     createGraphCell();
     createOutputCell();
-    createCompoundWidget();
 
-    connect(compoundwidget->gwMain, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
     connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
-    connect(variableButton, SIGNAL(clicked()), compoundwidget->gwMain, SLOT(showVariables()));
-
-    connect(compoundwidget->gwMain, SIGNAL(newExpr(QString)), this, SLOT(setExpr(QString)));
-    connect(this, SIGNAL(newExpr(QString)), compoundwidget->gwMain, SLOT(setExpr(QString)));
-    connect(compoundwidget->gwMain, SIGNAL(showGraphics()), this, SLOT(showGraphics()));
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
@@ -565,8 +556,6 @@ namespace IAEX {
       if( sleepTime > 100 )
         break;
     }
-
-    delete compoundwidget;
 
     delete input_;
     delete output_;
@@ -689,18 +678,6 @@ namespace IAEX {
       Qt::LinksAccessibleByMouse|
       Qt::LinksAccessibleByKeyboard);
     output_->hide();
-  }
-
-  void GraphCell::createCompoundWidget()
-  {
-    compoundwidget = new CompoundWidget(mainWidget());
-    // compoundwidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    layout_->addWidget( compoundwidget, 3, 1 /*, Qt::AlignHCenter*/);
-
-    compoundwidget->gwMain->setServerState(false);
-    compoundwidget->visWidget->setServerState(false);
-    compoundwidget->hide();
   }
 
   bool MyTextEdit2::lessIndented(QString s)
@@ -1154,7 +1131,7 @@ namespace IAEX {
     }
     catch(...)
     {
-      qDebug() << "setReadOnly: crash" << endl;
+      // qDebug() << "setReadOnly: crash" << endl;
     }
   }
 
@@ -1187,15 +1164,12 @@ namespace IAEX {
     if( closed )
     {
       output_->hide();
-      compoundwidget->hide();
     }
     else
     {
       if( evaluated_ )
       {
         output_->show();
-        if(showGraph)
-          compoundwidget->show();
       }
     }
 
@@ -1266,15 +1240,6 @@ namespace IAEX {
       height += outHeight;
     }
 
-    // add a little extra, just in case, emit 'heightChanged()' if height
-    // have chagned /AF
-    if(compoundwidget && compoundwidget->isVisible())
-    {
-      compoundwidget->gvBottom->show();
-      compoundwidget->gvLeft->show();
-      height += compoundwidget->height();
-    }
-
     setHeight( height );
     emit textChanged();
 
@@ -1330,13 +1295,7 @@ namespace IAEX {
 
   void GraphCell::showGraphics()
   {
-    compoundwidget->show();
     showGraph = true;
-
-    //if(!compoundwidget->isVisible())
-    //{      
-    //  compoundwidget->show();
-    //}
     contentChanged();
   }
 
@@ -1468,14 +1427,9 @@ namespace IAEX {
       if(newPlot)
       {
         setClosed(false);
-        compoundwidget->gwMain->setServerState(true);
-        compoundwidget->hideVis();
       } 
       else if (visualize)
       {
-        if(!compoundwidget->visWidget->getServerState())
-          compoundwidget->visWidget->setServerState(true);
-        compoundwidget->showVis();
         showGraphics();
       }
 
