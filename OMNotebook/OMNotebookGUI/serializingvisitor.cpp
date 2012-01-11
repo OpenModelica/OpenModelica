@@ -207,10 +207,7 @@ namespace IAEX
     QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
 
     QDomText outputnode;
-    if( node->isJavaPlot() )
-      outputnode = domdoc_.createTextNode( node->textOutputHtml() );
-    else
-      outputnode = domdoc_.createTextNode( node->textOutput() );
+    outputnode = domdoc_.createTextNode( node->textOutput() );
 
     outputelement.appendChild( outputnode );
     inputcell.appendChild( outputelement );
@@ -389,10 +386,7 @@ for(int i = 0; i < l.size(); ++i)
     QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
 
     QDomText outputnode;
-    if( node->isJavaPlot() )
-      outputnode = domdoc_.createTextNode( node->textOutputHtml() );
-    else
-      outputnode = domdoc_.createTextNode( node->textOutput() );
+    outputnode = domdoc_.createTextNode( node->textOutput() );
 
     outputelement.appendChild( outputnode );
     graphcell.appendChild( outputelement );

@@ -503,11 +503,7 @@ namespace IAEX
         else if( e.tagName() == XML_OUTPUTPART )
         {
           InputCell *iCell = dynamic_cast<InputCell*>(inputcell);
-
-          if( iCell->isJavaPlot() )
-            iCell->setTextOutputHtml( e.text() );
-          else
-            iCell->setTextOutput( e.text() );
+          iCell->setTextOutput( e.text() );
         }
         else if( e.tagName() == XML_RULE )
         {

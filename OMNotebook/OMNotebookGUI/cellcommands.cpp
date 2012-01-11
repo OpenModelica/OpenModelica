@@ -399,11 +399,7 @@ namespace IAEX
       if( oldInputCell->isEvaluated() )
       {
         newInputCell->setEvaluated( true );
-
-        if( oldInputCell->isJavaPlot() )
-          newInputCell->setTextOutputHtml( oldInputCell->textOutputHtml() );
-        else
-          newInputCell->setTextOutput( oldInputCell->textOutput() );
+        newInputCell->setTextOutput( oldInputCell->textOutput() );
       }
       else
         newInputCell->setEvaluated( false );
@@ -421,11 +417,7 @@ namespace IAEX
       if( oldGraphCell->isEvaluated() )
       {
         newGraphCell->setEvaluated( true );
-
-        if( oldGraphCell->isJavaPlot() )
-          newGraphCell->setTextOutputHtml( oldGraphCell->textOutputHtml() );
-        else
-          newGraphCell->setTextOutput( oldGraphCell->textOutput() );
+        newGraphCell->setTextOutput( oldGraphCell->textOutput() );
       }
       else
         newGraphCell->setEvaluated( false );

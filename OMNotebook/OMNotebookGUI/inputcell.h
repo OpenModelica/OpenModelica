@@ -86,8 +86,6 @@ namespace IAEX
     virtual bool isClosed();              // Added 2006-01-17 AF
     virtual bool isEditable();
     virtual bool isEvaluated();              // Added 2005-11-23 AF
-    virtual bool isJavaPlot(QString text = QString::null);  // Added 2005-11-23 AF
-
 
   signals:
     void heightChanged();
