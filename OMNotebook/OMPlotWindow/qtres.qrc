@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/" >
-        <file>Resources/plotWindow.bmp</file>
-    </qresource>
-</RCC>
