@@ -22,12 +22,14 @@ HEADERS += commandcompletion.h \
 
 # -------For OMNIorb
 win32 {
+  QMAKE_LFLAGS += -enable-auto-import
   DEFINES += __x86__ \
              __NT__ \
              __OSVERSION__=4 \
              __WIN32__
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 -lomniORB414_rt -lomnithread34_rt
+  INCLUDEPATH += ../../
 } else {
   include(OMShell.config)
 }
