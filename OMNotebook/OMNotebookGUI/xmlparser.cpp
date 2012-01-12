@@ -67,7 +67,6 @@
 #include "graphcell.h"
 #include <QMessageBox>
 #include <QPushButton>
-#include "../Pltpkg2/legendLabel.h"
 
 using namespace std;
 

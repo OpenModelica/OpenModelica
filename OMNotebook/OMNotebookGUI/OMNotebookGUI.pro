@@ -147,6 +147,7 @@ FORMS += ImageSizeDlg.ui \
     searchform.ui
 # -------For OMNIorb
 win32 {
+  QMAKE_LFLAGS += -enable-auto-import
   DEFINES += __x86__ \
              __NT__ \
              __OSVERSION__=4 \
