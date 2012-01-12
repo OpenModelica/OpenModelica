@@ -1128,11 +1128,11 @@ algorithm
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
         Tpl.tplNoret2(SimCodeQSS.translateModel, simCode, qssInfo);
       then ();
-    case (simCode,_,"C")
+    case (simCode,_,"c")
       equation
         Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
-    case (simCode,_,"c")
+    case (simCode,_,"C")
       equation
         Tpl.tplNoret(CodegenC.translateModel, simCode);
       then ();        

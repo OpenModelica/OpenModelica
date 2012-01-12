@@ -43,7 +43,6 @@ static const unsigned int infoLength = 15;
 typedef struct DASSL_DATA{
 	unsigned int* dasslStatistics;
 	unsigned int* dasslStatisticsTmp;
-	modelica_boolean reset;
 
 	fortran_integer* info;
 

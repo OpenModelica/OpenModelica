@@ -396,11 +396,10 @@ CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* curr
 
       FindRoot(simData, &EventTime, eventList);
       /*Handle event as state event*/
-      simData->localData[0]->timeValue = EventTime;
       EventHandle(simData, 0, eventList);
 
       DEBUG_INFO1(LOG_EVENTS, "Event Handling at EventTime: %f done!", EventTime);
-      *currentTime = EventTime;
+      *currentTime = simData->localData[0]->timeValue;
       freeList(eventList);
       return 1;
     }
@@ -519,7 +518,7 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
                 value = fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]);
             }
         }
-        DEBUG_INFO1(LOG_ZEROCROSSINGS, "Minimum value: %g", value);
+        DEBUG_INFO1(LOG_ZEROCROSSINGS, "Minimum value: %f", value);
       for (it=listFirstNode(eventList); it; it=listNextNode(it))
         {
             if (value == fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]))
@@ -532,10 +531,12 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
 
   listClear(eventList);
 
-  if (listLen(tmpEventList) > 0){
-    DEBUG_INFO_NEL(LOG_EVENTS, "Found events: ");
-  }else{
-    DEBUG_INFO_NEL(LOG_EVENTS, "Found event: ");
+  if (DEBUG_FLAG(LOG_EVENTS)){
+    if (listLen(tmpEventList) > 0){
+      DEBUG_INFO_NEL(LOG_EVENTS, "Found events: ");
+    }else{
+      DEBUG_INFO_NEL(LOG_EVENTS, "Found event: ");
+    }
   }
   while (listLen(tmpEventList) > 0){
       event_id = *((long*)listFirstData(tmpEventList));
@@ -550,9 +551,9 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
   }
   DEBUG_INFO_NELA(LOG_EVENTS, "\n");
 
- DEBUG_INFO1(LOG_EVENTS, "at time: %g", *EventTime);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point left: %g", time_left);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point right: %g", time_right);
+ DEBUG_INFO1(LOG_EVENTS, "at time: %f", *EventTime);
+ DEBUG_INFO1(LOG_EVENTS, "Time at Point left: %f", time_left);
+ DEBUG_INFO1(LOG_EVENTS, "Time at Point right: %f", time_right);
 
   /*determined system at t_e - epsilon */
   simData->localData[0]->timeValue = time_left;
@@ -664,10 +665,10 @@ CheckZeroCrossings(_X_DATA *simData, LIST *tmpEventList, LIST *eventList)
               *((long*)listNodeData(it)), simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))], simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))], simData->simulationInfo.zeroCrossingEnabled[*((long*)listNodeData(it))]); fflush(NULL);
 
       /*Found event in left section*/
-      if ((simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] < 0
-              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] >= 0)
-          || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] > 0
-              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] <= 0)
+      if ((simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] <= 0
+              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] > 0)
+          || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] >= 0
+              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] < 0)
           || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] > 0
               && simData->simulationInfo.zeroCrossingEnabled[*((long*)listNodeData(it))] <= -1)
           || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] < 0

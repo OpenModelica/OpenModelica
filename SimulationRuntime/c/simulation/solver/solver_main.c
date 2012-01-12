@@ -211,7 +211,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	if(initialization(simData, "state", "nelder_mead_ex"))
   {
-			THROW("Error in initialization. Storing results and exiting.");
+			//THROW("Error in initialization. Storing results and exiting.");
 	}
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
@@ -290,9 +290,6 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
    */
   while (solverInfo.currentTime < simInfo->stopTime) {
 
-    /* rotate RingBuffer before step is calculated */
-    rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
-
 	  if (measure_time_flag) {
 		  for (i = 0; i < simData->modelData.nFunctions + simData->modelData.nProfileBlocks; i++)
 			  rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
@@ -300,22 +297,26 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		  rt_tick(SIM_TIMER_STEP);
 	  }
 
+    /* rotate RingBuffer before step is calculated */
+    rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
+
+
 	  /* Calculate new step size after an event */
 	  if (solverInfo.didEventStep == 1) {
 		  solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
-		  if (solverInfo.offset + uround > solverInfo.currentStepSize)
+		  if (solverInfo.offset + uround > simInfo->stepSize)
 			  solverInfo.offset = 0;
 		  DEBUG_INFO1(LOG_SOLVER, "Offset value for the next step: %g", solverInfo.offset);
 	  } else {
 		  solverInfo.offset = 0;
 	  }
-
 	  if (flag != 6) {
 		  /*!!!!! not for DOPRI5 with stepsize control */
 		  solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
 
 		  if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
 			  solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
+			  DEBUG_INFO1(LOG_SOLVER, "Correct currentStepSize : %g", solverInfo.currentStepSize);
 		  }
 	  }
 
@@ -326,7 +327,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  /* read input vars */
 	  input_function(simData);
 
-	  DEBUG_INFO2(LOG_SOLVER, "Call Solver from %g to %g", solverInfo.currentTime,
+	  DEBUG_INFO2(LOG_SOLVER, "Call Solver from %f to %f", solverInfo.currentTime,
 			  solverInfo.currentTime + solverInfo.currentStepSize);
 
 	  /* do one integration step
@@ -410,12 +411,11 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  /********* end of Emit this time step *********/
 
 	  /* save dassl stats before reset */
-	  /*
-	  if (reset == 1) {
-		  for (i = 0; i < DASSLSTATS; i++)
-			  dasslStats[i] += dasslStatsTmp[i];
+	  if (solverInfo.didEventStep == 1 && flag == 3) {
+		  for (i = 0; i < noStatistics; i++)
+		    ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[i] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[i];
 	  }
-	  */
+
 	  /* Check for termination of terminate() or assert() */
 	  if (terminationAssert ||
 	      terminationTerminate ||
@@ -437,7 +437,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		  break;
 	  }
 
-	  DEBUG_INFO1(LOG_SOLVER, "** Step to  %g Done!", solverInfo.currentTime);
+	  DEBUG_INFO3(LOG_SOLVER, "** Step to  %e Done! Run still to stop time %e. time left :%e ", solverInfo.currentTime,simInfo->stopTime,solverInfo.currentTime- simInfo->stopTime);
 	  /* debug print */
     if (DEBUG_FLAG(LOG_DEBUG)){
 	    for (i=0; i<3;i++){
@@ -460,11 +460,11 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   /* save dassl stats before print */
 
   if (DEBUG_FLAG(LOG_STATS)) {
-    /*
     int i;
-    for (i = 0; i < DASSLSTATS; i++)
-      dasslStats[i] += dasslStatsTmp[i];
-     */
+    if (flag == 3){
+      for (i = 0; i < noStatistics; i++)
+        ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[i] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[i];
+    }
     rt_accumulate(SIM_TIMER_TOTAL);
 
     INFO("##### Statistics #####");
@@ -472,20 +472,24 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     INFO_AL1("Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
     INFO_AL1("State Events: %d", solverInfo.stateEvents);
     INFO_AL1("Sample Events: %d", solverInfo.sampleEvents);
-    /*
-    INFO_AL("##### Solver Statistics #####");
-    INFO_AL1("The number of steps taken: %d", dasslStats[0]);
-    INFO_AL1("The number of calls to functionODE: %d", dasslStats[1]);
-    INFO_AL1("The evaluations of Jacobian: %d", dasslStats[2]);
-    INFO_AL1("The number of error test failures: %d", dasslStats[3]);
-    INFO_AL1("The number of convergence test failures: %d", dasslStats[4]);
-    */
+    if (flag == 3)
+    {
+      INFO_AL("##### Solver Statistics #####");
+      INFO_AL1("The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
+      INFO_AL1("The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
+      INFO_AL1("The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
+      INFO_AL1("The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
+      INFO_AL1("The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
+    }
     /*
     if (flag == 6)
     {
         INFO1("DOPRI5: total number of steps rejected: %d", reject);
     }
     */
+  }else{
+    if (measure_time_flag)
+      rt_accumulate(SIM_TIMER_TOTAL);
   }
 
   /* deintialize solver related workspace */

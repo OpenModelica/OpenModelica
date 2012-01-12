@@ -70,6 +70,9 @@ void printAllVars(_X_DATA *data, int ringSegment);
 
 void overwriteOldSimulationData(_X_DATA *data);
 
+void
+restoreExtrapolationDataOld(_X_DATA *data);
+
 void storeStartValues(_X_DATA* data);
 
 void storeStartValuesParam(_X_DATA *data);

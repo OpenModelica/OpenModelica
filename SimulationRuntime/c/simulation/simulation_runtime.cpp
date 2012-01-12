@@ -341,7 +341,6 @@ startNonInteractiveSimulation(int argc, char**argv, _X_DATA* data)
     rt_clear( SIM_TIMER_INIT );
   }
 
-
   if (create_linearmodel) {
     if (lintime == NULL) {
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
@@ -576,6 +575,10 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
 void SimulationRuntime_printStatus(int sig) {
   printf("<status>\n");
   printf("<phase>UNKNOWN</phase>\n");
+  /*
+   * FIXME: Variables needed here are no longer global.
+   *        and (int sig) is too small for pointer to data.
+   */
   /*
   printf("<model>%s</model>\n", data->modelData.modelFilePrefix);
   printf("<phase>UNKNOWN</phase>\n");

@@ -90,14 +90,6 @@ continue_DASRT(fortran_integer* idid, double* tolarence);
 int
 dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
-  /* int i; */
-
-  /*will remove -> DASSL
-	for (i = 0; i < DASSLSTATS; i++) {
-			dasslStats[i] = 0;
-			dasslStatsTmp[i] = 0;
-		}
-   */
   /* work arrays for DASSL */
   dasslData->liw = 20 + simData->modelData.nStates;
   dasslData->lrw =  52 + (maxOrder + 4) * simData->modelData.nStates
@@ -114,6 +106,11 @@ dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   dasslData->ipar[1] = LOG_JAC;
   dasslData->ipar[2] = LOG_ENDJAC;
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
+  ASSERT(dasslData->info,"out of memory");
+  dasslData->dasslStatistics = (unsigned int*) calloc(noStatistics, sizeof(unsigned int));
+  ASSERT(dasslData->dasslStatistics,"out of memory");
+  dasslData->dasslStatisticsTmp = (unsigned int*) calloc(noStatistics, sizeof(unsigned int));
+  ASSERT(dasslData->dasslStatisticsTmp,"out of memory");
 
   /*********************************************************************
    *info[2] = 1;  //intermediate-output mode
@@ -199,14 +196,6 @@ int dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo)
 
     DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %g to %g",
         solverInfo->currentTime, tout);
-    /*
-     DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
-     &solverInfo->currentTime, sData->realVars, stateDer, &tout,
-     dasslData->info, &simData->simulationInfo.tolerance, &simData->simulationInfo.tolerance,
-     &dasslData->idid, dasslData->rwork, &dasslData->lrw, dasslData->iwork,
-     &dasslData->liw,dasslData->rpar, dasslData->ipar, dummy_Jacobian,
-     dummy_zeroCrossing, &tmpZero, NULL);
-     */
 
     if (jac_flag)
     {
@@ -238,27 +227,26 @@ int dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo)
           dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_zeroCrossing,
           &tmpZero, NULL);
     }
-    /*
-     if(sim_verbose == LOG_SOLVER)
+     if (DEBUG_FLAG(LOG_SOLVER))
      {
-     INFO("DASSL call | value of idid: %ld", idid);
-     INFO("DASSL call | current time value: %0.4g", globalData->timeValue);
-     INFO("DASSL call | current integration time value: %0.4g", rwork[3]);
-     INFO("DASSL call | step size H to be attempted on next step: %0.4g", rwork[2]);
-     INFO("DASSL call | step size used on last successful step: %0.4g", rwork[6]);
-     INFO("DASSL call | number of steps taken so far: %ld", iwork[10]);
-     INFO("DASSL call | number of calls of functionODE() : %ld", iwork[11]);
-     INFO("DASSL call | number of calculation of jacobian : %ld", iwork[12]);
-     INFO("DASSL call | total number of convergence test failures: %ld", iwork[13]);
-     INFO("DASSL call | total number of error test failures: %ld", iwork[14]);
+       INFO1("DASSL call | value of idid: %ld", dasslData->idid);
+       INFO1("DASSL call | current time value: %0.4g", solverInfo->currentTime);
+       INFO1("DASSL call | current integration time value: %0.4g", dasslData->rwork[3]);
+       INFO1("DASSL call | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
+       INFO1("DASSL call | step size used on last successful step: %0.4g", dasslData->rwork[6]);
+       INFO1("DASSL call | number of steps taken so far: %ld", dasslData->iwork[10]);
+       INFO1("DASSL call | number of calls of functionODE() : %ld", dasslData->iwork[11]);
+       INFO1("DASSL call | number of calculation of jacobian : %ld", dasslData->iwork[12]);
+       INFO1("DASSL call | total number of convergence test failures: %ld", dasslData->iwork[13]);
+       INFO1("DASSL call | total number of error test failures: %ld", dasslData->iwork[14]);
      }
-     */
     /* save dassl stats */
-    /*    for (i = 0; i < DASSLSTATS; i++) {
-     assert(10 + i < liw);
-     tmpStats[i] = iwork[10 + i];
-     }
-     */
+    for (i = 0; i < noStatistics; i++)
+    {
+      assert(10 + i < dasslData->liw);
+      dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];
+    }
+
     if (dasslData->idid == -1)
     {
       fflush(stderr);

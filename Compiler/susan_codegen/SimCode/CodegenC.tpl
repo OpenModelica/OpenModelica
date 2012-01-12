@@ -69,7 +69,9 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
           else 
             "" //the else is automatically empty, too
   
-  let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>.h')
+  // workaround for <%fileNamePrefix%>.h with an underscore, because we have  
+  // for example a ModelicaUtilities.h in the runtime
+  let()= textFile(simulationHeaderFile(simCode,guid), '_<%fileNamePrefix%>.h')
   // adpro: write the main .c file last! Make on windows doesn't seem to realize that 
   //        the .c file is newer than the .o file if we have succesive simulate commands
   //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
@@ -119,7 +121,7 @@ case simCode as SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
-  #include "<%fileNamePrefix%>.h"
+  #include "_<%fileNamePrefix%>.h"
   #include "<%fileNamePrefix%>_functions.c"
   #define _OMC_SEED_HACK char* _omc_hack
   #define _OMC_SEED_HACK_2  NULL
@@ -697,7 +699,8 @@ template functionInitial(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (DEBUG_FLAG(LOG_INIT)) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }'
+    'if (DEBUG_FLAG(LOG_INIT)) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }
+$P$START<%cref(cref)%> = <%cref(cref)%>;'
     ;separator="\n"%>
   
     return 0;
@@ -2050,7 +2053,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc2" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC -lModelicaExternalC <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lModelicaExternalC -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c

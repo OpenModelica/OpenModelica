@@ -383,9 +383,9 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal));
     DEBUG_INFO2(LOG_SOLVER, "read nominal-value for %s =  %f from init file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].attribute.nominal);
     read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min));
-    DEBUG_INFO2(LOG_SOLVER," read min-value for %s =  %f from init file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].attribute.min);
+    DEBUG_INFO2(LOG_SOLVER," read min-value for %s =  %g from init file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].attribute.min);
     read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max));
-    DEBUG_INFO2(LOG_SOLVER," read max-value for %s =  %f from init file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].attribute.max);
+    DEBUG_INFO2(LOG_SOLVER," read max-value for %s =  %g from init file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[i].info.name)]=i;
@@ -423,9 +423,9 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rDer[i]["nominal"], &(modelData->realVarsData[modelData->nStates+i].attribute.nominal));
     DEBUG_INFO2(LOG_SOLVER, "read nominal-value for %s =  %f from init file", modelData->realVarsData[modelData->nStates+i].info.name, modelData->realVarsData[modelData->nStates+i].attribute.nominal);
     read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min));
-    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s =  %f from init file", modelData->realVarsData[modelData->nStates+i].info.name, modelData->realVarsData[modelData->nStates+i].attribute.min);
+    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s =  %g from init file", modelData->realVarsData[modelData->nStates+i].info.name, modelData->realVarsData[modelData->nStates+i].attribute.min);
     read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max));
-    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s =  %f from init file", modelData->realVarsData[modelData->nStates+i].info.name, modelData->realVarsData[modelData->nStates+i].attribute.max);
+    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s =  %g from init file", modelData->realVarsData[modelData->nStates+i].info.name, modelData->realVarsData[modelData->nStates+i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[modelData->nStates+i].info.name)]= modelData->nStates+i;
@@ -464,9 +464,9 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal));
     DEBUG_INFO2(LOG_SOLVER, "read nominal-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.nominal);
     read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min));
-    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.min);
+    DEBUG_INFO2(LOG_SOLVER, "read min-value for %s = %g from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.min);
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max));
-    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s = %f from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.max);
+    DEBUG_INFO2(LOG_SOLVER, "read max-value for %s = %g from init file", modelData->realVarsData[j].info.name, modelData->realVarsData[j].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[j].info.name)]= j;
@@ -536,7 +536,7 @@ void read_input_xml(int argc, char **argv,
 
     /* read var attribute */
     read_value(mi.bAlg[i]["start"], (signed char*)&(modelData->booleanVarsData[i].attribute.start));
-    DEBUG_INFO2(LOG_SOLVER, "read start-value for %s =  %s from init file", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.start?"true":"false");
+    DEBUG_INFO2(LOG_SOLVER, "read start-value for %s = %s from init file", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.start?"true":"false");
     read_value(mi.bAlg[i]["fixed"],(signed char*)&(modelData->booleanVarsData[i].attribute.fixed));
     DEBUG_INFO2(LOG_SOLVER, "read fixed-value for %s = %s from init file", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.fixed?"true":"false");
 
@@ -611,9 +611,9 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal));
     DEBUG_INFO2(LOG_SOLVER, "read nominal for %s = %f from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.nominal);
     read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min));
-    DEBUG_INFO2(LOG_SOLVER," read min-value for %s =  %f from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.min);
+    DEBUG_INFO2(LOG_SOLVER," read min-value for %s =  %g from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.min);
     read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max));
-    DEBUG_INFO2(LOG_SOLVER," read max-value for %s =  %f from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.max);
+    DEBUG_INFO2(LOG_SOLVER," read max-value for %s =  %g from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->realParameterData[i].info.name)]=i;

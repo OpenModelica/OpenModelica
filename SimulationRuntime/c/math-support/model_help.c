@@ -188,6 +188,30 @@ void overwriteOldSimulationData(_X_DATA *data)
 }
 
 
+/** function restoreExtrapolationDataOld
+ * author: wbraun
+ *
+ * Restores variables (states, derivatives and algebraic).
+ *
+ * This function overwrites all variable with old values.
+ * This function is called while the initialization to be able
+ * initialize all ZeroCrossing relations.
+ */
+void
+restoreExtrapolationDataOld(_X_DATA *data)
+{
+  long i;
+
+  for(i=1; i<ringBufferLength(data->simulationData); ++i){
+    data->localData[i-1]->timeValue = data->localData[i]->timeValue;
+    memcpy(data->localData[i-1]->realVars, data->localData[i]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
+    memcpy(data->localData[i-1]->integerVars, data->localData[i]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
+    memcpy(data->localData[i-1]->booleanVars, data->localData[i]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
+    memcpy(data->localData[i-1]->stringVars, data->localData[i]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
+  }
+}
+
+
 /*! \fn void storeStartValues(_X_DATA *data)
  *
  *  sets all values to their start-attribute

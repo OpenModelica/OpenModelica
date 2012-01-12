@@ -659,18 +659,18 @@ static int state_initialization(_X_DATA *data, int optiMethod)
 
   /* call initialize function and save start values */
   storeStartValues(data);
-  storePreValues(data);             /* if initial_function() uses pre-values */
   storeStartValuesParam(data);
   initial_function(data);           /* set all start-Values */
-
-  storePreValues(data);             /* to provide all valid pre-values */
-  overwriteOldSimulationData(data);
-
   /* initialize all relations that are ZeroCrossings */
   bound_parameters(data);
+
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+
   update_DAEsystem(data);
 
   /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
   resetAllHelpVars(data);
   storePreValues(data);
 
