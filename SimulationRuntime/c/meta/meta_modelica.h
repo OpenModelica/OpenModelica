@@ -41,6 +41,7 @@
 #include "openmodelica.h"
 #include "meta_modelica_gc.h"
 #include "meta_modelica_string_lit.h"
+#include "meta_modelica_builtin.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
