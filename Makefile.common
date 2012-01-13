@@ -42,7 +42,7 @@ release: omc
 
 oldc_runtime: .testvariables mkbuilddirs
 	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
-newc_runtime: mkbuilddirs
+newc_runtime: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
