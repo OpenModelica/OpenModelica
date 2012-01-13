@@ -623,6 +623,8 @@ public constant Message WARNING_JACOBIAN_EQUATION_SOLVE = MESSAGE(523, SYMBOLIC(
   "jacobian equation %s could not solve proper for %s. Assume %s=0.");
 public constant Message SIMPLIFICATION_COMPLEXITY = MESSAGE(523, SYMBOLIC(), NOTIFICATION(),
   "Simplification produced a higher complexity (%s) than the original (%s). The simplification was: %s => %s.");
+public constant Message ITERATOR_NON_ARRAY = MESSAGE(524, TRANSLATION(), ERROR(),
+  "Iterator %s, has type %s, but expected an array expression.");
 
 public constant Message INDEX_REDUCTION_NOTIFICATION = MESSAGE(1000, SYMBOLIC(), NOTIFICATION(),
   "Differentiated equation %s to %s for index reduction");

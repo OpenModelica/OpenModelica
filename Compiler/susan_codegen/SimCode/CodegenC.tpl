@@ -435,6 +435,7 @@ case _ then
     #define <%cref(c)%> _<%cref(name)%>(0)
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
+    #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute.start
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
@@ -5576,20 +5577,30 @@ match exp
   else daeExp(exp,context,&preExp,&varDecls)
 end daeExpASubIndex;
 
-template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
-                       Text &varDecls /*BUFP*/)
+template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls)
   "Generates code for an asub of a cref, which becomes cref + offset."
 ::=
   match exp
   case cr as CREF(__) then
     '$P$PRE<%cref(cr.componentRef)%>'
-  case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
-    let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case ASUB(exp = cr as CREF(__), sub = subs) then
     let cref = cref(cr.componentRef)
-    '*(&$P$PRE<%cref%> + <%offset%>)'
+    '*(&$P$PRE<%cref%><%daeExpCallPreAsub(getDimensionSizes(cr.ty),subs,context,&preExp,&varDecls)%>)'
   else
     error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
 end daeExpCallPre; 
+
+template daeExpCallPreAsub(list<Integer> dims, list<Exp> subs, Context context, Text &preExp, Text &varDecls)
+::=
+  match subs
+  case {} then ""
+  case sub::subs2 then
+    let offset = daeExp(sub, context, &preExp, &varDecls)
+    (match dims
+      case _::dims2 then
+      << + (<%offset%><% if not intEq(intProduct(dims2),1) then '*<%intProduct(dims2)%>'%>)<%daeExpCallPreAsub(dims2,subs2,context,&preExp,&varDecls)%>>>
+    )
+end daeExpCallPreAsub;
 
 template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)

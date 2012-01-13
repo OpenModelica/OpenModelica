@@ -2047,7 +2047,8 @@ algorithm
     // one iterator
     case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
-        (cache,e_1,(prop as DAE.PROP(DAE.T_ARRAY(ty = t),cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
@@ -2060,7 +2061,8 @@ algorithm
     // multiple iterators
     case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation        
-        (cache,e_1,(prop as DAE.PROP(DAE.T_ARRAY(ty = t),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
@@ -2095,7 +2097,8 @@ algorithm
         tpl=List.first(lst);
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP(DAE.T_ARRAY(ty = t),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
@@ -2112,7 +2115,8 @@ algorithm
         tpl=List.first(lst);
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP(DAE.T_ARRAY(ty = t),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
+        t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
@@ -4688,5 +4692,23 @@ algorithm
     
   end matchcontinue;
 end generateNoConstantBindingError;
+
+protected function getIteratorType
+  input DAE.Type ty;
+  input String id;
+  input Absyn.Info info;
+  output DAE.Type oty;
+algorithm
+  oty := match (ty,id,info)
+    local
+      String str;
+    case (DAE.T_ARRAY(ty = oty),_,_) then oty;
+    case (ty,id,info)
+      equation
+        str = Types.unparseType(ty);
+        Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
+      then fail();
+  end match;
+end getIteratorType;
 
 end InstSection;

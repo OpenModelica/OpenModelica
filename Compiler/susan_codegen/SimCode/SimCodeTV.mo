@@ -39,6 +39,12 @@ package builtin
     output Integer c;
   end intDiv;
 
+  function intEq
+    input Integer a;
+    input Integer b;
+    output Boolean c;
+  end intEq;
+
   function arrayList 
     replaceable type TypeVar subtypeof Any;    
     input TypeVar[:] arr;
@@ -2023,6 +2029,11 @@ package Util
 	function getCurrentDateTime
 	  output DateTime dt;
 	end getCurrentDateTime;
+
+  function intProduct
+    input list<Integer> lst;
+    output Integer i;
+  end intProduct;
 end Util;
 
 package List
@@ -2296,5 +2307,12 @@ package DAEUtil
     output Absyn.Info info;
   end getElementSourceFileInfo;
 end DAEUtil;
+
+package Types
+  function getDimensionSizes
+    input DAE.Type inType;
+    output list<Integer> outIntegerLst;
+  end getDimensionSizes;
+end Types;
 
 end SimCodeTV;

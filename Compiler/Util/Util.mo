@@ -2863,4 +2863,11 @@ algorithm
   outRest := System.substring(inString, 1, len);
 end stringRest;
 
+public function intProduct
+  input list<Integer> lst;
+  output Integer i;
+algorithm
+  i := List.fold(lst,intMul,1);
+end intProduct;
+
 end Util;
