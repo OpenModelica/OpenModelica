@@ -24,6 +24,8 @@ all : install
 $(ALL_OBJS) : $(ALL_HEADERS)
 
 libSimulationRuntimeC.a: $(ALL_OBJS) libmeta
+	@# You have to remove the old archive first or it may contain old objects
+	@rm -f $@
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
@@ -52,36 +54,28 @@ simulation/libf2c/libf2c.a:
 
 install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS) omdevinstall
 	# move libraries
-	cp ./libSimulationRuntimeC.a $(builddir_lib)
-	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
-	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
-	cp ../interactive/libinteractive.a $(builddir_lib)
+	cp ./libSimulationRuntimeC.a \
+	   ./ModelicaExternalC/libModelicaExternalC.a \
+	   ./ModelicaExternalC/ModelicaUtilities.h \
+	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	# move header files
-	cp ./inline.h $(builddir_inc)
-	cp ./openmodelica.h $(builddir_inc)
-	cp ./openmodelica_func.h $(builddir_inc)
-	cp ./simulation_data.h $(builddir_inc)
-	cp ./f2c.h $(builddir_inc)
-	cp ./util/*.h $(builddir_inc)
-	cp ./math-support/matrix.h $(builddir_inc)
-	cp ./math-support/blaswrap.h $(builddir_inc)
-	cp ./math-support/model_help.h $(builddir_inc)
-	cp ./math-support/delay.h $(builddir_inc)
-	cp ./simulation/simulation_runtime.h $(builddir_inc)
-	cp ./simulation/libf2c/f2c.h $(builddir_inc)
-	cp ./simulation/solver/simulation_inline_solver.h $(builddir_inc)
-	cp ./util/*.h $(builddir_inc)
-	cp ./math-support/*.h $(builddir_inc)
-	cp ./simulation/*.h $(builddir_inc)
-	cp ./simulation/solver/*.h $(builddir_inc)
-	cp ./simulation/results/*.h $(builddir_inc)	
-	cp ./meta/*.h $(builddir_inc)
+	cp ./inline.h \
+	   ./openmodelica.h \
+	   ./openmodelica_func.h \
+	   ./simulation_data.h \
+	   ./f2c.h \
+	   ./util/*.h \
+	   ./math-support/*.h \
+	   ./simulation/*.h \
+	   ./simulation/solver/*.h \
+	   ./simulation/results/*.h \
+	   ./meta/*.h $(builddir_inc)
 	# move fmi stuff
-	cp ../fmi/export/*.h $(builddir_inc)
-	cp ../fmi/export/fmu_model_interface.c $(builddir_inc)
-	cp ../../FMI/import/source/fmuWrapper.h $(builddir_inc)
-	cp ../../FMI/import/source/xmlparser.h $(builddir_inc)
+	cp ../fmi/export/*.h \
+	   ../fmi/export/fmu_model_interface.c \
+	   ../../FMI/import/source/fmuWrapper.h \
+	   ../../FMI/import/source/xmlparser.h $(builddir_inc)
 	# move java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
