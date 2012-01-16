@@ -81,6 +81,8 @@ uniontype VarKind "- Variabile kind"
   record PARAM end PARAM;
   record CONST end CONST;
   record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  record JAC_VAR end JAC_VAR;
+  record JAC_DIFF_VAR end JAC_DIFF_VAR; 
 end VarKind;
 
 uniontype Var "- Variables"
@@ -400,6 +402,7 @@ public
 uniontype IndexType
   record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
   record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
+  record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
 end IndexType;
 
 public

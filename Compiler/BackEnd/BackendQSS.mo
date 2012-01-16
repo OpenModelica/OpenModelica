@@ -382,7 +382,7 @@ algorithm
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZeroCross, 
              BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}, shared = BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc1))), temp_output)
       equation
-        lst1 = BackendDAEUtil.incidenceRowExp(e, vars, {});
+        lst1 = BackendDAEUtil.incidenceRowExp(e, vars, {}, BackendDAE.NORMAL());
         temp_output = listAppend(temp_output, {lst1});
         (temp_output) = fillZeroCrossIncidenceMat(restZeroCross, inDAELow1, temp_output) ;
       then
@@ -477,8 +477,8 @@ algorithm
     
     case (BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutVars) 
       equation  
-        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.T_REAL_DEFAULT), vars, {});
-        lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {});
+        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.T_REAL_DEFAULT), vars, {}, BackendDAE.NORMAL());
+        lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {}, BackendDAE.NORMAL());
         row = lst2;
         elem = listNth(lst1, 0);
         tempOutVars = elem::tempOutVars;
@@ -639,8 +639,8 @@ algorithm
     case(BackendDAE.WHEN_EQ(left = outRef, right = inExpr), vars)
       equation
         
-        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(outRef,DAE.T_REAL_DEFAULT), vars, {});
-        lst2 = BackendDAEUtil.incidenceRowExp(inExpr, vars, {});
+        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(outRef,DAE.T_REAL_DEFAULT), vars, {}, BackendDAE.NORMAL());
+        lst2 = BackendDAEUtil.incidenceRowExp(inExpr, vars, {}, BackendDAE.NORMAL());
         //lst2 = makeListNegative(lst2, {});
         row = listAppend(lst1, lst2);
     then (row);
@@ -735,7 +735,7 @@ algorithm
     case (loopIndex, (cur_zc as BackendDAE.ZERO_CROSSING(relation_ = e))::rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
       equation
         false = checkIfExpressionIsSample(e);
-        tempInVars = BackendDAEUtil.incidenceRowExp(e, vars, {});
+        tempInVars = BackendDAEUtil.incidenceRowExp(e, vars, {}, BackendDAE.NORMAL());
         zc_inVarsTemp = tempInVars::zc_inVarsTemp;
         zcOnlyTemp = cur_zc::zcOnlyTemp;
         (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp, zcSamplesIndTemp) = getListofZeroCrossings2(loopIndex+1, rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp);

@@ -95,14 +95,19 @@ protected
 algorithm  
   _ := matchcontinue (inBackendDAE)
     local BackendDAE.BackendDAE bdae;
+      Integer i1,i2;
+      Boolean samesize;
     case (bdae)
       equation
         false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       then
         ();
-    case (bdae)
+    case (bdae as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement = i2))::{}))
       equation
         true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
+        //Check for correct size
+        samesize = i1 == i2;
+        Debug.fcall(Flags.CHECK_BACKEND_DAE,print,"No. of Equations: " +& intString(i1) +& " No. of Variables: " +& intString(i2) +& " Samesize: " +& boolString(samesize) +& "\n");
         (expCrefs,wrongEqns) = checkBackendDAE(inBackendDAE);
         printcheckBackendDAEWithErrorMsg(expCrefs,wrongEqns);
       then
@@ -217,6 +222,7 @@ algorithm
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs7;
       list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
+
     
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,
           arrayEqs = ae,algorithms = algs, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))))
@@ -920,7 +926,7 @@ algorithm
   end match;
 end translateDae;
 
-protected function addVarsToEqSystem
+public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
   input list<BackendDAE.Var> varlst;
   output BackendDAE.EqSystem osyst;
@@ -2569,6 +2575,11 @@ algorithm
         (states,output_) = splitBlocks(comps, arr) "block is not dynamic, belong in output section" ;
       then
         (states,(comp :: output_));
+    else
+      equation
+        print("- BackendDAEUtil.splitBlocks failed\n");
+      then
+        fail();        
   end matchcontinue;
 end splitBlocks;
 
@@ -3934,12 +3945,13 @@ public function applyIndexType
 algorithm
   outLst := match(inLst, inIndexType)
     
-    // leave as it is 
-    case (inLst, BackendDAE.NORMAL()) then inLst;
-    
     // transform to absolute indexes
     case (inLst, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
     
+    // leave as it is 
+    case (inLst, _) then inLst;
+    
+
   end match;
 end applyIndexType;
 
@@ -3978,7 +3990,7 @@ algorithm
         // get the equation
         e = equationNth(eqArr, i);
         // compute the row
-        row = incidenceRow(vars, e, wc);
+        row = incidenceRow(vars, e, wc, inIndexType);
         // only absolute indexes?
         row = applyIndexType(row, inIndexType);
         // put it in the arrays
@@ -4052,9 +4064,10 @@ public function incidenceRow
   input BackendDAE.Variables inVariables;
   input BackendDAE.Equation inEquation;
   input list<BackendDAE.WhenClause> inWhenClause;
+  input BackendDAE.IndexType inIndexType;
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inVariables,inEquation,inWhenClause)
+  outIntegerLst := matchcontinue (inVariables,inEquation,inWhenClause,inIndexType)
     local
       list<BackendDAE.Value> lst1,lst2,res;
       BackendDAE.Variables vars;
@@ -4069,53 +4082,53 @@ algorithm
       String eqnstr;
     
     // EQUATION
-    case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_)
+    case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,inIndexType)
       equation
-        lst1 = incidenceRowExp(e1, vars, {});
-        res = incidenceRowExp(e2, vars, lst1);
+        lst1 = incidenceRowExp(e1, vars, {},inIndexType);
+        res = incidenceRowExp(e2, vars, lst1,inIndexType);
       then
         res;
     
     // COMPLEX_EQUATION
-    case (vars,BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),_)
+    case (vars,BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),_,inIndexType)
       equation
-        lst1 = incidenceRowExp(e1, vars, {});
-        res = incidenceRowExp(e2, vars, lst1);
+        lst1 = incidenceRowExp(e1, vars, {},inIndexType);
+        res = incidenceRowExp(e2, vars, lst1,inIndexType);
       then
         res;
     
     // ARRAY_EQUATION
-    case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_)
+    case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_,inIndexType)
       equation
-        res = incidenceRow1(expl, incidenceRowExp, vars, {});
+        res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
       then
         res;
     
     // SOLVED_EQUATION
-    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_)
+    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,inIndexType)
       equation
         expCref = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(expCref, vars, {});
-        res = incidenceRowExp(e, vars, lst1);
+        lst1 = incidenceRowExp(expCref, vars, {},inIndexType);
+        res = incidenceRowExp(e, vars, lst1,inIndexType);
       then
         res;
     
     // RESIDUAL_EQUATION
-    case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_)
+    case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,inIndexType)
       equation
-        res = incidenceRowExp(e, vars, {});
+        res = incidenceRowExp(e, vars, {},inIndexType);
       then
         res;
     
     // WHEN_EQUATION
-    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc)
+    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,inIndexType)
       equation
         expl = BackendEquation.getWhenCondition(wc,wc_index);
-        lst1 = incidenceRow1(expl, incidenceRowExp, vars, {});
+        lst1 = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
         (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = Expression.crefExp(cr);
-        lst2 = incidenceRowExp(e1, vars, lst1);
-        res = incidenceRowExp(e2, vars, lst2);
+        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
+        res = incidenceRowExp(e2, vars, lst2,inIndexType);
       then
         res;
     
@@ -4124,14 +4137,14 @@ algorithm
     // If algorithm later on needs to be inverted, i.e. solved for
     // different variables than calculated, a non linear solver or
     // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs),_)
+    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs),_,inIndexType)
       equation
-        lst1 = incidenceRow1(inputs, incidenceRowExp, vars, {});
-        res = incidenceRow1(outputs, incidenceRowExp, vars, lst1);
+        lst1 = incidenceRow1(inputs, incidenceRowExp, vars, {},inIndexType);
+        res = incidenceRow1(outputs, incidenceRowExp, vars, lst1,inIndexType);
       then
         res;
     
-    case (vars,inEquation,_)
+    case (vars,inEquation,_,_)
       equation
         eqnstr = BackendDump.equationStr(inEquation);
         print("- BackendDAE.incidenceRow failed for eqn: ");
@@ -4148,29 +4161,32 @@ public function incidenceRow1
   input FuncType inFunc;
   input Type_b inArg;
   input Type_c inArg1;
+  input Type_d inArg2;
   output Type_c outArg1;
 
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
 
   partial function FuncType
     input Type_a inElem;
     input Type_b inArg;
     input Type_c inArg1;
+    input Type_d inArg2;
     output Type_c outArg1;
   end FuncType;
 algorithm
-  outArg1 := match(inList, inFunc, inArg, inArg1)
+  outArg1 := match(inList, inFunc, inArg, inArg1, inArg2)
     local
       Type_a e1;
       list<Type_a> rest_e1;
       Type_c res,res1;
-    case ({}, _, _, _) then inArg1;
-    case (e1 :: rest_e1, _, _, _)
+    case ({}, _, _, _, _) then inArg1;
+    case (e1 :: rest_e1, _, _, _, _)
       equation
-        res = inFunc(e1, inArg, inArg1);
-        res1 = incidenceRow1(rest_e1, inFunc, inArg, res);
+        res = inFunc(e1, inArg, inArg1, inArg2);
+        res1 = incidenceRow1(rest_e1, inFunc, inArg, res, inArg2);
       then
         res1;
   end match;
@@ -4184,12 +4200,18 @@ public function incidenceRowExp
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input list<BackendDAE.Value> inIntegerLst;
+  input BackendDAE.IndexType inIndexType;  
   output list<BackendDAE.Value> outIntegerLst;
 algorithm
-  outIntegerLst := match (inExp,inVariables,inIntegerLst)
+  outIntegerLst := match (inExp,inVariables,inIntegerLst,inIndexType)
     local
       list<BackendDAE.Value> vallst;
-  case(inExp,inVariables,inIntegerLst)      
+  case(inExp,inVariables,inIntegerLst,BackendDAE.SPARSE())      
+    equation
+      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables,inIntegerLst));
+      then
+        vallst;      
+  case(inExp,inVariables,inIntegerLst,inIndexType)      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
       then
@@ -4300,6 +4322,118 @@ algorithm
       then res;
   end matchcontinue;
 end incidenceRowExp1;
+
+public function traversingincidenceRowExpFinderwithInput "
+Author: wbraun
+Helper for statesAndVarsExp"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+      list<BackendDAE.Value> p,p_1,pa,res;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      DAE.Exp e;
+      list<BackendDAE.Var> varslst;
+    
+    case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
+      equation
+        cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst,p,pa,true);
+      then
+        ((e,false,(vars,res)));
+        
+    case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
+      equation
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst,p,pa,true);
+      then
+        ((e,false,(vars,res)));
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+      equation
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst,p,pa,false);
+      then
+        ((e,false,(vars,res)));
+
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst,p,pa,false);
+      then
+        ((e,false,(vars,res)));
+    /* pre(v) is considered a known variable */
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));
+    
+    case ((e,(vars,pa))) then ((e,true,(vars,pa)));
+  end matchcontinue;
+end traversingincidenceRowExpFinderwithInput;
+
+
+protected function incidenceRowExp1withInput
+  input list<BackendDAE.Var> inVarLst;
+  input list<Integer> inIntegerLst;
+  input list<Integer> inIntegerLst1;
+  input Boolean notinder;
+  output list<Integer> outIntegerLst;
+algorithm
+  outIntegerLst := matchcontinue (inVarLst,inIntegerLst,inIntegerLst1,notinder)
+    local
+       list<BackendDAE.Var> rest;
+       list<Integer> irest,res,vars;
+       Integer i,i1;
+       Boolean b;
+    case ({},{},vars,_) then vars;
+    /*If variable x is a state, der(x) is a variable in incidence matrix,
+         x is inserted as negative value, since it is needed by debugging and
+         index reduction using dummy derivatives */ 
+    case (BackendDAE.VAR(varKind = BackendDAE.JAC_DIFF_VAR()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,vars,b)
+      equation
+        failure( true = b);
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;             
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,vars,b)
+      equation
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
+        res = incidenceRowExp1(rest,irest,i::vars,b);
+      then res;       
+    case (_ :: rest,_::irest,vars,b)
+      equation
+        res = incidenceRowExp1(rest,irest,vars,b);
+      then res;
+  end matchcontinue;
+end incidenceRowExp1withInput;
+
 
 public function transposeMatrix
 "function: transposeMatrix
@@ -4523,7 +4657,7 @@ algorithm
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
-        row = incidenceRow(vars, eqn,wc);
+        row = incidenceRow(vars, eqn,wc,BackendDAE.NORMAL());
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(row, abse, m, {});
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);

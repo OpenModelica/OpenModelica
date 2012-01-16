@@ -3651,6 +3651,21 @@ algorithm
   outListList := map1(inListList, map, inFunc);
 end mapList;
 
+public function mapList0
+  "Takes a list of lists and a functions, and applying 
+  the function to all elements in  the list of lists.
+     Example: mapList0({{1, 2},{3},{4}}, print)"
+     
+  input list<list<ElementInType>> inListList;
+  input MapFunc inFunc;
+
+  partial function MapFunc
+    input ElementInType inElement;
+  end MapFunc;
+algorithm
+  map1_0(inListList, map_0, inFunc);
+end mapList0;
+
 public function mapListReverse
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists. The order of the
@@ -5991,7 +6006,7 @@ algorithm
   end matchcontinue;
 end deletePositionsSorted2;
 
-protected function removeMatchesFirst
+public function removeMatchesFirst
   "Removes all matching integers that occur first in a list. If the first
    element doesn't match it returns the list."
   input list<Integer> inList;

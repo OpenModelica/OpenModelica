@@ -40,8 +40,10 @@ encapsulated package Graph
   should also contain a graph type, but such a type would need polymorphic
   records that we don't yet support in MetaModelica."
 
+protected import Error;
 protected import List;
 protected import Util;
+
 
 public function buildGraph
   "This function will build a graph given a list of nodes, an edge function, and
@@ -443,5 +445,86 @@ algorithm
 
   end matchcontinue;
 end removeNodesFromGraph;
+
+public function allReachableNode
+"This function searches for a starting node in M
+ all reachabel nodes. Call with start node in M." 
+  input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output list<NodeType> reachableNodes;
+  
+  replaceable type NodeType subtypeof Any;
+  
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;  
+  
+algorithm
+  reachableNodes := matchcontinue(intmpstorage,inGraph,inEqualFunc)
+    local
+      tuple<list<NodeType>, list<NodeType>> tmpstorage;
+      NodeType node;
+      list<NodeType> edges,M,L;
+      list<tuple<NodeType, list<NodeType>>> restGraph;
+    case(({},L),inGraph,inEqualFunc)
+    then L;
+    case((node::M,L),inGraph,inEqualFunc)
+      equation
+        L = listAppend(L,{node});
+        //print(" List size 1 " +& intString(listLength(L)) +& "\n");
+        ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
+        //print(" List size 2 " +& intString(listLength(edges)) +& "\n");
+        edges = List.select1(edges, List.notMember, L);
+        //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
+        M = listAppend(M,edges);
+        //print("Start new round! \n");
+        reachableNodes = allReachableNode((M,L),inGraph,inEqualFunc);
+      then reachableNodes;
+    case((node::M,L),inGraph,inEqualFunc)
+      equation
+        L = listAppend(L,{node});
+        failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
+        reachableNodes = allReachableNode((M,L),inGraph,inEqualFunc);
+      then reachableNodes;        
+        else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
+      then fail();        
+  end matchcontinue;
+end allReachableNode;
+
+
+
+/* Functions for Integer graphs */
+
+public function printGraphInt 
+"This function prints an Integer Graph.
+ Useful for debuging." 
+  input list<tuple<Integer, list<Integer>>> inGraph;
+algorithm
+ _ := match(inGraph)
+   local
+     tuple<Integer, list<Integer>> nodesEdges;
+     Integer node;
+     list<Integer> edges;
+     list<String> strEdges;
+     list<tuple<Integer, list<Integer>>> restGraph;
+     case({}) then ();
+     case((node,edges)::restGraph)
+       equation
+         print("Node : " +& intString(node) +& " Edges: ");
+         strEdges = List.map(edges, intString);
+         strEdges = List.map1(strEdges, stringAppend, " ");
+         List.map_0(strEdges, print);
+         print("\n");
+         printGraphInt(restGraph);
+      then ();
+  end match;
+end printGraphInt;
+
 
 end Graph;

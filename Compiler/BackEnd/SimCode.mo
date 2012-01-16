@@ -2663,6 +2663,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
         dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),SOME("dummyDerivative"));
         // The jacobian code requires single systems; I did not rewrite it to take advantage of any parallelism in the code
         res = createJacobianCC(functions,dlow);
         res = createLinearModelMatrixes(functions,dlow,res);
@@ -2723,22 +2724,22 @@ algorithm
         
         // Differentiate the System w.r.t states for matrices A
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
-        linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         linearModelMatrices = {linearModelMatrix};
 
         // Differentiate the System w.r.t inputs for matrices B
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix B : " +& realString(clock()) +& "\n" );
-        linearModelMatrix = createJacobianFunction(functions,dlow,comref_inputvars,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
+        linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
 
         // Differentiate the System w.r.t states for matrices C
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix C : " +& realString(clock()) +& "\n" );
-        linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
+        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         
         // Differentiate the System w.r.t inputs for matrices D
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix D : " +& realString(clock()) +& "\n" );
-        linearModelMatrix = createJacobianFunction(functions,dlow,comref_inputvars,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
+        linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         
       then
@@ -2790,8 +2791,12 @@ algorithm
       list<JacobianMatrix> linearModelMatrices;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      
-    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e,matching=BackendDAE.MATCHING(ass1,ass2,comps))},shared as BackendDAE.SHARED(knownVars = kv)))
+
+      BackendDAE.IncidenceMatrix adjMatrix;
+      BackendDAE.IncidenceMatrixT adjMatrixT;
+      BackendDAE.Matching bdaeMatching;
+    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},shared as 
+BackendDAE.SHARED(knownVars = kv)))      
       equation
         true = Flags.isSet(Flags.JACOBIAN);
         
@@ -2801,6 +2806,7 @@ algorithm
         newVars = BackendDAEUtil.emptyVars();
         (newEqns, newVars) = splitoutEquationAndVars(blt_states,e,v,newEqns,newVars);
         dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),SOME("dummyDerivative"));
          
         // Prepare all needed variables
         varlst_tmp = BackendDAEUtil.varList(v);
@@ -2816,10 +2822,8 @@ algorithm
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         paramvars = List.sort(paramvars,  BackendVariable.varIndexComparer);
         
-        comref_states = List.map(states,BackendVariable.varCref);
-        
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
-        linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         // add empty matrices B,C,D
         linearModelMatrices = {linearModelMatrix,({},{},"B"),({},{},"C"),({},{},"D")};
         
@@ -2876,7 +2880,7 @@ protected function createJacobianFunction
  author: wbraun"
   input DAE.FunctionTree inFunctions;
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<DAE.ComponentRef> inDiffVars;
+  input list<BackendDAE.Var> inDiffVars;
   input BackendDAE.Variables inStateVars;
   input BackendDAE.Variables inInputVars;
   input BackendDAE.Variables inParameterVars;
@@ -2893,37 +2897,39 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
       
-      list<DAE.ComponentRef> inOrigVars,inOrigKnVars,comref_vars,comref_differentiatedVars;
+      list<DAE.ComponentRef> inOrigVars, inOrigKnVars, comref_vars, comref_differentiatedVars;
       
       list<SimEqSystem> columnEquations;
       list<SimVar> columnVars;
       list<SimVar> columnVarsKn;
       list<SimVar> seedVars;
       
-      BackendDAE.Shared shared,shared1;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Variables vars, knvars, empty;
-      list<BackendDAE.Var> diffedVars,seedlst;
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst,syst1;
+      BackendDAE.Variables vars, knvars, empty, orderedVars, diffVars, varswithDiffs;
+      list<BackendDAE.Var> diffedVars, seedlst, varswithDiffsLst;
       String s;
+      
+      list<list<Integer>> sparsepattern;
       
     case (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
       equation
 
-        //name = ComponentReference.printComponentRefStr(inDiffVars);
         diffedVars = BackendDAEUtil.varList(inDifferentiatedVars);
         s =  intString(listLength(diffedVars));
-        comref_differentiatedVars = List.map(diffedVars,BackendVariable.varCref);
+        comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
+        comref_vars = List.map(inDiffVars, BackendVariable.varCref);
 
-        seedlst = List.map(inDiffVars,BackendDAEOptimize.createJacVars);
+        seedlst = List.map(comref_vars, BackendDAEOptimize.createJacVars);
         ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
  
         
         // Differentiate the ODE system w.r.t states for jacobian
         Debug.fcall(Flags.EXEC_STAT,print,"*** analytical Jacobians Differentiate System.\n");
-        backendDAE = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, inDiffVars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars);
+        backendDAE = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars);
         
         // create equations and variables
-        (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,inFunctions,comref_differentiatedVars,inDiffVars,inVars,0);
+        (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,inFunctions,comref_differentiatedVars,comref_vars,inVars,0);
         columnEquations = createEquations(false, false, false, false, true, syst, shared, 0, comps, {});
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians differentiated!\n");
         
@@ -2937,7 +2943,9 @@ algorithm
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
         Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians BackendDAE created!\n");
-        
+                
+        sparsepattern = BackendDAEOptimize.generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
+        Debug.fcall(Flags.EXEC_STAT,print, "*** sparse pattern for analytical Jacobian created!\n");
         
      then
         (({(columnEquations,columnVars,s)},seedVars,inName));

@@ -846,6 +846,21 @@ algorithm
   end match;
 end dumpAlgorithms;
 
+
+public function dumpSparsePattern
+"function:  dumpSparsePattern
+ author: wbraun
+ description: fucntion dumps sparse pattern of Jacobain System."
+  input list<list<Integer>> inSparsePatter;
+protected
+ list<String> sparsepatternStr; 
+algorithm
+	print("Print sparse pattern: \n");
+	sparsepatternStr := List.map6(inSparsePatter,List.toString,intString,"Sparse pattern","\n"," ","\n",false);
+	List.map_0(sparsepatternStr,print);
+	print("\n");
+end dumpSparsePattern;
+
 public function dumpJacobianStr
 "function: dumpJacobianStr
   Dumps the sparse jacobian.
@@ -1286,6 +1301,8 @@ algorithm
     case BackendDAE.PARAM()       equation print("PARAM");       then ();
     case BackendDAE.CONST()       equation print("CONST");       then ();
     case BackendDAE.EXTOBJ(path)  equation print("EXTOBJ: ");print(Absyn.pathString(path)); then ();
+    case BackendDAE.JAC_VAR()     equation print("JACOBIAN_VAR");then ();
+    case BackendDAE.JAC_DIFF_VAR()equation print("JACOBIAN_DIFF_VAR");then ();      
   end match;
 end dumpKind;
 
@@ -1461,7 +1478,7 @@ algorithm
   end match;
 end dumpIncidenceMatrix2;
 
-protected function dumpIncidenceRow
+public function dumpIncidenceRow
 "function: dumpIncidenceRow
   author: PA
   Helper function to dumpIncidenceMatrix2."

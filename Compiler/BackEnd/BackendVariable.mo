@@ -1253,6 +1253,51 @@ algorithm
   end matchcontinue;
 end isOutputVar;
 
+public function createpDerVar
+"function creatVarpDerCVar
+  author: wbraun
+  Create variable with $pDER.v as cref for jacobian variables."
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.VarKind kind;
+      DAE.VarDirection dir;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> bind;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      BackendDAE.Value i;
+      DAE.ElementSource source "origin of equation";
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
+
+    case (BackendDAE.VAR(varName = cr,
+              varKind = kind,
+              varDirection = dir,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              index = i,
+              source = source,
+              values = attr,
+              comment = comment,
+              flowPrefix = flowPrefix,
+              streamPrefix = streamPrefix))
+    equation
+      cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+      oVar = BackendDAE.VAR(cr,BackendDAE.JAC_DIFF_VAR(),dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
+    then
+      oVar; 
+  end match;
+end createpDerVar;
+
 public function setVarKind
 "function setVarKind
   author: PA
@@ -3002,6 +3047,17 @@ algorithm
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
+public function deleteCrefs
+"function: deleteCrefs
+  author: wbraun
+  Deletes a list of DAE.ComponentRef from BackendDAE.Variables"
+  input list<DAE.ComponentRef> varlst;
+  input BackendDAE.Variables vars;
+  output BackendDAE.Variables vars_1;
+algorithm
+  vars_1 := List.fold(varlst, deleteVar, vars);
+end deleteCrefs;
+
 public function deleteVars
 "function: deleteVars
   author: Frenkel TUD 2011-04
@@ -3650,6 +3706,37 @@ algorithm
         (vars,ilst);
   end match;
 end getRecordVar;
+
+public function getVarIndexFromVariables
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inVariables2;
+  output list<Integer> v_lst;
+algorithm
+  ((_,v_lst)) := traverseBackendDAEVars(inVariables,traversingisVarIndexVarFinder,(inVariables2,{}));
+end getVarIndexFromVariables;
+
+protected function traversingisVarIndexVarFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      BackendDAE.Variables vars;
+      list<Integer> v_lst;
+      DAE.ComponentRef cr;
+      list<Integer> indxlst;
+    case ((v,(vars,v_lst)))
+      equation   
+        cr = varCref(v);
+       (_,indxlst) = getVar(cr, vars);
+        v_lst = listAppend(v_lst,indxlst);
+      then ((v,(vars,v_lst)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end traversingisVarIndexVarFinder;
 
 public function mergeVariables
 "function: mergeVariables

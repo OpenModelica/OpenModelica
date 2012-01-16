@@ -66,6 +66,7 @@ protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
+protected import Graph;
 protected import Inline;
 protected import List;
 protected import System;
@@ -2432,7 +2433,7 @@ algorithm
         // failure(DAE.CREF(componentRef=_) = exp);
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {});
+        expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {},BackendDAE.NORMAL());
         // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
         (expvars1::expvarseqns) = List.map1(expvars,varEqns,(pos,mT));
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");
@@ -4062,10 +4063,8 @@ algorithm
           // figure out new matching and the strong components  
           (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
           Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",dlow));
-          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
-        
           Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpComponents, comps1);
-          //Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
         then dlow;
 
           
@@ -4081,8 +4080,9 @@ algorithm
 
           Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
-          dlow = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
+          (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
           Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",dlow));
+          Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpComponents, comps1);
           Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
         then dlow;
@@ -4092,6 +4092,138 @@ algorithm
        then fail();
    end matchcontinue;
 end generateLinearMatrix;
+
+
+
+protected function createDirectedGraph
+  input Integer inNode;
+  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.Matching> intupleArgs;
+  output list<Integer> outEdges; 
+algorithm
+  outEdges := matchcontinue(inNode,intupleArgs)
+  local
+    BackendDAE.IncidenceMatrix incidenceMat;
+    BackendDAE.IncidenceMatrixElement oneElement;
+    array<Integer> ass1;
+    Integer assignment;
+    list<Integer> outEdges;
+    list<String> oneEleStr;
+    case(inNode, (incidenceMat,BackendDAE.MATCHING(ass1 = ass1)))
+      equation
+        assignment = arrayGet(ass1,inNode);
+        oneElement = arrayGet(incidenceMat,assignment);
+        Debug.fcall(Flags.JAC_DUMP2, print,"create node : " +& intString(assignment) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print,"elements on node : ");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow,oneElement);
+        ( outEdges,_) = List.deleteMemberOnTrue(assignment,oneElement,intEq);
+    then outEdges;
+    case(inNode, (_,_))
+      then {};        
+  end matchcontinue;
+end createDirectedGraph;
+
+protected function getSparsePattern
+input list<Integer> inNodes1; //nodesEqnsIndex
+input list<Integer> inNodes2; //nodesVarsIndex
+input list<tuple<Integer, list<Integer>>> inGraph;
+output list<list<Integer>> outSparsePattern;
+algorithm 
+  outSparsePattern :=matchcontinue(inNodes1,inNodes2,inGraph)
+  local
+    list<Integer> rest;
+    list<Integer> oneRow;
+    Integer node;
+    list<Integer> reachableNodes,neededReachableNodes;
+    list<list<Integer>> result;
+    list<String> oneRes;
+    case({}, _, _) then {{}};
+    case(node::rest,inNodes2,inGraph)
+      equation
+        reachableNodes = Graph.allReachableNode(({node},{}), inGraph, intEq);
+        Debug.fcall(Flags.JAC_DUMP2, print, "current node : " +& intString(node) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, reachableNodes);
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
+        neededReachableNodes = List.intersectionOnTrue(inNodes2,reachableNodes,intEq);
+        Debug.fcall(Flags.JAC_DUMP2, print, "elements : ");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, neededReachableNodes);
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
+        result = getSparsePattern(rest,inNodes2,inGraph);
+        result = listAppend({neededReachableNodes},result);
+      then result;
+    else
+       equation
+       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
+       then fail();
+  end matchcontinue;
+end getSparsePattern;
+
+public function generateSparsePattern
+ input BackendDAE.BackendDAE inBackendDAE;
+ input list<BackendDAE.Var> inDiffVars;
+ input list<BackendDAE.Var> inDiffedVars;
+ output list<list<Integer>> outSparsePattern;
+ algorithm
+   outSparsePattern := matchcontinue(inBackendDAE,inDiffVars,inDiffedVars)
+   local
+      BackendDAE.IncidenceMatrix adjMatrix;
+      BackendDAE.Matching bdaeMatching;
+      list<tuple<Integer, list<Integer>>> bdaeDirectedGraph;
+      Integer sizeofGraph;
+      list<Integer> nodesList,nodesVarsList,nodesVarsIndex,nodesEqnsIndex;
+      list<list<Integer>> sparsepattern;
+      list<String> sparsepatternStr;
+      list<BackendDAE.Var> JacDiffVars,states,derstates,vars;
+      list<DAE.ComponentRef> state_comref;
+      BackendDAE.Variables diffVars,varswithDiffs,orderedVars;
+      BackendDAE.EquationArray orderedEqns;
+      
+      BackendDAE.BackendDAE modBDAE;
+      
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst,syst1;
+     case(inBackendDAE as BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching))::{}, shared=shared),inDiffVars,inDiffedVars)
+       equation
+         
+        // Generate Graph for determine sparse structure
+        
+        JacDiffVars =  List.map(inDiffVars,BackendVariable.createpDerVar);
+        /*
+        states = BackendVariable.getAllStateVarFromVariables(orderedVars);
+        derstates =  List.map(states,BackendVariable.createDerVar);
+        state_comref = List.map(states,BackendVariable.varCref);
+        //state_comref = listReverse(state_comref);
+        orderedVars = BackendVariable.deleteCrefs(state_comref,orderedVars);
+        orderedVars = BackendVariable.addVars(derstates,orderedVars);
+        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqns,NONE(),NONE(),bdaeMatching);*/
+        (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,JacDiffVars);
+        (adjMatrix,_ ) = BackendDAEUtil.incidenceMatrix(syst1,shared,BackendDAE.SPARSE());
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpVars,BackendDAEUtil.varList(varswithDiffs));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendDAEUtil.equationList(orderedEqns));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
+        diffVars = BackendDAEUtil.listVar(inDiffedVars);
+        Debug.fcall(Flags.JAC_DUMP2,print," diff Vars : " +& intString(listLength(JacDiffVars)) +& "\n");
+        nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffVars,varswithDiffs);
+        
+        Debug.fcall(Flags.JAC_DUMP2,print,"get Vars Index\n");
+        nodesList = List.intRange(arrayLength(adjMatrix));
+        nodesVarsList = List.intRange2(arrayLength(adjMatrix)+1,arrayLength(adjMatrix)+listLength(JacDiffVars));
+        nodesVarsIndex = List.map1(nodesEqnsIndex,intSub,arrayLength(adjMatrix));
+        nodesList = listAppend(nodesList,nodesVarsList);
+        bdaeDirectedGraph = Graph.buildGraph(nodesList,createDirectedGraph,(adjMatrix,bdaeMatching));
+        Debug.fcall(Flags.JAC_DUMP2,print,"Print the new created graph: \n");
+        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,bdaeDirectedGraph);
+        sparsepattern = getSparsePattern(nodesEqnsIndex,nodesVarsList,bdaeDirectedGraph);
+        
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
+      then sparsepattern;
+       else
+       equation
+       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern failed"});
+       then fail();
+    end matchcontinue;
+end generateSparsePattern;
+
+
 
 
 /* 
@@ -4142,6 +4274,9 @@ algorithm
       list<tuple<Integer, DAE.ComponentRef>> derivedAlgorithmsLookUp;
       list<BackendDAE.Equation> derivedEquations, knownEqn;
       
+      BackendDAE.EqSystem eqns;
+      BackendDAE.Shared shared;
+
     case(_, _, {}, _, _, _, _, _) equation
       jacOrderedVars = BackendDAEUtil.emptyVars();
       jacKnownVars = BackendDAEUtil.emptyVars();
@@ -4181,8 +4316,8 @@ algorithm
       diffvars = List.sort(diffvars, BackendVariable.varIndexComparer);
       x = DAE.CREF_IDENT("dummyVar",DAE.T_REAL_DEFAULT,{});
       derivedVariables = creatallDiffedVars(diffvars,x,diffedVars,0);    
+
       jacOrderedVars = BackendDAEUtil.listVar(derivedVariables);
-      
       // known vars: all variable from original system + seed
       jacKnownVars = BackendDAEUtil.emptyVars();
       jacKnownVars = BackendVariable.mergeVariables(jacKnownVars,orderedVars);
@@ -4205,6 +4340,20 @@ algorithm
       Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, jacobian);
       Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump: jacobian #####################\n");
     then jacobian;
+
+    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms)), functions, vars, diffedVars, inseedVars, stateVars, inputVars, paramVars) equation
+      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
+      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, bDAE);
+      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump:    input #####################\n\n");
+      
+      diffvars = BackendDAEUtil.varList(orderedVars);
+      (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, vars);
+      Debug.execStat( "*** analytical Jacobians -> created all derived vars: " +& "No. :" +& intString(listLength(comref_diffvars)), BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      (derivedAlgorithms, derivedAlgorithmsLookUp) = deriveAllAlg(arrayList(algorithms), vars, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, 0,vars);
+      derivedEquations = deriveAll(BackendDAEUtil.equationList(orderedEqs), vars, functions, inputVars, paramVars, stateVars, knownVars, derivedAlgorithmsLookUp, orderedVars, comref_diffvars);
+      false = (listLength(derivedVariables) == listLength(derivedEquations));
+      Debug.execStat("*** analytical Jacobians -> failed vars are not equal to equations: " +& intString(listLength(derivedEquations)), BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+    then fail();  
       
     else
      equation
@@ -5127,23 +5276,32 @@ algorithm
       DAE.Ident ident;
       DAE.ComponentRef cref;
       BackendDAE.Var controlVar;
+      list<DAE.Exp> lhsTuple;
+      list<DAE.Exp> derivedLHSTuple;
+      DAE.ElementSource source_;
     case({}, _, _, _, _, _, _, _, _,_) then {};
       
-    case((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars) 
+    case((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs,source=source_))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars) 
     equation
       controlparaVars = BackendVariable.addVars(controlVars, paramVars);
       {derivedLHS} = differentiateWithRespectToXVec(lhs, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
       {derivedRHS} = differentiateWithRespectToXVec(rhs, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
-      derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, DAE.emptyElementSource), currStatement};
+      derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, source_), currStatement};
       //derivedStatements1 = List.threadMap3(derivedLHS, derivedRHS, createDiffStatements, type_, currStatement, source);
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars);
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;
       
-    case(DAE.STMT_TUPLE_ASSIGN(exp=rhs)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars,  diffVars)
+    case ((currStatement as DAE.STMT_TUPLE_ASSIGN(type_=type_,exp=rhs,expExpLst=lhsTuple,source=source_))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars,  diffVars)
     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.differentiateAlgorithmStatements failed: DAE.STMT_TUPLE_ASSIGN"});
-    then fail();
+      controlparaVars = BackendVariable.addVars(controlVars, paramVars);
+      {derivedLHSTuple} = List.map8(lhsTuple,differentiateWithRespectToXVec, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
+      {derivedRHS} = differentiateWithRespectToXVec(rhs, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
+      derivedStatements1 = {DAE.STMT_TUPLE_ASSIGN(type_, derivedLHSTuple, derivedRHS, source_), currStatement};
+      //Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.differentiateAlgorithmStatements failed: DAE.STMT_TUPLE_ASSIGN"});
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
       
     case(DAE.STMT_ASSIGN_ARR(exp=rhs)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars)
     equation
