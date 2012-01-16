@@ -61,7 +61,7 @@ string array2string(double* array, int row, int col){
 }
 
 
-int linearize(_X_DATA* data)
+int linearize(DATA* data)
 {
 
     /* init Matrix A */

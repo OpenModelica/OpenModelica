@@ -36,7 +36,7 @@
 
 using namespace std;
 
-int linearize(_X_DATA* data);
+int linearize(DATA* data);
 //int argc, char** argv, string method, double start,
 //double stop, double stepSize , long outputSteps, double tolerance);
 

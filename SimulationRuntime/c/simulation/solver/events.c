@@ -57,7 +57,7 @@ double Sample(double t, double start, double interval)
  * The starting time start and the sample interval interval need to
  * be parameter expressions and need to be a subtype of Real or Integer.
  */
-modelica_boolean sample(_X_DATA *data, double start, double interval, int hindex)
+modelica_boolean sample(DATA *data, double start, double interval, int hindex)
 {
   /* adrpo - 2008-01-15
    * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
@@ -157,7 +157,7 @@ static int unique(void *base, size_t nmemb, size_t size,
   return nmemb - nuniq;
 }
 
-void initSample(_X_DATA* data, double start, double stop)
+void initSample(DATA* data, double start, double stop)
 {
   /* not used yet
    * long measure_start_time = clock();
@@ -228,7 +228,7 @@ void initSample(_X_DATA* data, double start, double stop)
  *
  */
 int
-checkForSampleEvent(_X_DATA *data, SOLVER_INFO* solverInfo)
+checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
   double a = solverInfo->currentTime + solverInfo->currentStepSize;
   int b = 0;
@@ -269,7 +269,7 @@ checkForSampleEvent(_X_DATA *data, SOLVER_INFO* solverInfo)
  *
  */
 int
-activateSampleEvents(_X_DATA *data)
+activateSampleEvents(DATA *data)
 {
     if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
     {
@@ -306,7 +306,7 @@ activateSampleEvents(_X_DATA *data)
  *
  */
 void
-deactivateSampleEvents(_X_DATA *data)
+deactivateSampleEvents(DATA *data)
 {
   int tmpindex = data->simulationInfo.curSampleTimeIx;
 
@@ -322,7 +322,7 @@ deactivateSampleEvents(_X_DATA *data)
  *
  */
 void
-deactivateSampleEventsandEquations(_X_DATA *data)
+deactivateSampleEventsandEquations(DATA *data)
 {
   while ((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).activated == 1)
     {
@@ -342,7 +342,7 @@ deactivateSampleEventsandEquations(_X_DATA *data)
    process will start
 */
 int
-CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* currentTime)
+CheckForNewEvent(DATA* simData, modelica_boolean* sampleactived, double* currentTime)
 {
   long i = 0;
   LIST *eventList=NULL;
@@ -414,7 +414,7 @@ CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* curr
  = 0 state event
  = 1 sample event
  */
-int EventHandle(_X_DATA* simData, int flag, LIST *eventList) {
+int EventHandle(DATA* simData, int flag, LIST *eventList) {
 
   if (flag == 0) {
     long event_id = 0;
@@ -473,7 +473,7 @@ int EventHandle(_X_DATA* simData, int flag, LIST *eventList) {
   This function perform a root finding for
   Intervall=[oldTime, timeValue]
 */
-void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
+void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
 {
   long event_id;
   LIST_NODE* it;
@@ -579,7 +579,7 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
 /*
   Method to find root in Intervall[oldTime, timeValue]
  */
-double BiSection(_X_DATA* simData, double* a, double* b, double* states_a,
+double BiSection(DATA* simData, double* a, double* b, double* states_a,
     double* states_b, LIST *tmpEventList, LIST *eventList) {
 
   /*double TTOL =  DBL_EPSILON*fabs((*b - *a))*100; */
@@ -653,7 +653,7 @@ double BiSection(_X_DATA* simData, double* a, double* b, double* states_a,
    is used in BiSection
 */
 int
-CheckZeroCrossings(_X_DATA *simData, LIST *tmpEventList, LIST *eventList)
+CheckZeroCrossings(DATA *simData, LIST *tmpEventList, LIST *eventList)
 {
 
   LIST_NODE *it;
@@ -691,7 +691,7 @@ CheckZeroCrossings(_X_DATA *simData, LIST *tmpEventList, LIST *eventList)
 
 
 void
-SaveZeroCrossingsAfterEvent(_X_DATA* simData)
+SaveZeroCrossingsAfterEvent(DATA* simData)
 {
   long i = 0;
 
@@ -705,7 +705,7 @@ SaveZeroCrossingsAfterEvent(_X_DATA* simData)
 
 
 void
-initializeZeroCrossings(_X_DATA* simData)
+initializeZeroCrossings(DATA* simData)
 {
   long i = 0;
   for (i = 0; i < simData->modelData.nZeroCrossings; i++)
@@ -722,7 +722,7 @@ initializeZeroCrossings(_X_DATA* simData)
 }
 
 void
-correctDirectionZeroCrossings(_X_DATA* simData)
+correctDirectionZeroCrossings(DATA* simData)
 {
   long i = 0;
   for (i = 0; i < simData->modelData.nZeroCrossings; i++)

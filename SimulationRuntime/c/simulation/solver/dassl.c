@@ -88,7 +88,7 @@ continue_DASRT(fortran_integer* idid, double* tolarence);
 
 
 int
-dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
+dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   /* work arrays for DASSL */
   dasslData->liw = 20 + simData->modelData.nStates;
@@ -147,7 +147,7 @@ dasrt_deinitial(DASSL_DATA *dasslData){
  *   + ZeroCrossing are handled outside DASSL.
  *   + if no event occurs outside DASSL performs a warm-start
  **********************************************************************************************/
-int dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo)
+int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
   int i = 0;
@@ -341,7 +341,7 @@ continue_DASRT(fortran_integer* idid, double* atol) {
 int functionODE_residual(double *t, double *x, double *xd, double *delta,
                     fortran_integer *ires, double *rpar, fortran_integer *ipar)
 {
-  _X_DATA* data = (_X_DATA*)(void*)rpar;
+  DATA* data = (DATA*)(void*)rpar;
   /*DASSL_DATA* dasslData = (DASSL_DATA*)(void*)rpar[1];*/
   double timeBackup;
   double* statesBackup;
@@ -374,7 +374,7 @@ int
 Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
          double *rpar, fortran_integer* ipar) {
 
-  _X_DATA* data = (_X_DATA*)(void*)rpar;
+  DATA* data = (DATA*)(void*)rpar;
   double* backupStates;
   double timeBackup;
   int i;
@@ -406,7 +406,7 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
  *  numerical method finite differences
  */
 int
-jacA_num(_X_DATA* data, double *t, double *y, double *matrixA) {
+jacA_num(DATA* data, double *t, double *y, double *matrixA) {
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   double delta_h = 1.e-10;
@@ -454,7 +454,7 @@ jacA_num(_X_DATA* data, double *t, double *y, double *matrixA) {
 int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
    double *rpar, fortran_integer* ipar) {
 
-  _X_DATA* data = (_X_DATA*)(void*)rpar;
+  DATA* data = (DATA*)(void*)rpar;
   int i,j;
   if (jacA_num(data, t, y, pd)) {
 	  THROW("Error, can not get Matrix A ");

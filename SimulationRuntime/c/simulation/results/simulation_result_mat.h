@@ -57,7 +57,7 @@ class simulation_result_mat : public simulation_result {
 public:
   simulation_result_mat(const char* filename, double tstart, double tstop, MODEL_DATA *modelData);
   virtual ~simulation_result_mat();
-  virtual void emit(_X_DATA *data);
+  virtual void emit(DATA *data);
   void writeParameterData(MODEL_DATA *modelData);
   virtual const char* result_type() { 
     /* return "Dymosim's compatible MAT-file"; */

@@ -56,34 +56,32 @@
 extern "C" {
 #endif
 
-void initializeXDataStruc(_X_DATA *data);
+void initializeDataStruc(DATA *data);
 
-void DeinitializeXDataStruc(_X_DATA *data);
+void DeinitializeDataStruc(DATA *data);
 
-void update_DAEsystem(_X_DATA *data);
+void update_DAEsystem(DATA *data);
 
-void SaveZeroCrossings(_X_DATA *data);
+void SaveZeroCrossings(DATA *data);
 
-void copyStartValuestoInitValues(_X_DATA *data);
+void copyStartValuestoInitValues(DATA *data);
 
-void printAllVars(_X_DATA *data, int ringSegment);
+void printAllVars(DATA *data, int ringSegment);
 
-void overwriteOldSimulationData(_X_DATA *data);
+void overwriteOldSimulationData(DATA *data);
 
-void
-restoreExtrapolationDataOld(_X_DATA *data);
+void restoreExtrapolationDataOld(DATA *data);
 
-void storeStartValues(_X_DATA* data);
+void setAllVarsToStart(DATA* data);
+void setAllParamsToStart(DATA *data);
 
-void storeStartValuesParam(_X_DATA *data);
+void storeInitialValuesParam(DATA *data);
 
-void storeInitialValuesParam(_X_DATA *data);
+void storePreValues(DATA *data);
 
-void storePreValues(_X_DATA *data);
+void resetAllHelpVars(DATA* data);
 
-void resetAllHelpVars(_X_DATA* data);
-
-double getNextSampleTimeFMU(_X_DATA *data);
+double getNextSampleTimeFMU(DATA *data);
 
 
 /* functions used in function_ZeroCrossings */

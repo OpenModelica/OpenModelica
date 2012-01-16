@@ -50,7 +50,7 @@
 #include <time.h>
 
 
-void simulation_result_csv::emit(_X_DATA *data)
+void simulation_result_csv::emit(DATA *data)
 {
   const char* format = "%.16g,";
   const char* formatint = "%i,";

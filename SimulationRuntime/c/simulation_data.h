@@ -96,41 +96,41 @@
   } SAMPLE_TIME;
 
   /* Alias data with various types*/
-  typedef struct _X_DATA_REAL_ALIAS
+  typedef struct DATA_REAL_ALIAS
   {
     int negate;  
     int nameID;  /* Pointer to Alias */
     char aliasType; /* 0 variable, 1 parameter, 2 time */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }_X_DATA_REAL_ALIAS;
+  }DATA_REAL_ALIAS;
 
-  typedef struct _X_DATA_INTEGER_ALIAS
+  typedef struct DATA_INTEGER_ALIAS
   {
     int negate;
     int nameID;
     char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }_X_DATA_INTEGER_ALIAS;
+  }DATA_INTEGER_ALIAS;
 
-  typedef struct _X_DATA_BOOLEAN_ALIAS
+  typedef struct DATA_BOOLEAN_ALIAS
   {
     int negate;
     int nameID;
     char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }_X_DATA_BOOLEAN_ALIAS;
+  }DATA_BOOLEAN_ALIAS;
 
-  typedef struct _X_DATA_STRING_ALIAS
+  typedef struct DATA_STRING_ALIAS
   {
     int negate;
     int nameID;
     char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }_X_DATA_STRING_ALIAS;
+  }DATA_STRING_ALIAS;
 
 
   /* collect all attributes from one variable in one struct */
@@ -213,10 +213,10 @@
     STATIC_BOOLEAN_DATA* booleanParameterData;
     STATIC_STRING_DATA* stringParameterData;
 
-    _X_DATA_REAL_ALIAS* realAlias;
-    _X_DATA_INTEGER_ALIAS* integerAlias;
-    _X_DATA_BOOLEAN_ALIAS* booleanAlias;
-    _X_DATA_STRING_ALIAS* stringAlias;
+    DATA_REAL_ALIAS* realAlias;
+    DATA_INTEGER_ALIAS* integerAlias;
+    DATA_BOOLEAN_ALIAS* booleanAlias;
+    DATA_STRING_ALIAS* stringAlias;
 
     FUNCTION_INFO* functionNames;
     EQUATION_INFO* equationInfo;
@@ -321,12 +321,12 @@
   }SIMULATION_DATA;
 
   /* top-level struct to collect dynamic and static model data */
-  typedef struct _X_DATA
+  typedef struct DATA
   {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
     SIMULATION_DATA **localData;
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
-  }_X_DATA;
+  }DATA;
 
 #endif

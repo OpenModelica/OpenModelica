@@ -226,7 +226,7 @@ simulation_result_mat::~simulation_result_mat()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void simulation_result_mat::emit(_X_DATA *data)
+void simulation_result_mat::emit(DATA *data)
 {
   double datPoint=0;
 

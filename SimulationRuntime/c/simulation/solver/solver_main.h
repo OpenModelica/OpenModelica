@@ -70,7 +70,7 @@ extern "C" {
 #endif
 
 int
-solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
+solver_main(DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
 
 #ifdef __cplusplus
 }

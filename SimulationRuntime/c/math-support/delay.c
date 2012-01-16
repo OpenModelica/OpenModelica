@@ -44,7 +44,7 @@
 /* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
 
 
-void initDelay(_X_DATA* data, double startTime)
+void initDelay(DATA* data, double startTime)
 {
   /* get the start time of the simulation: time.start. */
   data->simulationInfo.tStart = startTime;
@@ -74,7 +74,7 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   return (start);
 }
 
-void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, double time)
+void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time)
 {
   TIME_AND_VALUE tpl;
 
@@ -90,7 +90,7 @@ void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, dou
   appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
 }
 
-double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
   RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);

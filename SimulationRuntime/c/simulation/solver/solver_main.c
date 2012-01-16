@@ -63,15 +63,15 @@ typedef struct RK4
 double dlamch_(char*,int);
 
 int
-euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
+euler_ex_step(DATA* simData, SOLVER_INFO* solverInfo);
 
 int
-rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
+rungekutta_step(DATA* simData, SOLVER_INFO* solverInfo);
 
-void checkTermination(_X_DATA* simData);
+void checkTermination(DATA* simData);
 
 int
-solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
+solver_main_step(int flag, DATA* simData, SOLVER_INFO* solverInfo) {
   switch (flag) {
   case 2:
     return rungekutta_step(simData, solverInfo);
@@ -103,7 +103,7 @@ solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
  * 6=dopri5 with stepsize control & dense output */
 
 int
-solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag) {
+solver_main(DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag) {
 
 	int i;
 
@@ -518,7 +518,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 /***************************************		EULER_EXP     *********************************/
 int
-euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
+euler_ex_step(DATA* simData, SOLVER_INFO* solverInfo) {
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)simData->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)simData->localData[1];
@@ -535,7 +535,7 @@ euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
 
 /***************************************		RK4  		***********************************/
 int
-rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
+rungekutta_step(DATA* simData, SOLVER_INFO* solverInfo) {
   double** k = ((RK4*)(solverInfo->solverData))->work_states;
   double sum;
   int i,j;
@@ -581,7 +581,7 @@ rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
  *
  *  function checks if the model should really terminated.
  */
-void checkTermination(_X_DATA* simData)
+void checkTermination(DATA* simData)
 {
   if(terminationAssert || terminationTerminate)
   {

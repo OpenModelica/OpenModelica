@@ -142,7 +142,7 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 }
 
 
-static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, _X_DATA *data, const struct FUNCTION_INFO *funcs) {
+static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct FUNCTION_INFO *funcs) {
   int i;
   for (i=0; i<data->modelData.nFunctions; i++) {
     printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id);
@@ -159,7 +159,7 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
   }
 }
 
-static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, _X_DATA *data) {
+static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
   int i;
   for (i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
     const struct EQUATION_INFO *eq = &(data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i-data->modelData.nFunctions]]);
@@ -187,7 +187,7 @@ static void printEquations(FILE *fout, int n, EQUATION_INFO *eqns) {
   }
 }
 
-static void printProfilingDataHeader(FILE *fout, _X_DATA *data) {
+static void printProfilingDataHeader(FILE *fout, DATA *data) {
   char *filename;
   int i;
   
@@ -220,7 +220,7 @@ static void printProfilingDataHeader(FILE *fout, _X_DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(_X_DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename) {
+int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;

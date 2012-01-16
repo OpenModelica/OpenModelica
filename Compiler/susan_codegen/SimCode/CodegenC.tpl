@@ -186,12 +186,12 @@ case simCode as SIMCODE(__) then
   #endif
   
   /* forward the main in the simulation runtime */
-  extern int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data);
+  extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
   
   /* call the simulation runtime main from our main! */
   int main(int argc, char**argv)
   {
-    _X_DATA data;
+    DATA data;
     initializeDataStruc_X_(&data);
     return _main_SimulationRuntime(argc, argv, &data);
   }
@@ -268,7 +268,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
  "Generates function in simulation file."
 ::=
   <<
-  void initializeDataStruc_X_(_X_DATA *data)
+  void initializeDataStruc_X_(DATA *data)
   {  
     ASSERT(data,"Error while initialize Data");
     <%pupulateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, delayed)%>
@@ -283,7 +283,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
   <<
-  void initializeDataStruc_X_2(_X_DATA *data)
+  void initializeDataStruc_X_2(DATA *data)
   {  
     <%globalDataFunctionInfoArray("function_names", functions)%>
     memcpy(data->modelData.functionNames, &funcInfo, data->modelData.nFunctions*sizeof(FUNCTION_INFO));
@@ -581,7 +581,7 @@ case EXTOBJINFO(__) then
     ;separator="\n")
   <<
   /* Has to be performed after _init.xml file has been read */
-  void callExternalObjectConstructors(_X_DATA *data)
+  void callExternalObjectConstructors(DATA *data)
   {
     <%varDecls%>
     state mem_state;
@@ -599,7 +599,7 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo)
 match extObjInfo
 case extObjInfo as EXTOBJINFO(__) then
   <<
-  void callExternalObjectDestructors(_X_DATA *data)
+  void callExternalObjectDestructors(DATA *data)
   {
     if (data->simulationInfo.extObjs) {
       <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => '_<%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name)%>);' ;separator="\n"%>
@@ -616,7 +616,7 @@ template functionInput(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  int input_function(_X_DATA *data)
+  int input_function(DATA *data)
   {
     <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
       '<%cref(name)%> = data->simulationInfo.inputVars[<%i0%>];'
@@ -633,7 +633,7 @@ template functionOutput(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  int output_function(_X_DATA *data)
+  int output_function(DATA *data)
   {
     <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
       'data->simulationInfo.outputVars[<%i0%>] = <%cref(name)%>;'
@@ -651,7 +651,7 @@ template functionInitSample(list<SampleCondition> sampleConditions)
   <<
   /* Initializes the raw time events of the simulation using the now
      calcualted parameters. */
-  void function_sampleInit(_X_DATA *data)
+  void function_sampleInit(DATA *data)
   {
     <%if timeEventCode then "int i = 0; // Current index"%>
     <%timeEventCode%>
@@ -669,7 +669,7 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
     ;separator="\n")
   <<
   <%&tmp%>
-  int function_updateSample(_X_DATA *data)
+  int function_updateSample(DATA *data)
   {
     state mem_state;
     <%varDecls%>
@@ -693,7 +693,7 @@ template functionInitial(list<SimEqSystem> initialEquations)
     ;separator="\n")
   <<
   <%&tmp%>
-  int initial_function(_X_DATA *data)
+  int initial_function(DATA *data)
   {
     <%varDecls%>
   
@@ -726,7 +726,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
 DEBUG_INFO2(LOG_RES_INIT,"Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f",i,initialResiduals[i-1]);'
     ;separator="\n")
   <<
-  int initial_residual(_X_DATA *data, double $P$_lambda, double* initialResiduals)
+  int initial_residual(DATA *data, double $P$_lambda, double* initialResiduals)
   {
     int i = 0;
     state mem_state;
@@ -766,7 +766,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      <%&tmp%>
      void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag, void* userdata)
      {
-       _X_DATA *data = ((_X_DATA*)userdata);
+       DATA *data = ((DATA*)userdata);
        state mem_state;
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
@@ -798,7 +798,7 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
     ;separator="\n")    
   <<
   <%&tmp%>
-  int bound_parameters(_X_DATA *data)
+  int bound_parameters(DATA *data)
   {
     state mem_state;
     <%varDecls%>
@@ -827,7 +827,7 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<  
-  int function_storeDelayed(_X_DATA *data)
+  int function_storeDelayed(DATA *data)
   {
     state mem_state;
     <%varDecls%>
@@ -943,7 +943,7 @@ template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
   let odeEqs = derivativEquations |> eq => equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp); separator="\n"
   <<
   <%&tmp%>
-  static void functionODE_system<%n%>(_X_DATA *data,int omc_thread_number)
+  static void functionODE_system<%n%>(DATA *data,int omc_thread_number)
   {
     <%varDecls%>
     <%odeEqs%>
@@ -966,7 +966,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   <<
   <%tmp%>
   <%funcs%>
-  static void (*functionODE_systems[<%nFuncs%>])(_X_DATA *, int) = {
+  static void (*functionODE_systems[<%nFuncs%>])(DATA *, int) = {
     <%funcNames%>
   };
   
@@ -975,7 +975,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     push_memory_states(<% if Flags.isSet(Flags.OPENMP) then noProc() else 1 %>);
   }
   
-  int functionODE(_X_DATA *data)
+  int functionODE(DATA *data)
   {
     int id,th_id;
     state mem_state; /* We need to have separate memory pools for separate systems... */
@@ -998,7 +998,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   <<
   // we need to access the inline define that we compiled the simulation with
   // from the simulation runtime.
-  int functionODE_inline(_X_DATA* data, double stepSize)
+  int functionODE_inline(DATA* data, double stepSize)
   {
     state mem_state;
     <%varDecls2%>
@@ -1014,7 +1014,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   >>
   else
   <<
-  int functionODE_inline(_X_DATA* data, double stepSize)
+  int functionODE_inline(DATA* data, double stepSize)
   {
     return 0;
   }
@@ -1034,7 +1034,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   <<
   <%tmp%>
   /* for continuous time variables */
-  int functionAlgebraics(_X_DATA *data)
+  int functionAlgebraics(DATA *data)
   {
     state mem_state;
     <%varDecls%>
@@ -1059,7 +1059,7 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
   <<
   <%&tmp%>
   /* for continuous time variables */
-  int functionAliasEquations(_X_DATA *data)
+  int functionAliasEquations(DATA *data)
   {
     state mem_state;
     <%varDecls%>
@@ -1093,7 +1093,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
     ;separator="\n")
   <<
   <%&tmp%>
-  int functionDAE(_X_DATA *data, int *needToIterate)
+  int functionDAE(DATA *data, int *needToIterate)
   {
     state mem_state;
     <%varDecls%>
@@ -1116,7 +1116,7 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings)
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = zeroCrossingsTpl2(zeroCrossings, &varDecls /*BUFD*/)
   <<
-  int function_onlyZeroCrossings(_X_DATA *data, double *gout,double *t)
+  int function_onlyZeroCrossings(DATA *data, double *gout,double *t)
   {
     state mem_state;
     <%varDecls%>
@@ -1138,7 +1138,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
        'if (<%cref(var)%> != $P$PRE<%cref(var)%>) { DEBUG_INFO2(LOG_EVENTS,"Discrete Var <%crefStr(var)%> : <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);  needToIterate=1; }'
     ;separator="\n")
   <<
-  int checkForDiscreteChanges(_X_DATA *data)
+  int checkForDiscreteChanges(DATA *data)
   {
     int needToIterate = 0;
   
@@ -1179,7 +1179,7 @@ template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts
     ;separator="\n")
   <<
   /* for continuous time variables */
-  int checkForAsserts(_X_DATA *data)
+  int checkForAsserts(DATA *data)
   {
     <%varDecls%>
   
@@ -1322,7 +1322,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars,String
       ;separator="\n")
   <<
   <%&tmp%>
-  int functionJac<%matrixName%>_0(_X_DATA* data, double *seed, double *out_col)
+  int functionJac<%matrixName%>_0(DATA* data, double *seed, double *out_col)
   {
     state mem_state;
     <%varDecls%>
@@ -1366,7 +1366,7 @@ template generateMatrix(list<JacobianColumn> jacobianMatrix, list<SimVar> seedVa
 match seedVars
 case {} then
 <<
- int functionJac<%matrixname%>(_X_DATA* data, double* jac){
+ int functionJac<%matrixname%>(DATA* data, double* jac){
     return 0;
  }
 >>
@@ -1385,7 +1385,7 @@ case _ then
  #define _OMC_SEED_HACK_2 seed
  <%writeJac_%>
  <%jacMats%>
- int functionJac<%matrixname%>(_X_DATA* data, double* jac){
+ int functionJac<%matrixname%>(DATA* data, double* jac){
     double seed[<%index_%>] = {0};
     double localtmp[<%indexColumn%>] = {0};
     int i,j,l,k;
@@ -1566,7 +1566,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &eqs +=
   <<
   
-  void eqFunction_<%ix%>(_X_DATA *data, _OMC_SEED_HACK) {
+  void eqFunction_<%ix%>(DATA *data, _OMC_SEED_HACK) {
     <%&varD%>
     <%x%>
   }

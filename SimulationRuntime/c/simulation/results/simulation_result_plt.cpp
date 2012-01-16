@@ -100,7 +100,7 @@ static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
 }
 */
 
-void simulation_result_plt::emit(_X_DATA *data)
+void simulation_result_plt::emit(DATA *data)
 {
   rt_tick(SIM_TIMER_OUTPUT);
   if (actualPoints < maxPoints) {
@@ -120,7 +120,7 @@ void simulation_result_plt::emit(_X_DATA *data)
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
  */
-void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA *simData)
+void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *simData)
 {
   /* save time first */
   /* cerr << "adding result for time: " << time; */

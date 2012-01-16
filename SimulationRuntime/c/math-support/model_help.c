@@ -39,14 +39,17 @@
 #include "varinfo.h"
 #include "delay.h"
 
-
-/*  function: update_DAEsystem
- *
- *  ! Function to update the whole system with EventIteration.
- *  Evaluate the functionDAE()
- */
 static const int IterationMax = 200;
-void update_DAEsystem(_X_DATA *data)
+const size_t SIZERINGBUFFER = 3;
+
+/*! \fn update_DAEsystem
+ *
+ *  Function to update the whole system with EventIteration.
+ *  Evaluate the functionDAE()
+ *
+ *  \param [ref] [data]
+ */
+void update_DAEsystem(DATA *data)
 {
   int needToIterate = 0;
   int IterationNum = 0;
@@ -54,7 +57,8 @@ void update_DAEsystem(_X_DATA *data)
   functionDAE(data, &needToIterate);
   functionAliasEquations(data);
   /*
-  if (DEBUG_FLAG(LOG_EVENTS)) {
+  if (DEBUG_FLAG(LOG_EVENTS))
+  {
     sim_result_emit(data);
   }
   */
@@ -84,101 +88,107 @@ void update_DAEsystem(_X_DATA *data)
   }
 }
 
-/* function: SaveZeroCrossings
+/*! \fn SaveZeroCrossings
  *
- * ! Function saves all ZeroCrossing Values
+ * Function saves all ZeroCrossing Values
  *
+ *  \param [ref] [data]
  */
-void
-SaveZeroCrossings(_X_DATA* simData)
+void SaveZeroCrossings(DATA* data)
 {
   long i = 0;
 
   DEBUG_INFO(LOG_ZEROCROSSINGS, "Save ZeroCrossings!");
 
-  for(i=0;i<simData->modelData.nZeroCrossings;i++){
-      simData->simulationInfo.zeroCrossingsPre[i] = simData->simulationInfo.zeroCrossings[i];
-  }
-  function_onlyZeroCrossings(simData, simData->simulationInfo.zeroCrossings, &(simData->localData[0]->timeValue));
+  for(i=0;i<data->modelData.nZeroCrossings;i++)
+	  data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
+
+  function_onlyZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
 }
 
-/* function: copyStartValuestoInitValues
+/*! \fn copyStartValuestoInitValues
  *
- * ! Function to copy all start values to initial values
+ *  Function to copy all start values to initial values
  *
+ *  \param [ref] [data]
  */
-void copyStartValuestoInitValues(_X_DATA *data)
+void copyStartValuestoInitValues(DATA *data)
 {
-
   /* just copy all start values to initial */
-  storeStartValuesParam(data);
+  setAllParamsToStart(data);
   storeInitialValuesParam(data);
-  storeStartValues(data);
+  setAllVarsToStart(data);
   storePreValues(data);
   overwriteOldSimulationData(data);
-
 }
 
-/*! \fn void printAllVars(_X_DATA *data, int )
+/*! \fn printAllVars
  *
  *  prints all values as arguments it need data
  *  and which part of the ring should printed.
  *
- *  author: wbraun
+ *  \param [in]  [data]
+ *  \param [in]  [ringSegment]
+ *
+ *  \author wbraun
  */
-void printAllVars(_X_DATA *data, int ringSegment)
+void printAllVars(DATA *data, int ringSegment)
 {
   long i;
-  MODEL_DATA      *mData = &(data->modelData);
+  MODEL_DATA *mData = &(data->modelData);
+
   INFO1("all real variables regarding point in time: %g", data->localData[ringSegment]->timeValue);
   for(i=0; i<mData->nVariablesReal; ++i){
-    INFO3("localData->realVars[%ld] = %s = %g",i,mData->realVarsData[i].info.name,data->localData[ringSegment]->realVars[i]);
+    INFO3("localData->realVars[%ld] = %s = %g", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
   INFO("all integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i){
-    INFO3("localData->integerVars[%ld] = %s = %ld",i,mData->integerVarsData[i].info.name,data->localData[ringSegment]->integerVars[i]);
+    INFO3("localData->integerVars[%ld] = %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
   }
   INFO("all boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i){
-    INFO3("localData->booleanVars[%ld] = %s = %s",i,mData->booleanVarsData[i].info.name,data->localData[ringSegment]->booleanVars[i]?"true":"false");
+    INFO3("localData->booleanVars[%ld] = %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
   }
   INFO("all string variables");
   for(i=0; i<mData->nVariablesString; ++i){
-    INFO3("localData->stringVars[%ld] = %s = %s",i,mData->stringVarsData[i].info.name,data->localData[ringSegment]->stringVars[i]);
+    INFO3("localData->stringVars[%ld] = %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
   INFO("all real parameters");
   for(i=0; i<mData->nParametersReal; ++i){
-    INFO3("mData->realParameterData[%ld] = %s = %g",i,mData->realParameterData[i].info.name,mData->realParameterData[i].attribute.initial);
+    INFO3("mData->realParameterData[%ld] = %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
   }
   INFO("all integer parameters");
   for(i=0; i<mData->nParametersInteger; ++i){
-    INFO3("mData->integerParameterData[%ld] = %s = %ld",i,mData->integerParameterData[i].info.name,mData->integerParameterData[i].attribute.initial);
+    INFO3("mData->integerParameterData[%ld] = %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
   }
   INFO("all boolean parameters");
   for(i=0; i<mData->nParametersBoolean; ++i){
-    INFO3("mData->booleanParameterData[%ld] = %s = %s",i,mData->booleanParameterData[i].info.name,mData->booleanParameterData[i].attribute.initial?"true":"false");
+    INFO3("mData->booleanParameterData[%ld] = %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
   }
   INFO("all string parameters");
   for(i=0; i<mData->nParametersString; ++i){
-    INFO3("mData->stringParameterData[%ld] = %s = %s",i,mData->stringParameterData[i].info.name,mData->stringParameterData[i].attribute.initial);
+    INFO3("mData->stringParameterData[%ld] = %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
   }
 }
 
-/*! \fn void overwriteOldSimulationData(_X_DATA *data)
+/*! \fn overwriteOldSimulationData
  *
- * Stores variables (states, derivatives and algebraic) to be used
- * by e.g. numerical solvers to extrapolate values as start values.
+ *  Stores variables (states, derivatives and algebraic) to be used
+ *  by e.g. numerical solvers to extrapolate values as start values.
  *
- * This function overwrites all old value with the current.
- * This function is called after events.
+ *  This function overwrites all old value with the current.
+ *  This function is called after events.
  *
- *  author: lochel
+ *  \param [ref] [data]
+ *
+ *  \author lochel
  */
-void overwriteOldSimulationData(_X_DATA *data)
+void overwriteOldSimulationData(DATA *data)
 {
   long i;
 
-  for(i=1; i<ringBufferLength(data->simulationData); ++i){
+  for(i=1; i<ringBufferLength(data->simulationData); ++i)
+  {
     data->localData[i]->timeValue = data->localData[i-1]->timeValue;
     memcpy(data->localData[i]->realVars, data->localData[i-1]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
     memcpy(data->localData[i]->integerVars, data->localData[i-1]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
@@ -187,22 +197,24 @@ void overwriteOldSimulationData(_X_DATA *data)
   }
 }
 
-
-/** function restoreExtrapolationDataOld
- * author: wbraun
+/* \fn restoreExtrapolationDataOld
  *
- * Restores variables (states, derivatives and algebraic).
+ *  Restores variables (states, derivatives and algebraic).
  *
- * This function overwrites all variable with old values.
- * This function is called while the initialization to be able
- * initialize all ZeroCrossing relations.
+ *  This function overwrites all variable with old values.
+ *  This function is called while the initialization to be able
+ *  initialize all ZeroCrossing relations.
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
  */
-void
-restoreExtrapolationDataOld(_X_DATA *data)
+void restoreExtrapolationDataOld(DATA *data)
 {
   long i;
 
-  for(i=1; i<ringBufferLength(data->simulationData); ++i){
+  for(i=1; i<ringBufferLength(data->simulationData); ++i)
+  {
     data->localData[i-1]->timeValue = data->localData[i]->timeValue;
     memcpy(data->localData[i-1]->realVars, data->localData[i]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
     memcpy(data->localData[i-1]->integerVars, data->localData[i]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
@@ -211,161 +223,178 @@ restoreExtrapolationDataOld(_X_DATA *data)
   }
 }
 
-
-/*! \fn void storeStartValues(_X_DATA *data)
+/*! \fn setAllVarsToStart
  *
- *  sets all values to their start-attribute
+ *  This function sets all variables to their start-attribute.
  *
- *  author: lochel
+ *  \param [ref] [data]
+ *
+ *  \author lochel
  */
-void storeStartValues(_X_DATA* data)
+void setAllVarsToStart(DATA *data)
 {
-  long i;
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
+  long i;
 
-  for(i=0; i<mData->nVariablesReal; ++i){
+  for(i=0; i<mData->nVariablesReal; ++i)
+  {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Real var %s = %g",mData->realVarsData[i].info.name, sData->realVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
-  for(i=0; i<mData->nVariablesInteger; ++i){
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Integer var %s = %ld",mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
-  for(i=0; i<mData->nVariablesBoolean; ++i){
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanVarsData[i].info.name, sData->booleanVars[i]?"true":"false");
+    DEBUG_INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
-  for(i=0; i<mData->nVariablesString; ++i){
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
-/*! \fn void storeStartValuesParam(_X_DATA *data)
+/*! \fn setAllParamsToStart
  *
- *  sets all parameter initial values to their start-attribute
+ *  This function sets all parameters and their initial values to their start-attribute.
  *
- *  author: wbraun
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
  */
-void storeStartValuesParam(_X_DATA *data)
+void setAllParamsToStart(DATA *data)
 {
-  long i;
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
   MODEL_DATA      *mData = &(data->modelData);
+  long i;
 
-  for(i=0; i<mData->nParametersReal; ++i){
+  for(i=0; i<mData->nParametersReal; ++i)
+  {
     mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
-    data->simulationInfo.realParameter[i] = mData->realParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT,"Set Real var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
+    sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_INIT, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
-  for(i=0; i<mData->nParametersInteger; ++i){
+  for(i=0; i<mData->nParametersInteger; ++i)
+  {
     mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
-    data->simulationInfo.integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT,"Set Integer var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+    sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_INIT, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
-  for(i=0; i<mData->nParametersBoolean; ++i){
+  for(i=0; i<mData->nParametersBoolean; ++i)
+  {
     mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
-    data->simulationInfo.booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT,"Set Boolean var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
+    sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_INIT, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
-  for(i=0; i<mData->nParametersString; ++i){
+  for(i=0; i<mData->nParametersString; ++i)
+  {
     mData->stringParameterData[i].attribute.initial = mData->stringParameterData[i].attribute.start;
-    data->simulationInfo.stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT,"Set String var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+    sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_INIT, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
-
 }
 
-/*! \fn void storeInitialValuesParam(_X_DATA *data)
+/*! \fn storeInitialValuesParam
  *
- *  sets all parameter initial values to their start-attribute
+ *  This function sets all parameters initial values to their current values.
  *
- *  author: wbraun
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
  */
-void storeInitialValuesParam(_X_DATA *data)
+void storeInitialValuesParam(DATA *data)
 {
-  long i;
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
   MODEL_DATA      *mData = &(data->modelData);
+  long i;
 
-  for(i=0; i<mData->nParametersReal; ++i){
-    mData->realParameterData[i].attribute.initial = data->simulationInfo.realParameter[i];
-    DEBUG_INFO2(LOG_INIT,"Set Real Parameter var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
+  for(i=0; i<mData->nParametersReal; ++i)
+  {
+    mData->realParameterData[i].attribute.initial = sInfo->realParameter[i];
+    DEBUG_INFO2(LOG_INIT, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
-  for(i=0; i<mData->nParametersInteger; ++i){
-    mData->integerParameterData[i].attribute.initial = data->simulationInfo.integerParameter[i];
-    DEBUG_INFO2(LOG_INIT,"Set Integer Parameter var %s = %ld",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+  for(i=0; i<mData->nParametersInteger; ++i)
+  {
+    mData->integerParameterData[i].attribute.initial = sInfo->integerParameter[i];
+    DEBUG_INFO2(LOG_INIT, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
-  for(i=0; i<mData->nParametersBoolean; ++i){
-    mData->booleanParameterData[i].attribute.initial = data->simulationInfo.booleanParameter[i];
-    DEBUG_INFO2(LOG_INIT,"Set Boolean Parameter var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
+  for(i=0; i<mData->nParametersBoolean; ++i)
+  {
+    mData->booleanParameterData[i].attribute.initial = sInfo->booleanParameter[i];
+    DEBUG_INFO2(LOG_INIT, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
-  for(i=0; i<mData->nParametersString; ++i){
-    mData->stringParameterData[i].attribute.initial = data->simulationInfo.stringParameter[i];
-    DEBUG_INFO2(LOG_INIT,"Set String initial Parameter var %s = %s",mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
+  for(i=0; i<mData->nParametersString; ++i)
+  {
+    mData->stringParameterData[i].attribute.initial = sInfo->stringParameter[i];
+    DEBUG_INFO2(LOG_INIT, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
-
 }
 
-
-/*! \fn void storePreValues(_X_DATA *data)
+/*! \fn storePreValues
  *
  *  copys all the values into their pre-values
  *
- *  author: lochel
+ *  \param [ref] [data]
+ *
+ *  \author lochel
  */
-void storePreValues(_X_DATA *data)
+void storePreValues(DATA *data)
 {
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *siData = &(data->simulationInfo);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  memcpy(siData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
-  memcpy(siData->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
-  memcpy(siData->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
-  memcpy(siData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
-  memcpy(siData->helpVarsPre, siData->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
-
+  memcpy(sInfo->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+  memcpy(sInfo->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
+  memcpy(sInfo->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
+  memcpy(sInfo->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
+  memcpy(sInfo->helpVarsPre, sInfo->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
 }
 
-/** function resetAllHelpVars
- *  author: wbraun
+/*! \fn resetAllHelpVars
  *
  *  workaround function to reset all helpvar that are used for when-equations.
  *  Need be done before initialization, to ensure the continuous integration.
+ *
+ *  \param [out] [data]
+ *
+ *  \author wbraun
  */
-void resetAllHelpVars(_X_DATA* data)
+void resetAllHelpVars(DATA *data)
 {
-  int i = 0;
-  for(i = 0; i < data->modelData.nHelpVars; i++)
+  int i;
+  for(i = 0; i<data->modelData.nHelpVars; i++)
   {
     data->simulationInfo.helpVars[i] = 0;
   }
 }
 
-
-/** function getNextSampleTimeFMU
- *  author: wbraun
+/*! \fn getNextSampleTimeFMU
  *
  *  function return next sample time.
+ *
+ *  \param [in]  [data]
+ *
+ *  \author wbraun
  */
-double getNextSampleTimeFMU(_X_DATA *data)
+double getNextSampleTimeFMU(DATA *data)
 {
-    if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
-    {
-        return((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events);
-    }
-    else
-    {
-        return -1;
-    }
-
+  if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
+  {
+    return((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events);
+  }
+  else
+  {
+    return -1;
+  }
 }
 
-
-
-const size_t SIZERINGBUFFER = 3;
-
-void initializeXDataStruc(_X_DATA *data)
+void initializeDataStruc(DATA *data)
 {
   SIMULATION_DATA tmpSimData;
   size_t i = 0;
@@ -407,10 +436,10 @@ void initializeXDataStruc(_X_DATA *data)
   data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean, sizeof(STATIC_BOOLEAN_DATA));
   data->modelData.stringParameterData = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString, sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realAlias = (_X_DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal, sizeof(_X_DATA_REAL_ALIAS));
-  data->modelData.integerAlias = (_X_DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(_X_DATA_INTEGER_ALIAS));
-  data->modelData.booleanAlias = (_X_DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(_X_DATA_BOOLEAN_ALIAS));
-  data->modelData.stringAlias = (_X_DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(_X_DATA_STRING_ALIAS));
+  data->modelData.realAlias = (DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal, sizeof(DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(DATA_BOOLEAN_ALIAS));
+  data->modelData.stringAlias = (DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(DATA_STRING_ALIAS));
 
   data->simulationInfo.rawSampleExps = (SAMPLE_RAW_TIME*) calloc(data->modelData.nSamples, sizeof(SAMPLE_RAW_TIME));
 
@@ -461,7 +490,7 @@ void initializeXDataStruc(_X_DATA *data)
 
 }
 
-void DeinitializeXDataStruc(_X_DATA *data)
+void DeinitializeDataStruc(DATA *data)
 {
   size_t i = 0;
 
@@ -575,7 +604,6 @@ void DeinitializeXDataStruc(_X_DATA *data)
   free(data->simulationInfo.delayStructure);
 
   pop_memory_states(NULL);
-
 }
 
 /* relation functions used in zero crossing detection */

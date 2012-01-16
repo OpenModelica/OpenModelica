@@ -73,7 +73,7 @@ extern Socket sim_communication_port;
 #ifdef __cplusplus
 extern "C" {
 #endif /* cplusplus */
-void sim_result_emit(_X_DATA *data);
+void sim_result_emit(DATA *data);
 void sim_result_writeParameterData(MODEL_DATA *modelData);
 #ifdef __cplusplus
 }
@@ -119,7 +119,7 @@ extern int num_jac_flag;  /* Flag for DASSL to work with selfmade numerical Jaco
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
-extern int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data);
+extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
 void communicateStatus(const char *phase, double completionPercent);
 
 #ifdef __cplusplus

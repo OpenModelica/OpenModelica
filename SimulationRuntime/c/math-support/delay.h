@@ -56,9 +56,9 @@ typedef struct EXPRESSION_DELAY_BUFFER
 extern "C" {
 #endif
 
-  void initDelay(_X_DATA* data, double startTime);
-  double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-  void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, double time);
+  void initDelay(DATA* data, double startTime);
+  double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
+  void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time);
 
 #ifdef __cplusplus
 }

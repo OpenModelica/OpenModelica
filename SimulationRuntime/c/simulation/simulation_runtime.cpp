@@ -110,7 +110,7 @@ extern const int ERROR_NONLINSYS = -1;
 extern const int ERROR_LINSYS = -2;
 
 /* function with template for linear model */
-int callSolver(_X_DATA*, string, string, string, double, double, double, long, double);
+int callSolver(DATA*, string, string, string, double, double, double, long, double);
 
 int isInteractiveSimulation();
 
@@ -119,13 +119,13 @@ int
 startInteractiveSimulation(int, char**);
 */
 int
-startNonInteractiveSimulation(int, char**, _X_DATA* data);
+startNonInteractiveSimulation(int, char**, DATA* data);
 int
-initRuntimeAndSimulation(int, char**, _X_DATA *data);
+initRuntimeAndSimulation(int, char**, DATA *data);
 
 
 
-/*! \fn void setTermMsg(_X_DATA* simData, const char* msg )
+/*! \fn void setTermMsg(DATA* simData, const char* msg )
  *
  *  prints all values as arguments it need data
  *  and which part of the ring should printed.
@@ -306,7 +306,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
  * Starts a non-interactive simulation
  */
 int
-startNonInteractiveSimulation(int argc, char**argv, _X_DATA* data)
+startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 {
   int retVal = -1;
 
@@ -399,7 +399,7 @@ startNonInteractiveSimulation(int argc, char**argv, _X_DATA* data)
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
 int
-callSolver(_X_DATA* simData, string method, string outputFormat,
+callSolver(DATA* simData, string method, string outputFormat,
     string result_file_cstr,
     double start, double stop, double stepSize, long outputSteps,
     double tolerance)
@@ -510,7 +510,7 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
  * Initialization is the same for interactive or non-interactive simulation
  */
 int
-initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
+initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
   if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
     cout << "usage: " << argv[0]
@@ -519,7 +519,7 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
                               << endl;
     EXIT(0);
   }
-  initializeXDataStruc(data);
+  initializeDataStruc(data);
 
   if (!data) {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
@@ -614,7 +614,7 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
  * -r res.plt write result to file.
  */
 
-int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
+int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 {
   int retVal = -1;
   if(!setjmp(globalJmpbuf) ) 
@@ -645,7 +645,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
    * free(globalData);
    */
   callExternalObjectDestructors(data);
-  DeinitializeXDataStruc(data);
+  DeinitializeDataStruc(data);
   fflush(NULL);
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (sim_communication_port_open) {
@@ -656,7 +656,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
 }
 
 /* C-Interface for sim_result->emit(); */
-void sim_result_emit(_X_DATA *data)
+void sim_result_emit(DATA *data)
 {
    if (sim_result) sim_result->emit(data);
 }

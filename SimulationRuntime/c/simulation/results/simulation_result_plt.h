@@ -45,7 +45,7 @@ long dataSize;
 int num_vars;
 MODEL_DATA *modelData;
 
-void add_result(double *data, long *actualPoints, _X_DATA *simData);
+void add_result(double *data, long *actualPoints, DATA *simData);
 void deallocResult();
 void printPltLine(FILE* f, double time, double val);
 
@@ -53,7 +53,7 @@ public:
 
 simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modeldata);
 virtual ~simulation_result_plt();
-virtual void emit(_X_DATA *data);
+virtual void emit(DATA *data);
 void writeParameterData(MODEL_DATA *modelData) { /* do nothing */ };
 virtual const char* result_type() {return "plt";};
 

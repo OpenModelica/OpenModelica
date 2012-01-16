@@ -67,12 +67,12 @@ typedef struct DASSL_DATA{
 
 /* main dassl function to make a step */
 int
-dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
+dasrt_step(DATA* simData, SOLVER_INFO* solverInfo);
 
 
 /* initial main dassl Data */
 int
-dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
+dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData);
 
 /* deinitial main dassl Data */
 int

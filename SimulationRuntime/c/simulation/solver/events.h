@@ -43,27 +43,27 @@
 extern "C" {
 #endif
 
-  double BiSection(_X_DATA* data, double*, double*, double*, double*, LIST*, LIST*);
+  double BiSection(DATA* data, double*, double*, double*, double*, LIST*, LIST*);
 
-  int CheckZeroCrossings(_X_DATA *data, LIST *list, LIST*);
+  int CheckZeroCrossings(DATA *data, LIST *list, LIST*);
 
 
   double Sample(double t, double start, double interval);
-  modelica_boolean sample(_X_DATA *data, double start, double interval, int hindex);
-  void initSample(_X_DATA *data, double start, double stop);
+  modelica_boolean sample(DATA *data, double start, double interval, int hindex);
+  void initSample(DATA *data, double start, double stop);
 
-  int checkForSampleEvent(_X_DATA *data, SOLVER_INFO* solverInfo);
+  int checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
 
-  double getNextSampleTimeFMU(_X_DATA *data);
+  double getNextSampleTimeFMU(DATA *data);
 
-  int CheckForNewEvent(_X_DATA *data, modelica_boolean *sampleactived, double* currentTime);
-  int EventHandle(_X_DATA *data, int, LIST *eventList);
-  void FindRoot(_X_DATA *data, double*, LIST *eventList);
+  int CheckForNewEvent(DATA *data, modelica_boolean *sampleactived, double* currentTime);
+  int EventHandle(DATA *data, int, LIST *eventList);
+  void FindRoot(DATA *data, double*, LIST *eventList);
 
-  void SaveZeroCrossingsAfterEvent(_X_DATA *data);
-  void initializeZeroCrossings(_X_DATA *data);
-  void correctDirectionZeroCrossings(_X_DATA *data);
-  int activateSampleEvents(_X_DATA *data);
+  void SaveZeroCrossingsAfterEvent(DATA *data);
+  void initializeZeroCrossings(DATA *data);
+  void correctDirectionZeroCrossings(DATA *data);
+  int activateSampleEvents(DATA *data);
 
 
 #define INTERVAL 1
