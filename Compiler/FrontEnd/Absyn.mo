@@ -4369,7 +4369,7 @@ Helper function for mergeElementAttributes
   input Parallelism p1;
   input Parallelism p2;
   output Parallelism p3;
-algorithm v3 := matchcontinue(p1,p2)
+algorithm p3 := matchcontinue(p1,p2)
   case(p1,NON_PARALLEL()) then p1;
   case(NON_PARALLEL(),p2) then p2;
   case(p1,p2)

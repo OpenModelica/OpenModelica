@@ -15405,7 +15405,7 @@ algorithm
       SCode.Element c;
       list<Env.Frame> env_1,env;
       Absyn.Path envpath,p_1,p;
-      String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
+      String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,parallelism_str,dir_str,str,access;
       String typeAdStr;
       list<Absyn.ComponentItem> lst;
       list<String> names,lst_1,dims,strLst;
@@ -15438,11 +15438,12 @@ algorithm
         flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
         streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
+        parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,parallelism_str,variability_str,inout_str,dir_str}, ", ");
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
         lst_1;
@@ -15466,9 +15467,10 @@ algorithm
         flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
         streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
+        parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,parallelism_str,variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
@@ -15511,6 +15513,7 @@ protected function getComponentsInfo
   where flow is one of: true, false
   where stream is one of: true, false
   where replaceable is one of: true, false
+  where parallelism is one of: \"parglobal\", \"parlocal\", \"unspecified\"
   where variability is one of: \"constant\", \"parameter\", \"discrete\" or \"unspecified\"
   where innerouter is one of: \"inner\", \"outer\", (\"innerouter\") or \"none\"
   where vardirection is one of: \"input\", \"output\" or \"unspecified\".
@@ -15703,7 +15706,7 @@ end attrStreamStr;
 protected function attrParallelismStr
 "function: attrParallelismStr
   Helper function to get_component_info,
-  retrieve direction as a string."
+  retrieve parallelism as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
 algorithm
