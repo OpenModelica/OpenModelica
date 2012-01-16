@@ -2101,7 +2101,7 @@ static void *Absyn__NON_5fEACH = MMC_REFSTRUCTLIT(Absyn__NON_5fEACH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementAttributes_ATTR__desc_added
 #define Absyn_ElementAttributes_ATTR__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_ElementAttributes_ATTR__desc__fields[5] = {"flowPrefix","streamPrefix","variability","direction","arrayDim"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementAttributes_ATTR__desc__fields[6] = {"flowPrefix","streamPrefix","parallelism","variability","direction","arrayDim"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementAttributes_ATTR__desc = {
   "Absyn_ElementAttributes_ATTR",
   "Absyn.ElementAttributes.ATTR",
@@ -2111,8 +2111,56 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementAttributes_ATTR
 #else /* Only use the file as a header */
 extern struct record_description Absyn_ElementAttributes_ATTR__desc;
 #endif
-#define Absyn__ATTR_3dBOX5 3
-#define Absyn__ATTR(flowPrefix,streamPrefix,variability,direction,arrayDim) (mmc_mk_box6(3,&Absyn_ElementAttributes_ATTR__desc,flowPrefix,streamPrefix,variability,direction,arrayDim))
+#define Absyn__ATTR_3dBOX6 3
+#define Absyn__ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim) (mmc_mk_box7(3,&Absyn_ElementAttributes_ATTR__desc,flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Parallelism_PARGLOBAL__desc_added
+#define Absyn_Parallelism_PARGLOBAL__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Parallelism_PARGLOBAL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Parallelism_PARGLOBAL__desc = {
+  "Absyn_Parallelism_PARGLOBAL",
+  "Absyn.Parallelism.PARGLOBAL",
+  Absyn_Parallelism_PARGLOBAL__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Parallelism_PARGLOBAL__desc;
+#endif
+#define Absyn__PARGLOBAL_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__PARGLOBAL__struct,1,3) {&Absyn_Parallelism_PARGLOBAL__desc}};
+static void *Absyn__PARGLOBAL = MMC_REFSTRUCTLIT(Absyn__PARGLOBAL__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Parallelism_PARLOCAL__desc_added
+#define Absyn_Parallelism_PARLOCAL__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Parallelism_PARLOCAL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Parallelism_PARLOCAL__desc = {
+  "Absyn_Parallelism_PARLOCAL",
+  "Absyn.Parallelism.PARLOCAL",
+  Absyn_Parallelism_PARLOCAL__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Parallelism_PARLOCAL__desc;
+#endif
+#define Absyn__PARLOCAL_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__PARLOCAL__struct,1,4) {&Absyn_Parallelism_PARLOCAL__desc}};
+static void *Absyn__PARLOCAL = MMC_REFSTRUCTLIT(Absyn__PARLOCAL__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Parallelism_NON__PARALLEL__desc_added
+#define Absyn_Parallelism_NON__PARALLEL__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Parallelism_NON__PARALLEL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Parallelism_NON__PARALLEL__desc = {
+  "Absyn_Parallelism_NON__PARALLEL",
+  "Absyn.Parallelism.NON_PARALLEL",
+  Absyn_Parallelism_NON__PARALLEL__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Parallelism_NON__PARALLEL__desc;
+#endif
+#define Absyn__NON_5fPARALLEL_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__NON_5fPARALLEL__struct,1,5) {&Absyn_Parallelism_NON__PARALLEL__desc}};
+static void *Absyn__NON_5fPARALLEL = MMC_REFSTRUCTLIT(Absyn__NON_5fPARALLEL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_VAR__desc_added
 #define Absyn_Variability_VAR__desc_added
