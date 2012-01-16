@@ -444,7 +444,7 @@ fi
 if test "Darwin" != `uname`; then
   RT_LDFLAGS="-lrt"
 else
-  RT_LDFLAGS=""
+  RT_LDFLAGS="-liconv"
 fi
 
 dnl should we compile modpar
