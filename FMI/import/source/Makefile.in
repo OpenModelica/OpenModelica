@@ -22,7 +22,6 @@ all: all-before $(BIN) all-after $(LIB)
 
 $(LIB): fmuWrapper.o
 	$(AR) $@ $<
-	cp $@ ../../../build/lib/omc2/libfmuWrapper.a
 
 fmuModelica.h: fmuModelica.tmp
 	sed 's/"/\\"/g' $< | sed 's/^/"/' | sed 's/$$/\\n"/' > $@.tmp
