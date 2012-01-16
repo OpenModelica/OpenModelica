@@ -419,7 +419,7 @@ static inline void *mmc_mk_some(const void *x)
     return mmc_mk_box1(1, x);
 }
 
-void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args);
+void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 modelica_boolean valueEq(modelica_metatype,modelica_metatype);

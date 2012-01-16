@@ -2053,8 +2053,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc2" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lModelicaExternalC -lSimulationRuntimeC <%makefileParams.ldflags%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lModelicaExternalC -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
@@ -2191,6 +2191,7 @@ template commonHeader()
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
   <% if acceptMetaModelicaGrammar() then "#include \"meta_modelica.h\"" %>
   <% if Flags.isSet(Flags.OPENMP) then "#include <omp.h>" else "#define omp_get_thread_num() 0" %>
+  #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
@@ -2205,8 +2206,10 @@ template functionsFile(String filePrefix,
 ::=
   <<
   #include "<%filePrefix%>.h"
+  #include "modelica.h"
   #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); }
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
+
 
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   

@@ -30,7 +30,8 @@
 
 extern "C" {
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "lapackimpl.c"
 

@@ -35,6 +35,7 @@
 
 extern "C" {
 
+#include "openmodelica.h"
 #include "modelica.h"
 #include "rml.h"
 #include "Absyn.h"

@@ -30,7 +30,7 @@
 #ifndef __SYSTEMIMPL_H
 #define __SYSTEMIMPL_H
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 char* _replace(const char* source_str,
                const char* search_str,

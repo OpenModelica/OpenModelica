@@ -36,6 +36,11 @@
 #include "division.h"
 #include "integer_array.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <stdarg.h>
+
 /* Indexing 1 dimension */
 modelica_real real_get(const real_array_t *a, size_t i)
 {

@@ -56,12 +56,12 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	# move libraries
 	cp ./libSimulationRuntimeC.a \
 	   ./ModelicaExternalC/libModelicaExternalC.a \
-	   ./ModelicaExternalC/ModelicaUtilities.h \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	# move header files
 	cp ./inline.h \
 	   ./openmodelica.h \
+	   ./ModelicaExternalC/ModelicaUtilities.h \
 	   ./openmodelica_func.h \
 	   ./simulation_data.h \
 	   ./f2c.h \

@@ -24,7 +24,7 @@ CC	= @CC@
 CXX	= @CXX@
 IDL	= @IDLCMD@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(top_builddir)/c_runtime/meta -I$(top_builddir)/c_runtime/meta/gc -I$(srcdir) -I. $(CORBAINCL)  
+CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL)  
 
 include Makefile.common
 

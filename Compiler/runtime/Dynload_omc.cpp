@@ -35,7 +35,9 @@ extern "C" {
 #include <Windows.h>
 #endif
 
+#include "openmodelica.h"
 #include "modelica.h"
+#include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
 #include "Dynload.cpp"

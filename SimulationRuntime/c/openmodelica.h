@@ -43,6 +43,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
 #include <float.h>
 #include <assert.h>
@@ -191,6 +192,59 @@ typedef unsigned int fortran_uinteger;
 typedef long int fortran_integer;
 typedef unsigned long int fortran_uinteger;
 #endif
+
+
+/* BEFORE: read_write */
+typedef struct type_desc_s type_description;
+
+enum type_desc_e {
+  TYPE_DESC_NONE,
+  TYPE_DESC_REAL,
+  TYPE_DESC_REAL_ARRAY,
+  TYPE_DESC_INT,
+  TYPE_DESC_INT_ARRAY,
+  TYPE_DESC_BOOL,
+  TYPE_DESC_BOOL_ARRAY,
+  TYPE_DESC_STRING,
+  TYPE_DESC_STRING_ARRAY,
+  TYPE_DESC_TUPLE,
+  TYPE_DESC_COMPLEX,
+  TYPE_DESC_RECORD,
+  /* function pointer - added by stefan */
+  TYPE_DESC_FUNCTION,
+  TYPE_DESC_MMC,
+  TYPE_DESC_NORETCALL
+};
+
+struct type_desc_s {
+  enum type_desc_e type;
+  int retval : 1;
+  union {
+    modelica_real real;
+    real_array_t real_array;
+    modelica_integer integer;
+    integer_array_t int_array;
+    modelica_boolean boolean;
+    boolean_array_t bool_array;
+    modelica_string_const string;
+    string_array_t string_array;
+    struct {
+      size_t elements;
+      struct type_desc_s *element;
+    } tuple;
+    modelica_complex complex;
+    struct {
+      const char *record_name;
+      size_t elements;
+      char **name;
+      struct type_desc_s *element;
+    } record;
+    /* function pointer - stefan */
+    modelica_fnptr function;
+    void* mmc;
+  } data;
+};
+
 
 /* math functions (-lm)*/
 

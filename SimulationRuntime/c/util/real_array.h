@@ -33,10 +33,11 @@
 #define REAL_ARRAY_H_
 
 
-#include <stdarg.h>
-#include <stdio.h>
 #include "openmodelica.h"
 #include "base_array.h"
+#include "memory_pool.h"
+#include "index_spec.h"
+#include <stdarg.h>
 
 /* Indexing 1 dimensions */
 extern modelica_real real_get(const real_array_t *a, size_t i);

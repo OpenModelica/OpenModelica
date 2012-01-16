@@ -56,6 +56,7 @@ extern "C" {
 #include "rtclock.h"
 #include "config.h"
 #include "errorext.h"
+#include "f2c.h"
 
 #if defined(_MSC_VER) /* no iconv for VS! */
 

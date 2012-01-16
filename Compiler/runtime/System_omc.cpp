@@ -35,7 +35,8 @@ extern "C" {
 #endif
 
 #include <ctype.h> /* for toupper */
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 #include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINTIONS static
 #include "OpenModelicaBootstrappingHeader.h"

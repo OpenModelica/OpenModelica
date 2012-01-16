@@ -33,21 +33,15 @@ mkbuilddirs:
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
-	mkdir -p $(builddir_lib)/omc2
-	mkdir -p $(top_builddir)/build/include/omc2
 
 debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc
 
-oldc_runtime: .testvariables mkbuilddirs
-	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
-newc_runtime: .testvariables mkbuilddirs
+c_runtime: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
-
-c_runtime: oldc_runtime newc_runtime
 
 docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)

@@ -69,7 +69,17 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 
-#include "compat.h"
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define EXIT(code) exit(code)
+#else
+/* We need to patch exit() on Unix systems
+ * It does not change the exit code of simulations for some reason! */
+#include <unistd.h>
+#define EXIT(code) {fflush(NULL); _exit(code);}
+#endif
+
+#include "inline.h"
+
 #include "modelica_string.h"
 #include "memory_pool.h"
 #include "index_spec.h"
@@ -83,19 +93,12 @@ extern "C" {
 #include "utility.h"
 #include "division.h"
 
-
-typedef real_array_t real_array;
-typedef integer_array_t integer_array;
-typedef boolean_array_t boolean_array;
-typedef string_array_t string_array;
-
 #include <assert.h>
-/*#include "read_write.h"*/
+#include "read_write.h"
+#include "simulation_data.h"
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
 #include "meta_modelica_real.h"
-/*#include "matrix.h"
-#include "simulation_varinfo.h"*/
 
 
 /* math functions (-lm)*/

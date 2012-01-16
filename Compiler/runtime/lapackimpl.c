@@ -48,6 +48,7 @@ extern "C" {
 #include "rtclock.h"
 #include "config.h"
 #include "errorext.h"
+#include "f2c.h"
 
 /*
  * Platform specific includes and defines

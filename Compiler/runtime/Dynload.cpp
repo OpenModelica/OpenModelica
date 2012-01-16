@@ -33,6 +33,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "openmodelica.h"
 #include "modelica.h"
 #include "systemimpl.h"
 #include "errorext.h"

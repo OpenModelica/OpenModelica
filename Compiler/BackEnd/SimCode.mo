@@ -1184,7 +1184,6 @@ algorithm
   end match;
 end callTargetTemplatesFMU;
 
-
 public function translateModel
 "Entry point to translate a Modelica model for simulation.
     
@@ -1292,7 +1291,7 @@ algorithm
         makefileParams = createMakefileParams(includeDirs, libs);
         fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
-        _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
+        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
       then
         ();
     case (name, NONE(), daeElements, metarecordTypes, includes)
@@ -1303,7 +1302,7 @@ algorithm
         makefileParams = createMakefileParams(includeDirs, libs);
         fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
-        _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
+        _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
       then
         ();
   end match;
