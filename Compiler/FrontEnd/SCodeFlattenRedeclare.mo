@@ -113,7 +113,7 @@ public function extendEnvWithClassExtends
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inClassExtends, inEnv)
+  outEnv := match(inClassExtends, inEnv)
     local
       SCode.Ident bc, cls_name;
       list<SCode.Element> el;
@@ -133,6 +133,7 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       SCode.ClassDef cdef;
       SCode.Element cls, ext;
+      String el_str, env_str, err_msg;
 
     // When a 'redeclare class extends X' is encountered we insert a 'class X
     // extends BaseClass.X' into the environment, with the same elements as the
@@ -176,14 +177,18 @@ algorithm
           SCodeEnv.newClassItem(cls, cls_env, SCodeEnv.CLASS_EXTENDS()), inEnv, bc);
       then env;
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = bc), info = info), _)
+    case (_, _)
       equation
-        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
-          {bc}, info);
+        info = SCode.elementInfo(inClassExtends);
+        el_str = SCodeDump.printElementStr(inClassExtends);
+        env_str = SCodeEnv.getEnvName(inEnv);
+        err_msg = "SCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +& 
+          el_str +& " in " +& env_str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end extendEnvWithClassExtends;
   
 protected function addClassExtendsInfoToEnv
@@ -283,6 +288,11 @@ algorithm
 end updateClassExtends2;
 
 protected function lookupClassExtendsBaseClass
+  "This function takes the name of a base class and looks up that name suffixed
+   with the base class suffix defined in SCodeEnv. I.e. it looks up the real base
+   class of a class extends, and not the alias introduced when adding replaceable
+   classes to the environment in SCodeEnv.extendEnvWithClassDef. It returns the
+   fully qualified path and the item for that base class."
   input String inName;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -295,6 +305,7 @@ algorithm
       Item item;
       String basename;
 
+    // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
       equation
         basename = inName +& SCodeEnv.BASE_CLASS_SUFFIX;
@@ -303,8 +314,8 @@ algorithm
       then
         (path, item);
 
-    // The previous case might fail if we try to class extend from a
-    // non-replaceable class which doesn't have have an alias. To get the
+    // The previous case will fail if we try to class extend a
+    // non-replaceable class, because they don't have aliases. To get the
     // correct error message later we look the class up via the non-alias name
     // instead and return that result if found.
     case (_, _, _)
@@ -496,10 +507,7 @@ algorithm
         SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
           Absyn.TPATH(path, array_dim), mods, cmt, cond, info));
     
-    // TODO! is this correct??
-    case (SCodeEnv.PROCESSED_MODIFIER(_), _)
-      then
-        inRedeclare;
+    case (SCodeEnv.PROCESSED_MODIFIER(modifier = _), _) then inRedeclare;
 
     else
       equation
@@ -513,29 +521,33 @@ algorithm
 end qualifyRedeclare;
 
 public function replaceRedeclares
+  "Replaces redeclares in the environment. This function takes a list of
+   redeclares, the item and environment of the class in which they should be
+   redeclared, and the environment in which the modified element was declared
+   (used to qualify the redeclares). The redeclares are then either replaced if
+   they can be found in the immediate local environment of the class, or pushed
+   into the correct extends clauses if they are inherited." 
   input list<SCodeEnv.Redeclaration> inRedeclares;
-  input Absyn.Path inBaseClassName;
-  input Item inBaseClassItem;
-  input Env inBaseClassEnv;
-  input Env inEnv;
+  input Item inClassItem "The item of the class to be modified.";
+  input Env inClassEnv "The environment of the class to be modified.";
+  input Env inElementEnv "The environment in which the modified element was declared.";
   input SCodeLookup.RedeclareReplaceStrategy inReplaceRedeclares;
   output Option<Item> outItem;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outEnv) := matchcontinue(inRedeclares, inBaseClassName, inBaseClassItem,
-      inBaseClassEnv, inEnv, inReplaceRedeclares)
+  (outItem, outEnv) := matchcontinue(inRedeclares, inClassItem, inClassEnv,
+      inElementEnv, inReplaceRedeclares)
     local
       Item item;
       Env env;
-      Absyn.Path bc;
 
-    case (_, _, _, _, _, SCodeLookup.IGNORE_REDECLARES()) 
-      then (SOME(inBaseClassItem), SOME(inEnv));
+    case (_, _, _, _, SCodeLookup.IGNORE_REDECLARES()) 
+      then (SOME(inClassItem), SOME(inClassEnv));
 
-    case (_, bc, _, _, _, SCodeLookup.INSERT_REDECLARES())
+    case (_, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
         (item, env) = replaceRedeclaredElementsInEnv(inRedeclares,
-          inBaseClassItem, inBaseClassEnv, inEnv);
+          inClassItem, inClassEnv, inElementEnv);
       then
         (SOME(item), SOME(env));
 
@@ -544,18 +556,19 @@ algorithm
 end replaceRedeclares;
 
 public function replaceRedeclaredElementsInEnv
-  "If a variable has modifications that redeclare classes in it's instance we
-  need to replace those classes in the environment so that the lookup finds the
-  right classes. This function takes a list of redeclares from a variables
-  modifications and applies them to the environment of the variables type."
+  "If a variable or extends clause has modifications that redeclare classes in
+   it's instance we need to replace those classes in the environment so that the
+   lookup finds the right classes. This function takes a list of redeclares from
+   an elements' modifications and applies them to the environment of the
+   elements type."
   input list<SCodeEnv.Redeclaration> inRedeclares "The redeclares from the modifications.";
-  input Item inItem "The type of the variable.";
+  input Item inItem "The type of the element.";
   input Env inTypeEnv "The enclosing scopes of the type.";
-  input Env inVarEnv "The environment in which the variable was declared.";
+  input Env inElementEnv "The environment in which the element was declared.";
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := matchcontinue(inRedeclares, inItem, inTypeEnv, inVarEnv)
+  (outItem, outEnv) := matchcontinue(inRedeclares, inItem, inTypeEnv, inElementEnv)
     local
       SCode.Element cls;
       Env env;
@@ -574,7 +587,7 @@ algorithm
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
         // Fully qualify the redeclares to make sure they can be found.
-        redecls = List.map1(inRedeclares, qualifyRedeclare, inVarEnv);
+        redecls = List.map1(inRedeclares, qualifyRedeclare, inElementEnv);
         env = List.fold(redecls, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
@@ -586,7 +599,7 @@ algorithm
         Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
         Debug.traceln("redeclares: " +& 
           stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
-          " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inVarEnv));
+          " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inElementEnv));
       then
         fail();
   end matchcontinue;
@@ -595,17 +608,16 @@ end replaceRedeclaredElementsInEnv;
 public function extractRedeclaresFromModifier
   "Returns a list of redeclare elements given a redeclaration modifier."
   input SCode.Mod inMod;
-  input Env inEnv;
   output list<SCodeEnv.Redeclaration> outRedeclares;
 algorithm
-  outRedeclares := match(inMod, inEnv)
+  outRedeclares := match(inMod)
     local
       list<SCode.SubMod> sub_mods;
       list<SCodeEnv.Redeclaration> redeclares;
     
-    case (SCode.MOD(subModLst = sub_mods), _)
+    case SCode.MOD(subModLst = sub_mods)
       equation
-        redeclares = List.fold1(sub_mods, extractRedeclareFromSubMod, inEnv, {});
+        redeclares = List.fold(sub_mods, extractRedeclareFromSubMod, {});
       then
         redeclares;
 
@@ -617,40 +629,28 @@ protected function extractRedeclareFromSubMod
   "Checks a submodifier and adds the redeclare element to the list of redeclares
   if the modifier is a redeclaration modifier."
   input SCode.SubMod inMod;
-  input Env inEnv;
   input list<SCodeEnv.Redeclaration> inRedeclares;
   output list<SCodeEnv.Redeclaration> outRedeclares;
 algorithm
-  outRedeclares := match(inMod, inEnv, inRedeclares)
+  outRedeclares := match(inMod, inRedeclares)
     local
       SCode.Element el;
       SCodeEnv.Redeclaration redecl; 
 
-    // Redeclaration of a class definition.
-    case (SCode.NAMEMOD(A = SCode.REDECL(element = 
-        el as SCode.CLASS(name = _))), _, _)
+    case (SCode.NAMEMOD(A = SCode.REDECL(element = el)), _)
       equation
         redecl = SCodeEnv.RAW_MODIFIER(el);
         SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
-      then 
+      then
         redecl :: inRedeclares;
 
-    // Redeclaration of a component.
-    case (SCode.NAMEMOD(A = SCode.REDECL(element =
-        el as SCode.COMPONENT(name = _))), _, _)
-      equation
-        redecl = SCodeEnv.RAW_MODIFIER(el);
-        SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
-      then 
-        redecl :: inRedeclares;
-
-    // Not a redeclaration.
+    // Skip modifiers that are not redeclarations.
     else then inRedeclares;
   end match;
 end extractRedeclareFromSubMod;
 
 protected function replaceRedeclaredElementInEnv
-  "Replaces a redeclared element in the environment."
+  "Replaces a redeclaration in the environment."
   input SCodeEnv.Redeclaration inRedeclare;
   input Env inEnv;
   output Env outEnv;
@@ -658,39 +658,31 @@ algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
       SCode.Ident name;
-      SCode.Element e;
-      Env env, class_env;
-      Absyn.Path path;
-      Option<Env> opt_env;
+      Item item;
       Absyn.Info info;
-      Item item, replacement;
+      Absyn.Path path;
       SCodeEnv.Redeclaration redecl;
 
-    // A processed redeclared class definition.
-    case (SCodeEnv.PROCESSED_MODIFIER(modifier = replacement as SCodeEnv.CLASS(
-        cls = e as SCode.CLASS(name = name, info = info))), _)
+    // Try to redeclare this element in the current scope.
+    case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
-        (item, path, env) =
-          SCodeLookup.lookupClassName(Absyn.IDENT(name), inEnv, info);
-        SCodeCheck.checkRedeclaredElementPrefix(item, e, info);
-        path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
-        env = replaceElementInEnv(path, replacement, inEnv);
-      then
-        env;
-
-    // A processed redeclared component.
-    case (SCodeEnv.PROCESSED_MODIFIER(modifier = replacement as SCodeEnv.VAR(
-        var = e as SCode.COMPONENT(name = name, info = info))), _)
-      equation
-        (item, path, env) =
-          SCodeLookup.lookupVariableName(Absyn.IDENT(name), inEnv, info);
-        SCodeCheck.checkRedeclaredElementPrefix(item, e, info);
-        path = SCodeEnv.joinPaths(SCodeEnv.getEnvPath(env), path);
-        env = replaceElementInEnv(path, replacement, inEnv);
-      then
-        env;
+        name = SCodeEnv.getItemName(item);
+      then  
+        replaceElementInScope(name, item, inEnv);
         
-    // An unprocessed redeclaration.
+    // If the previous case failed, see if we can find the redeclared element in
+    // any of the base classes. If so, push the redeclare into those base
+    // classes instead, i.e. add them to the list of redeclares in the
+    // appropriate extends in the extends table.
+    case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
+      equation
+        name = SCodeEnv.getItemName(item);
+        info = SCodeEnv.getItemInfo(item);
+        (path, _) = SCodeLookup.lookupBaseClass(name, inEnv, info);
+      then
+        pushRedeclareIntoExtends(item, path, inEnv);
+        
+    // A raw modifier, process it first.
     case (SCodeEnv.RAW_MODIFIER(modifier = _), _)
       equation
         redecl = processRedeclaration(inRedeclare);
@@ -705,119 +697,107 @@ algorithm
           " in " +& SCodeEnv.getEnvName(inEnv));
       then
         fail();
-
   end matchcontinue;
 end replaceRedeclaredElementInEnv;
 
-protected function replaceElementInEnv
-  "Replaces an element in the environment with another element, which is needed
-  for redeclare. There are two cases here: either the element we want to replace
-  is in the current path or it's somewhere else in the environment. If it's in
-  the current path we can just go through the frames until we find the right
-  frame to replace the element in. If it's not we need to look up the correct
-  class in the environment and continue into the class's environment."
-  input Absyn.Path inPath;
-  input Item inElement;
+protected function pushRedeclareIntoExtends
+  "Pushes a redeclare into the given extends in the environment."
+  input Item inRedeclare;
+  input Absyn.Path inBaseClass;
   input Env inEnv;
   output Env outEnv;
 protected
-  Env env;
-  Boolean next_scope_available;
-  SCodeEnv.Frame f;
+  list<SCodeEnv.Extends> exts;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
+  SCodeEnv.ExtendsTable et;
+  String name;
 algorithm
-  // Reverse the frame order so that the frames are in the same order as the path.
-  env := listReverse(inEnv);
-  // Make the redeclare in both the current environment and the global.
-  // TODO: do this in a better way.
-  f :: env := replaceElementInEnv2(inPath, inElement, env);
-  {f} := replaceElementInEnv2(inPath, inElement, {f});
-  outEnv := listReverse(f :: env);
-end replaceElementInEnv;
+  SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(exts, re, cei)) :: _ := inEnv;
+  name := SCodeEnv.getItemName(inRedeclare);
+  exts := pushRedeclareIntoExtends2(inRedeclare, name, inBaseClass, exts);
+  et := SCodeEnv.EXTENDS_TABLE(exts, re, cei);
+  outEnv := SCodeEnv.setEnvExtendsTable(et, inEnv);
+end pushRedeclareIntoExtends;
 
-protected function checkNextScopeAvailability
-  "Checks if the next scope in the environment is the scope we are looking for
-  next. If the first identifier in the path has the same name as the next scope
-  it returns true, otherwise false."
-  input Absyn.Path inPath;
-  input Env inEnv;
-  output Boolean isAvailable;
+protected function pushRedeclareIntoExtends2
+  "Given the name of a base class, find that extends in the given list of
+   extends, and add the given redeclare to it's list of redeclares."
+  input Item inRedeclare;
+  input String inName;
+  input Absyn.Path inBaseClass;
+  input list<SCodeEnv.Extends> inExtends;
+  output list<SCodeEnv.Extends> outExtends;
 algorithm
-  isAvailable := match(inPath, inEnv)
+  outExtends := matchcontinue(inRedeclare, inName, inBaseClass, inExtends)
     local
-      String name, scope_name;
+      Absyn.Path bc;
+      list<SCodeEnv.Redeclaration> redecls;
+      Absyn.Info info;
+      list<SCodeEnv.Extends> rest_exts;
+      SCodeEnv.Extends ext;
+      String bc_str, err_msg;
 
-    case (Absyn.QUALIFIED(name = name), 
-        _ :: SCodeEnv.FRAME(name = SOME(scope_name)) :: _)
-      then stringEqual(name, scope_name);
-
-    else then false;
-  end match;
-end checkNextScopeAvailability;
-
-protected function replaceElementInEnv2
-  "Helper function to replaceClassInEnv."
-  input Absyn.Path inPath;
-  input Item inElement;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := replaceElementInEnv3(inPath, inElement, inEnv,
-    checkNextScopeAvailability(inPath, inEnv));
-end replaceElementInEnv2;
-
-protected function replaceElementInEnv3
-  "Helper function to replaceClassInEnv."
-  input Absyn.Path inPath;
-  input Item inElement;
-  input Env inEnv;
-  input Boolean inNextScopeAvailable;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inPath, inElement, inEnv, inNextScopeAvailable)
-    local
-      String name, scope_name;
-      Absyn.Path path;
-      Env env, rest_env;
-      SCodeEnv.Frame f;
-
-    // A simple identifier means that the element should be replaced in the
-    // current scope.
-    case (Absyn.IDENT(name = name), _, _, _)
+    case (_, _, _, SCodeEnv.EXTENDS(bc, redecls, info) :: rest_exts)
       equation
-        env = replaceElementInScope(name, inElement, inEnv);
+        true = Absyn.pathEqual(bc, inBaseClass);
+        redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls);
       then
-        env;
+        SCodeEnv.EXTENDS(bc, redecls, info) :: rest_exts;
 
-    // If the next frame is the next scope we want to reach we can just continue
-    // into it.
-    case (Absyn.QUALIFIED(path = path), _, f :: rest_env, true)
+    case (_, _, _, ext :: rest_exts)
       equation
-        rest_env = replaceElementInEnv2(path, inElement, rest_env);
-        env = f :: rest_env;
+        rest_exts = pushRedeclareIntoExtends2(inRedeclare, inName, inBaseClass,
+          rest_exts);
       then
-        env;
+        ext :: rest_exts;
 
-    // If there are no more scopes available in the environment we need to start
-    // going into classes in the environment instead.
-    case (Absyn.QUALIFIED(name = name, path = path), _, _, false)
+    case (_, _, _, {})
       equation
-        env = replaceElementInClassEnv(inPath, inElement, inEnv);
-      then
-        env;
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- SCodeFlattenRedeclare.replaceElementInEnv3 failed for ");
-        Debug.trace(Absyn.pathString(inPath));
-        Debug.trace(" in ");
-        Debug.traceln(SCodeEnv.getEnvName(inEnv));
+        bc_str = Absyn.pathString(inBaseClass);
+        err_msg = "SCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base class " +& 
+           bc_str +& " for " +& inName +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         fail();
 
   end matchcontinue;
-end replaceElementInEnv3;
+end pushRedeclareIntoExtends2;
 
+protected function pushRedeclareIntoExtends3
+  "Given the item and name of a redeclare, try to find the redeclare in the
+   given list of redeclares. If found, replace the redeclare in the list.
+   Otherwise, add a new redeclare to the list."
+  input Item inRedeclare;
+  input String inName;
+  input list<SCodeEnv.Redeclaration> inRedeclares;
+  output list<SCodeEnv.Redeclaration> outRedeclares;
+algorithm
+  outRedeclares := matchcontinue(inRedeclare, inName, inRedeclares)
+    local
+      Item item;
+      SCodeEnv.Redeclaration redecl;
+      list<SCodeEnv.Redeclaration> rest_redecls;
+      String name;
+
+    case (_, _, SCodeEnv.PROCESSED_MODIFIER(modifier = item) :: rest_redecls)
+      equation
+        name = SCodeEnv.getItemName(item);
+        true = stringEqual(name, inName);
+      then
+        SCodeEnv.PROCESSED_MODIFIER(item) :: rest_redecls;
+
+    case (_, _, redecl :: rest_redecls)
+      equation
+        rest_redecls = pushRedeclareIntoExtends3(inRedeclare, inName, rest_redecls);
+      then
+        redecl :: rest_redecls;
+
+    case (_, _, {}) then {SCodeEnv.PROCESSED_MODIFIER(inRedeclare)};
+
+  end matchcontinue;
+end pushRedeclareIntoExtends3;
+        
 protected function replaceElementInScope
   "Replaces an element in the current scope."
   input SCode.Ident inElementName;
@@ -833,6 +813,7 @@ algorithm
     case (_, _, SCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
         old_item = SCodeEnv.avlTreeGet(tree, inElementName);
+        //print("Replacing " +& inElementName +& " in " +& SCodeEnv.getEnvName(inEnv) +& "\n");
         new_item = propagateItemPrefixes(old_item, inElement);
         new_item = SCodeEnv.linkItemUsage(old_item, new_item);
         tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);
@@ -1025,80 +1006,6 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
-  
-protected function replaceElementInClassEnv
-  "Replaces an element in the environment of a class."
-  input Absyn.Path inClassPath;
-  input Item inElement;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inClassPath, inElement, inEnv)
-    local
-      Option<String> frame_name;
-      SCodeEnv.FrameType ty;
-      SCodeEnv.AvlTree tree;
-      SCodeEnv.ExtendsTable exts;
-      SCodeEnv.ImportTable imps;
-      Env rest_env, class_env, env;
-      Item item;
-      String name;
-      Absyn.Path path;
-      SCode.Element cls;
-      Util.StatefulBoolean is_used;
-      SCodeEnv.ClassType cls_ty;
-
-    // A simple identifier means that we have reached the environment in which
-    // the element should be replaced.
-    case (Absyn.IDENT(name = name), _, _)
-      equation
-        env = replaceElementInScope(name, inElement, inEnv);
-      then
-        env;
-
-    // A qualified path means that we should look up the first identifier and
-    // continue into the found class's environment.
-    case (Absyn.QUALIFIED(name = name, path = path), _,
-        SCodeEnv.FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env)
-      equation
-        item = SCodeEnv.avlTreeGet(tree, name);
-        (name, SCodeEnv.CLASS(cls = cls, env = class_env, classType = cls_ty)) = 
-          replaceElementInClassEnv2(name, item, tree);
-        class_env = replaceElementInClassEnv(path, inElement, class_env);
-        tree = SCodeEnv.avlTreeReplace(tree, name, 
-          SCodeEnv.newClassItem(cls, class_env, cls_ty));
-      then
-        SCodeEnv.FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env;
-
-  end matchcontinue;
-end replaceElementInClassEnv;
-
-protected function replaceElementInClassEnv2
-  "Helper function to replaceElementInClassEnv. Makes sure that the replacement
-  is done in the correct class with regards to aliases."
-  input String inName;
-  input Item inItem;
-  input SCodeEnv.AvlTree inTree;
-  output String outName;
-  output Item outItem;
-algorithm
-  (outName, outItem) := match(inName, inItem, inTree)
-    local
-      String name;
-      Item item;
-
-    // An alias. Resolve it and return the correct name of the aliased class.
-    case (_, SCodeEnv.ALIAS(path = Absyn.IDENT(name)), _)
-      equation
-        item = SCodeEnv.avlTreeGet(inTree, name);
-        (name, item) = replaceElementInClassEnv2(name, item, inTree);
-      then
-        (name, item);
-
-    else (inName, inItem);
-
-  end match;
-end replaceElementInClassEnv2;
 
 protected function processRedeclaration
   input SCodeEnv.Redeclaration inRedeclare;

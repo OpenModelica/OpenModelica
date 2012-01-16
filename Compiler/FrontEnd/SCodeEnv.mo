@@ -269,6 +269,27 @@ algorithm
   outExtends := EXTENDS_TABLE({}, {}, NONE());
 end newExtendsTable;
 
+public function newItem
+  input SCode.Element inElement;
+  output Item outItem;
+algorithm
+  outItem := match(inElement)
+    local
+      Env class_env;
+      Item item;
+
+    case SCode.CLASS(name = _)
+      equation
+        class_env = makeClassEnvironment(inElement, true);
+        item = newClassItem(inElement, class_env, USERDEFINED());
+      then
+        item;
+
+    case SCode.COMPONENT(name = _) then newVarItem(inElement, false);
+
+  end match;
+end newItem;
+
 public function newClassItem
   "Creates a new class environment item."
   input SCode.Element inClass;
@@ -755,13 +776,14 @@ protected
 algorithm
   SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) := 
     inExtends;
-  redecls := SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods, inEnv);
+  redecls := SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
   outEnv := addExtendsToEnvExtendsTable(EXTENDS(bc, redecls, info), inEnv);
 end extendEnvWithExtends;
 
 protected function qualifyExtendsList
+  "Fully qualifies a list of extends."
   input list<Extends> inExtends;
-  input ClassType inClassType;
+  input ClassType inClassType "The type of the class that contains the extends.";
   input Env inEnv;
   output list<Extends> outExtends;
 algorithm
@@ -770,16 +792,17 @@ algorithm
       Extends ext;
       list<Extends> extl;
 
+    // Skip the first extends in a class extends, since it's added by the
+    // compiler itself and shouldn't be qualified.
     case (ext :: extl, CLASS_EXTENDS(), _)
       equation
-        //ext = qualifyExtends(ext, inEnv, CLASS_EXTENDS());
-        extl = List.map2(extl, qualifyExtends, inEnv, USERDEFINED());
+        extl = List.map1(extl, qualifyExtends, inEnv);
       then
         ext :: extl;
 
     else
       equation
-        extl = List.map2(inExtends, qualifyExtends, inEnv, inClassType);
+        extl = List.map1(inExtends, qualifyExtends, inEnv);
       then
         extl;
   end match;
@@ -813,10 +836,9 @@ protected function qualifyExtends
    base class names we avoid these problems."
   input Extends inExtends;
   input Env inEnv;
-  input ClassType inClassType;
   output Extends outExtends;
 algorithm
-  outExtends := matchcontinue(inExtends, inEnv, inClassType)
+  outExtends := matchcontinue(inExtends, inEnv)
     local
       Absyn.Path bc;
       Absyn.Ident id;
@@ -826,17 +848,17 @@ algorithm
 
     // Check if we're extending a builtin type such as Real, in which case we
     // don't need to do anything.
-    case (EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
+    case (EXTENDS(baseClass = Absyn.IDENT(name = id)), _)
       equation
         _ = SCodeLookup.lookupBuiltinType(id);
       then
         inExtends;
 
-    case (EXTENDS(baseClass = bc, info = info), _, _)
+    case (EXTENDS(baseClass = bc, info = info), _)
       equation
         (qbc, opt_item) = qualifyExtends2(bc, info, inEnv);
       then
-        qualifyExtends3(qbc, opt_item, inExtends, inClassType, inEnv);
+        qualifyExtends3(qbc, opt_item, inExtends, inEnv);
 
   end matchcontinue;
 end qualifyExtends;
@@ -883,18 +905,17 @@ protected function qualifyExtends3
   input Option<Absyn.Path> inQualifiedBC;
   input Option<Item> inItem;
   input Extends inExtends;
-  input ClassType inClassType;
   input Env inEnv;
   output Extends outExtends;
 algorithm
-  outExtends := match(inQualifiedBC, inItem, inExtends, inClassType, inEnv)
+  outExtends := match(inQualifiedBC, inItem, inExtends, inEnv)
     local
       Absyn.Path bc, obc;
       Item item;
       list<Redeclaration> rl;
       Absyn.Info info;
 
-    case (SOME(bc), SOME(item), EXTENDS(obc, rl, info), _, _)
+    case (SOME(bc), SOME(item), EXTENDS(obc, rl, info), _)
       equation
         SCodeCheck.checkExtendsReplaceability(item, obc, inEnv, info);
         bc = Absyn.makeFullyQualified(bc);
@@ -1200,12 +1221,12 @@ algorithm
 end updateExtendsInEnv;
 
 public function updateExtendsInEnv2
-  /*"While building the environment we store all class extends in the extends
-  table. This function will go through the environment and insert all class
-  extends into the environment instead. This is done because we need to know
-  which class is extended (see comment in extendsEnvWithClassExtends), which
-  means we need a complete environment to be able to do look up before this can
-  be done."*/
+  "While building the environment some extends information is stored that needs
+   to be updated once the environment is complete, since we can't reliably look
+   things up in an incomplete environment. This includes fully qualifying the
+   names of the extended classes, updating the extends clauses added by
+   SCodeFlattenRedeclare.extendEnvWithClassExtends and inserting element
+   redeclares as modifiers on the extends clauses."
   input Env inEnv;
   input ClassType inClassType;
   output Env outEnv;
@@ -1221,17 +1242,24 @@ protected
   Util.StatefulBoolean is_used;
   ExtendsTable ex;
 algorithm
+  // Remove the extends from the local scope, since extends shouldn't be looked up in those.
   FRAME(name, ty, tree, EXTENDS_TABLE(bcl, re, _), imps, is_used) :: rest_env := inEnv;
   ex := newExtendsTable();
   env := enterFrame(FRAME(name, ty, tree, ex, imps, is_used), rest_env);
+  // Fully qualify the extends.
   bcl := qualifyExtendsList(bcl, inClassType, env);
+  // Update the environment with the qualified extends and call
+  // updateExtendsInEnv3 to traverse down the environment tree.
   env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
   SOME(tree) := updateExtendsInEnv3(SOME(tree), env);
+  // Update the environment with the new tree and add element redeclarations.
   env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
   outEnv := SCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
 end updateExtendsInEnv2;
 
 protected function updateExtendsInEnv3
+  "Helper function to updateExtendsInEnv2 to recursively traverse the
+   environment tree. Also updates class extends."
   input Option<AvlTree> inTree;
   input Env inEnv;
   output Option<AvlTree> outTree;
@@ -1248,25 +1276,33 @@ algorithm
       Item item;
       ClassType cls_ty;
 
+    // Empty leaf, do nothing.
     case (NONE(), _) then inTree;
 
+    // Class node.
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(
         key = name, value = CLASS(cls = cls, env = {class_frame}, 
           classType = cls_ty))),
         height = h, left = left, right = right)), _)
       equation
+        // Enter the class' frame and update the class extends in it.
         env = enterFrame(class_frame, inEnv);
         (cls, env) = SCodeFlattenRedeclare.updateClassExtends(cls, env, cls_ty);
+        // Call updateExtendsInEnv2 on the class' environment to update the extends.
         class_frame :: rest_env = updateExtendsInEnv2(env, cls_ty);
+        // Recurse into left and right branch of the tree.
         left = updateExtendsInEnv3(left, inEnv);
         right = updateExtendsInEnv3(right, inEnv);
+        // Rebuild the class item with the updated information.
         item = CLASS(cls, {class_frame}, cls_ty);
       then
         SOME(AVLTREENODE(SOME(AVLTREEVALUE(name, item)), h, left, right));
 
+    // Non-class node.
     case (SOME(AVLTREENODE(value = value, height = h, 
         left = left, right = right)), _)
       equation
+        // Recurse into left and right branch of the tree.
         left = updateExtendsInEnv3(left, inEnv);
         right = updateExtendsInEnv3(right, inEnv);
       then

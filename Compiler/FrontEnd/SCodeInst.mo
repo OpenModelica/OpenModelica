@@ -42,8 +42,10 @@ encapsulated package SCodeInst
 public import Absyn;
 public import SCodeEnv;
 
+protected import Debug;
 protected import Dump;
 protected import Error;
+protected import Flags;
 protected import List;
 protected import SCode;
 protected import SCodeDump;
@@ -63,7 +65,7 @@ public function instClass
   input Env inEnv;
 protected
 algorithm
-  _ := match(inClassPath, inEnv)
+  _ := matchcontinue(inClassPath, inEnv)
     local
       Item item;
       Absyn.Path path;
@@ -87,7 +89,15 @@ algorithm
       then
         ();
 
-  end match;
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = Absyn.pathString(inClassPath);
+        Debug.traceln("SCodeInst.instClass failed on " +& name);
+      then
+        fail();
+
+  end matchcontinue;
 end instClass;
 
 protected function instClassItem
@@ -572,13 +582,13 @@ algorithm
         //print("Modifier: " +& printMod(mod) +& "\n");
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
         // Apply the redeclarations.
-        redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mod, inEnv);
+        redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mod);
         (item, env) =
           SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
         prefix = (name, ad) :: inPrefix;
         var_count = instClassItem(item, mod, env, prefix);
         // Print the variable if it's a basic type.
-        //printVar(prefix, inVar, path, var_count);
+        printVar(prefix, inVar, path, var_count);
         dim_count = countVarDims(ad);
 
         // Set var_count to one if it's zero, since it counts as an element by

@@ -330,7 +330,7 @@ algorithm
         item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
         (opt_item, opt_env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, 
-          bc, item, env, inEnv, inReplaceRedeclares);
+          item, env, inEnv, inReplaceRedeclares); 
         (opt_item, opt_path, opt_env) = 
           lookupInBaseClasses3(Absyn.IDENT(inName), opt_item, opt_env);
       then
@@ -626,7 +626,7 @@ algorithm
         // Look up the variable type.
         (item, type_env) = lookupTypeSpec(type_spec, env, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods, env);
+        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
@@ -672,8 +672,7 @@ algorithm
         // Look up the variables' type.
         (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         // Apply redeclares to the type and look for the name inside the type.
-        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(
-          mods, inEnv);
+        redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
@@ -786,7 +785,7 @@ algorithm
         _, SCode.NOT_REPLACEABLE(), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {name}, info);
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {"class", name}, info);
       then
         fail();
 
