@@ -647,12 +647,20 @@ uniontype ElementAttributes "- Component attributes"
     Boolean streamPrefix "stream" ;
 //    Boolean inner_ "inner";
 //    Boolean outer_ "outer";
+    Parallelism parallelism "for OpenCL/CUDA parglobal, parlocal ...";
     Variability variability "variability ; parameter, constant etc." ;
     Direction direction "direction" ;
     ArrayDim arrayDim "arrayDim" ;
   end ATTR;
 
 end ElementAttributes;
+
+public
+uniontype Parallelism "Parallelism"
+  record PARGLOBAL  "Global variables for CUDA and OpenCL"            end PARGLOBAL;
+  record PARLOCAL "Shared for CUDA and local for OpenCL"              end PARLOCAL;
+  record NON_PARALLEL  "Non parallel/Normal variables"                 end NON_PARALLEL;
+end Parallelism;
 
 public
 uniontype Variability "Variability"
@@ -4337,20 +4345,44 @@ merge the derived ElementAttributes with the optional ElementAttributes returned
 algorithm outoEle := match(ele, oEle)
   local
     Boolean b1,b2,bStream1,bStream2,bStream;
+    Parallelism p1,p2;
     Variability v1,v2;
     Direction d1,d2;
     ArrayDim ad1,ad2;
   case(ele,NONE()) then SOME(ele);
-  case(ATTR(b1,bStream1,v1,d1,ad1), SOME(ATTR(b2,bStream2,v2,d2,ad2)))
+  case(ATTR(b1,bStream1,p1,v1,d1,ad1), SOME(ATTR(b2,bStream2,p2,v2,d2,ad2)))
     equation
       b1 = boolOr(b1,b2);
       bStream = boolOr(bStream1,bStream2);
+      p1 = propagateAbsynParallelism(p1,p2);
       v1 = propagateAbsynVariability(v1,v2);
       d1 = propagateAbsynDirection(d1,d2);
     then
-      SOME(ATTR(b1,bStream,v1,d1,ad1));
+      SOME(ATTR(b1,bStream,p1,v1,d1,ad1));
 end match;
 end mergeElementAttributes;
+
+//mahge930: Not sure what to do here for now.
+protected function propagateAbsynParallelism "
+Helper function for mergeElementAttributes
+"
+  input Parallelism p1;
+  input Parallelism p2;
+  output Parallelism p3;
+algorithm v3 := matchcontinue(p1,p2)
+  case(p1,NON_PARALLEL()) then p1;
+  case(NON_PARALLEL(),p2) then p2;
+  case(p1,p2)
+    equation
+      equality(p1 = p2);
+    then p1;
+  case(_,_)
+    equation
+      print(" failure in propagateAbsynParallelism, parglobal-parlocal mismatch");
+    then
+      fail();
+end matchcontinue;
+end propagateAbsynParallelism;
 
 protected function propagateAbsynVariability "
 Helper function for mergeElementAttributes
@@ -4379,7 +4411,7 @@ algorithm v3 := matchcontinue(v1,v2)
     then v1;
   case(_,_)
     equation
-      print(" failure in propagateAbsynDirection, inner outer mismatch");
+      print(" failure in propagateAbsynDirection, input-output mismatch");
     then
       fail();
 end matchcontinue;
@@ -5485,5 +5517,4 @@ algorithm
     case ELEMENTITEM(element=_) then ();
   end match;
 end filterAnnotationItem;
-
 end Absyn;

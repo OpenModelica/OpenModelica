@@ -215,7 +215,7 @@ class_specifier2 returns [void* ast, const char *s2] @init {
 | SUBTYPEOF ts=type_specifier
    {
      $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mk_scon("polymorphic")),mk_cons($ts.ast,mk_nil()),mk_nil()),
-                           Absyn__ATTR(RML_FALSE,RML_FALSE,Absyn__VAR,Absyn__BIDIR,mk_nil()),mk_nil(),mk_none());
+                           Absyn__ATTR(RML_FALSE,RML_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,mk_nil()),mk_nil(),mk_none());
    }
 )
 ;
@@ -243,7 +243,7 @@ overloading returns [void* ast] :
   ;
 
 base_prefix returns [void* ast] :
-  tp=type_prefix {ast = Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, mk_nil());}
+  tp=type_prefix {ast = Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, mk_nil());}
   ;
 
 name_list returns [void* ast] :
@@ -449,15 +449,16 @@ component_clause returns [void* ast] @declarations {
 				}
 		  }
 
-      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), $path.ast, clst);
+      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, arr), $path.ast, clst);
     }
   ;
 
-type_prefix returns [void* flow, void* stream, void* variability, void* direction] :
-  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|prl=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
+type_prefix returns [void* flow, void* stream, void* parallelism, void* variability, void* direction] :
+  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|glb=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
     {
       $flow = mk_bcon(fl);
       $stream = mk_bcon(st);
+	  $parallelism = srd ? Absyn__PARLOCAL : glb ? Absyn__PARGLOBAL : Absyn__NON_5fPARALLEL;
       $variability = di ? Absyn__DISCRETE : pa ? Absyn__PARAM : co ? Absyn__CONST : Absyn__VAR;
       $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
     }

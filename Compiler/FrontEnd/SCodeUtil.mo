@@ -384,13 +384,14 @@ algorithm
     local
       Boolean f, s;
       Absyn.Variability v;
+      Absyn.Parallelism p;
       Absyn.ArrayDim adim,extraADim;
       Absyn.Direction dir;
       SCode.Flow sf;
       SCode.Stream ss;
       SCode.Variability sv;
       
-    case (Absyn.ATTR(f, s, v, dir, adim),extraADim)
+    case (Absyn.ATTR(f, s, p, v, dir, adim),extraADim)
       equation
         sf = SCode.boolFlow(f);
         ss = SCode.boolStream(s);
@@ -1254,6 +1255,7 @@ algorithm
       Absyn.Annotation absann;
       SCode.Annotation ann;
       Absyn.Variability variability;
+      Absyn.Parallelism parallelism;
       Absyn.Info i,info;
       String str;
       SCode.Element cls;
@@ -1323,7 +1325,7 @@ algorithm
     case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 
     case (cc,finalPrefix,io,repl,vis,Absyn.COMPONENTS(attributes =
-      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
+      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
         true = SCodeCheck.checkIdentNotEqTypeName(n, t, info);

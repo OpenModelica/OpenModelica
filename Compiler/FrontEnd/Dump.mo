@@ -6502,15 +6502,18 @@ algorithm
     local
       Boolean flowPrefix;
       Boolean streamPrefix;
+      Absyn.Parallelism parallelism;
       Absyn.Variability variability;
       Absyn.Direction direction;
       Absyn.ArrayDim arrayDim;
-    case Absyn.ATTR(flowPrefix,streamPrefix,variability,direction,arrayDim)
+    case Absyn.ATTR(flowPrefix,streamPrefix,parallelism,variability,direction,arrayDim)
       equation
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
         Print.printBuf(Util.if_(flowPrefix, "true", "false"));
         Print.printBuf(", streamPrefix = ");
         Print.printBuf(Util.if_(streamPrefix, "true", "false"));
+        Print.printBuf(", parallelism = ");
+        printParallelismAsCorbaString(parallelism);
         Print.printBuf(", variability = ");
         printVariabilityAsCorbaString(variability);
         Print.printBuf(", direction = ");
@@ -6521,6 +6524,25 @@ algorithm
       then ();
   end match;
 end printElementAttributesAsCorbaString;
+
+protected function printParallelismAsCorbaString
+  input Absyn.Parallelism parallelism;
+algorithm
+  _ := match parallelism
+    case Absyn.PARGLOBAL()
+      equation
+        Print.printBuf("record Absyn.PARGLOBAL end Absyn.PARGLOBAL;");
+      then ();
+    case Absyn.PARLOCAL()
+      equation
+        Print.printBuf("record Absyn.PARLOCAL end Absyn.PARLOCAL;");
+      then ();
+    case Absyn.NON_PARALLEL()
+      equation
+        Print.printBuf("record Absyn.NON_PARALLEL end Absyn.NON_PARALLEL;");
+      then ();
+  end match;
+end printParallelismAsCorbaString;
 
 protected function printVariabilityAsCorbaString
   input Absyn.Variability var;
