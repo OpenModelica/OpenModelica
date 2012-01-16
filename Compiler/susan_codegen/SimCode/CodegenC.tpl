@@ -2946,6 +2946,7 @@ case FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
+    void* states = push_memory_states(1);  
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
@@ -2954,7 +2955,7 @@ case FUNCTION(__) then
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     fflush(NULL);
-
+    pop_memory_states(states);
     return 0;
   }
   >>
@@ -3012,6 +3013,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
+    void* states = push_memory_states(1);  
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
@@ -3019,6 +3021,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
     <%outVars |> var as VARIABLE(__) hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n"%>
+    pop_memory_states(states);
     return 0;
   }
   >> %>
