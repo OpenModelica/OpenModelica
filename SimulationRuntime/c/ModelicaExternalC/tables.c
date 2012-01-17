@@ -646,7 +646,7 @@ inline static char getEndianness()
   return ((*(char*)&endian_test) == 0);
 }
 
-#define correctEndianness(stype,type)  inline type correctEndianness_ ## stype (type _num, char dataEndianness)  \
+#define correctEndianness(stype,type)  inline static type correctEndianness_ ## stype (type _num, char dataEndianness)  \
 { \
   typedef union  \
   { \
