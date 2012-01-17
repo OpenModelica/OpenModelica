@@ -117,7 +117,7 @@ public uniontype Frame
     AvlTree clsAndVars;
     ExtendsTable extendsTable;
     ImportTable importTable;
-    Util.StatefulBoolean isUsed "Used by SCodeDependency.";
+    Option<Util.StatefulBoolean> isUsed "Used by SCodeDependency.";
   end FRAME;
 end Frame;
 
@@ -125,12 +125,13 @@ public uniontype ClassType
   record USERDEFINED end USERDEFINED;
   record BUILTIN end BUILTIN;
   record CLASS_EXTENDS end CLASS_EXTENDS;
+  record BASIC_TYPE end BASIC_TYPE;
 end ClassType;
 
 public uniontype Item
   record VAR
     SCode.Element var;
-    Util.StatefulBoolean isUsed "Used by SCodeDependency.";
+    Option<Util.StatefulBoolean> isUsed "Used by SCodeDependency.";
   end VAR;
 
   record CLASS
@@ -252,7 +253,7 @@ algorithm
   exts := newExtendsTable();
   imps := newImportTable();
   is_used := Util.makeStatefulBoolean(false);
-  outFrame := FRAME(inName, inType, tree, exts, imps, is_used);
+  outFrame := FRAME(inName, inType, tree, exts, imps, SOME(is_used));
 end newFrame;
 
 protected function newImportTable
@@ -309,7 +310,7 @@ protected
   Util.StatefulBoolean is_used;
 algorithm
   is_used := Util.makeStatefulBoolean(inIsUsed);
-  outVarItem := VAR(inVar, is_used);
+  outVarItem := VAR(inVar, SOME(is_used));
 end newVarItem;
 
 public function extendEnvWithClasses
@@ -353,6 +354,7 @@ algorithm
     case BUILTIN() then "BUILTIN";
     case CLASS_EXTENDS() then "CLASS_EXTENDS";
     case USERDEFINED() then "USERDEFINED";
+    case BASIC_TYPE() then "BASIC_TYPE";
   end match;
 end printClassType;
 
@@ -368,7 +370,7 @@ protected
   ImportTable imps;
   ExtendsTable exts;
   Env rest;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, importTable = imps,
     isUsed = is_used) :: rest := inEnv;
@@ -387,7 +389,7 @@ protected
   AvlTree tree;
   ImportTable imps;
   Env rest;
-  Util.StatefulBoolean iu;
+  Option<Util.StatefulBoolean> iu;
   list<Extends> bcl;
   list<SCode.Element> re;
   Option<SCode.Element> cei;
@@ -420,7 +422,7 @@ protected
   ImportTable imps;
   ExtendsTable exts;
   Env rest;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
   list<Extends> bc;
   Option<SCode.Element> cei;
 algorithm
@@ -454,7 +456,7 @@ protected
   AvlTree tree;
   ImportTable imps;
   ExtendsTable exts;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = outClsAndVars, 
     extendsTable = exts, importTable = imps, isUsed = is_used) := inFrame;
@@ -476,7 +478,7 @@ protected
   ExtendsTable exts;
   Env rest;
   list<Import> qi, uqi;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable = exts,
     importTable = IMPORT_TABLE(qualifiedImports = qi, unqualifiedImports = uqi),
@@ -516,10 +518,10 @@ algorithm
     local
       Util.StatefulBoolean is_used;
 
-    case CLASS(env = {FRAME(isUsed = is_used)})
+    case CLASS(env = {FRAME(isUsed = SOME(is_used))})
       then Util.getStatefulBoolean(is_used);
 
-    case VAR(isUsed = is_used)
+    case VAR(isUsed = SOME(is_used))
       then Util.getStatefulBoolean(is_used);
 
     else false;
@@ -535,7 +537,7 @@ public function linkItemUsage
 algorithm
   outDestItem := match(inSrcItem, inDestItem)
     local
-      Util.StatefulBoolean is_used;
+      Option<Util.StatefulBoolean> is_used;
       SCode.Element elem;
       ClassType cls_ty;
       Option<String> name;
@@ -632,7 +634,7 @@ protected
 algorithm
   SCode.COMPONENT(name = var_name) := inVar;
   is_used := Util.makeStatefulBoolean(false);
-  outEnv := extendEnvWithItem(VAR(inVar, is_used), inEnv, var_name);
+  outEnv := extendEnvWithItem(VAR(inVar, SOME(is_used)), inEnv, var_name);
 end extendEnvWithVar;
 
 public function extendEnvWithItem
@@ -648,7 +650,7 @@ protected
   ImportTable imps;
   FrameType ty;
   Env rest;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
   tree := avlTreeAdd(tree, inItemName, inItem);
@@ -668,7 +670,7 @@ protected
   ImportTable imps;
   FrameType ty;
   Env rest;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   FRAME(name, ty, tree, exts, imps, is_used) :: rest := inEnv;
   tree := avlTreeReplace(tree, inItemName, inItem);
@@ -715,7 +717,7 @@ algorithm
       Env rest;
       Absyn.Info info;
       Boolean hidden;
-      Util.StatefulBoolean is_used;
+      Option<Util.StatefulBoolean> is_used;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)), 
@@ -1239,7 +1241,7 @@ protected
   list<SCode.Element> re;
   Option<SCode.Element> cei;
   ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
   ExtendsTable ex;
 algorithm
   // Remove the extends from the local scope, since extends shouldn't be looked up in those.
@@ -1494,7 +1496,7 @@ protected
   FrameType ty;
   AvlTree tree;
   ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
   Env rest_env;
 algorithm
   FRAME(name, ty, tree, _, imps, is_used) :: rest_env := inEnv;
@@ -1510,7 +1512,7 @@ protected
   FrameType ty;
   ExtendsTable ext;
   ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
   Env rest_env;
 algorithm
   FRAME(name, ty, _, ext, imps, is_used) :: rest_env := inEnv;
@@ -1628,7 +1630,7 @@ algorithm
   tree := addDummyClassToTree("Integer", tree);
   tree := addDummyClassToTree("spliceFunction", tree);
 
-  outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, is_used)};
+  outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, SOME(is_used))};
 end buildInitialEnv;
 
 protected function addDummyClassToTree
@@ -1740,10 +1742,11 @@ algorithm
       Option<AvlTree> left, right;
       AvlTreeValue value;
       String left_str, right_str, value_str;
+      Integer height;
 
     case (NONE()) then "";
     case (SOME(AVLTREENODE(value = NONE()))) then "";
-    case (SOME(AVLTREENODE(value = SOME(value), left = left, right = right)))
+    case (SOME(AVLTREENODE(value = SOME(value), height = height, left = left, right = right)))
       equation
         left_str = printAvlTreeStr(left);
         right_str = printAvlTreeStr(right);

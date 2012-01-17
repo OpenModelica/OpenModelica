@@ -831,7 +831,7 @@ algorithm
   outNewItem := match(inOriginalItem, inNewItem)
     local
       SCode.Element el1, el2;
-      Util.StatefulBoolean iu1, iu2;
+      Option<Util.StatefulBoolean> iu1, iu2;
       Env env1, env2;
       SCodeEnv.ClassType ty1, ty2;
       String name, res_str;

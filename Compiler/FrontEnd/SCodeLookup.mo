@@ -58,41 +58,298 @@ public uniontype RedeclareReplaceStrategy
   record IGNORE_REDECLARES end IGNORE_REDECLARES;
 end RedeclareReplaceStrategy;
 
+// Default parts of the declarations for builtin elements and types.
+public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
+  SCode.PUBLIC(), SCode.NOT_REDECLARE(), SCode.NOT_FINAL(),
+  Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE());
+
+public constant SCode.Attributes BUILTIN_ATTRIBUTES = SCode.ATTR(
+  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.VAR(), Absyn.BIDIR());
+
+public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
+  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.CONST(), Absyn.BIDIR());
+
+public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
+  {}, {}, {}, {}, {}, NONE(), {}, NONE());
+
+
+// Metatypes used to define the builtin types.
+public constant SCode.Element BUILTIN_REALTYPE = SCode.CLASS(
+  "$RealType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
+  SCode.R_PREDEFINED_REAL(), BUILTIN_EMPTY_CLASS, Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_INTEGERTYPE = SCode.CLASS(
+  "$IntegerType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
+  SCode.R_PREDEFINED_INTEGER(), BUILTIN_EMPTY_CLASS, Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_BOOLEANTYPE = SCode.CLASS(
+  "$BooleanType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
+  SCode.R_PREDEFINED_BOOLEAN(), BUILTIN_EMPTY_CLASS, Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STRINGTYPE = SCode.CLASS(
+  "$StringType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
+  SCode.R_PREDEFINED_STRING(), BUILTIN_EMPTY_CLASS, Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ENUMTYPE = SCode.CLASS(
+  "$EnumType", BUILTIN_PREFIXES, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(),
+  SCode.R_PREDEFINED_ENUMERATION(), BUILTIN_EMPTY_CLASS, Absyn.dummyInfo);
+
+public constant Item BUILTIN_REALTYPE_ITEM = 
+  SCodeEnv.VAR(BUILTIN_REALTYPE, NONE());
+public constant Item BUILTIN_INTEGERTYPE_ITEM =
+  SCodeEnv.VAR(BUILTIN_INTEGERTYPE, NONE());
+public constant Item BUILTIN_BOOLEANTYPE_ITEM =
+  SCodeEnv.VAR(BUILTIN_BOOLEANTYPE, NONE());
+public constant Item BUILTIN_STRINGTYPE_ITEM =
+  SCodeEnv.VAR(BUILTIN_STRINGTYPE, NONE());
+public constant Item BUILTIN_ENUMTYPE_ITEM =
+  SCodeEnv.VAR(BUILTIN_ENUMTYPE, NONE());
+
+public constant Absyn.TypeSpec BUILTIN_REALTYPE_SPEC = 
+  Absyn.TPATH(Absyn.IDENT("$RealType"), NONE());
+public constant Absyn.TypeSpec BUILTIN_INTEGERTYPE_SPEC =
+  Absyn.TPATH(Absyn.IDENT("$IntegerType"), NONE());
+public constant Absyn.TypeSpec BUILTIN_BOOLEANTYPE_SPEC =
+  Absyn.TPATH(Absyn.IDENT("$BooleanType"), NONE());
+public constant Absyn.TypeSpec BUILTIN_STRINGTYPE_SPEC =
+  Absyn.TPATH(Absyn.IDENT("$StringType"), NONE());
+public constant Absyn.TypeSpec BUILTIN_ENUMTYPE_SPEC =
+  Absyn.TPATH(Absyn.IDENT("$EnumType"), NONE());
+public constant Absyn.TypeSpec BUILTIN_STATESELECT_SPEC =
+  Absyn.TPATH(Absyn.IDENT("StateSelect"), NONE());
+
+// Parts of the builtin types.
+// Generic elements:
+public constant SCode.Element BUILTIN_ATTR_QUANTITY = SCode.COMPONENT(
+  "quantity", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ATTR_UNIT = SCode.COMPONENT(
+  "unit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ATTR_DISPLAYUNIT = SCode.COMPONENT(
+  "displayUnit", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ATTR_FIXED = SCode.COMPONENT(
+  "fixed", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ATTR_STATESELECT = SCode.COMPONENT(
+  "stateSelect", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STATESELECT_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+// Real-specific elements:
+public constant SCode.Element BUILTIN_REAL_MIN = SCode.COMPONENT(
+  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_REAL_MAX = SCode.COMPONENT(
+  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_REAL_START = SCode.COMPONENT(
+  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_REAL_NOMINAL = SCode.COMPONENT(
+  "nominal", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_REALTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+// Integer-specific elements:
+public constant SCode.Element BUILTIN_INTEGER_MIN = SCode.COMPONENT(
+  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_INTEGER_MAX = SCode.COMPONENT(
+  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_INTEGER_START = SCode.COMPONENT(
+  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_INTEGERTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+// Boolean-specific elements:
+public constant SCode.Element BUILTIN_BOOLEAN_START = SCode.COMPONENT(
+  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_BOOLEANTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+// String-specific elements:
+public constant SCode.Element BUILTIN_STRING_START = SCode.COMPONENT(
+  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_STRINGTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+// StateSelect-specific elements:
+public constant SCode.Element BUILTIN_ENUM_MIN = SCode.COMPONENT(
+  "min", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ENUM_MAX = SCode.COMPONENT(
+  "max", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_ENUM_START = SCode.COMPONENT(
+  "start", BUILTIN_PREFIXES, BUILTIN_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STATESELECT_NEVER = SCode.COMPONENT(
+  "never", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STATESELECT_AVOID = SCode.COMPONENT(
+  "avoid", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STATESELECT_DEFAULT = SCode.COMPONENT(
+  "default", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STATESELECT_PREFER = SCode.COMPONENT(
+  "prefer", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+public constant SCode.Element BUILTIN_STATESELECT_ALWAYS = SCode.COMPONENT(
+  "always", BUILTIN_PREFIXES, BUILTIN_CONST_ATTRIBUTES, BUILTIN_ENUMTYPE_SPEC,
+  SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
+
+
+// Environments for the builtin types:
+public constant Env BUILTIN_REAL_ENV = {SCodeEnv.FRAME(SOME("Real"), 
+  SCodeEnv.NORMAL_SCOPE(), 
+  SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("nominal", 
+      SCodeEnv.VAR(BUILTIN_REAL_NOMINAL, NONE()))), 4, 
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("max",
+        SCodeEnv.VAR(BUILTIN_REAL_MAX, NONE()))), 3,
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("fixed",
+            SCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 2,
+              SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("displayUnit",
+                SCodeEnv.VAR(BUILTIN_ATTR_DISPLAYUNIT, NONE()))), 1,
+                  NONE(), NONE())),
+                NONE())),
+            SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("min",
+              SCodeEnv.VAR(BUILTIN_REAL_MIN, NONE()))), 1,
+                NONE(), NONE())))),
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("start",
+        SCodeEnv.VAR(BUILTIN_REAL_START, NONE()))), 3,
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("quantity",
+            SCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 1,
+              NONE(), NONE())),
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("stateSelect",
+            SCodeEnv.VAR(BUILTIN_ATTR_STATESELECT, NONE()))), 2,
+              NONE(),
+              SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("unit",
+                SCodeEnv.VAR(BUILTIN_ATTR_UNIT, NONE()))), 1,
+                  NONE(), NONE()))))))),
+  SCodeEnv.EXTENDS_TABLE({}, {}, NONE()), SCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
+
+public constant Env BUILTIN_INTEGER_ENV = {SCodeEnv.FRAME(SOME("Integer"), 
+  SCodeEnv.NORMAL_SCOPE(), 
+  SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("quantity", 
+      SCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 3, 
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("max",
+        SCodeEnv.VAR(BUILTIN_INTEGER_MAX, NONE()))), 2,
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("fixed",
+            SCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
+              NONE(), NONE())),
+            SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("min",
+              SCodeEnv.VAR(BUILTIN_INTEGER_MIN, NONE()))), 1,
+                NONE(),
+                NONE())))),
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("start",
+        SCodeEnv.VAR(BUILTIN_INTEGER_START, NONE()))), 1,
+          NONE(), NONE()))),
+  SCodeEnv.EXTENDS_TABLE({}, {}, NONE()), SCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
+
+public constant Env BUILTIN_BOOLEAN_ENV = {SCodeEnv.FRAME(SOME("Boolean"), 
+  SCodeEnv.NORMAL_SCOPE(), 
+  SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("quantity", 
+      SCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2, 
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("fixed",
+        SCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
+          NONE(), NONE())),
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("start",
+        SCodeEnv.VAR(BUILTIN_BOOLEAN_START, NONE()))), 1,
+          NONE(), NONE()))),
+  SCodeEnv.EXTENDS_TABLE({}, {}, NONE()), SCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
+
+public constant Env BUILTIN_STRING_ENV = {SCodeEnv.FRAME(SOME("String"), 
+  SCodeEnv.NORMAL_SCOPE(), 
+  SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("quantity", 
+      SCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2, 
+      NONE(),
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("start",
+        SCodeEnv.VAR(BUILTIN_STRING_START, NONE()))), 1,
+          NONE(), NONE()))),
+  SCodeEnv.EXTENDS_TABLE({}, {}, NONE()), SCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
+
+public constant Env BUILTIN_STATESELECT_ENV = {SCodeEnv.FRAME(SOME("StateSelect"), 
+  SCodeEnv.NORMAL_SCOPE(), 
+  SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("max",
+    SCodeEnv.VAR(BUILTIN_ENUM_MAX, NONE()))), 4,
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("default",
+        SCodeEnv.VAR(BUILTIN_STATESELECT_DEFAULT, NONE()))), 3,
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("avoid",
+            SCodeEnv.VAR(BUILTIN_STATESELECT_AVOID, NONE()))), 2,
+              SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("always",
+                SCodeEnv.VAR(BUILTIN_STATESELECT_ALWAYS, NONE()))), 1,
+                  NONE(), NONE())),
+              NONE())),
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("fixed",
+            SCodeEnv.VAR(BUILTIN_ATTR_FIXED, NONE()))), 1,
+              NONE(), NONE())))),
+      SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("never",
+        SCodeEnv.VAR(BUILTIN_STATESELECT_NEVER, NONE()))), 3,
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("min",
+            SCodeEnv.VAR(BUILTIN_ENUM_MIN, NONE()))), 1,
+              NONE(), NONE())),
+          SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("quantity",
+            SCodeEnv.VAR(BUILTIN_ATTR_QUANTITY, NONE()))), 2,
+              SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("prefer",
+                SCodeEnv.VAR(BUILTIN_STATESELECT_PREFER, NONE()))), 1,
+                  NONE(), NONE())),
+              SOME(SCodeEnv.AVLTREENODE(SOME(SCodeEnv.AVLTREEVALUE("start",
+                SCodeEnv.VAR(BUILTIN_ENUM_START, NONE()))), 1,
+                  NONE(), NONE()))))))),
+  SCodeEnv.EXTENDS_TABLE({}, {}, NONE()), SCodeEnv.IMPORT_TABLE(false, {}, {}), NONE())};
+
+
+// The builtin types:
 public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
   SCode.CLASS("Real", SCode.defaultPrefixes, 
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), BUILTIN_REAL_ENV, SCodeEnv.BASIC_TYPE());
   
 public constant Item BUILTIN_INTEGER = SCodeEnv.CLASS(
   SCode.CLASS("Integer", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), BUILTIN_INTEGER_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_BOOLEAN = SCodeEnv.CLASS(
   SCode.CLASS("Boolean", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), BUILTIN_BOOLEAN_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
   SCode.CLASS("String", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), BUILTIN_STRING_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
   SCode.CLASS("StateSelect",  SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), BUILTIN_STATESELECT_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
   SCode.CLASS("ExternalObject", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
-      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
+      Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE());
 
 protected import Debug;
 protected import Flags;
@@ -114,7 +371,7 @@ algorithm
     lookupSimpleName2(inName, inEnv, {});
 end lookupSimpleName;
 
-public function lookupSimpleName2
+protected function lookupSimpleName2
   "Helper function to lookupSimpleName. Looks up a simple identifier in the
   environment."
   input Absyn.Ident inName;
@@ -822,6 +1079,11 @@ algorithm
     case "String" then BUILTIN_STRING;
     case "StateSelect" then BUILTIN_STATESELECT;
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
+    case "$RealType" then BUILTIN_REALTYPE_ITEM;
+    case "$IntegerType" then BUILTIN_INTEGERTYPE_ITEM;
+    case "$BooleanType" then BUILTIN_BOOLEANTYPE_ITEM;
+    case "$StringType" then BUILTIN_STRINGTYPE_ITEM;
+    case "$EnumType" then BUILTIN_ENUMTYPE_ITEM;
   end match;
 end lookupBuiltinType;
 
@@ -1320,7 +1582,7 @@ algorithm
       equation
         cls = makeDummyMetaType(name);
       then 
-        (SCodeEnv.CLASS(cls, SCodeEnv.emptyEnv, SCodeEnv.BUILTIN()), 
+        (SCodeEnv.CLASS(cls, SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE()), 
           SCodeEnv.emptyEnv);
          
   end match;

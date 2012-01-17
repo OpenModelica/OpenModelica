@@ -117,9 +117,13 @@ algorithm
       Env env;
       Absyn.Info info;
       SCodeEnv.AvlTree cls_and_vars;
+      String name;
+
+    case (SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()), _, _, _) then 0;
 
     // A class with parts, instantiate all elements in it.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = SCode.PARTS(elementLst = el)), 
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, 
+        classDef = SCode.PARTS(elementLst = el)), 
         env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _)
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
@@ -154,7 +158,7 @@ protected
   list<tuple<String, Option<Absyn.Path>, SCode.Mod>> upd_mods;
 algorithm
   mods := splitMod(inMod, inPrefix);
-  upd_mods := List.map1(mods, updateModElement, inEnv);
+  upd_mods := List.map2(mods, updateModElement, inEnv, inPrefix);
   outElements := List.fold(upd_mods, applyModifications2, inElements);
 end applyModifications;
 
@@ -165,19 +169,21 @@ protected function updateModElement
    extends, otherwise the option will be NONE."
   input tuple<String, SCode.Mod> inMod;
   input Env inEnv;
+  input Prefix inPrefix;
   output tuple<String, Option<Absyn.Path>, SCode.Mod> outMod;
 protected
 algorithm
-  outMod := matchcontinue(inMod, inEnv)
+  outMod := matchcontinue(inMod, inEnv, inPrefix)
     local
-      String name;
+      String name, pre_str;
       SCode.Mod mod;
       Absyn.Path path;
       Env env;
       SCodeEnv.AvlTree tree;
+      Absyn.Info info;
 
     // Check if the element can be found in the local scope first.
-    case ((name, mod), SCodeEnv.FRAME(clsAndVars = tree) :: _)
+    case ((name, mod), SCodeEnv.FRAME(clsAndVars = tree) :: _, _)
       equation
         _ = SCodeLookup.lookupInTree(name, tree);
       then
@@ -185,19 +191,28 @@ algorithm
 
     // Check which extends the element comes from.
     // TODO: The element might come from multiple extends!
-    case ((name, mod), _)
+    case ((name, mod), _, _)
       equation
         (_, _, path, _) = SCodeLookup.lookupInBaseClasses(name, inEnv,
           SCodeLookup.IGNORE_REDECLARES(), {});
       then
         ((name, SOME(path), mod));
 
+    case ((name, mod), _, _)
+      equation
+        pre_str = printPrefix(inPrefix);
+        info = SCode.getModifierInfo(mod);
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, pre_str}, info);
+      then
+        fail();
+        
   end matchcontinue;
 end updateModElement;
   
 protected function applyModifications2
-  // Given a tuple of an element name, and optional path and a modifier, apply
-  // the modifier to the correct element in the list of elements given.
+  "Given a tuple of an element name, and optional path and a modifier, apply
+   the modifier to the correct element in the list of elements given."
   input tuple<String, Option<Absyn.Path>, SCode.Mod> inMod;
   input list<SCode.Element> inElements;
   output list<SCode.Element> outElements;

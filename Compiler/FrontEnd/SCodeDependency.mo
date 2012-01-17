@@ -282,9 +282,8 @@ algorithm
       then
         ();
 
-    // A class without an environment is one of the builtin types (Real, etc.),
-    // so we don't need to do anything here.
-    case (SCodeEnv.CLASS(env = {}), _) then ();
+    // A basic type, nothing to be done.
+    case (SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()), _) then ();
 
     // A normal class, mark it and it's environment as used, and recursively
     // analyse it's contents.
@@ -323,12 +322,14 @@ algorithm
       Util.StatefulBoolean is_used;
       String name;
       
-    case (SCodeEnv.VAR(isUsed = is_used), _)
+    case (SCodeEnv.VAR(isUsed = SOME(is_used)), _)
       equation
         Util.setStatefulBoolean(is_used, true);
         markEnvAsUsed(inEnv);
       then
         ();
+
+    case (SCodeEnv.VAR(isUsed = NONE()), _) then ();
 
     case (SCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS(name = name)), _)
       equation
@@ -342,11 +343,19 @@ end markItemAsUsed;
 protected function markFrameAsUsed
   "Marks a single frame as used."
   input SCodeEnv.Frame inFrame;
-protected
-  Util.StatefulBoolean is_used;
 algorithm
-  SCodeEnv.FRAME(isUsed = is_used) := inFrame;
-  Util.setStatefulBoolean(is_used, true);
+  _ := match(inFrame)
+    local
+      Util.StatefulBoolean is_used;
+
+    case SCodeEnv.FRAME(isUsed = SOME(is_used))
+      equation
+        Util.setStatefulBoolean(is_used, true);
+      then
+        ();
+
+    else ();
+  end match;
 end markFrameAsUsed;
         
 protected function markEnvAsUsed
@@ -361,7 +370,7 @@ algorithm
       Env rest_env;
       SCodeEnv.Frame f;
 
-    case ((f as SCodeEnv.FRAME(isUsed = is_used)) :: rest_env)
+    case ((f as SCodeEnv.FRAME(isUsed = SOME(is_used))) :: rest_env)
       equation
         false = Util.getStatefulBoolean(is_used);
         markEnvAsUsed2(f, rest_env);
@@ -806,7 +815,8 @@ algorithm
     case (_, _, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
         true = markAsUsedOnRestriction2(inRestriction);
-        SCodeEnv.VAR(isUsed = is_used) = SCodeEnv.avlTreeGet(cls_and_vars, inName);
+        SCodeEnv.VAR(isUsed = SOME(is_used)) = 
+          SCodeEnv.avlTreeGet(cls_and_vars, inName);
         Util.setStatefulBoolean(is_used, true);
       then
         ();
@@ -1614,7 +1624,7 @@ algorithm
 
     // Check if the current environment is not used, we can quit here if that's
     // the case.
-    case (_, SCodeEnv.FRAME(name = SOME(_), isUsed = is_used) :: _)
+    case (_, SCodeEnv.FRAME(name = SOME(_), isUsed = SOME(is_used)) :: _)
       equation
         false = Util.getStatefulBoolean(is_used);
       then
@@ -2044,7 +2054,7 @@ protected
   list<SCode.Element> re;
   Option<SCode.Element> cei;
   SCodeEnv.ImportTable imps;
-  Util.StatefulBoolean is_used;
+  Option<Util.StatefulBoolean> is_used;
 algorithm
   {SCodeEnv.FRAME(name, ty, cls_and_vars, SCodeEnv.EXTENDS_TABLE(bcl, re, cei), 
     imps, is_used)} := inEnv;
