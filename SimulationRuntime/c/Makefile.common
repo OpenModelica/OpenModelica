@@ -82,7 +82,7 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica	
 
 clean:
-	rm -f $(ALL_OBJS)
+	rm -f $(ALL_PATHS_CLEAN_OBJS)
 	rm -f libSimulationRuntimeC.a
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
