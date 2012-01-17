@@ -11,6 +11,7 @@ MOEXTC_OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o Modelica
 all: libModelicaExternalC.a
 
 libModelicaExternalC.a : $(MOEXTC_OBJS)
+	@rm -f $@
 	$(AR) $@ $(MOEXTC_OBJS)
 	ranlib $@
 
