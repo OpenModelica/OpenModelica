@@ -33,6 +33,7 @@ omcd: difftool c_runtime docs fmi
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*
+	rm -rf OMOptim/build/OMOptim$(EXE) OMOptim/build/omc_communication.*
 ifeq ($(QMAKE),)
 qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
@@ -65,6 +66,7 @@ qtclean: qtclean-common
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
+	$(MAKE) -C OMOptim/build -f Makefile.unix clean
 endif
 
 fix-svn-eol-style:
