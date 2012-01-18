@@ -25,6 +25,7 @@ $(NAME): Makefile OMEdit.config omc_communication.cpp
 
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -f ../bin/*.o
 
 build: $(NAME)
 	$(MAKE) -f Makefile
