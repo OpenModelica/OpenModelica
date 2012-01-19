@@ -75,7 +75,7 @@ int ModelicaTables_CombiTable2D_init(const char* tableName, const char* fileName
                                        double const *table, int nRow, int nColumn,
                                        int smoothness)
 {
-  return omcTable2DIni(0,tableName,fileName,table,nRow,nColumn,0);
+  return omcTable2DIni(smoothness,tableName,fileName,table,nRow,nColumn,0);
 }
 
 void ModelicaTables_CombiTable2D_close(int tableID)

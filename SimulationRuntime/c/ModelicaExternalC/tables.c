@@ -1148,9 +1148,13 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
   ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
 
+  if (ipoType != 1)
+	  WARNING2("Currently only LinearSegments interpolation is supported. For Table %s from file %s LinearSegments interpolation is used.",tableName,fileName);
+
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
   tpl->colWise = colWise;
+  tpl->ipoType = ipoType;
 
   tpl->tablename = copyTableNameFile(tableName);
   tpl->filename = copyTableNameFile(fileName);
@@ -1200,14 +1204,12 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
     x1 = tmp;
   }
 
-  /* if out of boundary, just set to min/max */
-  x1 = fmin(fmax(x1,InterpolationTable2D_getElt(table,1,0)),InterpolationTable2D_getElt(table,table->rows-1,0));
-  x2 = fmin(fmax(x2,InterpolationTable2D_getElt(table,0,1)),InterpolationTable2D_getElt(table,0,table->cols-1));
+  /* if out of boundary, use first or last two points */
 
   /* find intervals corresponding x1 and x2 */
-  for(i = 2; i < table->rows; ++i)
+  for(i = 2; i < table->rows-1; ++i)
     if (InterpolationTable2D_getElt(table,i,0) >= x1) break;
-  for(j = 2; j < table->cols; ++j)
+  for(j = 2; j < table->cols-1; ++j)
     if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
   
   /* bilinear interpolation */
