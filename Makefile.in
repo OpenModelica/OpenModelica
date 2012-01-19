@@ -70,8 +70,8 @@ qtclean: qtclean-common
 endif
 
 fix-svn-eol-style:
-	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ | grep "\.mos\?\$$" | grep -v parser/ParseModel | grep -v _temp[0-9]*\$$`
-	svn propset svn:eol-style LF `find c_runtime/ Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$"`
+	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ | egrep "\.(mos\?|tpl)\$$" | grep -v parser/ParseModel | grep -v "[ ]" | grep -v _temp[0-9]*\$$`
+	svn propset svn:eol-style LF `find c_runtime/ Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$" | grep -v "[ ]"`
 	svn propset svn:eol-style LF `find . | grep /Makefile\$$`
 	svn propset svn:eol-style LF `find . | grep /Makefile.in\$$`
 
