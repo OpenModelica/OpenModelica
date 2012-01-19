@@ -2466,7 +2466,7 @@ The feature sendData has been removed from OpenModelica. As a result, the kernel
 <li>New options to API calls <strong>list</strong>, <strong>loadFile</strong>, and more.</li>
 <li>Initial support for operator overloading (in progress).</li>
 <li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
-<li>Improved the scripting environment. <code>cl := $TypeName(Modelica)</code>;getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
+<li>Improved the scripting environment. <code>cl := $TypeName(Modelica);getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
 <li>Various bugfixes.</li>
 </ul>
 <h4>OMNotebook</h4>

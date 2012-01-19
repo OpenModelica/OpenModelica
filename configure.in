@@ -246,7 +246,7 @@ else
   LIBS=""
   AC_SEARCH_LIBS(dlopen,dl)
   AC_SEARCH_LIBS(sqrt,m)
-  LIBS="$LPLIB/liblpsolve55.a $LPLIB/libcolamd.a $LIBS"
+  LIBS="$LPLIB/liblpsolve55_pic.a $LPLIB/libcolamd.a $LIBS"
   AC_MSG_CHECKING([for static lpsolve55])
   AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [AC_MSG_ERROR([failed])])
   AC_MSG_RESULT([$LIBLPSOLVE55])
