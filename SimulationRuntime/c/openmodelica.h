@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
+ * Copyright (c) 1998-CurrentYear, Linkïöping University,
  * Department of Computer and Information Science,
- * SE-58183 Linkï¿½ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -75,7 +75,6 @@ typedef void* modelica_fnptr;
  #define WIN32_LEAN_AND_MEAN
 #if !defined(NOMINMAX)
  #define NOMINMAX
- #include <Windows.h>
 #endif
 #endif
 
