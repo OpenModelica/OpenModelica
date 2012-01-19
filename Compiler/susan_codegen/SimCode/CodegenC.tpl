@@ -972,7 +972,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   
   void function_initMemoryState()
   {
-    push_memory_states(<% if Flags.isSet(Flags.OPENMP) then noProc() else 1 %>);
+    push_memory_states(<% if Flags.isSet(Flags.OPENMP) then (match noProc() case 0 then "omp_get_max_threads()" else noProc()) else 1 %>);
   }
   
   int functionODE(DATA *data)
