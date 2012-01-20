@@ -108,14 +108,28 @@ function_storeDelayed(DATA *data);
 /*used in functionDAE_res function*/
 int functionODE_inline(DATA *data, double stepsize);
 
-/* function for calculate initial values from initial equations and fixed start attibutes */
-int initial_function(DATA *data);
+/*! \fn updateBoundStartValues
+ *
+ *  This function updates all bound start-values. This are all start-values
+ *  which are not constant.
+ *  obsolete: initial_function
+ *
+ *  \param [ref] [data]
+ */
+int updateBoundStartValues(DATA *data);
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
 int initial_residual(DATA *data, double lambda, double* initialResiduals);
 
-/* function for calculating bound parameters that depend on other parameters, e.g. parameter Real n=1/m; */
-int bound_parameters(DATA *data);
+/*! \fn updateBoundParameters
+ *
+ *  This function calculates bound parameters that depend on other parameters,
+ *  e.g. parameter Real n=1/m;
+ *  obsolete: bound_parameters
+ *
+ *  \param [ref] [data]
+ */
+int updateBoundParameters(DATA *data);
 
 /* function for checking for asserts and terminate */
 int checkForAsserts(DATA *data);

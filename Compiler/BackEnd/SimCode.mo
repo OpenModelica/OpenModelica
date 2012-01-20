@@ -228,6 +228,7 @@ uniontype VarInfo
     Integer numBoolParams;
     Integer numOutVars;
     Integer numInVars;
+    Integer numInitEquations;
     Integer numResiduals;
     Integer numExternalObjects;
     Integer numStringAlgVars;
@@ -2154,11 +2155,11 @@ algorithm
       // new variables
       ModelInfo modelInfo;
       list<SimEqSystem> allEquations;
-      list<list<SimEqSystem>> odeEquations;         // --> functionODE
+      list<list<SimEqSystem>> odeEquations;   // --> functionODE
       list<SimEqSystem> algebraicEquations;   // --> functionAlgebraics
       list<SimEqSystem> residualEquations;    // --> initial_residual
-      list<SimEqSystem> initialEquations;     // --> initial_function
-      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> initialEquations;     // --> updateBoundStartValues
+      list<SimEqSystem> parameterEquations;   // --> updateBoundParameters
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> sampleEquations;
       list<Algorithm.Statement> algorithmAndEquationAsserts;
@@ -2188,6 +2189,8 @@ algorithm
       
       list<DAE.Exp> lits;
       list<String> labels;
+      
+      Integer nE;
       
 /*  //create simCode for labeled DAE  
 		case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
@@ -2410,8 +2413,9 @@ algorithm
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
        
-        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
-        (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
+        (dlow2 as BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2, functionTree);
+        nE = BackendDAEUtil.countInitialEquations(dlow2);
         
         residualEquations = createResidualEquations(dlow2);
         nres = listLength(residualEquations);
@@ -2425,7 +2429,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, nres, fileDir,ifcpp);
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, nE, nres, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
@@ -2581,11 +2585,11 @@ algorithm
       list<Function> functions;
       list<String> labels;
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
-      Integer nhv,nin, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool, na_string;
+      Integer nhv,nin, niniteq, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool, na_string;
       Integer njacvars;
       Option<Integer> dim1,dim2;
       case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions,labels)))
+          niniteq, nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions,labels)))
         equation
           jacvars = appendAllVars(inJacs);
           jacvars = List.unionOnTrue(jacvars,jacvars,compareSimVarName);
@@ -2594,7 +2598,7 @@ algorithm
           linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},jacvars,{},{},{},{});
           simvarsandlinearvars = mergeVars(vars,linearVars);
         then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions,labels);
+          niniteq, nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions,labels);
    end match;
 end expandModelInfoVars;
 
@@ -6665,13 +6669,14 @@ protected function createModelInfo
   input list<Function> functions;
   input list<String> labels;
   input Integer numHelpVars;
+  input Integer numInitEquations;
   input Integer numResiduals;
   input String fileDir;
   input Boolean ifcpp;
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir,ifcpp)
+  matchcontinue (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir,ifcpp)
     local
       String directory;
       VarInfo varInfo;
@@ -6702,7 +6707,7 @@ algorithm
       list<SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimVar> states_2,derivatives_2,derivative;
     
-    case (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir, true)
+    case (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6728,7 +6733,7 @@ algorithm
         next = listLength(extObjVars);
         (dim_1,dim_2)= dimensions(dlow);
         Debug.fcall(Flags.CPP,print,"create varinfo \n");
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
          Debug.fcall(Flags.CPP,print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
@@ -6748,7 +6753,7 @@ algorithm
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars), 
                   functions, labels);
     
-    case (class_, dlow, functions, labels, numHelpVars, numResiduals, fileDir, false)
+    case (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir, false)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6773,7 +6778,7 @@ algorithm
         np_string = listLength(stringParamVars);
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
       then
         MODELINFO(class_, directory, varInfo, vars, functions, labels);
@@ -6797,6 +6802,7 @@ protected function createVarInfo
   input Integer numOutVars;
   input Integer numInVars;
   input Integer numHelpVars;
+  input Integer numInitEquations;
   input Integer numResiduals;
   input Integer ny_int;
   input Integer np_int;
@@ -6812,12 +6818,12 @@ protected function createVarInfo
   output VarInfo varInfo;
 algorithm
   varInfo :=
-  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
     local
       Integer ng, ng_sam, ng_sam_1, ng_1;
       String s1,s2;
-    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
       equation
         (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
@@ -6825,8 +6831,8 @@ algorithm
         ng_sam_1 = filterNg(ng_sam);
       then
         VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+          numInitEquations, numResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfoCPP failed"});
       then

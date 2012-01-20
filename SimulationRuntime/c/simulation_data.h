@@ -244,7 +244,8 @@
     long nZeroCrossings;
     long nSamples;
     long nDelayExpressions;
-    long nResiduals;
+    long nInitEquations;      /* number of initial equations */
+    long nResiduals;          /* number of initial residuals */
     long nExtObjs;
     long nFunctions;
     long nEquations;

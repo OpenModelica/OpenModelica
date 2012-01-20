@@ -192,7 +192,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
 	}
 
 	/* Is done while the initialization!
-	if (bound_parameters(simData)) {
+	if (updateBoundParameters(simData)) {
 		INFO("Error calculating bound parameters");
 		return -1;
 	}
@@ -202,7 +202,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
 	/* Evaluate all constant equations during initialization */
 	/* functionAliasEquations(simData); */
 
-	/* Calculate initial values from initial_function()
+	/* Calculate initial values from updateBoundStartValues()
 	 * saveall() value as pre values */
 	if (measure_time_flag) {
 		rt_accumulate(SIM_TIMER_PREINIT);

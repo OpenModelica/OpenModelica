@@ -63,7 +63,7 @@ public:
   simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
   virtual ~simulation_result() {};
   virtual void emit(DATA *data) = 0;
-  // write the parameter data after bound_parameters is called
+  // write the parameter data after updateBoundParameters is called
   virtual void writeParameterData(MODEL_DATA *modelData) = 0;
   virtual const char* result_type() = 0;
 

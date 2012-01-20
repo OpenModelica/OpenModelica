@@ -426,16 +426,14 @@ end checkAssertCondition;
 
 public function checkInitialSystem "function: checkInitialSystem
   author: Frenkel TUD 2010-12
-
-  - check if the inital conditions full specified and fix it 
-  if not.
-"
-
+  - check if the inital conditions full specified and fix it if not."
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := mapEqSystem1(inDAE,checkInitialSystemWork,funcs);
+  // do not use this stuff
+  // outDAE := mapEqSystem1(inDAE,checkInitialSystemWork,funcs);
+  outDAE := inDAE;
 end checkInitialSystem;
 
 protected function checkInitialSystemWork "function: checkInitialSystem
@@ -485,6 +483,18 @@ algorithm
       then (syst,shared);
   end matchcontinue;
 end checkInitialSystemWork;
+
+public function countInitialEquations "function: countInitialEquations
+  author: lochel
+  - count all initial equations and algorithms"
+  input BackendDAE.BackendDAE inDAE;
+  output Integer outE;
+protected
+  BackendDAE.EquationArray initialEqs;
+algorithm
+  BackendDAE.DAE(_, BackendDAE.SHARED(initialEqs=initialEqs)) := inDAE;
+  outE := equationSize(initialEqs);
+end countInitialEquations;
 
 protected function checkInitialSystem1"function: checkInitialSystem
   author: Frenkel TUD 2010-12"

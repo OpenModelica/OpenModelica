@@ -76,7 +76,8 @@ void update_DAEsystem(DATA *data)
     functionDAE(data, &needToIterate);
     functionAliasEquations(data);
     /*
-    if (DEBUG_FLAG(LOG_EVENTS)) {
+    if (DEBUG_FLAG(LOG_EVENTS))
+    {
       sim_result_emit(data);
     }
     */
@@ -277,25 +278,25 @@ void setAllParamsToStart(DATA *data)
   {
     mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    DEBUG_INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     mData->stringParameterData[i].attribute.initial = mData->stringParameterData[i].attribute.start;
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_INIT, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 
@@ -316,28 +317,28 @@ void storeInitialValuesParam(DATA *data)
   for(i=0; i<mData->nParametersReal; ++i)
   {
     mData->realParameterData[i].attribute.initial = sInfo->realParameter[i];
-    DEBUG_INFO2(LOG_INIT, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     mData->integerParameterData[i].attribute.initial = sInfo->integerParameter[i];
-    DEBUG_INFO2(LOG_INIT, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     mData->booleanParameterData[i].attribute.initial = sInfo->booleanParameter[i];
-    DEBUG_INFO2(LOG_INIT, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    DEBUG_INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     mData->stringParameterData[i].attribute.initial = sInfo->stringParameter[i];
-    DEBUG_INFO2(LOG_INIT, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 
 /*! \fn storePreValues
  *
- *  copys all the values into their pre-values
+ *  This function copys all the values into their pre-values.
  *
  *  \param [ref] [data]
  *
@@ -368,7 +369,7 @@ void storePreValues(DATA *data)
 void resetAllHelpVars(DATA *data)
 {
   int i;
-  for(i = 0; i<data->modelData.nHelpVars; i++)
+  for(i=0; i<data->modelData.nHelpVars; i++)
   {
     data->simulationInfo.helpVars[i] = 0;
   }

@@ -111,7 +111,7 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
   return names;
 }
 
-/* write the parameter data after bound_parameters is called */
+/* write the parameter data after updateBoundParameters is called */
 void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
 {
   int rows, cols;
