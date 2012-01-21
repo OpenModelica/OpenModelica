@@ -1147,9 +1147,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
   ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
-
-  if (ipoType != 1)
-	  WARNING2("Currently only LinearSegments interpolation is supported. For Table %s from file %s LinearSegments interpolation is used.",tableName,fileName);
+  ASSERT3(0 < ipoType  & ipoType < 3,"Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
 
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
@@ -1193,10 +1191,151 @@ void InterpolationTable2D_deinit(InterpolationTable2D *table)
   }
 }
 
+double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
+{
+  double x1,x2,x3,y1,y2,y3,a,b,c,yd0,yd1,a1,a2,t,pd_li,pd_re,g0,g1,h0,h1;
+  double q[5];
+  size_t index=0;
+  size_t pos=0;
+  size_t i=0;
+  ASSERT(tlen>0,"InterpolationTable2D_akime called with empty table!");
+  /* smooth interpolation with Akima Splines such that der(y) is continuous */
+  if ((tlen < 4) | (x < tx[2]) | (x > tx[tlen-3]))
+  {
+  if (tlen < 3)
+  {
+    if (tlen < 2)
+    {
+      return ty[0];
+    }
+    /* Linear Interpolation */
+    return ((tx[1] - x)*ty[0] + (x - tx[0])*ty[1]) / (tx[1]-tx[0]);
+  }
+  /* parable interpolation */
+    if (x > tx[tlen-3])
+    {
+      x1 = tx[tlen-3];
+      x2 = tx[tlen-2];
+      x3 = tx[tlen-1];
+      y1 = ty[tlen-3];
+      y2 = ty[tlen-2];
+      y3 = ty[tlen-1];
+    }
+    else
+    {
+      x1 = tx[0];
+      x2 = tx[1];
+      x3 = tx[2];
+      y1 = ty[0];
+      y2 = ty[1];
+      y3 = ty[2];
+    }
+
+    a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/((x1-x2)*(x1-x3)*(x3-x2));
+    b = (x1*x1*(y2-y3)+x2*x2*(y3-y1)+x3*x3*(y1-y2))/((x1-x2)*(x1-x3)*(x2-x3));
+    c = (x1*x1*(x2*y3-x3*y2)+x1*(x3*x3*y2-x2*x2*y3)+x2*x3*y1*(x2-x3))/((x1-x2)*(x1-x3)*(x2-x3));
+
+    return a*x*x + b*x + c;
+  }
+
+  /* get index in table */
+  for(index = 1; index < tlen-1; index++)
+    if (tx[index] > x) break;
+
+  if (index > 2)
+  {
+    if (index < tlen - 2)
+    {
+      /* calc */
+      pos = 0;
+      for(i = -2; i < 3; ++i)
+      {
+        q[pos] = (ty[index+i]-ty[index+i-1])/(tx[index+i]-tx[index+i-1]);
+        pos = pos + 1;
+      }
+
+      a1 = abs(q[3]-q[2]);
+      a2 = abs(q[1]-q[0]);
+      if (a1+a2 == 0)
+        yd0 = (q[1] + q[2])/2;
+      else
+        yd0 = (q[1]*a1 + q[2]*a2)/(a1+a2);
+      a1 = abs(q[4]-q[3]);
+      a2 = abs(q[2]-q[1]);
+      if (a1+a2 == 0)
+        yd1 = (q[2] + q[3])/2;
+      else
+        yd1 = (q[2]*a1 + q[3]*a2)/(a1+a2);
+    }
+    else
+    {
+      x1 = tx[tlen-3];
+      x2 = tx[tlen-2];
+      x3 = tx[tlen-1];
+      y1 = ty[tlen-3];
+      y2 = ty[tlen-2];
+      y3 = ty[tlen-1];
+
+      a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/((x1-x2)*(x1-x3)*(x3-x2));
+      b = (x1*x1*(y2-y3)+x2*x2*(y3-y1)+x3*x3*(y1-y2))/((x1-x2)*(x1-x3)*(x2-x3));
+
+      if (index < tlen - 1)
+      {
+       yd0 = 2*a*x1 - b;
+       yd1 = 2*a*x2 - b;
+      }
+      else
+      {
+        yd0 = 2*a*x2 - b;
+        yd1 = 2*a*x3 - b;
+      }
+    }
+  }
+  else
+  {
+    x1 = tx[0];
+    x2 = tx[1];
+    x3 = tx[2];
+    y1 = ty[0];
+    y2 = ty[1];
+    y3 = tx[2];
+
+    a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/((x1-x2)*(x1-x3)*(x3-x2));
+    b = (x1*x1*(y2-y3)+x2*x2*(y3-y1)+x3*x3*(y1-y2))/((x1-x2)*(x1-x3)*(x2-x3));
+
+    if (index > 0)
+    {
+      yd0 = 2*a*x2 - b;
+      yd1 = 2*a*x3 - b;
+    }
+    else
+    {
+      yd0 = 2*a*x1 - b;
+      yd1 = 2*a*x2 - b;
+    }
+  }
+  t = (x-tx[index-1])/(tx[index]-tx[index-1]);
+
+  pd_li = (tx[index] - tx[index-1])*yd0;
+  pd_re = (tx[index] - tx[index-1])*yd1;
+
+  g0 = 0.5-1.5*(t-0.5)+2*pow(t-0.5,3);
+  g1 = 1-g0;
+  h0 = t*pow((t-1),2);
+  h1 = t*t*(t-1);
+
+  return ty[index-1]*g0+ty[index]*g1+pd_li*h0+pd_re*h1;
+}
+
 double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, double x2)
 {
-  size_t i, j;
+  size_t i, j, start, k, l, starte;
   double f_1, f_2;
+  double tx[6];
+  double ty[6];
+  double te[6];
+  size_t tlen=0;
+  size_t telen=0;
   if (table->colWise)
   {
     double tmp = x1;
@@ -1204,7 +1343,65 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
     x1 = tmp;
   }
 
-  /* if out of boundary, use first or last two points */
+  /* if out of boundary, use first or last two points for x2 */
+  if (table->cols == 2)
+  {
+    if (table->rows == 2)
+    {
+      /*
+       If the table has only one element, the table value is returned,
+       independent of the value of the input signal.
+      */
+      return InterpolationTable2D_getElt(table,1,1);
+    }
+    /* find interval corresponding x1 */
+    for(i = 2; i < table->rows; ++i)
+      if (InterpolationTable2D_getElt(table,i,0) >= x1) break;
+    if ((table->ipoType == 2) && (table->rows > 3))
+    {
+      /* smooth interpolation with Akima Splines such that der(y) is continuous */
+      tlen=0;
+      if (i < 4)
+        start = 1;
+      else
+        start = i-3;
+      for(j = start; (j < table->rows) & (j < i+3); ++j)
+      {
+        tx[tlen] = InterpolationTable2D_getElt(table,j,0);
+        ty[tlen] = InterpolationTable2D_getElt(table,j,1);
+        tlen++;
+      }
+      return InterpolationTable2D_akime(tx,ty,tlen,x1);
+    }
+    /* Liniear Interpolation */
+    f_2 = InterpolationTable2D_getElt(table,i,1) - InterpolationTable2D_getElt(table,i-1,1);
+    return InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),0,f_2);
+  }
+  if (table->rows == 2)
+  {
+    /* find interval corresponding x2 */
+    for(j = 2; j < table->cols; ++j)
+      if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
+
+    if ((table->ipoType == 2) && (table->cols > 3))
+    {
+      /* smooth interpolation with Akima Splines such that der(y) is continuous */
+      tlen=0;
+      if (j < 4)
+        start = 1;
+      else
+        start = j-3;
+      for(i = start; (i < table->cols) & (i < j+3); ++i)
+      {
+        tx[tlen] = InterpolationTable2D_getElt(table,0,i);
+        ty[tlen] = InterpolationTable2D_getElt(table,1,i);
+        tlen++;
+      }
+      return InterpolationTable2D_akime(tx,ty,tlen,x2);
+    }
+    f_2 = InterpolationTable2D_getElt(table,1,j) - InterpolationTable2D_getElt(table,1,j-1);
+    return InterpolationTable2D_linInterpolate(x2,InterpolationTable2D_getElt(table,0,j-1),InterpolationTable2D_getElt(table,0,j),0,f_2);
+  }
 
   /* find intervals corresponding x1 and x2 */
   for(i = 2; i < table->rows-1; ++i)
@@ -1212,6 +1409,47 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
   for(j = 2; j < table->cols-1; ++j)
     if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
   
+  if ((table->ipoType == 2) && (table->rows != 3) && (table->cols != 3)  )
+  {
+    /* smooth interpolation with Akima Splines such that der(y) is continuous */
+
+    /* interpolate rows */
+    if (i < 4)
+      start = 1;
+    else
+      start = i-3;
+    if (j < 4)
+      starte = 1;
+    else
+      starte = j-3;
+    telen=0;
+    tlen=0;
+    for(k = start; (k < table->rows) & (k < i+3); ++k)
+    {
+      tx[tlen] = InterpolationTable2D_getElt(table,k,0);
+      tlen++;
+    }
+    telen=0;
+    for(l = starte; (l < table->cols) & (l < j+3); ++l)
+    {
+      tlen=0;
+      for(k = start; (k < table->rows) & (k < i+3); ++k)
+      {
+        ty[tlen] = InterpolationTable2D_getElt(table,k,l);
+        tlen++;
+      }
+      te[telen] = InterpolationTable2D_akime(tx,ty,tlen,x1);
+      telen++;
+    }
+    telen=0;
+    for(k = starte; (k < table->cols) & (k < j+3); ++k)
+    {
+      tx[telen] = InterpolationTable2D_getElt(table,0,k);
+      telen++;
+    }
+    return InterpolationTable2D_akime(tx,te,telen,x2);
+  }
+
   /* bilinear interpolation */
   f_1 = InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),InterpolationTable2D_getElt(table,i-1,j-1),InterpolationTable2D_getElt(table,i,j-1));
   f_2 = InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),InterpolationTable2D_getElt(table,i-1,j),InterpolationTable2D_getElt(table,i,j));
@@ -1247,6 +1485,8 @@ const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, 
 void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl) 
 {
   size_t i = 0;
+  /* check if table has values */
+  ASSERT2((tpl->rows > 1) && (tpl->cols > 1),"Table %s from file %s has no data!",tpl->tablename,tpl->filename);
   /* check that first row and column are strictly monotonous */
   for(i=2; i < tpl->rows; ++i)
   {
