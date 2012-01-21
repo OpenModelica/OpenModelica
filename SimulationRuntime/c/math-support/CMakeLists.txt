@@ -2,14 +2,12 @@
 # CMakefile for compilation of OMC 
 
 # Quellen und Header
-SET(math_support_sources  bigden.c enorm.c hybrd1.c nelmead.c qform.c r1updt.c
-                  biglag.c dogleg.c fdjac1.c hybrj.c newuoa.c qrfac.c trsapp.c
-				  dpmpar.c hybrd.c lsame.c newuob.c r1mpyq.c update.c
-				  events.c delay.c
-				  initialization.c dgesv_aux.c ringbuffer.c list.c)
+SET(math_support_sources  bigden.c biglag.c delay.c dgesv_aux.c dogleg.c dpmpar.c
+				enorm.c fdjac1.c hybrd.c hybrd1.c hybrj.c initialization.c lsame.c
+				model_help.c nelmead.c newuoa.c newuob.c qform.c qrfac.c r1mpyq.c
+                r1updt.c trsapp.c update.c)
 
-SET(math_support_headers  blaswrap.h matrix.h ringbuffer.h delay.h
-                  events.h initialization.h list.h) 
+SET(math_support_headers  blaswrap.h delay.h initialization.h matrix.h model_help.h) 
 						 
 # Library util
 ADD_LIBRARY(math-support ${math_support_sources} ${math_support_headers})

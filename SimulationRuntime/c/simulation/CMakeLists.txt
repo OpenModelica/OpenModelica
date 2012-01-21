@@ -7,13 +7,11 @@ ADD_SUBDIRECTORY(results)
 ADD_SUBDIRECTORY(solver)
 
 # Quellen und Header
-SET(simulation_sources  options.cpp simulation_input_xml.cpp
-                    simulation_modelinfo.c simulation_runtime.cpp
-					simulation_varinfo.c ../linearization/linearize.cpp simulation_data.c )
+SET(simulation_sources  options.cpp simulation_input_xml.cpp simulation_runtime.cpp
+					    ../linearization/linearize.cpp)
 
-SET(simulation_headers  simulation_input_xml.h simulation_runtime.h 
-                    simulation_modelinfo.h simulation_varinfo.h 
-					options.h ../linearization/linearize.h ../simulation_data.h)				 
+SET(simulation_headers options.h simulation_input_xml.h simulation_runtime.h
+					../linearization/linearize.h ../simulation_data.h)				 
 						 
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)

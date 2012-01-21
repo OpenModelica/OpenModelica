@@ -7,10 +7,11 @@ SET(solver_sources  daux.c ddasrt.c
 					dlamch.c 
 					dlinpk.c 
 					solver_main.c
-					dassl.c )
+					dassl.c 
+					events.c)
 #					dopri45.c  )
 
-SET(solver_headers  simulation_inline_solver.h solver_main.h dassl.h ) 
+SET(solver_headers  simulation_inline_solver.h solver_main.h dassl.h events.h) 
                     #dopri45.h)				 
 						 
 # Library util

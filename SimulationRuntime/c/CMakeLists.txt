@@ -16,23 +16,21 @@ MESSAGE(" omc is " ${OMC_DEBUG})
 # includes
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linearization)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/math-support)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sendData)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/libf2c)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/math-support)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/results)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
 
 # Subdirectorys
+ADD_SUBDIRECTORY(math-support)
 ADD_SUBDIRECTORY(meta)
 ADD_SUBDIRECTORY(ModelicaExternalC)
-ADD_SUBDIRECTORY(sendData)
 ADD_SUBDIRECTORY(simulation)
 ADD_SUBDIRECTORY(util)
-ADD_SUBDIRECTORY(math-support)
 
 
 # -------------------------------------------------------------
@@ -61,21 +59,20 @@ MACRO(SHOW_VARIABLE var type doc default)
 ENDMACRO(SHOW_VARIABLE)
 
 # MACRO BUILDMODEL
-MACRO(BUILDMODEL model dir Flags CSRC)
+MACRO(BUILDMODEL model mo dir Flags CSRC)
 
 
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -96,7 +93,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
-                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${model}.mo Modelica ModelicaServices 												  
+                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${mo} Modelica ModelicaServices 												  
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
 
@@ -104,7 +101,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -122,15 +119,14 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)    
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)   
 
   INCLUDE_DIRECTORIES(${dir})    
   
@@ -174,7 +170,7 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
 
   ADD_DEFINITIONS(/TP ${dir}/${model}.c)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
 
   # custom command to copy xml file
   SET(XML_CODE   ${dir}/${model}_init.xml)
@@ -199,15 +195,14 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -245,7 +240,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta  ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -263,15 +258,14 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -307,7 +301,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta  ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
