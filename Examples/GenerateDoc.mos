@@ -170,8 +170,8 @@ items:={Item(
         "</table>"
         ),
       OpenModelica.Scripting.getClassComment(c),
-      preSuffixIfNotEmpty("\n<h4><a name=\\\"text\\\">Interface</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
-      preSuffixIfNotEmpty("\n<h4><a name=\\\"text\\\">Definition</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
+      preSuffixIfNotEmpty("\n<h4><a name=\"text\">Interface</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
+      preSuffixIfNotEmpty("\n<h4><a name=\"text\">Definition</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
     ) for c in b};
 print("Start writing items to file");
 echo(true);
