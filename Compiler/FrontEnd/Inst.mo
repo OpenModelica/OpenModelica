@@ -8491,6 +8491,8 @@ algorithm
       Absyn.Info info;
       Absyn.InnerOuter io;
       UnitAbsyn.InstStore store;
+      list<DAE.SubMod> subMods;
+
 
     // Rules for instantation of function variables (e.g. input and output
 
@@ -8498,8 +8500,60 @@ algorithm
     // For Functions we cannot always find dimensional sizes. e.g. 
     // input Real x[:]; component environement The class is instantiated 
     // with the calculated modification, and an extended prefix. 
-    //     
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+    //
+    
+    // mahge: Function variables with subMod modifications. This can happen for records with inline constructions (and maybe other stuff too???)
+     // now only for records.
+        // e.g.   
+        // function out
+        //   output R1 r(v1=3,v2=3);  // <= Here
+        // protected
+        //   R1 r2(v1=1, v1=2);     // <= Here
+        // end out;
+        // see testsuit/mofiles/RecordBindings.mo.
+     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD()),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+      equation
+        ClassInf.isFunction(ci_state);
+        checkFunctionVar(n, attr, pf, info);
+
+        //Do not flatten because it is a function
+        dims_1 = instDimExpLst(dims, impl);
+        
+        //Instantiate type of the component, skip dae/not flattening (but extract functions)
+        // adrpo: do not send in the modifications as it will fail if the modification is an ARRAY. 
+        //        anyhow the modifications are handled below.
+        //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
+        //        see testsuite/mofiles/Sequence.mo
+        (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) = 
+          instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, INNER_CALL(), graph, csets);
+        //Make it an array type since we are not flattening
+        ty_1 = makeArrayType(dims, ty);
+        checkFunctionVarType(ty_1, ci_state, n, info);
+        
+        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
+        
+        //Generate variable with default binding
+        ty_2 = Types.simplifyType(ty_1);
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
+        
+        //We should get a call exp from here 
+        (cache, DAE.EQBOUND(e,_,_,_/*source*/)) = makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+
+        
+        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
+        dae = daeDeclare(cr, ci_state, ty, attr, vis, SOME(e), {dims_1}, NONE(), dae_var_attr, comment, io, fin, source, true);
+        store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+      then
+        (cache,env_1,ih,store,dae,csets,ty_1,graph);
+    
+    
+       
+    // mahge: function variables with eqMod modifications. 
+    // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo 
+    case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = SOME(_)),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         ClassInf.isFunction(ci_state);
         checkFunctionVar(n, attr, pf, info);
@@ -8537,7 +8591,8 @@ algorithm
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
-
+        
+     
     // Function variables without binding
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name=n2)),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
        equation
@@ -8803,6 +8858,7 @@ algorithm
       DAE.DAElist dae;
       Absyn.Direction dir;
       SCode.Attributes attr;
+      DAE.Type ty;
 
     // Constant with binding.
     case (_, _, SCode.CONST(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
@@ -8811,6 +8867,27 @@ algorithm
         dae = DAEUtil.joinDaes(inClassDae, inDae);
       then 
         dae;
+       
+    // mahge    
+    // Records with Bindings to other records like =>  
+    // model M
+    //   R r1 = R(1); 
+    //   R r1 = r2;   <= here
+    // end M;
+    // The dae that will be recived from instClass in instScalar will give the default record bindings for the record r1
+    // which is wrong. Fixing it there would need a LOT of changes.
+    // So instead we fix it here by moving the equation generated from eqMod modification for each element back to the 
+    // declaration of the element. Then removing the equation. This is done in the function moveBindings.
+    // SEE testsuit/records/RecordBindingsOrdered.mo and RecordBindingsOrderedSimple.mo 
+    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _, DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = DAE.CREF(_, _)))),
+        _, _, _, _)
+      equation
+        dae = instModEquation(inCref, inType, inMod, inSource, inImpl);
+        //move bindings from dae to inClassDae and use the resulting dae
+        dae = moveBindings(dae,inClassDae);
+        dae = DAEUtil.joinDaes(dae, inDae);
+      then
+        dae;    
 
     // Parameter with binding.
     case (_, _, SCode.PARAM(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
@@ -8835,6 +8912,54 @@ algorithm
         dae;
   end match;
 end instScalar2;
+
+
+protected function moveBindings
+"mahge: 
+This function takes two daelists, the first variable declarations
+and the second with equations generated for the variables' bindings by instModEquation.
+Then it moves the equations back as bindings for the variables.
+used for fixing record bindings."
+  input DAE.DAElist inDae1;
+  input DAE.DAElist inDae2;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := match(inDae1,inDae2)
+   local
+     DAE.ComponentRef cref;
+     DAE.VarKind kind;
+     DAE.VarDirection dir;
+     DAE.VarVisibility vis;
+     DAE.Type ty;
+     Option<DAE.Exp> bind;
+     DAE.InstDims dims;
+     DAE.Flow flowP;
+     DAE.Stream sPrefix;
+     DAE.ElementSource src;
+     Option<DAE.VariableAttributes> varAttOpt;
+     Option<SCode.Comment> commOpt;
+     Absyn.InnerOuter inOut;
+     list<DAE.Element> restDae1;    
+     list<DAE.Element> restDae2;
+     DAE.Exp newBindExp;    
+    
+    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::{}),
+      DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::{}))
+      then (DAE.DAE({DAE.VAR(cref, kind, dir, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)}));
+    
+    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::restDae1),
+      DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2))
+      equation
+         DAE.DAE(restDae2) = moveBindings(DAE.DAE(restDae1),DAE.DAE(restDae2));
+      then (DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2));
+    
+    case (_,_)
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.moveBindings failed");
+      then
+        fail();
+   end match;     
+end moveBindings;
 
 protected function checkModificationOnOuter
   input Env.Cache inCache;
@@ -14495,10 +14620,10 @@ algorithm
         binding;
 
     // Take the first component and look for a submod that gives it a binding.
-    case (_, _, _, _, DAE.TYPES_VAR(name = name) :: rest_vars, sub_mods, _, _, _, _)
+    case (_, _, _, _, DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, sub_mods, _, _, _, _)
       equation
         (sub_mods, opt_mod) = List.deleteMemberOnTrue(name, sub_mods, isSubModNamed);
-        (exp, val) = makeRecordBinding3(opt_mod, inRecordType, inInfo);
+        (exp, val) = makeRecordBinding3(opt_mod, ty, inInfo);
         binding = makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, rest_vars, sub_mods, inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
       then
         binding;
@@ -14513,7 +14638,10 @@ algorithm
     // If the previous case fails, then there is no binding for this component, ignore it
     case (_, _, _, _, DAE.TYPES_VAR(name = name, binding = DAE.UNBOUND(), ty = ty) :: rest_vars, sub_mods, _, _, _, _)
       equation
-        // make an Values.EMPTY(scope, name, ty, valType)
+        // make sure there is no binding for it
+        // The previous cases can also fail for other reasons. e.g type mismatch.
+        (sub_mods, NONE()) = List.deleteMemberOnTrue(name, sub_mods, isSubModNamed);
+        
         ety = Types.simplifyType(ty);
         scope = Env.printEnvPathStr(inEnv);
         tyStr = Types.printTypeStr(ty);
@@ -14552,44 +14680,50 @@ protected function makeRecordBinding3
   output DAE.Exp outExp;
   output Values.Value outValue;
 algorithm
-  (outExp, outValue) := match(inSubMod, inType, inInfo)
+  (outExp, outValue) := matchcontinue(inSubMod, inType, inInfo)
     local
       DAE.Exp exp;
       Values.Value val;
-
-    //mahge: Is this correct??? Should it be the first case
-    //case (_, _, _) then fail();
+      DAE.Type ty,ty2;
+      DAE.Ident ident;
+      String binding_str, exptected_type_str, given_type_str;
+      
 
     // Array type and each prefix => return the expression and value.
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), eqModOption = 
         SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))),
-        DAE.T_ARRAY(ty = _), _)
+       _, _)
       then (exp, val);
 
-    // Array type and no each prefix => need to split the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH()))),
-         DAE.T_ARRAY(ty = _), _)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Inst.makeRecordBinding3: array modifier not yet implemented."}, inInfo);
-      then
-        fail();
-
+    
     // Scalar type and no each prefix => return the expression and value.
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption = 
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))), _, _)
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty)))))), ty2, _)
+        equation
+           (exp, ty) = Types.matchType(exp, ty, ty2, true);
       then (exp, val);
     
     
     // Scalar type and no each prefix => bindings given by expressions myRecord(v1 = inV1, v2 = inV2)
     case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), eqModOption = 
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE()))))), _, _)
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty)))))), ty2, _)
+        equation
+           (exp, ty) = Types.matchType(exp, ty, ty2, true);
       then (exp, Values.OPTION(NONE()));
     
     
-    //mahge: Moved from top.    
-    case (_, _, _) then fail();
+    case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(eqModOption = 
+        SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))), ty2,_)
+      equation
+        binding_str = ExpressionDump.printExpStr(exp);
+        exptected_type_str = Types.unparseType(ty2);
+        given_type_str = Types.unparseType(ty);
+        Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
+        {ident, binding_str, exptected_type_str, given_type_str}, inInfo);
+      then
+        fail();
       
-  end match;
+  end matchcontinue;
 end makeRecordBinding3;
     
 protected function isSubModNamed
