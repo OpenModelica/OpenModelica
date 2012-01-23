@@ -524,6 +524,10 @@ algorithm
     //overloaded binary operator. 
     case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_) /* Binary and unary operations */
       equation
+        //Dont deoverload if it is not a record.
+        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
+        true = propEitherRecord(prop1,prop2);
         (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
       then
         (cache,exp_1,prop,st_1);
@@ -535,6 +539,7 @@ algorithm
         prop = DAE.PROP(t,c);
       then
         (cache,exp_1,prop,st_1);
+        
     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
@@ -544,9 +549,9 @@ algorithm
       then
         (cache,exp_1,prop,st_1);
     
-    
      case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,numError)
-      equation  
+      equation
+        (_,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_),_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);  
         (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
       then
         (cache,exp_1,prop,st_1);
@@ -562,6 +567,17 @@ algorithm
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
+    
+    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
+      equation
+        //Dont deoverload if it is not a record.
+        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
+        true = propEitherRecord(prop1,prop2);
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
+      then
+        (cache,exp_1,prop,st_1);
+        
     case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info) "Logical unary expressions" ;
@@ -570,6 +586,14 @@ algorithm
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
+    
+    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
+      equation
+        (_,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_),_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);  
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
+      then
+        (cache,exp_1,prop,st_1);
+        
     case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
       equation
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Relations, e.g. a < b" ;
@@ -581,6 +605,17 @@ algorithm
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
       then
         (cache,exp_1,prop,st_2);
+    
+    case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
+      equation
+        //Dont deoverload if it is not a record.
+        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
+        true = propEitherRecord(prop1,prop2);
+        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
+      then
+        (cache,exp_1,prop,st_1);
+    
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre,info,_) /* Conditional expressions */
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
@@ -777,13 +812,6 @@ algorithm
        (cache,exp,prop,st) = Patternm.elabMatchExpression(cache,env,e,impl,st,doVect,pre,info,numErrorMessages);
      then (cache,exp,prop,st);
        
-   //If everything else fails try user defined overloaded operators    
-   case (cache,env,e,impl,st,doVect,pre,info,numErrorMessages)
-     equation
-       (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
-      then
-        (cache,exp_1,prop,st_1);
-
    case (cache,env,e,_,_,_,pre,info,numErrorMessages)
      equation
        true = numErrorMessages == Error.getNumErrorMessages();
@@ -12686,6 +12714,19 @@ protected constant list<DAE.Type> stringtypes = {
 };
 
 
+
+protected function propEitherRecord
+  input DAE.Properties inProp1;
+  input DAE.Properties inProp2;
+  output Boolean outBool;
+algorithm
+  outBool := match(inProp1,inProp2)
+    case (DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_),_) then true;
+    case (_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_)) then true;
+    else false;
+  end match;
+        
+end propEitherRecord;
 
 protected function userDefOperatorDeoverload
   input Env.Cache inCache;
