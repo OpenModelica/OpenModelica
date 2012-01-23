@@ -2251,12 +2251,12 @@ algorithm
           Absyn.BOOL(value = streamPrefix),
           Absyn.BOOL(value = protected_),
           Absyn.BOOL(value = repl)}),
-          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
+          // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
           Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
           Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
           Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
           getApiFunctionArgs(istmts);
-        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, streamPrefix, protected_, repl, parallelism, variability, {dref1,dref2}, causality, p);
+        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, streamPrefix, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
         st = setSymbolTableAST(st, p_1);
       then
         (resstr,st);
@@ -2272,12 +2272,12 @@ algorithm
            Absyn.BOOL(value = flowPrefix),
            Absyn.BOOL(value = protected_),
            Absyn.BOOL(value = repl)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
+         // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
           getApiFunctionArgs(istmts);
-        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, false, protected_, repl, parallelism, variability, {dref1,dref2}, causality, p);
+        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, false, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
         st = setSymbolTableAST(st, p_1);
       then
         (resstr,st);
@@ -4819,7 +4819,7 @@ protected function setComponentProperties
   input Boolean inStream;
   input Boolean inProtected;
   input Boolean inReplaceable;
-  input String inString6;
+  // input String inString6;  //parallelism removed for now
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
@@ -4828,7 +4828,7 @@ protected function setComponentProperties
   output Absyn.Program outProgram;
 algorithm
   (outString,outProgram):=
-  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9,inProgram10)
+  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10)
     local
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
@@ -4838,15 +4838,15 @@ algorithm
       Boolean finalPrefix,flowPrefix,streamPrefix,prot,repl;
       list<Boolean> dyn_ref;
       Absyn.TimeStamp ts;
-    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl,parallelism,variability,dyn_ref,causality,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality);
+        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
       then
         ("Ok",newp);
-    case (_,_,_,_,_,_,_,_,_,_,_,p) then ("Error",p);
+    case (_,_,_,_,_,_,_,/*_,*/_,_,_,p) then ("Error",p);
   end matchcontinue;
 end setComponentProperties;
 
@@ -15438,12 +15438,12 @@ algorithm
         flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
         streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
-        parallelism_str = attrParallelismStr(attr);
+        // parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,parallelism_str,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,/*parallelism_str,*/variability_str,inout_str,dir_str}, ", ");
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
         lst_1;
@@ -15467,10 +15467,10 @@ algorithm
         flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
         streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
-        parallelism_str = attrParallelismStr(attr);
+        //parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,parallelism_str,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,/*parallelism_str,*/variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
@@ -15714,7 +15714,7 @@ algorithm
   match (inElementAttributes)
     case (Absyn.ATTR(parallelism = Absyn.PARGLOBAL())) then "\"parglobal\"";
     case (Absyn.ATTR(parallelism = Absyn.PARLOCAL())) then "\"parlocal\"";
-    case (Absyn.ATTR(parallelism = Absyn.NON_PARALLEL())) then "\"unspecified\"";
+    case (Absyn.ATTR(parallelism = Absyn.NON_PARALLEL())) then "";
   end match;
 end attrParallelismStr;
 
