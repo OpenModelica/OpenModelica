@@ -395,7 +395,7 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
         if (mpProgressDialog->isHidden())
             return;
-        if (mpSimulationProcess->exitCode() > 0)
+        if (mpSimulationProcess->exitCode() != 0)
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
                                   arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardError())),
