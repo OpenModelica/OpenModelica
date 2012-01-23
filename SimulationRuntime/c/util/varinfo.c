@@ -38,19 +38,19 @@ void printErrorEqSyst(equationSystemError err, struct EQUATION_INFO eq, double v
 {
   switch (err) {
   case ERROR_AT_TIME:
-    WARNING2("Error solving nonlinear system %s at time %g\n", eq.name, var);
+    WARNING2("Error solving nonlinear system %s at time %g", eq.name, var);
     break;
   case NO_PROGRESS_START_POINT:
-    WARNING2("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)\n", eq.name, var);
+    WARNING2("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)", eq.name, var);
     break;
   case NO_PROGRESS_FACTOR:
-    WARNING2("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g\n", eq.name, var);
+    WARNING2("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g", eq.name, var);
     break;
   case IMPROPER_INPUT:
-    WARNING2("improper input parameters to nonlinear eq. syst: %s at time %g\n", eq.name, var);
+    WARNING2("improper input parameters to nonlinear eq. syst: %s at time %g", eq.name, var);
     break;
   default:
-    WARNING3("Unknown equation system error: %d %s %g\n", err, eq.name, var);
+    WARNING3("Unknown equation system error: %d %s %g", err, eq.name, var);
     break;
   }
 }
