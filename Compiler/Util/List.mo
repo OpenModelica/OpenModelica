@@ -6176,7 +6176,7 @@ algorithm
     else
       equation
         str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
-        str = stringAppendList({inBeginStr, str, inEndStr});
+        str = stringAppendList({inListNameStr, inBeginStr, str, inEndStr});
       then
         str;
 

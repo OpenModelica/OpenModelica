@@ -650,6 +650,7 @@ end Attributes;
 
 public 
 constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()); 
+constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
 constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"

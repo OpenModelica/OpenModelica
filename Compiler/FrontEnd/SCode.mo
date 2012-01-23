@@ -579,9 +579,11 @@ public constant Prefixes defaultPrefixes =
     Absyn.NOT_INNER_OUTER(), 
     NOT_REPLACEABLE()); 
 
+public constant Attributes defaultVarAttr =
+  ATTR({}, NOT_FLOW(), NOT_STREAM(), VAR(), Absyn.BIDIR());
 public constant Attributes defaultConstAttr =
   ATTR({}, NOT_FLOW(), NOT_STREAM(), CONST(), Absyn.BIDIR());
-
+ 
 // .......... functionality .........
 protected import Util;
 protected import Dump;

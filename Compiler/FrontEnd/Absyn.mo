@@ -2655,6 +2655,22 @@ algorithm
   end matchcontinue;
 end typeSpecPath;
 
+public function typeSpecDimensions
+  "Returns the dimensions of a TypeSpec."
+  input TypeSpec inTypeSpec;
+  output ArrayDim outDimensions;
+algorithm
+  outDimensions := match(inTypeSpec)
+    local
+      ArrayDim dim;
+
+    case TPATH(arrayDim = SOME(dim)) then dim;
+    case TCOMPLEX(arrayDim = SOME(dim)) then dim;
+    else {};
+
+  end match;
+end typeSpecDimensions;
+
 public function pathString "function: pathString
   This function simply converts a Path to a string."
   input Path path;

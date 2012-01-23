@@ -328,7 +328,7 @@ public constant Message COMPONENT_CONDITION_VARIABILITY = MESSAGE(100, TRANSLATI
 public constant Message SELF_REFERENCE_EQUATION = MESSAGE(101, TRANSLATION(), WARNING(),
   "Circular reference with variable \"%s\"");
 public constant Message DUPLICATE_MODIFICATIONS = MESSAGE(103, TRANSLATION(), ERROR(),
-  "Duplicate modifications in %s");
+  "Duplicate modification of element %s on component %s.");
 public constant Message ILLEGAL_SUBSCRIPT = MESSAGE(104, TRANSLATION(), ERROR(),
   "Illegal subscript %s for dimensions %s in component %s");
 public constant Message ILLEGAL_EQUATION_TYPE = MESSAGE(105, TRANSLATION(), ERROR(),
@@ -573,6 +573,8 @@ public constant Message INSERT_CLASS = MESSAGE(213, SCRIPTING(), ERROR(),
 public constant Message MISSING_MODIFIED_ELEMENT = MESSAGE(214, TRANSLATION(),
 ERROR(),
   "Modified element %s not found in class %s\n");
+public constant Message INVALID_REDECLARE_IN_BASIC_TYPE = MESSAGE(215, TRANSLATION(), ERROR(),
+  "Invalid redeclaration, attributes of basic types can not be redeclared.");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),
