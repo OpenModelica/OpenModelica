@@ -5,6 +5,7 @@ $ sudo su -c "echo deb http://build.openmodelica.org/apt nightly contrib >> /etc
 $ sudo su -c "echo deb-src http://build.openmodelica.org/apt nightly contrib >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get build-dep openmodelica
+$ autoconf
 $ ./configure --with-omniORB
 $ make # or make omc if you only want the omc core and not the qtclients
 
