@@ -29,21 +29,21 @@ libSimulationRuntimeC.a: $(ALL_OBJS) libmeta
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
-$(UTILOBJSPATH):%.o: %.c
+$(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
 
-$(MATHOBJSPATH):%.o: %.c
+$(MATHOBJSPATH):%.o: %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(MATHPATH) -I$(UTILPATH) 
 
-$(SOLVEROBJSPATH):%.o: %.c
+$(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
-$(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH)
+$(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH) $(COMMON_HEADERS)
 
-$(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp
+$(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -Ilinearization/
 
-libmeta: $(METAHFILESPATH)
+libmeta: $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(MAKE) -C meta -f ${LIBMAKEFILE} 
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
