@@ -863,7 +863,8 @@ function setStackOverflowSignal
   "Sets the stack overflow signal to the given value and returns the old one"
   input Boolean inSignal;
   output Boolean outSignal;
-  annotation(__OpenModelica_Impure = true);
-external "builtin";
+  annotation(__OpenModelica_Impure = true, __OpenModelica_EarlyInline = true);
+algorithm
+  outSignal := inSignal;
 end setStackOverflowSignal;
 
