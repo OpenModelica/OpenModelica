@@ -97,10 +97,11 @@ protected
   String compound := \"\", file;
 algorithm
   head :=
-\"<!DOCTYPE HTML PUBLIC \\\"-//W3C//DTD HTML 4.01 Transitional//EN\\\"
-        \\\"http://www.w3.org/TR/html4/loose.dtd\\\">
+\"<head>
   <link href=\\\"style.css\\\" rel=\\\"stylesheet\\\" type=\\\"text/css\\\" />
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
+  </head>
+  <body>
   <h1><a href = \\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
@@ -121,7 +122,7 @@ algorithm
     then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
     else \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1];
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
-  res := item.head + docInfo + item.interface + item.short + item.contents + revision + version;
+  res := item.head + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
 end itemString;
 
 function itemFile
@@ -240,7 +241,8 @@ for (@{  $tree->extract_links('a', 'img')  }) {
 }
 
 open (MYFILE, \">$file\");
-print MYFILE $tree->as_HTML;
+binmode MYFILE, \":utf8\";
+print MYFILE $tree->as_XML;
 close (MYFILE);
 
 system(\"echo Checking file \\\"$file\\\" >>tidy.2.log\");
