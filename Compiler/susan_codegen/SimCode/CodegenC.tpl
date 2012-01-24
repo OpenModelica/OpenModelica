@@ -3735,7 +3735,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
   <<
-  <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>#
+  <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
   <%res%>
   <%endModelicaLine()%>
   >>
