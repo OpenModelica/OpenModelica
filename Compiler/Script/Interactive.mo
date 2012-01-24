@@ -17206,7 +17206,14 @@ algorithm
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> nargs;
       Absyn.Exp e;
-
+      list<Absyn.Exp> argsList;
+    
+    /* Covers the case annotate=Diagram(1) */
+    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = argsList)))
+      equation
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(argsList),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+      then
+        res;
     /* Covers the case annotate=Diagram(x=1,y=2) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))
       equation
