@@ -241,8 +241,7 @@ for (@{  $tree->extract_links('a', 'img')  }) {
 }
 
 open (MYFILE, \">$file\");
-binmode MYFILE, \":utf8\";
-print MYFILE $tree->as_XML;
+print MYFILE $tree->as_HTML;
 close (MYFILE);
 
 system(\"echo Checking file \\\"$file\\\" >>tidy.2.log\");
