@@ -1179,11 +1179,11 @@ algorithm
       BackendDAE.StrongComponents strongComponents;
       String str;
       
-    case (simCode,"C")
+    case (simCode,"c")
       equation
         Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
       then ();
-    case (simCode,"c")
+    case (simCode,"C")
       equation
         Tpl.tplNoret(CodegenFMU.translateModel, simCode);
       then ();        

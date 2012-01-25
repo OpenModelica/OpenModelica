@@ -62,7 +62,7 @@ typedef struct {
     fmiEventInfo eventInfo;
     fmiBoolean outputsvalid;
     ModelState state;
-    _X_DATA* fmuData;
+    DATA* fmuData;
 } ModelInstance;
 
 fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){

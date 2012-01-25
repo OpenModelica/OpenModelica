@@ -113,7 +113,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
-	_X_DATA* fmudata = (_X_DATA *)functions.allocateMemory(1, sizeof(_X_DATA));
+	DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
 	comp->fmuData = fmudata;
 	if (!comp->fmuData) {
 		functions.logger(NULL, instanceName, fmiError, "error",
@@ -135,7 +135,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
       "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
   initializeDataStruc_X_(comp->fmuData);
-  initializeXDataStruc(comp->fmuData);
+  initializeDataStruc(comp->fmuData);
 
   comp->instanceName = instanceName;
   comp->GUID = GUID;
@@ -172,7 +172,7 @@ void fmiFreeModelInstance(fmiComponent c) {
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiFreeModelInstance");
 
-  DeinitializeXDataStruc(comp->fmuData);
+  DeinitializeDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp);
 }
 
@@ -554,7 +554,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /*TODO: Simulation stop time is need to calculate in before hand all sample events
    	   	  We shouldn't generate them all in beforehand */
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
-  initDelay(comp->fmuData->localData[0]->timeValue);
+  initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
   if (initialization(comp->fmuData, "state", "nelder_mead_ex")){
     comp->state = modelError;
@@ -648,7 +648,7 @@ fmiStatus fmiTerminate(fmiComponent c){
 
   /* deinitDelay(comp->fmuData); */
   callExternalObjectDestructors(comp->fmuData);
-  DeinitializeXDataStruc(comp->fmuData);
+  DeinitializeDataStruc(comp->fmuData);
   free(comp->fmuData);
 
   comp->state = modelTerminated;

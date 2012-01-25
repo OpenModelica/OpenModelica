@@ -42,10 +42,10 @@
 /* macro for screen printing */
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
-/* #define _DEBUG_ 1
- * #define PRINT_INFORMATION
- * #define _DEBUG_MODELICA 1
- */
+/* #define _DEBUG_ 1 */
+/*#define PRINT_INFORMATION
+  #define _DEBUG_MODELICA 1
+*/
 
 /* macro for error message print */
 #define _IMPORT_ERROR_LOG_
