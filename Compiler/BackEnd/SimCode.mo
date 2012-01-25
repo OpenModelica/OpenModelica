@@ -2221,7 +2221,7 @@ algorithm
         (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
         (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
-        residualEquations = createResidualEquations(dlow2);
+        residualEquations = createInitialResiduals(dlow2);
         nres = listLength(residualEquations);
         
         extObjInfo = createExtObjInfo(shared);
@@ -2329,7 +2329,7 @@ algorithm
         (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
         (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
-        residualEquations = createResidualEquations(dlow2);
+        residualEquations = createInitialResiduals(dlow2);
         nres = listLength(residualEquations);
         extObjInfo = createExtObjInfo(shared);
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
@@ -2433,7 +2433,7 @@ algorithm
         (dlow2 as BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2, functionTree);
         nE = BackendDAEUtil.countInitialEquations(dlow2);
         
-        residualEquations = createResidualEquations(dlow2);
+        residualEquations = createInitialResiduals(dlow2);
         nres = listLength(residualEquations);
         
         extObjInfo = createExtObjInfo(shared);
@@ -6050,103 +6050,42 @@ algorithm
   end matchcontinue;
 end generateStartValueResiduals;
 
-protected function createResidualEquations
-  input BackendDAE.BackendDAE dae;
-  output list<SimEqSystem> residualEquations;
+protected function createInitialResiduals "function: createInitialResiduals
+  author: lochel
+  This function generates all initial_residuals."
+  input BackendDAE.BackendDAE inDAE;
+  output list<SimEqSystem> outResidualEquations;
 algorithm
-  residualEquations := matchcontinue (dae)
+  outResidualEquations := matchcontinue(inDAE)
     local
-      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst, ie3_lst;
-      BackendDAE.Variables vars, knvars;
-      BackendDAE.EquationArray eqns, se, ie;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<Algorithm.Algorithm> al;
-      BackendDAE.EventInfo ev;
-      list<SimEqSystem> resEqus1,resEqus2,resEqus3;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EqSystems systs;
+      BackendDAE.BackendDAE dae;
+      list<SimEqSystem> residualEquations, resEqus1, resEqus2;
+      BackendDAE.EqSystems eqs;
+      BackendDAE.EquationArray initialEqs;
+      array<Algorithm.Algorithm> algorithms;
+      list<BackendDAE.Equation> initialEqs_lst, initialEqs_lst2;
       
-    case (dae as BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=ie,aliasVars=av,algorithms=al)))
-      equation
-        (_,ie2_lst) = BackendDAEUtil.mapEqSystemAndFold(dae,createResidualEquations1,{});
-        ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(knvars,generateInitialEquationsFromStart,(ie2_lst,av));
-        ie2_lst = listReverse(ie2_lst);
-        
-        /*
-        ((_,_,_,eqns_lst)) = BackendEquation.traverseBackendDAEEqns(eqns,selectContinuousEquations,(1, ass2, vars,{}));
-        eqns_lst = listReverse(eqns_lst);
-
-        eqns_lst = List.map(eqns_lst, BackendEquation.equationToResidualForm);
-        eqns_lst = List.filter(eqns_lst, failUnlessResidual);
-        resEqus1 = List.map1(eqns_lst, dlowEqToSimEqSystem,al);
-        
-        se_lst = BackendEquation.traverseBackendDAEEqns(se,BackendDAEUtil.traverseequationToResidualForm,{});
-        se_lst = replaceDerOpInEquationList(se_lst);
-        se_lst = listReverse(se_lst);
-        se_lst = List.filter(se_lst, failUnlessResidual);
-        resEqus2 = List.map1(se_lst, dlowEqToSimEqSystem,al);
-        */
-        
-        ie_lst = BackendEquation.traverseBackendDAEEqns(ie,BackendDAEUtil.traverseequationToResidualForm,{});
-        ie_lst = replaceDerOpInEquationList(ie_lst);
-        ie_lst = listReverse(ie_lst);
-        ie_lst = List.filter(ie_lst, failUnlessResidual);
-        ie_lst = addLambdaToEquationList(ie_lst);
-        resEqus1 = List.map1(ie_lst, dlowEqToSimEqSystem,al);
-        
-        ie2_lst = List.map(ie2_lst, BackendEquation.equationToResidualForm);
-        ie2_lst = List.filter(ie2_lst, failUnlessResidual);
-        ie2_lst = addLambdaToEquationList(ie2_lst);
-        resEqus2 = List.map1(ie2_lst, dlowEqToSimEqSystem,al);
-        
-        ie3_lst = generateStartValueResiduals(List.flatten(List.mapMap(systs,BackendVariable.daeVars,BackendDAEUtil.varList)));
-        resEqus3 = List.map1(ie3_lst, dlowEqToSimEqSystem, al);
-        
-        residualEquations = listAppend(resEqus1, resEqus2);
-        residualEquations = listAppend(residualEquations, resEqus3);
-        //residualEquations = listAppend(resEqus1,resEqus3);
-        //residualEquations = listAppend(residualEquations, resEqus4);
-      then
-        residualEquations;
-        
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createResidualEquations failed"});
-      then
-        fail();
-  end matchcontinue;
-end createResidualEquations;
-
-protected function createResidualEquations1
-  input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>> sharedExtra;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>> osharedExtra;
-algorithm
-  (osyst,osharedExtra) := matchcontinue (syst,sharedExtra)
-    local
-      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst, ie3_lst;
-      BackendDAE.Variables vars, knvars;
-      BackendDAE.EquationArray eqns, se, ie;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<Algorithm.Algorithm> al;
-      BackendDAE.EventInfo ev;
-      list<SimEqSystem> resEqus1,resEqus2,resEqus3;
-      BackendDAE.AliasVariables av;
-      BackendDAE.Shared shared;
+    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs, algorithms=algorithms))) equation
+      // lambda * initial_equation
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToResidualForm, {});
+      initialEqs_lst = replaceDerOpInEquationList(initialEqs_lst);
+      initialEqs_lst = listReverse(initialEqs_lst);
+      initialEqs_lst = List.filter(initialEqs_lst, failUnlessResidual);
+      initialEqs_lst = addLambdaToEquationList(initialEqs_lst);
+      resEqus1 = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
       
-    case (BackendDAE.EQSYSTEM(orderedVars=vars),(shared as BackendDAE.SHARED(aliasVars=av),ie2_lst))
-      equation
-        ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,(ie2_lst,av));
-      then (syst,(shared,ie2_lst));
+      // (1-lambda) * (v - start(v))
+      initialEqs_lst2 = generateStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
+      resEqus2 = List.map1(initialEqs_lst2, dlowEqToSimEqSystem, algorithms);
+      
+      residualEquations = listAppend(resEqus1, resEqus2);
+    then residualEquations;
         
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createResidualEquations failed"});
-      then
-        fail();
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"createInitialResiduals failed"});
+    then fail();
   end matchcontinue;
-end createResidualEquations1;
+end createInitialResiduals;
 
 protected function dlowEqToSimEqSystem
   input BackendDAE.Equation inEquation;

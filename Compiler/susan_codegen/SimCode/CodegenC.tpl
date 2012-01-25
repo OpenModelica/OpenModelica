@@ -158,11 +158,11 @@ case simCode as SIMCODE(__) then
 
   <%functionStoreDelayed(delayedExps)%>
 
-  <%functionInitial(initialEquations)%>
+  <%functionUpdateBoundStartValues(initialEquations)%>
   
   <%functionInitialResidual(residualEquations)%>
   
-  <%functionBoundParameters(parameterEquations)%>
+  <%functionUpdateBoundParameters(parameterEquations)%>
   
   <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
   
@@ -655,7 +655,7 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
 >>
 end functionSampleEquations;
 
-template functionInitial(list<SimEqSystem> initialEquations)
+template functionUpdateBoundStartValues(list<SimEqSystem> initialEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -671,16 +671,16 @@ template functionInitial(list<SimEqSystem> initialEquations)
   
     <%eqPart%>
   
+    DEBUG_INFO(LOG_INIT, "updating start-values:");
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-    'if (DEBUG_FLAG(LOG_INIT)) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }
+    'DEBUG_INFO_AL2(LOG_INIT, "   %s(start=%f)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
 $P$START<%cref(cref)%> = <%cref(cref)%>;'
     ;separator="\n"%>
   
     return 0;
   }
   >>
-end functionInitial;
-
+end functionUpdateBoundStartValues;
 
 template functionInitialResidual(list<SimEqSystem> residualEquations)
  "Generates function in simulation file."
@@ -692,10 +692,9 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
         'initialResiduals[i++] = 0;'
       else
         let &preExp = buffer "" /*BUFD*/
-        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
-                           &varDecls /*BUFD*/)
+        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         '<%preExp%>initialResiduals[i++] = <%expPart%>;
-DEBUG_INFO2(LOG_RES_INIT,"Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f",i,initialResiduals[i-1]);'
+DEBUG_INFO_AL2(LOG_RES_INIT, "   residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f", i, initialResiduals[i-1]);'
     ;separator="\n")
   <<
   int initial_residual(DATA *data, double $P$_lambda, double* initialResiduals)
@@ -705,6 +704,7 @@ DEBUG_INFO2(LOG_RES_INIT,"Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %
     <%varDecls%>
   
     mem_state = get_memory_state();
+    DEBUG_INFO(LOG_RES_INIT, "updating initial_residuals:");
     <%body%>
     restore_memory_state(mem_state);
   
@@ -712,7 +712,6 @@ DEBUG_INFO2(LOG_RES_INIT,"Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %
   }
   >>
 end functionInitialResidual;
-
 
 template functionExtraResiduals(list<SimEqSystem> allEquations)
  "Generates functions in simulation file."
@@ -755,8 +754,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionExtraResiduals;
 
-
-template functionBoundParameters(list<SimEqSystem> parameterEquations)
+template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -783,7 +781,7 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
     return 0;
   }
   >>
-end functionBoundParameters;
+end functionUpdateBoundParameters;
 
 template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
