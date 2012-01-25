@@ -181,7 +181,7 @@ for cl in classNames loop
     modelVersion := getVersion(cl);
     if base == "package.mo" then
       /* The replaceCommands are used in the perl-script generated later. These are sed-style replacements with & as delimiter to avoid escaping slashes. */
-      replaceCommands := replaceCommands + "  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://" + contentStrToks[end] + "/&" + dirname(file) + "/&g;\n";
+      replaceCommands := replaceCommands + "\n (re.compile('^[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://"+contentStrToks[end]+"/'),'"+dirname(file)+"/'),";
       dirpaths := strtok(dirname(file),"/");
       dirs := dirs + " \"" + dirpaths[end] + "\" ";
     end if;
@@ -210,51 +210,52 @@ writeFile(filetmp, "</table>\n", append = true);
 writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline version</a>)", append = true);
 writeFile(filetmp, "</body>\n</html>", append = true);
 
-writeFile("Tidy.pl","use strict;
-use HTML::Tree;
-use LWP::Simple;
+writeFile("Tidy.py","
+from BeautifulSoup import BeautifulSoup
+import subprocess
+import re
+import glob
 
-my @files = glob(\"*.html\");
-my %visited = ();
-for (@files) {
+repls = ["+replaceCommands+"
+ (re.compile('.*/omlibrary/'), ''),
+ (re.compile('[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*#)'), '\\\\1.html#'),
+ (re.compile('[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*)'), '\\\\1.html'),
+]
 
-my $file = $_;
-if ($visited{$file}!=1) {
+def linkreplace(link):
+  for (regex,repl) in repls:
+    link = regex.sub(repl,link)
+  return link
 
-$visited{'$file'} = 1;
-system(\"echo Checking file \\\"$file\\\" >>tidy.log\");
-system(\"tidy -modify -quiet \\\"$file\\\" 2>>tidy.log\");
+log = open('tidy.log','w')
+verblog = open('tidy.verbose','w')
 
-my $tree = HTML::Tree->new();
-$tree->parse_file($file);
-
-for (@{  $tree->extract_links('a', 'img')  }) {
-  my($link, $element, $attr, $tag) = @$_;
-  my $link2 = $link;\n"
-+replaceCommands /* These are the replacements from earlier */ +
-"  $link2 =~ s/.*\\/omlibrary\\///g;
-  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.'()_]*#)&\\1.html#&g;
-  $link2 =~ s&[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.'()_]*$)&\\1.html&g;
-  $link2 =~ s&'&&g;
-  # print \"$tag.$attr=$link2\\n\";
-  $element->attr(\"$attr\",\"$link2\");
-}
-
-open (MYFILE, \">$file\");
-print MYFILE $tree->as_HTML;
-close (MYFILE);
-
-system(\"echo Checking file \\\"$file\\\" >>tidy.2.log\");
-system(\"tidy -modify -quiet \\\"$file\\\" 2>>tidy.2.log\");
-
-}
-}
+for f in glob.glob('*.html'):
+  log.write('Checking file '+f+'\\n')
+  verblog.write('Checking file '+f+'\\n')
+  p = subprocess.Popen(['-modify','-quiet',f],bufsize=1000,executable='tidy',stdin=None,stdout=verblog,stderr=log)
+  p.wait()
+  file = open(f,'r')
+  soup = BeautifulSoup(file)
+  for a in soup.findAll('a'):
+    try:
+      a['href'] = linkreplace(a['href'])
+    except:
+      pass
+  for img in soup.findAll('img'):
+    try:
+      img['src'] = linkreplace(img['src'])
+    except:
+      pass
+  file.close()
+  file = open(f,'w')
+  file.write(soup.__str__())
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
 rm -f *.png *.pdf FindFiles.log
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
-grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.:-]*/[A-Za-z_0-9%.:/-]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" > tmp
+grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.: -]*/[A-Za-z_0-9%.:/ -]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" | sed 's/ /%20/g' > tmp
 for f in `cat tmp`; do
   f=`echo $f | sed 's/%20/ /'`
   if test -f \"$OMLIBRARY/$f\"; then
@@ -295,8 +296,8 @@ pre
 system("rm -f tidy.log tidy.2.log");
 system("mkdir -p old-html-tmp");
 system("cp *.html old-html-tmp/");
-"Tidy.pl";
-system("perl Tidy.pl");
+"Tidy.py";
+system("python Tidy.py");
 "FindFiles.sh";
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
