@@ -421,7 +421,7 @@ protected function findIndexofNodeInGraph
     output Boolean isEqual;
   end EqualFunc;
 algorithm
-  outNode := matchcontinue(inNode, inGraph, inEqualFunc, inIndex)
+  outIndex := matchcontinue(inNode, inGraph, inEqualFunc, inIndex)
     local
       NodeType node;
       tuple<NodeType, list<NodeType>> graph_node;
@@ -625,14 +625,14 @@ forbiddenColors[color[x]] <- ui
 color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
 "
   input list<NodeType> toColorNodes;
-  input Option<list<NodeType>>[:] inforbiddenColor;
+  input array<Option<list<NodeType>>> inforbiddenColor;
   input list<Integer> inColors;
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input list<tuple<NodeType, list<NodeType>>> inGraphT;
-  input Integer[:] inColored;
+  input array<Integer> inColored;
   input EqualFunc inEqualFunc;
   input PrintFunc inPrintFunc;
-  output Integer[:] outColored;
+  output array<Integer> outColored;
   
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -654,8 +654,8 @@ algorithm
   local
     NodeType node;
     list<NodeType> rest, nodes;
-    Option<list<NodeType>>[:] forbiddenColor;
-    Integer[:] colored;
+    array<Option<list<NodeType>>> forbiddenColor;
+    array<Integer> colored;
     Integer color, index;
     case ({},_,_,_,_,inColored, _, _) then inColored;          
     case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
@@ -680,7 +680,7 @@ protected function addForbiddenColors
   input NodeType inNode;
   input list<NodeType> inNodes;
   input array<Integer> inColored;
-  input Option<list<NodeType>>[:] inForbiddenColor;
+  input array<Option<list<NodeType>>> inForbiddenColor;
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
   input PrintFunc inPrintFunc;
@@ -709,7 +709,7 @@ algorithm
     list<Integer> indexes;
     list<Integer> indexesColor;
     list<String> indexesStr;
-    Option<list<NodeType>>[:] forbiddenColor,forbiddenColor1;
+    array<Option<list<NodeType>>> forbiddenColor,forbiddenColor1;
     list<Option<list<NodeType>>> listOptFobiddenColors;
     list<list<NodeType>> listFobiddenColors;
     case (inNode, {}, _, inForbiddenColor, _, _, _) then inForbiddenColor;
@@ -718,7 +718,7 @@ algorithm
         ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
         indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
         indexes = List.select1(indexes, arrayElemetGtZero, inColored);
-        indexesColor = List.map1(indexes,getArrayElem,inColored);
+        indexesColor = List.map1(indexes, getArrayElem, inColored);
         // Debug output
         //((inPrintFunc(nodes,"Column:" );
         //print("Indexes for fobiddenColors : ");
@@ -743,8 +743,9 @@ end addForbiddenColors;
 
 protected function getArrayElem
   input Integer inIndex;
-  input Type_a[:] inArray;
+  input array<Type_a> inArray;
   output Type_a outElem;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outElem := arrayGet(inArray,inIndex);
 end getArrayElem;
@@ -762,7 +763,7 @@ end cleanOptList;
 
 protected function arrayUpdateListAppend
   input Integer inIndex;
-  input Option<list<NodeType>>[:] inArray;
+  input array<Option<list<NodeType>>> inArray;
   input NodeType inNode;
   replaceable type NodeType subtypeof Any;
 protected 
@@ -791,14 +792,14 @@ end arrayUpdateListAppend;
 
 protected function arrayElemetGtZero
   input Integer inIndex;
-  input Integer[:] inArray;
+  input array<Integer> inArray;
   output Boolean outBoolean;
 algorithm
   outBoolean := intGt(arrayGet(inArray, inIndex), 0);
 end arrayElemetGtZero;
 
 protected function arrayFindMinColorIndex
-  input Option<list<NodeType>>[:] inForbiddenColor;
+  input array<Option<list<NodeType>>> inForbiddenColor;
   input NodeType inNode;
   input Integer inIndex;
   input Integer inmaxIndex;

@@ -4186,15 +4186,15 @@ public function generateSparsePattern
       Integer sizeofGraph, njacs;
       list<Integer> nodesList,nodesVarsList,nodesVarsIndex,nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT;
-      list<Integer>[:] arraySparse;
+      array<list<Integer>> arraySparse;
       list<String> sparsepatternStr;
       list<BackendDAE.Var> JacDiffVars,states,derstates,vars;
       list<DAE.ComponentRef> state_comref;
       BackendDAE.Variables diffedVars,varswithDiffs,orderedVars;
       BackendDAE.EquationArray orderedEqns;
-      Option<list<Integer>>[:] forbiddenColor;
-      Integer[:] colored;
-      Integer[:] colored1;
+      array<Option<list<Integer>>> forbiddenColor;
+      array<Integer> colored;
+      array<Integer> colored1;
       list<Integer> coloredlist;
       
       BackendDAE.BackendDAE modBDAE;
@@ -4251,8 +4251,8 @@ public function generateSparsePattern
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
         
         // color sparse bipartite graph
-        forbiddenColor = fill(NONE(),njacs);
-        colored = fill(0,njacs);        
+        forbiddenColor = arrayCreate(njacs,NONE());
+        colored = arrayCreate(njacs,0);        
         colored1 = Graph.partialDistance2color(nodesList, forbiddenColor, nodesList, sparseGraph, sparseGraphT, colored, intEq, Graph.printNodesInt);
         coloredlist = arrayList(colored1);
         
@@ -4260,7 +4260,7 @@ public function generateSparsePattern
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, coloredlist);
         
         //transpose pattern
-        arraySparse = fill({},njacs);
+        arraySparse = arrayCreate(njacs,{});
         arraySparse = transposeSparsePattern(sparsepattern, arraySparse, 1);
         sparsepatternT = arrayList(arraySparse);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
