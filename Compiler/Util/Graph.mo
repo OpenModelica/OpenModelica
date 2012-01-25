@@ -821,7 +821,7 @@ protected function arrayFindMinColorIndex
     input String inName;
   end PrintFunc;   
 algorithm
-  outForbiddenColor := matchcontinue(inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+  outColor := matchcontinue(inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
   local
     list<NodeType> nodes;
     Integer index;
