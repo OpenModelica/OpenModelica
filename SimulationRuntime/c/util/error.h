@@ -79,9 +79,11 @@ extern const unsigned int LOG_RES_INIT;
 
 #define MSG_NEL(type, stream, msg)   do{MSG_T(type, stream); fprintf(stream, msg);}while(0)
 #define MSG1_NEL(type, stream, msg, a)   do{MSG_T(type, stream); fprintf(stream, msg, a);}while(0)
+#define MSG2_NEL(type, stream, msg, a, b)   do{MSG_T(type, stream); fprintf(stream, msg, a, b);}while(0)
 
 #define MSG_NELA(stream, msg)   do{fprintf(stream, msg);}while(0)
 #define MSG1_NELA(stream, msg, a)   do{fprintf(stream, msg, a);}while(0)
+#define MSG2_NELA(stream, msg, a, b)   do{fprintf(stream, msg, a, b);}while(0)
 
 #define INFO(msg)        do{MSG("info   ", stdout, msg);}while(0)
 #define INFO1(msg, a)        do{MSG1("info   ", stdout, msg, a);}while(0)
@@ -106,6 +108,14 @@ extern const unsigned int LOG_RES_INIT;
 #define INFO_AL8(msg, a, b, c, d, e, f, g, h)     do{MSG8("       ", stdout, msg, a, b, c, d, e, f, g, h);}while(0)
 #define INFO_AL9(msg, a, b, c, d, e, f, g, h, i)     do{MSG9("       ", stdout, msg, a, b, c, d, e, f, g, h, i);}while(0)
 #define INFO_AL10(msg, a, b, c, d, e, f, g, h, i, j)     do{MSG10("       ", stdout, msg, a, b, c, d, e, f, g, h, i, j);}while(0)
+
+#define INFO_NEL(msg)   do{MSG_NEL("info   ", stdout, msg);}while(0)
+#define INFO_NEL1(msg, a)   do{MSG1_NEL("info   ", stdout, msg, a);}while(0)
+#define INFO_NEL2(msg, a, b)   do{MSG2_NEL("info   ", stdout, msg, a, b);}while(0)
+
+#define INFO_NELA(msg)   do{MSG_NELA(stdout, msg);}while(0)
+#define INFO_NELA1(msg, a)   do{MSG1_NELA(stdout, msg, a);}while(0)
+#define INFO_NELA2(msg, a, b)   do{MSG2_NELA(stdout, msg, a, b);}while(0)
 
 #define WARNING(msg)     do{MSG("warning", stdout, msg);}while(0)
 #define WARNING1(msg, a)     do{MSG1("warning", stdout, msg, a);}while(0)

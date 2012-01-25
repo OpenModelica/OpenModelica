@@ -95,6 +95,49 @@
     int activated;
   } SAMPLE_TIME;
 
+
+  /* SPARSE_PATTERN
+   *
+   * sparse pattern struct used by jacobians
+   * leadindex points to an index where to corresponding
+   * index of an row or column is noted in index.
+   * sizeofIndex contain number of elements in index
+   * colorsCols contain color of colored columns
+   *
+   */
+  typedef struct SPARSE_PATTERN
+  {
+      unsigned int* leadindex;
+      unsigned int* index;
+      unsigned int sizeofIndex;
+      unsigned int* colorCols;
+  }SPARSE_PATTERN;
+
+  /* ANALYTIC_JACOBIAN
+   *
+   * analytic jacobian struct used for dassl and linearization.
+   * jacobianName contain "A" || "B" etc.
+   * sizeCols contain size of column
+   * sizeRows contain size of rows
+   * sparsePattern contain the sparse pattern include colors
+   * seedVars contain seed vector to the corresponding jacobian
+   * resultVars contain result of one column to the corresponding jacobian
+   * jacobian contains dense jacobian elements
+   *
+   */
+  typedef struct ANALYTIC_JACOBIAN
+  {
+      char jacobianName;
+      unsigned int sizeCols;
+      unsigned int sizeRows;
+      SPARSE_PATTERN sparsePattern;
+      modelica_real* seedVars;
+      modelica_real* tmpVars;
+      modelica_real* resultVars;
+      modelica_real* jacobian;
+
+  }ANALYTIC_JACOBIAN;
+
   /* Alias data with various types*/
   typedef struct DATA_REAL_ALIAS
   {
@@ -238,7 +281,6 @@
     long nParametersString;
     long nInputVars;
     long nOutputVars;
-    long nJacobianVars;
     long nHelpVars;   /* results of relations in when equation */
 
     long nZeroCrossings;
@@ -255,6 +297,8 @@
     long nAliasInteger;
     long nAliasBoolean;
     long nAliasString;
+
+    long nJacobians;
   }MODEL_DATA;
 
   typedef struct SIMULTAION_INFO
@@ -299,9 +343,10 @@
     modelica_boolean* booleanParameter;
     modelica_string* stringParameter;
 
-    modelica_real* jacobianVars;
     modelica_real* inputVars;
     modelica_real* outputVars;
+
+    ANALYTIC_JACOBIAN* analyticJacobians;
 
     /* delay vars */
     double tStart;

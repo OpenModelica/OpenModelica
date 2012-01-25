@@ -26,6 +26,12 @@ package builtin
     input Integer b;
     output Integer c;
   end intAdd;
+  
+  function intSub
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intSub;
 
   function intMul
     input Integer a;
@@ -67,8 +73,12 @@ package SimCode
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
   type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
-  type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;
-  type JacobianMatrix = tuple<list<JacobianColumn>,list<SimVar>,String>;
+  type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
+  type JacobianMatrix = tuple<list<JacobianColumn>, // column
+                            list<SimVar>,           // seed vars
+                            String,                 // matrix name
+                            list<list<Integer>>,    // sparse pattern
+                            list<Integer>>;          // colored cols
   
   uniontype SimCode
     record SIMCODE
@@ -2044,6 +2054,18 @@ package List
   	output list<Type_a> outTypeALst;
 	  replaceable type Type_a subtypeof Any;
 	end fill;
+
+	function flatten
+    input list<list<ElementType>> inList;
+    output list<ElementType> outList;
+    replaceable type ElementType subtypeof Any;	  
+	end flatten;
+	  
+	function lengthListElements
+    input list<list<Type_a>> inListList;
+    output Integer outLength;
+    replaceable type Type_a subtypeof Any;
+  end lengthListElements;
 
 	function union 
     input list<Type_a> inTypeALst1;

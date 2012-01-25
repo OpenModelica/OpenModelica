@@ -36,7 +36,7 @@
 #define DDASRT ddasrt_
 
 static const unsigned int maxOrder = 5;
-static const unsigned int noStatistics = 5;
+static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 15;
 
 

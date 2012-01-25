@@ -463,10 +463,11 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.integerParameter = (modelica_integer*) calloc(data->modelData.nParametersInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanParameter = (modelica_boolean*) calloc(data->modelData.nParametersBoolean, sizeof(modelica_boolean));
   data->simulationInfo.stringParameter = (modelica_string*) calloc(data->modelData.nParametersString, sizeof(modelica_string));
-
-  data->simulationInfo.jacobianVars = (modelica_real*) calloc(data->modelData.nJacobianVars, sizeof(modelica_real));
+  /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
+
+  data->simulationInfo.analyticJacobians = (modelica_real*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   /* buffer for equations and fucntions */
   data->modelData.functionNames = (FUNCTION_INFO*) malloc(data->modelData.nFunctions*sizeof(FUNCTION_INFO));
@@ -580,7 +581,7 @@ void DeinitializeDataStruc(DATA *data)
   free(data->simulationInfo.stringParameter);
 
   /* free buffer jacobians */
-  free(data->simulationInfo.jacobianVars);
+  free(data->simulationInfo.analyticJacobians);
 
   /* free inputs and output */
   free(data->simulationInfo.inputVars);

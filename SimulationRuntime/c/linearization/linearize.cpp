@@ -63,8 +63,7 @@ string array2string(double* array, int row, int col){
 
 int linearize(DATA* data)
 {
-
-    /* init Matrix A */
+    /* init linearization sizes */
     int size_A = data->modelData.nStates;
     int size_Inputs = data->modelData.nInputVars;
     int size_Outputs = data->modelData.nOutputVars;
@@ -80,30 +79,36 @@ int linearize(DATA* data)
     ASSERT(matrixD,"Calloc");
 
     /* Determine Matrix A */
-    if (functionJacA(data, matrixA)){
+    if (!initialAnalyticJacobianA(data)){
+      if (functionJacA(data, matrixA))
         THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
-    if (functionJacB(data, matrixB)){
+    if (!initialAnalyticJacobianB(data)){
+      if (functionJacB(data, matrixB))
         THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
+
     /* Determine Matrix C */
-    if (functionJacC(data, matrixC)){
+    if (!initialAnalyticJacobianC(data)){
+      if (functionJacC(data, matrixC))
         THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
+
     /* Determine Matrix D */
-    if (functionJacD(data, matrixD)){
+    if (!initialAnalyticJacobianD(data)){
+      if (functionJacD(data, matrixD))
         THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 
-    /* The empty array {} is not valid modelica, so we need to put something
-       inside the curly braces for x0 and u0. {for i in in 1:0} will create an
-       empty array if needed. */
+    // The empty array {} is not valid modelica, so we need to put something
+    //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
+    //   empty array if needed.
     if(size_A) {
         strX = array2string(data->localData[0]->realVars,1,size_A);
     } else {

@@ -48,6 +48,8 @@ public import HashTableCG;
 
 public constant String partialDerivativeNamePrefix="$pDER";
 public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
+public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=13;
+public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS_MODULES=14;
 
 public type Type = .DAE.Type 
 "Once we are in BackendDAE, the Type can be only basic types or enumeration. 

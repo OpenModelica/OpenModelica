@@ -850,16 +850,35 @@ end dumpAlgorithms;
 public function dumpSparsePattern
 "function:  dumpSparsePattern
  author: wbraun
- description: fucntion dumps sparse pattern of Jacobain System."
-  input list<list<Integer>> inSparsePatter;
-protected
- list<String> sparsepatternStr; 
+ description: function dumps sparse pattern of a Jacobain System."
+  input list<list<Integer>> inSparsePatter; 
 algorithm
-	print("Print sparse pattern: \n");
-	sparsepatternStr := List.map6(inSparsePatter,List.toString,intString,"Sparse pattern","\n"," ","\n",false);
-	List.map_0(sparsepatternStr,print);
+	print("Print sparse pattern: " +& intString(listLength(inSparsePatter)) +& "\n");
+	dumpSparsePattern2(inSparsePatter, 1);
 	print("\n");
 end dumpSparsePattern;
+
+public function dumpSparsePattern2
+"function:  dumpSparsePattern
+ author: wbraun
+ description: help function to dumpSparsePattern."
+  input list<list<Integer>> inSparsePatter;
+  input Integer inInteger;
+algorithm
+  _ := match(inSparsePatter, inInteger)
+  local
+    list<list<Integer>> rest;
+    list<Integer> elem;
+    String sparsepatternStr; 
+    case({},inInteger) then ();
+    case(elem::rest,inInteger)
+      equation  
+      sparsepatternStr = List.toString(elem, intString,"Row[" +& intString(inInteger) +& "] = ","{",";","}",true);
+      print(sparsepatternStr +& "\n");
+      dumpSparsePattern2(rest,inInteger+1);
+    then ();
+  end match;   
+end dumpSparsePattern2;
 
 public function dumpJacobianStr
 "function: dumpJacobianStr

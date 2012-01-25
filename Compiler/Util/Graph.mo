@@ -403,6 +403,42 @@ algorithm
   end matchcontinue;
 end findNodeInGraph;
 
+protected function findIndexofNodeInGraph
+  "Returns the index in the list of the node  from a graph given a node to search for, or
+  fails if no such node exists in the graph."
+  input NodeType inNode;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  input Integer inIndex;
+  output Integer outIndex;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  outNode := matchcontinue(inNode, inGraph, inEqualFunc, inIndex)
+    local
+      NodeType node;
+      tuple<NodeType, list<NodeType>> graph_node;
+      list<tuple<NodeType, list<NodeType>>> rest_graph;
+
+    case (_, (node, _) :: _, _, inIndex)
+      equation
+        true = inEqualFunc(inNode, node);
+      then
+        inIndex;
+
+    case (_, _ :: rest_graph, _, inIndex)
+      then findIndexofNodeInGraph(inNode, rest_graph, inEqualFunc, inIndex+1);
+
+  end matchcontinue;
+end findIndexofNodeInGraph;
+
 protected function removeNodesFromGraph
   "Removed a list of nodes from the graph. Note that only the nodes are removed
   and not any edges pointing at the nodes."
@@ -445,6 +481,85 @@ algorithm
 
   end matchcontinue;
 end removeNodesFromGraph;
+
+public function transposeGraph
+"This function transposes a graph by given a graph and vertex list.
+"
+  input list<tuple<NodeType, list<NodeType>>> intmpGraph;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  output list<tuple<NodeType, list<NodeType>>> outGraph;
+
+  replaceable type NodeType subtypeof Any;
+ 
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+
+algorithm
+  outGraph := matchcontinue(intmpGraph,inGraph,inEqualFunc)
+    local
+      NodeType node;
+      list<NodeType> nodeList;
+      tuple<NodeType, list<NodeType>> vertex;
+      list<tuple<NodeType, list<NodeType>>> restGraph,tmpGraph;
+    case(intmpGraph,{},inEqualFunc)
+    then intmpGraph;
+    case(intmpGraph,(node,nodeList)::restGraph,inEqualFunc)
+      equation
+        tmpGraph = List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
+        tmpGraph = transposeGraph(tmpGraph,restGraph,inEqualFunc);
+      then tmpGraph;
+        else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
+      then fail();
+  end matchcontinue; 
+end transposeGraph;
+
+protected function insertNodetoGraph
+" This function takes nodes and a vertex and inserts 
+  the vertex to list of nodes of the graph.
+"
+  input NodeType inNode;
+  input NodeType inVertex;
+  input EqualFunc inEqualFunc;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  output list<tuple<NodeType, list<NodeType>>> outGraph;
+ 
+  replaceable type NodeType subtypeof Any;
+ 
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+
+algorithm
+  outGraph := matchcontinue(inNode, inVertex, inEqualFunc, inGraph)
+  local
+    NodeType node;
+    list<NodeType> rest;
+    list<tuple<NodeType, list<NodeType>>> restGraph;
+
+  case (inNode, inVertex, inEqualFunc, {}) then {};
+  case (inNode, inVertex, inEqualFunc, (node,rest)::restGraph)
+    equation
+      true = inEqualFunc(node, inNode);
+      rest = List.unionList({rest, {inVertex}});
+      restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
+    then (node,rest)::restGraph;
+  case (inNode, inVertex, inEqualFunc, (node,rest)::restGraph)
+    equation
+      false = inEqualFunc(node, inNode);
+      restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
+    then (node,rest)::restGraph;
+  end matchcontinue; 
+end insertNodetoGraph;
 
 public function allReachableNode
 "This function searches for a starting node in M
@@ -498,6 +613,245 @@ algorithm
 end allReachableNode;
 
 
+public function partialDistance2color 
+"A greedy partial distance-2 coloring algorithm.
+procedure G REEDY PARTIAL D2C OLORING(Gb = (V1 ,V2 , E))
+Let u1 , u2 , . . ., un be a given ordering of V2 , where n = |V2 |
+Initialize forbiddenColors with some value a in V2
+for i = 1 to n do
+for each vertex w such that (ui , w) in E do
+for each colored vertex x such that (w, x) in E do
+forbiddenColors[color[x]] <- ui
+color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
+"
+  input list<NodeType> toColorNodes;
+  input Option<list<NodeType>>[:] inforbiddenColor;
+  input list<Integer> inColors;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input list<tuple<NodeType, list<NodeType>>> inGraphT;
+  input Integer[:] inColored;
+  input EqualFunc inEqualFunc;
+  input PrintFunc inPrintFunc;
+  output Integer[:] outColored;
+  
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;  
+  
+  partial function PrintFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input list<NodeType> inNode1;
+    input String inName;
+  end PrintFunc;
+  
+  replaceable type NodeType subtypeof Any;
+  
+algorithm
+  outColored := matchcontinue(toColorNodes, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
+  local
+    NodeType node;
+    list<NodeType> rest, nodes;
+    Option<list<NodeType>>[:] forbiddenColor;
+    Integer[:] colored;
+    Integer color, index;
+    case ({},_,_,_,_,inColored, _, _) then inColored;          
+    case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
+      equation
+        index = listLength(inColors) - listLength(rest);
+        //print("partial d2color:  Index = " +& intString(index) +& "\n");
+        ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
+        //inPrintFunc(nodes,"Rows:");
+        forbiddenColor = addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+        color = arrayFindMinColorIndex(forbiddenColor, node, 1, listLength(inColors)+1, inEqualFunc, inPrintFunc);
+        colored = arrayUpdate(inColored, index, color);
+        colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
+    then colored;
+      else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."});
+      then fail();
+  end matchcontinue;
+end partialDistance2color;
+
+protected function addForbiddenColors
+  input NodeType inNode;
+  input list<NodeType> inNodes;
+  input array<Integer> inColored;
+  input Option<list<NodeType>>[:] inForbiddenColor;
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc inEqualFunc;
+  input PrintFunc inPrintFunc;
+  output array<Option<list<NodeType>>> outForbiddenColor;
+  
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+
+  partial function PrintFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input list<NodeType> inNode1;
+    input String inName;
+  end PrintFunc; 
+    
+algorithm
+  outForbiddenColor := matchcontinue(inNode, inNodes, inColored, inForbiddenColor, inGraph, inEqualFunc, inPrintFunc)
+  local
+    NodeType node;
+    list<NodeType> rest,nodes;
+    list<Integer> indexes;
+    list<Integer> indexesColor;
+    list<String> indexesStr;
+    Option<list<NodeType>>[:] forbiddenColor,forbiddenColor1;
+    list<Option<list<NodeType>>> listOptFobiddenColors;
+    list<list<NodeType>> listFobiddenColors;
+    case (inNode, {}, _, inForbiddenColor, _, _, _) then inForbiddenColor;
+    case (inNode, node::rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc)
+      equation
+        ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
+        indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
+        indexes = List.select1(indexes, arrayElemetGtZero, inColored);
+        indexesColor = List.map1(indexes,getArrayElem,inColored);
+        // Debug output
+        //((inPrintFunc(nodes,"Column:" );
+        //print("Indexes for fobiddenColors : ");
+        //indexesStr = List.map(indexesColor, intString);
+        //List.map_0(indexesStr, print);
+        //print("\n");
+				List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
+				// Debug output
+				//print("List Length : " +& intString(arrayLength(forbiddenColor)) +& "\n");
+				//listOptFobiddenColors = arrayList(forbiddenColor);
+				//listFobiddenColors = List.map(listOptFobiddenColors,cleanOptList);
+				//List.map1_0(listFobiddenColors, inPrintFunc, "Forbidden Nodes for Color: ");
+				//print("updated forbiddenColor! \n\n");
+        forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+      then forbiddenColor1;
+      else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+      then fail();        
+  end matchcontinue;
+end addForbiddenColors;
+
+protected function getArrayElem
+  input Integer inIndex;
+  input Type_a[:] inArray;
+  output Type_a outElem;
+algorithm
+  outElem := arrayGet(inArray,inIndex);
+end getArrayElem;
+
+protected function cleanOptList
+  input Option<list<Type_a>> inListOption;
+  output list<Type_a> outList;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := match(inListOption)
+    case (SOME(outList)) then outList;
+    case (NONE()) then {};
+  end match;
+end cleanOptList;
+
+protected function arrayUpdateListAppend
+  input Integer inIndex;
+  input Option<list<NodeType>>[:] inArray;
+  input NodeType inNode;
+  replaceable type NodeType subtypeof Any;
+protected 
+  list<NodeType> arrayElem;
+algorithm
+  _ := matchcontinue(inIndex, inArray, inNode)
+  local
+     list<NodeType> arrElem;
+    case (inIndex, inArray, inNode)
+      equation
+      SOME(arrElem) = arrayGet(inArray, inIndex);
+      arrElem = List.union(arrElem, {inNode});
+      _ = arrayUpdate(inArray, inIndex, SOME(arrElem));
+    then ();
+    case (inIndex, inArray, inNode)
+      equation
+      NONE() = arrayGet(inArray, inIndex);
+      _ = arrayUpdate(inArray, inIndex, SOME({inNode}));
+    then ();
+      else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
+      then fail();     
+  end matchcontinue;      
+end arrayUpdateListAppend;
+
+protected function arrayElemetGtZero
+  input Integer inIndex;
+  input Integer[:] inArray;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := intGt(arrayGet(inArray, inIndex), 0);
+end arrayElemetGtZero;
+
+protected function arrayFindMinColorIndex
+  input Option<list<NodeType>>[:] inForbiddenColor;
+  input NodeType inNode;
+  input Integer inIndex;
+  input Integer inmaxIndex;
+  input EqualFunc inEqualFunc;
+  input PrintFunc inPrintFunc;
+  output Integer outColor;
+  
+  replaceable type NodeType subtypeof Any;
+
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+  partial function PrintFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input list<NodeType> inNode1;
+    input String inName;
+  end PrintFunc;   
+algorithm
+  outForbiddenColor := matchcontinue(inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+  local
+    list<NodeType> nodes;
+    Integer index;
+    case (_, _, inIndex, inmaxIndex, _, _)
+      equation
+        true = intEq(inIndex, inmaxIndex);
+        //print("Failed to find min Color!\n");
+      then 0;
+    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+      equation
+        NONE() = arrayGet(inForbiddenColor, inIndex);
+        //print("Found color on index : " +& intString(inIndex) +& "\n");
+      then inIndex;        
+    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+      equation
+        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+        //inPrintFunc(nodes,"FobiddenColors:" );
+        failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
+        //print("Found color on index : " +& intString(inIndex) +& "\n");
+      then inIndex;
+    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+      equation
+        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+        //inPrintFunc(nodes,"FobiddenColors:" );
+        _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
+        //print("Not found color on index : " +& intString(inIndex) +& "\n");
+        index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
+      then index;        
+  end matchcontinue;
+end arrayFindMinColorIndex;
+
 
 /* Functions for Integer graphs */
 
@@ -525,6 +879,30 @@ algorithm
       then ();
   end match;
 end printGraphInt;
+
+public function printNodesInt 
+"This function prints an Integer List Nodes.
+ Useful for debuging." 
+  input list<Integer> inListNodes;
+  input String inName;
+algorithm
+ _ := match(inListNodes, inName)
+   local
+     list<String> strNodes;
+     case ({}, inName)
+       equation
+       print(inName +& "\n");
+       then ();
+     case (inListNodes, inName)
+       equation
+         print(inName +& " : ");
+         strNodes = List.map(inListNodes, intString);
+         strNodes = List.map1(strNodes, stringAppend, " ");
+         List.map_0(strNodes, print);
+         print("\n");
+      then ();
+  end match;
+end printNodesInt;
 
 
 end Graph;

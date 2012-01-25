@@ -122,8 +122,12 @@ type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>; // helpvarindex, expression, whenclause index
 type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
-type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;
-type JacobianMatrix = tuple<list<JacobianColumn>,list<SimVar>,String>;
+type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
+type JacobianMatrix = tuple<list<JacobianColumn>,   // column
+                            list<SimVar>,           // seed vars
+                            String,                 // matrix name
+                            list<list<Integer>>,    // sparse pattern
+                            list<Integer>>;         // colored cols
   
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For SimCodeC.tpl";
 
@@ -860,7 +864,7 @@ algorithm
         list<JacobianColumn> column;
         list<SimEqSystem> tmp,tmp1;
         list<JacobianMatrix> rest;
-    case ((column,_,_)::rest)
+    case ((column,_,_,_,_)::rest)
       equation
         tmp = appendAllequation(column);
         tmp1 = appendAllequations(rest);
@@ -871,11 +875,11 @@ end matchcontinue;
 end appendAllequations;
 
 protected function appendAllequation
-  input list<JacobianColumn> inJacobianMatrix;
+  input list<JacobianColumn> inJacobianColumn;
   output list<SimEqSystem> outEqn;
 algorithm 
   outEqn := 
-  matchcontinue(inJacobianMatrix)
+  matchcontinue(inJacobianColumn)
       local
         list<SimEqSystem> tmp,tmp1;
         list<JacobianColumn> rest;
@@ -915,9 +919,12 @@ public function createSimulationSettings
 protected
   Real stepSize;
   Integer numberOfIntervals;
+  Boolean activateJacobian;
 algorithm
   numberOfIntervals := Util.if_(inumberOfIntervals <= 0, 1, inumberOfIntervals);
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
+  activateJacobian := Util.if_(stringEq(method,"dassljac"),true,false);
+  _ := Flags.set(Flags.JACOBIAN, Flags.isSet(Flags.JACOBIAN) or activateJacobian);
   simSettings := SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
     method, options, outputFormat, variableFilter, measureTime, cflags);
@@ -1061,6 +1068,7 @@ public function generateModelCode
   output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
+  output Real timeJacobian;
 protected 
   
   list<String> includes,includeDirs;
@@ -1073,6 +1081,7 @@ protected
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  list<JacobianMatrix> LinearMatrices;
 algorithm
   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   a_cref := Absyn.pathToCref(className);
@@ -1087,6 +1096,12 @@ algorithm
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   
+  LinearMatrices := createJacobianLinearCode(functionTree,outIndexedBackendDAE);
+  simCode := addJacobianstoSimCode(simCode, LinearMatrices);
+  timeJacobian := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.execStat("Linearization",CevalScript.RT_CLOCK_BUILD_MODEL);
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+    
   callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCode;
@@ -1220,7 +1235,7 @@ algorithm
       //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
-      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend, timeJacobians;
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt,args)
       equation
@@ -1237,7 +1252,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,funcs,true);
         dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates, timeJacobians) = 
           generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
@@ -1245,6 +1260,7 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
+        resultValues = Util.if_(Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION),("timeJacobians",Values.REAL(timeJacobians))::resultValues,resultValues);
         resstr = Util.if_(Flags.isSet(Flags.FAILTRACE),Absyn.pathStringNoQual(className),"");
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
         //        resstr = "SimCode: The model has been translated";
@@ -2471,9 +2487,8 @@ algorithm
         allEquations = List.map(allEquations,applyResidualReplacements);
 
         // generate jacobian or linear model matrices
-        // can be activeted by debug flag "+d=jacobian|linearization"        
-        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
-        modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
+        // can be activeted by debug flag "+d=jacobian|linearization"
+        LinearMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
@@ -2567,94 +2582,6 @@ algorithm
   end matchcontinue;
 end createEquationsForSystems;
 
-protected function expandModelInfoVars
-"Expand Modelinfo with jacobain Vars"
-  input list<JacobianMatrix> inJacs;
-  input ModelInfo inModelinfo;
-  output ModelInfo outModelinfo;
-algorithm
-  outModelinfo := 
-  match (inJacs,inModelinfo)
-    local
-      list<SimVar> jacvars;
-      SimVars linearVars,vars,simvarsandlinearvars;
-      ModelInfo minfo;
-      Absyn.Path name;
-      String dir;
-      VarInfo varinfo;
-      list<Function> functions;
-      list<String> labels;
-      Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
-      Integer nhv,nin, niniteq, nresi, nout, ny_int, np_int, ny_bool, np_bool, na, na_int, na_bool, na_string;
-      Integer njacvars;
-      Option<Integer> dim1,dim2;
-      case(inJacs,minfo as (MODELINFO(name,dir,VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          niniteq, nresi, next, ny_string, np_string, na_string,_,dim1,dim2),vars,functions,labels)))
-        equation
-          jacvars = appendAllVars(inJacs);
-          jacvars = List.unionOnTrue(jacvars,jacvars,compareSimVarName);
-          jacvars = rewriteIndex(jacvars,0);
-          njacvars = listLength(jacvars);
-          linearVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},jacvars,{},{},{},{});
-          simvarsandlinearvars = mergeVars(vars,linearVars);
-        then MODELINFO(name, dir, VARINFO(nhv, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, nout, nin,
-          niniteq, nresi, next, ny_string, np_string, na_string, njacvars,dim1,dim2), simvarsandlinearvars, functions,labels);
-   end match;
-end expandModelInfoVars;
-
-protected function compareSimVarName
-  input SimVar inVar1;
-  input SimVar inVar2;
-  output Boolean outBool;
-algorithm
-  outBool := match(inVar1,inVar2)
-    local
-      DAE.ComponentRef cref1,cref2;
-      Boolean res;
-    case(SIMVAR(name=cref1),SIMVAR(name=cref2))
-    then ComponentReference.crefEqual(cref1, cref2);
-  end match;
-end compareSimVarName;  
-
-
-public function appendAllVars
-  input list<JacobianMatrix> inJacobianMatrix;
-  output list<SimVar> outEqn;
-algorithm 
-  outEqn := 
-  matchcontinue(inJacobianMatrix)
-      local
-        list<JacobianColumn> column;
-        list<SimVar> tmp,tmp1;
-        list<JacobianMatrix> rest;
-    case ((column,_,_)::rest)
-      equation
-        tmp = appendAllVar(column);
-        tmp1 = appendAllVars(rest);
-        tmp1 = listAppend(tmp,tmp1);
-      then tmp1;
-   case({}) then {};
-end matchcontinue;
-end appendAllVars;
-
-protected function appendAllVar
-  input list<JacobianColumn> inJacobianMatrix;
-  output list<SimVar> outEqn;
-algorithm 
-  outEqn := 
-  matchcontinue(inJacobianMatrix)
-      local
-        list<SimVar> tmp,tmp1;
-        list<JacobianColumn> rest;
-    case (((_,tmp,_)::rest))
-      equation
-        tmp1 = appendAllVar(rest);
-        tmp1 = listAppend(tmp,tmp1);
-      then tmp1;
-   case({}) then {};
-end matchcontinue;
-end appendAllVar;
-
 protected function createJacobianLinearCode
   input DAE.FunctionTree functions;
   input BackendDAE.BackendDAE idlow;
@@ -2668,17 +2595,61 @@ algorithm
         true = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
         dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
         dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),SOME("dummyDerivative"));
-        // The jacobian code requires single systems; I did not rewrite it to take advantage of any parallelism in the code
+        // The jacobian code requires single systems;
+        // I did not rewrite it to take advantage of any parallelism in the code
         res = createJacobianCC(functions,dlow);
         res = createLinearModelMatrixes(functions,dlow,res);
       then res;
     else
       equation
         false = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
-        res = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
+        res = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
       then res;
   end matchcontinue;
 end createJacobianLinearCode;
+
+protected function addJacobianstoSimCode
+  input SimCode inSimCode;
+  input list<JacobianMatrix> inJacobians;
+  output SimCode outSimCode;
+algorithm
+  outSimCode := match(inSimCode,inJacobians)
+    local
+      ModelInfo modelInfo;
+      list<DAE.Exp> literals "shared literals";
+      list<RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimEqSystem>> odeEquations;
+      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,initialEquations,parameterEquations,removedEquations,sampleEquations;
+      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SampleCondition> sampleConditions;
+      list<HelpVarInfo> helpVarInfo;
+      list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      DelayedExpression delayedExps;
+      list<String> labels;
+      Option<SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String directory;
+      VarInfo varInfo;
+      SimVars vars;
+      list<Function> functions;     
+
+    case (SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations, 
+                 parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                 discreteModelVars,extObjInfo,makefileParams,delayedExps,_,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),inJacobians)
+      then
+        SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations, 
+                  parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                  discreteModelVars,extObjInfo,makefileParams,delayedExps,inJacobians,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
+                  
+  end match;
+end addJacobianstoSimCode;
 
 protected function createLinearModelMatrixes
 "fuction creates the linear model matrices column-wise
@@ -2727,24 +2698,36 @@ algorithm
         comref_outputvars = List.map(outputvars,BackendVariable.varCref);
         
         // Differentiate the System w.r.t states for matrices A
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         linearModelMatrices = {linearModelMatrix};
-
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated system for matrix A: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+  
+        
         // Differentiate the System w.r.t inputs for matrices B
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix B : " +& realString(clock()) +& "\n" );
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated system for matrix B: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+
 
         // Differentiate the System w.r.t states for matrices C
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix C : " +& realString(clock()) +& "\n" );
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated system for matrix C: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+
         
         // Differentiate the System w.r.t inputs for matrices D
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix D : " +& realString(clock()) +& "\n" );
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated system for matrix D: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+
         
       then
         linearModelMatrices;
@@ -2759,7 +2742,7 @@ algorithm
       equation
         false = Flags.isSet(Flags.LINEARIZATION);
         false = Flags.isSet(Flags.JACOBIAN);
-        linearModelMatrices = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
+        linearModelMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
       then
         linearModelMatrices;
     case (_, _, _)
@@ -2803,7 +2786,8 @@ algorithm
 BackendDAE.SHARED(knownVars = kv)))      
       equation
         true = Flags.isSet(Flags.JACOBIAN);
-        
+
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);        
         (blt_states, _) = BackendDAEUtil.generateStatePartition(syst);
         
         newEqns = BackendDAEUtil.listEquation({});
@@ -2825,18 +2809,19 @@ BackendDAE.SHARED(knownVars = kv)))
         inputvars = List.sort(inputvars, BackendVariable.varIndexComparer);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         paramvars = List.sort(paramvars,  BackendVariable.varIndexComparer);
-        
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
+
         linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         // add empty matrices B,C,D
-        linearModelMatrices = {linearModelMatrix,({},{},"B"),({},{},"C"),({},{},"D")};
+        linearModelMatrices = {linearModelMatrix,({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated system for matrix A: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         
       then
         linearModelMatrices;
     case (_,dlow)
       equation
         false = Flags.isSet(Flags.JACOBIAN);
-        linearModelMatrices = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
+        linearModelMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
       then
         linearModelMatrices;
     else
@@ -2901,20 +2886,23 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
       
-      list<DAE.ComponentRef> inOrigVars, inOrigKnVars, comref_vars, comref_differentiatedVars;
+      list<DAE.ComponentRef> inOrigVars, inOrigKnVars, comref_vars, comref_seedVars, comref_differentiatedVars, varsToRemove;
       
       list<SimEqSystem> columnEquations;
       list<SimVar> columnVars;
+      list<list<SimVar>> columnVarsList;
       list<SimVar> columnVarsKn;
       list<SimVar> seedVars;
       
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst,syst1;
-      BackendDAE.Variables vars, knvars, empty, orderedVars, diffVars, varswithDiffs;
-      list<BackendDAE.Var> diffedVars, seedlst, varswithDiffsLst;
+      BackendDAE.Variables vars, knvars, knvars1, empty, orderedVars, diffVars, varswithDiffs;
+      list<BackendDAE.Var> diffedVars, diffVarsTmp, varswithDiffsLst,seedlst, knvarsTmp, knvarsTmp1;
       String s;
       
       list<list<Integer>> sparsepattern;
+      list<Integer> colsColors;
+      Integer colorMax;
       
     case (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
       equation
@@ -2922,37 +2910,55 @@ algorithm
         diffedVars = BackendDAEUtil.varList(inDifferentiatedVars);
         s =  intString(listLength(diffedVars));
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
+        
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
-
-        seedlst = List.map(comref_vars, BackendDAEOptimize.createJacVars);
+        seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, inName);
+        comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
  
         
         // Differentiate the ODE system w.r.t states for jacobian
-        Debug.fcall(Flags.EXEC_STAT,print,"*** analytical Jacobians Differentiate System.\n");
-        backendDAE = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        (backendDAE as BackendDAE.DAE(shared=shared)) = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.execStat("analytical Jacobians -> generated equations for Jacobian " +& inName +& " : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        knvars1 = BackendVariable.daeKnVars(shared);
+        knvarsTmp = BackendDAEUtil.varList(knvars1);
         
         // create equations and variables
         (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,inFunctions,comref_differentiatedVars,comref_vars,inVars,0);
         columnEquations = createEquations(false, false, false, false, true, syst, shared, 0, comps, {});
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians differentiated!\n");
         
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
-        knvars = List.fold(inOrigVars, BackendVariable.deleteVar,knvars);
-        knvars = List.fold(inOrigKnVars, BackendVariable.deleteVar,knvars);        
+        diffVarsTmp = BackendDAEUtil.varList(knvars);
+        
+        // remove all known input vars from Jacobian BackendDAE
+        // varsToRemove = listAppend(comref_seedVars,listAppend(inOrigVars, inOrigKnVars));
+        // knvars = List.fold(varsToRemove, BackendVariable.deleteVar, knvars); 
+        (_,knvarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, knvarsTmp, BackendVariable.varEqual);
+        knvars = BackendDAEUtil.listVar(knvarsTmp);
+        
+        // create SimVars from jacobian vars
         empty = BackendDAEUtil.emptyVars();
         ((columnVars,_)) =  BackendVariable.traverseBackendDAEVars(vars,traversingdlowvarToSimvar,({},empty));
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians BackendDAE created!\n");
-                
-        sparsepattern = BackendDAEOptimize.generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
-        Debug.fcall(Flags.EXEC_STAT,print, "*** sparse pattern for analytical Jacobian created!\n");
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.execStat("analytical Jacobians -> transformed to SimCode : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         
+        
+        // generate sparse pattern
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);        
+        (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.execStat("analytical Jacobians -> generated sparse pattern and colored : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+                
      then
-        (({(columnEquations,columnVars,s)},seedVars,inName));
+        (({(columnEquations,columnVars,s)},seedVars,inName,sparsepattern,colsColors));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createJacobianFunction failed"});
@@ -12383,7 +12389,7 @@ algorithm
     case ({}, files) then files;
     
     // handle rest  
-    case ((onemat,_,_)::rest, files)
+    case ((onemat,_,_,_,_)::rest, files)
       equation
         files = getFilesFromJacobianMatrix(onemat, files);
         files = getFilesFromJacobianMatrixes(rest, files);

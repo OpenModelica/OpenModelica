@@ -144,10 +144,16 @@ void function_sampleInit(DATA *data);
 void function_initMemoryState();
 
 /* function for calculation Jacobian */
+/*#ifdef D_OMC_JACOBIAN*/
+int initialAnalyticJacobianA(DATA* data);
+int initialAnalyticJacobianB(DATA* data);
+int initialAnalyticJacobianC(DATA* data);
+int initialAnalyticJacobianD(DATA* data);
 int functionJacA(DATA* data, double* jac);
 int functionJacB(DATA* data, double* jac);
 int functionJacC(DATA* data, double* jac);
 int functionJacD(DATA* data, double* jac);
+/*#endif*/
 
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
 

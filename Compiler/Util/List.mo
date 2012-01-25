@@ -122,6 +122,7 @@ replaceable type ArgType5 subtypeof Any;
 replaceable type ArgType6 subtypeof Any;
 replaceable type ArgType7 subtypeof Any;
 replaceable type ArgType8 subtypeof Any;
+replaceable type ArgType9 subtypeof Any;
 
 replaceable type FoldType subtypeof Any;
 
@@ -3234,6 +3235,87 @@ algorithm
   end match;
 end map8_tail;
 
+public function map9
+  "Takes a list, a function and eight extra arguments, and creates a new list
+   by applying the function to each element of the list."
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input ArgType4 inArg4;
+  input ArgType5 inArg5;
+  input ArgType6 inArg6;
+  input ArgType7 inArg7;
+  input ArgType8 inArg8;
+  input ArgType9 inArg9;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input ArgType4 inArg4;
+    input ArgType5 inArg5;
+    input ArgType6 inArg6;
+    input ArgType7 inArg7;
+    input ArgType8 inArg8;
+    input ArgType9 inArg9;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := listReverse(map9_tail(inList, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9, {}));
+end map9;
+
+protected function map9_tail
+  "Tail-recursive implementation of map8"
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input ArgType4 inArg4;
+  input ArgType5 inArg5;
+  input ArgType6 inArg6;
+  input ArgType7 inArg7;
+  input ArgType8 inArg8;
+  input ArgType9 inArg9;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input ArgType4 inArg4;
+    input ArgType5 inArg5;
+    input ArgType6 inArg6;
+    input ArgType7 inArg7;
+    input ArgType8 inArg8;
+    input ArgType9 inArg9;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := match(inList, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9, inAccumList)
+    local
+      ElementInType head;
+      ElementOutType new_head;
+      list<ElementInType> rest;
+      list<ElementOutType> accum;
+
+    case ({}, _, _, _, _, _, _, _, _, _, _, _) then inAccumList;
+
+    case (head :: rest, _, _, _, _, _, _, _, _, _, _, _)
+      equation
+        new_head = inFunc(head, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9);
+        accum = map9_tail(rest, inFunc, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, inArg7, inArg8, inArg9, new_head :: inAccumList);
+      then
+        accum;
+  end match;
+end map9_tail;
+
 public function mapFlat
   "Takes a list and a function that maps elements to lists, which are flattened
    into one list. Example (fill2(n) = {n, n}):
@@ -3665,6 +3747,23 @@ public function mapList0
 algorithm
   map1_0(inListList, map_0, inFunc);
 end mapList0;
+
+public function mapList1_0
+  "Takes a list of lists and a functions, and applying 
+  the function to all elements in  the list of lists.
+     Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1)"
+     
+  input list<list<ElementInType>> inListList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+  end MapFunc;
+algorithm
+  map2_0(inListList, map1_0, inFunc, inArg1);
+end mapList1_0;
 
 public function mapListReverse
   "Takes a list of lists and a functions, and creates a new list of lists by
@@ -6195,5 +6294,17 @@ algorithm
     case (_) then false;
   end match;
 end hasOneElement;
+
+public function lengthListElements
+  input list<list<Type_a>> inListList;
+  output Integer outLength;
+  replaceable type Type_a subtypeof Any;
+protected 
+  list<Type_a> flattenList;
+algorithm
+  flattenList := flatten(inListList);
+  outLength := listLength(flattenList);
+end lengthListElements;
+
 
 end List;

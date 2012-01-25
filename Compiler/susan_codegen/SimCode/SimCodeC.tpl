@@ -1498,7 +1498,7 @@ end generateMatrix;
 template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  "Generates Matrixes for Linear Model."
 ::=
-  let jacMats = (JacobianMatrixes |> (mat,vars,name) =>
+  let jacMats = (JacobianMatrixes |> (mat, vars, name, _, _) =>
     generateMatrix(mat,vars,name)
     ;separator="\n\n")
  <<

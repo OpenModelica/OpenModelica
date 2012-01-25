@@ -33,8 +33,8 @@
 #include "simulation_data.h"
 #include "simulation_runtime.h"
 #include "solver_main.h"
-#include "openmodelica_func.h"
 #include "openmodelica.h"
+#include "openmodelica_func.h"
 
 #include <string.h>
 
@@ -100,16 +100,15 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   ASSERT(dasslData->iwork,"out of memory");
   dasslData->jroot = NULL;
   dasslData->rpar = NULL;
-  dasslData->ipar = (fortran_integer*) calloc(noStatistics, sizeof(fortran_integer));
+  dasslData->ipar = (fortran_integer*) calloc(numStatistics, sizeof(fortran_integer));
   ASSERT(dasslData->ipar,"out of memory");
-  dasslData->ipar[0] = globalDebugFlags;
-  dasslData->ipar[1] = LOG_JAC;
-  dasslData->ipar[2] = LOG_ENDJAC;
+  dasslData->ipar[0] = DEBUG_FLAG(LOG_JAC);
+  dasslData->ipar[1] = DEBUG_FLAG(LOG_ENDJAC);
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
   ASSERT(dasslData->info,"out of memory");
-  dasslData->dasslStatistics = (unsigned int*) calloc(noStatistics, sizeof(unsigned int));
+  dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
   ASSERT(dasslData->dasslStatistics,"out of memory");
-  dasslData->dasslStatisticsTmp = (unsigned int*) calloc(noStatistics, sizeof(unsigned int));
+  dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
   ASSERT(dasslData->dasslStatisticsTmp,"out of memory");
 
   /*********************************************************************
@@ -122,8 +121,18 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
    *rwork[1] = *step;  //define max. stepsize
    *********************************************************************/
 
-  if (jac_flag || num_jac_flag)
+  if (num_jac_flag)
     dasslData->info[4] = 1; /* use sub-routine JAC */
+
+  if (jac_flag){
+    dasslData->info[4] = 1; /* use sub-routine JAC */
+    if (initialAnalyticJacobianA(simData)){
+      INFO("Jacobian not generated or failed to initialize!");
+      return 1;
+    }
+
+  }
+
 
   return 0;
 }
@@ -241,7 +250,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
        INFO1("DASSL call | total number of error test failures: %ld", dasslData->iwork[14]);
      }
     /* save dassl stats */
-    for (i = 0; i < noStatistics; i++)
+    for (i = 0; i < numStatistics; i++)
     {
       assert(10 + i < dasslData->liw);
       dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];

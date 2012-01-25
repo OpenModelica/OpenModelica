@@ -412,7 +412,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
 
 	  /* save dassl stats before reset */
 	  if (solverInfo.didEventStep == 1 && flag == 3) {
-		  for (i = 0; i < noStatistics; i++)
+		  for (i = 0; i < numStatistics; i++)
 		    ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[i] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[i];
 	  }
 
@@ -462,7 +462,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
   if (DEBUG_FLAG(LOG_STATS)) {
     int i;
     if (flag == 3){
-      for (i = 0; i < noStatistics; i++)
+      for (i = 0; i < numStatistics; i++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[i] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[i];
     }
     rt_accumulate(SIM_TIMER_TOTAL);
