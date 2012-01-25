@@ -1934,7 +1934,7 @@ case SES_NONLINEAR(__) then
     nls_xold[<%i0%>] = _<%namestr%>(1) /*old*/;
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, -1, (void*)data);
+  solve_nonlinear_system(residualFunc<%index%>, data->modelData.equationInfo[SIM_PROF_EQ_<%index%>], (void*)data);
   <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
   end_nonlinear_system();<%inlineCrefs(context,crefs)%>
   #ifdef _OMC_MEASURE_TIME
@@ -6646,7 +6646,7 @@ end literalExpConstArrayVal;
 template equationInfo(list<SimEqSystem> eqs)
 ::=
   match eqs
-  case {} then "const struct EQUATION_INFO equation_info[1] = {{0,NULL}};"
+  case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
   else
     let &preBuf = buffer ""
     let res =
@@ -6664,14 +6664,14 @@ template equationInfo(list<SimEqSystem> eqs)
             //let var = '<%cref(componentRef)%>__varInfo'
             //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%i0%> = &<%var%>;'
             '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
-          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>",0,NULL'
-          case SES_WHEN(__) then '"SES_WHEN <%i0%>",0,NULL'
-          case SES_LINEAR(__) then '"LINEAR<%index%>",0,NULL'
+          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>", 0, NULL'
+          case SES_WHEN(__) then '"SES_WHEN <%i0%>", 0, NULL'
+          case SES_LINEAR(__) then '"LINEAR<%index%>", 0, NULL'
           case SES_NONLINEAR(__) then
            let &preBuf += 'const VAR_INFO** residualFunc<%index%>_crefs = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
            let &preBuf += '<%crefs|>cr hasindex i0 => 'residualFunc<%index%>_crefs[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-            '"residualFunc<%index%>",<%listLength(crefs)%>, residualFunc<%index%>_crefs'
-          case SES_MIXED(__) then '"MIXED<%index%>",0,NULL'
+            '"residualFunc<%index%>", <%listLength(crefs)%>, residualFunc<%index%>_crefs'
+          case SES_MIXED(__) then '"MIXED<%index%>", 0, NULL'
           else '"unknown equation <%i0%>",0,NULL'%>}
         >> ; separator=",\n"%>
     };
@@ -6698,12 +6698,6 @@ template equationInfo(list<SimEqSystem> eqs)
       ; empty
       %>
     };
-    <% eqs |> eq hasindex i0 => match eq
-      case SES_MIXED(__)
-      case SES_LINEAR(__)
-      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
-    ; separator="\n"
-    %>
     >>
 end equationInfo;
 

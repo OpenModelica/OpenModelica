@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-void printErrorEqSyst(equationSystemError, struct EQUATION_INFO, double var);
+void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time);
 
 void printInfo(FILE *stream, FILE_INFO info);
 

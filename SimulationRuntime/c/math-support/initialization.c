@@ -159,15 +159,15 @@ static void computeInitialResidualScalingCoefficients(DATA *data, double nz, dou
   DEBUG_INFO1(LOG_INIT, "initial residuals scaling coefficients [lambda=%g]", lambda);
   for(j=0; j<data->modelData.nResiduals; ++j)
   {
-      if(initialResidualScalingCoefficients[j] < 1e-42)
-      {
-        initialResidualScalingCoefficients[j] = 1.0;
-        DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g [ineffective]", j, initialResidualScalingCoefficients[j]);
-      }
-      else
-      {
-        DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g", j, initialResidualScalingCoefficients[j]);
-      }
+    if(initialResidualScalingCoefficients[j] < 1e-42)
+    {
+      initialResidualScalingCoefficients[j] = 1.0;
+      DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g [ineffective]", j, initialResidualScalingCoefficients[j]);
+    }
+    else
+    {
+      DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g", j, initialResidualScalingCoefficients[j]);
+    }
   }
 
   free(tmpInitialResidual1);
@@ -498,7 +498,7 @@ static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zN
   {
     DEBUG_INFO1(LOG_INIT, "initialization-nr. %d", (int)l);
 
-    NelderMeadOptimization(nz, z, zNominal, initialResidualScalingCoefficients, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? 100 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
+    NelderMeadOptimization(nz, z, zNominal, initialResidualScalingCoefficients, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? 10000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
 
     storePreValues(data);                       /* save pre-values */
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
@@ -619,10 +619,7 @@ static INIT_DATA *initializeInitData(DATA *data)
     {
       initData->zNominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
       if(initData->zNominal[iz] == 0.0)
-      {
-        DEBUG_INFO1(LOG_INIT, "set nominal(%s) := 1.0", data->modelData.realVarsData[i].info.name);
         initData->zNominal[iz] = 1.0;
-      }
       initData->z[iz] = data->modelData.realVarsData[i].attribute.start;
       initData->zName[iz] = data->modelData.realVarsData[i].info.name;
       iz++;
@@ -635,10 +632,7 @@ static INIT_DATA *initializeInitData(DATA *data)
     {
       initData->zNominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
       if(initData->zNominal[iz] == 0.0)
-      {
-        DEBUG_INFO1(LOG_INIT, "set nominal(%s) := 1.0", data->modelData.realParameterData[i].info.name);
         initData->zNominal[iz] = 1.0;
-      }
       initData->z[iz] = data->modelData.realParameterData[i].attribute.start;
       initData->zName[iz] = data->modelData.realParameterData[i].info.name;
       iz++;
@@ -669,7 +663,13 @@ static int initialize(DATA *data, int optiMethod)
   /* no initial values to calculate. */
   if(initData == NULL)
   {
-    DEBUG_INFO(LOG_INIT, "no initial values to calculate");
+    DEBUG_INFO(LOG_INIT, "no variables to initialize");
+    return 0;
+  }
+
+  if(data->modelData.nInitEquations == 0)
+  {
+    DEBUG_INFO(LOG_INIT, "no initial equations");
     return 0;
   }
 
@@ -733,7 +733,7 @@ static int initialize(DATA *data, int optiMethod)
 
     freeInitData(initData);
     initData = initializeInitData(data);
-    /* no initial values to calculate. */
+    /* no initial values to calculate. (not possible to be here)*/
     if(initData == NULL)
     {
       DEBUG_INFO(LOG_INIT, "no initial values to calculate");

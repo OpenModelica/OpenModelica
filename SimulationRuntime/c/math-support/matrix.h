@@ -85,7 +85,7 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
   printf("}\n"); \
 } while(0)
 
-#define solve_nonlinear_system_mixed(residual,no, userdata) do { \
+#define solve_nonlinear_system_mixed(residual, no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
    int retries2 = 0; \
@@ -113,7 +113,7 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
         } else if (info >= 2 && info <= 5) { \
           int i = 0; \
           modelErrorCode=ERROR_NONLINSYS; \
-          DEBUG_INFO2(LOG_NONLIN_SYS,"error solving nonlinear system nr. %d at time %f",-1,data->localData[0]->timeValue); \
+          DEBUG_INFO2(LOG_NONLIN_SYS, "error solving nonlinear system nr. %d at time %f", no, data->localData[0]->timeValue); \
           if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
             for (i = 0; i < n; i++) { \
                DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
@@ -124,7 +124,7 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
       }\
 } while(0) /* (no trailing ;)*/
 
-#define solve_nonlinear_system(residual,no, userdata) do { \
+#define solve_nonlinear_system(residual, no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
    int retries2 = 0; \
@@ -134,18 +134,18 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
       if (info == 0) \
-          printErrorEqSyst(IMPROPER_INPUT,-1,data->localData[0]->timeValue); \
+          printErrorEqSyst(IMPROPER_INPUT, no, data->localData[0]->timeValue); \
       if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
         retries++;  giveUp = 0; \
         factor = factor / 10.0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS))  \
-          printErrorEqSyst(NO_PROGRESS_FACTOR,-1,factor); \
+          printErrorEqSyst(NO_PROGRESS_FACTOR, no, factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++;  giveUp=0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
-          printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
+          printErrorEqSyst(NO_PROGRESS_START_POINT, no, 1e-6); \
       } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
         retries = 0; retries2++; giveUp = 0; \
         int i = 0; \
@@ -153,7 +153,7 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
       } else if (info >= 2 && info <= 5) { \
         int i = 0; \
         modelErrorCode=ERROR_NONLINSYS; \
-        printErrorEqSyst(ERROR_AT_TIME,-1,data->localData[0]->timeValue); \
+        printErrorEqSyst(ERROR_AT_TIME, no, data->localData[0]->timeValue); \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
           for (i = 0; i < n; i++) { \
              DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
@@ -173,23 +173,23 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
           nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
       if (info == 0) { \
-          printErrorEqSyst(IMPROPER_INPUT,-1,data->localData[0]->timeValue); \
+          printErrorEqSyst(IMPROPER_INPUT, no, data->localData[0]->timeValue); \
       } \
       if ((info == 4 || info == 5) && retries < 3) { /* First try to decrease factor*/ \
         retries++; giveUp = 0; \
         factor = factor / 10.0; \
            if (sim_verbose)  \
-          printErrorEqSyst(NO_PROGRESS_FACTOR,-1,factor); \
+          printErrorEqSyst(NO_PROGRESS_FACTOR, no, factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++; giveUp=0; \
         if (sim_verbose) \
-            printErrorEqSyst(NO_PROGRESS_START_POINT,-1,1e-6); \
+            printErrorEqSyst(NO_PROGRESS_START_POINT, no, 1e-6); \
         } \
         else if (info >= 2 && info <= 5) { \
           modelErrorCode=ERROR_NONLINSYS; \
-          printErrorEqSyst(-1,data->localData[0]->timeValue); \
+          printErrorEqSyst(no, data->localData[0]->timeValue); \
         } \
      }\
 } while(0) /* (no trailing ;)*/
