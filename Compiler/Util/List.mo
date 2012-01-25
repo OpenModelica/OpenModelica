@@ -4135,6 +4135,69 @@ algorithm
   end match;
 end map1Fold_tail;
 
+public function map2Fold
+  "Takes a list, an extra argument, two extra constant arguments, and a function.
+  The function will be applied to each element in the list, and the extra
+  argument will be passed to the function and updated."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input FoldType inArg;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := map2Fold_tail(inList, inFunc, inConstArg, inConstArg2, inArg, {});
+end map2Fold;
+
+protected function map2Fold_tail
+  "Tail recursive implementation of map1Fold."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input FoldType inArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := match(inList, inFunc, inConstArg, inConstArg2, inArg, inAccumList)
+    local
+      ElementInType e1;
+      list<ElementInType> rest_e1;
+      ElementOutType res;
+      list<ElementOutType> rest_res, acc;
+      FoldType arg;
+      
+    case ({}, _, _, _, _, _) then (listReverse(inAccumList), inArg);
+    case (e1 :: rest_e1, _, _, _, _, _)
+      equation
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map2Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, arg, acc);
+      then
+        (rest_res, arg);
+  end match;
+end map2Fold_tail;
+
 public function mapFoldTuple
   "Takes a list, an extra argument and a function. The function will be applied
   to each element in the list, and the extra argument will be passed to the

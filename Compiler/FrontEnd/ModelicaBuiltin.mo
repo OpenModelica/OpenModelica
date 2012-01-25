@@ -1463,6 +1463,7 @@ end checkModel;
 
 function checkAllModelsRecursive
   input TypeName className;
+  input Boolean checkProtected := false "Checks also protected classes if true";
   output String result;
 external "builtin";
 annotation(preferredView="text");
@@ -1723,6 +1724,7 @@ function getClassNames
   input Boolean qualified := false;
   input Boolean sort := false;
   input Boolean builtin := false "List also builtin classes if true";
+  input Boolean showProtected := false "List also protected classes if true";
   output TypeName classNames[:]; 
 external "builtin";
 annotation(preferredView="text");

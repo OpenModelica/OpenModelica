@@ -764,7 +764,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
       Interactive.Statements istmts;
-      Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin;
+      Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -840,7 +840,7 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         paths = Interactive.getTopClassnames(p);
@@ -849,30 +849,30 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
-        paths = Interactive.getClassnamesInPath(path, p);
+        paths = Interactive.getClassnamesInPath(path, p, showProtected);
         paths = Debug.bcallret3(b,List.map1r,paths,Absyn.joinPaths,path,paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
-        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,{});
+        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
-        (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,{});
+        (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,{});
         paths = listReverse(paths);
         paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -1069,9 +1069,9 @@ algorithm
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
+    case (cache,env,"checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)},st,msg)
       equation
-        (cache,ret_val,st_1) = checkAllModelsRecursive(cache, env, className, st, msg);
+        (cache,ret_val,st_1) = checkAllModelsRecursive(cache, env, className, showProtected, st, msg);
       then
         (cache,ret_val,st_1);
     
@@ -1923,12 +1923,20 @@ algorithm
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
         // create absolute path of simulation result file
-        str1 = System.pwd() +& pd +& filename;
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        str = System.pwd() +& pd +& filename;
+        filename = Util.if_(System.regularFileExists(str), str, filename);
         (visvars,visvar_str) = Interactive.getElementsOfVisType(className, p);
         // write the visualizing objects to the file
-        str2 = System.pwd() +& pd +& Absyn.pathString(className) +& ".visualize";
-        System.writeFile(str2, visvar_str);
+        str1 = System.pwd() +& pd +& Absyn.pathString(className) +& ".visualize";
+        System.writeFile(str1, visvar_str);
+        s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
+        // create the path till OMVisualize
+        str2 = stringAppendList({omhome,pd,"bin",pd,"OMVisualize",s1});
+        // create the list of arguments for OMVisualize
+        str3 = "--visualizationfile=\"" +& str1 +& "\" --simulationfile=\"" +& filename +& "\"";
+        call = str2 +& " " +& str3;
+        
+        0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
         
@@ -3610,41 +3618,43 @@ protected function getClassnamesInClassList
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Class inClass;
+  input Boolean inShowProtected;
   output list<String> outStrings;
 algorithm
   outStrings :=
-  match (inPath,inProgram,inClass)
+  match (inPath,inProgram,inClass,inShowProtected)
     local
       list<String> strlist;
       list<Absyn.ClassPart> parts;
       Absyn.Path inmodel,path;
       Absyn.Program p;
       String  baseClassName;
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+      Boolean b;
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts);
+        strlist = Interactive.getClassnamesInParts(parts,b);
       then
         strlist;
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))),b)
       equation
       then
         {};
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)),b)
       equation
       then {};
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)),b)
       equation
       then {};
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts)),b)
       equation
-        strlist = Interactive.getClassnamesInParts(parts);
+        strlist = Interactive.getClassnamesInParts(parts,b);
       then strlist;
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_,_)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_,_)),b)
       equation
       then {};
 
@@ -3671,26 +3681,28 @@ protected function getAllClassPathsRecursive
 "@author adrpo
  Returns all paths of the classes recursively defined in a given class with the specified path."
   input Absyn.Path inPath "the given class path";
+  input Boolean inCheckProtected;
   input Absyn.Program inProgram "the program";
   output list<Absyn.Path> outPaths;
 algorithm
   outPaths :=
-  matchcontinue (inPath,inProgram)
+  matchcontinue (inPath,inCheckProtected,inProgram)
     local
       Absyn.Class cdef;
       String parent_string, s;
       list<String> strlst;
       Absyn.Program p;
       list<Absyn.Path> result_path_lst, result;
-    case (inPath, p)
+      Boolean b;
+    case (inPath, b, p)
       equation
         cdef = Interactive.getPathedClassInProgram(inPath, p);
-        strlst = getClassnamesInClassList(inPath, p, cdef);
+        strlst = getClassnamesInClassList(inPath, p, cdef, b);
         result_path_lst = List.map1(strlst, joinPaths, inPath);
-        result = List.flatten(List.map1(result_path_lst, getAllClassPathsRecursive, p));
+        result = List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
       then
         inPath::result;
-    case (inPath, _)
+    case (inPath, b, _)
       equation
         parent_string = Absyn.pathString(inPath);
         s = Error.printMessagesStr();
@@ -3724,6 +3736,7 @@ public function checkAllModelsRecursive
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className;
+  input Boolean inCheckProtected;
   input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -3731,7 +3744,7 @@ public function checkAllModelsRecursive
   output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
+  matchcontinue (inCache,inEnv,className,inCheckProtected,inInteractiveSymbolTable,inMsg)
     local
       list<Absyn.Path> allClassPaths;
       list<SCode.Element> sp;
@@ -3744,10 +3757,11 @@ algorithm
       Env.Cache cache;
       String ret;
       list<Env.Frame> env;
+      Boolean b;
     
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,className,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
-        allClassPaths = getAllClassPathsRecursive(className, p);
+        allClassPaths = getAllClassPathsRecursive(className, b, p);
         // allClassPaths = List.select(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
@@ -3757,7 +3771,7 @@ algorithm
       then
         (cache,Values.STRING(ret),st);
     
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,className,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ret = stringAppend("Error checking: ", Absyn.pathString(className));
     then

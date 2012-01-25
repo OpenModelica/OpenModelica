@@ -12370,19 +12370,21 @@ public function getClassnamesInPath
   Return a comma separated list of classes in a given Path."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Boolean inShowProtected;
   output list<Absyn.Path> paths;
 algorithm
   paths :=
-  matchcontinue (inPath,inProgram)
+  matchcontinue (inPath,inProgram,inShowProtected)
     local
       Absyn.Class cdef;
       String str,res;
       Absyn.Path modelpath;
       Absyn.Program p;
-    case (modelpath,p)
+      Boolean b;
+    case (modelpath,p,b)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-      then getClassnamesInClass(modelpath, p, cdef);
+      then getClassnamesInClass(modelpath, p, cdef, b);
     else {};
   end matchcontinue;
 end getClassnamesInPath;
@@ -12462,31 +12464,34 @@ protected function getClassnamesInClass
    This function takes a `Class\' definition and a Path identifying the
    class.
    It returns a string containing comma separated package names found
-   in the class definition."
+   in the class definition.
+   The list also contains proctected classes if inShowProtected is true."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Class inClass;
+  input Boolean inShowProtected;
   output list<Absyn.Path> paths;
 algorithm
-  paths := match (inPath,inProgram,inClass)
+  paths := match (inPath,inProgram,inClass,inShowProtected)
     local
       list<String> strlist;
       String res;
       list<Absyn.ClassPart> parts;
       Absyn.Path inmodel,path;
       Absyn.Program p;
+      Boolean b;
     /* a class with parts */
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
       equation
-        strlist = getClassnamesInParts(parts);
+        strlist = getClassnamesInParts(parts,b);
       then List.map(strlist,Absyn.makeIdentPathFromString);
     /* an extended class with parts: model extends M end M; */
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),b)
       equation
-        strlist = getClassnamesInParts(parts);
+        strlist = getClassnamesInParts(parts,b);
       then List.map(strlist,Absyn.makeIdentPathFromString);
     /* a derived class */
-    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path, _))))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path, _))),b)
       equation
         /* adrpo 2009-10-27: we sholdn't dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, inmodel, p);
@@ -12500,25 +12505,35 @@ public function getClassnamesInParts
 "function: getClassnamesInParts
   Helper function to getClassnamesInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Boolean inShowProtected;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inAbsynClassPartLst)
+  matchcontinue (inAbsynClassPartLst,inShowProtected)
     local
       list<String> l1,l2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> rest;
-    case {} then {};
-    case ((Absyn.PUBLIC(contents = elts) :: rest))
+      Boolean b;
+    case ({},b) then {};
+    case ((Absyn.PUBLIC(contents = elts) :: rest),b)
       equation
         l1 = getClassnamesInElts(elts);
-        l2 = getClassnamesInParts(rest);
+        l2 = getClassnamesInParts(rest,b);
         res = listAppend(l1, l2);
       then
         res;
-    case ((_ :: rest))
+    /* adeas31 2012-01-25: Also check the protected sections. */
+    case ((Absyn.PROTECTED(contents = elts) :: rest), true)
       equation
-        res = getClassnamesInParts(rest);
+        l1 = getClassnamesInElts(elts);
+        l2 = getClassnamesInParts(rest,true);
+        res = listAppend(l1, l2);
+      then
+        res;
+    case ((_ :: rest),b)
+      equation
+        res = getClassnamesInParts(rest,b);
       then
         res;
   end matchcontinue;
@@ -16198,7 +16213,8 @@ algorithm
     case ((c1 as Absyn.CLASS(name = name)),w,p)
       equation
         s1 = Dump.unparseWithin(0, w);
-        (_,paths) = getClassNamesRecursive(NONE(), p, {});
+        /* adeas31 2012-01-25: false indicates that the classnamesrecursive doesn't look into protected sections */
+        (_,paths) = getClassNamesRecursive(NONE(), p, false, {});
         s2 = stringAppendList(List.map1r(List.map(paths,Absyn.pathString),stringAppend,"\n  "));
         Error.addMessage(Error.INSERT_CLASS, {name,s1,s2});
       then
@@ -17206,12 +17222,11 @@ algorithm
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> nargs;
       Absyn.Exp e;
-      list<Absyn.Exp> argsList;
     
     /* Covers the case annotate=Diagram(1) */
-    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = argsList, argNames = {})))
+    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {e}, argNames = {})))
       equation
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(argsList),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(x=1,y=2) */
@@ -19236,37 +19251,39 @@ protected function getClassnamesInClassList
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Class inClass;
+  input Boolean inShowProtected;
   output list<String> outString;
 algorithm
   outString:=
-  match (inPath,inProgram,inClass)
+  match (inPath,inProgram,inClass,inShowProtected)
     local
       list<String> strlist;
       list<Absyn.ClassPart> parts;
       Absyn.Path inmodel,path;
       Absyn.Program p;
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+      Boolean b;
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
       equation
-        strlist = getClassnamesInParts(parts);
+        strlist = getClassnamesInParts(parts,b);
       then
         strlist;
-    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),b)
       equation
-        strlist = getClassnamesInParts(parts);
+        strlist = getClassnamesInParts(parts,b);
       then strlist;
-    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))),b)
       equation
         //(cdef,newpath) = lookupClassdef(path, inmodel, p);
         //res = getClassnamesInClassList(newpath, p, cdef);
       then
         {};//res;
-    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(functionNames = _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(functionNames = _)),b)
       equation
       then {};
-    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = _)),b)
       equation
       then {};
-    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(functionName = _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(functionName = _)),b)
       equation
       then {};
   end match;
@@ -19293,11 +19310,12 @@ public function getClassNamesRecursive
   Returns a string with all the classes for a given path."
   input Option<Absyn.Path> inPath;
   input Absyn.Program inProgram;
+  input Boolean inShowProtected;
   input list<Absyn.Path> inAcc;
   output Option<Absyn.Path> opath;
   output list<Absyn.Path> paths;
 algorithm
-  (opath,paths) := matchcontinue (inPath,inProgram,inAcc)
+  (opath,paths) := matchcontinue (inPath,inProgram,inShowProtected,inAcc)
     local
       Absyn.Class cdef;
       String s1,res, parent_string, result;
@@ -19307,22 +19325,23 @@ algorithm
       list<Absyn.Class> classes;
       list<Option<Absyn.Path>> result_path_lst;
       list<Absyn.Path> acc;
+      Boolean b;
       
-    case (SOME(pp),p,acc)
+    case (SOME(pp),p,b,acc)
       equation
         acc = pp::acc;
         cdef = getPathedClassInProgram(pp, p);
-        strlst = getClassnamesInClassList(pp, p, cdef);
+        strlst = getClassnamesInClassList(pp, p, cdef,b);
         result_path_lst = List.map(List.map1(strlst, joinPaths, pp),Util.makeOption);
-        (_,acc) = List.map1Fold(result_path_lst, getClassNamesRecursive, p, acc);
+        (_,acc) = List.map2Fold(result_path_lst, getClassNamesRecursive, p, b, acc);
       then (inPath,acc);
-    case (NONE(),p as Absyn.PROGRAM(classes=classes),acc)
+    case (NONE(),p as Absyn.PROGRAM(classes=classes),b,acc)
       equation
         strlst = List.map(classes, Absyn.getClassName);
         result_path_lst = List.mapMap(strlst, Absyn.makeIdentPathFromString, Util.makeOption);
-        (_,acc) = List.map1Fold(result_path_lst, getClassNamesRecursive, p, acc);
+        (_,acc) = List.map2Fold(result_path_lst, getClassNamesRecursive, p, b, acc);
       then (inPath,acc);
-    case (SOME(pp),_,_)
+    case (SOME(pp),_,b,_)
       equation
         s1 = Absyn.pathString(pp);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,"<TOP>"});
