@@ -509,28 +509,11 @@ algorithm
 
     case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_) /* Binary and unary operations */
       equation
-        (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
-        (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        c = Types.constAnd(c1, c2);
-
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
-        exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
-        (exp_1,_) = ExpressionSimplify.simplify(exp_1);
-        prop = DAE.PROP(rtype,c);
+        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
+        (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
+        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
       then
         (cache,exp_1,prop,st_2);
-    
-    
-    //overloaded binary operator. 
-    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_) /* Binary and unary operations */
-      equation
-        //Dont deoverload if it is not a record.
-        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
-        true = propEitherRecord(prop1,prop2);
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
-      then
-        (cache,exp_1,prop,st_1);
 
     case (cache,env,(e as Absyn.UNARY(op = Absyn.UPLUS(),exp = e1)),impl,st,doVect,pre,info,_)
       equation
@@ -542,79 +525,34 @@ algorithm
         
     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
-        (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
-        exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
-        prop = DAE.PROP(rtype,c);
-      then
-        (cache,exp_1,prop,st_1);
-    
-     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,numError)
-      equation
-        (_,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_),_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);  
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
-      then
-        (cache,exp_1,prop,st_1);
-    
-    
-    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
-      equation
-        (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Logical binary expressions" ;
-        (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        c = Types.constAnd(c1, c2);
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
-        exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
-        prop = DAE.PROP(rtype,c);
-      then
-        (cache,exp_1,prop,st_2);
-    
-    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
-      equation
-        //Dont deoverload if it is not a record.
-        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
-        true = propEitherRecord(prop1,prop2);
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
+        (cache,e_1,prop1,st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        (cache,exp_1,prop) = operatorDeoverloadUnary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
       then
         (cache,exp_1,prop,st_1);
         
+    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_) "Logical binary expressions" 
+      equation
+        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
+        (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
+        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
+      then
+        (cache,exp_1,prop,st_2);
+        
     case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
-        (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info) "Logical unary expressions" ;
-        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
-        exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
-        prop = DAE.PROP(rtype,c);
+        (cache,e_1,prop1,st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        (cache,exp_1,prop) = operatorDeoverloadUnary(cache,env,op,prop1,e_1,e,e1,impl,st_1,pre,info);
       then
         (cache,exp_1,prop,st_1);
     
-    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
-      equation
-        (_,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,_),_),_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);  
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
-      then
-        (cache,exp_1,prop,st_1);
         
     case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
       equation
-        (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Relations, e.g. a < b" ;
-        (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
-        c = Types.constAnd(c1, c2);
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
-        exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()), c);
-        prop = DAE.PROP(rtype,c);
-        warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
+        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
+        (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
+        (cache,exp_1,prop) = operatorDeoverloadBinary(cache,env,op,prop1,e1_1,prop2,e2_1,e,e1,e2,impl,st_2,pre,info);
       then
         (cache,exp_1,prop,st_2);
-    
-    case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
-      equation
-        //Dont deoverload if it is not a record.
-        (_,_,prop1,_) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (_,_,prop2,_) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
-        true = propEitherRecord(prop1,prop2);
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverload(cache,env,e,impl,st,doVect,pre,info);   
-      then
-        (cache,exp_1,prop,st_1);
     
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre,info,_) /* Conditional expressions */
       equation
@@ -658,7 +596,7 @@ algorithm
     //However elab call prints error messags if it can not elaborate it even though the function might be overloaded. 
     case (cache,env, e as Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadUnary(cache,env,e,impl,st,doVect,pre,info); 
+        (cache,exp_1,prop,st_1) = userDefOperatorDeoverloadString(cache,env,e,impl,st,doVect,pre,info); 
       then
         (cache,exp_1,prop,st_1);
 	
@@ -1678,21 +1616,49 @@ end constructArrayType;
 protected function replaceOperatorWithFcall "function: replaceOperatorWithFcall
   Replaces a userdefined operator expression with a corresponding function
   call expression. Other expressions just passes through."
-  input DAE.Exp inExp;
+  input Absyn.Exp AbExp;
+  input DAE.Exp inExp1;
+  input DAE.Operator inOper;
+  input Option<DAE.Exp> inExp2;
   input DAE.Const inConst;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp,inConst)
+  outExp := matchcontinue (AbExp,inExp1,inOper,inExp2,inConst)
     local
       DAE.Exp e1,e2,e;
       Absyn.Path funcname;
       DAE.Const c;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-    case (DAE.UNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-    case (DAE.LBINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-    case (DAE.LUNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-    case (DAE.RELATION(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
-    case (e,_) then e;
+      
+    case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), c) 
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      
+    case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _) 
+      then DAE.BINARY(e1, inOper, e2);
+        
+    case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), c) 
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      
+    case (Absyn.UNARY(_, _), e1, _, NONE(), _) 
+        then DAE.UNARY(inOper,e1);
+          
+    case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), c)
+       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+         
+    case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _) 
+      then DAE.LBINARY(e1, inOper, e2);
+    
+    case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),c) 
+      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        
+    case (Absyn.LUNARY(_, _), e1, _, NONE(), _) 
+        then DAE.LUNARY(inOper,e1);
+        
+    case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),c) 
+      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+    
+    case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _) 
+      then DAE.RELATION(e1, inOper, e2, -1, NONE());
+      
   end matchcontinue;
 end replaceOperatorWithFcall;
 
@@ -1816,12 +1782,11 @@ algorithm
     // Binary and unary operations
     case (cache,env,(exp as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,pre,info) 
       equation
-        (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info);
-        (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        c = Types.constAnd(c1, c2);
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
+        (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
+        (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
+        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
-        (cache,DAE.BINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
+        (cache, dexp, prop);
     case (cache,env,(e as Absyn.UNARY(op = Absyn.UPLUS(),exp = e1)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
@@ -1831,38 +1796,36 @@ algorithm
         (cache,e_1,prop);
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,exp,pre,info);
+        (cache,e_1,prop1) = elabGraphicsExp(cache,env, e, impl,pre,info);
+        (cache, dexp, prop) = operatorDeoverloadUnary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
       then
-        (cache,DAE.UNARY(op_1,e_2),DAE.PROP(rtype,c));
+        (cache, dexp, prop);
     
     // Logical binary expressions
     case (cache,env,(exp as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
       equation
-        (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info);
-        (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        c = Types.constAnd(c1, c2);
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
+        (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
+        (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
+        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
-        (cache,DAE.LBINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
+        (cache, dexp, prop);
     
     // Logical unary expressions
     case (cache,env,(exp as Absyn.LUNARY(op = op,exp = e)),impl,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
+        (cache,e_1,prop1) = elabGraphicsExp(cache,env, e, impl,pre,info);
+        (cache, dexp, prop) = operatorDeoverloadUnary(cache,env, op, prop1, e_1, exp, e, impl, NONE(), pre, info);
       then
-        (cache,DAE.LUNARY(op_1,e_2),DAE.PROP(rtype,c));
+        (cache, dexp, prop);
     
     // Relation expressions 
     case (cache,env,(exp as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
       equation
-        (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info);
-        (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
-        c = Types.constAnd(c1, c2);
-        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
+        (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
+        (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
+        (cache, dexp, prop) = operatorDeoverloadBinary(cache, env, op, prop1, e1_1, prop2, e2_1, exp, e1, e2, impl, NONE(), pre, info);
       then
-        (cache,DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()),DAE.PROP(rtype,c));
+        (cache, dexp, prop);
     
     // Conditional expressions
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,pre,info) 
@@ -12217,20 +12180,16 @@ protected function deoverload "function: deoverload
   is returned.
   
   The basic principle is that the first operator that matches is chosen.
-  
-  The third argument to the function is the expression containing
-  the operation to be deoverloaded.  It is only used for error
-  messages."
+  ."
   input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
-  input Absyn.Exp inExp;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
 algorithm
-  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp,inPrefix,info)
+  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inPrefix,info)
     local
       list<DAE.Exp> args_1,exps;
       list<DAE.Type> types_1,params,tps;
@@ -12238,13 +12197,12 @@ algorithm
       DAE.Operator op;
       list<tuple<DAE.Exp, DAE.Type>> args;
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> xs;
-      Absyn.Exp exp;
       Ident s,estr,tpsstr,pre_str;
       list<Ident> exps_str,tps_str;
       Prefix.Prefix pre;
       DAE.Type ty;
 
-    case (((op,params,rtype) :: _),args,_,pre,info)
+    case (((op,params,rtype) :: _),args,pre,info)
       equation
         //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
         //Debug.fprint(Flags.DOVL, "\n===\n");
@@ -12255,9 +12213,9 @@ algorithm
       then
         (op,args_1,rtype_1);
     
-    case ((_ :: xs),args,exp,pre,info)
+    case ((_ :: xs),args,pre,info)
       equation
-        (op,args_1,rtype) = deoverload(xs, args, exp,pre,info);
+        (op,args_1,rtype) = deoverload(xs, args,pre,info);
       then
         (op,args_1,rtype);
         
@@ -12728,381 +12686,332 @@ algorithm
         
 end propEitherRecord;
 
-protected function userDefOperatorDeoverload
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp inExp;
-  input Boolean inImplicit;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-  
-algorithm
-  
-  (outCache,expProps,outInteractiveInteractiveSymbolTableOption) :=
-  match (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
-    local
-      Boolean impl,doVect;
-      String str1;
-      Absyn.Path path;
-      list<Absyn.Path> operNames;
-      Env.Env operatorEnv,env;
-      SCode.Element operatorCl;
-      Env.Cache cache,cache2;
-      list<DAE.Type> types;
-      Option<Interactive.SymbolTable> st,st_1;
-      DAE.Exp exp_1;
-      DAE.Properties prop;
-      Absyn.Exp e,e1,e2;
-      Absyn.Operator op;
-      Prefix.Prefix pre;
-  
-    case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
-      equation       
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadUnary(cache,env,e,impl,st,doVect,pre,info);       
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-      
-    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
-      equation      
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadUnary(cache,env,e,impl,st,doVect,pre,info);       
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-       
-    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
-      equation
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);    
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-        
-    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
-      equation        
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);     
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-        
-    case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
-      equation        
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadBinary(cache,env,e1,op,e2,impl,st,doVect,pre,info);     
-      then
-        (cache,SOME((exp_1,prop)),st_1);  
-        
-    case (cache,env,e as Absyn.CALL(_,_),impl,st,doVect,pre,info) 
-      equation       
-        (_,SOME((exp_1,prop)),st_1) = userDefOperatorDeoverloadUnary(cache,env,e,impl,st,doVect,pre,info);       
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-        
-  end match;     
-  
-end userDefOperatorDeoverload;
-
-
-protected function userDefOperatorDeoverloadUnary
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp inExp;
-  input Boolean inImplicit;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-  
-algorithm
-  
-  (outCache,expProps,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
-    local
-      Boolean impl,doVect;
-      String str1;
-      Absyn.Path path;
-      list<Absyn.Path> operNames;
-      Env.Env operatorEnv,env;
-      SCode.Element operatorCl;
-      Env.Cache cache,cache2;
-      list<DAE.Type> types;
-      Option<Interactive.SymbolTable> st,st_1;
-      DAE.Exp exp_1;
-      list<Absyn.Exp> restargs;
-      list<Absyn.NamedArg> nargs;
-      DAE.Properties prop;
-      Absyn.Exp e,e1,e2;
-      Absyn.Operator op;
-      Prefix.Prefix pre;
-  
-    case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
-      equation
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types as _::_) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-               
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1},{},impl,st_1,pre,info);       
-
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-        
-    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
-      equation
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types as _::_) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-               
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1},{},impl,st_1,pre,info);       
-
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-     
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = e1::restargs,argNames = nargs)),impl,st,doVect,pre,info) 
-      equation       
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'String'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-        
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types as _::_) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-        
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,e1::restargs,nargs,impl,st_1,pre,info);  
-
-        (exp_1,_) = ExpressionSimplify.simplify1(exp_1);      
-      then
-        (cache,SOME((exp_1,prop)),st_1);   
-        
-        
-        
-   end matchcontinue;     
-  
-end userDefOperatorDeoverloadUnary;
-
 
 protected function userDefOperatorDeoverloadBinary
+"used to resolve overloaded binary operators for operator records
+It looks if there is an operator function defined for the specific
+operation. If there is then it will call that function and returns the 
+resulting expression. "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Absyn.Exp inExp1;
   input Absyn.Operator inOper;
+  input Absyn.Exp inExp1;
   input Absyn.Exp inExp2;
-  input Boolean inImplicit;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input DAE.Properties inProp1;
+  input DAE.Properties inProp2;
+  input Boolean inImpl;
+  input Option<Interactive.SymbolTable> inSyTabOpt;
+  input Prefix.Prefix inPre;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
-  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
   
 algorithm
   
-  (outCache,expProps,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExp1,inOper,inExp2,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  (outCache,outExp,outProp) :=
+  matchcontinue (inCache, inEnv, inOper,inExp1,inExp2,inProp1,inProp2,inImpl,inSyTabOpt,inPre,inInfo)
     local
-      Boolean impl,doVect;
+      Boolean impl;
       String str1;
       Absyn.Path path,path2;
       list<Absyn.Path> operNames;
       Env.Env operatorEnv,env;
       SCode.Element operatorCl;
-      Env.Cache cache,cache2;
+      Env.Cache cache;
       list<DAE.Type> types;
-      Option<Interactive.SymbolTable> st,st_1;
-      DAE.Exp exp_1;
-      DAE.Properties prop;
-      Absyn.Exp e,e1,e2;
+      DAE.Properties prop, prop_oth;
+      Absyn.Exp exp,exp1,exp2;
       Absyn.Operator op;
-      Prefix.Prefix pre;
       DAE.Dimensions dims;
       Absyn.ComponentRef comRef;
+      DAE.Exp  daeExp;
   
-    //Arrays of Complex types. Expand.
-    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
-      equation
-        (cache,_,DAE.PROP(DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),dims,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-               
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-  
-      // Try left side first == L + R -> L.'+'(L,R)
-    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
-      equation
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-               
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-    
-    //Try constructing the right side(implicit) and then evaluate == L + r -> L.'+'(L,L(r))
-    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
-      equation
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        
-        str1 = "'constructor'";
-        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
-        
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-        
-        (cache2,SOME((exp_1 as DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache2,env,types,path2,{e2},{},impl,st_1,pre,info);     
-        
-        comRef = Absyn.pathToCref(path2);
-        e2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({e2}, {}));
-        
-        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
-        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
-        true = SCode.isOperator(operatorCl);
-        
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
-               
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path2,{e1,e2},{},impl,st_1,pre,info);     
-      then
-        (cache,SOME((exp_1,prop)),st_1);
-        
-    //left side did not resolve. Try right side == L + R -> R.'+'(L,R)
-    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+      // Try left side first == L + R -> L.'+'(L,R)  
+    case (cache, env, op, exp1, exp2, DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_), prop_oth, _, _, _, _)
       equation
                 
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
-        
-        
         str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
     
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
                
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path,{e1,e2},{},impl,st_1,pre,info);     
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path,{exp1,exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
       then
-        (cache,SOME((exp_1,prop)),st_1); 
-        
-    //Try constructing the right side(implicit) and then evaluate == l + R -> R.'+'(R(l),R)
-    case (cache,env,e1,op,e2,impl,st,doVect,pre,info)
+        (cache,daeExp,prop);
+    
+    //Try constructing the right side(implicit) and then evaluate == L + r -> L.'+'(L,L(r))
+    case (cache, env, op, exp1, exp2, DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_), prop_oth, _, _, _, _)
       equation
-        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,e2,impl,st,doVect,pre,info);
-        
+                
         str1 = "'constructor'";
         path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
         
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
         
-        (cache2,SOME((exp_1 as DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache2,env,types,path2,{e1},{},impl,st_1,pre,info);     
+        (cache,SOME((DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache,env,types,path2,{exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
         
         comRef = Absyn.pathToCref(path2);
-        e1 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({e1}, {}));
+        exp2 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({exp2}, {}));
         
         str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
         path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
     
-        (cache2,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
-        (cache2,types) = Lookup.lookupFunctionsListInEnv(cache2, operatorEnv, operNames, info, {});
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
                
-        (cache2,SOME((exp_1,prop))) = elabCallArgs3(cache2,env,types,path2,{e1,e2},{},impl,st_1,pre,info);     
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path2,{exp1,exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
       then
-        (cache,SOME((exp_1,prop)),st_1);
+        (cache,daeExp,prop);
         
+      
+       //left side did not resolve. Try right side == L + R -> R.'+'(L,R)
+    case (cache, env, op, exp1, exp2, prop_oth, DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_), _, _, _, _)
+      equation
+                
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+               
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path,{exp1,exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
+      then
+        (cache,daeExp,prop);
+        
+    case (cache, env, op, exp1, exp2, prop_oth, DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_), _, _, _, _)
+      equation
+                
+        str1 = "'constructor'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+        
+        (cache,SOME((DAE.CALL(path2,_,_),prop))) = elabCallArgs3(cache,env,types,path2,{exp1},{},inImpl,inSyTabOpt,inPre,inInfo);     
+        
+        comRef = Absyn.pathToCref(path2);
+        exp1 = Absyn.CALL(comRef, Absyn.FUNCTIONARGS({exp1}, {}));
+        
+        str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
+        path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
+    
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+               
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path2,{exp1,exp2},{},inImpl,inSyTabOpt,inPre,inInfo);     
+      then
+        (cache,daeExp,prop);
+          
   end matchcontinue;        
   
 end userDefOperatorDeoverloadBinary;
 
-
+protected function userDefOperatorDeoverloadString
+"This functions checks if the builtin function string is overloaded for opertor records"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp1;
+  input Boolean inImpl;
+  input Option<Interactive.SymbolTable> inSyTabOpt;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPre;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
+  output Option<Interactive.SymbolTable> outSyTabOpt;
+  
+algorithm
+  
+  (outCache,outExp,outProp,outSyTabOpt) :=
+  matchcontinue (inCache, inEnv,inExp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo)
+    local
+      Boolean impl;
+      String str1;
+      Absyn.Path path;
+      Option<Interactive.SymbolTable> st_1;
+      list<Absyn.Path> operNames;
+      Env.Env operatorEnv,env;
+      SCode.Element operatorCl;
+      Env.Cache cache;
+      list<DAE.Type> types;
+      DAE.Properties prop;
+      Absyn.Exp exp1;
+      DAE.Exp  daeExp;
+      list<Absyn.Exp> restargs;
+      list<Absyn.NamedArg> nargs;
+        
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = exp1::restargs,argNames = nargs)),_,_,_,_,_) 
+      equation       
+        (cache,_,DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_),st_1) = elabExp(cache,env,exp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo);
+        
+        str1 = "'String'";
+        path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+        
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        true = SCode.isOperator(operatorCl);
+        
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+        
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,st_1,inPre,inInfo);  
+      then
+        (cache,daeExp,prop,st_1);       
+        
+   end matchcontinue;     
+  
+end userDefOperatorDeoverloadString;
 
 protected function operatorDeoverloadBinary
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Operator inOperator1;
-  input DAE.Type ty1;
-  input DAE.Exp e1;
-  input DAE.Type ty2;
-  input DAE.Exp e2;
-  input Absyn.Exp exp "For error-messages only";
-  input Prefix.Prefix pre "For error-messages only";
-  input Absyn.Info info "For error-messages only";
-  output DAE.Operator op;
-  output DAE.Exp oe1;
-  output DAE.Exp oe2;
-  output DAE.Type ty;
-protected
-  list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
-  DAE.Type oty1,oty2;
+  input DAE.Properties inProp1;
+  input DAE.Exp inExp1;
+  input DAE.Properties inProp2;
+  input DAE.Exp inExp2;
+  input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
+  input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
+  input Absyn.Exp AbExp2 "We need this when/if we elaborate user defined operator functions";
+  input Boolean inImpl;
+  input Option<Interactive.SymbolTable> inSymTab;
+  input Prefix.Prefix inPre "For error-messages only";
+  input Absyn.Info inInfo "For error-messages only";
+  output Env.Cache outCache; 
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
 algorithm
-  // print("deoverload arg1: " +& ExpressionDump.printExpStr(e1) +& " of type " +& Types.unparseType(ty1) +& "\n");
-  // print("deoverload arg2: " +& ExpressionDump.printExpStr(e2) +& " of type " +& Types.unparseType(ty2) +& "\n");
-  (ops,oty1,oe1,oty2,oe2) := operatorsBinary(inOperator1,ty1,e1,ty2,e2);
-  // print("deoverload arg1 (2): " +& ExpressionDump.printExpStr(oe1) +& " of type " +& Types.unparseType(oty1) +& "\n");
-  // print("deoverload arg2 (2): " +& ExpressionDump.printExpStr(oe2) +& " of type " +& Types.unparseType(oty2) +& "\n");
-  (op,{oe1,oe2},ty) := deoverload(ops,{(oe1,oty1),(oe2,oty2)},exp,pre,info);
+  (outCache, outExp, outProp) :=
+   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
+       local
+         Env.Cache cache;
+         Env.Env env;
+          list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
+         DAE.Type type1,type2, otype;
+         DAE.Exp exp1,exp2,exp;
+         DAE.Const const1,const2, const;
+         DAE.Operator oper;
+         Absyn.Operator aboper;
+         DAE.Properties prop;
+         Absyn.Exp absexp, absexp1, absexp2;
+         DAE.Properties prop1,prop2;
+         
+     case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _) 
+       equation
+         (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
+         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, inPre, inInfo);  
+         const = Types.constAnd(const1, const2);
+         exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);      
+         (exp,_) = ExpressionSimplify.simplify(exp);  
+         prop = DAE.PROP(otype,const);      
+         warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre);      
+       then
+           (inCache,exp, prop);
+      
+       // if we have a record check for overloaded operators   
+     case(cache, env, aboper, prop1, exp1, prop2, exp2, _, absexp1, absexp2, _, _, _, _)
+       equation
+         true = propEitherRecord(prop1,prop2);
+        (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp1,absexp2,prop1,prop2,inImpl,inSymTab,inPre,inInfo);
+       then
+         (cache, exp, prop);          
+  end matchcontinue;
 end operatorDeoverloadBinary;
 
 protected function operatorDeoverloadUnary
+"used to resolve unary operations.
+
+also used to resolve user overloaded unary operators for operator records
+It looks if there is an operator function defined for the specific
+operation. If there is then it will call that function and returns the 
+resulting expression. "
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Operator inOperator1;
-  input DAE.Type ty;
-  input DAE.Exp e;
-  input Absyn.Exp exp "For error-messages only";
-  input Prefix.Prefix pre "For error-messages only";
-  input Absyn.Info info "For error-messages only";
-  output DAE.Operator op;
-  output DAE.Exp oe;
-  output DAE.Type oty;
-protected
-  list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
+  input DAE.Properties inProp1;
+  input DAE.Exp inExp1;
+  input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
+  input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
+  input Boolean inImpl;
+  input Option<Interactive.SymbolTable> inSymTab;
+  input Prefix.Prefix inPre "For error-messages only";
+  input Absyn.Info inInfo "For error-messages only";
+  output Env.Cache outCache; 
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
 algorithm
-  ops := operatorsUnary(inOperator1);
-  (op,{oe},oty) := deoverload(ops,{(e,ty)},exp,pre,info);
+  (outCache, outExp, outProp) :=
+   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo)
+     local
+       String str1;
+       Env.Cache cache;
+       list<Absyn.Path> operNames;
+       Absyn.Path path;
+       Env.Env operatorEnv;
+       SCode.Element operatorCl;
+       list<DAE.Type> types;
+       Env.Env env;
+       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
+       DAE.Type type1,type2, otype;
+       DAE.Exp exp1,exp;
+       DAE.Const const;
+       DAE.Operator oper;
+       Absyn.Operator aboper;
+       DAE.Properties prop;
+       Absyn.Exp absexp, absexp1;
+       DAE.Properties prop1,prop2;
+         
+     case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _, _, _, _, _) 
+       equation
+         opList = operatorsUnary(aboper);
+         (oper, {exp1}, otype) = deoverload(opList, {(exp1,type1)}, inPre, inInfo);
+         exp = replaceOperatorWithFcall(AbExp, exp1,oper,NONE(), const);  
+         // (exp,_) = ExpressionSimplify.simplify(exp);  
+         prop = DAE.PROP(otype,const);             
+       then
+         (inCache,exp, prop);
+         
+      // if we have a record check for overloaded operators   
+     case(cache, env, aboper, prop1 as DAE.PROP(DAE.T_COMPLEX(ClassInf.RECORD(path),_, _,_),_), _, _, absexp1, _, _, _, _)
+       equation       
+         str1 = "'" +& Dump.opSymbolCompact(aboper) +& "'";
+         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
+         
+         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+         true = SCode.isOperator(operatorCl);
+         
+         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
+         
+         (cache,SOME((exp,prop))) = elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inSymTab,inPre,inInfo);       
+         
+       then
+         (cache,exp,prop);   
+         
+  end matchcontinue;
 end operatorDeoverloadUnary;
+
 
 protected function operatorsBinary "function: operators
   This function relates the operators in the abstract syntax to the
@@ -13718,25 +13627,26 @@ protected function warnUnsafeRelations "
   Author: BZ, 2008-08
   Check if we have Real == Real or Real != Real, if so give a warning."
   input Env.Env inEnv;
+  input Absyn.Exp inExp;
   input DAE.Const variability;
   input DAE.Type t1,t2;
   input DAE.Exp e1,e2;
   input DAE.Operator op;
   input Prefix.Prefix inPrefix;
 algorithm 
-  _ := matchcontinue(inEnv,variability,t1,t2,e1,e2,op,inPrefix)
+  _ := matchcontinue(inEnv,inExp,variability,t1,t2,e1,e2,op,inPrefix)
     local 
       Boolean b1,b2;
       String stmtString,opString,pre_str;
       Prefix.Prefix pre;
     // == or != on Real is permitted in functions, so don't print an error if
     // we're in a function.
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _, _)
       equation
         true = Env.inFunctionScope(inEnv);
       then ();
 
-    case(_,DAE.C_VAR(),t1,t2,e1,e2,op,pre)
+    case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),t1,t2,e1,e2,op,pre)
       equation
         b1 = Types.isReal(t1);
         b2 = Types.isReal(t1);
@@ -13748,7 +13658,7 @@ algorithm
         Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
       then
         ();
-    case(_,_,_,_,_,_,_,_) then ();
+    case(_,_,_,_,_,_,_,_,_) then ();
   end matchcontinue;
 end warnUnsafeRelations;
 

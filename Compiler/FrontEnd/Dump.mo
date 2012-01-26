@@ -4863,6 +4863,7 @@ algorithm
     case (Absyn.GREATEREQ()) then ">=";
     case (Absyn.EQUAL()) then "==";
     case (Absyn.NEQUAL()) then "<>";
+  else fail();
   end match;
 end opSymbolCompact;
 
