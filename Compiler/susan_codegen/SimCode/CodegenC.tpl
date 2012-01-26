@@ -6405,7 +6405,7 @@ template dimension(Dimension d)
   match d
   case DAE.DIM_INTEGER(__) then integer
   case DAE.DIM_ENUM(__) then size
-  case DAE.DIM_UNKNOWN(__) then ":"
+  case DAE.DIM_UNKNOWN(__) then error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
   else "INVALID_DIMENSION"
 end dimension;
 
