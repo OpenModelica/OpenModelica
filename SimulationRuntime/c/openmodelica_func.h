@@ -72,7 +72,7 @@ extern "C" {
  * to avoid memory leak.
  */
 /* DATA* initializeDataStruc(); */ /*create in model code */
-void initializeDataStruc_X_2(DATA *data);
+void setupDataStruc2(DATA *data);
 
 /* Function for calling external object constructors */
 void

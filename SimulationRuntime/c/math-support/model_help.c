@@ -138,6 +138,7 @@ void printAllVars(DATA *data, int ringSegment)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
+  INFO1("Print values for buffer segment = %d", ringSegment);
   INFO1("all real variables regarding point in time: %g", data->localData[ringSegment]->timeValue);
   for(i=0; i<mData->nVariablesReal; ++i){
     INFO3("localData->realVars[%ld] = %s = %g", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);

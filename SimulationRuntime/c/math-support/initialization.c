@@ -791,13 +791,8 @@ static int state_initialization(DATA *data, int optiMethod)
 
   /* debug print */
   if(DEBUG_FLAG(LOG_DEBUG))
-  {
     for(i=0; i<3;i++)
-    {
-      INFO1("Print values for buffer segment = %d", i);
       printAllVars(data, i);
-    }
-  }
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
@@ -805,18 +800,12 @@ static int state_initialization(DATA *data, int optiMethod)
 
   /* debug print */
   if(DEBUG_FLAG(LOG_DEBUG))
-  {
     for(i=0; i<3;i++)
-    {
-      INFO1("Print values for buffer segment = %d", i);
       printAllVars(data, i);
-    }
-  }
 
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
-
   update_DAEsystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */

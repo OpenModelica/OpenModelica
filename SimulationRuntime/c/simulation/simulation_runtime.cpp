@@ -330,7 +330,7 @@ startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
-  initializeDataStruc_X_2(data);
+  setupDataStruc2(data);
 
   if (measure_time_flag) {
     rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /*sentinel */ );
