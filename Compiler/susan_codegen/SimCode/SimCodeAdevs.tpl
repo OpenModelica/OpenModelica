@@ -510,7 +510,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        for (int i = 0; i < numHelpVars(); i++)
            helpVars_saved[i] = false;
        // Calculate any equations that provide initial values
-       <%makeInitialEqns(initialEquations)%>
+       <%makeInitialEqns(startValueEquations)%>
        bound_params();
 	   // Save again after calculating initial equations and algorithms
 	   save_vars();
@@ -527,10 +527,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    >>
 end makeInit;
 
-template makeInitialEqns(list<SimEqSystem> initialEquations)
+template makeInitialEqns(list<SimEqSystem> startValueEquations)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/)
     ;separator="\n")
   <<

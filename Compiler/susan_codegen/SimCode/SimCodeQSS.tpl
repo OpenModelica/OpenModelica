@@ -296,7 +296,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   <%SimCodeC.functionStoreDelayed(delayedExps)%>
 
-  <%SimCodeC.functionInitial(initialEquations)%>
+  <%SimCodeC.functionInitial(startValueEquations)%>
   
   <%SimCodeC.functionBoundParameters(parameterEquations)%>
   

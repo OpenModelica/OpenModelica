@@ -90,7 +90,7 @@ package SimCode
       list<list<SimEqSystem>> odeEquations;
       list<SimEqSystem> algebraicEquations;
       list<SimEqSystem> residualEquations;
-      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<DAE.Statement> algorithmAndEquationAsserts;

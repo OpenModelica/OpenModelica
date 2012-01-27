@@ -56,7 +56,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
     
     <%functionStoreDelayed(simCode)%>
 
-    <%functionInitial(initialEquations, simCode)%>
+    <%functionInitial(startValueEquations, simCode)%>
 
     <%functionInitialResidual(residualEquations, simCode)%>
 
@@ -818,16 +818,16 @@ public override void FunODE()
 end functionODE;
 
 //TODO:??there is st more in the trunk
-template functionInitial(list<SimEqSystem> initialEquations, SimCode simCode) ::=
+template functionInitial(list<SimEqSystem> startValueEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 public override void InitialFun()
 {
   <% localRepresentationArrayDefines %>
-  <%initialEquations |> saeq as SES_SIMPLE_ASSIGN(__) => equation_(saeq, contextOther, simCode) ;separator="\n"%>
+  <%startValueEquations |> saeq as SES_SIMPLE_ASSIGN(__) => equation_(saeq, contextOther, simCode) ;separator="\n"%>
 
   //if (sim_verbose) {
-    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
     <<
     //Debug.WriteLine("Setting variable start value: {0}(start={1})", "<%cref(cref, simCode)%>", <%cref(cref, simCode)%>);
     >> ;separator="\n"%>

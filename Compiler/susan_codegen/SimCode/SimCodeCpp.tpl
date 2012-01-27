@@ -1177,7 +1177,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let () = System.tmpTickReset(0)
    let &varDecls = buffer "" /*BUFD*/
    let initVariables = initvar(modelInfo,simCode)
-   let initFunctions = functionInitial(initialEquations,varDecls,simCode)
+   let initFunctions = functionInitial(startValueEquations,varDecls,simCode)
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
    let initTimeEventFunctions = timeEventCondition(sampleConditions,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
@@ -3404,12 +3404,12 @@ template crefFunctionName(ComponentRef cr)
     '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionName(componentRef)%>'
 end crefFunctionName;
 
-template functionInitial(list<SimEqSystem> initialEquations,Text &varDecls,SimCode simCode)
+template functionInitial(list<SimEqSystem> startValueEquations,Text &varDecls,SimCode simCode)
 
 ::=
   
 
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls,simCode)
     ;separator="\n")
   <<

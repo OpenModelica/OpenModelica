@@ -158,7 +158,7 @@ case simCode as SIMCODE(__) then
 
   <%functionStoreDelayed(delayedExps)%>
 
-  <%functionUpdateBoundStartValues(initialEquations)%>
+  <%functionUpdateBoundStartValues(startValueEquations)%>
   
   <%functionInitialResidual(residualEquations)%>
   
@@ -655,12 +655,12 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
 >>
 end functionSampleEquations;
 
-template functionUpdateBoundStartValues(list<SimEqSystem> initialEquations)
+template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
   <<
@@ -672,7 +672,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     DEBUG_INFO(LOG_INIT, "updating start-values:");
-    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
     'DEBUG_INFO_AL2(LOG_INIT, "   %s(start=%f)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
 $P$START<%cref(cref)%> = <%cref(cref)%>;'
     ;separator="\n"%>

@@ -140,7 +140,7 @@ case simCode as SIMCODE(__) then
 
   <%functionStoreDelayed(delayedExps)%>
 
-  <%functionInitial(initialEquations)%>
+  <%functionInitial(startValueEquations)%>
   
   <%functionInitialResidual(residualEquations)%>
   
@@ -765,12 +765,12 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
 >>
 end functionSampleEquations;
 
-template functionInitial(list<SimEqSystem> initialEquations)
+template functionInitial(list<SimEqSystem> startValueEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
   <<
@@ -781,7 +781,7 @@ template functionInitial(list<SimEqSystem> initialEquations)
   
     <%eqPart%>
   
-    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       'if (sim_verbose >= LOG_INIT) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }'
     ;separator="\n"%>
   
