@@ -235,21 +235,24 @@ for f in glob.glob('*.html'):
   verblog.write('Checking file '+f+'\\n')
   p = subprocess.Popen(['-modify','-quiet',f],bufsize=1000,executable='tidy',stdin=None,stdout=verblog,stderr=log)
   p.wait()
-  file = open(f,'r')
-  soup = BeautifulSoup(file)
-  for a in soup.findAll('a'):
-    try:
-      a['href'] = linkreplace(a['href'])
-    except:
-      pass
-  for img in soup.findAll('img'):
-    try:
-      img['src'] = linkreplace(img['src'])
-    except:
-      pass
-  file.close()
-  file = open(f,'w')
-  file.write(soup.__str__())
+  try:
+    file = open(f,'r')
+    soup = BeautifulSoup(file)
+    for a in soup.findAll('a'):
+      try:
+        a['href'] = linkreplace(a['href'])
+      except:
+        pass
+    for img in soup.findAll('img'):
+      try:
+        img['src'] = linkreplace(img['src'])
+      except:
+        pass
+    file.close()
+    file = open(f,'w')
+    file.write(soup.__str__())
+  except:
+    log.write('Unknown python error')
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
