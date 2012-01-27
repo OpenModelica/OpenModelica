@@ -12,7 +12,8 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions), 'Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions), 'Functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
-  algloopfiles(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)  
+//  algloopfiles(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)  
+  algloopfiles(allEquations,simCode) 
    
     // empty result of the top-level template .., only side effects
 end translateModel;
@@ -159,21 +160,32 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     
     <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings& globalSettings) 
    :SystemDefaultImplementation()
-     <%simulationInitFile(simCode)%>
+    <%simulationInitFile(simCode)%>
     { 
-       // Number of equations
-       <%dimension1(simCode)%>
-      //DAE's are not supported yet, Index reduction is enabled
-	  _dimAE = 0; // algebraic equations
-	  // Initialize the state vector
-	  SystemDefaultImplementation::init();
-	  //Instantiate auxiliary object for event handling functionality
-	  _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
-	  _historyImpl = new HistoryImplType(globalSettings);
-	  <%arrayReindex(modelInfo)%>
-	  <%arrayInit(simCode)%> 
-	 //Load Algloopsover library
-	 type_map types;
+    //Number of equations
+    <%dimension1(simCode)%>
+    //Number of residues
+    <%if modelInfo.labels then 
+      <<     
+      _dimResidues=<%numResidues(allEquations)%>;
+      >>
+    else
+      <<
+      _dimResidues=0;
+      >>
+    %>
+    //DAE's are not supported yet, Index reduction is enabled
+	_dimAE = 0; // algebraic equations
+	//Initialize the state vector
+	SystemDefaultImplementation::init();
+	//Instantiate auxiliary object for event handling functionality
+	_event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
+	_historyImpl = new HistoryImplType(globalSettings);
+	<%arrayReindex(modelInfo)%>
+	//Initialize array elements
+	<%arrayInit(simCode)%>
+	//Load Algloopsover library
+	type_map types;
 	std::string algsover_name(SYSTEM_LIB);
 	if(!load_single_library(types, algsover_name))
 		throw std::invalid_argument("Algsover library could not be loaded");
@@ -202,6 +214,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
+   <%checkConditions(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
    <%resethelpvar(whenClauses,simCode)%>
@@ -228,7 +241,7 @@ match eq
   <<
    #include "Modelica.h"
    #include "<%modelname%>Algloop<%index%>.h"
-
+   <%if modelInfo.labels then '#include "Math/Implementation/ArrayOperations.h"'%>
 
    
     
@@ -252,6 +265,7 @@ match eq
    			if(_residuals) delete [] _residuals;
     }
    <%algloopRHSCode(simCode,eq)%>
+   <%if modelInfo.labels then algloopResiduals(simCode,eq)%>
    <%initAlgloop(simCode,eq)%>
    <%upateAlgloopNonLinear(simCode,eq)%>
    <%upateAlgloopLinear(simCode,eq)%>    
@@ -321,16 +335,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let bname = 'b<%uid%>'
     let &varDecls = buffer "" /*BUFD*/
      let &preExp = buffer "" /*BUFD*/
+
+
+ 
  let Amatrix= 
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-      '_A[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>_A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
   
  
  
  let bvector =  (beqs |> exp hasindex i0 =>
-    
+
      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
      '_b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
@@ -341,8 +358,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   {
 	  
 	  <%Amatrix%>
-	  <%bvector%>
-	  
+	  <%bvector%>	  
 	 
   }
      
@@ -1181,7 +1197,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     _event_handling.init(this,<%helpvarlength(simCode)%>);
     saveAll();
     vector<unsigned int> var_ouputs_idx;
-    <%initOutputIndices%>;	
+    <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
     <%initALgloopSolvers%>
@@ -1288,7 +1304,41 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 end algloopRHSCode;
 
 
-
+template algloopResiduals(SimCode simCode,SimEqSystem eq)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  let modelname = lastIdentOfPath(modelInfo.name)
+match eq
+ case SES_LINEAR(__) then
+   <<
+    int <%modelname%>Algloop<%index%>::giveDimResiduals(int index)
+    {
+      if(index == 0) return _dim[0];
+      else if(index == 1) return _dim[1];
+      else if(index == 2) return _dim[2];
+    }
+   
+	void <%modelname%>Algloop<%index%>::giveResiduals(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
+	{		
+		ublas::matrix<double> A=toMatrix(_dim[0],_dim[0],_A.data());
+		double* doubleUnknowns = new double[_dim[0]];
+		int* intUnknowns = new int[_dim[1]];
+		bool* boolUnknowns = new bool[_dim[2]];
+		giveVars(doubleUnknowns,intUnknowns,boolUnknowns);
+		//ublas::vector<double> x (_dim[0]);
+		//for (int i = 0; i < x.size (); i++)
+        //x (i) = *(_xd+i);
+        ublas::vector<double> x=toVector(_dim[0],doubleUnknowns);
+		ublas::vector<double> b=toVector(_dim[0],_b.data());
+		b=ublas::prod(ublas::trans(A),x)-b;
+		//b*=-1;
+		//ublas::axpy_prod(ublas::trans(A),x,b,false); 		
+		if(doubleResiduals) std::copy(b.data().begin(), b.data().end(), doubleResiduals);
+		//if(doubleResiduals) memcpy(doubleResiduals,b->data(),_dim[0]*sizeof(double));
+	}
+   >>  
+end algloopResiduals;
 
 template isLinearCode(SimCode simCode,SimEqSystem eq)
 ::=
@@ -1520,14 +1570,86 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	
 	HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
 	HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
-	 <%writeoutput2(modelInfo)%>
-	 _historyImpl->write(v,v2,time);
+	<%writeoutput2(modelInfo)%>
+	<%if modelInfo.labels then
+	  <<
+	  HistoryImplType::value_type_r v3(<%numResidues(allEquations)%>);	  
+	  <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
+	  double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
+	  for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
+	  _historyImpl->write(v,v2,v3,time);
+	  >>
+	else
+	  <<
+	  _historyImpl->write(v,v2,time);
+	  >>
+	%>
 	}
    }
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
 end writeoutput;
 
+template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode)
+::=
+  match eq
+  case SES_LINEAR(__)
+  case SES_NONLINEAR(__)
+    then 
+    let num = index
+    match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then    
+    <<
+    double* doubleResiduals<%num%> = new double[_algLoop<%num%>->giveDimResiduals(0)];
+    int* intResiduals<%num%> = new int[_algLoop<%num%>->giveDimResiduals(1)];
+    bool* boolResiduals<%num%> = new bool[_algLoop<%num%>->giveDimResiduals(2)];
+    _algLoop<%num%>->giveResiduals(doubleResiduals<%num%>,intResiduals<%num%>,boolResiduals<%num%>);
+  
+    >>
+  else
+    " "
+ end writeoutputAlgloopsolvers;
+
+template writeoutput3(SimEqSystem eqn, SimCode simCode)
+::=
+  match eqn
+  case SES_RESIDUAL(__) then
+  <<
+  >>
+  case  SES_SIMPLE_ASSIGN(__) then
+  <<
+  <%cref1(cref,simCode)%>
+  >>
+  case SES_ARRAY_CALL_ASSIGN(__) then
+  <<
+  >>
+  case SES_ALGORITHM(__) then
+  <<
+  >>
+  case e as SES_LINEAR(__) then
+  <<
+  <%(vars |> var hasindex myindex2 => writeoutputLinear(e.index,myindex2));separator=","%>
+  >>
+  case SES_NONLINEAR(__) then
+  <<
+  >>
+  case SES_MIXED(__) then
+  <<
+  >>
+  case SES_WHEN(__) then
+  <<
+  >>
+  else
+  <<
+  >>
+end writeoutput3;
+
+template writeoutputLinear(Integer index, Integer myindex2)
+::=
+ <<
+ *(doubleResiduals<%index%>+<%myindex2%>)
+ >>
+end writeoutputLinear;
 
 template generateHeaderInlcudeString(SimCode simCode)
  "Generates header part of simulation file."
@@ -1553,12 +1675,15 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
   #include "policies/BufferReaderWriter.h"
-  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;
+  //typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;  
+  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;  
+
   >>
   else
   <<
   #include "policies/TextFileWriter.h"
-  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;
+  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
+  
   >>%>
   /*****************************************************************************
   * 
@@ -1708,11 +1833,22 @@ void <%lastIdentOfPath(modelInfo.name)%>::setVars(const double* z, const INDEX i
 	SystemDefaultImplementation::setVars(z,index);
 }
  
-// Provide the right hand side (according to the index)
+// Provide the right hand side (according to the index) 
 void <%lastIdentOfPath(modelInfo.name)%>::giveRHS(double* f, const INDEX index)
 {
+<%if modelInfo.labels then
+<<
+	/*<%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
+	double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
+	for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];*/
 	SystemDefaultImplementation::giveRHS(f,index);
+>>
+else
+<<
+	SystemDefaultImplementation::giveRHS(f,index);
+>>%>
 }
+
 void <%lastIdentOfPath(modelInfo.name)%>::giveJacobianSparsityPattern(SparcityPattern pattern)
 {
   throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented");	
@@ -1907,6 +2043,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual int getDimZeroFunc();
 	//Provides current values of root/zero functions 
 	 virtual void giveZeroFunc(double* f,const double& eps);
+	//Called to check conditions for event-handling
+	virtual void checkConditions(unsigned int, bool all);
 	//Called to handle all  events occured at same time  
 	virtual void handleSystemEvents(const bool* events,update_events_type update_event);
 	//Called to handle an event  
@@ -1938,7 +2076,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	// Returns labels for a labeled DAE
 	virtual label_list_type getLabels();
 	//Sets all algebraic and state varibales for current time
-	virtual void setVariables(const ublas::vector<double>& variables);
+	virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
+	//Gives back residues
+	virtual void giveResidues(double* f);
 	>>%>
 >>
 end generateMethodDeclarationCode;
@@ -1971,6 +2111,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual void update(const  IContinous::UPDATE command =IContinous::UNDEF_UPDATE);
 	/// Provide the right hand side (according to the index)
 	virtual void giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
+	<%if modelInfo.labels then
+	<<
+	/// Provide dimensions of residuals for linear equation systems
+	virtual int giveDimResiduals(int index);	
+	/// Provide the residuals for linear equation systems
+	virtual void giveResiduals(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
+	>>%>
 	/// Output routine (to be called by the solver after every successful integration step)
 	virtual void giveAMatrix(double* A_matrix);
 	virtual bool isLinear();
@@ -2408,27 +2555,21 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end InitAlgloopParams;
 
-
-
-
-
-
 template MemberVariableDefine(String type,SimVar simVar, String arrayName)
 ::=
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-       <%type%> <%cref(name)%>;
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%type%> <%cref(name)%>;
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
-       >>
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      multi_array<<%variableType(type_)%>,<%listLength(numArrayElement)%>> <%arraycref(name)%>;
+      >>
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
-       >>
-   
+      multi_array<<%variableType(type_)%>,<%listLength(numArrayElement)%>> <%arraycref(name)%>;
+      >>   
 end MemberVariableDefine;
 
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
@@ -2436,17 +2577,16 @@ template MemberVariableDefineReference(String type,SimVar simVar, String arrayNa
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-       <%type%>& <%pre%><%cref(name)%>
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%type%>& <%pre%><%cref(name)%>
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
-       >>
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
+      >>
+     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
-       >>
-   
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
+      >>
 end MemberVariableDefineReference;
 
 
@@ -2455,17 +2595,16 @@ template MemberVariableDefine2(SimVar simVar, String arrayName)
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-        <%variableType(type_)%> <%cref(name)%>;
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%variableType(type_)%> <%cref(name)%>;
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
-       >>
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>> <%arraycref(name)%>;
+      >>
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
-       >>
-   
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>> <%arraycref(name)%>;
+      >>
 end MemberVariableDefine2;
 
 
@@ -2474,15 +2613,14 @@ template InitAlgloopParam(SimVar simVar, String arrayName,Text& arrayInit)
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-       <%cref(name)%>(_<%cref(name)%>)
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%cref(name)%>(_<%cref(name)%>)
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ',<%arraycref(name)%>=_<%arraycref(name)%>'
       '<%arraycref(name)%>(_<%arraycref(name)%>)'
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
-     ' <%arraycref(name)%>( _<%arraycref(name)%>)'
-   
+      '<%arraycref(name)%>( _<%arraycref(name)%>)'  
 end InitAlgloopParam;
 
 template CallAlgloopParam(SimVar simVar)
@@ -2490,35 +2628,31 @@ template CallAlgloopParam(SimVar simVar)
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-       <%cref(name)%>
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%cref(name)%>
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ',<%arraycref(name)%>=_<%arraycref(name)%>'
       '<%arraycref(name)%>'
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
-     ' <%arraycref(name)%>'
-   
+      '<%arraycref(name)%>'   
 end CallAlgloopParam;
-
-
 
 template MemberVariableDefineReference2(SimVar simVar, String arrayName,String pre)
 ::=
 match simVar
   	case SIMVAR(numArrayElement={}) then
       <<
-        <%variableType(type_)%>& <%pre%><%cref(name)%>
-       >>
-    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <%variableType(type_)%>& <%pre%><%cref(name)%>
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
-       >>
-     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
+      >>
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
-       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
-       >>
-   
+      multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
+      >>  
 end MemberVariableDefineReference2;
 
 
@@ -2550,7 +2684,7 @@ end arrayConstruct;
 template arrayConstruct1(list<SimVar> varsLst) ::=
   varsLst |> v as SIMVAR(arrayCref=SOME(_)) =>
   <<
-    ,<%arraycref(name)%>(boost::extents[<%v.numArrayElement;separator="]["%>])
+  ,<%arraycref(name)%>(boost::extents[<%v.numArrayElement;separator="]["%>])
   >> 
   ;separator="\n"
 end arrayConstruct1;
@@ -2589,7 +2723,7 @@ template cref2(ComponentRef cr)
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
-  else crefToCStr(cr)
+  else "$"+crefToCStr(cr)
 end cref2;
 
 template crefToCStr(ComponentRef cr)
@@ -2601,15 +2735,6 @@ template crefToCStr(ComponentRef cr)
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
-
-template crefToCStr2(ComponentRef cr)
-::=
-  match cr
-  case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToCStr2;
 
 template subscriptsToCStr(list<Subscript> subscripts)
 ::=
@@ -2639,7 +2764,7 @@ template crefToCStr1(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr2(componentRef)%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -2679,6 +2804,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   then
   <<
   <%arrayConstruct(modelInfo)%>
+  <%initVals(vars.constVars, simCode)%>
+  <%initVals(vars.intConstVars, simCode)%>
+  <%initVals(vars.boolConstVars, simCode)%>
+  <%initVals(vars.stringConstVars, simCode)%>
   <%initVals(vars.paramVars,simCode)%>
   <%initVals(vars.intParamVars,simCode)%>
   <%initVals(vars.boolParamVars,simCode)%>
@@ -2687,15 +2816,13 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
 end simulationInitFile;
 
 template initVals(list<SimVar> varsLst,SimCode simCode) ::=
-  
-  
   varsLst |> SIMVAR(numArrayElement={}) =>
   <<
-    ,<%cref(name)%>(<%match initialValue 
-    case SOME(v) then initVal(v)
-      else "0"
-    %>) 
-    >>  
+  ,<%cref(name)%>(<%match initialValue 
+  case SOME(v) then initVal(v)
+  else "0"
+  %>) 
+  >>  
   ;separator="\n"
 end initVals;
 
@@ -2706,25 +2833,32 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__))) 
   then
   <<
-  <%initVals1(vars.paramVars)%>
-  <%initVals1(vars.intParamVars)%>
-  <%initVals1(vars.boolParamVars)%>
-  <%initVals1(vars.stringParamVars)%>
- 
+  <%initVals1(vars.paramVars,simCode)%>
+  <%initVals1(vars.intParamVars,simCode)%>
+  <%initVals1(vars.boolParamVars,simCode)%>
+  <%initVals1(vars.stringParamVars,simCode)%>
+  <%initVals1(vars.constVars,simCode)%>
+  <%initVals1(vars.intConstVars,simCode)%>
+  <%initVals1(vars.boolConstVars,simCode)%>
+  <%initVals1(vars.stringConstVars,simCode)%>
   >>
 end arrayInit;
 
-template initVals1(list<SimVar> varsLst) ::=
- varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst=_)) =>
-  <<
-    <%cref(name)%>=<%match initialValue 
+template initVals1(list<SimVar> varsLst, SimCode simCode) ::=
+  varsLst |> (var as SIMVAR(__)) => 
+  initVals2(var,simCode)
+  ;separator="\n"
+end initVals1;
+
+template initVals2(SimVar var, SimCode simCode) ::=
+  match var
+  case SIMVAR(numArrayElement = {}) then ''
+  case SIMVAR(__) then '<%cref(name)%>=<%match initialValue 
     case SOME(v) then initVal(v)
       else "0"
-    %>;
-   >>
- ;separator="\n"
+    %>;'
+end initVals2;
 
-end initVals1;
 
 template arrayReindex(ModelInfo modelInfo)
 ::=
@@ -2754,7 +2888,7 @@ end arrayReindex;
 template arrayReindex1(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(arrayCref=SOME(_)) =>
   <<
-    <%arraycref(name)%>.reindex(1);
+  <%arraycref(name)%>.reindex(1);
   >> 
   ;separator="\n"
 end arrayReindex1;
@@ -2830,12 +2964,51 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>  
 end writeoutput1;
 
+template numResidues(list<SimEqSystem> allEquations)
+::=
+(allEquations |> eqn => numResidues2(eqn);separator="+")
+end numResidues;
+
+template numResidues2(SimEqSystem eqn)
+::=
+match eqn
+case SES_RESIDUAL(__) then
+<<
+>>
+case  SES_SIMPLE_ASSIGN(__) then
+<<
+1
+>>
+case SES_ARRAY_CALL_ASSIGN(__) then
+<<
+>>
+case SES_ALGORITHM(__) then
+<<
+>>
+case lin as SES_LINEAR(__) then
+<<
+<%(vars |> var => '1');separator="+"%>
+>>
+case SES_NONLINEAR(__) then
+<<
+>>
+case SES_MIXED(__) then
+<<
+>>
+case SES_WHEN(__) then
+<<
+>>
+else
+<<
+>>
+end numResidues2;
+
 template numStatevars(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-  <%varInfo.numStateVars%>
+<%varInfo.numStateVars%>
 >>
 end numStatevars;
 
@@ -2844,7 +3017,7 @@ template numAlgvars(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-  <%varInfo.numAlgVars%>+<%varInfo.numIntAlgVars%>+<%varInfo.numBoolAlgVars%>
+<%varInfo.numAlgVars%>+<%varInfo.numIntAlgVars%>+<%varInfo.numBoolAlgVars%>
 >>
 end numAlgvars;
 
@@ -2853,7 +3026,7 @@ template numAlgvar(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-  <%varInfo.numAlgVars%>
+<%varInfo.numAlgVars%>
 >>
 end numAlgvar;
 
@@ -2862,7 +3035,7 @@ template numIntAlgvar(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-  <%varInfo.numIntAlgVars%>
+<%varInfo.numIntAlgVars%>
 >>
 end numIntAlgvar;
 
@@ -2872,7 +3045,7 @@ template numDerivativevars(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
 <<
-  <%varInfo.dimODE1stOrder%>+<%varInfo.dimODE2ndOrder%>
+<%varInfo.dimODE1stOrder%>+<%varInfo.dimODE2ndOrder%>
 >>
 end numDerivativevars;
 
@@ -2890,7 +3063,6 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%(vars.stateVars  |> SIMVAR(__) =>' v(<%numAlgvars(modelInfo)%>+<%index%>)=_z[<%index%>]; ')%>
      <%(vars.derivativeVars  |> SIMVAR(__) =>' v2(<%index%>)=_zDot[<%index%>]; ')%>
    
- 
  >>
 end writeoutput2;
 
@@ -2935,7 +3107,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%initValst(vars.aliasVars, simCode)%>
   <%initValst(vars.intAliasVars, simCode)%>
   <%initValst(vars.boolAliasVars, simCode)%>
-  <%initValst(vars.constVars, simCode)%>
  >>
 end initvar;
 
@@ -2978,7 +3149,7 @@ case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     (vars.intAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.boolAlgVars |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%index%>';separator=","),
     (vars.stateVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%index%>';separator=","),
-    (vars.derivativeVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>+<%index%>';separator=",")};separator=","%>
+    (vars.derivativeVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>+<%index%>';separator=",")};separator=","%>;
     >>
 end outputIndices;
 
@@ -3034,21 +3205,20 @@ template dimension1(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)))
 then
- <<
+    <<
     <%modelInfo.varInfo |> VARINFO(__) =>'<%match dimODE1stOrder 
     case SOME(v) then 
                <<
-                 _dimODE1stOrder = <%vi.dimODE1stOrder%>;
+               _dimODE1stOrder = <%vi.dimODE1stOrder%>;
                >>
       else ""%> ';separator=";\n"%>
     <%modelInfo.varInfo |> VARINFO(__) =>'<%match dimODE2ndOrder 
     case SOME(v) then 
                 <<
-                 _dimODE2ndOrder = <%vi.dimODE2ndOrder%>;
-               >> 
-      else ""%> ';separator=";\n"%>
-  
- >>
+                _dimODE2ndOrder = <%vi.dimODE2ndOrder%>;
+                >> 
+      else ""%> ';separator=";\n"%>  
+    >>
 end dimension1;
 
 template isODE(SimCode simCode)
@@ -3267,8 +3437,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   case e as SES_NONLINEAR(__)
     then 
     <<
-   		if(_algLoopSolver<%index%>) 
-   			_algLoopSolver<%index%>->solve(command);
+       if(!(command & IContinous::RANKING))
+    {
+       if(_algLoopSolver<%index%>) _algLoopSolver<%index%>->solve(command);       
+    }
+   	else _algLoop<%index%>->init();
+   	//if(_algLoopSolver<%index%>) _algLoopSolver<%index%>->solve(command);
   	>>
   else
     "NOT IMPLEMENTED EQUATION" 
@@ -3416,6 +3590,7 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
     " "
  end algloopfilesInclude2;
  
+/* 
 template algloopfiles(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -3427,7 +3602,20 @@ template algloopfiles(list<list<SimEqSystem>> continousEquations,list<SimEqSyste
   <%algloopsolver%>
   >>
 end algloopfiles;
+*/
 
+// use allEquations instead of odeEquations, because only allEquations are labeled for reduction algorithms
+template algloopfiles(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver = (allEquations |> eqs =>
+      algloopfiles2(eqs, contextOther, &varDecls /*BUFC*/,simCode)
+    ;separator="\n")
+  
+  <<
+  <%algloopsolver%>
+  >>
+end algloopfiles;
 
 template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
  "Generates an equation.
@@ -3672,11 +3860,18 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RELATION(__)        then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case e as MATRIX(__)         then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as SHARED_LITERAL(__)  then /*daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)*/ ""
   else ""
 end daeExp;
+
+template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a match expression."
+::=
+match exp case exp as SHARED_LITERAL(__) then '"_OMC_LIT<%exp.index%>"'
+end daeExpSharedLiteral;
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)
@@ -3688,7 +3883,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
     let dimPart = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let resVar = tempDecl("size_t", &varDecls /*BUFD*/)
     let typeStr = '<%expTypeArray(exp.ty)%>'
-    let &preExp += '<%resVar%> = <%expPart%>.shape()[<%dimPart%>-1)];<%\n%>'
+    let &preExp += '<%resVar%> = <%expPart%>.shape()[<%dimPart%>-1];<%\n%>'
     resVar
   else "size(X) not implemented"
 end daeExpSize;
@@ -4500,12 +4695,13 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   else
     // For context simulation and other array variables must be boxed into a real_array
     // object since they are represented only in a double array.
-    let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
-    let dimsLenStr = listLength(dims)
-    let type = expTypeShort(aty)
-     //let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>);<%\n%>'
+    //let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
+    //let &preExp += '<%tmpArr%> = <%arrayCrefCStr(ecr.componentRef)%>;<%\n%>'
+    let tmpArr = '<%arrayCrefCStr(ecr.componentRef)%>'
+    //let dimsLenStr = listLength(dims)
+    //let type = expTypeShort(aty)
+    //let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>);<%\n%>'
     tmpArr
-    
 end daeExpCrefRhsArrayBox;
 
 template cref1(ComponentRef cr, SimCode simCode) ::=
@@ -5123,6 +5319,7 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings,Text& varDecl
   >>
 end functionOnlyZeroCrossing;
 
+
 template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for zero crossings."
 ::=
@@ -5132,7 +5329,7 @@ template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BU
   ;separator="\n")
 end zeroCrossingsTpl2;
 
-
+/*
 template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for a zero crossing."
 ::=
@@ -5147,6 +5344,18 @@ template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,
     <%preExp%>
     <%res%>=(<%e1%><%op%><%e2%>);
     _condition<%zerocrossingIndex%>=<%res%>;
+    >>
+end zeroCrossingTpl2;
+*/
+
+
+template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case RELATION(index=zerocrossingIndex) then
+    <<
+    checkConditions(<%zerocrossingIndex%>,false);
     >>
 end zeroCrossingTpl2;
 
@@ -5254,6 +5463,48 @@ template handleEvent2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimC
     >>
 end handleEvent2;
 
+template checkConditions(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenClauses,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let zeroCrossingsCode = checkConditions1(zeroCrossings, &varDecls /*BUFD*/, simCode)
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then 
+<<
+   void <%lastIdentOfPath(modelInfo.name)%>::checkConditions(unsigned int index, bool all)
+   { 
+      <%varDecls%>
+      <%zeroCrossingsCode%>      
+   }
+>>
+end checkConditions;
+
+template checkConditions1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
+::=
+
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+    checkConditions2(i0, relation_, &varDecls /*BUFD*/,simCode)
+  ;separator="\n")
+end checkConditions1;
+
+template checkConditions2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
+::=
+  match relation
+  case RELATION(index=zerocrossingIndex) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let op = zeroCrossingOpFunc(operator)
+    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let res = tempDecl("bool", &varDecls /*BUFC*/)
+    <<
+    <%preExp%>
+    if(index==<%zerocrossingIndex%> || all)
+    {
+      <%res%>=(<%e1%><%op%><%e2%>);
+      _condition<%zerocrossingIndex%>=<%res%>;
+    }
+   >>
+end checkConditions2;
+
 template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenClauses,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -5297,16 +5548,11 @@ template handleSystemEvents2(Integer index1, Exp relation, Text &varDecls /*BUFP
   match relation
   case RELATION(index=zerocrossingIndex) then
     let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let op = zeroCrossingOpFunc(operator)
-    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let res = tempDecl("bool", &varDecls /*BUFC*/)
     <<
     <%preExp%>
     if(events[<%zerocrossingIndex%>])
     {
-      <%res%>=(<%e1%><%op%><%e2%>);
-      _condition<%zerocrossingIndex%>=<%res%>;
+      checkConditions(<%zerocrossingIndex%>,false);
       _event_handling.addEvent(<%zerocrossingIndex%>);
       handleEvent(<%zerocrossingIndex%>);
     }
@@ -5321,6 +5567,8 @@ template zeroCrossingOpFunc(Operator op)
   case GREATER(__)   then ">"
   case LESSEQ(__)    then "<="
   case GREATEREQ(__) then ">="
+  case EQUAL(__)     then "=="
+  case NEQUAL(__)    then "!="
 end zeroCrossingOpFunc;
 
 template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
@@ -5552,8 +5800,9 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
-  {
+  { 
     <%varDecls%>
+    if(IContinous::RANKING) checkConditions(0,true);
   	<%all_equations%>
     <%reinit%>
   }
@@ -5630,13 +5879,20 @@ IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
    label_list_type $labels = tuple_list_of 
-   <%(labels |> label hasindex index0 => '(&$<%label%>,<%index0%>)') ;separator=" "%>;
+   <%(labels |> label hasindex index0 => '(&$<%label%>_1,<%index0%>,&$<%label%>_2)') ;separator=" "%>;
    return $labels;
 }
  
-void <%lastIdentOfPath(modelInfo.name)%>::setVariables(const ublas::vector<double>& variables)
+void <%lastIdentOfPath(modelInfo.name)%>::setVariables(const ublas::vector<double>& variables,const ublas::vector<double>& variables2)
 {
    <%setVariables(modelInfo)%>
+}
+
+void <%lastIdentOfPath(modelInfo.name)%>::giveResidues(double* f)
+{
+	<%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
+	double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
+	for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];	
 }
 >>
 end LabeledDAE; 
@@ -5658,6 +5914,9 @@ then
       ;separator="\n"),
       (vars.stateVars |> SIMVAR(__)  =>
        '_z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%index%>);'
+      ;separator="\n"),
+      (vars.derivativeVars |> SIMVAR(__) =>
+      '_zDot[<%index%>]=variables2(<%index%>);'
       ;separator="\n")}
      ;separator="\n"%>     
 >>

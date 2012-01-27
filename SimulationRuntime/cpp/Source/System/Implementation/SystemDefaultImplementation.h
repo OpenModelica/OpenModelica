@@ -83,6 +83,7 @@ protected:
 	int		
 		_dimODE1stOrder,	///< Number (dimension) of first order ordinary differential equations 
 		_dimODE2ndOrder,	///< Number (dimension) of second order ordinary differential equations (RHS of a mechanical system)
+		_dimResidues,       ///< Number of residues
 		_dimAE;				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 	bool _initial;		
 

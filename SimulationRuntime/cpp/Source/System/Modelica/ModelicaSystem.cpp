@@ -15,6 +15,7 @@ Modelica::Modelica(IGlobalSettings& globalSettings)
 	// Number of equations
 	_dimODE1stOrder = 0; // ordinary differential equations of 1st order
 	_dimODE2ndOrder = 0; // ordinary differential equations of 2nd order
+	_dimResidues = 0;
 	//DAE's are not supported yet, Index reduction is enabled
 	_dimAE = 0; // algebraic equations
 	// Initialize the state vector

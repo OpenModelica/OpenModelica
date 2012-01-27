@@ -7,7 +7,7 @@ using std::ios;
 /**
 Policy class to write simulation results in a text file
 */
-template <unsigned long dim_1,unsigned long dim_2 > 
+template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3> 
 struct TextFileWriter
 {
 public:
@@ -30,7 +30,12 @@ public:
 		//not supported for file output
 
 	}
-	
+
+	void read(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re)
+	{
+		//not supported for file output
+
+	}	
 	
 	void read(const double& time,ublas::vector<double>& dv,ublas::vector<double>& v)
 	{

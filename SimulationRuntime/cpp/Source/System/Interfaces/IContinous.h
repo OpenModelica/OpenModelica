@@ -29,7 +29,7 @@ public:
 		DIFF_INDEX3			=	0x00008,	///< Differentiation Index 3 (constraints on position level only)
 		DIFF_INDEX2			=	0x00010,	///< Differentiation Index 2 (constraints on velocity level only)
 		DIFF_INDEX1			=	0x00020,	///< Differentiation Index 1 (constraints on acceleration level only)
-
+		ALL_RESIDUES		=	0x00040,    ///< All residues
 		ALL_STATES			=	0x00007,	///< All states (no order)
 		ALL_VARS			=	0x0003f,	///< All variables (no order)
 	};
@@ -42,6 +42,8 @@ public:
 		DISCRETE		=	0x00000001,			///< Sample discrete variables only
 		CONTINOUS		=	0x00000002,			///< Determine continous variables
 		ALL				=	0x00000003,			///< [DISCRETE|CONTINOUS]
+		RANKING			=	0x00000004,			///< Ranking Method
+		
 	};
 
 

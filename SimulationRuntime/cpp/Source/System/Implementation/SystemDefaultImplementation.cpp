@@ -67,6 +67,9 @@ int SystemDefaultImplementation::getDimRHS(const IContinous::INDEX index) const
 		i+= _dimAE;
 	else if (index & IContinous::DIFF_INDEX1) 
 		i+= _dimAE;
+		
+	if (index & IContinous::ALL_RESIDUES)
+		i+= _dimResidues;
 
 	return i;
 };

@@ -22,9 +22,13 @@ public:
 	*/
    	virtual void getSimResults(const double time,ublas::vector<double>& v,ublas::vector<double>& dv) =0;
 	/**
-	Returns all simulation results for all Varibables (R matrix) and rhs(dR)
+	Returns all simulation results for all Variables (R matrix) and rhs(dR)
 	*/
 	virtual void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR) =0;
+	/**
+	Returns all simulation results for all Variables (R matrix), rhs(dR) and residues (Re)
+	*/
+	virtual void getSimResults(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re) =0;
 	/**
 	Returns all output variables results
 	*/
@@ -45,6 +49,10 @@ public:
 	Retunrs number of state variables 
 	*/
 	virtual unsigned long getDimdR()=0;
+	/**
+	Returns number of residues
+	*/
+	virtual unsigned long getDimRe()=0;
 	/**
 	Clears simulation buffer
 	*/

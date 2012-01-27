@@ -17,7 +17,7 @@
 * System class Modelica implements the Interface IDAESystem
 *
 *****************************************************************************/
-typedef HistoryImpl<TextFileWriter,0,0> HistoryImplType;
+typedef HistoryImpl<TextFileWriter,0,0,0> HistoryImplType;
 
 
 class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public SystemDefaultImplementation
