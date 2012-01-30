@@ -1,30 +1,27 @@
 # Sources and Headers
-SET(META_SRC 	meta_modelica.c
-				meta_modelica_builtin.c
+SET(META_SRC 	meta_modelica_builtin.c
+				meta_modelica_string_lit.c
+				realString.c
 				meta_modelica_catch.c
-				meta_modelica_gc.c
-				meta_modelica_gc_list.c
-				meta_modelica_gc_pages.c
-				meta_modelica_gc_roots.c
-				meta_modelica_gc_settings.c
-				meta_modelica_gc_stack.c
-				meta_modelica_gc_stats.c
+				meta_modelica.c
 				meta_modelica_real.c
-				meta_modelica_string_lit.c)
+				gc/gc.c
+				gc/common.c
+				gc/roots.c
+				gc/generational.c
+				gc/marksweep.c)
 
-SET(META_HFILES meta_modelica.h
-				meta_modelica_builtin.h
-				meta_modelica_builtin_boxptr.h
-				meta_modelica_gc.h
-				meta_modelica_gc_list.h
-				meta_modelica_gc_pages.h
-				meta_modelica_gc_roots.h
-				meta_modelica_gc_settings.h
-				meta_modelica_gc_stack.h
-				meta_modelica_gc_stats.h
-				meta_modelica_real.h
-				meta_modelica_string_lit.h
-                rml_compatibility.h) 
+SET(META_HFILES rml_compatibility.h 
+                meta_modelica_builtin.h 
+				meta_modelica_builtin_boxptr.h 
+				meta_modelica_real.h 
+				meta_modelica_string_lit.h 
+				meta_modelica.h 
+				gc/gc.h 
+				gc/common.h 
+				gc/generational.h 
+				gc/marksweep.h 
+				gc/roots.h) 
 
 
 # Library meta
