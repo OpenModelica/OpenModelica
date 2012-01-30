@@ -77,6 +77,7 @@ extern mmc_GC_state_type* mmc_GC_state;
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 /* primary allocation routines for MetaModelica */
 void *mmc_alloc_words(unsigned nwords);
+void *mmc_alloc_bytes(unsigned nbytes);
 
 #if defined(_MMC_GC_)
 
