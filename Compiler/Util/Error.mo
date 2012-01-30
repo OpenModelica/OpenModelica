@@ -723,6 +723,10 @@ public constant Message SUSAN_ERROR = MESSAGE(7000, TRANSLATION(), ERROR(),
   "%s");
 public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),
   "Template error: %s");
+public constant Message OPERATOR_OVERLOADING_WARNING = MESSAGE(7002, TRANSLATION(), WARNING(),
+  "Operator Overloading: %s.");
+public constant Message OPERATOR_OVERLOADING_ERROR = MESSAGE(7003, TRANSLATION(), ERROR(),
+  "Operator Overloading: %s.");
 
 protected import ErrorExt;
 protected import Print;

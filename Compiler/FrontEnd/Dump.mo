@@ -4845,13 +4845,13 @@ algorithm
     case (Absyn.UMINUS()) then "-";
     case (Absyn.UPLUS()) then "+";
     /* element-wise arithmetic operators */
-    case (Absyn.ADD_EW()) then ".+";
-    case (Absyn.SUB_EW()) then ".-";
-    case (Absyn.MUL_EW()) then ".*";
-    case (Absyn.DIV_EW()) then "./";
-    case (Absyn.POW_EW()) then ".^";
-    case (Absyn.UMINUS_EW()) then ".-";
-    case (Absyn.UPLUS_EW()) then ".+";
+    case (Absyn.ADD_EW()) then "+";
+    case (Absyn.SUB_EW()) then "-";
+    case (Absyn.MUL_EW()) then "*";
+    case (Absyn.DIV_EW()) then "/";
+    case (Absyn.POW_EW()) then "^";
+    case (Absyn.UMINUS_EW()) then "-";
+    // case (Absyn.UPLUS_EW()) then "+";
     /* logical operators */
     case (Absyn.AND()) then "and";
     case (Absyn.OR()) then "or";
