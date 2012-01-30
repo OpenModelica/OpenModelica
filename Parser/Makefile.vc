@@ -4,7 +4,7 @@ RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=
-CPPFLAGS=-I$(COMPILERHOME) -I../c_runtime -I../c_runtime/meta -I../c_runtime/meta/gc $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../testsuite/bootstrapping/
+CPPFLAGS=-I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/util -I../SimulationRuntime/c/meta/gc $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../testsuite/bootstrapping/ -I$(COMPILERHOME) 
 CCDEBUG = cl /Od /ZI /Fd".\vc100.pdb" /D "_DEBUG" /D "_CONSOLE" $(CPPFLAGS)
 CCOPTIM = cl /O2 /Fd".\vc100.pdb" /D "_CONSOLE" $(CPPFLAGS)
 CC = $(CCOPTIM)

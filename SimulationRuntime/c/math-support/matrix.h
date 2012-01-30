@@ -32,12 +32,12 @@
 #ifndef _MATRIX_H_
 #define _MATRIX_H_
 
-#include "blaswrap.h"
-#include "f2c.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "blaswrap.h"
+#include "f2c.h"
 
 extern
 int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer

@@ -45,6 +45,7 @@
 #include "rml.h"
 #include "Config.h"
 #include "systemimpl.c"
+#include <float.h>
 
 /* use this one to output messages depending on flags! */
 int check_debug_flag(char const* strdata);

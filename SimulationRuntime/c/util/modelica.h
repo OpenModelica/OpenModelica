@@ -67,7 +67,6 @@ extern "C" {
 
 #include <stdlib.h>
 #include <limits.h>
-#include <float.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define EXIT(code) exit(code)
@@ -99,6 +98,7 @@ extern "C" {
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
 #include "meta_modelica_real.h"
+#include "varinfo.h"
 
 
 /* math functions (-lm)*/

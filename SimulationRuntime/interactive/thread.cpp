@@ -23,7 +23,7 @@ Thread::~Thread()
 
 bool Thread::Create(THREAD_RET_TYPE (*func)(THREAD_PARAM_TYPE))
 {
-  thread_handle = CreateThread(NULL, 0, *func, NULL, 0, NULL);
+  thread_handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)*func, NULL, 0, NULL);
   return thread_handle != NULL;
 }
 
@@ -58,7 +58,7 @@ bool Mutex::Lock()
 
 bool Mutex::Unlock()
 {
-  return ReleaseMutex(mutex_handle);
+  return (ReleaseMutex(mutex_handle))?true:false;
 }
 
 
@@ -88,12 +88,12 @@ bool Semaphore::TryWait()
 
 bool Semaphore::Post()
 {
-  return ReleaseSemaphore(semaphore_handle, 1, NULL);
+  return (ReleaseSemaphore(semaphore_handle, 1, NULL))?true:false;
 }
 
 bool Semaphore::Post(unsigned count)
 {
-  return ReleaseSemaphore(semaphore_handle, count, NULL);
+  return (ReleaseSemaphore(semaphore_handle, count, NULL))?true:false;
 }
 
 /* Linux and other POSIX-compliant platforms */

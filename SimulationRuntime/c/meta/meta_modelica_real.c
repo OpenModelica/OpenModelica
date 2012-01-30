@@ -43,48 +43,8 @@
 #include <float.h>
 #define isinf(d) (!_finite(d) && !_isnan(d))
 #define isnan _isnan
+#define snprintf _snprintf
 #endif
-
-static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
-static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
-static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
-
-modelica_string realString(modelica_real r)
-{
-  /* NOTE: The RML runtime uses the same code as this function.
-   * If you update one, you must update the other or the testsuite might break
-   *
-   * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
-   * Add safety margin in case some C runtime is trigger happy. */
-  static char buffer[32];
-  modelica_string res;
-  /* fprintf(stderr, "\nrealString(%g)\n", r); */
-  if (isinf(r) && r < 0)
-    res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
-  else if (isinf(r))
-    res = MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
-  else if (isnan(r))
-    res = MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-  else {
-    char* endptr;
-    int ix = snprintf(buffer, 32, "%.15g", r);
-    long ignore;
-    if (ix < 0)
-      MMC_THROW();
-    errno = 0;
-    /* If it looks like an integer, we need to append .0 so it looks like real */
-    ignore = strtol(buffer,&endptr,10);
-    if (errno == 0 && *endptr == '\0') {
-      if (ix > 30)
-        MMC_THROW();
-      buffer[ix++] = '.';
-      buffer[ix++] = '0';
-      buffer[ix] = '\0';
-    }
-    res = mmc_mk_scon(buffer);
-  }
-  return res;
-}
 
 modelica_metatype boxptr_realMin(modelica_metatype a,modelica_metatype b)
 {
@@ -95,3 +55,5 @@ modelica_metatype boxptr_realMax(modelica_metatype a,modelica_metatype b)
 {
   return mmc_mk_rcon(fmax(mmc_unbox_real(a),mmc_unbox_real(b)));
 }
+
+

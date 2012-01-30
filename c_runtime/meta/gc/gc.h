@@ -78,7 +78,6 @@ int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 /* primary allocation routines for MetaModelica */
 void *mmc_alloc_words(unsigned nwords);
 
-
 #if defined(_MMC_GC_)
 
 DLLExport void mmc_GC_set_state(mmc_GC_state_type* state);

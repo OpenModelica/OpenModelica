@@ -5451,7 +5451,14 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
     match vs
     case v::vrest then
       let exp = daeExp(e,context,&preExp,&varDecls)
-      '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+      match e
+      case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
+        // adrpo: ignore _x = _x!
+        if stringEq(v, crefStr(cr))
+        then '<%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+      case _ then
+        '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
 end daeExpTailCall;
 
 template daeExpCallBuiltinPrefix(Boolean builtin)

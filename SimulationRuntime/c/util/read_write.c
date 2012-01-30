@@ -29,6 +29,10 @@
  *
  */
 
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
 
 #include "read_write.h"
 #include "real_array.h"
@@ -39,7 +43,7 @@
 #include <string.h>
 
 char *my_strdup(const char *s) {
-    char *p = malloc(strlen(s) + 1);
+    char *p = (char*)malloc(strlen(s) + 1);
     if(p != NULL) {
         strcpy(p, s);
     }
@@ -162,7 +166,7 @@ void puttype(const type_description *desc)
     fprintf(stderr, "NONE\n");
     break;
   case TYPE_DESC_RECORD: {
-      int i;
+      size_t i;
       fprintf(stderr, "RECORD: %s ", desc->data.record.record_name?desc->data.record.record_name:"[no name]");
       if (!desc->data.record.elements) {
         fprintf(stderr, "has no members!?\n");
@@ -476,10 +480,8 @@ void write_real_array(type_description *desc, const real_array_t *arr)
   if (desc->retval) {
     /* Can't use memory pool for these */
     desc->data.real_array.ndims = arr->ndims;
-    desc->data.real_array.dim_size = malloc(sizeof(*(arr->dim_size))
-                                            * arr->ndims);
-    memcpy(desc->data.real_array.dim_size, arr->dim_size,
-           sizeof(*(arr->dim_size)) * arr->ndims);
+    desc->data.real_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
+    memcpy(desc->data.real_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = real_array_nr_of_elements(arr);
     desc->data.real_array.data = malloc(sizeof(modelica_real) * nr_elements);
     memcpy(desc->data.real_array.data, arr->data,
@@ -499,10 +501,8 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
   if (desc->retval) {
     /* Can't use memory pool for these */
     desc->data.int_array.ndims = arr->ndims;
-    desc->data.int_array.dim_size = malloc(sizeof(*(arr->dim_size))
-                                           * arr->ndims);
-    memcpy(desc->data.int_array.dim_size, arr->dim_size,
-           sizeof(*(arr->dim_size)) * arr->ndims);
+    desc->data.int_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
+    memcpy(desc->data.int_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = integer_array_nr_of_elements(arr);
     desc->data.int_array.data = malloc(sizeof(modelica_integer) * nr_elements);
     memcpy(desc->data.int_array.data, arr->data,
@@ -523,10 +523,8 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
   if (desc->retval) {
     /* Can't use memory pool for these */
     desc->data.bool_array.ndims = arr->ndims;
-    desc->data.bool_array.dim_size = malloc(sizeof(*(arr->dim_size))
-                                            * arr->ndims);
-    memcpy(desc->data.bool_array.dim_size, arr->dim_size,
-           sizeof(*(arr->dim_size)) * arr->ndims);
+    desc->data.bool_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
+    memcpy(desc->data.bool_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = boolean_array_nr_of_elements(arr);
     desc->data.bool_array.data = malloc(sizeof(modelica_boolean) * nr_elements);
     memcpy(desc->data.bool_array.data, arr->data,
@@ -547,17 +545,15 @@ void write_string_array(type_description *desc, const string_array_t *arr)
     size_t i;
     modelica_string_t *dst = NULL, *src = NULL;
     desc->data.string_array.ndims = arr->ndims;
-    desc->data.string_array.dim_size = malloc(sizeof(*(arr->dim_size))
-                                              * arr->ndims);
-    memcpy(desc->data.string_array.dim_size, arr->dim_size,
-           sizeof(*(arr->dim_size)) * arr->ndims);
+    desc->data.string_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
+    memcpy(desc->data.string_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = string_array_nr_of_elements(arr);
     desc->data.string_array.data = malloc(sizeof(modelica_string)* nr_elements);
-    dst = desc->data.string_array.data;
-    src = arr->data;
+    dst = (modelica_string_t*)desc->data.string_array.data;
+    src = (modelica_string_t*)arr->data;
     for (i = 0; i < nr_elements; ++i) {
       size_t len = modelica_string_length(*src);
-      *dst = malloc(len + 1);
+      *dst = (modelica_string_t)malloc(len + 1);
       memcpy(*dst, *src, len + 1);
       ++src;
       ++dst;
@@ -592,7 +588,7 @@ void write_modelica_string(type_description *desc, modelica_string *str)
   if (desc->retval) {
     /* Can't use memory pool */
     len = modelica_string_length(*str);
-    desc->data.string = malloc(len + 1);
+    desc->data.string = (modelica_string_const)malloc(len + 1);
     memcpy((char*)desc->data.string, *str, len + 1);
   } else {
     *str = copy_modelica_string(desc->data.string);
@@ -765,13 +761,13 @@ type_description *add_modelica_record_member(type_description *desc,
 {
   type_description *elem;
   assert(desc->type == TYPE_DESC_RECORD);
-  desc->data.record.name = realloc(desc->data.record.name, sizeof(char *)
+  desc->data.record.name = (char**)realloc(desc->data.record.name, sizeof(char *)
                                    * (desc->data.record.elements + 1));
-  desc->data.record.element = realloc(desc->data.record.element,
+  desc->data.record.element = (struct type_desc_s*)realloc(desc->data.record.element,
                                       sizeof(struct type_desc_s)
                                       * (desc->data.record.elements + 1));
   elem = desc->data.record.element + desc->data.record.elements;
-  desc->data.record.name[desc->data.record.elements] = malloc(nlen + 1);
+  desc->data.record.name[desc->data.record.elements] = (char*)malloc(nlen + 1);
   memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1);
   /*
    * strdup is not ansi!
@@ -872,7 +868,7 @@ type_description *add_tuple_member(type_description *desc)
 {
   type_description *ret = NULL;
   assert(desc->type == TYPE_DESC_TUPLE);
-  desc->data.tuple.element = realloc(desc->data.tuple.element,
+  desc->data.tuple.element = (struct type_desc_s*)realloc(desc->data.tuple.element,
                                      (desc->data.tuple.elements + 1)
                                      * sizeof(struct type_desc_s));
   ret = desc->data.tuple.element + desc->data.tuple.elements;
@@ -886,7 +882,7 @@ static type_description *add_tuple_item(type_description *desc)
   type_description *ret = NULL;
 
   if (desc->type == TYPE_DESC_TUPLE) {
-    desc->data.tuple.element = realloc(desc->data.tuple.element,
+    desc->data.tuple.element = (struct type_desc_s*)realloc(desc->data.tuple.element,
                                        (desc->data.tuple.elements + 1)
                                        * sizeof(struct type_desc_s));
     ret = desc->data.tuple.element + desc->data.tuple.elements;
@@ -897,7 +893,7 @@ static type_description *add_tuple_item(type_description *desc)
     desc->type = TYPE_DESC_TUPLE;
     desc->retval = tmp.retval;
     desc->data.tuple.elements = 2;
-    desc->data.tuple.element = malloc(2 * sizeof(struct type_desc_s));
+    desc->data.tuple.element = (struct type_desc_s*)malloc(2 * sizeof(struct type_desc_s));
     memcpy(desc->data.tuple.element, &tmp, sizeof(tmp));
     ret = desc->data.tuple.element + 1;
   }
@@ -907,4 +903,7 @@ static type_description *add_tuple_item(type_description *desc)
   return ret;
 }
 
+#if defined(__cplusplus)
+}
+#endif
 

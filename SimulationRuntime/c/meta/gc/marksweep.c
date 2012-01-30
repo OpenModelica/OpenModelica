@@ -32,26 +32,22 @@
 
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
- * This file implements the new MetaModelica Garbage Collector
- * which is a mark-and-sweep collector. See more information
- * in meta_modelica_gc.h file.
+ * This file implements the new MetaModelica mark-and-sweep garbage collector
+ * See more information in gc.h file.
  *
- * RCS: $Id: meta_modelica_gc.c 8047 2011-03-01 10:19:49Z perost $
+ * RCS: $Id: marksweep.c 8047 2011-03-01 10:19:49Z perost $
  *
  */
 
-#include "openmodelica.h"
-#include "meta_modelica.h"
+#include "modelica.h"
 
 #if defined(_MMC_GC_)
 
 mmc_GC_state_type *mmc_GC_state = NULL;
 
-char debug = 0;
-
 void mmc_GC_set_state(mmc_GC_state_type* state)
 {
-  if (debug)
+  if (state->settings.debug)
   {
     fprintf(stderr, "setting state -> before: %p, after: %p\n", (void*)mmc_GC_state, (void*)state);
     fflush(NULL);
@@ -69,7 +65,7 @@ int mmc_GC_init(mmc_GC_settings_type settings)
   int i = 0;
   mmc_GC_state = (mmc_GC_state_type*) malloc (sizeof(mmc_GC_state_type));
 
-  if (debug) { fprintf(stderr, "mmc_GC_init!\n"); fflush(NULL); }
+  /* if (mmc_GC_state->settings.debug) { fprintf(stderr, "mmc_GC_init!\n"); fflush(NULL); } */
 
   if (!mmc_GC_state)
   {
@@ -80,9 +76,11 @@ int mmc_GC_init(mmc_GC_settings_type settings)
 
   /* create the GC state structures */
   mmc_GC_state->settings = settings;
-  mmc_GC_state->totalPageSize = 0;
-  mmc_GC_state->totalFreeSize = 0;
-  mmc_GC_state->pages = pages_create(settings.pages_size, settings.page_size, settings.number_of_pages, settings.free_slots_size);
+  /*
+  mmc_GC_state->mas.totalPageSize = 0;
+  mmc_GC_state->mas.totalFreeSize = 0;
+  mmc_GC_state->mas.pages = pages_create(settings.pages_size, settings.page_size, settings.number_of_pages, settings.free_slots_size);
+  */
   mmc_GC_state->roots = roots_create(settings.roots_size, settings.roots_marks_size);
   mmc_GC_state->stats = stats_create();
   
@@ -90,6 +88,8 @@ int mmc_GC_init(mmc_GC_settings_type settings)
   {
     mmc_GC_state->global_roots[i] = 0;
   }
+
+  mmc_gcinit();
 
   return 0;
   }
@@ -108,7 +108,7 @@ int mmc_GC_clear(void)
   if (!mmc_GC_state) return 0;
 
   {
-  if (debug) { fprintf(stderr, "mmc_GC_clear!\n"); fflush(NULL); }
+  if (mmc_GC_state->settings.debug) { fprintf(stderr, "mmc_GC_clear!\n"); fflush(NULL); }
 
   free(mmc_GC_state->roots.marks->start);
   free(mmc_GC_state->roots.marks);
@@ -120,292 +120,24 @@ int mmc_GC_clear(void)
   }
 }
 
-/* add pointers to roots */
-void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
-{
-  int i;
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  assert(mmc_GC_state != NULL);
-
-  while (mmc_GC_state->roots.current + n >=  mmc_GC_state->roots.limit)
-  {
-    /* roots are filled, realloc! */
-    mmc_GC_state->roots = roots_increase(mmc_GC_state->roots, mmc_GC_state->settings.roots_size);
-  }
-
-  if (p)
-  {
-    /* if p is not null and inside the page, add it */
-    /* if (!*p || (*p && is_inside_page(*p))) */
-
-    {
-      /* check if already added
-      size_t i = 0;
-      for (i = 0; i < mmc_GC_state->roots.current; i++)
-      {
-        if (mmc_GC_state->roots.start[i] == *p)
-        {
-          if (debug)
-          {
-            fprintf(stderr, "root: PRESENT %ld -> ", i, p, *p); fflush(NULL);
-          }
-        }
-      }
-      */
-      for (i=0; i<n; i++) {
-        /* set the pointer to current */
-        mmc_GC_state->roots.start[mmc_GC_state->roots.current] = p+i;
-        if (debug)
-        {
-          fprintf(stderr, "root: ADDED  %ld %p *%p ->", mmc_GC_state->roots.current, (void*) p, *p); fflush(NULL);
-        }
-        /* increase the current */
-        mmc_GC_state->roots.current++;
-      }
-    }
-
-    if (debug)
-    {
-      fprintf(stderr, " %s.%s\n", local_GC_state.functionName, name);
-      /*
-      mmc_Stack s = mmc_GC_state->roots.marks;
-      while (s != NULL)
-      {
-        fprintf(stderr, "%s / ", s->el.functionName); fflush(NULL);
-        s = s->next;
-      }
-      fprintf(stderr, "\n", name);
-      */
-    }
-
-
-  }
-
-}
-
-/* save the current roots mark */
-mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name)
-{
-  mmc_GC_local_state_type local_GC_state = {0, 0};
-  size_t mark = 0;
-
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  assert(mmc_GC_state != NULL);
-
-  mark = mmc_GC_state->roots.current;
-
-  /* increasing stack index */
-  mmc_GC_state->roots.rootsStackIndex++;
-  local_GC_state.functionName = name;
-  local_GC_state.rootsMark = mark;
-  local_GC_state.rootsStackIndex = mmc_GC_state->roots.rootsStackIndex;
-
-  /* push the current index in the roots */
-  mmc_GC_state->roots.marks = stack_push(mmc_GC_state->roots.marks, local_GC_state);
-
-  if (debug)
-  {
-    fprintf(stderr, "stack: -> %ld %ld %s\n",
-      local_GC_state.rootsStackIndex,
-      local_GC_state.rootsMark,
-      name);
-    fflush(NULL);
-  }
-
-  return local_GC_state;
-}
-
-/* unwind to current function */
-int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
-{
-/*  return mmc_GC_undo_roots_state(local_GC_state); */
-  mmc_GC_local_state_type roots_index = {0, 0, 0};
-
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  assert(mmc_GC_state != NULL);
-
-  roots_index = stack_peek(mmc_GC_state->roots.marks);
-
-  if (debug)
-  {
-    fprintf(stderr, "stack: UW %ld %ld %s - top stack: %ld %ld %s\n",
-        local_GC_state.rootsStackIndex,
-        local_GC_state.rootsMark,
-        local_GC_state.functionName,
-        roots_index.rootsStackIndex,
-        roots_index.rootsMark,
-        roots_index.functionName
-        );
-    fflush(NULL);
-  }
-
-  /* pop until you reach the function scope or empty! */
-  while (roots_index.rootsStackIndex > local_GC_state.rootsStackIndex)
-  {
-    if (debug)
-    {
-      fprintf(stderr, "stack: -- %ld %ld %s\n",
-          roots_index.rootsStackIndex,
-          roots_index.rootsMark,
-          roots_index.functionName);
-      fflush(NULL);
-    }
-
-    /* pop the marks stack */
-    roots_index = stack_pop(mmc_GC_state->roots.marks);
-
-    if (debug)
-    {
-      fprintf(stderr, "stack: <- %ld %ld %s\n",
-          roots_index.rootsStackIndex,
-          roots_index.rootsMark,
-          roots_index.functionName);
-      fflush(NULL);
-    }
-
-    if (stack_empty(mmc_GC_state->roots.marks))
-      break;
-
-    roots_index = stack_peek(mmc_GC_state->roots.marks);
-  }
-
-
-  if (debug)
-  {
-    fprintf(stderr, "stack: UF %ld %ld %s\n",
-        roots_index.rootsStackIndex,
-        roots_index.rootsMark,
-        roots_index.functionName);
-    fflush(NULL);
-  }
-
-  /* reset the roots current index */
-  mmc_GC_state->roots.current         = roots_index.rootsMark;
-  mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
-
-  /* decrease the roots size if we can */
-  mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size);
-  /* decrease the stack size if we can */
-  mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size);
-
-  return 0;
-
-}
-
-
-/* remove the current roots mark */
-int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
-{
-  mmc_GC_local_state_type roots_index = {0, 0, 0};
-
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  assert(mmc_GC_state != NULL);
-
-  roots_index = stack_peek(mmc_GC_state->roots.marks);
-
-  if (debug)
-  {
-    fprintf(stderr, "stack: GC %ld %ld %s - top stack: %ld %ld %s\n",
-        local_GC_state.rootsStackIndex,
-        local_GC_state.rootsMark,
-        local_GC_state.functionName,
-        roots_index.rootsStackIndex,
-        roots_index.rootsMark,
-        roots_index.functionName
-        );
-    fflush(NULL);
-  }
-
-  /* pop until you reach the function scope or empty! */
-  while (roots_index.rootsStackIndex >= local_GC_state.rootsStackIndex)
-  {
-    if (debug)
-    {
-      fprintf(stderr, "stack: -- %ld %ld %s\n",
-          roots_index.rootsStackIndex,
-          roots_index.rootsMark,
-          roots_index.functionName);
-      fflush(NULL);
-    }
-
-    /* pop the marks stack */
-    roots_index = stack_pop(mmc_GC_state->roots.marks);
-
-    if (debug)
-    {
-      fprintf(stderr, "stack: <- %ld %ld %s\n",
-          roots_index.rootsStackIndex,
-          roots_index.rootsMark,
-          roots_index.functionName);
-      fflush(NULL);
-    }
-
-    if (stack_empty(mmc_GC_state->roots.marks))
-      break;
-
-    roots_index = stack_peek(mmc_GC_state->roots.marks);
-  }
-
-
-  if (debug)
-  {
-    fprintf(stderr, "stack: FI %ld %ld %s\n",
-        roots_index.rootsStackIndex,
-        roots_index.rootsMark,
-        roots_index.functionName);
-    fflush(NULL);
-  }
-
-  /* reset the roots current index */
-  mmc_GC_state->roots.current         = roots_index.rootsMark;
-  mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
-
-  /* decrease the roots size if we can */
-  mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size);
-  /* decrease the stack size if we can */
-  mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size);
-
-  return 0;
-}
-
 void walk_object(modelica_metatype p)
 {
 mmc_walk_top:
 
-  /* if (debug) fprintf(stderr, "walking: %p\n", p); fflush(NULL); */
+  /* if (mmc_GC_state->settings.debug) fprintf(stderr, "walking: %p\n", p); fflush(NULL); */
 
   assert(p != NULL);
   /*
   if (is_in_free(MMC_UNTAGPTR(p)))
   {
-    if (debug) fprintf(stderr, "walking: %p\n", p); fflush(NULL);
+    if (mmc_GC_state->settings.debug) fprintf(stderr, "walking: %p\n", p); fflush(NULL);
     assert(0);
   }
   */
 
   if( MMC_IS_IMMEDIATE(p) )
   {
-    /* if (debug) fprintf(stderr, "immediate: %p\n", p); fflush(NULL); */
+    /* if (mmc_GC_state->settings.debug) fprintf(stderr, "immediate: %p\n", p); fflush(NULL); */
     return;
   }
   else
@@ -430,16 +162,16 @@ mmc_walk_top:
     /* if we should mark it and is already marked, return */
     if ( MMC_HDRISMARKED(hdr) ) return;
     /* else, mark it */
-    /* if (debug) fprintf(stderr, "casting the header\n"); fflush(NULL); */
+    /* if (mmc_GC_state->settings.debug) fprintf(stderr, "casting the header\n"); fflush(NULL); */
     sh = ((struct mmc_header*)MMC_UNTAGPTR(p));
-    /* if (debug) fprintf(stderr, "marking: %p %ul\n", p, sh->header); fflush(NULL); */
+    /* if (mmc_GC_state->settings.debug) fprintf(stderr, "marking: %p %ul\n", p, sh->header); fflush(NULL); */
     sh->header = MMC_HDR_MARK(hdr);
-    /* if (debug) fprintf(stderr, "marked: %p\n", p); fflush(NULL); */
+    /* if (mmc_GC_state->settings.debug) fprintf(stderr, "marked: %p\n", p); fflush(NULL); */
 
     /* if is string or real, just return */
     if( MMC_HDRISSTRING(MMC_HDR_UNMARK(hdr)) || (MMC_HDR_UNMARK(hdr) == MMC_REALHDR) )
     {
-      /* if (debug) fprintf(stderr, "real or string: %p\n", p); fflush(NULL); */
+      /* if (mmc_GC_state->settings.debug) fprintf(stderr, "real or string: %p\n", p); fflush(NULL); */
       return;
     }
 
@@ -451,7 +183,7 @@ mmc_walk_top:
       mmc_uint_t slotsMin  = 0, index = 0;
       void **pp = NULL;
 
-      /* if (debug) fprintf(stderr, "structure: %p\n", p); fflush(NULL); */
+      /* if (mmc_GC_state->settings.debug) fprintf(stderr, "structure: %p\n", p); fflush(NULL); */
       if (slots == 0) return;
 
       pp = MMC_STRUCTDATA(p);
@@ -481,7 +213,7 @@ mmc_walk_top:
 /* the mark phase */
 int mmc_GC_collect_mark(void)
 {
-  size_t index = 0;
+  size_t index = 0, count = 0;
   modelica_metatype* p = NULL;
 
   assert(mmc_GC_state != NULL);
@@ -496,30 +228,31 @@ int mmc_GC_collect_mark(void)
    */
 
   for(index = 0; index < mmc_GC_state->roots.current; index++)
-  {
-    p = (void**)(mmc_GC_state->roots.start[index]);
-    if (p && *p)
+    for(count = 0; count < mmc_GC_state->roots.start[index].count; count++)
     {
-      int a=0;
-      if (debug)
+      p = (void**)(mmc_GC_state->roots.start[index].start[count]);
+      if (p && *p)
       {
-        fprintf(stderr, "marking object: %ld %p *%p ->", index, (void*) p, *p); fflush(NULL);
-        /* printAny(*p); */
-        fprintf(stderr, "\n"); fflush(NULL);
-      }
+        int a=0;
+        if (mmc_GC_state->settings.debug)
+        {
+          fprintf(stderr, "marking object: %ld %p *%p ->", index, (void*) p, *p); fflush(NULL);
+          /* printAny(*p); */
+          fprintf(stderr, "\n"); fflush(NULL);
+        }
 
-      if (!MMC_IS_IMMEDIATE(*p) && !MMC_HDRISMARKED(MMC_GETHDR(*p)))
-      {
-        /* assert(is_in_free(*p) == 0); */
-        walk_object(*p);
-        if (debug) { fprintf(stderr, ">> marking done <<\n"); fflush(NULL); }
-      }
-      else
-      {
-        if (debug) { fprintf(stderr, ">> obj skipped a:%d <<\n", a); fflush(NULL); }
+        if (!MMC_IS_IMMEDIATE(*p) && !MMC_HDRISMARKED(MMC_GETHDR(*p)))
+        {
+          /* assert(is_in_free(*p) == 0); */
+          walk_object(*p);
+          if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> marking done <<\n"); fflush(NULL); }
+        }
+        else
+        {
+          if (mmc_GC_state->settings.debug) { fprintf(stderr, ">> obj skipped a:%d <<\n", a); fflush(NULL); }
+        }
       }
     }
-  }
 
   /* mark global roots! */
   for(index = 0; index < 1024; index++)
@@ -527,9 +260,9 @@ int mmc_GC_collect_mark(void)
     p = &mmc_GC_state->global_roots[index];
     if (p && *p && !MMC_IS_IMMEDIATE(*p) && !MMC_HDRISMARKED(MMC_GETHDR(*p)) /*&&  is_inside_page(*p) */)
     {
-      if (debug) { fprintf(stderr, "marking global object: %ld %p ->", index, mmc_GC_state->global_roots[index]); fflush(NULL); }
+      if (mmc_GC_state->settings.debug) { fprintf(stderr, "marking global object: %ld %p ->", index, mmc_GC_state->global_roots[index]); fflush(NULL); }
       /* printAny(mmc_GC_state->global_roots[index]); */
-      if (debug) { fprintf(stderr, "\n"); fflush(NULL); }
+      if (mmc_GC_state->settings.debug) { fprintf(stderr, "\n"); fflush(NULL); }
 
       /* assert(is_in_free(*p) == 0); */
 
@@ -551,7 +284,7 @@ int sweep_page(mmc_GC_page_type page)
   mmc_uint_t hdr = 0, unmarkedHdr = 0, slots = 0, sz = 0, ctor = 0;
 
   /*
-  if (debug) fprintf(stderr, "sweeping page: %p, filled: %u\n", (void*)scan, filledSize); fflush(NULL);
+  if (mmc_GC_state->settings.debug) fprintf(stderr, "sweeping page: %p, filled: %u\n", (void*)scan, filledSize); fflush(NULL);
   */
 
   /* scan the page */
@@ -579,7 +312,7 @@ int sweep_page(mmc_GC_page_type page)
     if (ctor == MMC_FREE_OBJECT_CTOR || MMC_HDRCTOR(hdr) == MMC_FREE_OBJECT_CTOR)
     {
       sz = (slots + 1) * sizeof(void*);
-      if (debug) 
+      if (mmc_GC_state->settings.debug) 
       {
         fprintf(stderr, "skipping free object: %p size:%ld\n", scan, sz); 
         fflush(NULL);
@@ -588,7 +321,7 @@ int sweep_page(mmc_GC_page_type page)
       continue;
     }
 
-    if (debug) 
+    if (mmc_GC_state->settings.debug) 
     {
       fprintf(stderr, "get obj header: hdr:%ld ctor:%ld slots:%ld\n", MMC_HDR_UNMARK(hdr), ctor, slots); 
       fflush(NULL);
@@ -598,7 +331,7 @@ int sweep_page(mmc_GC_page_type page)
     if (MMC_HDRISMARKED(hdr))
     {
       /* do nothing */
-      if (debug) 
+      if (mmc_GC_state->settings.debug) 
       {
         fprintf(stderr, "skipping and unmarking marked obj: %p size:%ld\n", scan, (slots+1)*sizeof(void*)); 
         fflush(NULL);
@@ -607,7 +340,7 @@ int sweep_page(mmc_GC_page_type page)
     }
     else /* object is unmarked, add it to the free list */
     {
-      if (debug)
+      if (mmc_GC_state->settings.debug)
       {
         fprintf(stderr, "add free obj: hdr:%ld ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), ctor, slots, scan); 
         printAny(MMC_TAGPTR(scan));
@@ -616,20 +349,20 @@ int sweep_page(mmc_GC_page_type page)
       }
       
       page.free = list_add(page.free, scan, slots + 1);
-      mmc_GC_state->totalFreeSize += (size_t)MMC_WORDS_TO_BYTES(slots + 1);
+      mmc_GC_state->mas.totalFreeSize += (size_t)MMC_WORDS_TO_BYTES(slots + 1);
   
-      if (debug)
+      if (mmc_GC_state->settings.debug)
       {
-        size_t sz = pages_list_size(mmc_GC_state->pages);
-        if (sz != mmc_GC_state->totalFreeSize)
+        size_t sz = pages_list_size(mmc_GC_state->mas.pages);
+        if (sz != mmc_GC_state->mas.totalFreeSize)
         {
           fprintf(stderr, "add free obj: hdr:%ld/%lu ctor:%ld slots:%ld p:%p\n", MMC_HDR_UNMARK(hdr), hdr, ctor, slots, scan);
           fflush(NULL);
         }
-        assert(sz == mmc_GC_state->totalFreeSize);
+        assert(sz == mmc_GC_state->mas.totalFreeSize);
       }
 
-      assert(mmc_GC_state->totalFreeSize <= mmc_GC_state->totalPageSize);
+      assert(mmc_GC_state->mas.totalFreeSize <= mmc_GC_state->mas.totalPageSize);
 
     }
     /* move to next object which should be after slots + 1 (the header) */
@@ -666,9 +399,9 @@ int mmc_GC_collect_sweep(void)
    * unmarked objects region to the free list!
    */
 
-  for (i = 0; i < mmc_GC_state->pages.current; i++)
+  for (i = 0; i < mmc_GC_state->mas.pages.current; i++)
   {
-    page = mmc_GC_state->pages.start[i];
+    page = mmc_GC_state->mas.pages.start[i];
     sweep_page(page);
   }
 
@@ -745,20 +478,28 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
     mmc_GC_init(mmc_GC_settings_default);
   }
 
+  if ((mmc_GC_gen_state_young_next+64) < (mmc_GC_gen_state_young_limit))
+   return 0;
+
+  // fprintf(stderr, "GC from: %s", local_GC_state.functionName); fflush(stderr);
+  mmc_minor_collection();
+
+  return 0;
+
   assert(mmc_GC_state != NULL);
 
-  sizePages = mmc_GC_state->totalPageSize;
-  sizeFree = mmc_GC_state->totalFreeSize;
+  sizePages = mmc_GC_state->mas.totalPageSize;
+  sizeFree = mmc_GC_state->mas.totalFreeSize;
   saved = sizeFree;
   assert(sizeFree <= sizePages);
 
   /* only collect if sizeof free is 5% sizeof pages */
-  if ((double)sizeFree * 4 > mmc_GC_state->settings.page_size)
+  if ((double)sizeFree * 10 > mmc_GC_state->settings.page_size)
   {
     return 0;
   }
 
-  if (debug)
+  if (mmc_GC_state->settings.debug)
   {
     fprintf(stderr, "GC before: [%s] sizeFree: %ld sizePages: %ld procent: %.3g\n",
         local_GC_state.functionName,
@@ -767,27 +508,27 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
   }
 
 
-  if (debug) fprintf(stderr, "mark\n"); fflush(NULL);
+  if (mmc_GC_state->settings.debug) fprintf(stderr, "mark\n"); fflush(NULL);
   mmc_GC_collect_mark();
-  if (debug) fprintf(stderr, "sweep\n"); fflush(NULL);
+  if (mmc_GC_state->settings.debug) fprintf(stderr, "sweep\n"); fflush(NULL);
   mmc_GC_collect_sweep();
-  if (debug) fprintf(stderr, "collect done\n"); fflush(NULL);
+  if (mmc_GC_state->settings.debug) fprintf(stderr, "collect done\n"); fflush(NULL);
 
-  sizePages = mmc_GC_state->totalPageSize;
-  sizeFree = mmc_GC_state->totalFreeSize;
+  sizePages = mmc_GC_state->mas.totalPageSize;
+  sizeFree = mmc_GC_state->mas.totalFreeSize;
   assert(sizeFree <= sizePages);
 
-  mmc_GC_state->pages = free_list_compact(mmc_GC_state->pages);
+  mmc_GC_state->mas.pages = free_list_compact(mmc_GC_state->mas.pages);
 
-  if ((sizeFree - saved) && debug)
+  if ((sizeFree - saved)/* && mmc_GC_state->settings.debug*/)
   {
     fprintf(stderr, "GC collect: free: %8.2fMb pages: %8.2fMb free: %8.3f%% freed: %8.4fMb  lst: %10lu p: %4ld s: %6lu r:%6lu [%s]\n",
         (double)sizeFree/(1024.0*1024.0),
         (double)sizePages/(1024.0*1024.0),
         (double)sizeFree*100.0/(double)sizePages,
         (double)(sizeFree-saved)/(1024.0*1024.0),
-        pages_list_length(mmc_GC_state->pages),
-        (long) mmc_GC_state->pages.current,
+        pages_list_length(mmc_GC_state->mas.pages),
+        (long) mmc_GC_state->mas.pages.current,
         mmc_GC_state->roots.rootsStackIndex,
         mmc_GC_state->roots.current,
         local_GC_state.functionName);
@@ -799,7 +540,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
   {
     mmc_GC_page_type page = page_create(mmc_GC_state->settings.page_size, mmc_GC_state->settings.free_slots_size);
     /* add it to pages */
-    mmc_GC_state->pages = pages_add(mmc_GC_state->pages, page);
+    mmc_GC_state->mas.pages = pages_add(mmc_GC_state->mas.pages, page);
   }
 
   return 0;
@@ -815,9 +556,9 @@ modelica_metatype allocate_from_free(unsigned nbytes)
   assert(((double)nbytes / (double)MMC_SIZE_META) == (double)(nbytes / MMC_SIZE_META));
 
   /* find a free slot, look in all pages */
-  for (i = 0; i < mmc_GC_state->pages.current; i++)
+  for (i = 0; i < mmc_GC_state->mas.pages.current; i++)
   {
-    page = mmc_GC_state->pages.start[i];
+    page = mmc_GC_state->mas.pages.start[i];
     p = list_get(page.free, szWords);
     if (p) 
       break;
@@ -825,51 +566,33 @@ modelica_metatype allocate_from_free(unsigned nbytes)
 
   if (!p) /* add a new page */
   {
-    mmc_GC_state->pages = 
-      pages_add(mmc_GC_state->pages, 
+    mmc_GC_state->mas.pages = 
+      pages_add(mmc_GC_state->mas.pages, 
         page_create(
           (mmc_GC_state->settings.page_size > nbytes) ? mmc_GC_state->settings.page_size : mmc_GC_state->settings.page_size + nbytes,
           mmc_GC_state->settings.free_slots_size));
-    p = list_get(mmc_GC_state->pages.start[mmc_GC_state->pages.current - 1].free, szWords);
+    p = list_get(mmc_GC_state->mas.pages.start[mmc_GC_state->mas.pages.current - 1].free, szWords);
   }
 
   assert(p != NULL);
-  assert(mmc_GC_state->totalFreeSize >= nbytes);
+  assert(mmc_GC_state->mas.totalFreeSize >= nbytes);
 
-  mmc_GC_state->totalFreeSize -= (size_t)nbytes;
+  mmc_GC_state->mas.totalFreeSize -= (size_t)nbytes;
 
-  if (debug)
+  if (mmc_GC_state->settings.debug)
   {
-    size_t sz = pages_list_size(mmc_GC_state->pages);
-    assert(sz == mmc_GC_state->totalFreeSize);
+    size_t sz = pages_list_size(mmc_GC_state->mas.pages);
+    assert(sz == mmc_GC_state->mas.totalFreeSize);
   }
 
   return p;
 }
 
-void *mmc_alloc_bytes(unsigned nbytes)
+/* primary allocation routine for MetaModelica */
+void *mmc_alloc_words(unsigned nwords)
 {
-  modelica_metatype p = NULL;
-
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  assert(mmc_GC_state != NULL);
-
-  p = allocate_from_free(nbytes);
-
-  if (debug) 
-  {
-    fprintf(stderr, "alloc obj: %p, tag:%p size:%lu\n", p, MMC_TAGPTR(p), (unsigned long) nbytes); 
-    fflush(NULL);
-  }
-
-  return p;
+  return mmc_gen_alloc_words(nwords);
 }
-
 
 #else /* normal GC */
 
@@ -904,14 +627,14 @@ static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
 mmc_GC_local_state_type dummy_local_GC_state = {0,0};
 
-#endif /* defined(_MMC_GC_) */
-
-/* global functions, not ifdef dependent */
 /* primary allocation routine for MetaModelica */
 void *mmc_alloc_words(unsigned nwords)
 {
   return mmc_alloc_bytes(nwords * sizeof(void*));
 }
+
+
+#endif /* defined(_MMC_GC_) */
 
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes)
 {
@@ -925,8 +648,4 @@ int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes)
   
   return 0;
 }
-
-
-
-
 

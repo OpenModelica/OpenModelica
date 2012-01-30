@@ -32,6 +32,7 @@
 
 #include "meta_modelica_builtin.h"
 #include "meta_modelica.h"
+#include <float.h>
 #include <limits.h>
 #include <assert.h>
 #include <time.h>
@@ -43,6 +44,7 @@
 #include <float.h>
 #define isinf(d) (!_finite(d) && !_isnan(d))
 #define isnan _isnan
+#define snprintf _snprintf
 #endif
 
 #define GEN_META_MODELICA_BUILTIN_BOXPTR
@@ -604,6 +606,27 @@ modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modeli
   if (ix < 1 || ix > nelts)
     MMC_THROW();
   MMC_STRUCTDATA(arr)[ix-1] = val;
+#if defined(_MMC_GC_)
+  /* save it in the array trail! */
+  if (!MMC_IS_IMMEDIATE(val))
+  {
+    mmc_uint_t idx;
+    /* also check here if the array is not already in the trail */
+    for (idx = mmc_GC_state->gen.array_trail_size; &mmc_GC_state->gen.array_trail[idx] >= mmc_GC_state->gen.ATP; idx--)
+    if (mmc_GC_state->gen.array_trail[idx] == val) /* if found, do not add again */
+    {
+      return arr;
+    }
+    /* add the address of the array into the roots to be
+    taken into consideration at the garbage collection time */
+    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail ) 
+    {
+      (void)fprintf(stderr, "Array Trail Overflow!\n");
+      mmc_exit(1);
+    }
+    *--mmc_GC_state->gen.ATP = arr;
+  }
+#endif
   return arr;
 }
 
@@ -711,5 +734,11 @@ modelica_real realMaxLit()
 modelica_integer intMaxLit()
 {
   return INT_MAX / 2;
+}
+
+modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)
+{
+  /* return for now what we got */
+  return inSignal;
 }
 

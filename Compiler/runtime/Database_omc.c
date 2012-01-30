@@ -18,3 +18,4 @@ void* Database_query(int index, const char* _sql)
     return mk_nil();
   return result;
 }
+

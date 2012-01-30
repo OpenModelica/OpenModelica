@@ -31,61 +31,43 @@
 
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
- * This file implements the new MetaModelica Garbage Collector (GC)
- * which is a mark-and-sweep collector.
- *
- * RCS: $Id: meta_modelica_gc.h 8047 2011-03-01 10:19:49Z perost $
- *
- * At first a configurable number of pages of configurable size
- * are allocated and then made part of the free list. Allocation
- * picks up a slot from the free list and updates it.
- * All live data (made via mmc_mk_* functions) is added to the
- * array of roots. The upper limit mark of the roots array is
- * saved in a stack called marks which is pop-ed when a function
- * exits of fails.
- *
- * Garbage collection happens in several phases:
- * - mark phase when we start from roots (0 - currentMark)
- *   and marks all the objects that are live
- * - sweep phase collects all the other parts of the pages
- *   which are not marked by the mark phase into the free
- *   list which can then be reused for allocation.
- * - unmark phase when we start from roots (0 - currentMark)
- *   and un-marks all the objects that are live
- *
- * For more information see paper at Modelica Conference 2011:
- *  Martin Sjölund, Peter Fritzson, Adrian Pop
- *  "Bootstrapping a Modelica Compiler aiming at Modelica 4"
- * or contact Adrian Pop.
+ * This file defines the MetaModelica garbage collector (GC) interface
+ *  We have two collectors:
+ *  - generational 
+ *  - mark-and-sweep
+ *  and we can switch between them at runtime when needed.
+ *  We start with the generational and if there is not enough 
+ *  memory to allocate a new older generation we switch to a
+ *  mark-and-sweep collector.
+ * 
+ * RCS: $Id: gc.h 8047 2011-03-01 10:19:49Z perost $
  *
  */
 
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
 
-#include "openmodelica.h"
-#include "meta_modelica_gc_settings.h"
-#include "meta_modelica_gc_stack.h"
-#include "meta_modelica_gc_list.h"
-#include "meta_modelica_gc_roots.h"
-#include "meta_modelica_gc_pages.h"
-#include "meta_modelica_gc_stats.h"
+/*
+#define _MMC_GC_ 1
+*/
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#define MMC_GC_MARK   1
-#define MMC_GC_UNMARK 0
+#include "modelica.h"
+#include "common.h"
+#include "roots.h"
+#include "generational.h"
+#include "marksweep.h"
 
 struct mmc_GC_state_type /* the structure of GC state */
 {
   mmc_GC_settings_type    settings; /* defaults settings */
-  mmc_GC_pages_type       pages; /* the allocated pages which contain a free list */
   mmc_GC_roots_type       roots; /* the current roots */
-  modelica_metatype       global_roots[1024]; /* the global roots ! */
-  size_t                  totalPageSize; /* the total size of pages */
-  size_t                  totalFreeSize; /* the total size of free slots */
+  mmc_GC_gen_state_type   gen; /* the generational state */
+  mmc_GC_mas_state_type   mas; /* the mark-and-swep state */
+  modelica_metatype       global_roots[MMC_GC_GLOBAL_ROOTS_SIZE]; /* the global roots ! */
   mmc_GC_stats_type       stats; /* the statistics */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
@@ -98,12 +80,7 @@ extern mmc_GC_state_type* mmc_GC_state;
 /* checks if the pointer is in range */
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 /* primary allocation routines for MetaModelica */
-void *mmc_alloc_bytes(unsigned nbytes);
 void *mmc_alloc_words(unsigned nwords);
-
-/* define this to have GC!
-#define _MMC_GC_
-*/
 
 #if defined(_MMC_GC_)
 
@@ -114,17 +91,24 @@ int mmc_GC_init(mmc_GC_settings_type settings);
 int mmc_GC_init_default(void);
 /* clear of MetaModelica GC */
 int mmc_GC_clear(void);
-/* add pointers to roots */
-#define mmc_GC_add_root(A,B,C) mmc_GC_add_roots(A,1,B,C)
-void mmc_GC_add_roots(modelica_metatype*, int, mmc_GC_local_state_type local_GC_state, const char*);
-/* save the current roots mark */
-mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
-/* remove the current roots mark */
-int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state);
-/* unwind to current function */
-int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);
 /* do garbage collection */
 int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
+
+static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
+{
+  if (mmc_GC_state->roots.current + 1 <  mmc_GC_state->roots.limit)
+  {
+    if (p)
+    {
+    mmc_GC_state->roots.start[mmc_GC_state->roots.current].start = p;
+    mmc_GC_state->roots.start[mmc_GC_state->roots.current++].count = n;
+    }
+  }
+  else
+  {
+    mmc_GC_add_roots_fallback(p, n, local_GC_state, name);
+  }
+} 
 
 #else /* NO GC */
 
@@ -133,14 +117,10 @@ extern mmc_GC_local_state_type dummy_local_GC_state;
 #define mmc_GC_init(settings)                          
 #define mmc_GC_init_default(void)                      
 #define mmc_GC_clear(void)                             
-#define mmc_GC_add_root(A,B,C)                         
-#define mmc_GC_add_roots(p, n, local_GC_state, name)   
-#define mmc_GC_save_roots_state(name)                  (dummy_local_GC_state)
-#define mmc_GC_undo_roots_state(local_GC_state)        
-#define mmc_GC_unwind_roots_state(local_GC_state)      
 #define mmc_GC_collect(local_GC_state)                 
 
 #endif /* defined(_MMC_GC_) */
+
 
 #if defined(__cplusplus)
 }

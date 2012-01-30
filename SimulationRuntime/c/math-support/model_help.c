@@ -31,12 +31,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "simulation_data.h"
 #include "model_help.h"
 #include "openmodelica_func.h"
 #include "error.h"
-#include "varinfo.h"
 #include "delay.h"
 
 static const int IterationMax = 200;

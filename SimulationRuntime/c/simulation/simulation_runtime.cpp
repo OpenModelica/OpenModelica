@@ -28,23 +28,10 @@
  *
  */
 
-#include "error.h"
-#include "simulation_data.h"
-#include "openmodelica_func.h"
 
-#include "linearize.h"
-#include "options.h"
-#include "simulation_runtime.h"
-#include "simulation_input_xml.h"
-#include "simulation_result_empty.h"
-#include "simulation_result_plt.h"
-#include "simulation_result_csv.h"
-#include "simulation_result_mat.h"
-#include "solver_main.h"
-#include "modelinfo.h"
-#include "model_help.h"
-#include "rtclock.h"
-
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 
 #include <setjmp.h>
 #include <string>
@@ -62,6 +49,23 @@
 #ifndef _MSC_VER
 #include <regex.h>
 #endif
+
+#include "error.h"
+#include "simulation_data.h"
+#include "openmodelica_func.h"
+
+#include "linearize.h"
+#include "options.h"
+#include "simulation_runtime.h"
+#include "simulation_input_xml.h"
+#include "simulation_result_empty.h"
+#include "simulation_result_plt.h"
+#include "simulation_result_csv.h"
+#include "simulation_result_mat.h"
+#include "solver_main.h"
+#include "modelinfo.h"
+#include "model_help.h"
+#include "rtclock.h"
 
 #ifdef _OMC_QSS_LIB
 #include "solver_qss/solver_qss.h"

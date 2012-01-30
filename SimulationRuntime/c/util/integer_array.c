@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <math.h>
 
 modelica_integer integer_get(const integer_array_t *a, size_t i)
 {

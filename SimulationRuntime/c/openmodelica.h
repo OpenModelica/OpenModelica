@@ -45,7 +45,6 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
-#include <float.h>
 #include <assert.h>
 
 /* adrpo: extreme windows crap! */

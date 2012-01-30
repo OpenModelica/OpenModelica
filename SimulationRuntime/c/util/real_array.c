@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <math.h>
 
 /* Indexing 1 dimension */
 modelica_real real_get(const real_array_t *a, size_t i)

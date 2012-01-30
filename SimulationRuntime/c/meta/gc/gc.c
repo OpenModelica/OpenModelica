@@ -29,38 +29,19 @@
  *
  */
 
+
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
- * This file implements GC statistics
- *
- * RCS: $Id: meta_modelica_gc_stats.h 8047 2011-03-01 10:19:49Z perost $
+ * This file defines the MetaModelica garbage collector (GC) interface
+ *  We have two collectors:
+ *  - generational 
+ *  - mark-and-sweep
+ *  and we can switch between them at runtime when needed.
+ *  We start with the generational and if there is not enough 
+ *  memory to allocate a new older generation we switch to a
+ *  mark-and-sweep collector.
+ * 
+ * RCS: $Id: gc.c 8047 2011-03-01 10:19:49Z perost $
  *
  */
-
-#ifndef META_MODELICA_GC_STATS_H_
-#define META_MODELICA_GC_STATS_H_
-
-#include "openmodelica.h"
-
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-/* GC statistics, add more here if needed */
-struct mmc_GC_stats_type
-{
-  size_t allocated;    /* the total allocated memory */
-  size_t collected;    /* the total collected memory */
-  size_t collections;  /* the number of performed collections */
-};
-typedef struct mmc_GC_stats_type mmc_GC_stats_type;
-
-/* create the statistics structure */
-mmc_GC_stats_type stats_create(void);
-
-#if defined(__cplusplus)
-}
-#endif
-
-#endif /* #define META_MODELICA_GC_STATS_H_ */
 

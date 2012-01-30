@@ -35,7 +35,6 @@
 #include "openmodelica.h"
 #include <stdlib.h>
 #include <stdarg.h>
-#include <math.h>
 
 /* Settings the fields of a base_array */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);

@@ -4,7 +4,7 @@
 #if defined(__MINGW32__) || defined(_MSC_VER)
   #include <windows.h>
 
-  #define THREAD_RET_TYPE DWORD WINAPI
+  #define THREAD_RET_TYPE DWORD 
     #define THREAD_RET_TYPE_NO_API DWORD
   typedef LPVOID THREAD_PARAM_TYPE;
 

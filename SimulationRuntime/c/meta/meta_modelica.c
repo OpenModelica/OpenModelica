@@ -54,9 +54,9 @@ void* mmc_mk_rcon(double d)
 */
 void* mmc_mk_rcon(double d)
 {
-    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words(sizeof(struct mmc_real)/MMC_SIZE_INT);
+    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+    mmc_prim_set_real(p, d);
     p->header = MMC_REALHDR;
-    p->data = d;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "REAL size: %u\n", MMC_SIZE_DBL/MMC_SIZE_INT+1); fflush(NULL);
 #endif
@@ -117,8 +117,8 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 
   if (h_lhs == MMC_REALHDR) {
     double d1,d2;
-    d1 = MMC_REALDATA(lhs);
-    d2 = MMC_REALDATA(rhs);
+    d1 = mmc_prim_get_real(lhs);
+    d2 = mmc_prim_get_real(rhs);
     return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs)) {
@@ -219,6 +219,12 @@ inline static int anyStringWork(void* any, int ix)
     ix += sprintf(anyStringBuf+ix, "%ld", (signed long) MMC_UNTAGFIXNUM(any));
     return ix;
   }
+
+  if (MMC_HDR_IS_FORWARD(MMC_GETHDR(any))) {
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "Forward");
+    return ix;
+  }
   
   hdr = MMC_HDR_UNMARK(MMC_GETHDR(any));
 
@@ -230,7 +236,7 @@ inline static int anyStringWork(void* any, int ix)
 
   if (hdr == MMC_REALHDR) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%.7g", (double) MMC_REALDATA(any));
+    ix += sprintf(anyStringBuf+ix, "%.7g", (double) mmc_prim_get_real(any));
     return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {
@@ -381,6 +387,11 @@ void printTypeOfAny(void* any) /* for debugging */
   }
   
   hdr = MMC_GETHDR(any);
+
+  if (MMC_HDR_IS_FORWARD(hdr)) {
+    fprintf(stderr, "Forward");
+    return;
+  }
 
   if (hdr == MMC_NILHDR) {
     fprintf(stderr, "list<Any>");

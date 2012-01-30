@@ -30,6 +30,10 @@
 #ifndef MODEL_HELP_H
 #define MODEL_HELP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "simulation_data.h"
 
 #define ZEROCROSSING(ind,exp) { \
@@ -51,10 +55,6 @@
   data->simulationInfo.backupRelations[index] = ((exp1) op (exp2)); \
   }\
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void initializeDataStruc(DATA *data);
 
@@ -93,6 +93,5 @@ double GreaterEq(double a, double b);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

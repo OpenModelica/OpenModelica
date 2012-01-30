@@ -38,6 +38,10 @@
 #ifndef OPENMODELICAFUNC_H_
 #define OPENMODELICAFUNC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "simulation_data.h"
 
 #include "memory_pool.h"
@@ -53,10 +57,6 @@
 
 #include "model_help.h"
 #include "delay.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * this is used for initialize the DATA structure that is used in
