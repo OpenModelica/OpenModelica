@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.65])
+AC_PREREQ([2.63])
 AC_INIT(c_runtime/boolean_array.c)
 AC_SUBST(date)
 AC_SUBST(rmlc_bin)
