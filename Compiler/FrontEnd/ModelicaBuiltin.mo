@@ -2456,9 +2456,9 @@ Bug fixes, especially in the Linux version.
 The Functional Mockup Interface FMI 1.0 for model exchange import and export is supported by this release. The functionality is accessible via API calls as well as via pull-down menu commands in OMEdit.
 </html>"));
 end '1.8.0';
-package trunk "Current version"
+package '1.8.1' "Current version"
 annotation(Documentation(info="<html>
-Major changes (up to r10819):
+Major changes:
 <h4>OpenModelica Compiler (OMC)</h4>
 The feature sendData has been removed from OpenModelica. As a result, the kernel no longer depends on Qt. The <code>plot3()</code> family of functions have now replaced <code>plot()</code>, which in turn have been removed. The non-standard <code>visualize()</code> command has been removed in favour of more recent alternatives.
 <ul>
@@ -2466,13 +2466,18 @@ The feature sendData has been removed from OpenModelica. As a result, the kernel
 <li>Re-implementation of the simulation runtime using C instead of C++ (this was needed to export FMI source-based packages).</li>
 <li>Changed the internal representation of various structures to share more memory. This significantly improved the performance for very large models that use records.</li>
 <li>New options to API calls <strong>list</strong>, <strong>loadFile</strong>, and more.</li>
-<li>Initial support for operator overloading (in progress).</li>
+<li>Some support for operator overloading.</li>
 <li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
 <li>Improved the scripting environment. <code>cl := $TypeName(Modelica);getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
+<li>Interactive simulation is currently not working.</li>
 <li>Various bugfixes.</li>
 </ul>
 <h4>OMNotebook</h4>
 Added OMSketch (...).
+</html>"));
+end '1.8.1';
+package trunk "Development version"
+annotation(Documentation(info="<html>
 </html>"));
 end trunk;
 annotation(Documentation(info="<html>
