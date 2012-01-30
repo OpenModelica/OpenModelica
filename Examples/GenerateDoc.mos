@@ -229,10 +229,13 @@ def linkreplace(link):
 
 log = open('tidy.log','w')
 verblog = open('tidy.verbose','w')
-
 for f in glob.glob('*.html'):
+  log = open('tidy.log','a')
+  verblog = open('tidy.verbose','a')
   log.write('Checking file '+f+'\\n')
   verblog.write('Checking file '+f+'\\n')
+  log.flush()
+  verblog.flush()
   p = subprocess.Popen(['-modify','-quiet',f],bufsize=1000,executable='tidy',stdin=None,stdout=verblog,stderr=log)
   p.wait()
   try:
@@ -252,7 +255,7 @@ for f in glob.glob('*.html'):
     file = open(f,'w')
     file.write(soup.__str__())
   except:
-    log.write('Unknown python error')
+    log.write('Unknown python error in: ' + f)
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
