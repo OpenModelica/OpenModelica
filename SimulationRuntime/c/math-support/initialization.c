@@ -76,6 +76,7 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
   fortran_integer i = 0;
   long j = 0;
   double funcValue = 0;
+  double scalingCoefficient;
 
   for(i=0; i<data->modelData.nStates; ++i)
   {
@@ -103,7 +104,9 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
 
   for(j=0; j<data->modelData.nResiduals; ++j)
   {
-    funcValue += (initialResiduals[j] / (initialResidualScalingCoefficients ? initialResidualScalingCoefficients[j] : 1.0)) * (initialResiduals[j] / (initialResidualScalingCoefficients ? initialResidualScalingCoefficients[j] : 1.0));
+    scalingCoefficient = initialResidualScalingCoefficients ? initialResidualScalingCoefficients[j] : 1.0;
+    if(scalingCoefficient > 0.0)
+      funcValue += (initialResiduals[j] / scalingCoefficient) * (initialResiduals[j] / scalingCoefficient);
   }
 
   return funcValue;
@@ -118,12 +121,11 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
  *  \param [in]  [nz] number of unfixed states and unfixed parameters
  *  \param [in]  [z] vector of unfixed states and unfixed parameters
  *  \param [in]  [zNominal] vector of nominal-values for z or NULL
- *  \param [in]  [lambda] E [0; 1]
  *  \param [out] [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals
  *
  *  \author lochel
  */
-static void computeInitialResidualScalingCoefficients(DATA *data, double nz, double *z, double *zNominal, double lambda, double *initialResidualScalingCoefficients)
+static void computeInitialResidualScalingCoefficients(DATA *data, double nz, double *z, double *zNominal, double *initialResidualScalingCoefficients)
 {
   int i, j;
 
@@ -139,13 +141,13 @@ static void computeInitialResidualScalingCoefficients(DATA *data, double nz, dou
   for(i=0; i<nz; ++i)
     states[i] = z[i] * (zNominal ? zNominal[i] : 1.0);
 
-  /* calculate initial_residuals */
-  leastSquareWithLambda(data, nz, states, NULL, NULL, lambda, tmpInitialResidual1);
+  /* lambda = 1.0 */
+  leastSquareWithLambda(data, nz, states, NULL, NULL, 1.0, tmpInitialResidual1);
 
   for(i=0; i<nz; ++i)
   {
     states[i] += h;
-    leastSquareWithLambda(data, nz, states, NULL, NULL, lambda, tmpInitialResidual2);
+    leastSquareWithLambda(data, nz, states, NULL, NULL, 1.0, tmpInitialResidual2);
 
     for(j=0; j<data->modelData.nResiduals; ++j)
     {
@@ -156,12 +158,29 @@ static void computeInitialResidualScalingCoefficients(DATA *data, double nz, dou
     states[i] -= h;
   }
 
-  DEBUG_INFO1(LOG_INIT, "initial residuals scaling coefficients [lambda=%g]", lambda);
+  /* lambda = 0.0 */
+  leastSquareWithLambda(data, nz, states, NULL, NULL, 0.0, tmpInitialResidual1);
+
+  for(i=0; i<nz; ++i)
+  {
+    states[i] += h;
+    leastSquareWithLambda(data, nz, states, NULL, NULL, 0.0, tmpInitialResidual2);
+
+    for(j=0; j<data->modelData.nResiduals; ++j)
+    {
+      double f = fabs(zNominal[i] * (tmpInitialResidual2[j] - tmpInitialResidual1[j]) / h /* / tmpInitialResidual2[j] */ );
+      if(f > initialResidualScalingCoefficients[j])
+        initialResidualScalingCoefficients[j] = f;
+    }
+    states[i] -= h;
+  }
+
+  DEBUG_INFO(LOG_INIT, "initial residuals scaling coefficients");
   for(j=0; j<data->modelData.nResiduals; ++j)
   {
     if(initialResidualScalingCoefficients[j] < 1e-42)
     {
-      initialResidualScalingCoefficients[j] = 1.0;
+      initialResidualScalingCoefficients[j] = 0.0;
       DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g [ineffective]", j, initialResidualScalingCoefficients[j]);
     }
     else
@@ -255,20 +274,16 @@ static void NelderMeadOptimization(long N,
   }
 
   /*DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(data, N, simplex, scale, initialResidualScalingCoefficients, lambda, initialResiduals));*/
-  computeInitialResidualScalingCoefficients(data, N, simplex, scale, 0.0, initialResidualScalingCoefficients);
+  computeInitialResidualScalingCoefficients(data, N, simplex, scale, initialResidualScalingCoefficients);
 
   do
   {
     /* lambda-control */
     double sigma = 0.0;
     double average = 0.0;
-    double g = 0.000001;
+    double g = 0.00001;
 
     iteration++;
-
-    /* dump every dump-th step */
-    if(dump && !(iteration % dump))
-      INFO3("NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(data, N, simplex, scale, initialResidualScalingCoefficients, lambda, initialResiduals));
 
     /* func-values for the simplex */
     for(x=0; x<N+1; x++)
@@ -304,14 +319,17 @@ static void NelderMeadOptimization(long N,
       sigma += (fvalues[x] - average) * (fvalues[x] - average);
     sigma /= N;
 
+    /* dump every dump-th step */
+    if(dump && !(iteration % dump))
+      INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xz]);
+
     if(sigma < g*g && lambda < 1.0)
     {
       lambda += lambda_step;
       if(lambda > 1.0)
         lambda = 1.0;
 
-      DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(data, N, simplex, scale, initialResidualScalingCoefficients, lambda, initialResiduals));
-      computeInitialResidualScalingCoefficients(data, N, &simplex[xb*N], scale, lambda, initialResidualScalingCoefficients);
+      DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
       continue;
     }
 
@@ -515,7 +533,10 @@ static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zN
     DEBUG_INFO_AL1(LOG_INIT, "   iterations: %ld", iteration);
     DEBUG_INFO_AL1(LOG_INIT, "   lambda: %g", lambda);
     for(i=0; i<nz; i++)
-      DEBUG_INFO_AL3(LOG_INIT, "   z[%ld]: %s = %g", i, zName[i], z[i]);
+      DEBUG_INFO_AL3(LOG_INIT, "   z[%ld]: %s = %g", i, zName[i], z[i] * (zNominal ? zNominal[i] : 1.0));
+    for(i=0; i<data->modelData.nResiduals; i++)
+      if(fabs(initialResiduals[i]) > 1e-3)
+        DEBUG_INFO_AL2(LOG_INIT, "   residual[%ld] = %g", i, initialResiduals[i]);
 
     if(funcValue < bestFuncValue)
     {
