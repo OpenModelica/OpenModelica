@@ -414,12 +414,12 @@ algorithm
 
     case _
       equation
-        {"Modelica", version} = System.strtok(inLibraryName, " ");
+        "Modelica" :: version :: _ = System.strtok(inLibraryName, " ");
         new_std = versionStringToStd(version);
         current_std = getLanguageStandard();
         false = valueEq(new_std, current_std);
         setLanguageStandard(new_std);
-        show_warning = languageStandardAtMost(MODELICA_3_0());
+        show_warning = hasLanguageStandardChanged(current_std);
         new_std_str = languageStandardString(new_std);
         Debug.bcall2(show_warning, Error.addMessage, Error.CHANGED_STD_VERSION,
           {new_std_str, version});
@@ -430,6 +430,22 @@ algorithm
   end matchcontinue;
 end setLanguageStandardFromMSL;
 
+protected function hasLanguageStandardChanged
+  input LanguageStandard inOldStandard;
+  output Boolean outHasChanged;
+algorithm
+  outHasChanged := matchcontinue(inOldStandard)
+    // If the old standard wasn't set by the user, then we consider it to have
+    // changed only if the new standard is 3.0 or less. This is to avoid
+    // printing a notice if the user loads e.g. MSL 3.1.
+    case MODELICA_LATEST()
+      then languageStandardAtMost(MODELICA_3_0());
+
+    // Otherwise is has changed.
+    else true;
+  end matchcontinue;
+end hasLanguageStandardChanged;
+    
 protected function versionStringToStd
   input String inVersion;
   output LanguageStandard outStandard;
