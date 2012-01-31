@@ -8,8 +8,8 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
 	, _hUpperLimit	(globalSettings->getEndTime() - globalSettings->getStartTime())
 	, _hLowerLimit	(10*UROUND)
 	, _endTimeTol	(1e-6)
-	, _zeroTol		(1e-4)
-	, _zeroTimeTol	(1e-12)
+	, _zeroTol		(1e-8)
+	, _zeroTimeTol	(1e-6)
 	,_zeroRatio(1.0)
 
 {	

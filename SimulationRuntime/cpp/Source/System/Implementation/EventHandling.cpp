@@ -195,7 +195,21 @@ void  EventHandling::addTimeEvents( event_times_type times)
    }
   
 }
+bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index)
+{
 
+	bool found=true;
+	found = (std::equal (next_values, next_values+size,pre_values));
+	if(!found)
+	{
+		 for (int i = 0; i < size; i++) 
+		 { 
+
+              *cur_values[i] = values[cur_index * size + i]; 
+          } 
+	}
+	return found;
+}
 
 event_times_type EventHandling::makePeriodeEvents(double ts,double te,double interval,long index)
 {

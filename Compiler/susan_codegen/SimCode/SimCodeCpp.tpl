@@ -71,6 +71,11 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
    Functions::~Functions() 
    { 
    } 
+    void Functions::Assert(bool cond,string msg)
+	{
+		if(!cond)
+			throw std::runtime_error(msg);
+	}
     <%functionBodies(functions,simCode)%>
   >>
   
@@ -102,8 +107,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 	    Functions(); 
        ~Functions(); 
        <%functionHeaderBodies2(functions,simCode)%>
+       void Assert(bool cond,string msg);
       private:
        <%functionHeaderBodies3(functions,simCode)%>
+       
      };
   >>
   
@@ -137,7 +144,7 @@ FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>   -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>   -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
 	 
 >>
 end simulationMakefile;
@@ -186,6 +193,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	<%arrayInit(simCode)%>
 	//Load Algloopsover library
 	type_map types;
+
 	std::string algsover_name(SYSTEM_LIB);
 	if(!load_single_library(types, algsover_name))
 		throw std::invalid_argument("Algsover library could not be loaded");
@@ -246,12 +254,13 @@ match eq
    
     
     <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(
-    															<%constructorParams%>,double* z,double* zDot
+    															<%constructorParams%>,double* z,double* zDot,EventHandling& event_handling
     															 ) 
    :AlgLoopDefaultImplementation()
    ,_residuals(NULL)
    ,_z(z)
    ,_zDot(zDot)
+   ,_event_handling(event_handling)
    <%alocateLinearSystem(eq)%>
    <%iniAlgloopParamas%>
     { 
@@ -288,7 +297,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/,simCode)
+         equation_(eq2, contextOther, &varDecls /*BUFD*/,simCode)
        ;separator="\n")      
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFD*/,simCode)
@@ -349,14 +358,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  let bvector =  (beqs |> exp hasindex i0 =>
 
      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-     '_b[<%i0%>]=<%expPart%>;'
+     '<%preExp%>_b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
  
   
  <<
    void <%modelname%>Algloop<%index%>::update(const IContinous::UPDATE command)
   {
-	  
+	  <%varDecls%>
 	  <%Amatrix%>
 	  <%bvector%>	  
 	 
@@ -1382,17 +1391,26 @@ case SES_NONLINEAR(__) then
   ;separator="\n"%>
    >>
  case SES_LINEAR(__)then
- <<
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+  let &varDecls = buffer "" /*BUFD*/
      let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-     '<%preExp%>_A[<%row%>][<%col%>] = <%expPart%>;'
-  ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
-     let &preExp = buffer "" /*BUFD*/
+ let Amatrix= 
+    (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+      let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
+      '<%preExp%>_A[<%row%>][<%col%>]=<%expPart%>;'
+  ;separator="\n")
+  
+ 
+ 
+ let bvector =  (beqs |> exp hasindex i0 =>
+
      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-     '<%preExp%>_b[<%i0%>]= <%expPart%>;'
-  ;separator="\n"%>
+     '<%preExp%>_b[<%i0%>]=<%expPart%>;'
+  ;separator="\n")
+ 
+ <<
+	  <%varDecls%>
+	  <%Amatrix%>
+	  <%bvector%>
   >> 
    
 end initAlgloopEquation;
@@ -1675,8 +1693,13 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
   #include "policies/BufferReaderWriter.h"
+
+  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;  
+
+
   //typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;  
   typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;  
+
 
   >>
   else
@@ -1704,8 +1727,10 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #pragma once
   #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_IMPORT_DECL
+  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL 
   #include "System/Interfaces/IDAESystem.h"
   #include "System/Implementation/AlgLoopDefaultImplementation.h"
+  #include "System/Implementation/EventHandling.h"
   #include "Functions.h"
   >>
 end generateAlgloopHeaderInlcudeString;
@@ -1763,6 +1788,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%modelname%>Algloop<%index%>(
       								 <%constructorParams%>
       								 ,double* z,double* zDot
+      								 ,EventHandling& event_handling
       								); 
       ~<%modelname%>Algloop<%index%>();
       
@@ -1780,6 +1806,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	//b vector
 	boost::multi_array<double,1> _b;
      <%algvars%>
+    EventHandling& _event_handling; 
    };
   >>
 end generateAlgloopClassDeclarationCode;
@@ -2076,9 +2103,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	// Returns labels for a labeled DAE
 	virtual label_list_type getLabels();
 	//Sets all algebraic and state varibales for current time
+
+	virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
+
 	virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
 	//Gives back residues
 	virtual void giveResidues(double* f);
+
 	>>%>
 >>
 end generateMethodDeclarationCode;
@@ -2710,7 +2741,7 @@ template cref(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
   else "$"+crefToCStr(cr)
@@ -2720,7 +2751,7 @@ template cref2(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
   else "$"+crefToCStr(cr)
@@ -2764,7 +2795,7 @@ template crefToCStr1(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
+  case CREF_QUAL(__) then 			  '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -2772,6 +2803,7 @@ end crefToCStr1;
 template crefStr(ComponentRef cr)
 ::=
   match cr
+  case CREF_IDENT(ident = "xloc") then '_xd<%subscriptsStr(subscriptLst)%>'
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
@@ -3437,25 +3469,77 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   case e as SES_NONLINEAR(__)
     then 
     <<
-       if(!(command & IContinous::RANKING))
+
+    
+     if(!(command & IContinous::RANKING))
     {
        if(_algLoopSolver<%index%>) _algLoopSolver<%index%>->solve(command);       
     }
    	else _algLoop<%index%>->init();
    	//if(_algLoopSolver<%index%>) _algLoopSolver<%index%>->solve(command);
+
   	>>
+  case e as SES_MIXED(__)
+    then
+    <<
+     <%equationMixed(e, context, &varDecls, simCode)%>
+     >>
   else
     "NOT IMPLEMENTED EQUATION" 
 end equation_;
+
+
+template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, SimCode simCode)
+ "Generates a mixed equation system."
+::=
+match eq
+case SES_MIXED(__) then
+  let contEqs = equation_(cont, context, &varDecls /*BUFD*/, simCode)
+  let numDiscVarsStr = listLength(discVars) 
+  let valuesLenStr = listLength(values)
+  let &preDisc = buffer "" /*BUFD*/
+  let num = index
+  let discvars2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
+      let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      <<
+      <%cref(cref)%> = <%expPart%>;
+      new_disc_vars<%num%>[<%i0%>] = <%cref(cref)%>;
+      >>
+    ;separator="\n")
+  <<
+  	bool values<%num%>[<%valuesLenStr%>] = {<%values ;separator=", "%>};
+  	bool pre_disc_vars<%num%>[<%numDiscVarsStr%>];
+  	bool new_disc_vars<%num%>[<%numDiscVarsStr%>];
+  	bool restart<%num%> = true;
+  	int iter<%num%>=0;
+  	int max_iter<%num%> = <%valuesLenStr%> / <%numDiscVarsStr%>;
+   	while(restart<%num%> && !(iter<%num%>++ > max_iter<%num%>))
+   	{
+   	  <%discVars |> SIMVAR(__) hasindex i0 => 'pre_disc_vars<%num%>[<%i0%>] = <%cref(name)%>;' ;separator="\n"%> 
+   	   <%contEqs%>
+   	    checkConditions(0,true);
+   	   <%preDisc%>
+  	   <%discvars2%>
+     	bool* cur_disc_vars<%num%>[<%numDiscVarsStr%>]= {<%discVars |> SIMVAR(__) => '&<%cref(name)%>' ;separator=", "%>};
+       restart<%num%>=!(_event_handling.CheckDiscreteValues(values<%num%>,pre_disc_vars<%num%>,new_disc_vars<%num%>,cur_disc_vars<%num%>,<%numDiscVarsStr%>,iter<%num%>));
+    }
+    if(iter<%num%>>max_iter<%num%>)
+    {
+    	throw std::runtime_error("Number of iteration steps exceeded for discrete varibales check . ");
+    }
+  
+  >>
+end equationMixed;
 
 template generateAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
-      generateAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode))
+      generateAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode) ;separator="\n")
     ;separator="\n")
   
   <<
+   _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create());
   <%algloopsolver%>
   >>
 end generateAlgloopsolvers;
@@ -3474,15 +3558,21 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
-  _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create());
+
   _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(
-  																																				<%CallAlgloopParams(modelInfo)%>,_z,_zDot
+  																																				<%CallAlgloopParams(modelInfo)%>,_z,_zDot,_event_handling
   																																				)
   																																);
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
    >>
+   end match
+  case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%generateAlgloopsolvers2(eq_sys,context,varDecls,simCode)%>
+   >> 
   else
-    " "
+    ""
  end generateAlgloopsolvers2;
 
 
@@ -3492,7 +3582,7 @@ template generateAlgloopsolverVariables(list<list<SimEqSystem>> continousEquatio
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
-      generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode))
+      generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode);separator="\n")
     ;separator="\n")
   
   <<
@@ -3514,13 +3604,19 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
-  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
+  	boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
 		_algLoop<%num%>;	
 	boost::shared_ptr<IAlgLoopSolver>
 		_algLoopSolver<%num%>;		///< Solver for algebraic loop */
    >>
+   end match
+   case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%generateAlgloopsolverVariables2(eq_sys,context,varDecls,simCode)%>
+   >>
   else
-    " "
+    ""
  end generateAlgloopsolverVariables2;
 
 
@@ -3554,6 +3650,12 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
 	if(_algLoopSolver<%num%>)
 		_algLoopSolver<%num%>->init();
   >>
+   end match
+   case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode)%>
+   >>
   else
     " "
  end initAlgloopsolvers2;
@@ -3561,12 +3663,10 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
 template algloopfilesInclude(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
-      algloopfilesInclude2(eq, contextOther, &varDecls /*BUFC*/,simCode))
-    ;separator="\n")
-  
   <<
-  <%algloopsolver%>
+  <% continousEquations |> eqs => (eqs |> eq =>
+      algloopfilesInclude2(eq, contextOther, &varDecls /*BUFC*/,simCode) ;separator="\n" )
+    ;separator="\n" %>
   >>
 end algloopfilesInclude;
 
@@ -3580,14 +3680,18 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
    case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then    
- 	<<
- 	#include "<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h"
- 	>>
+  	let num = index
+  	match simCode
+  		case SIMCODE(modelInfo = MODELINFO(__)) then    
+ 		<<#include "<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h ">>
+   end match
+  case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%algloopfilesInclude2(eq_sys,context,varDecls,simCode)%>
+   >>
   else
-    " "
+   	"" 
  end algloopfilesInclude2;
  
 /* 
@@ -3623,15 +3727,25 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
+  case SES_LINEAR(__)
   case e as SES_NONLINEAR(__)
     then 
   let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then    
-  let()= textFile(algloopHeaderFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
-  let()= textFile(algloopCppFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
-	" "
+ 	 match simCode
+  		case SIMCODE(modelInfo = MODELINFO(__)) then    
+  			let()= textFile(algloopHeaderFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
+  			let()= textFile(algloopCppFile(simCode,eq), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
+			" "
+		end match
+  case e as SES_MIXED(cont = eq_sys)
+    then 
+ 	 let num = index
+ 	 match simCode
+  		case SIMCODE(modelInfo = MODELINFO(__)) then    
+ 			 let()= textFile(algloopHeaderFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
+  			let()= textFile(algloopCppFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
+			" "
+		end match
   else
     " "
  end algloopfiles2;
@@ -3665,6 +3779,12 @@ template algloopcppfilenames2(SimEqSystem eq, Context context, Text &varDecls, S
   case SIMCODE(modelInfo = MODELINFO(__)) then    
    <<
    <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp
+   >>
+   end match
+   case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%algloopcppfilenames2(eq_sys,context,varDecls,simCode)%>
    >>
  else
     " "
@@ -4706,7 +4826,7 @@ end daeExpCrefRhsArrayBox;
 
 template cref1(ComponentRef cr, SimCode simCode) ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then ""
+  case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
   case CREF_IDENT(ident = "time") then "time"
   else '<%representationCref(cr, simCode) %>'
 end cref1;

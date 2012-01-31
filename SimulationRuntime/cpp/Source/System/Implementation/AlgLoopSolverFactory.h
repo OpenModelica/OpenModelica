@@ -28,6 +28,6 @@ public:
 	virtual boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
-	boost::shared_ptr<INewtonSettings>_algsolversettings;
-	boost::shared_ptr<IAlgLoopSolver> _algsolver;
+	std::vector<boost::shared_ptr<INewtonSettings> > _algsolversettings;
+	std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
 };

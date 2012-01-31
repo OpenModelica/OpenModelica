@@ -42,7 +42,7 @@ public:
 		DISCRETE		=	0x00000001,			///< Sample discrete variables only
 		CONTINOUS		=	0x00000002,			///< Determine continous variables
 		ALL				=	0x00000003,			///< [DISCRETE|CONTINOUS]
-		RANKING			=	0x00000004,			///< Ranking Method
+		RANKING			=	0x00000004			///< Ranking Method
 		
 	};
 

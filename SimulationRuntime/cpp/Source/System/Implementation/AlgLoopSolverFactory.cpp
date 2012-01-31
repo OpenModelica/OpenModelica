@@ -30,7 +30,8 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 		{
 			throw std::invalid_argument("No such Newton Settings");
 		}
-		_algsolversettings= boost::shared_ptr<INewtonSettings>(iter2->second.create());
+		boost::shared_ptr<INewtonSettings> algsolversetting= boost::shared_ptr<INewtonSettings>(iter2->second.create());
+		_algsolversettings.push_back(algsolversetting);
 		//Todo load or configure settings
 		//_algsolversettings->load("config/Newtonsettings.xml");
 		iter = Newtonfactory.find("Newton");
@@ -39,8 +40,9 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 			throw std::invalid_argument("No such Newton Solver");
 		}
 
-		_algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,_algsolversettings.get()));
-		return _algsolver;
+		boost::shared_ptr<IAlgLoopSolver> algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,algsolversetting.get()));
+		_algsolvers.push_back(algsolver);
+		return algsolver;
 	}
 	else
 	{

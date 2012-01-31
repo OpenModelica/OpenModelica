@@ -91,8 +91,8 @@ void Newton::solve(const IContinous::UPDATE command)
 
 	// Get initial values from system
 	_algLoop->giveVars(_y,NULL,NULL);
-	_algLoop->update(command);
-	_algLoop->giveRHS(_f,NULL,NULL);
+	//_algLoop->update(command);
+	//_algLoop->giveRHS(_f,NULL,NULL);
 
 
 	// Reset status flag
@@ -103,14 +103,22 @@ void Newton::solve(const IContinous::UPDATE command)
 		_iterationStatus = DONE;
 
 		// Check stopping criterion
-		for(int i=0; i<_dimSys; ++i)
+		if(totStps)
 		{
-			if(fabs(_f[i]) > _newtonSettings->getRtol() * (_newtonSettings->getAtol() + fabs(_f[i])))
+			for(int i=0; i<_dimSys; ++i)
 			{
-				_iterationStatus = CONTINUE;
-				break;
+				if(fabs(_f[i]) > _newtonSettings->getRtol() * (_newtonSettings->getAtol() + fabs(_f[i])))
+				{
+					_iterationStatus = CONTINUE;
+					break;
+				}
 			}
 		}
+		else
+			_iterationStatus = CONTINUE;
+
+		// New right hand side
+		calcFunction(_y,_f);
 
 		if(_iterationStatus == CONTINUE)
 		{
@@ -119,8 +127,14 @@ void Newton::solve(const IContinous::UPDATE command)
 				// Determination of Jacobian (Fortran-format)
 				if(_algLoop->isLinear())
 				{
-					calcFunction(_yHelp,_fHelp);
+					//calcFunction(_yHelp,_fHelp);
 					_algLoop->giveAMatrix(_jac);
+					dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
+					memcpy(_y,_f,_dimSys*sizeof(double));
+					_algLoop->setVars(_y,NULL,NULL);
+					_iterationStatus = DONE;
+					break;
+
 				}
 				else
 				{
@@ -140,17 +154,9 @@ void Newton::solve(const IContinous::UPDATE command)
 				++ totStps;
 
 				// New solution
-				if(_algLoop->isLinear())
-				{
-					memcpy(_y,_f,_dimSys*sizeof(double));
-				}
-				else
-				{
 				for(int i=0; i<_dimSys; ++i)
 					_y[i] -= _newtonSettings->getDelta() * _f[i];
-				}
-				// New right hand side
-				calcFunction(_y,_f);
+				
 			}
 			else 
 				_iterationStatus = SOLVERERROR;

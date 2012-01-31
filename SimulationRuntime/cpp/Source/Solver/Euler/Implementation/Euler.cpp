@@ -1054,7 +1054,7 @@ void Euler::doMyZeroSearch()
 		}
 		*/
 		interp1(_tZero,_z);
-		_tLastSuccess = _tCurrent;
+		_tLastSuccess = tL;
 		_tCurrent = _tZero;
 		setZeroState();	
 
@@ -1080,6 +1080,7 @@ void Euler::doMyZeroSearch()
 	{
 
 		_tZero = _tCurrent+_h;
+		_tCurrent = _tZero;
 	}
 }
 
