@@ -299,6 +299,8 @@ algorithm
       then
         ();
 
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = "time")), _) then ();
+
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
