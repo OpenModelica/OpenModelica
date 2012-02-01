@@ -91,7 +91,11 @@ void IconProperties::setUpDialog()
     mpGeneralTab = new QWidget(mpPropertiesTabWidget);
     mpPropertiesTabWidget->addTab(mpGeneralTab, tr("General"));
     mpParametersTab = new QWidget(mpPropertiesTabWidget);
-    mpPropertiesTabWidget->addTab(mpParametersTab, tr("Parameters"));
+    mpParametersTabScrollArea = new QScrollArea;
+    mpParametersTabScrollArea->setFrameShape(QFrame::NoFrame);
+    mpParametersTabScrollArea->setBackgroundRole(QPalette::Base);
+    mpParametersTabScrollArea->setWidgetResizable(true);
+    mpPropertiesTabWidget->addTab(mpParametersTabScrollArea, tr("Parameters"));
     mpModifiersTab = new QWidget(mpPropertiesTabWidget);
     mpPropertiesTabWidget->addTab(mpModifiersTab, tr("Modifiers"));
 
@@ -169,6 +173,7 @@ void IconProperties::setUpDialog()
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addLayout(horizontalLayout, 0, 0);
     mainLayout->addWidget(mHorizontalLine, 1, 0);
+    mpParametersTabScrollArea->setWidget(mpParametersTab);
     mainLayout->addWidget(mpPropertiesTabWidget, 2, 0);
     mainLayout->addWidget(mpButtonBox, 3, 0);
 

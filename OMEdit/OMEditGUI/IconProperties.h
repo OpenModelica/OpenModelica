@@ -65,6 +65,7 @@ private:
     QLabel *mpIconModelCommentLabel;
     QLabel *mpIconModelCommentTextBox;
     QWidget *mpParametersTab;
+    QScrollArea *mpParametersTabScrollArea;
     QWidget *mpModifiersTab;
     QLabel *mpModifiersLabel;
     QLineEdit *mpModifiersTextBox;
