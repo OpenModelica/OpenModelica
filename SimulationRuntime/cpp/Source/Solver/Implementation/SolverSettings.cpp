@@ -8,7 +8,7 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
 	, _hUpperLimit	(globalSettings->getEndTime() - globalSettings->getStartTime())
 	, _hLowerLimit	(10*UROUND)
 	, _endTimeTol	(1e-6)
-	, _zeroTol		(1e-8)
+	, _zeroTol		(1e-6)
 	, _zeroTimeTol	(1e-6)
 	,_zeroRatio(1.0)
 

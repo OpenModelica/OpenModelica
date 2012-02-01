@@ -195,7 +195,7 @@ void  EventHandling::addTimeEvents( event_times_type times)
    }
   
 }
-bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index)
+bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values)
 {
 
 	bool found=true;
@@ -204,8 +204,12 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
 	{
 		 for (int i = 0; i < size; i++) 
 		 { 
-
-              *cur_values[i] = values[cur_index * size + i]; 
+			 	 int index = cur_index * size + i;
+				 
+				 if(index < (num_values-1))
+					*cur_values[i] = values[index]; 
+				 else
+					 break;
           } 
 	}
 	return found;
@@ -220,6 +224,7 @@ event_times_type EventHandling::makePeriodeEvents(double ts,double te,double int
      double val = ts;
      while(val < te)
      {		 
+	
 		 periode.insert(make_pair(real_cast<double>(val),index));
          val += interval;
      }

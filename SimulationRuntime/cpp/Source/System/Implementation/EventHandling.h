@@ -53,7 +53,7 @@ public:
 	///returns the vector with all time events
 	 event_times_type& getTimeEvents();
     resetHelpVar_type  resetHelpVar;
-	bool CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index);
+	bool CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values);
 private:
 	//Stores all varibales occured before an event
 	unordered_map<string,double> _pre_vars;

@@ -3513,7 +3513,7 @@ case SES_MIXED(__) then
   	bool restart<%num%> = true;
   	int iter<%num%>=0;
   	int max_iter<%num%> = <%valuesLenStr%> / <%numDiscVarsStr%>;
-   	while(restart<%num%> && !(iter<%num%>++ > max_iter<%num%>))
+   	while(restart<%num%> && !(iter<%num%> > max_iter<%num%>))
    	{
    	  <%discVars |> SIMVAR(__) hasindex i0 => 'pre_disc_vars<%num%>[<%i0%>] = <%cref(name)%>;' ;separator="\n"%> 
    	   <%contEqs%>
@@ -3521,9 +3521,10 @@ case SES_MIXED(__) then
    	   <%preDisc%>
   	   <%discvars2%>
      	bool* cur_disc_vars<%num%>[<%numDiscVarsStr%>]= {<%discVars |> SIMVAR(__) => '&<%cref(name)%>' ;separator=", "%>};
-       restart<%num%>=!(_event_handling.CheckDiscreteValues(values<%num%>,pre_disc_vars<%num%>,new_disc_vars<%num%>,cur_disc_vars<%num%>,<%numDiscVarsStr%>,iter<%num%>));
+       restart<%num%>=!(_event_handling.CheckDiscreteValues(values<%num%>,pre_disc_vars<%num%>,new_disc_vars<%num%>,cur_disc_vars<%num%>,<%numDiscVarsStr%>,iter<%num%>,<%valuesLenStr%>));
+       iter<%num%>++;
     }
-    if(iter<%num%>>max_iter<%num%>)
+    if(iter<%num%>>max_iter<%num%> && (restart<%num%> == true) )
     {
     	throw std::runtime_error("Number of iteration steps exceeded for discrete varibales check . ");
     }

@@ -4,7 +4,7 @@
 
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
 : SolverSettings		(globalSettings)
-, _method				(EULERFORWARD)
+, _method				(EULERBACKWARD)
 , _zeroSearchMethod		(BISECTION)
 , _denseOutput			(true)
 , _useSturmSequence		(false)
