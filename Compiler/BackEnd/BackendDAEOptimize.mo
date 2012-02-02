@@ -938,13 +938,13 @@ algorithm
     // a = der(b) 
     case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
       equation
-        var = BackendVariable.getVarAt(vars,intAbs(i));
-        false = BackendVariable.varHasUncertainValueRefine(var);
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
         // select candidate
         ((_::_),(k::_)) = BackendVariable.getVar(cr,vars);
+        var = BackendVariable.getVarAt(vars,intAbs(k));
+        false = BackendVariable.varHasUncertainValueRefine(var);
       then (cr,k,es,syst,shared,mvars,mavars,2);
     // a = b 
     case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared,mvars,mavars)
