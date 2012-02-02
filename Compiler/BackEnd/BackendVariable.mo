@@ -718,8 +718,8 @@ end isNonStateVar;
   output Boolean b;
 algorithm 
   b := matchcontinue (var)
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(DAE.REFINE))))) then true;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption = SOME(DAE.REFINE))))) then true;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(DAE.REFINE()))))) then true;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption = SOME(DAE.REFINE()))))) then true;
     case (_) then false;
   end matchcontinue;
 end varHasUncertainValueRefine;

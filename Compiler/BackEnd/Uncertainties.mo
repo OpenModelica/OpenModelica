@@ -67,7 +67,7 @@ algorithm
     case ((l :: lst),i)
       equation         
         print("{");
-        ls = List.map(l, int_string);
+        ls = List.map(l, intString);
         s = stringDelimitList(ls, ", ");
         print(s);
         print("}\n");
@@ -117,8 +117,8 @@ algorithm
       BackendDAE.Variables vars,kvars;
       list<Integer> eqnIndexList, varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,equationToExtract;
       BackendDAE.EquationArray eqns,ieqns;
-      BackendDAE.MultiDimEquation[:] arrEqns;
-      DAE.Algorithm[:] algs;
+      array<BackendDAE.MultiDimEquation> arrEqns;
+      array<DAE.Algorithm> algs;
       list<BackendDAE.Equation> eqnLst,ieqnLst;
       list<BackendDAE.EqSystem> eqsyslist;      
             
@@ -354,12 +354,12 @@ algorithm
 	    //ComplexEquations ce,ice;
 	    //ExternalObjectClasses extObjCls;
 	    HashTable.HashTable s;
-	    //MultiDimEquation[:] arr_md_eqns,iarr_md_eqns;
-	   // DAE.Algorithm[:] algarr,ialgarr;
+	    //MultiDimEquation arr_md_eqns,iarr_md_eqns;
+	   // DAE.Algorithm algarr,ialgarr;
 	    //list<IfEquation> ifeqns,iifeqns;
 	    HashTable.HashTable crefDouble;
       BackendDAE.IncidenceMatrix m;
-	    //IfEquation[:] arr_ifeqns,arr_iifeqns;
+	    //IfEquation arr_ifeqns,arr_iifeqns;
 	    HashTable.HashTable movedvars_1;
 	    list<BackendDAE.Equation> seqns,eqnLst,ieqnLst;
 	    BackendVarTransform.VariableReplacements repl;
@@ -764,7 +764,7 @@ algorithm
       DAE.Exp e1,e2;
       BackendDAE.Var cr1Var;
       DAE.ElementSource source "origin of equation";
-      Option<BackendDAE.Var>[:] varOptArr;
+      array<Option<BackendDAE.Var>> varOptArr;
       BackendDAE.Var elimVar;
 
     case ({},_,vars,knvars,mvars,repl,_,m,elimVarIndexList,false) then
@@ -850,8 +850,7 @@ algorithm
        fixedIndex = List.map1r(eqnIndxLst,intAdd,-1);
        eqnLst = List.map1r(fixedIndex,BackendDAEUtil.equationNth,BackendEquation.daeEqns(eqsys1)); //daeArrayEqns equationNth
        varLst = List.map1r(varIndxLst,BackendVariable.getVarAt,BackendVariable.daeVars(eqsys1));
-       dae=setDaeVarsAndEqs(dae,BackendDAEUtil.listEquation(eqnLst),BackendDAEUtil.listVar(varLst));
-    then dae;
+      then setDaeVarsAndEqs(dae,BackendDAEUtil.listEquation(eqnLst),BackendDAEUtil.listVar(varLst));
     case(_,_,_) equation
      //print("getSubSystemDaeForVars failed\n");
     then fail();
@@ -1090,7 +1089,7 @@ end getVariablesInBlocks;
   input list<Integer> eqns;
   output list<Integer> vars;
 algorithm 
-  out := matchcontinue (m, eqns)
+  vars := matchcontinue (m, eqns)
     local
       Integer eqn;
       list<Integer> eqnsRest, vars, vars_1, vars_2;
@@ -1131,7 +1130,7 @@ algorithm
   end matchcontinue;
 end getUncertainRefineVariablesInBlocks;
   
-  protected function getUncertainRefineVariablesInBlock
+protected function getUncertainRefineVariablesInBlock
 "
   author: Daniel Hedberg, 2011-01
   modified by: Leonardo Laguna, 2012-01
@@ -1144,7 +1143,7 @@ end getUncertainRefineVariablesInBlocks;
   input list<Integer> eqns;
   output list<Integer> vars;
 algorithm 
-  out := matchcontinue (daelow, m, eqns)
+  vars := matchcontinue (daelow, m, eqns)
     local
       Integer eqn;
       list<Integer> eqnsRest, vars, vars_1, vars_2;
@@ -1199,7 +1198,7 @@ end getUncertainRefineVariablesInEquation;
 algorithm 
   out := matchcontinue (allVariables, variableIndexList)
     local
-      list<int> variableIndexListRest, refineVariableIndexList;
+      list<Integer> variableIndexListRest, refineVariableIndexList;
       Integer index;
       BackendDAE.Var var;
     case (_, {}) then
@@ -1286,10 +1285,11 @@ protected function  findArraysInRecordLst "help function to findArraysPartiallyI
  output HashTable.HashTable outHt "resulting accumulated crefs";
 algorithm
   outHt := matchcontinue(ht,recordCr,varLst)
-  local String name;
-    DAE.Type tp;
-    DAE.ComponentRef thisCr;
-    input list<DAE.Var> varLst2;
+    local
+      String name;
+      DAE.Type tp;
+      DAE.ComponentRef thisCr;
+      list<DAE.Var> varLst2;
     case(ht,recordCr,{}) then ht;
     // found array
     case(ht,recordCr,DAE.TYPES_VAR(name=name,ty=tp)::varLst) equation
@@ -1406,8 +1406,7 @@ protected function findArraysPartiallyIndexed2 "
   output HashTable.HashTable outHt;
   
 algorithm
-  (outRef) := 
-  matchcontinue(inRef,dubRef,ht)
+  outHt := matchcontinue(inRef,dubRef,ht)
     local
       DAE.ComponentRef c1,c2,c3;
       list<DAE.ComponentRef> crefs1,crefs2,crefs3;
