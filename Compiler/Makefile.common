@@ -121,7 +121,9 @@ ExpressionSolve.mo \
 PartFn.mo \
 SimCode.mo \
 TaskGraph.mo \
-XMLDump.mo
+XMLDump.mo \
+Uncertainties.mo
+
 
 GLOBAL = \
 Global.mo

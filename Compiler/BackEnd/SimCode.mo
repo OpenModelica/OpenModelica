@@ -298,7 +298,7 @@ uniontype SimVar
     DAE.ElementSource source;
     Causality causality;
     Option<Integer> variable_index;
-    list <String> numArrayElement;
+    list<String> numArrayElement;
     
   end SIMVAR;
 end SimVar;
@@ -6958,7 +6958,7 @@ algorithm
       DAE.ComponentRef arrayCref;
       DAE.ElementSource source;
       Option<Integer> variable_index;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE(),numArrayElement))
       equation
         name = ComponentReference.crefPrefixDer(name);
@@ -7248,7 +7248,7 @@ algorithm
       DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
       Integer index;
       
     case ({},_) then {};
@@ -7358,7 +7358,7 @@ algorithm
       Absyn.Info info;
       Causality causality;
       Option<Integer> variable_index;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), initCrefs)
       equation
         (_ :: _) = List.select1(initCrefs, ComponentReference.crefEqualNoStringCompare, name);
@@ -11455,7 +11455,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     DAE.ElementSource source;
     Causality causality;
     Option<Integer> variable_index;
-    list <String> numArrayElement;
+    list<String> numArrayElement;
     BackendDAE.EqSystems eqsystems;
   case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
      equation
@@ -11528,7 +11528,7 @@ algorithm
       Causality causality;
       Option<Integer> variable_index;
       list<SimVar> rest,indexed_vector;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
     case({},_) then {};
     case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement) :: rest,index)
       equation
@@ -11644,7 +11644,7 @@ algorithm
       Option<Integer> variable_index;
       DAE.ComponentRef cr_1;
       String name_str,id_str;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
       Integer i;
     /*case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
@@ -11718,7 +11718,7 @@ algorithm
       Option <Integer> variable_index;
       Integer variable_index1;
       SimVar v,newvar1;
-      list <String> numArrayElement;
+      list<String> numArrayElement;
   
   case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
     equation

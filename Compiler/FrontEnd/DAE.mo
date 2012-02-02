@@ -98,10 +98,11 @@ uniontype ElementSource "gives information about the origin of the element"
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
+    list<SCode.Comment> comment;
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{},{});
 
 public uniontype SymbolicOperation
   record SIMPLIFY
@@ -361,6 +362,7 @@ uniontype VariableAttributes
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
     Option<Exp> nominal "nominal" ;
     Option<StateSelect> stateSelectOption;
+    Option<Uncertainty> uncertainOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
@@ -371,6 +373,7 @@ uniontype VariableAttributes
     tuple<Option<Exp>, Option<Exp>> min "min , max" ;
     Option<Exp> initial_ "Initial value" ;
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Uncertainty> uncertainOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected; // ,eb,ip
     Option<Boolean> finalPrefix;
@@ -416,6 +419,14 @@ public uniontype StateSelect
 
   record ALWAYS end ALWAYS;
 end StateSelect;
+
+public uniontype Uncertainty
+  record GIVEN end GIVEN;
+
+  record SOUGHT end SOUGHT;
+
+  record REFINE end REFINE;
+end Uncertainty;
 
 public uniontype ExtArg
   record EXTARG

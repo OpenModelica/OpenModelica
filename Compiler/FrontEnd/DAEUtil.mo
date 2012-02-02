@@ -191,14 +191,15 @@ algorithm
        Option<DAE.Exp> e1,e2,e3,e4,e5,e6;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.StateSelect> sSelectOption,sSelectOption2;
+      Option<DAE.Uncertainty> unc;
       Option<Boolean> ip,fn;
       String s;
   
-    case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,_,ip,fn)))
-    then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,SOME(bindExp),ip,fn)));
+    case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,_,ip,fn)))
+    then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,SOME(bindExp),ip,fn)));
     
-    case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,_,ip,fn)))
-    then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,SOME(bindExp),ip,fn));
+    case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,_,ip,fn)))
+    then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,SOME(bindExp),ip,fn));
     
     case (bindExp,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn)))
     then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
@@ -677,7 +678,7 @@ algorithm
   start := matchcontinue (inVariableAttributesOption)
     local
       DAE.Exp u;
-    case (SOME(DAE.VAR_ATTR_REAL(_,SOME(u),_,_,_,_,_,_,_,_,_))) then u;
+    case (SOME(DAE.VAR_ATTR_REAL(_,SOME(u),_,_,_,_,_,_,_,_,_,_))) then u;
     case (_) then DAE.SCONST("");
   end matchcontinue;
 end getUnitAttr;
@@ -756,16 +757,17 @@ algorithm
     local
       Option<DAE.Exp> q,u,du,f,n,i;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,eb,ip,fn)),minMax)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,eb,ip,fn)),minMax)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,unc,eb,ip,fn)),minMax)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,unc,eb,ip,fn)),minMax)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,u,du,eb,ip,fn)),minMax)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn));
     case (NONE(),minMax)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),minMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),minMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setMinMax;
 
@@ -843,12 +845,13 @@ algorithm
       Option<DAE.Exp> q,u,du,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,eb,ip,fn)),start)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,SOME(start),f,n,ss,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,eb,ip,fn)),start)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,SOME(start),f,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,eb,ip,fn)),start)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,SOME(start),f,n,ss,unc,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,eb,ip,fn)),start)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,SOME(start),f,unc,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn)),start)
     then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn)),start)
@@ -856,7 +859,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),start)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,SOME(start),du,eb,ip,fn));
     case (NONE(),start)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttr;
 
@@ -886,12 +889,13 @@ algorithm
       Option<DAE.Exp> q,u,du,f,s;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,eb,ip,fn)),nominal)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,SOME(nominal),ss,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,unc,eb,ip,fn)),nominal)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,SOME(nominal),ss,unc,eb,ip,fn));
     case (NONE(),nominal)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setNominalAttr;
 
@@ -908,12 +912,13 @@ algorithm
       Option<DAE.Exp> q,u,du,f,n,s;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,eb,ip,fn)),unit)
-    then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,eb,ip,fn)),unit)
+    then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,unc,eb,ip,fn));
     case (NONE(),unit)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setUnitAttr;
 
@@ -930,13 +935,14 @@ algorithm
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,_,fn)),isProtected)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,SOME(isProtected),fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,_,fn)),isProtected)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,SOME(isProtected),fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,eb,_,fn)),isProtected)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,eb,SOME(isProtected),fn));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,eb,_,fn)),isProtected)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,eb,SOME(isProtected),fn));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn)),isProtected)
     then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn)),isProtected)
@@ -944,7 +950,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),isProtected)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,SOME(isProtected),fn));
     case (NONE(),isProtected)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE()));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE()));
   end matchcontinue;
 end setProtectedAttr;
 
@@ -978,13 +984,14 @@ algorithm
       Option<DAE.Exp> q,u,du,i,f,n,ini;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,eb,ip,fn)),start)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,start,n,ss,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,eb,ip,fn)),start)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,start,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,eb,ip,fn)),start)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,start,n,ss,unc,eb,ip,fn));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,unc,eb,ip,fn)),start)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,start,unc,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn)),start)
     then SOME(DAE.VAR_ATTR_BOOL(q,ini,start,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn)),start)
@@ -1005,13 +1012,14 @@ algorithm
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
       Option<DAE.Exp> eb;
       Option<Boolean> ip;
     
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,_)),finalPrefix)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,SOME(finalPrefix)));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,_)),finalPrefix)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,eb,ip,SOME(finalPrefix)));
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,eb,ip,_)),finalPrefix)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,eb,ip,SOME(finalPrefix)));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,eb,ip,_)),finalPrefix)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,eb,ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_)),finalPrefix)
     then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix)));
     case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_)),finalPrefix)
@@ -1021,7 +1029,7 @@ algorithm
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(finalPrefix)));
 
     case (NONE(),finalPrefix)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix)));
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix)));
   end match;
 end setFinalAttr;
 
@@ -4125,9 +4133,10 @@ algorithm
     local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb;
       Option<DAE.StateSelect> stateSelect;
+      Option<DAE.Uncertainty> uncertainty;
       Option<Boolean> ip,fn;
       Type_a extraArg;
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),func,extraArg)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,eb,ip,fn)),func,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (unit,extraArg) = traverseDAEOptExp(unit,func,extraArg);
@@ -4137,16 +4146,16 @@ algorithm
         (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
         (nominal,extraArg) = traverseDAEOptExp(nominal,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),extraArg);
+      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,eb,ip,fn)),extraArg);
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),func,extraArg)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,eb,ip,fn)),func,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
         (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
         (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
-      then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),extraArg);
+      then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,eb,ip,fn)),extraArg);
 
       case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),func,extraArg)
         equation
@@ -4322,9 +4331,10 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
+      list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations), classPath)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst, operations);
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), classPath)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst, operations,comment);
   end match;
 end addElementSourceType;
 
@@ -4358,9 +4368,10 @@ algorithm
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
+      list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations), withinPath)
-      then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations);
+    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), withinPath)
+      then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment);
   end match;
 end addElementSourcePartOf;
 
@@ -4398,8 +4409,9 @@ algorithm
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       Absyn.Info info;
       list<DAE.SymbolicOperation> operations;
-    case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), info)
-      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations);
+      list<SCode.Comment> comment;
+    case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), info)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment);
   end match;
 end addElementSourceFileInfo;
 
@@ -4416,10 +4428,11 @@ algorithm
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
       list<DAE.SymbolicOperation> operations;
+      list<SCode.Comment> comment;
 
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), instanceOpt)
-      then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst,operations);
+    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), instanceOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst,operations,comment);
   end match;
 end addElementSourceInstanceOpt;
 
@@ -4436,11 +4449,12 @@ algorithm
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
       list<DAE.SymbolicOperation> operations;
+      list<SCode.Comment> comment;
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations), connectEquationOpt)
-      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations);
+    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), connectEquationOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
   end matchcontinue;
 end addElementSourceConnectOpt;
 
@@ -4478,17 +4492,44 @@ algorithm
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
       list<Absyn.Path> typeLst1,typeLst2,t;
       list<DAE.SymbolicOperation> o,operations1,operations2;
-    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1),
-          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2, operations2))
+      list<SCode.Comment> comment, comment1,comment2;
+    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1, comment1),
+          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2, operations2, comment2))
       equation
         p = listAppend(partOfLst1, partOfLst2);
         i = listAppend(instanceOptLst1, instanceOptLst2);
         c = listAppend(connectEquationOptLst1, connectEquationOptLst2);
         t = listAppend(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);
-      then DAE.SOURCE(info,p,i,c,t, o);
+        comment = listAppend(comment1,comment2);
+      then DAE.SOURCE(info,p,i,c,t, o,comment);
  end match;
 end mergeSources;
+
+public function addCommentToSource
+  input DAE.ElementSource src1;
+  input Option<SCode.Comment> commentIn;
+  output DAE.ElementSource mergedSrc;
+algorithm
+  mergedSrc := match(src1,commentIn)
+    local
+      Absyn.Info info;
+      list<Absyn.Within> partOfLst1,p;
+      list<Option<DAE.ComponentRef>> instanceOptLst1,i;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,c;
+      list<Absyn.Path> typeLst1,t;
+      list<DAE.SymbolicOperation> o,operations1;
+      list<SCode.Comment> comment1,comment2;
+      SCode.Comment comment;
+    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1, comment1),SOME(comment))
+      equation
+        comment2 = comment::comment1;
+      then DAE.SOURCE(info,partOfLst1,instanceOptLst1,connectEquationOptLst1,typeLst1, operations1,comment2);
+    case(_,_)
+      then
+        src1;    
+ end match;
+end addCommentToSource;
 
 function createElementSource
 "@author: adrpo
@@ -5579,18 +5620,19 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       DAE.Exp h1,t1,t2;
       list<DAE.Exp> es1,es2,es;
+      list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations),DAE.SUBSTITUTION(es2,t2))
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations,comment),DAE.SUBSTITUTION(es2,t2))
       equation
         // The tail of the new substitution chain is the same as the head of the old one...
         true = Expression.expEqual(t2,h1);
         // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
         // true = referenceEq(t2,h1);
         es = listAppend(es2,es1);
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations);
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations,comment);
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations),op)
-      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations);
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment),op)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations,comment);
   end matchcontinue;
 end addSymbolicTransformation;
 

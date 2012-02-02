@@ -456,6 +456,7 @@ algorithm
       Absyn.FunctionArgs fargs;
       DAE.Exp exp;
       Option<Values.Value> containsEmpty;
+      Option<SCode.Comment> comment;
 
     // connect statements
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph) 
@@ -466,7 +467,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
     // equality equations e1 = e2
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
+    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info,comment=comment),initial_,impl,graph)
       equation 
          // Do static analysis and constant evaluation of expressions. 
         // Gives expression and properties 
@@ -492,12 +493,14 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
+        source = DAEUtil.addCommentToSource(source,comment);
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
                           
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
+        
         
     
     /*    

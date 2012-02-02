@@ -1271,7 +1271,10 @@ end getMessagesString;
 record SourceInfo
   String filename;
   Boolean readonly;
-  Integer lineStart,columnStart,lineEnd,columnEnd;
+  Integer lineStart;
+  Integer columnStart;
+  Integer lineEnd;
+  Integer columnEnd;
 annotation(preferredView="text");
 end SourceInfo;
 

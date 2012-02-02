@@ -2205,6 +2205,17 @@ protected constant DAE.Type stateSelectType =
           DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);
+          
+protected constant DAE.Type uncertaintyType = 
+          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine"},
+          {
+             DAE.TYPES_VAR("given",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.TYPES_VAR("sought",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
+             DAE.TYPES_VAR("refine",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
+          },{},DAE.emptyTypeSource);          
 
 protected function instRealClass
 "function instRealClass
@@ -2300,6 +2311,11 @@ algorithm
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,stateSelectType,p);
       then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+      equation
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
+        v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
+      then v::varLst;    
     case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre,ty)
       equation
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
@@ -2364,6 +2380,11 @@ algorithm
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+      equation
+        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
+      then v::varLst;      
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       equation
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
@@ -14016,8 +14037,9 @@ algorithm
   (outCache,outDAEVariableAttributesOption) :=
   matchcontinue (inCache,inEnv,inMod,inType,inIntegerLst)
     local
-      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val;
+      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val;
       Option<DAE.StateSelect> stateSelect_value;
+      Option<DAE.Uncertainty> uncertainty_value;
       list<Env.Frame> env;
       DAE.Mod mod;
       DAE.TypeSource ts;
@@ -14041,11 +14063,15 @@ algorithm
         
         (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",stateSelectType,true);
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
+        
+        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
+        
         //TODO: check for protected attribute (here and below matches)
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
-          start_val,fixed_val,nominal_val,stateSelect_value,NONE(),NONE(),NONE())));
+          start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,NONE(),NONE(),NONE())));
     
     // Integer
     case (cache,env,mod,tp as DAE.T_INTEGER(varLst = varLst, source = ts),index_list)
@@ -14055,8 +14081,10 @@ algorithm
         (max_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
         (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
+        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
       then
-        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,NONE(),NONE(),NONE())));
     
     // Boolean
     case (cache,env,mod,tp as DAE.T_BOOL(varLst = varLst, source = ts),index_list)
@@ -14338,6 +14366,24 @@ algorithm
     case (_) then NONE();
   end matchcontinue;
 end getStateSelectFromExpOption;
+
+protected function getUncertainFromExpOption
+"
+  Author: Daniel Hedberg 2011-01
+
+  Extracts the uncertainty value, as defined in DAE, from a DAE.Exp.
+"
+  input Option<DAE.Exp> expOption;
+  output Option<DAE.Uncertainty> out;
+algorithm
+  out := matchcontinue (expOption)
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());   
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
+    case (NONE()) then NONE();
+    case (_) then NONE();
+  end matchcontinue;
+end getUncertainFromExpOption;
 
 protected function instModEquation
 "function: instModEquation

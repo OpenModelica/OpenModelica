@@ -202,6 +202,11 @@ protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",com
           SOME((
           Absyn.CREF(
           Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
+          
+protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
+          SOME((Absyn.CREF(Absyn.CREF_QUAL("Uncertainty",{},Absyn.CREF_IDENT("given",{}))),false)),Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);            
 
 protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("never",commonPrefixes,
@@ -215,18 +220,29 @@ protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("always",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
 
+protected constant list<SCode.Element> uncertaintyComps = {
+          SCode.COMPONENT("given",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("sought",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
+          SCode.COMPONENT("refine",commonPrefixes,
+          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo)} "The Uncertainty enumeration" ;
+
 protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The State Select Type";
 
+protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
+          SCode.PARTS(uncertaintyComps,{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The Uncertainty Type";
+          
 public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "ExternalObject type" ;
 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
+          stateSelect,uncertainty},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
@@ -492,6 +508,7 @@ algorithm
   env := Env.extendFrameC(env, stringType);
   env := Env.extendFrameC(env, booleanType);
   env := Env.extendFrameC(env, stateSelectType);
+  env := Env.extendFrameC(env, uncertaintyType);
 end simpleInitialEnv;
 
 public function initialEnv "function: initialEnv
@@ -536,6 +553,7 @@ algorithm
       env = Env.extendFrameC(env, stringType);
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
+      env = Env.extendFrameC(env, uncertaintyType);
       env = Env.extendFrameV(env, timeVar, NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);

@@ -690,7 +690,8 @@ protected constant list<String> basicTypeMods = {
   "start",
   "fixed",
   "nominal",
-  "stateSelect"  
+  "stateSelect",
+  "uncertain"  
 };
 
 public function isBasicTypeComponentName

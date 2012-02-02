@@ -181,7 +181,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -199,7 +199,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -334,7 +334,7 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       then
         BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -352,7 +352,7 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       then
         BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -638,7 +638,7 @@ algorithm
   outReal := matchcontinue (inVar)
     local
       Real nominal;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(DAE.RCONST(nominal)),_,_,_,_)))) then nominal;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(DAE.RCONST(nominal)),_,_,_,_,_)))) then nominal;
   end matchcontinue;
 end varNominal;
 
@@ -705,6 +705,24 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isNonStateVar;
+
+  public function varHasUncertainValueRefine
+"
+  author: Daniel Hedberg, 2011-01
+  modified by: Leonardo Laguna, 2012-01
+  
+  Returns true if the specified variable has the attribute uncertain and the
+  value of it is Uncertainty.refine, false otherwise.
+"
+  input BackendDAE.Var var;
+  output Boolean b;
+algorithm 
+  b := matchcontinue (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(DAE.REFINE))))) then true;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption = SOME(DAE.REFINE))))) then true;
+    case (_) then false;
+  end matchcontinue;
+end varHasUncertainValueRefine;
 
 protected function failIfNonState
 "Fails if the given variable kind is state."

@@ -527,7 +527,7 @@ uniontype MapContext
     MatchingExp ofBinding;
     Expression mapExp;
     list<MMEscOption> iterMMExpOptions;
-    Option <Ident> hasIndexIdentOpt "used index variable";
+    Option<Ident> hasIndexIdentOpt "used index variable";
     Boolean useIter "Whether PushIter/NextIter/PopIter is necessary.";
   end MAP_CONTEXT;
 end MapContext;

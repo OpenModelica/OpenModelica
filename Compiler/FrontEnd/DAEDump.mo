@@ -664,6 +664,22 @@ algorithm
   end match;
 end dumpStateSelectStr;
 
+protected function dumpUncertaintyStr
+"
+  Author: Daniel Hedberg 2011-01
+
+  Dump Uncertainty to a string.
+"
+  input DAE.Uncertainty uncertainty;
+  output String out;
+algorithm
+  out := matchcontinue (uncertainty)
+    case DAE.GIVEN() then "Uncertainty.given";
+    case DAE.SOUGHT() then "Uncertainty.sought";
+    case DAE.REFINE() then "Uncertainty.refine";
+  end matchcontinue;
+end dumpUncertaintyStr;
+
 public function dumpVariableAttributes "function: dumpVariableAttributes
   Dump VariableAttributes option."
   input Option<DAE.VariableAttributes> attr;
@@ -684,12 +700,13 @@ algorithm
   outString:=
   matchcontinue (inVariableAttributesOption)
     local
-      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,res_1,res1,res;
+      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,res_1,res1,res;
       Boolean is_empty;
       Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed;
       Option<DAE.StateSelect> stateSel;
+      Option<DAE.Uncertainty> uncertainty;
     
-    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,_,_,_)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
@@ -700,23 +717,25 @@ algorithm
         nominal_str = Dump.getOptionWithConcatStr(nominal, ExpressionDump.printExpStr, "nominal = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
+        uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
-          initial_str,fixed_str,nominal_str,stateSel_str}, ", ");
+          initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,_,_,_)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str}, ", ");
+        uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);

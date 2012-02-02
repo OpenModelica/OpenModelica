@@ -897,6 +897,7 @@ algorithm
         var = BackendVariable.getVarAt(vars,intAbs(i));
         // no State
         false = BackendVariable.isStateorStateDerVar(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
         // try to solve the equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
@@ -918,6 +919,7 @@ algorithm
         var = BackendVariable.getVarAt(vars,intAbs(i));
         // no State
         false = BackendVariable.isStateorStateDerVar(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
         // try to solve the equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
@@ -936,6 +938,8 @@ algorithm
     // a = der(b) 
     case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
       equation
+        var = BackendVariable.getVarAt(vars,intAbs(i));
+        false = BackendVariable.varHasUncertainValueRefine(var);
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
@@ -1091,6 +1095,7 @@ algorithm
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
       then
         ();
   end match;
@@ -3611,7 +3616,7 @@ algorithm
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);

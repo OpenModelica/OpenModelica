@@ -5463,6 +5463,37 @@ algorithm
   end matchcontinue;
 end isMemberOnTrue;
 
+public function exist
+  "Returns true if the and element is found on the list using a function. Example
+       filter({1,2}, isEven) => true
+       filter({1,3,5,7}, isEven) => false"
+  input list<ElementType> inList;
+  input FindFunc inFindFunc;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType inElement;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := matchcontinue(inList,inFindFunc)
+  local 
+    list<ElementType> t;
+    ElementType h; Boolean ret;
+    case({},_)
+      then false;
+    case(h::t,inFindFunc) 
+      equation 
+        true = inFindFunc(h);
+    then 
+      true;
+    case(_::t,inFindFunc)
+       equation
+         ret = exist(t,inFindFunc);
+       then ret;      
+  end matchcontinue;
+end exist;
+
 public function filter
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function succeeds.

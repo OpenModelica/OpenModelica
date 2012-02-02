@@ -104,6 +104,7 @@ protected import Util;
 protected import ValuesUtil;
 protected import XMLDump;
 protected import ComponentReference;
+protected import Uncertainties;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -1042,6 +1043,15 @@ algorithm
    
     case (cache,env,"translateModel",_,st,msg)
       then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
+
+    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_},st,msg)
+      equation
+        (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, filenameprefix);
+      then
+        (cache,ret_val,st_1);
+   
+    case (cache,env,"modelEquationsUC",_,st,msg)
+      then (cache,Values.STRING("There were errors during extraction of uncertainty equations. Use getErrorString() to see them."),st);     
 
     /*case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation

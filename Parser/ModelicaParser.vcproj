@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="ModelicaParser"
 	ProjectGUID="{9A6E007C-6E49-49EF-B85A-FF8152DDFA99}"
 	RootNamespace="ModelicaParser"
@@ -47,7 +47,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)antlr-3.2\runtime\C\include&quot;;.\"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)antlr-3.2\runtime\C\include&quot;;../Compiler;.\"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
