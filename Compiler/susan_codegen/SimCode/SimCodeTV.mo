@@ -78,7 +78,8 @@ package SimCode
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
                             list<list<Integer>>,    // sparse pattern
-                            list<Integer>>;          // colored cols
+                            list<Integer>,          // colored cols
+                            Integer>;               // max color used
   
   uniontype SimCode
     record SIMCODE

@@ -124,8 +124,6 @@ case simCode as SIMCODE(__) then
   <%externalFunctionIncludes(externalFunctionIncludes)%>
   #include "_<%fileNamePrefix%>.h"
   #include "<%fileNamePrefix%>_functions.c"
-  #define _OMC_SEED_HACK char* _omc_hack
-  #define _OMC_SEED_HACK_2  NULL
   /* dummy VARINFO and FILEINFO */
   const FILE_INFO dummyFILE_INFO = {"",-1,-1,-1,-1,1};
   const VAR_INFO dummyVAR_INFO = {-1,"","",(FILE_INFO){"",-1,-1,-1,-1,1}};
@@ -458,7 +456,7 @@ end globalDataAliasVarArray;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
  "Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _) hasindex index0 =>
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _, _) hasindex index0 =>
     variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     ;separator="\n")
 <<
@@ -1311,7 +1309,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   >>
 end functionJac;
 
-template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList)
+template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList, Integer maxColor)
  "Generates Matrixes for Linear Model."
 ::=
 match jacobianColumn
@@ -1343,7 +1341,7 @@ case _ then
      
       int index = <%indexJacobian%>;
       int i,j,l,k,ii;
-      for(i=0; i < <%index_%>; i++)
+      for(i=0; i < <%maxColor%>; i++)
       {
         for (ii=0; ii < <%index_%>; ii++)
           if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
@@ -1399,11 +1397,11 @@ end generateMatrix;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes)
  "Generates Matrixes for Linear Model."
 ::=
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList) hasindex index0 =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList)
     ;separator="\n\n")
-  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList) hasindex index0  =>
-    generateMatrix(index0, mat, vars, name, sparsepattern, colorList)
+  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) hasindex index0  =>
+    generateMatrix(index0, mat, vars, name, sparsepattern, colorList, maxColor)
     ;separator="\n\n")
 <<
 <%initialjacMats%> 
@@ -1626,14 +1624,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &eqs +=
   <<
   
-  void eqFunction_<%ix%>(DATA *data, _OMC_SEED_HACK) {
+  void eqFunction_<%ix%>(DATA *data) {
     <%&varD%>
     <%x%>
   }
   
   >>
   <<
-  eqFunction_<%ix%>(data, _OMC_SEED_HACK_2);
+  eqFunction_<%ix%>(data);
   >>
   )
 end equation_;

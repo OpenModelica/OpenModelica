@@ -127,7 +127,9 @@ type JacobianMatrix = tuple<list<JacobianColumn>,   // column
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
                             list<list<Integer>>,    // sparse pattern
-                            list<Integer>>;         // colored cols
+                            list<Integer>,          // colored cols
+                            Integer>;               // max color used
+
   
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For SimCodeC.tpl";
 
@@ -864,7 +866,7 @@ algorithm
         list<JacobianColumn> column;
         list<SimEqSystem> tmp,tmp1;
         list<JacobianMatrix> rest;
-    case ((column,_,_,_,_)::rest)
+    case ((column,_,_,_,_,_)::rest)
       equation
         tmp = appendAllequation(column);
         tmp1 = appendAllequations(rest);
@@ -2487,7 +2489,7 @@ algorithm
 
         // generate jacobian or linear model matrices
         // can be activeted by debug flag "+d=jacobian|linearization"
-        LinearMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        LinearMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
@@ -2602,7 +2604,7 @@ algorithm
     else
       equation
         false = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
-        res = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        res = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
       then res;
   end matchcontinue;
 end createJacobianLinearCode;
@@ -2741,7 +2743,7 @@ algorithm
       equation
         false = Flags.isSet(Flags.LINEARIZATION);
         false = Flags.isSet(Flags.JACOBIAN);
-        linearModelMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        linearModelMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
       then
         linearModelMatrices;
     case (_, _, _)
@@ -2811,7 +2813,7 @@ BackendDAE.SHARED(knownVars = kv)))
 
         linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         // add empty matrices B,C,D
-        linearModelMatrices = {linearModelMatrix,({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        linearModelMatrices = {linearModelMatrix,({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         Debug.execStat("analytical Jacobians -> generated system for matrix A: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         
@@ -2820,7 +2822,7 @@ BackendDAE.SHARED(knownVars = kv)))
     case (_,dlow)
       equation
         false = Flags.isSet(Flags.JACOBIAN);
-        linearModelMatrices = {({},{},"A",{},{}),({},{},"B",{},{}),({},{},"C",{},{}),({},{},"D",{},{})};
+        linearModelMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
       then
         linearModelMatrices;
     else
@@ -2901,7 +2903,7 @@ algorithm
       
       list<list<Integer>> sparsepattern;
       list<Integer> colsColors;
-      Integer colorMax;
+      Integer maxColor;
       
     case (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
       equation
@@ -2953,11 +2955,12 @@ algorithm
         // generate sparse pattern
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);        
         (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
+        maxColor = List.fold(colsColors, intMax, 1);
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         Debug.execStat("analytical Jacobians -> generated sparse pattern and colored : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
                 
      then
-        (({(columnEquations,columnVars,s)},seedVars,inName,sparsepattern,colsColors));
+        (({(columnEquations,columnVars,s)},seedVars,inName,sparsepattern,colsColors,maxColor));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createJacobianFunction failed"});
@@ -12306,7 +12309,7 @@ algorithm
     case ({}, files) then files;
     
     // handle rest  
-    case ((onemat,_,_,_,_)::rest, files)
+    case ((onemat,_,_,_,_,_)::rest, files)
       equation
         files = getFilesFromJacobianMatrix(onemat, files);
         files = getFilesFromJacobianMatrixes(rest, files);
