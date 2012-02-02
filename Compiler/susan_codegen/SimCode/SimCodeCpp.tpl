@@ -374,6 +374,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      >>  
   
 end upateAlgloopLinear;
+
 template inlineVars(Context context, list<SimVar> simvars)
 ::= match context case INLINE_CONTEXT(__) then match simvars
 case {} then ''
@@ -1384,7 +1385,7 @@ case SES_NONLINEAR(__) then
   <<
    
    <%crefs |> name hasindex i0 =>
-    let namestr = cref(name)
+    let namestr = cref1(name,simCode)
     <<
     _xd[<%i0%>] = <%namestr%>;
      >>
@@ -1429,7 +1430,7 @@ case SES_NONLINEAR(__) then
   <<
    
    <%crefs |> name hasindex i0 =>
-    let namestr = cref(name)
+    let namestr = cref1(name,simCode)
     <<
       doubleUnknowns[<%i0%>] = <%namestr%>;
      >>
@@ -1504,7 +1505,7 @@ case SES_NONLINEAR(__) then
   <<
    
    <%crefs |> name hasindex i0 =>
-    let namestr = cref(name)
+    let namestr = cref1(name,simCode)
     <<
     <%namestr%>  = doubleUnknowns[<%i0%>];
      >>
@@ -2741,7 +2742,6 @@ template cref(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
   else "$"+crefToCStr(cr)
@@ -4827,7 +4827,7 @@ end daeExpCrefRhsArrayBox;
 
 template cref1(ComponentRef cr, SimCode simCode) ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
+  case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode) %>'
   case CREF_IDENT(ident = "time") then "time"
   else '<%representationCref(cr, simCode) %>'
 end cref1;
@@ -4839,7 +4839,7 @@ template representationCref(ComponentRef inCref, SimCode simCode) ::=
     << <%representationCref1(inCref,simCode)%> >>
   case STATE_DER(__)   then 
     << <%representationCref2(inCref,simCode)%> >>
-  else << <%cref(inCref)%> >>
+  else << <%cref(inCref)%>>>
 end representationCref;
 
 
