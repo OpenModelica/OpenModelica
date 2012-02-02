@@ -1049,7 +1049,7 @@ void *mmc_gen_alloc_words(unsigned nwords) {
     mmc_uint_t nfree = mmc_older_size - (next - mmc_current_region);
     if (nfree >= nwords + mmc_young_size)
     {
-      mmc_uint_t idx;
+      mmc_uint_t idx=0;
       mmc_current_next = next + nwords;
       p = next;
       mmc_allocated_in_older = 1;

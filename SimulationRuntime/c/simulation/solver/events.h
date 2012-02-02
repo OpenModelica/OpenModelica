@@ -73,7 +73,7 @@ extern "C" {
 
   void debugPrintHelpVars();
   void deactivateSampleEvent();
-  void deactivateSampleEventsandEquations();
+  void deactivateSampleEventsandEquations(DATA *data);
   void debugSampleEvents();
 
 #ifdef __cplusplus
