@@ -1157,6 +1157,7 @@ algorithm
       list<DAE.Exp> explst;
       list<DAE.ElementSource> sources;
       DAE.ElementSource source;
+      String str;
       
     case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,entrylst,explst,sources)))
       equation
@@ -1186,8 +1187,9 @@ algorithm
         
     case ((eqn,_))
       equation
-        BackendDump.dumpEqns({eqn});
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},equationInfo(eqn));
+        str = BackendDump.equationStr(eqn);
+        str = "dlowEqToExp failed: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
       then
         fail();
   end matchcontinue;
