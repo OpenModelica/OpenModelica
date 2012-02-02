@@ -451,9 +451,7 @@ end setDaeEqns;
 
 
 
-public function replaceDAElow "set the equations of a dae
-public function setEquations 
-"
+public function replaceDAElow
   input BackendDAE.BackendDAE idlow;
   input BackendVarTransform.VariableReplacements repl; 
   input Option<PredicateFunction> func;
@@ -464,7 +462,7 @@ public function setEquations
   input Boolean replaceVariables "if true, run replacementrules on variablelist also: Note: requires destinations in repl to be crefs!";
   output BackendDAE.BackendDAE odae;
 algorithm
-  odlow := match(idlow,repl,func,replaceVariables)  
+  odae := match(idlow,repl,func,replaceVariables)  
   local 
     
     BackendDAE.EqSystem syst;
@@ -814,7 +812,7 @@ protected function solveEqn2 "solves an equation w.r.t. a variable"
   output DAE.Exp exp;
   output DAE.ElementSource source;
 algorithm
-  exp := matchcontinue(eqn,cr)
+  (exp,source) := matchcontinue(eqn,cr)
   local DAE.Exp e1,e2,fSol,fbExp;
     list<list<BackendDAE.Equation>> tbs;
     list<BackendDAE.Equation> fb;
