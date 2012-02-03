@@ -515,7 +515,6 @@ testsuite/bootstrapping/LinkMain.makefile \
 c_runtime/libf2c/makefile.u \
 FMI/import/source/Makefile \
 SimulationRuntime/c/Makefile \
-SimulationRuntime/c/meta/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/interactive/Makefile \
