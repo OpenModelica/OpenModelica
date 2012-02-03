@@ -537,17 +537,17 @@ algorithm
         DAE.RCONST(r);
       
     // cast of unary
-    case(DAE.UNARY(DAE.UMINUS_ARR(_),exp),tp) 
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),e),tp) 
       equation
-        exp = addCast(exp,tp);
+        e = addCast(e,tp);
       then
-        DAE.UNARY(DAE.UMINUS_ARR(tp),exp);
+        DAE.UNARY(DAE.UMINUS_ARR(tp),e);
     // cast of unary
-    case(DAE.UNARY(DAE.UMINUS(_),exp),tp) 
+    case(DAE.UNARY(DAE.UMINUS(_),e),tp) 
       equation
-        exp = addCast(exp,tp);
+        e = addCast(e,tp);
       then
-        DAE.UNARY(DAE.UMINUS(tp),exp);
+        DAE.UNARY(DAE.UMINUS(tp),e);
     
     // cast of array
     case(DAE.ARRAY(t,b,exps),tp) 
