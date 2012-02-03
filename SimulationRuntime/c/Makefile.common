@@ -30,7 +30,7 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 	ranlib $@
 
 $(METAOBJSPATH):%.o: %.c $(METAHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)
 
 meta/meta_modelica_catch.o: meta/meta_modelica_catch.c
 	$(CC) -c $(CFLAGS) -o $@ $< -g
