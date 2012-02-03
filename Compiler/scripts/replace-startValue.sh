@@ -1,3 +1,3 @@
 #!/bin/sh
 #usage: ./replace-startValue.sh variableName variableStartValue Model_init.xml
-${OPENMODELICAHOME}/lib/omc/libexec/xsltproc/xsltproc.exe --stringparam variableName $1 --stringparam variableStart $2 replace-startValue.xsl $3
+${OPENMODELICAHOME}/lib/omc/libexec/xsltproc/xsltproc --stringparam variableName $1 --stringparam variableStart $2 replace-startValue.xsl $3
