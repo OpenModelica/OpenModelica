@@ -102,11 +102,23 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
   functionAlgebraics(data);
   initial_residual(data, lambda, initialResiduals);
 
-  for(j=0; j<data->modelData.nResiduals; ++j)
+  if (initialResidualScalingCoefficients)
   {
-    scalingCoefficient = initialResidualScalingCoefficients ? initialResidualScalingCoefficients[j] : 1.0;
-    if(scalingCoefficient > 0.0)
-      funcValue += (initialResiduals[j] / scalingCoefficient) * (initialResiduals[j] / scalingCoefficient);
+    /* use scaling coefficients */
+    for(j=0; j<data->modelData.nResiduals; ++j)
+    {
+      scalingCoefficient = initialResidualScalingCoefficients[j];
+      if(scalingCoefficient > 0.0)
+        funcValue += (initialResiduals[j] / scalingCoefficient) * (initialResiduals[j] / scalingCoefficient);
+    }
+  }
+  else
+  {
+    /* no scaling coefficients given */
+    for(j=0; j<data->modelData.nResiduals; ++j)
+    {
+      funcValue += initialResiduals[j] * initialResiduals[j];
+    }
   }
 
   return funcValue;
@@ -138,8 +150,16 @@ static void computeInitialResidualScalingCoefficients(DATA *data, double nz, dou
   for(j=0; j<data->modelData.nResiduals; ++j)
     initialResidualScalingCoefficients[j] = 0.0;
 
-  for(i=0; i<nz; ++i)
-    states[i] = z[i] * (zNominal ? zNominal[i] : 1.0);
+  if (zNominal)
+  {
+    for(i=0; i<nz; ++i)
+      states[i] = z[i] * zNominal[i];
+  }
+  else
+  {
+    for(i=0; i<nz; ++i)
+      states[i] = z[i];
+  }
 
   /* lambda = 1.0 */
   leastSquareWithLambda(data, nz, states, NULL, NULL, 1.0, tmpInitialResidual1);
@@ -269,8 +289,12 @@ static void NelderMeadOptimization(long N,
     for(i=0; i<N; i++)
     {
       /* vertex x / var i */
-      simplex[x*N + i] = var[i] + ((x==i) ? 1.0 : 0.0);    /* canonical simplex */
+      simplex[x*N + i] = var[i];
     }
+  }
+  for(i=0; i<N; i++)
+  {
+    simplex[i*N + i] += 1.0;    /* canonical simplex */
   }
 
   /*DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(data, N, simplex, scale, initialResidualScalingCoefficients, lambda, initialResiduals));*/
@@ -323,7 +347,7 @@ static void NelderMeadOptimization(long N,
     if(dump && !(iteration % dump))
       INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xz]);
 
-    if(sigma < g*g && lambda < 1.0)
+    if((sigma < (g*g)) && (lambda < 1.0))
     {
       lambda += lambda_step;
       if(lambda > 1.0)

@@ -1,13 +1,13 @@
 #include "stdafx.h"
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "EventHandling.h"
-#include "../Interfaces/IContinous.h"				
+#include "../Interfaces/IContinous.h"
 #include <boost/math/tools/real_cast.hpp>
 #include "../../Math/Implementation/Functions.h"
 #include <sstream>
 
 /**
-Constructor 
+Constructor
 \param system Modelica system object
 \param dim Dimenson of help variables
 */
@@ -24,22 +24,22 @@ EventHandling::~EventHandling(void)
 Inits the event variables
 */
 void EventHandling::init(IDAESystem* system,int dim)
-{   
+{
 	_dimH=dim;
     _system=system;
 	if(_dimH > 0)
 	{
 		// Initialize help vars vector
-		if(_h) delete [] _h ; 
+		if(_h) delete [] _h ;
 		_h = new double[_dimH];
 		memset(_h,0,(_dimH)*sizeof(double));
 	}
 }
 /**
-Returns the help vector 
+Returns the help vector
 */
 void EventHandling::giveHelpVars(double* h)
-{		
+{
 	for(int i=0; i<_dimH; ++i)
 	{
 		h[i] = _h[i];
@@ -76,7 +76,7 @@ int EventHandling::getDimHelpVars() const
 }
 void EventHandling::setHelpVar(unsigned int i,double var)
 {
-	
+
   assert(i >= 0 && i < _dimH);
   _h[i]=var;
 }
@@ -152,10 +152,10 @@ bool EventHandling::IterateEventQueue(const bool* events,update_events_type upda
 	bool drestart=true;
 	bool crestart=true;
 	//store events before handled
-	int dimf = event_system->getDimZeroFunc();	
+	int dimf = event_system->getDimZeroFunc();
 	bool* events_before = new bool[dimf];
 	memcpy(events_before,events, dimf*sizeof(bool));
-	//Handle all events	
+	//Handle all events
 	vector<long>::const_iterator iter;
 	for(iter=_event_queue.begin();iter!=_event_queue.end();++iter)
 	{
@@ -166,7 +166,7 @@ bool EventHandling::IterateEventQueue(const bool* events,update_events_type upda
 	_event_queue.clear();
 	//update discrete equattions
 	countinous_system->update(IContinous::DISCRETE);
-	
+
 	drestart= event_system->checkForDiscreteEvents();
 	update_event();//Update the event vector
 	//check if new events occured
@@ -176,24 +176,24 @@ bool EventHandling::IterateEventQueue(const bool* events,update_events_type upda
 }
 
 
-		
+
 void EventHandling::addTimeEvent(long index,double time)
 {
    _time_events.insert(make_pair(time,index));
 }
 void  EventHandling::addTimeEvents( event_times_type times)
 {
-  
+
    event_times_type::iterator iter,iter2;
- 
+
    for( iter=times.begin();iter!=times.end();++iter)
-   { 
+   {
 	   //check if time event already exists
 	  iter2 = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(iter->first, 1e-10) );
        if(iter2==_time_events.end())
 		_time_events.insert(*iter);
    }
-  
+
 }
 bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values)
 {
@@ -202,15 +202,22 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
 	found = (std::equal (next_values, next_values+size,pre_values));
 	if(!found)
 	{
-		 for (int i = 0; i < size; i++) 
-		 { 
-			 	 int index = cur_index * size + i;
-				 
-				 if(index < (num_values-1))
-					*cur_values[i] = values[index]; 
-				 else
-					 break;
-          } 
+		int offset = cur_index * size;
+		int i_max;
+
+		if((offset+size) > num_values)
+		{
+			i_max = num_values - offset;
+		}
+		else
+		{
+			i_max = size;
+		}
+
+		for (int i = 0; i < i_max; i++)
+		{
+			*cur_values[i] = values[offset + i];
+		}
 	}
 	return found;
 }
@@ -220,11 +227,11 @@ event_times_type EventHandling::makePeriodeEvents(double ts,double te,double int
 	using namespace boost::math::tools;
 	event_times_type periode;
 	if((te < ts)||(interval==0.0))
-	   throw std::runtime_error("wrong make sample parameters");	
+	   throw std::runtime_error("wrong make sample parameters");
      double val = ts;
      while(val < te)
-     {		 
-	
+     {
+
 		 periode.insert(make_pair(real_cast<double>(val),index));
          val += interval;
      }

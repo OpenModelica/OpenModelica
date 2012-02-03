@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linkï¿½pings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linkï¿½ping, Sweden.
+ * Copyright (c) 1998-2010, Linköpings University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -69,14 +69,14 @@ modelica_boolean sample(DATA *data, double start, double interval, int hindex)
   double retVal;
   double tmp = 1;
   int tmpindex = data->simulationInfo.curSampleTimeIx;
-  
+
   if(tmpindex < data->simulationInfo.nSampleTimes){
     while((data->simulationInfo.sampleTimes[tmpindex]).activated == 1){
       if((data->simulationInfo.sampleTimes[tmpindex]).zc_index == hindex)
         tmp = 0;
-		
+
       tmpindex++;
-	  
+
       if(tmpindex == data->simulationInfo.nSampleTimes)
         break;
     }
@@ -162,12 +162,12 @@ void initSample(DATA* data, double start, double stop)
   /* not used yet
    * long measure_start_time = clock();
    */
-   
+
   /* This code will generate an array of time values when sample generates events.
    * The only problem is our backend does not generate this array.
    * Sample() and sample() also need to be changed, but this should be easy to fix.
    */
-   
+
   int i;
   /* double stop = 1.0; */
   double d;
@@ -194,19 +194,19 @@ void initSample(DATA* data, double start, double stop)
 
   for(i = 0; i < num_samples; i++){
     DEBUG_INFO2(LOG_EVENTS, "Generate times for sample(%f, %f)", data->simulationInfo.rawSampleExps[i].start, data->simulationInfo.rawSampleExps[i].interval);
-    
+
     for(d = data->simulationInfo.rawSampleExps[i].start; ix < max_events && d <= stop; d += data->simulationInfo.rawSampleExps[i].interval){
       (Samples[ix]).events = d;
       (Samples[ix++]).zc_index = (data->simulationInfo.rawSampleExps[i]).zc_index;
-	  
+
       DEBUG_INFO3(LOG_EVENTS, "Generate sample(%f, %f, %d)", d, data->simulationInfo.rawSampleExps[i].interval, (data->simulationInfo.rawSampleExps[i]).zc_index);
     }
   }
-  
+
   /* Sort, filter out unique values */
   qsort(Samples, max_events, sizeof(SAMPLE_TIME), compSample);
   nuniq = unique(Samples, max_events, sizeof(SAMPLE_TIME), compSampleZC);
-  
+
   DEBUG_INFO1(LOG_INIT, "Number of sorted, unique sample events: %d", nuniq);
   for(i = 0; i < nuniq; i++)
     DEBUG_INFO_AL3(LOG_INIT, "%f\t HelpVar[%d]=activated(%d)", (Samples[i]).events, (Samples[i]).zc_index,(Samples[i]).activated);
@@ -227,8 +227,7 @@ void initSample(DATA* data, double start, double stop)
  * ! Function check if a sample expression should be activated
  *
  */
-int
-checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
+int checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
   double a = solverInfo->currentTime + solverInfo->currentStepSize;
   int b = 0;
@@ -268,8 +267,7 @@ checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  * ! Function activated sample expression
  *
  */
-int
-activateSampleEvents(DATA *data)
+int activateSampleEvents(DATA *data)
 {
     if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
     {
@@ -305,8 +303,7 @@ activateSampleEvents(DATA *data)
  * ! Function deactivate, before activated sample expression
  *
  */
-void
-deactivateSampleEvents(DATA *data)
+void deactivateSampleEvents(DATA *data)
 {
   int tmpindex = data->simulationInfo.curSampleTimeIx;
 
@@ -321,8 +318,7 @@ deactivateSampleEvents(DATA *data)
  * ! Function deactivate, before activated sample expression in equations
  *
  */
-void
-deactivateSampleEventsandEquations(DATA *data)
+void deactivateSampleEventsandEquations(DATA *data)
 {
   while ((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).activated == 1)
     {
@@ -341,8 +337,7 @@ deactivateSampleEventsandEquations(DATA *data)
    If a ZeroCrossing Function cause a sign change, root finding
    process will start
 */
-int
-CheckForNewEvent(DATA* simData, modelica_boolean* sampleactived, double* currentTime)
+int CheckForNewEvent(DATA* simData, modelica_boolean* sampleactived, double* currentTime)
 {
   long i = 0;
   LIST *eventList=NULL;
@@ -479,7 +474,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
   LIST_NODE* it;
   fortran_integer i=0;
   static LIST *tmpEventList = NULL;
-  
+
   double *states_right = (double*) malloc(simData->modelData.nStates * sizeof(double));
   double *states_left = (double*) malloc(simData->modelData.nStates * sizeof(double));
 
@@ -513,9 +508,10 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
         double value = fabs(simData->simulationInfo.zeroCrossings[*((long*)listFirstData(eventList))]);
         for(it=listFirstNode(eventList); it; it=listNextNode(it))
         {
-            if(value > fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]))
+	    double fvalue = fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]);
+            if(value > fvalue)
             {
-                value = fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]);
+                value = fvalue;
             }
         }
         DEBUG_INFO1(LOG_ZEROCROSSINGS, "Minimum value: %f", value);
@@ -652,12 +648,11 @@ double BiSection(DATA* simData, double* a, double* b, double* states_a,
    Check if at least one zerocrossing has change sign
    is used in BiSection
 */
-int
-CheckZeroCrossings(DATA *simData, LIST *tmpEventList, LIST *eventList)
+int CheckZeroCrossings(DATA *simData, LIST *tmpEventList, LIST *eventList)
 {
 
   LIST_NODE *it;
-  
+
   listClear(tmpEventList);
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
     {
@@ -690,8 +685,7 @@ CheckZeroCrossings(DATA *simData, LIST *tmpEventList, LIST *eventList)
 }
 
 
-void
-SaveZeroCrossingsAfterEvent(DATA* simData)
+void SaveZeroCrossingsAfterEvent(DATA* simData)
 {
   long i = 0;
 
@@ -704,8 +698,7 @@ SaveZeroCrossingsAfterEvent(DATA* simData)
 }
 
 
-void
-initializeZeroCrossings(DATA* simData)
+void initializeZeroCrossings(DATA* simData)
 {
   long i = 0;
   for (i = 0; i < simData->modelData.nZeroCrossings; i++)
@@ -721,8 +714,7 @@ initializeZeroCrossings(DATA* simData)
     }
 }
 
-void
-correctDirectionZeroCrossings(DATA* simData)
+void correctDirectionZeroCrossings(DATA* simData)
 {
   long i = 0;
   for (i = 0; i < simData->modelData.nZeroCrossings; i++)
