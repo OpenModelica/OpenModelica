@@ -536,6 +536,19 @@ algorithm
       then 
         DAE.RCONST(r);
       
+    // cast of unary
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),exp),tp) 
+      equation
+        exp = addCast(exp,tp);
+      then
+        DAE.UNARY(DAE.UMINUS_ARR(tp),exp);
+    // cast of unary
+    case(DAE.UNARY(DAE.UMINUS(_),exp),tp) 
+      equation
+        exp = addCast(exp,tp);
+      then
+        DAE.UNARY(DAE.UMINUS(tp),exp);
+    
     // cast of array
     case(DAE.ARRAY(t,b,exps),tp) 
       equation
