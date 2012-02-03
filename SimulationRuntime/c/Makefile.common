@@ -23,11 +23,17 @@ all : install
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
 
-libSimulationRuntimeC.a: $(ALL_OBJS) libmeta
+libSimulationRuntimeC.a: $(ALL_OBJS)
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
+
+$(METAOBJSPATH):%.o: %.c $(METAHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH)
+
+meta/meta_modelica_catch.o: meta/meta_modelica_catch.c
+	$(CC) -c $(CFLAGS) -o $@ $< -g
 
 $(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
@@ -42,9 +48,6 @@ $(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH) $(COMMON_HEADERS)
 
 $(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -Ilinearization/
-
-libmeta: $(METAHFILESPATH) $(COMMON_HEADERS)
-	$(MAKE) -C meta -f ${LIBMAKEFILE} 
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
@@ -85,5 +88,4 @@ clean:
 	rm -f $(ALL_PATHS_CLEAN_OBJS) *.a
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-	$(MAKE) -C meta -f ${LIBMAKEFILE} clean	
 	
