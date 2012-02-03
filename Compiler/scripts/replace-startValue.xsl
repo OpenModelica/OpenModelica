@@ -11,7 +11,7 @@
     </xsl:copy>
   </xsl:template>
   <!--                                                     -->
-  <xsl:template match="ScalarVariable/Real/@start">
+  <xsl:template match="ScalarVariable/node()/@start">
     <xsl:choose>
       <xsl:when test="../../@name = $variableName">
         <xsl:attribute name="start">
