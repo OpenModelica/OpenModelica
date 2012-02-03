@@ -3180,7 +3180,12 @@ match fn
 case RECORD_CONSTRUCTOR(__) then
   let() = System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let funArgsStr = (funArgs |> var as VARIABLE(__) => contextCref(name,contextFunction) ;separator=", ")
+  let funArgsStr = (funArgs |> var =>
+     match var
+     case VARIABLE(__) then contextCref(name,contextFunction)
+     case FUNCTION_PTR(__) then name
+     else error(sourceInfo(),"Unknown variable")
+  ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
   modelica_metatype boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)

@@ -3,16 +3,10 @@
 OMC = OPENMODELICAHOME=`pwd`/../../../build/ ../../../build/bin/omc +d=failtrace
 
 
-all : SimCodeC.mo CodegenC.mo CodegenFMU.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
+all : CodegenC.mo CodegenFMU.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
 
 SimCodeAdevs.mo : SimCodeAdevs.tpl SimCodeTV.mo
 	@echo " ** SimCodeAdevs template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	cp -pf $@ ../../Template/
-	@echo " "
-
-SimCodeC.mo : SimCodeC.tpl SimCodeTV.mo
-	@echo " ** SimCodeC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "
@@ -29,7 +23,7 @@ SimCodeCSharp.mo : SimCodeCSharp.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "
 
-SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo SimCodeC.tpl
+SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo CodegenC.tpl
 	@echo " ** SimCodeFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
@@ -53,7 +47,7 @@ SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo SimCodeC.tpl
+SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo CodegenC.tpl
 	@echo " ** SimCodeQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
