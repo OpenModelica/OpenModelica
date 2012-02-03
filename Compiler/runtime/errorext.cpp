@@ -82,14 +82,14 @@ static void push_message(ErrorMessage *msg)
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
 static void pop_message(bool rollback)
 {
-top:
-  ErrorMessage *msg = errorMessageQueue.top();
-  if (msg->getSeverity() == ErrorLevel_error) numErrorMessages--;
-  errorMessageQueue.pop();
-  bool pop_more = (errorMessageQueue.size() > 0 && !(rollback && errorMessageQueue.size() <= checkPoints.back().first) && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage());
-  delete msg;
-  if (pop_more)
-    goto top;
+  bool pop_more;
+  do {
+    ErrorMessage *msg = errorMessageQueue.top();
+    if (msg->getSeverity() == ErrorLevel_error) numErrorMessages--;
+    errorMessageQueue.pop();
+    pop_more = (errorMessageQueue.size() > 0 && !(rollback && errorMessageQueue.size() <= checkPoints.back().first) && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage());
+    delete msg;
+  } while (pop_more);
 }
 
 /* Adds a message without file info. */
