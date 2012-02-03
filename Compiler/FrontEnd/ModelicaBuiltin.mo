@@ -2459,7 +2459,7 @@ Bug fixes, especially in the Linux version.
 The Functional Mockup Interface FMI 1.0 for model exchange import and export is supported by this release. The functionality is accessible via API calls as well as via pull-down menu commands in OMEdit.
 </html>"));
 end '1.8.0';
-package '1.8.1' "Current version"
+package '1.8.1' "Version 1.8.1 (r11???, 2012-02-??)"
 annotation(Documentation(info="<html>
 Major changes:
 <h4>OpenModelica Compiler (OMC)</h4>
@@ -2467,16 +2467,28 @@ The feature sendData has been removed from OpenModelica. As a result, the kernel
 <ul>
 <li>Store the documentation as Modelica <a href=\"modelica://ModelicaReference.Annotations.Documentation\">Documentation</a> annotations.</li>
 <li>Re-implementation of the simulation runtime using C instead of C++ (this was needed to export FMI source-based packages).</li>
+<li>FMI import/export fixes.</li>
 <li>Changed the internal representation of various structures to share more memory. This significantly improved the performance for very large models that use records.</li>
+<li>Faster model flattening, Improved simulation, initialization, some graphical API bug fixes.</li>
 <li>New options to API calls <strong>list</strong>, <strong>loadFile</strong>, and more.</li>
 <li>Some support for operator overloading.</li>
 <li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
 <li>Improved the scripting environment. <code>cl := $TypeName(Modelica);getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
+<li>Faster plotting in OMNotebook</li>
 <li>Interactive simulation is currently not working.</li>
 <li>Various bugfixes.</li>
 </ul>
 <h4>OMNotebook</h4>
-Added OMSketch (...).
+<li>Faster plotting.</li>
+<li>New feature OMSketch.</li>
+<h4>ModelicaML</h4>
+New ModelicaML version with support for value bindings in requirements-driven modeling and importing Modelica library models into ModelicaML models.
+<h4>Missing functionality</h4>
+Functionality from 1.8 that is missing in 1.8.1 but will be put back in a subsequent release:
+<ul>
+<li>Interactive simulation.</li>
+<li>Plots in OMNotebook are not yet put in a cell in the notebook, instead just in a popup window.</li>
+</ul>
 </html>"));
 end '1.8.1';
 package trunk "Development version"
