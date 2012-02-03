@@ -341,11 +341,12 @@ public function eliminateVariablesDAE
   Eliminates the specified variables between the given set of equations.
 "
   input list<Integer> elimVarIndexList;
-  input BackendDAE.BackendDAE dae;
+  input BackendDAE.BackendDAE indae;
   output BackendDAE.BackendDAE outDae;
 algorithm
-  outDae := matchcontinue(elimVarIndexList, dae)
+  outDae := matchcontinue(elimVarIndexList, indae)
     local
+      BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars,vars_1,kvars,kvars_1,extVars;
 	    BackendDAE.EquationArray eqns,reqns,ieqns;
 	    BackendDAE.EqSystem syst;
@@ -506,7 +507,7 @@ protected function replaceVars "help function to replaceDAElow, replaces variabl
 If replaceName is true it replaced the variable name, fails if destination is not cref.
 if replaceName is false it only replaces in binding expression.
 "
-  input list<BackendDAE.Var> varLst;
+  input list<BackendDAE.Var> invarLst;
   input BackendVarTransform.VariableReplacements repl;
   input Option<PredicateFunction> func;
   input Boolean replaceName;
@@ -517,8 +518,12 @@ if replaceName is false it only replaces in binding expression.
   
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := matchcontinue(varLst,repl,func,replaceName)
-    local BackendDAE.Var v; DAE.ComponentRef cr; Option<DAE.Exp> bindExp; 
+  outVarLst := matchcontinue(invarLst,repl,func,replaceName)
+    local
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      Option<DAE.Exp> bindExp;
+      list<BackendDAE.Var> varLst;  
        
     case({},repl,func,replaceName) then {};
     case(v::varLst,repl,func,replaceName as true) equation
@@ -1277,17 +1282,18 @@ algorithm
 end findArraysPartiallyIndexedRecordsExpVisitor; 
 
 protected function  findArraysInRecordLst "help function to findArraysPartiallyIndexedRecordsExpVisitor, searches the record elements for arrays"
- input HashTable.HashTable ht "accumulated crefs so far"; 
+ input HashTable.HashTable inht "accumulated crefs so far"; 
  input DAE.ComponentRef recordCr  "the record cref";
- input list<DAE.Var> varLst;
+ input list<DAE.Var> invarLst;
  output HashTable.HashTable outHt "resulting accumulated crefs";
 algorithm
-  outHt := matchcontinue(ht,recordCr,varLst)
+  outHt := matchcontinue(inht,recordCr,invarLst)
     local
+      HashTable.HashTable ht;
       String name;
       DAE.Type tp;
       DAE.ComponentRef thisCr;
-      list<DAE.Var> varLst2;
+      list<DAE.Var> varLst,varLst2;
     case(ht,recordCr,{}) then ht;
     // found array
     case(ht,recordCr,DAE.TYPES_VAR(name=name,ty=tp)::varLst) equation
@@ -1337,11 +1343,11 @@ a.v
 a.v[:]
 "
   input list<BackendDAE.Equation> inEqs;
-  input HashTable.HashTable ht;
+  input HashTable.HashTable inht;
   output HashTable.HashTable outHt;  
 algorithm
   (outHt) := 
-  matchcontinue(inEqs,ht)
+  matchcontinue(inEqs,inht)
       local
         list<BackendDAE.Equation> eqs;
         BackendDAE.Equation eq1;
@@ -1350,6 +1356,7 @@ algorithm
         DAE.ComponentRef c1;
         list<DAE.Exp> expl1,expl2;
         list<DAE.ComponentRef> cindex2;
+        HashTable.HashTable ht;
     case({},ht) then  ht;
     case( (eq1 as BackendDAE.ALGORITHM(in_=expl1,out=expl2)) :: eqs,ht)
       equation
@@ -1376,13 +1383,14 @@ end findArraysPartiallyIndexed1;
 
 protected function findArrayVariables "collects all variables that are arrays and adds them to the list"
   input list<DAE.Exp> inRef "The list of expressions to traverse/search for crefs";
-  input HashTable.HashTable ht;
+  input HashTable.HashTable inht;
   output HashTable.HashTable outHt;
 algorithm
-  outHt := matchcontinue(inRef,ht)
+  outHt := matchcontinue(inRef,inht)
     local DAE.Exp e1;
       list<DAE.Exp> expl1;
       DAE.ComponentRef c1;
+      HashTable.HashTable ht;
     case({},ht) then ht;
     case((e1 as DAE.CREF(c1,_))::expl1,ht) equation
       true = Expression.isArrayType(ComponentReference.crefTypeConsiderSubs(c1));
@@ -1399,17 +1407,18 @@ end findArrayVariables;
 protected function findArraysPartiallyIndexed2 "
 "
   input list<DAE.Exp> inRef "The list of expressions to traverse/search for crefs";
-  input HashTable.HashTable dubRef "ComponentReferences that are duplicate(y[1,1],y[1,2] is a double)";
-  input HashTable.HashTable ht "Added componentReferences";
+  input HashTable.HashTable indubRef "ComponentReferences that are duplicate(y[1,1],y[1,2] is a double)";
+  input HashTable.HashTable inht "Added componentReferences";
   output HashTable.HashTable outHt;
   
 algorithm
-  outHt := matchcontinue(inRef,dubRef,ht)
+  outHt := matchcontinue(inRef,indubRef,inht)
     local
       DAE.ComponentRef c1,c2,c3;
       list<DAE.ComponentRef> crefs1,crefs2,crefs3;
       DAE.Exp e1;
       list<DAE.Exp> expl1;
+      HashTable.HashTable dubRef,ht;
       
     case({}, _, ht) then ht;
       
