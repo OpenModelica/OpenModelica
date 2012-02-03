@@ -11,7 +11,7 @@ builddir_inc=$(top_builddir)/build/include/omc
 
 CC := @CC@
 CXX := @CXX@
-CFLAGS := -g -O0 @CFLAGS@
+CFLAGS := @CFLAGS@
 
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
