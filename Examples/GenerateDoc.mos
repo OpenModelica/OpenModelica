@@ -224,7 +224,10 @@ repls = ["+replaceCommands+"
 
 def linkreplace(link):
   for (regex,repl) in repls:
-    link = regex.sub(repl,link)
+    try:
+      link = regex.sub(repl,link)
+    except:
+      pass
   return link
 
 log = open('tidy.log','w')
@@ -241,6 +244,7 @@ for f in glob.glob('*.html'):
   try:
     file = open(f,'r')
     soup = BeautifulSoup(file)
+    file.close()
     for a in soup.findAll('a'):
       try:
         a['href'] = linkreplace(a['href'])
@@ -251,11 +255,13 @@ for f in glob.glob('*.html'):
         img['src'] = linkreplace(img['src'])
       except:
         pass
-    file.close()
-    file = open(f,'w')
-    file.write(soup.__str__())
+    try:
+      file = open(f,'w')
+      file.write(soup.__str__())
+    except:
+      log.write('Error writing back file: ' + f + '\\n')
   except:
-    log.write('Unknown python error in: ' + f)
+    log.write('Unknown python error in: ' + f + '\\n')
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
