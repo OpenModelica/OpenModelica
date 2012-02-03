@@ -2854,7 +2854,7 @@ algorithm
   end match;
 end unparseEquationitemStrLst;
 
-protected function unparseEquationitemStr "function: unparseEquationitemStr
+public function unparseEquationitemStr "function: unparseEquationitemStr
   Prettyprints an EquationItem to a string."
   input Integer inInteger;
   input Absyn.EquationItem inEquationItem;

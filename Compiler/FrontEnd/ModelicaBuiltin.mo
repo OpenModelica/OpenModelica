@@ -1960,6 +1960,36 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialAlgorithm;
 
+function getAlgorithmItemsCount "Counts the number of Algorithm items in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getAlgorithmItemsCount;
+
+function getNthAlgorithmItem "Returns the Nth Algorithm Item"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getNthAlgorithmItem;
+
+function getInitialAlgorithmItemsCount "Counts the number of Initial Algorithm items in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getInitialAlgorithmItemsCount;
+
+function getNthInitialAlgorithmItem "Returns the Nth Initial Algorithm Item"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getNthInitialAlgorithmItem;
+
 function getEquationCount "Counts the number of Equation sections in a class"
   input TypeName class_;
   output Integer count;
@@ -1989,6 +2019,36 @@ function getNthInitialEquation "Returns the Nth Initial Equation section"
 external "builtin";
 annotation(preferredView="text");
 end getNthInitialEquation;
+
+function getEquationItemsCount "Counts the number of Equation items in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getEquationItemsCount;
+
+function getNthEquationItem "Returns the Nth Equation Item"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getNthEquationItem;
+
+function getInitialEquationItemsCount "Counts the number of Initial Equation items in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+annotation(preferredView="text");
+end getInitialEquationItemsCount;
+
+function getNthInitialEquationItem "Returns the Nth Initial Equation Item"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+annotation(preferredView="text");
+end getNthInitialEquationItem;
 
 function getAnnotationCount "Counts the number of Annotation sections in a class"
   input TypeName class_;
