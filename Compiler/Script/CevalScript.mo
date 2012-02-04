@@ -4715,7 +4715,27 @@ protected function getNthAlgorithmItemInAlgorithms
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := Dump.unparseAlgorithmStr(0, listGet(inAbsynAlgorithmItemLst, inInteger));
+  outString := matchcontinue (inAbsynAlgorithmItemLst,inInteger)
+    local
+      String str;
+      Absyn.Algorithm alg;
+      Option<Absyn.Comment> cmt;
+      Absyn.Info inf;
+      list<Absyn.AlgorithmItem> xs;
+      Integer newn,n;
+    case ((Absyn.ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = inf) :: xs), 1)
+      equation
+        str = Dump.unparseAlgorithmStr(0, Absyn.ALGORITHMITEM(alg, cmt, inf));
+      then
+        str;
+    case ((_ :: xs),n)
+      equation
+        newn = n - 1;
+        str = getNthAlgorithmItemInAlgorithms(xs, newn);
+      then
+        str;
+    case ({},_) then fail();
+  end matchcontinue;
 end getNthAlgorithmItemInAlgorithms;
 
 protected function getInitialAlgorithmItemsCount
@@ -5137,7 +5157,27 @@ protected function getNthEquationItemInEquations
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := Dump.unparseEquationitemStr(0, listGet(inAbsynEquationItemLst, inInteger));
+  outString := matchcontinue (inAbsynEquationItemLst,inInteger)
+    local
+      String str;
+      Absyn.Equation eq;
+      list<Absyn.EquationItem> xs;
+      Integer newn,n;
+    case ((Absyn.EQUATIONITEM(equation_ = eq) :: xs), 1)
+      equation
+        str = Dump.unparseEquationStr(0, eq);
+        str = stringAppend(str, ";");
+        str = System.trim(str, " ");
+      then
+        str;
+    case ((_ :: xs),n)
+      equation
+        newn = n - 1;
+        str = getNthEquationItemInEquations(xs, newn);
+      then
+        str;
+    case ({},_) then fail();
+  end matchcontinue;
 end getNthEquationItemInEquations;
 
 protected function getInitialEquationItemsCount
