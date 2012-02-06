@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -104,7 +104,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
   if ((0 == ((mmc_sint_t)lhs & 1)) && (0 == ((mmc_sint_t)rhs & 1))) {
     return lhs == rhs;
   }
-  
+
   h_lhs = MMC_GETHDR(lhs);
   h_rhs = MMC_GETHDR(rhs);
 
@@ -127,7 +127,7 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 
   numslots = MMC_HDRSLOTS(h_lhs);
   ctor = 255 & (h_lhs >> 2);
-  
+
   if (numslots>0 && ctor > 1) { /* RECORD */
     lhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1));
     rhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1));
@@ -195,7 +195,7 @@ inline static void checkAnyStringBufSize(int ix, int szNewObject)
   }
 }
 
-void initializeStringBuffer()
+void initializeStringBuffer(void)
 {
   if (anyStringBufSize == 0) {
     anyStringBuf = malloc(8192);
@@ -225,7 +225,7 @@ inline static int anyStringWork(void* any, int ix)
     ix += sprintf(anyStringBuf+ix, "Forward");
     return ix;
   }
-  
+
   hdr = MMC_HDR_UNMARK(MMC_GETHDR(any));
 
   if (hdr == MMC_NILHDR) {
@@ -248,7 +248,7 @@ inline static int anyStringWork(void* any, int ix)
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = MMC_HDRCTOR(hdr);
-  
+
   if (numslots>0 && ctor == MMC_FREE_OBJECT_CTOR) { /* FREE OBJECT! */
     checkAnyStringBufSize(ix,100);
     ix += sprintf(anyStringBuf+ix, "FREE(%u)", numslots);
@@ -385,7 +385,7 @@ void printTypeOfAny(void* any) /* for debugging */
     fprintf(stderr, "Integer");
     return;
   }
-  
+
   hdr = MMC_GETHDR(any);
 
   if (MMC_HDR_IS_FORWARD(hdr)) {
@@ -410,7 +410,7 @@ void printTypeOfAny(void* any) /* for debugging */
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
-  
+
   if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
     fprintf(stderr, "meta_array<");
     data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
@@ -605,7 +605,7 @@ int isOptionNone(void* any)
  * So printf does not print straight away on the console.
  * changing it to NULL fix the problem.
  * */
-void changeStdStreamBuffer() {
+void changeStdStreamBuffer(void) {
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
 }
@@ -616,32 +616,32 @@ unsigned long mmc_prim_hash(void *p)
   void **pp = NULL;
   mmc_uint_t phdr = 0;
   mmc_uint_t slots = 0;
-  
+
   mmc_prim_hash_tail_recur:
   if ((0 == ((mmc_sint_t)p & 1)))
   {
     return hash + (unsigned long)MMC_UNTAGFIXNUM(p);
-  } 
-  
+  }
+
   phdr = MMC_GETHDR(p);
   hash += (unsigned long)phdr;
 
-  if( phdr == MMC_REALHDR ) 
+  if( phdr == MMC_REALHDR )
   {
     return hash + (unsigned long)mmc_unbox_real(p);
-  } 
-  
-  if( MMC_HDRISSTRING(phdr) ) 
+  }
+
+  if( MMC_HDRISSTRING(phdr) )
   {
     return hash + (unsigned long)stringHashDjb2(p);
   }
-  
-  if( MMC_HDRISSTRUCT(phdr) ) 
+
+  if( MMC_HDRISSTRUCT(phdr) )
   {
     slots = MMC_HDRSLOTS(phdr);
     pp = MMC_STRUCTDATA(p);
     hash += MMC_HDRCTOR(phdr);
-    if (slots == 0) 
+    if (slots == 0)
       return hash;
 
     while ( --slots > 0)

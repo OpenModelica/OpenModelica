@@ -72,41 +72,37 @@ extern "C" {
  * to avoid memory leak.
  */
 /* DATA* initializeDataStruc(); */ /*create in model code */
-void setupDataStruc2(DATA *data);
+extern void setupDataStruc2(DATA *data);
 
 /* Function for calling external object constructors */
-void
-callExternalObjectConstructors(DATA *data);
+extern void callExternalObjectConstructors(DATA *data);
 /* Function for calling external object deconstructors */
-void
-callExternalObjectDestructors(DATA *_data);
+extern void callExternalObjectDestructors(DATA *_data);
 
 /* function for calculating ouput values */
-/*used in DDASRT fortran function*/
-int functionODE(DATA *data);          /* functionODE with respect to start-values */
-int functionAlgebraics(DATA *data);   /* functionAlgebraics with respect to start-values */
-int functionAliasEquations(DATA *data);
+/* used in DDASRT fortran function*/
+extern int functionODE(DATA *data);          /* functionODE with respect to start-values */
+extern int functionAlgebraics(DATA *data);   /* functionAlgebraics with respect to start-values */
+extern int functionAliasEquations(DATA *data);
 
 
 /*   function for calculating all equation sorting order
   uses in EventHandle  */
-int
-functionDAE(DATA *data, int *needToIterate);
+extern int functionDAE(DATA *data, int *needToIterate);
 
 
 /* functions for input and output */
-int input_function(DATA*);
-int output_function(DATA*);
+extern int input_function(DATA*);
+extern int output_function(DATA*);
 
 /* function for storing value histories of delayed expressions
  * called from functionDAE_output()
  */
-int
-function_storeDelayed(DATA *data);
+extern int function_storeDelayed(DATA *data);
 
 /* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
-int functionODE_inline(DATA *data, double stepsize);
+extern int functionODE_inline(DATA *data, double stepsize);
 
 /*! \fn updateBoundStartValues
  *
@@ -116,10 +112,10 @@ int functionODE_inline(DATA *data, double stepsize);
  *
  *  \param [ref] [data]
  */
-int updateBoundStartValues(DATA *data);
+extern int updateBoundStartValues(DATA *data);
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
-int initial_residual(DATA *data, double lambda, double* initialResiduals);
+extern int initial_residual(DATA *data, double lambda, double* initialResiduals);
 
 /*! \fn updateBoundParameters
  *
@@ -129,30 +125,30 @@ int initial_residual(DATA *data, double lambda, double* initialResiduals);
  *
  *  \param [ref] [data]
  */
-int updateBoundParameters(DATA *data);
+extern int updateBoundParameters(DATA *data);
 
 /* function for checking for asserts and terminate */
-int checkForAsserts(DATA *data);
+extern int checkForAsserts(DATA *data);
 
 /* functions for event handling */
-int function_onlyZeroCrossings(DATA *data, double* gout, double* t);
-int function_updateSample(DATA *data);
-int checkForDiscreteChanges(DATA *data);
+extern int function_onlyZeroCrossings(DATA *data, double* gout, double* t);
+extern int function_updateSample(DATA *data);
+extern int checkForDiscreteChanges(DATA *data);
 
 /* function for initializing time instants when sample() is activated */
-void function_sampleInit(DATA *data);
-void function_initMemoryState();
+extern void function_sampleInit(DATA *data);
+extern void function_initMemoryState(void);
 
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
-int initialAnalyticJacobianA(DATA* data);
-int initialAnalyticJacobianB(DATA* data);
-int initialAnalyticJacobianC(DATA* data);
-int initialAnalyticJacobianD(DATA* data);
-int functionJacA(DATA* data, double* jac);
-int functionJacB(DATA* data, double* jac);
-int functionJacC(DATA* data, double* jac);
-int functionJacD(DATA* data, double* jac);
+extern int initialAnalyticJacobianA(DATA* data);
+extern int initialAnalyticJacobianB(DATA* data);
+extern int initialAnalyticJacobianC(DATA* data);
+extern int initialAnalyticJacobianD(DATA* data);
+extern int functionJacA(DATA* data, double* jac);
+extern int functionJacB(DATA* data, double* jac);
+extern int functionJacC(DATA* data, double* jac);
+extern int functionJacD(DATA* data, double* jac);
 /*#endif*/
 
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */

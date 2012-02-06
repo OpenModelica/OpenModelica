@@ -38,6 +38,7 @@
 #include "openmodelica_func.h"
 #include "error.h"
 #include "delay.h"
+#include "varinfo.h"
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;
@@ -468,7 +469,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
 
-  data->simulationInfo.analyticJacobians = (modelica_real*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   /* buffer for equations and fucntions */
   data->modelData.functionNames = (FUNCTION_INFO*) malloc(data->modelData.nFunctions*sizeof(FUNCTION_INFO));

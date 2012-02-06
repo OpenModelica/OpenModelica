@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -54,7 +54,7 @@ extern "C" {
 
 
 /*
- * 
+ *
  * adrpo: define this to have mmk_mk_* function tracing
  * #define MMC_MK_DEBUG
  *
@@ -63,7 +63,7 @@ extern "C" {
 #if 0 /* Enable if you need to debug some MMC runtime assertions */
 #define MMC_DEBUG_ASSERT(x) assert(x)
 #else
-#define MMC_DEBUG_ASSERT(x) 
+#define MMC_DEBUG_ASSERT(x)
 #endif
 #define MMC_CHECK_STRING(x) MMC_DEBUG_ASSERT(!((MMC_STRLEN(x) != strlen(MMC_STRINGDATA(x))) && (MMC_STRLEN(x) >=0)))
 
@@ -71,9 +71,9 @@ extern "C" {
 #define MMC_SIZE_META sizeof(modelica_metatype)
 #define MMC_WORDS_TO_BYTES(x) ((x) * MMC_SIZE_META)
 
-/* 
+/*
  * a slot is a word on any platform!
- * the maximum slots in a free slot is 
+ * the maximum slots in a free slot is
  * - 2^(32-10) + 1 (header) on 32 bit systems
  * - 2^(64-10) + 1 (header) on 64 bit systems
  */
@@ -81,7 +81,7 @@ extern "C" {
 #define MMC_MAX_SLOTS (18014398509481984) /* max words slots header */
 #else
 #define MMC_MAX_SLOTS (4194304)           /* max words slots header */
-#endif 
+#endif
 
 /* max object size on 32/64 bit systems in bytes */
 #define MMC_MAX_OBJECT_SIZE_BYTES MMC_WORDS_TO_BYTES(MMC_MAX_SLOTS)
@@ -460,32 +460,32 @@ static inline void *mmc_mk_some(void *x)
     return mmc_mk_box1(1, x);
 }
 
-void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
-void *mmc_mk_box_no_assign(int slots, unsigned ctor);
+extern void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
+extern void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
-modelica_boolean valueEq(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_valueEq(modelica_metatype,modelica_metatype);
+extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
+extern modelica_metatype boxptr_valueEq(modelica_metatype lhs,modelica_metatype rhs);
 
-modelica_integer valueHashMod(modelica_metatype,modelica_integer);
-void* boxptr_valueHashMod(void *p, void *mod);
+extern modelica_integer valueHashMod(modelica_metatype p,modelica_integer mod);
+extern void* boxptr_valueHashMod(void *p, void *mod);
 
-void mmc__unbox(modelica_metatype box, void* res);
+extern void mmc__unbox(modelica_metatype box, void* res);
 
 #define mmc__uniontype__metarecord__typedef__equal(UT,CTOR,NFIELDS) (MMC_GETHDR(UT)==MMC_STRUCTHDR(NFIELDS+1,CTOR+3))
 
-void debug__print(void*,void*); /* For debugging */
-void initializeStringBuffer();
-char* anyString(void*); /* For debugging in external functions */
-void* mmc_anyString(void*); /* For debugging */
-void printAny(void*); /* For debugging */
-void printTypeOfAny(void*); /* For debugging */
-char* getTypeOfAny(void*); /* For debugging */
-char* getRecordElementName(void*, int); /* For debugging */
-int isOptionNone(void*); /* For debugging */
-void changeStdStreamBuffer(); /* For debugging */
+extern void debug__print(void*prefix,void*any); /* For debugging */
+extern void initializeStringBuffer(void);
+extern char* anyString(void*any); /* For debugging in external functions */
+extern void* mmc_anyString(void*any); /* For debugging */
+extern void printAny(void*any); /* For debugging */
+extern void printTypeOfAny(void*any); /* For debugging */
+extern char* getTypeOfAny(void*any); /* For debugging */
+extern char* getRecordElementName(void*any, int element); /* For debugging */
+extern int isOptionNone(void*any); /* For debugging */
+extern void changeStdStreamBuffer(void); /* For debugging */
 
 /*
- * Generated (Meta)Records should access a static, constant value of 
+ * Generated (Meta)Records should access a static, constant value of
  * the record_description structure. This means the additional cost
  * of including the description is 1 word of memory and O(1) time.
  * When sending structures between the compiler and generated files,

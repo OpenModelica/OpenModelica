@@ -543,7 +543,7 @@ modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
     lst = mmc_mk_cons(tmpArr[i], lst);
   }
   free(tmpArr);
-  
+
   return lst;
 }
 
@@ -619,7 +619,7 @@ modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modeli
     }
     /* add the address of the array into the roots to be
     taken into consideration at the garbage collection time */
-    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail ) 
+    if( mmc_GC_state->gen.ATP == mmc_GC_state->gen.array_trail )
     {
       (void)fprintf(stderr, "Array Trail Overflow!\n");
       mmc_exit(1);
@@ -663,7 +663,7 @@ modelica_metatype boxptr_arrayNth(modelica_metatype arr,modelica_metatype ix)
 }
 
 /* Misc Operations */
-modelica_integer tick()
+modelica_integer tick(void)
 {
   static modelica_integer curTick = 0;
   return curTick++;
@@ -674,7 +674,7 @@ void print(modelica_metatype str)
   fprintf(stdout, "%s", MMC_STRINGDATA(str));
 }
 
-modelica_real mmc_clock()
+modelica_real mmc_clock(void)
 {
   static double start_t;
   static int init = 1;
@@ -726,12 +726,12 @@ modelica_metatype boxptr_listRest(modelica_metatype lst)
   return MMC_CDR(lst);
 }
 
-modelica_real realMaxLit()
+modelica_real realMaxLit(void)
 {
   return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
 }
 
-modelica_integer intMaxLit()
+modelica_integer intMaxLit(void)
 {
   return INT_MAX / 2;
 }

@@ -100,9 +100,9 @@ typedef struct mmc_GC_gen_state_type mmc_GC_gen_state_type;
   } while(0)
 
 extern void mmc_gcinit(void);
-extern void* mmc_minor_collection();
+extern void* mmc_minor_collection(void);
 extern void *mmc_gen_alloc_words(unsigned nwords);
-extern void mmc_exit(int);
+extern void mmc_exit(int status);
 
 #if defined(__cplusplus)
 }
