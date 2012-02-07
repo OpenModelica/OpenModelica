@@ -437,7 +437,7 @@ public constant Message LOOKUP_FUNCTION_GOT_CLASS = MESSAGE(148, TRANSLATION(), 
   "Looking for a function %s but found a %s.");
 public constant Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = MESSAGE(149, TRANSLATION(), ERROR(),
   "Operand %s to operator %s is not a stream variable.");
-public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), ERROR(),
+public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), WARNING(),
   "Connector %s is not balanced: %s");
 public constant Message RESTRICTION_VIOLATION = MESSAGE(151, TRANSLATION(), ERROR(),
   "Restriction violation: %s is a %s, not a %s");
@@ -575,6 +575,8 @@ ERROR(),
   "Modified element %s not found in class %s\n");
 public constant Message INVALID_REDECLARE_IN_BASIC_TYPE = MESSAGE(215, TRANSLATION(), ERROR(),
   "Invalid redeclaration, attributes of basic types can not be redeclared.");
+public constant Message INVALID_STREAM_CONNECTOR = MESSAGE(216, TRANSLATION(), ERROR(),
+  "Invalid stream connector %s: %s\n");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),

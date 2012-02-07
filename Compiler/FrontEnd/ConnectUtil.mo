@@ -2928,7 +2928,7 @@ protected
   Integer potentials, flows, streams;
 algorithm
   (potentials, flows, streams) := countConnectorVars(inVars);
-  checkConnectorBalance2(potentials, flows, streams, path, info);
+  true := checkConnectorBalance2(potentials, flows, streams, path, info);
   //print(Absyn.pathString(path) +& " has:\n\t" +&
   //  intString(potentials) +& " potential variables\n\t" +&
   //  intString(flows) +& " flow variables\n\t" +&
@@ -2941,8 +2941,10 @@ protected function checkConnectorBalance2
   input Integer inStreamVars;
   input Absyn.Path path;
   input Absyn.Info info;
+  output Boolean outIsBalanced;
 algorithm
-  _ := matchcontinue(inPotentialVars, inFlowVars, inStreamVars, path, info)
+  outIsBalanced :=
+  matchcontinue(inPotentialVars, inFlowVars, inStreamVars, path, info)
     local
       String error_str, flow_str, potential_str, class_str;
 
@@ -2953,7 +2955,7 @@ algorithm
           Config.languageStandardAtMost(Config.MODELICA_2_X());
         true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
       then
-        ();
+        true;
 
     // Modelica 3.2 section 9.3.1:
     // For each non-partial connector class the number of flow variables shall
@@ -2986,10 +2988,13 @@ algorithm
         error_str = stringAppendList({
           "A stream connector must have exactly one flow variable, this connector has ", 
           flow_str, " flow variables."});
-        Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
+        Error.addSourceMessage(Error.INVALID_STREAM_CONNECTOR,
           {class_str, error_str}, info);
       then
-        fail();
+        false;
+
+    else true;
+
   end matchcontinue;
 end checkConnectorBalance2;
 
@@ -3152,7 +3157,7 @@ algorithm
         fv = Util.if_(bf, 1, 0);
         sv = Util.if_(bs, 1, 0);
         pv = Util.if_(bf or bs, 0, 1);
-        checkConnectorBalance2(pv, fv, sv, class_path, inInfo);
+        true = checkConnectorBalance2(pv, fv, sv, class_path, inInfo);
       then
         true;
 
