@@ -364,6 +364,10 @@ element returns [void* ast] @declarations {
                                   mk_scon("replaceable ??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
         }
     )
+  | conn=CONNECT
+    {
+       modelicaParserAssert(0, "Found the start of a connect equation but expected an element (are you missing the equation keyword?)", element, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+    }
   ;
 
 import_clause returns [void* ast] :
