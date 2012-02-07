@@ -1700,6 +1700,7 @@ algorithm
         dumpStrOpenTag(MathMLElseBranch);
         dumpExp2(fb);
         dumpStrCloseTag(MathMLElseBranch);
+        dumpStrCloseTag(MathMLIfClause);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = args))
