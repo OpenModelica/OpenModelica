@@ -251,7 +251,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
   {
     try
     {
-      returnString = omc_->sendExpression( fnCall.toLatin1() );
+      returnString = omc_->sendExpression( fnCall.toUtf8() );
       // cerr << "sendExpression(" << fnCall.toStdString() << ") => " << returnString.toStdString() << endl;
       break;
     }
