@@ -44,15 +44,21 @@ public import DAE;
 public import SCode;
 public import SCodeEnv;
 
+protected import BaseHashTable;
+protected import ComponentReference;
+protected import DAEDump;
 protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import Flags;
+protected import Graph;
 protected import List;
 protected import SCodeDump;
 protected import SCodeLookup;
 protected import SCodeFlattenRedeclare;
+protected import SCodeMod;
 protected import System;
 protected import Types;
 protected import Util;
@@ -60,11 +66,14 @@ protected import Util;
 public type Env = SCodeEnv.Env;
 protected type Item = SCodeEnv.Item;
 
-protected type Prefix = list<tuple<String, Absyn.ArrayDim>>;
+public type Prefix = list<tuple<String, Absyn.ArrayDim>>;
 
 public uniontype FlatProgram
+  record EMPTY_FLAT_PROGRAM end EMPTY_FLAT_PROGRAM;
+
   record FLAT_PROGRAM
-    list<SCode.Element> components;
+    list<Component> components;
+    list<Component> conditionals;
     list<SCode.Equation> equations;
     list<SCode.Equation> initialEquations;
     list<SCode.AlgorithmSection> algorithms;
@@ -72,36 +81,163 @@ public uniontype FlatProgram
   end FLAT_PROGRAM;
 end FlatProgram;
 
-protected constant FlatProgram EMPTY_FLAT_PROGRAM = 
-  FLAT_PROGRAM({}, {}, {}, {}, {});
+public uniontype Dimension
+  record UNTYPED_DIMENSION
+    DAE.Dimension dimension;
+    Boolean isProcessing;
+  end UNTYPED_DIMENSION;
 
+  record TYPED_DIMENSION
+    DAE.Dimension dimension;
+  end TYPED_DIMENSION;
+end Dimension;
+
+public uniontype Binding
+  record UNBOUND end UNBOUND;
+
+  record BINDING
+    DAE.Exp bindingExp;
+    DAE.Type bindingType;
+  end BINDING;
+end Binding;
+
+public uniontype Component
+  record UNTYPED_COMPONENT
+    Absyn.Path name;
+    SCode.Element element;
+    DAE.Type baseType;
+    array<Dimension> dimensions;
+    Option<DAE.Exp> binding;
+    Boolean isProcessing;
+  end UNTYPED_COMPONENT;
+
+  record TYPED_COMPONENT
+    Absyn.Path name;
+    DAE.Type ty;
+    SCode.Variability variability;
+    Binding binding;
+  end TYPED_COMPONENT;
+    
+  record CONDITIONAL_COMPONENT
+    Absyn.Path name;
+    SCode.Element element;
+    Env env;
+    Prefix prefix;
+  end CONDITIONAL_COMPONENT; 
+end Component;
+
+public type Key = Absyn.Path;
+public type Value = Component;
+
+public type HashTableFunctionsType = tuple<FuncHashKey, FuncKeyEqual, FuncKeyStr, FuncValueStr>;
+
+public type SymbolTable = tuple<
+  array<list<tuple<Key, Integer>>>,
+  tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
+  Integer,
+  Integer,
+  HashTableFunctionsType
+>;
+
+partial function FuncHashKey
+  input Key inKey;
+  input Integer inMod;
+  output Integer outHash;
+end FuncHashKey;
+
+partial function FuncKeyEqual
+  input Key inKey1;
+  input Key inKey2;
+  output Boolean outEqual;
+end FuncKeyEqual;
+
+partial function FuncKeyStr
+  input Key inKey;
+  output String outString;
+end FuncKeyStr;
+
+partial function FuncValueStr
+  input Value inValue;
+  output String outString;
+end FuncValueStr;
+
+public function hashFunc
+  input Key inKey;
+  input Integer inMod;
+  output Integer outHash;
+protected
+  String str;
+algorithm
+  str := Absyn.pathString(inKey);
+  outHash := System.stringHashDjb2Mod(str, inMod);
+end hashFunc;
+
+public function emptySymbolTable
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := emptySymbolTableSized(BaseHashTable.defaultBucketSize);
+end emptySymbolTable;
+
+public function emptySymbolTableSized
+  input Integer inSize;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := BaseHashTable.emptyHashTableWork(inSize,
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, printComponent));
+end emptySymbolTableSized;
+
+public function makeClassFlatProgram
+  input list<SCode.Equation> inEquations;
+  input list<SCode.Equation> inInitialEquations;
+  input list<SCode.AlgorithmSection> inAlgorithms;
+  input list<SCode.AlgorithmSection> inInitialAlgorithms;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inEquations, inInitialEquations, inAlgorithms,
+      inInitialAlgorithms)
+    case ({}, {}, {}, {}) then EMPTY_FLAT_PROGRAM();
+    else FLAT_PROGRAM({}, {}, inEquations, inInitialEquations,
+      inAlgorithms, inInitialAlgorithms);
+  end match;
+end makeClassFlatProgram;
 
 public function instClass
   "Flattens a class."
   input Absyn.Path inClassPath;
   input Env inEnv;
-protected
+  input list<Absyn.Path> inGlobalConstants;
 algorithm
-  _ := matchcontinue(inClassPath, inEnv)
+  _ := matchcontinue(inClassPath, inEnv, inGlobalConstants)
     local
       Item item;
       Absyn.Path path;
       Env env; 
       String name;
-      Integer var_count;
-      FlatProgram program;
+      FlatProgram program, const_prog;
+      SymbolTable symtab;
 
-    case (_, _)
+    case (_, _, _)
+      equation
+        false = Flags.isSet(Flags.SCODE_INST);
+      then
+        ();
+
+    case (_, _, _)
       equation
         System.startTimer();
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         (program, _) = instClassItem(item, SCode.NOMOD(), env, {});
+        const_prog = instGlobalConstants(inGlobalConstants, inEnv,
+          EMPTY_FLAT_PROGRAM());
+        program = mergeFlatProgram(const_prog, program);
+        symtab = buildSymbolTable(program);
+        symtab = typeComponents(program, symtab);
         System.stopTimer();
-        //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
-        //  " seconds.\n");
-        //printFlatProgram(name, program);
+        print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
+          " seconds.\n");
+        printFlatProgram(name, program);
       then
         ();
 
@@ -124,26 +260,49 @@ protected function mergeFlatProgram
 algorithm
   outProgram := match(inProgram1, inProgram2)
     local
-      list<SCode.Element> el1, el2;
+      list<Component> cl1, cl2, cdl1, cdl2;
       list<SCode.Equation> eq1, eq2, ie1, ie2;
       list<SCode.AlgorithmSection> al1, al2, ia1, ia2;
 
-    case (FLAT_PROGRAM({}, {}, {}, {}, {}), _) then inProgram2;
-    case (_, FLAT_PROGRAM({}, {}, {}, {}, {})) then inProgram1;
+    case (EMPTY_FLAT_PROGRAM(), _) then inProgram2;
+    case (_, EMPTY_FLAT_PROGRAM()) then inProgram1;
 
-    case (FLAT_PROGRAM(el1, eq1, ie1, al1, ia1),
-          FLAT_PROGRAM(el2, eq2, ie2, al2, ia2))
+    case (FLAT_PROGRAM(cl1, cdl1, eq1, ie1, al1, ia1),
+        FLAT_PROGRAM(cl2, cdl2, eq2, ie2, al2, ia2))
       equation
-        el1 = listAppend(el1, el2);
+        cl1 = listAppend(cl1, cl2);
+        cdl1 = listAppend(cdl1, cdl2);
         eq1 = listAppend(eq1, eq2);
         ie1 = listAppend(ie1, ie2);
         al1 = listAppend(al1, al2);
         ia1 = listAppend(ia1, ia2);
       then
-        FLAT_PROGRAM(el1, eq1, ie1, al1, ia1);
+        FLAT_PROGRAM(cl1, cdl1, eq1, ie1, al1, ia1);
 
   end match;
 end mergeFlatProgram;
+
+protected function addComponentToFlatProgram
+  input Component inComponent;
+  input SCode.Variability inVariability;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+protected
+algorithm
+  outProgram := match(inComponent, inVariability, inProgram)
+    local
+      list<Component> cl, cdl;
+      list<SCode.Equation> eq, ie;
+      list<SCode.AlgorithmSection> al, ia;
+
+    case (_, _, FLAT_PROGRAM(cl, cdl, eq, ie, al, ia))
+      then FLAT_PROGRAM(inComponent :: cl, cdl, eq, ie, al, ia);
+
+    case (_, _, EMPTY_FLAT_PROGRAM())
+      then FLAT_PROGRAM({inComponent}, {}, {}, {}, {}, {});
+
+  end match;
+end addComponentToFlatProgram;
 
 protected function instClassItem
   input Item inItem;
@@ -170,8 +329,6 @@ algorithm
   (outProgram, outType) := match(inItem, inMod, inEnv, inPrefix)
     local
       list<SCode.Element> el;
-      list<Integer> var_counts;
-      Integer var_count;
       Absyn.TypeSpec dty;
       Item item;
       Env env;
@@ -187,13 +344,15 @@ algorithm
       Absyn.ArrayDim dims;
       list<DAE.Var> vars;
 
+      list<DAE.Element> del;
+
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _) 
       equation
-        vars = instBasicTypeAttributes(inMod, env);
+        vars = instBasicTypeAttributes(inMod, env, inPrefix);
         ty = instBasicType(name, inMod, vars);
       then 
-        (EMPTY_FLAT_PROGRAM, ty);
+        (EMPTY_FLAT_PROGRAM(), ty);
 
     // A class with parts, instantiate all elements in it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, 
@@ -202,11 +361,12 @@ algorithm
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
-        el = applyModifications(inMod, el, inPrefix, env);
-        prog = FLAT_PROGRAM(el, nel, iel, nal, ial);
-        progs = List.map2(el, instElement, env, inPrefix);
-        progs = prog :: progs;
-        prog = List.fold(progs, mergeFlatProgram, EMPTY_FLAT_PROGRAM);
+        el = SCodeMod.applyModifications(inMod, el, inPrefix, env);
+
+        //del = List.map2(nel, instEquation, env, inPrefix);
+        //print(stringDelimitList(List.map(del, DAEDump.dumpEquationStr), "\n") +& "\n");
+        prog = makeClassFlatProgram(nel, iel, nal, ial);
+        prog = instElementList(el, env, inPrefix, prog);
       then
         (prog, DAE.T_COMPLEX_DEFAULT);
 
@@ -215,14 +375,14 @@ algorithm
         SCode.DERIVED(modifications = mod, typeSpec = dty), info = info)), _, _, _)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
-        mod = mergeMod(inMod, mod);
+        mod = SCodeMod.mergeMod(inMod, mod);
         (prog, ty) = instClassItem(item, mod, env, inPrefix);
         dims = Absyn.typeSpecDimensions(dty);
-        ty = liftArrayType(dims, ty, inEnv);
+        //ty = liftArrayType(dims, ty, inEnv, inPrefix);
       then
         (prog, ty);
         
-    else (EMPTY_FLAT_PROGRAM, DAE.T_NONE_DEFAULT);
+    else (EMPTY_FLAT_PROGRAM(), DAE.T_UNKNOWN_DEFAULT);
   end match;
 end instClassItem2;
 
@@ -324,433 +484,14 @@ algorithm
   end match;
 end instBasicType;
 
-protected function applyModifications
-  "Applies a class modifier to the class' elements."
-  input SCode.Mod inMod;
-  input list<SCode.Element> inElements;
-  input Prefix inPrefix;
-  input Env inEnv;
-  output list<SCode.Element> outElements;
-protected
-  list<tuple<String, SCode.Mod>> mods;
-  list<tuple<String, Option<Absyn.Path>, SCode.Mod>> upd_mods;
-algorithm
-  mods := splitMod(inMod, inPrefix);
-  upd_mods := List.map2(mods, updateModElement, inEnv, inPrefix);
-  outElements := List.fold(upd_mods, applyModifications2, inElements);
-end applyModifications;
-
-protected function updateModElement
-  "Given a tuple of an element name and a modifier, checks if the element 
-   is in the local scope, or if it comes from an extends clause. If it comes
-   from an extends, return a new tuple that also contains the path of the
-   extends, otherwise the option will be NONE."
-  input tuple<String, SCode.Mod> inMod;
-  input Env inEnv;
-  input Prefix inPrefix;
-  output tuple<String, Option<Absyn.Path>, SCode.Mod> outMod;
-protected
-algorithm
-  outMod := matchcontinue(inMod, inEnv, inPrefix)
-    local
-      String name, pre_str;
-      SCode.Mod mod;
-      Absyn.Path path;
-      Env env;
-      SCodeEnv.AvlTree tree;
-      Absyn.Info info;
-
-    // Check if the element can be found in the local scope first.
-    case ((name, mod), SCodeEnv.FRAME(clsAndVars = tree) :: _, _)
-      equation
-        _ = SCodeLookup.lookupInTree(name, tree);
-      then
-        ((name, NONE(), mod));
-
-    // Check which extends the element comes from.
-    // TODO: The element might come from multiple extends!
-    case ((name, mod), _, _)
-      equation
-        (_, _, path, _) = SCodeLookup.lookupInBaseClasses(name, inEnv,
-          SCodeLookup.IGNORE_REDECLARES(), {});
-      then
-        ((name, SOME(path), mod));
-
-    case ((name, mod), _, _)
-      equation
-        pre_str = printPrefix(inPrefix);
-        info = SCode.getModifierInfo(mod);
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, pre_str}, info);
-      then
-        fail();
-        
-  end matchcontinue;
-end updateModElement;
-  
-protected function applyModifications2
-  "Given a tuple of an element name, and optional path and a modifier, apply
-   the modifier to the correct element in the list of elements given."
-  input tuple<String, Option<Absyn.Path>, SCode.Mod> inMod;
-  input list<SCode.Element> inElements;
-  output list<SCode.Element> outElements;
-algorithm
-  outElements := matchcontinue(inMod, inElements)
-    local
-      String name, id;
-      Absyn.Path path, bc_path;
-      SCode.Prefixes pf;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      Option<SCode.Comment> cmt;
-      Option<Absyn.Exp> cond;
-      Absyn.Info info;
-      SCode.Mod inner_mod, outer_mod;
-      SCode.Element e;
-      list<SCode.Element> rest_el;
-      SCode.Visibility vis;
-      Option<SCode.Annotation> ann;
-
-    // No more elements, this should actually be an error!
-    case (_, {}) then {};
-
-    // The optional path is NONE, we are looking for an element.
-    case ((id, NONE(), outer_mod), 
-        SCode.COMPONENT(name, pf, attr, ty, inner_mod, cmt, cond, info) :: rest_el)
-      equation
-        true = stringEq(id, name);
-        // Element name matches, merge the modifiers.
-        inner_mod = mergeMod(outer_mod, inner_mod);
-      then
-        SCode.COMPONENT(name, pf, attr, ty, inner_mod, cmt, cond, info) :: rest_el;
-    
-    // The optional path is SOME, we are looking for an extends.
-    case ((id, SOME(path), outer_mod),
-        SCode.EXTENDS(bc_path, vis, inner_mod, ann, info) :: rest_el)
-      equation
-        true = Absyn.pathEqual(path, bc_path);
-        // Element name matches. Create a new modifier with the given modifier
-        // as a named modifier, since the modifier is meant for an element in
-        // the extended class, and merge the modifiers.
-        outer_mod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), 
-          {SCode.NAMEMOD(id, outer_mod)}, NONE(), Absyn.dummyInfo);
-        inner_mod = mergeMod(outer_mod, inner_mod);
-      then
-        SCode.EXTENDS(bc_path, vis, inner_mod, ann, info) :: rest_el;
-
-    // No match, search the rest of the elements.
-    case (_, e :: rest_el)
-      equation
-        rest_el = applyModifications2(inMod, rest_el);
-      then
-        e :: rest_el;
-
-  end matchcontinue;
-end applyModifications2;
-
-protected function mergeMod
-  "Merges two modifiers, where the outer modifier has higher priority than the
-   inner one."
-  input SCode.Mod inOuterMod;
-  input SCode.Mod inInnerMod;
-  output SCode.Mod outMod;
-algorithm
-  outMod := match(inOuterMod, inInnerMod)
-    local
-      SCode.Final fp1, fp2;
-      SCode.Each ep;
-      list<SCode.SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      Absyn.Info info;
-
-    // One of the modifiers is NOMOD, return the other.
-    case (SCode.NOMOD(), _) then inInnerMod;
-    case (_, SCode.NOMOD()) then inOuterMod;
-
-    // Neither of the modifiers have a binding, just merge the submods.
-    case (SCode.MOD(subModLst = submods1, binding = NONE(), info = info),
-          SCode.MOD(subModLst = submods2, binding = NONE()))
-      equation
-        submods1 = List.fold(submods1, mergeSubMod, submods2);
-      then
-        SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods1, NONE(), info);
-
-    // The outer modifier has a binding which takes priority over the inner
-    // modifiers binding.
-    case (SCode.MOD(fp1, ep, submods1, binding as SOME(_), info),
-        SCode.MOD(finalPrefix = fp2, subModLst = submods2))
-      equation
-        checkModifierFinalOverride(inOuterMod, inInnerMod);
-        submods1 = List.fold(submods1, mergeSubMod, submods2);
-      then
-        SCode.MOD(fp1, ep, submods1, binding, info);
-
-    // The inner modifier has a binding, but not the outer, so keep it.
-    case (SCode.MOD(subModLst = submods1),
-          SCode.MOD(fp1, ep, submods2, binding as SOME(_), info))
-      equation
-        checkModifierFinalOverride(inOuterMod, inInnerMod);
-        submods2 = List.fold(submods1, mergeSubMod, submods2);
-      then
-        SCode.MOD(fp1, ep, submods2, binding, info);
-
-    case (SCode.MOD(subModLst = _), SCode.REDECL(element = _))
-      then inOuterMod;
-
-    case (SCode.REDECL(element = _), _) then inInnerMod;
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeInst.mergeMod failed on unknown mod."});
-      then
-        fail();
-  end match;
-end mergeMod;
-
-protected function checkModifierFinalOverride
-  input SCode.Mod inOuterMod;
-  input SCode.Mod inInnerMod;
-algorithm
-  _ := match(inOuterMod, inInnerMod)
-    case (_, SCode.MOD(finalPrefix = SCode.FINAL()))
-      equation
-        print("Trying to override final modifier " +& printMod(inInnerMod) +& 
-          " with modifier " +& printMod(inOuterMod) +& "\n");
-      then
-        fail();
-
-    else ();
-  end match;
-end checkModifierFinalOverride;
-
-protected function mergeSubMod
-  "Merges a sub modifier into a list of sub modifiers."
-  input SCode.SubMod inSubMod;
-  input list<SCode.SubMod> inSubMods;
-  output list<SCode.SubMod> outSubMods;
-algorithm
-  outSubMods := matchcontinue(inSubMod, inSubMods)
-    local
-      SCode.Ident id1, id2;
-      SCode.Mod mod1, mod2;
-      SCode.SubMod submod;
-      list<SCode.SubMod> rest_mods;
-
-    // No matching sub modifier found, add the given sub modifier as it is.
-    case (_, {}) then {inSubMod};
-
-    // Check if the sub modifier matches the first in the list.
-    case (SCode.NAMEMOD(id1, mod1), SCode.NAMEMOD(id2, mod2) :: rest_mods)
-      equation
-        true = stringEq(id1, id2);
-        // Match found, merge the sub modifiers.
-        mod1 = mergeMod(mod1, mod2);
-      then
-        SCode.NAMEMOD(id1, mod1) :: rest_mods;
-
-    // No match found, search the rest of the list.
-    case (_, submod :: rest_mods)
-      equation
-        rest_mods = mergeSubMod(inSubMod, rest_mods);
-      then 
-        submod :: rest_mods;
-
-  end matchcontinue;
-end mergeSubMod;
-
-protected function splitMod
-  "Splits a modifier that contains sub modifiers info a list of tuples of
-   element names with their corresponding modifiers. Ex:
-     MOD(x(w = 2), y = 3, x(z = 4) = 5 => 
-      {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}" 
-  input SCode.Mod inMod;
-  input Prefix inPrefix;
-  output list<tuple<String, SCode.Mod>> outMods;
-algorithm
-  outMods := match(inMod, inPrefix)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      Option<Absyn.Exp> bind_exp;
-      list<tuple<String, SCode.Mod>> mods;
-      Absyn.Info info;
-
-    // TOOD: print an error if this modifier has a binding?
-    case (SCode.MOD(subModLst = submods, binding = binding), _)
-      equation
-        mods = List.fold1(submods, splitSubMod, inPrefix, {});
-      then
-        mods;
-
-    else {};
-
-  end match;
-end splitMod;
-
-protected function splitSubMod
-  "Splits a named sub modifier."
-  input SCode.SubMod inSubMod;
-  input Prefix inPrefix;
-  input list<tuple<String, SCode.Mod>> inMods;
-  output list<tuple<String, SCode.Mod>> outMods;
-algorithm
-  outMods := match(inSubMod, inPrefix, inMods)
-    local
-      SCode.Ident id;
-      SCode.Mod mod;
-      list<tuple<String, SCode.Mod>> mods;
-
-    // Filter out redeclarations, they have already been applied.
-    case (SCode.NAMEMOD(A = SCode.REDECL(element = _)), _, _)
-      then inMods;
-
-    case (SCode.NAMEMOD(ident = id, A = mod), _, _)
-      equation
-        mods = splitMod2(id, mod, inPrefix, inMods);
-      then
-        mods;
-
-    case (SCode.IDXMOD(an = _), _, _)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Subscripted modifiers are not supported."});
-      then
-        fail();
-
-  end match;
-end splitSubMod;
-
-protected function splitMod2
-  "Helper function to splitSubMod. Tries to find a modifier for the same element
-   as the given modifier, and in that case merges them. Otherwise, add the
-   modifier to the given list."
-  input String inId;
-  input SCode.Mod inMod;
-  input Prefix inPrefix;
-  input list<tuple<String, SCode.Mod>> inMods;
-  output list<tuple<String, SCode.Mod>> outMods;
-algorithm
-  outMods := matchcontinue(inId, inMod, inPrefix, inMods)
-    local
-      SCode.Mod mod;
-      tuple<String, SCode.Mod> tup_mod;
-      list<tuple<String, SCode.Mod>> rest_mods;
-      String id;
-      SCode.SubMod submod;
-      list<SCode.SubMod> submods;
-
-    // No match, add the modifier to the list.
-    case (_, _, _, {}) then {(inId, inMod)};
-
-    case (_, _, _, (id, mod) :: rest_mods)
-      equation
-        true = stringEq(id, inId);
-        // Matching element, merge the modifiers.
-        mod = mergeModsInSameScope(mod, inMod, id, inPrefix);
-      then
-        (inId, mod) :: rest_mods;
-
-    case (_, _, _, tup_mod :: rest_mods)
-      equation
-        rest_mods = splitMod2(inId, inMod, inPrefix, rest_mods);
-      then
-        tup_mod :: rest_mods;
-
-  end matchcontinue;
-end splitMod2;
-
-protected function mergeModsInSameScope
-  "Merges two modifier in the same scope, i.e. they have the same priority. It's
-   thus an error if the modifiers modify the same element."
-  input SCode.Mod inMod1;
-  input SCode.Mod inMod2;
-  input String inElementName;
-  input Prefix inPrefix;
-  output SCode.Mod outMod;
-algorithm
-  outMod := match(inMod1, inMod2, inElementName, inPrefix)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      String comp_str;
-      Absyn.Info info1, info2;
-
-    // The second modifier has no binding, use the binding from the first.
-    case (SCode.MOD(fp, ep, submods1, binding, info1), 
-          SCode.MOD(subModLst = submods2, binding = NONE()), _, _)
-      equation
-        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
-          inElementName, submods2);
-      then
-        SCode.MOD(fp, ep, submods1, binding, info1);
-
-    // The first modifier has no binding, use the binding from the second.
-    case (SCode.MOD(subModLst = submods1, binding = NONE()),
-        SCode.MOD(fp, ep, submods2, binding, info2), _, _)
-      equation
-        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
-          inElementName, submods2);
-      then
-        SCode.MOD(fp, ep, submods1, binding, info2);
-
-    // Both modifiers have bindings, show duplicate modification error.
-    case (SCode.MOD(binding = SOME(_), info = info1), 
-          SCode.MOD(binding = SOME(_), info = info2), _, _)
-      equation
-        comp_str = printPrefix(inPrefix);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
-        Error.addSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
-          {inElementName, comp_str}, info1);
-      then
-        fail();
-
-  end match;
-end mergeModsInSameScope;
-
-protected function mergeSubModInSameScope
-  "Merges two sub modifiers in the same scope."
-  input SCode.SubMod inSubMod;
-  input Prefix inPrefix;
-  input String inElementName;
-  input list<SCode.SubMod> inSubMods;
-  output list<SCode.SubMod> outSubMods;
-algorithm
-  outSubMods := match(inSubMod, inPrefix, inElementName, inSubMods)
-    local
-      SCode.Ident id1, id2;
-      SCode.Mod mod1, mod2;
-      list<SCode.SubMod> rest_mods;
-      SCode.SubMod submod;
-
-    case (_, _, _, {}) then inSubMods;
-    case (SCode.NAMEMOD(id1, mod1), _, _, SCode.NAMEMOD(id2, mod2) :: rest_mods)
-      equation
-        true = stringEq(id1, id2);
-        id1 = inElementName +& "." +& id1;
-        mod1 = mergeModsInSameScope(mod1, mod2, id1, inPrefix);
-      then
-        SCode.NAMEMOD(id1, mod1) :: rest_mods;
-
-    case (_, _, _, submod :: rest_mods)
-      equation
-        rest_mods = mergeSubModInSameScope(inSubMod, inPrefix, inElementName, rest_mods);
-      then
-        submod :: rest_mods;
-
-  end match;
-end mergeSubModInSameScope;
 
 protected function instBasicTypeAttributes
   input SCode.Mod inMod;
   input Env inEnv;
+  input Prefix inPrefix;
   output list<DAE.Var> outVars;
 algorithm
-  outVars := match(inMod, inEnv)
+  outVars := match(inMod, inEnv, inPrefix)
     local
       list<SCode.SubMod> submods;
       SCodeEnv.AvlTree attrs;
@@ -758,16 +499,16 @@ algorithm
       SCode.Element el;
       Absyn.Info info;
 
-    case (SCode.NOMOD(), _) then {};
+    case (SCode.NOMOD(), _, _) then {};
 
     case (SCode.MOD(subModLst = submods), 
-        SCodeEnv.FRAME(clsAndVars = attrs) :: _)
+        SCodeEnv.FRAME(clsAndVars = attrs) :: _, _)
       equation
-        vars = List.map1(submods, instBasicTypeAttribute, attrs);
+        vars = List.map3(submods, instBasicTypeAttribute, attrs, inEnv, inPrefix);
       then
         vars;
 
-    case (SCode.REDECL(element = el), _)
+    case (SCode.REDECL(element = el), _, _)
       equation
         info = SCode.elementInfo(el);
         Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
@@ -780,9 +521,11 @@ end instBasicTypeAttributes;
 protected function instBasicTypeAttribute
   input SCode.SubMod inSubMod;
   input SCodeEnv.AvlTree inAttributes;
+  input Env inEnv;
+  input Prefix inPrefix;
   output DAE.Var outAttribute;
 algorithm
-  outAttribute := matchcontinue(inSubMod, inAttributes)
+  outAttribute := matchcontinue(inSubMod, inAttributes, inEnv, inPrefix)
     local
       String ident, tspec;
       DAE.Type ty;
@@ -791,12 +534,12 @@ algorithm
       DAE.Binding binding;
 
     case (SCode.NAMEMOD(ident = ident, 
-        A = SCode.MOD(subModLst = {}, binding = SOME((bind_exp, _)))), _)
+        A = SCode.MOD(subModLst = {}, binding = SOME((bind_exp, _)))), _, _, _)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
         ty = instBasicTypeAttributeType(tspec);
-        inst_exp = instExp(bind_exp);
+        inst_exp = instExp(bind_exp, inEnv, inPrefix);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
@@ -847,32 +590,62 @@ algorithm
   end match;
 end lookupElement;
         
+protected function instElementList
+  input list<SCode.Element> inElements;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inElements, inEnv, inPrefix, inProgram)
+    local
+      SCode.Element elem;
+      list<SCode.Element> rest_el;
+      FlatProgram prog;
+
+    case ({}, _, _, _) then inProgram;
+
+    case (elem :: rest_el, _, _, _)
+      equation
+        prog = instElement(elem, inEnv, inPrefix);
+        prog = mergeFlatProgram(prog, inProgram);
+      then
+        instElementList(rest_el, inEnv, inPrefix, prog);
+
+  end match;
+end instElementList;
+
 protected function instElement
-  input SCode.Element inVar;
+  input SCode.Element inElement;
   input Env inEnv;
   input Prefix inPrefix;
   output FlatProgram outProgram;
 algorithm
-  outProgram := match(inVar, inEnv, inPrefix)
+  outProgram := match(inElement, inEnv, inPrefix)
     local
-      String name,str;
-      Absyn.Info info;
-      Item item;
-      Env env;
-      Absyn.Path path;
       Absyn.ArrayDim ad;
-      Prefix prefix;
-      Integer var_count, dim_count;
-      SCode.Mod mod;
-      list<SCodeEnv.Redeclaration> redecls;
-      SCodeEnv.ExtendsTable exts;
-      FlatProgram prog;
-      DAE.Dimensions dims;
+      Absyn.Info info;
+      Absyn.Path path;
+      Component comp;
       DAE.Type ty;
+      Env env;
+      FlatProgram prog;
+      Item item;
+      list<SCodeEnv.Redeclaration> redecls;
+      Option<Absyn.Exp> binding;
+      Option<DAE.Exp> inst_binding;
+      Prefix prefix;
+      SCodeEnv.ExtendsTable exts;
+      SCode.Mod mod;
+      String name;
+      SCode.Variability var;
+      list<Dimension> dims;
+      array<Dimension> dim_arr;
 
     // A component, look up it's type and instantiate that class.
-    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-        typeSpec = Absyn.TPATH(path = path), modifications = mod, condition = NONE(), info = info), _, _)
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad,
+        variability = var), typeSpec = Absyn.TPATH(path = path), 
+        modifications = mod, condition = NONE(), info = info), _, _)
       equation
         // Look up the class of the component.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -883,11 +656,28 @@ algorithm
         // Instantiate the class.
         prefix = (name, ad) :: inPrefix;
         (prog, ty) = instClassItem(item, mod, env, prefix);
-        // Add the dimensions of the component to the type.
-        ty = liftArrayType(ad, ty, inEnv);
 
+        // Instantiate array dimensions and binding.
+        dims = List.map2(ad, instDimension, inEnv, inPrefix);
+        dim_arr = listArray(dims);
+        binding = SCode.getModifierBinding(mod);
+        inst_binding = instBinding(binding, inEnv, inPrefix);
+
+        // Create the component and add it to the program.
+        path = prefixToPath(prefix);
+        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, inst_binding, false);
+        prog = addComponentToFlatProgram(comp, var, prog);
 
         //print("Type of " +& name +& ": " +& Types.printTypeStr(ty) +& "\n");
+      then
+        prog;
+
+    // A conditional component, save it for later.
+    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _)
+      equation
+        path = prefixPath(Absyn.IDENT(name), inPrefix);
+        comp = CONDITIONAL_COMPONENT(path, inElement, inEnv, inPrefix);
+        prog = FLAT_PROGRAM({}, {comp}, {}, {}, {}, {});
       then
         prog;
 
@@ -907,55 +697,106 @@ algorithm
       then
         prog;
         
-    else EMPTY_FLAT_PROGRAM;
+    else EMPTY_FLAT_PROGRAM();
   end match;
 end instElement;
 
-protected function instDimension
-  input Absyn.Subscript inSubscript;
+protected function instBinding
+  input Option<Absyn.Exp> inExp;
   input Env inEnv;
-  output DAE.Dimension outDimension;
+  input Prefix inPrefix;
+  output Option<DAE.Exp> outExp;
 algorithm
-  outDimension := match(inSubscript, inEnv)
+  outExp := match(inExp, inEnv, inPrefix)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
 
-    case (Absyn.NOSUB(), _) then DAE.DIM_UNKNOWN();
-    case (Absyn.SUBSCRIPT(subscript = aexp), _)
+    case (NONE(), _, _) then NONE();
+    case (SOME(aexp), _, _)
       equation
-        //aexp = qualifyExp(aexp, inEnv);
-        dexp = instExp(aexp);
+        dexp = instExp(aexp, inEnv, inPrefix);
       then
-        DAE.DIM_EXP(dexp);
+        SOME(dexp);
+
+  end match;
+end instBinding;
+
+protected function instDimension
+  input Absyn.Subscript inSubscript;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Dimension outDimension;
+algorithm
+  outDimension := match(inSubscript, inEnv, inPrefix)
+    local
+      Absyn.Exp aexp;
+      DAE.Exp dexp;
+      DAE.Dimension dim;
+
+    case (Absyn.NOSUB(), _, _) 
+      then UNTYPED_DIMENSION(DAE.DIM_UNKNOWN(), false);
+
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _)
+      equation
+        dexp = instExp(aexp, inEnv, inPrefix);
+        dim = makeDimension(dexp);
+      then
+        UNTYPED_DIMENSION(dim, false);
 
   end match;
 end instDimension;
 
-protected function qualifyExp
-  input Absyn.Exp inExp;
-  input Env inEnv;
-  output Absyn.Exp outExp;
+protected function makeDimension
+  input DAE.Exp inExp;
+  output DAE.Dimension outDimension;
 algorithm
-  outExp := match(inExp, inEnv)
+  outDimension := match(inExp)
     local
-      Absyn.ComponentRef cref;
+      Integer idim;
 
-    case (Absyn.CREF(cref), _)
-      equation
-        cref = SCodeLookup.lookupComponentRef(cref, inEnv, Absyn.dummyInfo);
-      then
-        Absyn.CREF(cref);
-
-    else inExp;
+    case DAE.ICONST(idim) then DAE.DIM_INTEGER(idim);
+    else DAE.DIM_EXP(inExp);
   end match;
-end qualifyExp;
+end makeDimension;
+
+//protected function liftArrayType
+//  input Absyn.ArrayDim inDims;
+//  input DAE.Type inType;
+//  input Env inEnv;
+//  input Prefix inPrefix;
+//  output DAE.Type outType;
+//algorithm
+//  outType := match(inDims, inType, inEnv, inPrefix)
+//    local
+//      DAE.Dimensions dims1, dims2;
+//      DAE.TypeSource src;
+//      DAE.Type ty;
+//
+//    case ({}, _, _, _) then inType;
+//    case (_, DAE.T_ARRAY(ty, dims1, src), _, _)
+//      equation
+//        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+//        dims1 = listAppend(dims2, dims1);
+//      then
+//        DAE.T_ARRAY(ty, dims1, src);
+//
+//    else
+//      equation
+//        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+//      then
+//        DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource);
+//  
+//  end match;
+//end liftArrayType;
 
 protected function instExp
   input Absyn.Exp inExp;
+  input Env inEnv;
+  input Prefix inPrefix;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match(inExp, inEnv, inPrefix)
     local
       Integer ival;
       Real rval;
@@ -963,22 +804,200 @@ algorithm
       Boolean bval;
       Absyn.ComponentRef acref;
       DAE.ComponentRef dcref;
+      Absyn.Exp aexp1, aexp2;
+      DAE.Exp dexp1, dexp2;
+      Absyn.Operator aop;
+      DAE.Operator dop;
+      list<Absyn.Exp> aexpl;
+      list<DAE.Exp> dexpl;
 
-    case Absyn.REAL(value = rval) then DAE.RCONST(rval);
-    case Absyn.INTEGER(value = ival) then DAE.ICONST(ival);
-    case Absyn.BOOL(value = bval) then DAE.BCONST(bval);
-    case Absyn.STRING(value = sval) then DAE.SCONST(sval);
-    case Absyn.CREF(componentRef = acref) 
+    case (Absyn.REAL(value = rval), _, _) then DAE.RCONST(rval);
+    case (Absyn.INTEGER(value = ival), _, _) then DAE.ICONST(ival);
+    case (Absyn.BOOL(value = bval), _, _) then DAE.BCONST(bval);
+    case (Absyn.STRING(value = sval), _, _) then DAE.SCONST(sval);
+    case (Absyn.CREF(componentRef = acref), _, _) 
       equation
-        dcref = instCref(acref);
+        dcref = instCref(acref, inEnv, inPrefix);
       then
-        DAE.CREF(dcref, DAE.T_NONE_DEFAULT);
+        DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT);
+
+    case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+        dop = instOperator(aop);
+      then
+        DAE.BINARY(dexp1, dop, dexp2);
+
+    case (Absyn.UNARY(op = aop, exp = aexp1), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dop = instOperator(aop);
+      then
+        DAE.UNARY(dop, dexp1);
+
+    case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+        dop = instOperator(aop);
+      then
+        DAE.LBINARY(dexp1, dop, dexp2);
+
+    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dop = instOperator(aop);
+      then
+        DAE.LUNARY(dop, dexp1);
+
+    case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+        dop = instOperator(aop);
+      then
+        DAE.RELATION(dexp1, dop, dexp2, -1, NONE());
+
+    case (Absyn.ARRAY(arrayExp = aexpl), _, _)
+      equation
+        dexpl = List.map2(aexpl, instExp, inEnv, inPrefix);
+      then
+        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl);
+
+    //Absyn.CALL
+    //Absyn.PARTEVALFUNCTION
+    //Absyn.ARRAY
+    //Absyn.MATRIX
+    //Absyn.RANGE
+    //Absyn.TUPLE
+    //Absyn.END
+    //Absyn.CODE
+    //Absyn.AS
+    //Absyn.CONS
+    //Absyn.MATCHEXP
+    //Absyn.LIST
+
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+      then
+        DAE.SIZE(dexp1, SOME(dexp2));
 
     else DAE.ICONST(0);
   end match;
 end instExp;
 
+protected function instOperator
+  input Absyn.Operator inOperator;
+  output DAE.Operator outOperator;
+algorithm
+  outOperator := match(inOperator)
+    case Absyn.ADD() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.SUB() then DAE.SUB(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.MUL() then DAE.MUL(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.DIV() then DAE.DIV(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.POW() then DAE.POW(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UPLUS() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UMINUS() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.ADD_EW() then DAE.ADD_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.SUB_EW() then DAE.SUB_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.MUL_EW() then DAE.MUL_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.DIV_EW() then DAE.DIV_ARR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.POW_EW() then DAE.POW_ARR2(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UPLUS_EW() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.UMINUS_EW() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.AND() then DAE.AND(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.OR() then DAE.OR(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.NOT() then DAE.NOT(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.LESS() then DAE.LESS(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.LESSEQ() then DAE.LESSEQ(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.GREATER() then DAE.GREATER(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.GREATEREQ() then DAE.GREATEREQ(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.EQUAL() then DAE.EQUAL(DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.NEQUAL() then DAE.NEQUAL(DAE.T_UNKNOWN_DEFAULT);
+  end match;
+end instOperator;
+
+protected function originString
+  input SCodeLookup.Origin inOrigin;
+  output String outString;
+algorithm
+  outString := match(inOrigin)
+    case SCodeLookup.INSTANCE_ORIGIN() then "instance origin";
+    case SCodeLookup.CLASS_ORIGIN() then "class origin";
+    case SCodeLookup.BUILTIN_ORIGIN() then "builtin origin";
+  end match;
+end originString;
+
 protected function instCref
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv, inPrefix)
+    local
+      DAE.ComponentRef cref;
+      SCode.Variability var;
+      SCodeLookup.Origin origin;
+
+    case (Absyn.WILD(), _, _) then DAE.WILD();
+    case (Absyn.ALLWILD(), _, _) then DAE.WILD();
+    //case (Absyn.CREF_FULLYQUALIFIED(_), _, _)
+    //  equation
+    //    print("Found fully qualified path " +& Dump.printComponentRefStr(inCref) +& "!\n");
+    //  then
+    //    fail();
+
+    case (_, _, _)
+      equation
+        cref = instGlobalConstantCref(inCref, inEnv, inPrefix);
+      then
+        cref;
+
+    else
+      equation
+        cref = instCref2(inCref);
+        cref = prefixCref(cref, inPrefix);
+      then
+        cref;
+      
+  end matchcontinue;
+end instCref;
+        
+protected function instGlobalConstantCref
+  "Instantiates a global constant cref. A global constant is a constant that
+   comes from a package and not a class instance, i.e. it's available anywhere."
+  input Absyn.ComponentRef inName;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.ComponentRef outName;
+algorithm
+  outName := match(inName, inEnv, inPrefix)
+    local
+      Absyn.Path path;
+      Env env;
+      String name;
+      DAE.ComponentRef cref;
+
+    case (Absyn.CREF_QUAL(name = _), _, _)
+      equation
+        path = Absyn.crefToPath(inName);
+        (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, attributes = SCode.ATTR(
+            variability = SCode.CONST()))), path, env, SCodeLookup.CLASS_ORIGIN()) =
+          SCodeLookup.lookupName(path, inEnv, Absyn.dummyInfo, NONE());
+        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
+        cref = ComponentReference.pathToCref(path);
+      then
+        cref;
+        
+  end match;
+end instGlobalConstantCref;
+
+protected function instCref2
   input Absyn.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
@@ -989,18 +1008,783 @@ algorithm
       DAE.ComponentRef dcref;
 
     case Absyn.CREF_IDENT(name = name)
-      then DAE.CREF_IDENT(name, DAE.T_NONE_DEFAULT, {});
+      then DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
     case Absyn.CREF_QUAL(name = name, componentRef = cref)
       equation
-        dcref = instCref(cref);
+        dcref = instCref2(cref);
       then
-        DAE.CREF_QUAL(name, DAE.T_NONE_DEFAULT, {}, dcref);
+        DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, dcref);
+
+    case Absyn.CREF_FULLYQUALIFIED(cref) then instCref2(cref);
 
   end match;
-end instCref;
+end instCref2;
 
-protected function printMod
+protected function prefixCref
+  input DAE.ComponentRef inCref;
+  input Prefix inPrefix;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inPrefix)
+    local
+      String name;
+      Prefix rest_prefix;
+      DAE.ComponentRef cref;
+
+    case (_, {}) then inCref;
+    case (_, {(name, _)}) then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+    case (_, (name, _) :: rest_prefix)
+      equation
+        cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+      then
+        prefixCref(cref, rest_prefix);
+
+  end match;
+end prefixCref;
+ 
+protected function prefixToCref
+  input Prefix inPrefix;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inPrefix)
+    local
+      String name;
+      Prefix rest_prefix;
+      DAE.ComponentRef cref;
+
+    case ({(name, _)}) then DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+    case ((name, _) :: rest_prefix)
+      equation
+        cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+      then
+        prefixCref(cref, rest_prefix);
+
+  end match;
+end prefixToCref;
+
+protected function prefixPath
+  input Absyn.Path inPath;
+  input Prefix inPrefix;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPath, inPrefix)
+    local
+      String name;
+      Prefix rest_prefix;
+      Absyn.Path path;
+
+    case (_, {}) then inPath;
+    case (_, {(name, _)}) then Absyn.QUALIFIED(name, inPath);
+    case (_, (name, _) :: rest_prefix)
+      equation
+        path = Absyn.QUALIFIED(name, inPath);
+      then
+        prefixPath(path, rest_prefix);
+
+  end match;
+end prefixPath;
+
+protected function prefixToPath
+  input Prefix inPrefix;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPrefix)
+    local
+      String name;
+      Prefix rest_prefix;
+      Absyn.Path path;
+
+    case ({(name, _)}) then Absyn.IDENT(name);
+    case ((name, _) :: rest_prefix)
+      equation
+        path = Absyn.IDENT(name);
+      then
+        prefixPath(path, rest_prefix);
+
+  end match;
+end prefixToPath;
+
+protected function pathPrefix
+  input Absyn.Path inPath;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := pathPrefix2(inPath, {});
+end pathPrefix;
+
+protected function pathPrefix2
+  input Absyn.Path inPath;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := match(inPath, inPrefix)
+    local
+      Absyn.Path path;
+      String name;
+      Prefix prefix;
+
+    case (Absyn.QUALIFIED(name, path), _)
+      then pathPrefix2(path, (name, {}) :: inPrefix);
+
+    case (Absyn.IDENT(name), _)
+      then (name, {}) :: inPrefix;
+
+    case (Absyn.FULLYQUALIFIED(path), _)
+      then pathPrefix2(path, inPrefix);
+
+  end match;
+end pathPrefix2;
+
+protected function instEquation
+  input SCode.Equation inEquation;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Element outEquation;
+protected
+  SCode.EEquation eq; 
+algorithm
+  SCode.EQUATION(eEquation = eq) := inEquation;
+  outEquation := instEEquation(eq, inEnv, inPrefix);
+end instEquation;
+
+protected function instEEquation
+  input SCode.EEquation inEquation;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Element outEquation;
+algorithm
+  outEquation := match(inEquation, inEnv, inPrefix)
+    local
+      Absyn.Exp exp1, exp2;
+      DAE.Exp dexp1, dexp2;
+
+    case (SCode.EQ_EQUALS(exp1, exp2, _, _), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        dexp2 = instExp(exp2, inEnv, inPrefix);
+      then
+        DAE.EQUATION(dexp1, dexp2, DAE.emptyElementSource);
+
+  end match;
+end instEEquation;
+
+protected function instGlobalConstants
+  input list<Absyn.Path> inGlobalConstants;
+  input Env inEnv;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inGlobalConstants, inEnv, inProgram)
+    local
+      Absyn.Path const, pre_path;
+      list<Absyn.Path> rest_const;
+      FlatProgram prog;
+      Prefix prefix;
+      SCode.Element el;
+      Env env;
+
+    case ({}, _, _) then inProgram;
+
+    case (const :: rest_const, _, _)
+      equation
+        pre_path = Absyn.pathPrefix(const);
+        prefix = pathPrefix(pre_path);
+        (SCodeEnv.VAR(var = el), _, env) = 
+          SCodeLookup.lookupFullyQualified(const, inEnv);
+        prog = instElement(el, env, prefix);
+        prog = mergeFlatProgram(prog, inProgram);
+      then
+        instGlobalConstants(rest_const, inEnv, prog);
+
+  end match;
+end instGlobalConstants;
+
+protected function buildSymbolTable
+  input FlatProgram inProgram;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inProgram)
+    local
+      list<Component> comps, conds;
+      SymbolTable symtab;
+      Integer comp_size, bucket_size;
+
+    case EMPTY_FLAT_PROGRAM() then emptySymbolTableSized(0);
+
+    case FLAT_PROGRAM(components = comps, conditionals = conds)
+      equation
+        // Set the bucket size to the nearest prime of the number of components
+        // multiplied with 4/3, to get ~75% occupancy.
+        comp_size = listLength(comps) + listLength(conds);
+        bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3));
+        symtab = emptySymbolTableSized(bucket_size);
+        symtab = fillSymbolTable(comps, conds, symtab);
+      then
+        symtab;
+
+  end match;
+end buildSymbolTable;
+
+protected function fillSymbolTable
+  input list<Component> inComponents;
+  input list<Component> inConditionals;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := List.fold(inComponents, addComponentToTable, inSymbolTable); 
+  outSymbolTable := List.fold(inConditionals, addComponentToTable, outSymbolTable); 
+end fillSymbolTable;
+
+protected function addComponentToTable
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := matchcontinue(inComponent, inSymbolTable) 
+    local
+      Absyn.Path name;
+
+    case (UNTYPED_COMPONENT(name = name), _)
+      then BaseHashTable.addNoUpdCheck((name, inComponent), inSymbolTable);
+
+    case (CONDITIONAL_COMPONENT(name = name), _)
+      then BaseHashTable.addNoUpdCheck((name, inComponent), inSymbolTable);
+
+    case (UNTYPED_COMPONENT(name = name), _)
+      equation
+        print("Failed to add component " +& Absyn.pathString(name) +& " to symbol table!\n");
+      then
+        inSymbolTable;
+
+    else
+      equation
+        print("Failed to add unknown component to symbol table!\n");
+      then
+        inSymbolTable;
+
+  end matchcontinue;
+end addComponentToTable;
+
+protected function typeComponents
+  input FlatProgram inProgram;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inProgram, inSymbolTable)
+    local
+      list<Component> cl;
+      SymbolTable st;
+
+    case (EMPTY_FLAT_PROGRAM(), _) then inSymbolTable;
+
+    case (FLAT_PROGRAM(components = cl), st)
+      equation
+        (cl, st) = typeComponents2(cl, st, {});
+        print("Components [" +& intString(listLength(cl)) +& "]: \n");
+        print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
+      then
+        st;
+
+  end match;
+end typeComponents;
+
+protected function typeComponents2
+  input list<Component> inComponents;
+  input SymbolTable inSymbolTable;
+  input list<Component> inAccumComps;
+  output list<Component> outComponents;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outComponents, outSymbolTable) := 
+  match(inComponents, inSymbolTable, inAccumComps)
+    local
+      Absyn.Path name;
+      Component comp;
+      list<Component> rest_comps;
+      SymbolTable st;
+    
+    case ({}, _, _) then (listReverse(inAccumComps), inSymbolTable);
+
+    case (UNTYPED_COMPONENT(name = name) :: rest_comps, st, _)
+      equation
+        comp = BaseHashTable.get(name, st);
+        (comp, st) = typeComponent(comp, st);
+        (rest_comps, st) = typeComponents2(rest_comps, st, comp :: inAccumComps);
+      then
+        (rest_comps, st);
+
+  end match;
+end typeComponents2;
+
+protected function typeComponent
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outComponent, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+    local
+      Absyn.Path name;
+      DAE.Type ty;
+      Option<DAE.Exp> binding;
+      list<Dimension> dims;
+      Binding typed_binding;
+      SymbolTable st;
+      Component comp;
+      SCode.Variability var;
+
+    case (UNTYPED_COMPONENT(name = name, element = SCode.COMPONENT(attributes =
+            SCode.ATTR(variability = var)), isProcessing = true), _)
+      equation
+        print("Loop involving component " +& Absyn.pathString(name) +& " found\n");
+      then
+        fail();
+
+    case (UNTYPED_COMPONENT(name = name, 
+            element = SCode.COMPONENT(attributes = SCode.ATTR(variability = var)), 
+            baseType = ty, binding = binding, isProcessing = false), st)
+      equation
+        (ty, st) = typeComponentDims(inComponent, st);
+        st = markComponentAsProcessing(inComponent, st);
+        (typed_binding, st) = typeBinding(binding, st);
+        comp = TYPED_COMPONENT(name, ty, var, typed_binding);
+        st = BaseHashTable.add((name, comp), st);
+      then
+        (comp, st);
+
+    case (CONDITIONAL_COMPONENT(name = name), _)
+      equation
+        print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
+      then
+        fail();
+
+    case (TYPED_COMPONENT(name = _), st) then (inComponent, st);
+
+    case (UNTYPED_COMPONENT(name = name), _)
+      equation
+        print("Failed on component " +& Absyn.pathString(name) +& "\n");
+      then
+        fail();
+    //else (inComponent, inSymbolTable);
+  end matchcontinue;
+end typeComponent;
+
+protected function typeComponentDims
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output DAE.Type outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outType, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+    local
+      DAE.Type ty;
+      SymbolTable st;
+      array<Dimension> dims;
+      list<DAE.Dimension> typed_dims;
+
+    case (UNTYPED_COMPONENT(baseType = ty, dimensions = dims), st)
+      equation
+        true = intEq(0, arrayLength(dims));
+      then
+        (ty, st);
+
+    case (UNTYPED_COMPONENT(baseType = ty, dimensions = dims), st)
+      equation
+        (typed_dims, st) = typeDimensions(dims, st);
+      then
+        (DAE.T_ARRAY(ty, typed_dims, DAE.emptyTypeSource), st);
+        
+    case (TYPED_COMPONENT(ty = ty), st) then (ty, st);
+
+  end matchcontinue;
+end typeComponentDims;
+
+protected function typeComponentDim
+  input Component inComponent;
+  input Integer inIndex;
+  input SymbolTable inSymbolTable;
+  output DAE.Dimension outDimension;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outDimension, outSymbolTable) := match(inComponent, inIndex, inSymbolTable)
+    local
+      list<DAE.Dimension> dims;
+      DAE.Dimension typed_dim;
+      SymbolTable st;
+      array<Dimension> dims_arr;
+      Dimension dim;
+
+    case (TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, st)
+      equation
+        typed_dim = listNth(dims, inIndex);
+      then
+        (typed_dim, st);
+
+    case (UNTYPED_COMPONENT(dimensions = dims_arr), _, st)
+      equation
+        dim = arrayGet(dims_arr, inIndex);
+        (typed_dim, st) = typeDimension(dim, st, dims_arr, inIndex);
+      then
+        (typed_dim, st);
+
+  end match;
+end typeComponentDim;
+        
+protected function typeDimensions
+  input array<Dimension> inDimensions;
+  input SymbolTable inSymbolTable;
+  output list<DAE.Dimension> outDimensions;
+  output SymbolTable outSymbolTable;
+protected
+  Integer len;
+algorithm
+  len := arrayLength(inDimensions);
+  (outDimensions, outSymbolTable) := 
+    typeDimensions2(inDimensions, inSymbolTable, 1, len, {});
+end typeDimensions;
+
+protected function typeDimensions2
+  input array<Dimension> inDimensions;
+  input SymbolTable inSymbolTable;
+  input Integer inIndex;
+  input Integer inLength;
+  input list<DAE.Dimension> inAccDims;
+  output list<DAE.Dimension> outDimensions;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outDimensions, outSymbolTable) :=
+  matchcontinue(inDimensions, inSymbolTable, inIndex, inLength, inAccDims)
+    local
+      Dimension dim;
+      DAE.Dimension typed_dim;
+      SymbolTable st;
+      list<DAE.Dimension> dims;
+
+    case (_, _, _, _, _)
+      equation
+        true = inIndex > inLength;
+      then
+        (listReverse(inAccDims), inSymbolTable);
+
+    else
+      equation
+        dim = arrayGet(inDimensions, inIndex);
+        (typed_dim, st) = typeDimension(dim, inSymbolTable, inDimensions, inIndex);
+        (dims, st) = typeDimensions2(inDimensions, st, inIndex + 1, inLength,
+            typed_dim :: inAccDims);
+      then
+        (dims, st);
+
+  end matchcontinue;
+end typeDimensions2;
+
+protected function typeDimension
+  input Dimension inDimension;
+  input SymbolTable inSymbolTable;
+  input array<Dimension> inDimensions;
+  input Integer inIndex;
+  output DAE.Dimension outDimension;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outDimension, outSymbolTable) := 
+  match(inDimension, inSymbolTable, inDimensions, inIndex)
+    local
+      SymbolTable st;
+      DAE.Dimension dim;
+      DAE.Exp dim_exp;
+      Integer dim_int;
+      Dimension typed_dim;
+
+    case (UNTYPED_DIMENSION(isProcessing = true), _, _, _)
+      equation
+        print("Found dimension loop\n");
+      then
+        fail();
+
+    case (UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), st, _, _)
+      equation
+        _ = arrayUpdate(inDimensions, inIndex, UNTYPED_DIMENSION(dim, true));
+        (dim_exp, _, st) = typeExp(dim_exp, st);
+        dim = makeDimension(dim_exp);
+        typed_dim = TYPED_DIMENSION(dim);
+        _ = arrayUpdate(inDimensions, inIndex, typed_dim);
+      then
+        (dim, st);
+
+    case (UNTYPED_DIMENSION(dimension = dim), st, _, _)
+      equation
+        _ = arrayUpdate(inDimensions, inIndex, TYPED_DIMENSION(dim));
+      then 
+        (dim, st);
+
+    case (TYPED_DIMENSION(dimension = dim), st, _, _) then (dim, st);
+
+    else
+      equation
+        print("typeDimension got unknown dimension\n");
+      then
+        fail();
+
+  end match;
+end typeDimension;
+
+protected function markComponentAsProcessing
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := matchcontinue(inComponent, inSymbolTable)
+    local
+      Absyn.Path name;
+      SCode.Element el;
+      DAE.Type ty;
+      array<Dimension> dims;
+      Option<DAE.Exp> binding;
+      Component comp;
+      SCode.Variability var;
+
+    case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
+            SCode.ATTR(variability = var))), _)
+      equation
+        false = SCode.isParameterOrConst(var);
+      then
+        inSymbolTable;
+
+    case (UNTYPED_COMPONENT(name, el, ty, dims, binding, _), _)
+      equation
+        comp = UNTYPED_COMPONENT(name, el, ty, dims, binding, true);
+      then
+        BaseHashTable.add((name, comp), inSymbolTable);
+
+    else
+      equation
+        print("markComponentAsProcessing got unknown component\n");
+      then
+        fail();
+
+  end matchcontinue;
+end markComponentAsProcessing;
+      
+protected function typeBinding
+  input Option<DAE.Exp> inBinding;
+  input SymbolTable inSymbolTable;
+  output Binding outBinding;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outBinding, outSymbolTable) := match(inBinding, inSymbolTable)
+    local
+      DAE.Exp binding;
+      SymbolTable symtab;
+      DAE.Type ty;
+
+    case (SOME(binding), symtab)
+      equation
+        (binding, ty, symtab) = typeExp(binding, symtab);
+      then
+        (BINDING(binding, ty), symtab);
+
+    else (UNBOUND(), inSymbolTable);
+
+  end match;
+end typeBinding;
+
+protected function typeExp
+  input DAE.Exp inExp;
+  input SymbolTable inSymbolTable;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outExp, outType, outSymbolTable) := match(inExp, inSymbolTable)
+    local
+      DAE.Exp e1, e2, e3;
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      SymbolTable st;
+      DAE.Operator op;
+      Component comp;
+      Integer dim_int;
+      DAE.Dimension dim;
+
+    case (DAE.ICONST(integer = _), st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
+    case (DAE.RCONST(real = _), st) then (inExp, DAE.T_REAL_DEFAULT, st);
+    case (DAE.SCONST(string = _), st) then (inExp, DAE.T_STRING_DEFAULT, st);
+    case (DAE.BCONST(bool = _), st) then (inExp, DAE.T_BOOL_DEFAULT, st);
+    case (DAE.CREF(componentRef = cref), st)
+      equation
+        (e1, ty, st) = typeCref(cref, st);
+      then
+        (e1, ty, st);
+        
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), st)
+      equation
+        (e1, ty, st) = typeExp(e1, st);
+        (e2, ty, st) = typeExp(e2, st);
+      then
+        (DAE.BINARY(e1, op, e2), ty, st);
+
+    case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), st)
+      equation
+        (DAE.ICONST(dim_int), _, st) = typeExp(e2, st);
+        comp = lookupCrefInTable(cref, st);
+        (dim, st) = typeComponentDim(comp, dim_int, st);
+        e1 = dimensionExp(dim);
+      then
+        (e1, DAE.T_INTEGER_DEFAULT, st);
+
+    else (inExp, DAE.T_UNKNOWN_DEFAULT, inSymbolTable);
+    //else
+    //  equation
+    //    print("typeExp: unknown expression " +&
+    //        ExpressionDump.printExpStr(inExp) +& "\n");
+    //  then
+    //    fail();
+    //case (DAE.SIZE(exp = e1, sz = SOME(
+
+  end match;
+end typeExp;
+    
+protected function dimensionExp
+  input DAE.Dimension inDimension;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inDimension)
+    local
+      Integer dim_int;
+      DAE.Exp dim_exp;
+
+    case (DAE.DIM_INTEGER(dim_int)) then DAE.ICONST(dim_int);
+    case (DAE.DIM_EXP(dim_exp)) then dim_exp;
+
+  end match;
+end dimensionExp;
+  
+protected function typeCref
+  input DAE.ComponentRef inCref;
+  input SymbolTable inSymbolTable;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outExp, outType, outSymbolTable) := matchcontinue(inCref, inSymbolTable)
+    local
+      Absyn.Path path;
+      SymbolTable st;
+      Component comp;
+      DAE.Type ty;
+      DAE.Exp exp;
+
+    case (_, st)
+      equation
+        comp = lookupCrefInTable(inCref, st);
+        (exp, ty, st) = typeCref2(inCref, comp, st);
+      then
+        (exp, ty, st);
+
+    else
+      equation
+        print("Failed to type cref " +&
+            ComponentReference.printComponentRefStr(inCref) +& "\n");
+      then
+        (DAE.ICONST(0), DAE.T_UNKNOWN_DEFAULT, inSymbolTable);
+        //fail();
+
+  end matchcontinue;
+end typeCref;
+        
+protected function typeCref2
+  input DAE.ComponentRef inCref;
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outExp, outType, outSymbolTable) :=
+  matchcontinue(inCref, inComponent, inSymbolTable)
+    local
+      DAE.Type ty;
+      SCode.Variability var;
+      Binding binding;
+      SymbolTable st;
+      DAE.Exp exp;
+
+    case (_, TYPED_COMPONENT(variability = var, ty = ty, binding = binding), st)
+      equation
+        true = SCode.isParameterOrConst(var);
+        exp = getBindingExp(binding);
+      then
+        (exp, ty, st);
+
+    case (_, TYPED_COMPONENT(variability = var, ty = ty), st)
+      equation
+        false = SCode.isParameterOrConst(var);
+      then
+        (DAE.CREF(inCref, ty), ty, st);
+
+    case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
+            SCode.ATTR(variability = var))), st)
+      equation
+        true = SCode.isParameterOrConst(var);
+        (TYPED_COMPONENT(ty = ty, binding = binding), st) =
+          typeComponent(inComponent, st);
+        exp = getBindingExp(binding);
+      then
+        (exp, ty, st);
+
+    case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
+            SCode.ATTR(variability = var))), st)
+      equation
+        false = SCode.isParameterOrConst(var);
+        (ty, st) = typeComponentDims(inComponent, st);
+      then
+        (DAE.CREF(inCref, ty), ty, st);
+
+  end matchcontinue;
+end typeCref2;
+
+protected function getBindingExp
+  input Binding inBinding;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inBinding)
+    local
+      DAE.Exp exp;
+
+    case BINDING(bindingExp = exp) then exp;
+    else DAE.ICONST(0);
+  end match;
+end getBindingExp;
+
+protected function lookupCrefInTable
+  input DAE.ComponentRef inCref;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+algorithm
+  outComponent := matchcontinue(inCref, inSymbolTable)
+    local
+      Absyn.Path path;
+      Component comp;
+      SymbolTable st;
+
+    case (_, st)
+      equation
+        path = ComponentReference.crefToPath(inCref);
+        comp = BaseHashTable.get(path, st);
+      then
+        comp;
+
+    else
+      equation
+        print("Could not find cref " +&
+            ComponentReference.printComponentRefStr(inCref) +& " in the symbol table\n");
+      then
+        fail();
+  
+  end matchcontinue;
+end lookupCrefInTable;
+
+public function printMod
   input SCode.Mod inMod;
   output String outString;
 algorithm
@@ -1076,18 +1860,35 @@ end printBinding;
 protected function printFlatProgram
   input SCode.Ident inName;
   input FlatProgram inProgram;
-protected
-  list<SCode.Element> el;
-  list<SCode.Equation> eq, ie;
-  list<SCode.AlgorithmSection> al, ia;
 algorithm
-  FLAT_PROGRAM(el, eq, ie, al, ia) := inProgram;
-  print("class " +& inName +& "\n");
-  print("Components: " +& intString(listLength(el)) +& "\n");
-  print("Equations:  " +& intString(listLength(eq)) +& "\n");
-  print("Initial eq: " +& intString(listLength(ie)) +& "\n");
-  print("Algorithms: " +& intString(listLength(al)) +& "\n");
-  print("Initial al: " +& intString(listLength(ia)) +& "\n");
+  _ := match(inName, inProgram)
+    local
+      list<Component> cl, cdl;
+      list<SCode.Equation> eq, ie;
+      list<SCode.AlgorithmSection> al, ia;
+
+    case (_, EMPTY_FLAT_PROGRAM())
+      equation
+        print("class " +& inName +& "\n");
+        print("end " +& inName +& "\n");
+      then
+        ();
+
+    case (_, FLAT_PROGRAM(cl, cdl, eq, ie, al, ia))
+      equation
+        print("class " +& inName +& "\n");
+        print("Components: " +& intString(listLength(cl)) +& "\n");
+        print("Conditionals: " +& intString(listLength(cdl)) +& "\n");
+        print("Equations:  " +& intString(listLength(eq)) +& "\n");
+        //print(stringDelimitList(List.map(eq, SCodeDump.equationStr2), "\n") +& "\n");
+        print("Initial eq: " +& intString(listLength(ie)) +& "\n");
+        print("Algorithms: " +& intString(listLength(al)) +& "\n");
+        print("Initial al: " +& intString(listLength(ia)) +& "\n");
+        print("end " +& inName +& "\n");
+      then
+        ();
+
+  end match;
 end printFlatProgram;
 
 protected function printVar
@@ -1110,9 +1911,6 @@ algorithm
       Option<Absyn.Exp> cond;
       Absyn.Info info;
 
-    // Only print the variable if it doesn't contain any components, i.e. if
-    // it's of basic type. This needs to be better checked, since some models
-    // might be empty.
     case (_, SCode.COMPONENT(_, pf, 
           SCode.ATTR(_, fp, sp, vp, dp), _, mod, cmt, cond, info), _,
         SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()))
@@ -1128,7 +1926,37 @@ algorithm
   end match;
 end printVar;
 
-protected function printPrefix
+protected function printComponent
+  input Component inComponent;
+  output String outString;
+algorithm
+  outString := match(inComponent)
+    local
+      Absyn.Path path;
+      DAE.Exp binding;
+      DAE.Type ty, ty2;
+
+    case UNTYPED_COMPONENT(name = path, binding = SOME(binding))
+      then Absyn.pathString(path) +& " = " +& ExpressionDump.printExpStr(binding);
+
+    case UNTYPED_COMPONENT(name = path) 
+      then Absyn.pathString(path);
+      
+    case TYPED_COMPONENT(name = path, ty = ty, binding = BINDING(binding, ty2))
+      then Types.unparseType(ty) +& " " +& Absyn.pathString(path) +& " = " +&
+        Types.unparseType(ty2) +& " " +& ExpressionDump.printExpStr(binding);
+
+    case TYPED_COMPONENT(name = path, ty = ty)
+      then Types.unparseType(ty) +& " " +& Absyn.pathString(path);
+
+    case CONDITIONAL_COMPONENT(name = path) 
+      then "conditional " +& Absyn.pathString(path);
+
+    else "#UNKNOWN COMPONENT#";
+  end match;
+end printComponent;
+
+public function printPrefix
   input Prefix inPrefix;
   output String outString;
 algorithm
@@ -1145,34 +1973,5 @@ algorithm
 
   end match;
 end printPrefix;
-
-protected function liftArrayType
-  input Absyn.ArrayDim inDims;
-  input DAE.Type inType;
-  input Env inEnv;
-  output DAE.Type outType;
-algorithm
-  outType := match(inDims, inType, inEnv)
-    local
-      DAE.Dimensions dims1, dims2;
-      DAE.TypeSource src;
-      DAE.Type ty;
-
-    case ({}, _, _) then inType;
-    case (_, DAE.T_ARRAY(ty, dims1, src), _)
-      equation
-        dims2 = List.map1(inDims, instDimension, inEnv);
-        dims1 = listAppend(dims2, dims1);
-      then
-        DAE.T_ARRAY(ty, dims1, src);
-
-    else
-      equation
-        dims2 = List.map1(inDims, instDimension, inEnv);
-      then
-        DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource);
-  
-  end match;
-end liftArrayType;
 
 end SCodeInst;

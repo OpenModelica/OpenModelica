@@ -723,10 +723,9 @@ public function isParameterOrConst
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inVariability)
-    case (VAR()) then false;
-    case (DISCRETE()) then false;
-    case (PARAM()) then true;
-    case (CONST()) then true;
+    case PARAM() then true;
+    case CONST() then true;
+    else false;
   end match;
 end isParameterOrConst;
 
@@ -737,10 +736,8 @@ public function isConstant
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inVariability)
-    case (VAR()) then false;
-    case (DISCRETE()) then false;
-    case (PARAM()) then false;
-   case (CONST()) then true;
+    case CONST() then true;
+    else false;
   end match;
 end isConstant;
 
@@ -3736,6 +3733,19 @@ algorithm
     else Absyn.dummyInfo;
   end match;
 end getModifierInfo;
+
+public function getModifierBinding
+  input Mod inMod;
+  output Option<Absyn.Exp> outBinding;
+algorithm
+  outBinding := match(inMod)
+    local
+      Absyn.Exp binding;
+
+    case MOD(binding = SOME((binding, _))) then SOME(binding);
+    else NONE();
+  end match;
+end getModifierBinding;
 
 end SCode;
 

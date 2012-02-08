@@ -505,7 +505,7 @@ algorithm
       then
         CLASS(cls, env, cls_ty);
 
-    else then inItem;
+    else inItem;
   end match;
 end setImportsInItemHidden;
 
@@ -893,7 +893,7 @@ algorithm
     case (_, _, _)
       equation
         bc = Absyn.removePartialPrefix(getEnvPath(inEnv), inBaseClass);
-        (item, bc, env) = 
+        (item, bc, env, _) = 
           SCodeLookup.lookupName(inBaseClass, inEnv, inInfo, NONE());
         bc = mergePathWithEnvPath(bc, env);
       then

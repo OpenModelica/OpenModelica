@@ -112,6 +112,7 @@ algorithm
     local
       Env env, env2, env3;
       SCode.Program prog;
+      list<Absyn.Path> consts;
       
 
     case (_, prog)
@@ -122,11 +123,12 @@ algorithm
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = SCodeEnv.updateExtendsInEnv(env);
         
-        (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
+        (prog, env, consts) = SCodeDependency.analyse(inClassName, env, prog);
         checkForCardinality(env);
         //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
-        Debug.fcall2(Flags.SCODE_INST, SCodeInst.instClass, inClassName, env); 
+
+        SCodeInst.instClass(inClassName, env, consts);
         prog = SCodeFlattenExtends.flattenProgram(inClassName, prog, env);
         
         //System.stopTimer();
@@ -154,7 +156,7 @@ algorithm
   _ := matchcontinue(inEnv)
     case _
       equation
-        (_, _, _) = SCodeLookup.lookupName(Absyn.IDENT("cardinality"), inEnv,
+        (_, _, _, _) = SCodeLookup.lookupName(Absyn.IDENT("cardinality"), inEnv,
           Absyn.dummyInfo, NONE());
         System.setUsesCardinality(true);
       then

@@ -2897,6 +2897,36 @@ algorithm
   end match;
 end prefixOptPath;
 
+public function suffixPath
+  "Adds a suffix to a path. Ex:
+     suffixPath(a.b.c, 'd') => a.b.c.d"
+  input Path inPath;
+  input Ident inSuffix;
+  output Path outPath;
+algorithm
+  outPath := match(inPath, inSuffix)
+    local
+      Ident name;
+      Path path;
+
+    case (IDENT(name), _) 
+      then QUALIFIED(name, IDENT(inSuffix));
+
+    case (QUALIFIED(name, path), _)
+      equation
+        path = suffixPath(path, inSuffix);
+      then
+        QUALIFIED(name, path);
+
+    case (FULLYQUALIFIED(path), _)
+      equation
+        path = suffixPath(path, inSuffix);
+      then
+        FULLYQUALIFIED(path);
+
+  end match;
+end suffixPath;
+
 public function pathSuffixOf "returns true if suffix_path is a suffix of path"
   input Path suffix_path;
   input Path path;

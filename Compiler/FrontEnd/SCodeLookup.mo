@@ -58,6 +58,12 @@ public uniontype RedeclareReplaceStrategy
   record IGNORE_REDECLARES end IGNORE_REDECLARES;
 end RedeclareReplaceStrategy;
 
+public uniontype Origin
+  record INSTANCE_ORIGIN end INSTANCE_ORIGIN;
+  record CLASS_ORIGIN end CLASS_ORIGIN;
+  record BUILTIN_ORIGIN end BUILTIN_ORIGIN;
+end Origin;
+
 // Default parts of the declarations for builtin elements and types.
 public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
   SCode.PUBLIC(), SCode.NOT_REDECLARE(), SCode.NOT_FINAL(),
@@ -1101,8 +1107,9 @@ public function lookupName
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
+  output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv) := 
+  (outItem, outName, outEnv, outOrigin) := 
   matchcontinue(inName, inEnv, inInfo, inErrorType)
     local
       Absyn.Ident id;
@@ -1111,45 +1118,48 @@ algorithm
       Env env;
       String name_str, env_str;
       Error.Message error_id;
+      Origin origin;
 
     // A builtin type.
     case (Absyn.IDENT(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
       then
-        (item, inName, SCodeEnv.emptyEnv);
+        (item, inName, SCodeEnv.emptyEnv, BUILTIN_ORIGIN());
 
     // A builtin type with qualified path, i.e. StateSelect.something.
     case (Absyn.QUALIFIED(name = id), _, _, _)
       equation
         item = lookupBuiltinType(id);
       then
-        (item, inName, SCodeEnv.emptyEnv);
+        (item, inName, SCodeEnv.emptyEnv, BUILTIN_ORIGIN());
 
     // Simple name.
     case (Absyn.IDENT(name = id), _, _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
+        origin = itemOrigin(item);
       then
-        (item, new_path, env);
+        (item, new_path, env, origin);
         
     // Qualified name.
     case (Absyn.QUALIFIED(name = id, path = path), _, _, _)
       equation
         // Look up the first identifier.
         (item, new_path, env) = lookupSimpleName(id, inEnv);
+        origin = itemOrigin(item);
         // Look up the rest of the name in the environment of the first
         // identifier.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
       then
-        (item, path, env);
+        (item, path, env, origin);
              
     case (Absyn.FULLYQUALIFIED(path = path), _, _, _)
       equation
         (item, path, env) = lookupFullyQualified(path, inEnv);
       then
-        (item, path, env);
+        (item, path, env, CLASS_ORIGIN());
 
     case (_, _, _, SOME(error_id))
       equation
@@ -1171,7 +1181,7 @@ public function lookupClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_ERROR));
 end lookupClassName;
 
@@ -1184,7 +1194,7 @@ public function lookupBaseClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_BASECLASS_ERROR));
 end lookupBaseClassName;
 
@@ -1197,7 +1207,7 @@ public function lookupVariableName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv) := lookupName(inName, inEnv, inInfo,
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
     SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
@@ -1624,7 +1634,7 @@ algorithm
 
     case (_, _, _, _)
       equation
-        (_, path, env) = lookupName(inPath, inEnv, inInfo, inErrorType);
+        (_, path, env, _) = lookupName(inPath, inEnv, inInfo, inErrorType);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
         path = Absyn.makeFullyQualified(path);
       then
@@ -1640,5 +1650,15 @@ algorithm
         fail();
   end matchcontinue;
 end qualifyPath;
+
+protected function itemOrigin
+  input Item inItem;
+  output Origin outOrigin;
+algorithm
+  outOrigin := match(inItem)
+    case SCodeEnv.VAR(var = _) then INSTANCE_ORIGIN();
+    case SCodeEnv.CLASS(cls = _) then CLASS_ORIGIN();
+  end match;
+end itemOrigin;
 
 end SCodeLookup;

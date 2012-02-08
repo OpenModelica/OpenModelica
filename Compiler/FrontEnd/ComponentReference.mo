@@ -223,6 +223,25 @@ algorithm
   end match;
 end crefToPath;
 
+public function crefToPathIgnoreSubs
+  input DAE.ComponentRef inComponentRef;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inComponentRef)
+    local
+      DAE.Ident i;
+      Absyn.Path p;
+      DAE.ComponentRef c;
+
+    case DAE.CREF_IDENT(ident = i) then Absyn.IDENT(i);
+    case DAE.CREF_QUAL(ident = i, componentRef = c)
+      equation
+        p = crefToPathIgnoreSubs(c);
+      then
+        Absyn.QUALIFIED(i, p);
+  end match;
+end crefToPathIgnoreSubs;
+
 public function pathToCref
 "function: pathToCref
   This function converts a Absyn.Path to a ComponentRef."
