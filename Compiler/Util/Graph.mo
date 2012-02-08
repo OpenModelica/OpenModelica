@@ -853,6 +853,43 @@ algorithm
   end matchcontinue;
 end arrayFindMinColorIndex;
 
+public function printGraph
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input NodeToString inPrintFunc;
+  output String outString;
+  
+  replaceable type NodeType subtypeof Any;
+
+  partial function NodeToString
+    input NodeType inNode;
+    output String outString;
+  end NodeToString;
+algorithm
+  outString := stringDelimitList(List.map1(inGraph, printNode, inPrintFunc), "\n");
+end printGraph;
+
+public function printNode
+  input tuple<NodeType, list<NodeType>> inNode;
+  input NodeToString inPrintFunc;
+  output String outString;
+
+  replaceable type NodeType subtypeof Any;
+
+  partial function NodeToString
+    input NodeType inNode;
+    output String outString;
+  end NodeToString;
+protected
+  NodeType node;
+  list<NodeType> edges;
+  String node_str;
+  String edges_str;
+algorithm
+  (node, edges) := inNode;
+  node_str := inPrintFunc(node);
+  edges_str := stringDelimitList(List.map(edges, inPrintFunc), ", ");
+  outString := node_str +& ": " +& edges_str;
+end printNode;
 
 /* Functions for Integer graphs */
 

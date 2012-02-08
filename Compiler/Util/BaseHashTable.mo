@@ -68,6 +68,9 @@ protected import Util;
 //      719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829 
 //      839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967 
 //      971 977 983 991 997 1013 2053 3023 4013 4999 5051 5087 24971 
+//
+// You can also use Util.nextPrime if you know exactly how large the hash table
+// should be.
 
 public constant Integer lowBucketSize =  257;
 public constant Integer avgBucketSize = 2053;
@@ -75,6 +78,18 @@ public constant Integer bigBucketSize = 4013;
 public constant Integer biggerBucketSize = 25343;
 public constant Integer hugeBucketSize = 536870879 "2^29 - 33 is prime :)";
 public constant Integer defaultBucketSize = avgBucketSize;
+
+public
+replaceable type Key subtypeof Any;
+replaceable type Value subtypeof Any;
+type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
+type HashVector = array<list<tuple<Key,Integer>>>;
+type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
+type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
+partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
+partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
+partial function FuncKeyString input Key key; output String str; end FuncKeyString;
+partial function FuncValString input Value val; output String str; end FuncValString;
 
 public function bucketToValuesSize
 "calculate the values array size based on the bucket size"
@@ -93,17 +108,6 @@ protected
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 protected
   Integer szArr;
 algorithm
@@ -121,17 +125,6 @@ public function add
   input tuple<Key,Value> entry;
   input HashTable hashTable;
   output HashTable outHashTable;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   outHashTable := matchcontinue (entry,hashTable)
     local
@@ -188,17 +181,6 @@ public function addNoUpdCheck
   input tuple<Key,Value> entry;
   input HashTable hashTable;
   output HashTable outHashTable;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   outHashTable := matchcontinue (entry,hashTable)
     local
@@ -242,17 +224,6 @@ public function delete
   input Key key;
   input HashTable hashTable;
   output HashTable outHashTable;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   outHashTable :=
   matchcontinue (key,hashTable)
@@ -286,17 +257,6 @@ public function get
   input Key key;
   input HashTable hashTable;
   output Value value;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   (value,_):= get1(key,hashTable);
 end get;
@@ -306,17 +266,6 @@ protected function get1 "help function to get"
   input HashTable hashTable;
   output Value value;
   output Integer indx;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   (value,indx) := match (key,hashTable)
     local
@@ -347,9 +296,6 @@ protected function get2
   input list<tuple<Key,Integer>> keyIndices;
   input FuncEq keyEqual;
   output Integer index;
-
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  replaceable type Key subtypeof Any;
 algorithm
   index := matchcontinue (key,keyIndices,keyEqual)
     local
@@ -374,17 +320,6 @@ end get2;
 
 public function dumpHashTable ""
   input HashTable t;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 protected
   FuncKeyString printKey;
   FuncValString printValue;
@@ -400,11 +335,6 @@ protected function dumpTuple
   input FuncKeyString printKey;
   input FuncValString printValue;
   output String str;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   str := matchcontinue(tpl,printKey,printValue)
     local
@@ -423,17 +353,6 @@ end dumpTuple;
 public function hashTableValueList "return the Value entries as a list of Values"
   input HashTable hashTable;
   output list<Value> valLst;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
    valLst := List.map(hashTableList(hashTable),Util.tuple22);
 end hashTableValueList;
@@ -441,17 +360,6 @@ end hashTableValueList;
 public function hashTableKeyList "return the Key entries as a list of Keys"
   input HashTable hashTable;
   output list<Key> valLst;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
    valLst := List.map(hashTableList(hashTable),Util.tuple21);
 end hashTableKeyList;
@@ -459,17 +367,6 @@ end hashTableKeyList;
 public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
   input HashTable hashTable;
   output list<tuple<Key,Value>> tplLst;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
   tplLst := match(hashTable)
     local
@@ -485,10 +382,6 @@ public function valueArrayList
 "Transforms a ValueArray to a tuple<Key,Value> list"
   input ValueArray valueArray;
   output list<tuple<Key,Value>> tplLst;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   tplLst := matchcontinue (valueArray)
     local
@@ -519,9 +412,6 @@ protected function valueArrayList2 "Helper function to valueArrayList"
   input Integer inInteger3;
   input list<tuple<Key,Value>> iacc;
   output list<tuple<Key,Value>> outVarLst;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
 algorithm
   outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
     local
@@ -549,17 +439,6 @@ public function hashTableCurrentSize
   "Returns the number of elements inserted into the table"
   input HashTable hashTable;
   output Integer sz;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-  type HashVector = array<list<tuple<Key,Integer>>>;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
-  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
-  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
-  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
-  partial function FuncValString input Value val; output String str; end FuncValString;
 protected
   ValueArray va;
 algorithm
@@ -571,10 +450,6 @@ public function valueArrayLength
 "Returns the number of elements in the ValueArray"
   input ValueArray valueArray;
   output Integer sz;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   (sz,_,_) := valueArray;
 end valueArrayLength;
@@ -585,10 +460,6 @@ by factor 1.4"
   input ValueArray valueArray;
   input tuple<Key,Value> entry;
   output ValueArray outValueArray;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   outValueArray:=
   matchcontinue (valueArray,entry)
@@ -631,10 +502,6 @@ public function valueArraySetnth
   input Integer pos;
   input tuple<Key,Value> entry;
   output ValueArray outValueArray;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   outValueArray:=
   matchcontinue (valueArray,pos,entry)
@@ -660,10 +527,6 @@ public function valueArrayClearnth
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   outValueArray := matchcontinue (valueArray,pos)
     local
@@ -689,10 +552,6 @@ public function valueArrayNth
   input Integer pos;
   output Key key;
   output Value value;
-
-  replaceable type Key subtypeof Any;
-  replaceable type Value subtypeof Any;
-  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
   (key, value) := match (valueArray,pos)
     local

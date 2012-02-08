@@ -1342,6 +1342,76 @@ algorithm
   end match;
 end applyOption;
 
+public function applyOptionOrDefault
+  "Takes an optional value, a function and an extra value. If the optional value
+   is SOME, applies the function on that value and returns the result.
+   Otherwise returns the extra value."
+  input Option<Type_a> inValue;
+  input FuncType inFunc;
+  input Type_b inDefaultValue;
+  output Type_b outValue;
+
+  partial function FuncType
+    input Type_a inValue;
+    output Type_b outValue;
+  end FuncType;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outValue := match(inValue, inFunc, inDefaultValue)
+    local
+      Type_a value;
+      Type_b res;
+
+    case (SOME(value), _, _) 
+      equation
+        res = inFunc(value);
+      then
+        res;
+
+    else inDefaultValue;
+
+  end match;
+end applyOptionOrDefault;
+
+public function applyOptionOrDefault1
+  "Takes an optional value, a function, an extra argument and an extra value.
+   If the optional value is SOME, applies the function on that value and the
+   extra argument and returns the result. Otherwise returns the extra value."
+  input Option<Type_a> inValue;
+  input FuncType inFunc;
+  input Type_c inArg;
+  input Type_b inDefaultValue;
+  output Type_b outValue;
+
+  partial function FuncType
+    input Type_a inValue;
+    input Type_c inArg;
+    output Type_b outValue;
+  end FuncType;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outValue := match(inValue, inFunc, inArg, inDefaultValue)
+    local
+      Type_a value;
+      Type_b res;
+
+    case (SOME(value), _, _, _) 
+      equation
+        res = inFunc(value, inArg);
+      then
+        res;
+
+    else inDefaultValue;
+
+  end match;
+end applyOptionOrDefault1;
+
+
 public function makeOption "function makeOption
   Makes a value into value option, using SOME(value)"
   input Type_a inTypeA;
@@ -2869,5 +2939,108 @@ public function intProduct
 algorithm
   i := List.fold(lst,intMul,1);
 end intProduct;
+
+public function nextPrime
+  "Given a positive integer, returns the closest prime number that is equal or
+   larger. This algorithm checks every odd number larger than the given number
+   until it finds a prime, but since the distance between primes is relatively
+   small (the largest gap between primes up to 32 bit is only around 300) it's
+   still reasonably fast. It's useful for e.g. determining a good size for a
+   hash table with a known number of elements."
+  input Integer inN;
+  output Integer outNextPrime;
+algorithm
+  outNextPrime := matchcontinue(inN)
+    local
+      Integer x;
+
+    // If the given number is larger than 2, round it up to the nearest odd
+    // number and call nextPrime2.
+    case _
+      equation
+        true = inN > 2;
+      then
+        nextPrime2(inN + intMod(inN + 1, 2));
+
+    // Cases for number 0, 1 and 2.
+    case 0 then 2;
+    case 1 then 2;
+    case 2 then 2;
+
+    // Anything else must be negative.
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Util.nextPrime called with negative number."});
+      then
+        fail();
+
+  end matchcontinue;
+end nextPrime;
+
+protected function nextPrime2
+  "Helper function to nextPrime2, does the actual work of finding the next
+   prime."
+  input Integer inN;
+  output Integer outNextPrime;
+algorithm
+  outNextPrime := matchcontinue(inN)
+    // Return the given number if it's a prime.
+    case _
+      equation
+        true = nextPrime_isPrime(inN);
+      then
+        inN;
+
+    // Otherwise, check the next possible prime.
+    else nextPrime2(inN + 2);
+  end matchcontinue;
+end nextPrime2;
+
+protected function nextPrime_isPrime
+  "Helper function to nextPrime2, checks if a given number is a prime or not.
+   Note that this function is not a general prime checker, it only works for
+   positive odd numbers."
+  input Integer inN;
+  output Boolean outIsPrime;
+algorithm
+  outIsPrime := nextPrime_isPrime2(inN, 3, intDiv(inN, 3));
+end nextPrime_isPrime;
+
+protected function nextPrime_isPrime2
+  "Checks if a number is a prime or not, by checking for divisibility."
+  input Integer inN;
+  input Integer inI;
+  input Integer inQ;
+  output Boolean outIsPrime;
+algorithm
+  outIsPrime := matchcontinue(inN, inI, inQ)
+    local
+      Integer i, q;
+
+    // Stop when all factors up to sqrt(inN) has been checked.
+    case (_, _, _)
+      equation
+        true = inQ < inI;
+      then
+        true;
+
+    // The number is divisible by a factor => not a prime.
+    case (_, _, _)
+      equation
+        true = (inN == inQ * inI);
+      then
+        false;
+
+    // Continue checking factors.
+    else
+      equation
+        i = inI + 2;
+        q = intDiv(inN, i);
+      then
+        nextPrime_isPrime2(inN, i, q);
+
+  end matchcontinue;
+end nextPrime_isPrime2;
 
 end Util;
