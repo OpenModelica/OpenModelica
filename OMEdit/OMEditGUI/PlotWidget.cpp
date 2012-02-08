@@ -350,6 +350,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+                pPlotWindow->closeFile();
             }
             // if user unchecks the variable then remove it from the plot
             else if (pItem->checkState(column) == Qt::Unchecked)
@@ -407,6 +408,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         }
                         pPlotWindow->fitInView();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+                        pPlotWindow->closeFile();
                     }
                     else
                     {
