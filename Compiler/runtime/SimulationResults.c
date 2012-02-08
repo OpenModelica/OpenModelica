@@ -105,7 +105,8 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
       msg[1] = varname;
       msg[0] = filename;
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "%s not found in %s\n", msg, 2);
-      return NAN;
+      res = NAN;
+      break;
     }
     if (omc_matlab4_val(&res,&simresglob->matReader,var,timeStamp)) {
       char buf[64],buf2[64],buf3[64];
@@ -117,9 +118,10 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
       msg[1] = buf2;
       msg[0] = buf3;
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "%s not defined at time %s (startTime=%s, stopTime=%s).", msg, 4);
-      return NAN;
+      res = NAN;
+      break;
     }
-    return res;
+    break;
   }
   case PLT: {
     char *strToFind = (char*) malloc(strlen(varname)+30);
@@ -133,7 +135,8 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
         msg[1] = varname;
         msg[0] = filename;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "%s not found in %s\n", msg, 2);
-        return NAN;
+        res = NAN;
+        break;
       }
     } while (strcmp(strToFind,line));
     while (fscanf(simresglob->pltReader,"%lg, %lg\n",&t,&v) == 2) {
@@ -148,20 +151,25 @@ static double SimulationResultsImpl__val(const char *filename, const char *varna
       msg[1] = varname;
       msg[0] = buf;
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "%s not defined at time %s\n", msg, 2);
-      return NAN;
+      res = NAN;
+      break;
     } else {
       /* Linear interpolation */
       if ((t-pt) == 0.0) return v;
       w1 = (timeStamp - pt) / (t-pt);
       w2 = 1.0 - w1;
-      return pv*w2 + v*w1;
+      res = pv*w2 + v*w1;
+      break;
     }
   }
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "val() not implemented for plot format: %s\n", msg, 1);
-    return NAN;
+    res = NAN;
+    break;
   }
+  SimulationResultsImpl__close(simresglob);
+  return res;
 }
 
 static int SimulationResultsImpl__readSimulationResultSize(const char *filename, SimulationResult_Globals* simresglob)
@@ -173,19 +181,23 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
   }
   switch (simresglob->curFormat) {
   case MATLAB4: {
-    return simresglob->matReader.nrows;
+    size = simresglob->matReader.nrows;
+    break;
   }
   case PLT: {
     size = read_ptolemy_dataset_size(filename);
     msg[0] = filename;
     if (size == -1) c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Failed to read readSimulationResultSize from file: %s\n", msg, 1);
-    return size;
+    break;
   }
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "readSimulationResultSize() not implemented for plot format: %s\n", msg, 1);
-    return -1;
+    size = -1;
+    break;
   }
+  SimulationResultsImpl__close(simresglob);
+  return size;
 }
 
 static void* SimulationResultsImpl__readVars(const char *filename, SimulationResult_Globals* simresglob)
@@ -200,10 +212,11 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   case MATLAB4: {
     int i;
     for (i=simresglob->matReader.nall-1; i>=0; i--) res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
-    return res;
+    break;
   }
   case PLT: {
-    return read_ptolemy_variables(filename);
+    res = read_ptolemy_variables(filename);
+    break;
   }
   case CSV: {
     char **variables = read_csv_variables(filename);
@@ -215,13 +228,15 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
       variables++;
     }
     free(toFree);
-    return res;
+    break;
   }
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "readSimulationResultSize() not implemented for plot format: %s", msg, 1);
     return mk_nil();
   }
+  SimulationResultsImpl__close(simresglob);
+  return res;
 }
 
 static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, SimulationResult_Globals* simresglob)
@@ -243,7 +258,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     } else if (simresglob->matReader.nrows != dimsize) {
       fprintf(stderr, "dimsize: %d, rows %d\n", dimsize, simresglob->matReader.nrows);
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "readDataset(...): Expected and actual dimension sizes do not match.", NULL, 0);
-      return NULL;
+      break;
     }
     while (RML_NILHDR != RML_GETHDR(vars)) {
       var = RML_STRINGDATA(RML_CAR(vars));
@@ -265,15 +280,17 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
         res = mk_cons(col,res);
       }
     }
-    return res;
+    break;
   }
   case PLT: {
-    return read_ptolemy_dataset(filename,vars,dimsize);
-    // return NULL;
+    res = read_ptolemy_dataset(filename,vars,dimsize);
+    break;
   }
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "readDataSet() not implemented for plot format: %s\n", msg, 1);
-    return NULL;
+    break;
   }
+  SimulationResultsImpl__close(simresglob);
+  return res;
 }
