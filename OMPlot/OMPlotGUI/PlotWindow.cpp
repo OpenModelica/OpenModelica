@@ -81,7 +81,6 @@ void PlotWindow::initializePlot(QStringList arguments)
 {
     // open the file
     openFile(QString(arguments[1]));
-
     //Set up arguments
     setTitle(QString(arguments[2]));
     if(QString(arguments[3]) == "true")
@@ -135,6 +134,7 @@ void PlotWindow::initializePlot(QStringList arguments)
         setPlotType(PlotWindow::PLOTPARAMETRIC);
         plotParametric();
     }
+    closeFile();
 }
 
 void PlotWindow::setVariablesList(QStringList variables)
@@ -164,6 +164,11 @@ void PlotWindow::openFile(QString file)
         throw NoFileException(QString("File not found : ").append(file).toStdString().c_str());
     mFile.open(QIODevice::ReadOnly);
     mpTextStream = new QTextStream(&mFile);
+}
+
+void PlotWindow::closeFile()
+{
+    mFile.close();
 }
 
 void PlotWindow::setupToolbar()

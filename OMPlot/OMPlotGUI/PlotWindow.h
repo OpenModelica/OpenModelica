@@ -74,6 +74,7 @@ public:
     void setPlotType(PlotType type);
     PlotType getPlotType();
     void openFile(QString file);
+    void closeFile();
     void setupToolbar();
     void plot();
     void plotParametric();
