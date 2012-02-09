@@ -9,8 +9,13 @@ a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x
 isModel(Modelica.Blocks.Examples.PID_Controller);
 getErrorString();
 print("Numer of classes to build: " + String(size(a,1)));
-system("rm -f Modelica.*");
-min(writeFile(s + ".mos","loadModel(Modelica,{\"3.1\"});\nbuildModel("+s+");\ngetErrorString();") for s in a);
+system("rm -f Modelica.* " + log);
+min(writeFile(s + ".mos","
+writeFile(\""+log+"\",\""+s+"\n\",append=true);
+loadModel(Modelica,{\"3.1\"});
+buildModel("+s+");
+getErrorString();
+") for s in a);
 getErrorString();
 min(0==system(omc + " " + s + ".mos") for s in a);
 getErrorString();
