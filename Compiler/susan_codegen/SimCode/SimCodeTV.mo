@@ -2102,6 +2102,11 @@ package ComponentReference
     output DAE.Type res;
   end crefLastType;
 
+  function appendStringCref
+    input String str;
+    input DAE.ComponentRef cr;
+    output DAE.ComponentRef ocr;
+  end appendStringCref;
 end ComponentReference;
 
 package Expression

@@ -3824,6 +3824,22 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <%preExp%>
     <%varPart%> = (modelica_fnptr) <%expPart%>;
     >>
+    /* Records need to be traversed, assigning each component by itself */
+  case STMT_ASSIGN(exp1=CREF(componentRef=cr,ty = T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+    let &preExp = buffer ""
+    let rec = daeExp(exp, context, &preExp, &varDecls)
+    <<
+    <%preExp%>
+    <% varLst |> var as TYPES_VAR(__) =>
+      match var.ty
+      case T_ARRAY(__) then
+        copyArrayData(var.ty, '<%rec%>.<%var.name%>', appendStringCref(var.name,cr), context)
+      else
+        let varPart = contextCref(appendStringCref(var.name,cr),context)
+        '<%varPart%> = <%rec%>.<%var.name%>;'
+    ; separator="\n"
+    %>
+    >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)

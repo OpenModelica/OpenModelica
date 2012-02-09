@@ -1572,6 +1572,14 @@ algorithm
   end match;
 end prependStringCref;
 
+public function appendStringCref
+  input String str;
+  input DAE.ComponentRef cr;
+  output DAE.ComponentRef ocr;
+algorithm
+  ocr := joinCrefs(cr,DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{}));
+end appendStringCref;
+
 public function joinCrefs
 "function: joinCrefs
   Join two component references by concatenating them.

@@ -1278,6 +1278,7 @@ code_expression returns [void* ast] :
         }
       }
   | CODE_NAME LPAR name=name_path RPAR {ast = Absyn__CODE(Absyn__C_5fTYPENAME(name));}
+  | CODE_VAR LPAR cr=component_reference RPAR {ast = Absyn__CODE(Absyn__C_5fVARIABLENAME(cr.ast));}
   )
   ;
 
