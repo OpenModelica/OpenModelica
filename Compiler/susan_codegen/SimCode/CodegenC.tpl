@@ -165,8 +165,6 @@ case simCode as SIMCODE(__) then
   <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
   
   <%functionAlgebraic(algebraicEquations)%>
-    
-  <%functionAliasEquation(removedEquations)%>
                        
   <%functionDAE(allEquations, whenClauses, helpVarInfo)%>
     
@@ -1137,16 +1135,17 @@ template crefType(ComponentRef cr)
 end crefType;
 
 
-template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts)
+template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations)
  "Generates function in simulation file."
 ::=
-  let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
-  let algAndEqAssertsPart = (algorithmAndEquationAsserts |> stmt =>
-      algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
+  let &tmp = buffer ""
+  let algAndEqAssertsPart = (algAndEqAssertsEquations |> eq =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/, &tmp)
+    ;separator="\n")  
   <<
-  /* for continuous time variables */
+  <%&tmp%>
+  /* function to check assert after a step is done */
   int checkForAsserts(DATA *data)
   {
     <%varDecls%>
@@ -4743,9 +4742,12 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
     else 
       if crefIsScalar(cr, context) 
       then
+        /* LHS doesn't need any cast: lvalue required as left operand of assignment.
         let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
                           case T_ENUMERATION(__) then "(modelica_integer)" //else ""
         '<%cast%><%contextCref(cr,context)%>'
+        */
+        '<%contextCref(cr,context)%>'
       else 
         if crefSubIsScalar(cr) 
         then
@@ -5205,9 +5207,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)') 
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
-// a $_start is used to get get start value of a variable
+  // a $_start is used to get get start value of a variable
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
-    daeExpCallStart(arg, context, preExp, varDecls)    
+    daeExpCallStart(arg, context, preExp, varDecls)        
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
@@ -5708,7 +5710,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
     '*(&$P$START<%cref%> + <%offset%>)'
   else
     error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
-end daeExpCallStart; 
+end daeExpCallStart;
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)

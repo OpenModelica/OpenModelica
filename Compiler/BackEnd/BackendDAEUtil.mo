@@ -52,6 +52,7 @@ public import DAE;
 public import Env;
 
 protected import Absyn;
+protected import Algorithm;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
@@ -419,6 +420,145 @@ algorithm
       then fail();
   end matchcontinue;
 end checkAssertCondition;
+
+
+public function expandAlgorithmsbyInitStmts 
+"function: expandAlgorithmsbyInitStmts
+  This function expands algorithm sections by initial statements.
+  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
+  - A discrete variable v is initialized with pre(v)."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+algorithm
+  outDAE := mapEqSystem(inDAE,expandAlgorithmsbyInitStmts1);
+end expandAlgorithmsbyInitStmts;
+
+protected function expandAlgorithmsbyInitStmts1
+"function: expandAlgorithmsbyInitStmt1
+  This function expands algorithm sections by initial statements.
+  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
+  - A discrete variable v is initialized with pre(v).
+  Helper function to expandAlgorithmsbyInitStmts.
+"
+    input BackendDAE.EqSystem syst;
+    input BackendDAE.Shared shared;
+    output BackendDAE.EqSystem osyst;
+    output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := match (syst,shared)
+ local
+  array<DAE.Algorithm> algs;
+  list<DAE.Algorithm> inalgsList;
+  
+  BackendDAE.Variables ordvars;
+  BackendDAE.EquationArray ordeqns;
+  
+  BackendDAE.Variables knvars,exobj;
+  BackendDAE.AliasVariables aliasVars;
+  BackendDAE.EquationArray eqns,remeqns,inieqns;
+  array<BackendDAE.MultiDimEquation> arreqns;
+  array<DAE.Algorithm> algorithms;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.EqSystem eqs;
+  BackendDAE.BackendDAEType btp;  
+   case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=ordeqns),
+        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
+   equation
+     ((algs,_,_)) = BackendEquation.traverseBackendDAEEqns(ordeqns,expandAlgorithmsbyInitStmtsHelper,(algorithms,ordvars,{}));
+   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,einfo,eoc,btp));    
+   end match;
+end expandAlgorithmsbyInitStmts1;
+
+protected function expandAlgorithmsbyInitStmtsHelper
+"function: expandAlgorithmsbyInitStmt
+  This function expands algorithm sections by initial statements.
+  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
+  - A discrete variable v is initialized with pre(v).
+  Helper function to expandAlgorithmsbyInitStmts1.
+"
+  input tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,BackendDAE.Variables, list<Integer>>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,BackendDAE.Variables, list<Integer>>> outTpl;  
+algorithm
+ outTpl := matchcontinue(inTpl)
+ local
+   array<DAE.Algorithm> algs,algs1;
+   DAE.Algorithm alg;
+   DAE.Algorithm algExpanded;
+   BackendDAE.Equation eqn;
+   BackendDAE.Variables vars;
+   Integer aindex;
+   list<DAE.Exp> outputs;
+   tuple<array<DAE.Algorithm>,BackendDAE.Variables,list<Integer>> tpl;
+   list<Integer> doneAlgs;
+   case((eqn as BackendDAE.ALGORITHM(index=aindex,out=outputs),(algs,vars,doneAlgs)))
+   equation
+     //expand every algorithm equation only once
+     true = not listMember(aindex,doneAlgs);
+     alg = arrayGet(algs,aindex+1);
+     algExpanded = expandAlgorithmStmts(alg,outputs,vars);
+     algs1 = arrayUpdate(algs,aindex+1,algExpanded);
+   then ((eqn, (algs1,vars,aindex::doneAlgs)));
+   case((eqn,tpl))
+   then ((eqn,tpl));     
+   end matchcontinue;
+end expandAlgorithmsbyInitStmtsHelper;
+
+
+protected function expandAlgorithmStmts
+"function: expandAlgorithmStmts
+  This function expands algorithm sections by initial statements.
+  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
+  - A discrete variable v is initialized with pre(v).
+  Helper function to expandAlgorithmsbyInitStmts1."
+  input DAE.Algorithm inAlg;
+  input list<DAE.Exp> inOutputs;
+  input BackendDAE.Variables inVars;
+  output DAE.Algorithm outAlg;
+algorithm
+   outAlg := matchcontinue(inAlg, inOutputs, inVars)
+ local
+   DAE.Algorithm alg;
+   DAE.Exp out,initExp;
+   list<DAE.Exp> rest;
+   DAE.ComponentRef cref;
+   BackendDAE.Var var;
+   DAE.Statement stmt;
+   DAE.Type type_;
+   list<DAE.Statement> statements,statements1;
+   case(alg,{},_) then (alg);
+   case(alg,out::rest,inVars)
+     equation
+       cref = Expression.expCref(out);
+       type_ = Expression.typeof(out);
+       type_ = Expression.arrayEltType(type_);
+       (var::_,_) = BackendVariable.getVar(cref, inVars);
+       true = BackendVariable.isVarDiscrete(var);
+       initExp = Expression.makeBuiltinCall("pre", {out}, type_);
+       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR), initExp, DAE.PROP(type_,DAE.C_VAR), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+       (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
+       statements1 = listAppend({stmt},statements);
+     then (DAE.ALGORITHM_STMTS(statements1));
+   case(alg,out::rest,inVars)
+     equation
+       cref = Expression.expCref(out);
+       type_ = Expression.typeof(out);
+       type_ = Expression.arrayEltType(type_);
+       (var::_,_) = BackendVariable.getVar(cref, inVars);
+       false = BackendVariable.isVarDiscrete(var);
+       initExp = Expression.makeBuiltinCall("$_start", {out}, type_);
+       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR), initExp, DAE.PROP(type_,DAE.C_VAR), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+       (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
+       statements1 = listAppend({stmt},statements);
+     then (DAE.ALGORITHM_STMTS(statements1));
+   end matchcontinue;
+end expandAlgorithmStmts;
+
+
+
 
 /************************************************************
   Util function at Backend using for lowering and other stuff
@@ -5860,7 +6000,7 @@ public function getSolvedSystem
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE.BackendDAE dae,optdae,sode,sode1,optsode,indexed_dlow;
+  BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
@@ -5891,8 +6031,10 @@ algorithm
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
   Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  outSODE := calculateValues(inCache, inEnv, indexed_dlow);
+  sode2 := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  outSODE := expandAlgorithmsbyInitStmts(sode2);
+  Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
   Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
 end getSolvedSystem;

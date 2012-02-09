@@ -94,7 +94,8 @@ package SimCode
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
-      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> algorithmAndEquationAsserts;
+      //list<DAE.Statement> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<SampleCondition> sampleConditions;

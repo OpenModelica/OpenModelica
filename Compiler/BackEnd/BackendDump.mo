@@ -536,6 +536,7 @@ algorithm
   str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
   then
   str2;
+  else then "";
   end match;
 end dumpZcStr;
 
@@ -568,6 +569,8 @@ algorithm
       str = stringAppendList({" whenclause = ",sc," then ",s1});
      then
       str;
+     else
+     then "";
   end match;
 end dumpWcStr;
 
@@ -787,8 +790,7 @@ algorithm
         dumpEqns(ieqnsl);
         print("Zero Crossings :\n");
         print("===============\n");
-        ss = List.map(zc, dumpZcStr);
-        s = stringDelimitList(ss, ",\n");
+        s = dumpZcStr1(zc);
         print(s);
         print("\n");
         print("When Clauses :\n");

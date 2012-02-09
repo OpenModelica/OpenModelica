@@ -148,7 +148,8 @@ uniontype SimCode
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> removedEquations;
-    list<DAE.Statement> algorithmAndEquationAsserts;
+    list<SimEqSystem> algorithmAndEquationAsserts;
+    //list<DAE.Statement> algorithmAndEquationAsserts;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<SampleCondition> sampleConditions;
     list<SimEqSystem> sampleEquations;
@@ -2181,7 +2182,8 @@ algorithm
       list<SimEqSystem> parameterEquations;   // --> updateBoundParameters
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> sampleEquations;
-      list<Algorithm.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> algorithmAndEquationAsserts;
+      //list<DAE.Statement> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SimWhenClause> whenClauses;
       list<SampleCondition> sampleConditions;
@@ -2457,13 +2459,17 @@ algorithm
         startValueEquations = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
         parameterEquations = createParameterEquations(shared,parameterEquations);
-        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
-        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,({},algs));
         
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
         makefileParams = createMakefileParams(includeDirs,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        
+        //append removed equation to all equations, since these are actually 
+        //just the algorithms without outputs
+        algebraicEquations = listAppend(algebraicEquations,removedEquations);
+        allEquations = listAppend(allEquations,removedEquations);
         
         // replace div operator with div operator with check of Division by zero
         orderedVars = List.map(systs,BackendVariable.daeVars);
@@ -2621,8 +2627,7 @@ algorithm
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimEqSystem>> odeEquations;
-      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations;
-      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SampleCondition> sampleConditions;
       list<HelpVarInfo> helpVarInfo;
@@ -3557,24 +3562,31 @@ end extractExtObjInfo2;
 protected function createAlgorithmAndEquationAsserts
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input list<Algorithm.Statement> acc;
-  output list<Algorithm.Statement> algorithmAndEquationAsserts;
+  input list<SimEqSystem> acc;
+  output list<SimEqSystem> algorithmAndEquationAsserts;
 algorithm
   algorithmAndEquationAsserts := matchcontinue (syst,shared,acc)
     local
-      array<Algorithm.Algorithm> algs;
-      list<Algorithm.Statement> res,res1;
+      array<DAE.Algorithm> algs;
+      list<DAE.Algorithm> res,res1;
       BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
       Boolean b;
+      list<SimEqSystem> result;
       
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqns),BackendDAE.SHARED(algorithms=algs),acc)
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars = vars),BackendDAE.SHARED(algorithms=algs),acc)
       equation
         b = List.isEmpty(acc) "execute this part only once :D";
         res = createAlgorithmAndEquationAssertsFromAlgs(Debug.bcallret1(b,arrayList,algs,{}));
+        // get sqrt asserts
         res1 = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,findSqrtCallsforAsserts,{});
         res = listAppend(res,res1);
-        res = listAppend(res,acc);
-      then res;
+        // get minmax and nominal asserts
+        res1 = BackendVariable.traverseBackendDAEVars(vars,createVarMinMaxAssert,{});
+        res = listAppend(res,res1);
+        result = List.map(res,dlowAlgToSimEqSystem);
+        result = listAppend(result,acc);
+      then result;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"createAlgorithmAndEquationAsserts failed"});
@@ -3583,14 +3595,14 @@ algorithm
 end createAlgorithmAndEquationAsserts;
 
 protected function findSqrtCallsforAsserts
-  input tuple<DAE.Exp, list<Algorithm.Statement>> inTpl;
-  output tuple<DAE.Exp, list<Algorithm.Statement>> outTpl;
+  input tuple<DAE.Exp, list<DAE.Algorithm>> inTpl;
+  output tuple<DAE.Exp, list<DAE.Algorithm>> outTpl;
 algorithm
   outTpl :=
   matchcontinue inTpl
     local  
       DAE.Exp exp;
-      list<Algorithm.Statement> inasserts;
+      list<DAE.Algorithm> inasserts;
     case ((exp,inasserts))
       equation
         ((_,inasserts)) = Expression.traverseExp(exp,findSqrtCallsforAssertsExps,inasserts);
@@ -3601,21 +3613,21 @@ algorithm
 end findSqrtCallsforAsserts;
 
 protected function findSqrtCallsforAssertsExps
-  input tuple<DAE.Exp, list<Algorithm.Statement>> inTuple;
-  output tuple<DAE.Exp, list<Algorithm.Statement>> outTuple;
+  input tuple<DAE.Exp, list<DAE.Algorithm>> inTuple;
+  output tuple<DAE.Exp, list<DAE.Algorithm>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e,e1;
       String estr;
-      Algorithm.Statement addAssert;
-      list<Algorithm.Statement> inasserts;
+      DAE.Algorithm addAssert;
+      list<DAE.Algorithm> inasserts;
     
     // special case for time, it is never part of the equation system  
     case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
       equation
         estr = "Model error: Argument of sqrt should be >= 0";
-        addAssert = DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource);
+        addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)});
       then ((e, addAssert::inasserts));
     
     case inTuple then inTuple;
@@ -3624,26 +3636,25 @@ end findSqrtCallsforAssertsExps;
 
 
 protected function createAlgorithmAndEquationAssertsFromAlgs
-  input list<Algorithm.Algorithm> algs;
-  output list<Algorithm.Statement> algorithmAndEquationAsserts;
+  input list<DAE.Algorithm> algs;
+  output list<DAE.Algorithm> algorithmAndEquationAsserts;
 algorithm
   algorithmAndEquationAsserts := matchcontinue (algs)
     local
-      Algorithm.Statement stmt;
-      list<Algorithm.Statement> restStmt;
-      list<Algorithm.Algorithm> restAlgs;
+      DAE.Statement stmt;
+      list<DAE.Algorithm> restAlgs,resultAlgs;
       
     case ({}) then ({});
       
     case((DAE.ALGORITHM_STMTS({stmt as DAE.STMT_ASSERT(cond =_)})) :: restAlgs)
       equation
-        restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
-      then (stmt :: restStmt);
+        resultAlgs = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
+      then (DAE.ALGORITHM_STMTS({stmt}) :: resultAlgs);
         
     case(_ :: restAlgs)
       equation
-        restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
-      then (restStmt);
+        resultAlgs = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
+      then (resultAlgs);
   end matchcontinue;
 end createAlgorithmAndEquationAssertsFromAlgs;
 
@@ -12357,8 +12368,7 @@ algorithm
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimEqSystem>> odeEquations;
-      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations;
-      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SampleCondition> sampleConditions;
       list<HelpVarInfo> helpVarInfo;
@@ -12394,8 +12404,7 @@ algorithm
         files = getFilesFromSimVars(vars, files);
         files = getFilesFromFunctions(functions, files);
         files = getFilesFromSimEqSystems(allEquations::algebraicEquations::residualEquations::
-                                         startValueEquations::parameterEquations::removedEquations::sampleEquations::odeEquations, files);
-        files = getFilesFromStatements(algorithmAndEquationAsserts, files);
+                                         startValueEquations::parameterEquations::removedEquations::algorithmAndEquationAsserts::sampleEquations::odeEquations, files);
         files = getFilesFromWhenClauses(whenClauses, files);   
         files = getFilesFromExtObjInfo(extObjInfo, files);
         files = getFilesFromJacobianMatrixes(jacobianMatrixes, files);
@@ -12623,7 +12632,7 @@ algorithm
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
-      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SampleCondition> sampleConditions;
       list<SimEqSystem> sampleEquations;
@@ -12651,7 +12660,7 @@ algorithm
         (startValueEquations,a) = traverseExpsEqSystems(startValueEquations,func,a,{});
         (parameterEquations,a) = traverseExpsEqSystems(parameterEquations,func,a,{});
         (removedEquations,a) = traverseExpsEqSystems(removedEquations,func,a,{});
-        /* TODO:statements algorithmAndEquationAsserts */
+        (algorithmAndEquationAsserts,a) = traverseExpsEqSystems(algorithmAndEquationAsserts,func,a,{});
         /* TODO:zeroCrossing */
         /* TODO:sampleConditions */
         (sampleEquations,a) = traverseExpsEqSystems(sampleEquations,func,a,{});
@@ -12801,7 +12810,7 @@ algorithm
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
-      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<SimEqSystem> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SampleCondition> sampleConditions;
       list<SimEqSystem> sampleEquations;

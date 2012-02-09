@@ -79,17 +79,17 @@ extern void callExternalObjectConstructors(DATA *data);
 /* Function for calling external object deconstructors */
 extern void callExternalObjectDestructors(DATA *_data);
 
-/* function for calculating ouput values */
-/* used in DDASRT fortran function*/
-extern int functionODE(DATA *data);          /* functionODE with respect to start-values */
-extern int functionAlgebraics(DATA *data);   /* functionAlgebraics with respect to start-values */
-extern int functionAliasEquations(DATA *data);
+/* functionODE contains those equations that are needed
+ * to calculate the dynamic part of the system */
+extern int functionODE(DATA *data);
 
+/* functionAlgebraics contains all continuous equations that
+ * are not part of the dynamic part of the system */
+extern int functionAlgebraics(DATA *data);
 
-/*   function for calculating all equation sorting order
-  uses in EventHandle  */
+/* function for calculating all equation sorting order
+   uses in EventHandle  */
 extern int functionDAE(DATA *data, int *needToIterate);
-
 
 /* functions for input and output */
 extern int input_function(DATA*);

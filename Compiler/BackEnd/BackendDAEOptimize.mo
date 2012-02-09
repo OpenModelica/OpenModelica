@@ -5945,6 +5945,13 @@ algorithm
         e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),inExp1));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
+
+    // openmodelica build call $_start(x)
+    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("$_start")))          
+      equation
+        e = DAE.RCONST(0.0);
+      then e;
+    
     
   end match;
 end mergeCall;

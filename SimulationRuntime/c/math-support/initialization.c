@@ -848,6 +848,7 @@ static int state_initialization(DATA *data, int optiMethod)
     for(i=0; i<3;i++)
       printAllVars(data, i);
 
+  storeInitialValues(data);
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
@@ -855,6 +856,8 @@ static int state_initialization(DATA *data, int optiMethod)
 
   /* valid system for the first time! */
   SaveZeroCrossings(data);
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
 

@@ -56,7 +56,6 @@ void update_DAEsystem(DATA *data)
   int IterationNum = 0;
 
   functionDAE(data, &needToIterate);
-  functionAliasEquations(data);
   /*
   if (DEBUG_FLAG(LOG_EVENTS))
   {
@@ -75,7 +74,6 @@ void update_DAEsystem(DATA *data)
     }
     storePreValues(data);
     functionDAE(data, &needToIterate);
-    functionAliasEquations(data);
     /*
     if (DEBUG_FLAG(LOG_EVENTS))
     {
@@ -205,7 +203,7 @@ void overwriteOldSimulationData(DATA *data)
  *  Restores variables (states, derivatives and algebraic).
  *
  *  This function overwrites all variable with old values.
- *  This function is called while the initialization to be able
+ *  This function is called while the initialization to be ab lvalue required as left operand of assignmentle
  *  initialize all ZeroCrossing relations.
  *
  *  \param [ref] [data]
@@ -301,6 +299,43 @@ void setAllParamsToStart(DATA *data)
     DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
+
+/*! \fn storeInitialValues
+ *
+ *  This function sets all variables initial values to their current values..
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
+ */
+void storeInitialValues(DATA *data)
+{
+  SIMULATION_DATA *sData = data->localData[0];
+  MODEL_DATA      *mData = &(data->modelData);
+  long i;
+
+  for(i=0; i<mData->nVariablesReal; ++i)
+  {
+    mData->realVarsData[i].attribute.initial = sData->realVars[i];
+    DEBUG_INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+  }
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
+    mData->integerVarsData[i].attribute.initial = sData->integerVars[i];
+    DEBUG_INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+  }
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
+    mData->booleanVarsData[i].attribute.initial = sData->booleanVars[i];
+    DEBUG_INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+  }
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    mData->stringVarsData[i].attribute.initial = sData->stringVars[i];
+    DEBUG_INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+  }
+}
+
 
 /*! \fn storeInitialValuesParam
  *

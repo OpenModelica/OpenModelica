@@ -29,8 +29,6 @@ template dumpSimCode(SimCode code)
   <%dumpVars(vars.jacobianVars)%>
   <%dumpVars(vars.constVars)%>
   <%dumpEqs(sc.allEquations)%>
-  /* Removed Equations */
-  <%dumpEqs(sc.removedEquations)%>
   >>
 end dumpSimCode;
 

@@ -158,7 +158,7 @@ case simCode as SIMCODE(__) then
   
   <%functionCheckForDiscreteChanges(discreteModelVars)%>
   
-  <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
+  <% /* functionAssertsforCheck(algorithmAndEquationAsserts)*/ %>
   
   <%generateLinearMatrixes(jacobianMatrixes)%>
   

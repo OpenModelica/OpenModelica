@@ -312,7 +312,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   
   <%SimCodeC.functionCheckForDiscreteChanges(discreteModelVars)%>
   
-  <%SimCodeC.functionAssertsforCheck(algorithmAndEquationAsserts)%>
+  <%/*SimCodeC.functionAssertsforCheck(algorithmAndEquationAsserts) */%>
   
   <%SimCodeC.generateLinearMatrixes(jacobianMatrixes)%>
   

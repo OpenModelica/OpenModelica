@@ -199,9 +199,6 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
   DEBUG_INFO(LOG_SOLVER, "Calculated bound parameters");
   */
 
-  /* Evaluate all constant equations during initialization */
-  /* functionAliasEquations(simData); */
-
   /* Calculate initial values from updateBoundStartValues()
    * saveall() value as pre values */
   if (measure_time_flag) {
@@ -210,13 +207,13 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
   }
 
   if(initialization(simData, "state", "nelder_mead_ex"))
-        {
-           /* THROW("Error in initialization. Storing results and exiting."); */
+  {
+    /* THROW("Error in initialization. Storing results and exiting."); */
   }
 
-        /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
-        sim_result_writeParameterData(&(simData->modelData));
-        DEBUG_INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
+  /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
+  sim_result_writeParameterData(&(simData->modelData));
+  DEBUG_INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
 
   /* debug print */
   if (DEBUG_FLAG(LOG_DEBUG)){
@@ -340,7 +337,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
     retValIntegrator = solver_main_step(flag, simData, &solverInfo);
 
     functionAlgebraics(simData);
-    functionAliasEquations(simData);
+
     function_storeDelayed(simData);
     output_function(simData);
     SaveZeroCrossings(simData);

@@ -367,8 +367,6 @@ interpolation_control(const int dideventstep, double interpolationStep,
    *     << globalData->timeValue << ", " << interpolationStep << endl; fflush(NULL);
   } for debugging */
 
-  functionAliasEquations(NULL);
-
   if (dideventstep == 1) {
     /* Emit data after an event */
 	  sim_result_emit();
@@ -423,7 +421,6 @@ interpolation_control(const int dideventstep, double interpolationStep,
         /* update all dependent variables */
         functionODE(NULL);
         functionAlgebraics(NULL);
-        functionAliasEquations(NULL);
         SaveZeroCrossings();
 
         /* Emit interpolated data at the current time step */
