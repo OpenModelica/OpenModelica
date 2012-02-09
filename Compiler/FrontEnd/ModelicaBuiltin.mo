@@ -1930,6 +1930,15 @@ external "builtin";
 annotation(preferredView="text");
 end val;
 
+function closeSimulationResultFile "Closes the current simulation result file.
+  Only needed by Windows. Windows cannot handle reading and writing to the same file from different processes.
+  To allow OMEdit to make successful simulation again on the same file we must close the file after reading the Simulation Result Variables.
+  Even OMEdit only use this API for Windows :)"
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end closeSimulationResultFile;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class"
   input TypeName class_;
   output Integer count;

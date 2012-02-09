@@ -1960,7 +1960,13 @@ algorithm
         varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);
-    
+
+    case (cache,env,"closeSimulationResultFile",_,st,msg)
+      equation
+        SimulationResults.close();
+      then
+        (cache,Values.BOOL(true),st);
+            
     case (cache,env,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);

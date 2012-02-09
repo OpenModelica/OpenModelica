@@ -75,7 +75,6 @@ public function close
   external "C" SimulationResults_close() annotation(Library = "omcruntime");
 end close;
 
-
 public function cmpSimulationResults
   input String filename;
   input String reffilename;
