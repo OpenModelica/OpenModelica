@@ -1130,6 +1130,15 @@ external "builtin";
 annotation(preferredView="text");
 end getVersion;
 
+function regularFileExists
+  "The contents of the given file are returned.
+  Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
+  input String fileName;
+  output Boolean exists;
+external "builtin" annotation(__OpenModelica_Impure=true);
+annotation(preferredView="text");
+end regularFileExists;
+
 function readFile
   "The contents of the given file are returned.
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
@@ -2161,10 +2170,32 @@ function isPackage
 external "builtin";
 annotation(
   Documentation(info="<html>
-  Returns true if the given classname is a package.
+  Returns true if the given class is a package.
 </html>"),
   preferredView="text");
 end isPackage;
+
+function isPartial
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class is partial.
+</html>"),
+  preferredView="text");
+end isPartial;
+
+function isModel
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction model.
+</html>"),
+  preferredView="text");
+end isModel;
 
 annotation(preferredView="text");
 end Scripting;

@@ -1954,7 +1954,8 @@ algorithm
       equation
         matchApiFunction(istmts, "isModel");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isModel(cr, p);
+        path = Absyn.crefToPath(cr);
+        b1 = isModel(path, p);
         resstr = boolString(b1);
       then
         (resstr,st);
@@ -2068,8 +2069,9 @@ algorithm
       equation
         matchApiFunction(istmts, "existModel");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        path = Absyn.crefToPath(cr);
         b1 = existClass(cr, p);
-        b2 = isModel(cr, p);
+        b2 = isModel(path, p);
         b = boolAnd(b1, b2);
         resstr = boolString(b);
       then
@@ -8501,28 +8503,23 @@ algorithm
   end matchcontinue;
 end isConnector;
 
-protected function isModel
+public function isModel
 "function: isModel
    This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"model\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  outBoolean := matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (path,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_MODEL(),_,_) = getPathedClassInProgram(path, p);
-      then
-        true;
-    case (cr,p) then false;
+      then true;
+    else false;
   end matchcontinue;
 end isModel;
 
@@ -8648,6 +8645,25 @@ algorithm
     case (cr,p) then false;
   end matchcontinue;
 end isClass;
+
+public function isPartial
+"function: isClass
+   This function takes a component reference and a program.
+   It returns true if the refrenced class has the restriction
+   \"class\", otherwise it returns false."
+  input Absyn.Path p;
+  input Absyn.Program prog;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (p,prog)
+    case (p,prog)
+      equation
+        Absyn.CLASS(partialPrefix=true) = getPathedClassInProgram(p, prog);
+      then true;
+    else false;
+  end matchcontinue;
+end isPartial;
 
 protected function isParameter
 "function: isParameter

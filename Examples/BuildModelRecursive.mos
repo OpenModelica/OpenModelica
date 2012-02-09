@@ -1,0 +1,25 @@
+// Note: Run with +g=MetaModelica
+
+log:="BuildModelRecursive.log";
+loadModel(Modelica,{"3.1"});
+
+omc:=getInstallationDirectoryPath()+"/bin/omc";
+a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x)) and isModel(x) and (not isPartial(x)) in getClassNames(recursive=true)};
+isModel(Modelica.Blocks.Examples.PID_Controller);
+getErrorString();
+print("Numer of classes to build: " + String(size(a,1)));
+system("rm -f Modelica.*");
+min(writeFile(s + ".mos","loadModel(Modelica,{\"3.1\"});\nbuildModel("+s+");\ngetErrorString();") for s in a);
+getErrorString();
+min(0==system(omc + " " + s + ".mos") for s in a);
+getErrorString();
+
+echo(false);
+system("rm -f " + log);
+line:="================================================================================\n";
+str:="";
+str:=line+"Results (" + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded)\n" + line;
+estr:=getErrorString();
+writeFile(log,if estr<>"" then estr else str);getErrorString();
+writeFile(log,sum(s + ": " + boolString(OpenModelica.Scripting.regularFileExists(s)) + "\n" for s in a),append=true);getErrorString();
+print(readFile(log));

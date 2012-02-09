@@ -1465,6 +1465,12 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
         
+    case (cache,env,"regularFileExists",{Values.STRING(str)},st,msg)
+      equation
+        b = System.regularFileExists(str);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"readFile",{Values.STRING(str)},st,msg)
       equation
         str_1 = System.readFile(str);
@@ -1688,6 +1694,18 @@ algorithm
     case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         b = Interactive.isPackage(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"isPartial",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isPartial(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"isModel",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isModel(classpath, p);
       then
         (cache,Values.BOOL(b),st);
 
