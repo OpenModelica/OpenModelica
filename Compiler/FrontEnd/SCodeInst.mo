@@ -95,10 +95,15 @@ end Dimension;
 public uniontype Binding
   record UNBOUND end UNBOUND;
 
-  record BINDING
+  record UNTYPED_BINDING
+    DAE.Exp bindingExp;
+    Boolean isProcessing;
+  end UNTYPED_BINDING;
+
+  record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
-  end BINDING;
+  end TYPED_BINDING;
 end Binding;
 
 public uniontype Component
@@ -107,8 +112,7 @@ public uniontype Component
     SCode.Element element;
     DAE.Type baseType;
     array<Dimension> dimensions;
-    Option<DAE.Exp> binding;
-    Boolean isProcessing;
+    Binding binding;
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT
@@ -633,7 +637,7 @@ algorithm
       Item item;
       list<SCodeEnv.Redeclaration> redecls;
       Option<Absyn.Exp> binding;
-      Option<DAE.Exp> inst_binding;
+      Binding inst_binding;
       Prefix prefix;
       SCodeEnv.ExtendsTable exts;
       SCode.Mod mod;
@@ -665,7 +669,7 @@ algorithm
 
         // Create the component and add it to the program.
         path = prefixToPath(prefix);
-        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, inst_binding, false);
+        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, inst_binding);
         prog = addComponentToFlatProgram(comp, var, prog);
 
         //print("Type of " +& name +& ": " +& Types.printTypeStr(ty) +& "\n");
@@ -705,19 +709,19 @@ protected function instBinding
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
   input Prefix inPrefix;
-  output Option<DAE.Exp> outExp;
+  output Binding outExp;
 algorithm
   outExp := match(inExp, inEnv, inPrefix)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
 
-    case (NONE(), _, _) then NONE();
+    case (NONE(), _, _) then UNBOUND();
     case (SOME(aexp), _, _)
       equation
         dexp = instExp(aexp, inEnv, inPrefix);
       then
-        SOME(dexp);
+        UNTYPED_BINDING(dexp, false);
 
   end match;
 end instBinding;
@@ -1322,35 +1326,28 @@ protected function typeComponent
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
-  (outComponent, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+  (outComponent, outSymbolTable) := match(inComponent, inSymbolTable)
     local
       Absyn.Path name;
       DAE.Type ty;
-      Option<DAE.Exp> binding;
+      Binding binding;
       list<Dimension> dims;
-      Binding typed_binding;
       SymbolTable st;
       Component comp;
       SCode.Variability var;
 
-    case (UNTYPED_COMPONENT(name = name, element = SCode.COMPONENT(attributes =
-            SCode.ATTR(variability = var)), isProcessing = true), _)
-      equation
-        print("Loop involving component " +& Absyn.pathString(name) +& " found\n");
-      then
-        fail();
-
-    case (UNTYPED_COMPONENT(name = name, 
-            element = SCode.COMPONENT(attributes = SCode.ATTR(variability = var)), 
-            baseType = ty, binding = binding, isProcessing = false), st)
+    case (UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding), st)
       equation
         (ty, st) = typeComponentDims(inComponent, st);
-        st = markComponentAsProcessing(inComponent, st);
-        (typed_binding, st) = typeBinding(binding, st);
-        comp = TYPED_COMPONENT(name, ty, var, typed_binding);
-        st = BaseHashTable.add((name, comp), st);
+        (comp, st ) = typeComponentBinding(inComponent, SOME(ty), st);
+        //st = markComponentBindingAsProcessing(inComponent, st);
+        //(binding, st) = typeBinding(binding, st);
+        //comp = TYPED_COMPONENT(name, ty, var, binding);
+        //st = BaseHashTable.add((name, comp), st);
       then
         (comp, st);
+
+    case (TYPED_COMPONENT(name = _), st) then (inComponent, st);
 
     case (CONDITIONAL_COMPONENT(name = name), _)
       equation
@@ -1358,15 +1355,7 @@ algorithm
       then
         fail();
 
-    case (TYPED_COMPONENT(name = _), st) then (inComponent, st);
-
-    case (UNTYPED_COMPONENT(name = name), _)
-      equation
-        print("Failed on component " +& Absyn.pathString(name) +& "\n");
-      then
-        fail();
-    //else (inComponent, inSymbolTable);
-  end matchcontinue;
+  end match;
 end typeComponent;
 
 protected function typeComponentDims
@@ -1381,6 +1370,7 @@ algorithm
       SymbolTable st;
       array<Dimension> dims;
       list<DAE.Dimension> typed_dims;
+      Absyn.Path name;
 
     case (UNTYPED_COMPONENT(baseType = ty, dimensions = dims), st)
       equation
@@ -1388,9 +1378,9 @@ algorithm
       then
         (ty, st);
 
-    case (UNTYPED_COMPONENT(baseType = ty, dimensions = dims), st)
+    case (UNTYPED_COMPONENT(name = name, baseType = ty, dimensions = dims), st)
       equation
-        (typed_dims, st) = typeDimensions(dims, st);
+        (typed_dims, st) = typeDimensions(dims, name, st);
       then
         (DAE.T_ARRAY(ty, typed_dims, DAE.emptyTypeSource), st);
         
@@ -1413,6 +1403,7 @@ algorithm
       SymbolTable st;
       array<Dimension> dims_arr;
       Dimension dim;
+      Absyn.Path name;
 
     case (TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, st)
       equation
@@ -1420,10 +1411,10 @@ algorithm
       then
         (typed_dim, st);
 
-    case (UNTYPED_COMPONENT(dimensions = dims_arr), _, st)
+    case (UNTYPED_COMPONENT(name = name, dimensions = dims_arr), _, st)
       equation
         dim = arrayGet(dims_arr, inIndex);
-        (typed_dim, st) = typeDimension(dim, st, dims_arr, inIndex);
+        (typed_dim, st) = typeDimension(dim, name, st, dims_arr, inIndex);
       then
         (typed_dim, st);
 
@@ -1432,6 +1423,7 @@ end typeComponentDim;
         
 protected function typeDimensions
   input array<Dimension> inDimensions;
+  input Absyn.Path inComponentName;
   input SymbolTable inSymbolTable;
   output list<DAE.Dimension> outDimensions;
   output SymbolTable outSymbolTable;
@@ -1440,11 +1432,12 @@ protected
 algorithm
   len := arrayLength(inDimensions);
   (outDimensions, outSymbolTable) := 
-    typeDimensions2(inDimensions, inSymbolTable, 1, len, {});
+  typeDimensions2(inDimensions, inComponentName, inSymbolTable, 1, len, {});
 end typeDimensions;
 
 protected function typeDimensions2
   input array<Dimension> inDimensions;
+  input Absyn.Path inComponentName;
   input SymbolTable inSymbolTable;
   input Integer inIndex;
   input Integer inLength;
@@ -1453,14 +1446,14 @@ protected function typeDimensions2
   output SymbolTable outSymbolTable;
 algorithm
   (outDimensions, outSymbolTable) :=
-  matchcontinue(inDimensions, inSymbolTable, inIndex, inLength, inAccDims)
+  matchcontinue(inDimensions, inComponentName, inSymbolTable, inIndex, inLength, inAccDims)
     local
       Dimension dim;
       DAE.Dimension typed_dim;
       SymbolTable st;
       list<DAE.Dimension> dims;
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         true = inIndex > inLength;
       then
@@ -1469,9 +1462,10 @@ algorithm
     else
       equation
         dim = arrayGet(inDimensions, inIndex);
-        (typed_dim, st) = typeDimension(dim, inSymbolTable, inDimensions, inIndex);
-        (dims, st) = typeDimensions2(inDimensions, st, inIndex + 1, inLength,
-            typed_dim :: inAccDims);
+        (typed_dim, st) = 
+          typeDimension(dim, inComponentName, inSymbolTable, inDimensions, inIndex);
+        (dims, st) = typeDimensions2(inDimensions, inComponentName, st, inIndex + 1,
+          inLength, typed_dim :: inAccDims);
       then
         (dims, st);
 
@@ -1480,6 +1474,7 @@ end typeDimensions2;
 
 protected function typeDimension
   input Dimension inDimension;
+  input Absyn.Path inComponentName;
   input SymbolTable inSymbolTable;
   input array<Dimension> inDimensions;
   input Integer inIndex;
@@ -1487,21 +1482,22 @@ protected function typeDimension
   output SymbolTable outSymbolTable;
 algorithm
   (outDimension, outSymbolTable) := 
-  match(inDimension, inSymbolTable, inDimensions, inIndex)
+  match(inDimension, inComponentName, inSymbolTable, inDimensions, inIndex)
     local
       SymbolTable st;
       DAE.Dimension dim;
       DAE.Exp dim_exp;
       Integer dim_int;
       Dimension typed_dim;
+      Component comp;
 
-    case (UNTYPED_DIMENSION(isProcessing = true), _, _, _)
+    case (UNTYPED_DIMENSION(isProcessing = true), _, _, _, _)
       equation
         print("Found dimension loop\n");
       then
         fail();
 
-    case (UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), st, _, _)
+    case (UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, UNTYPED_DIMENSION(dim, true));
         (dim_exp, _, st) = typeExp(dim_exp, st);
@@ -1511,13 +1507,24 @@ algorithm
       then
         (dim, st);
 
-    case (UNTYPED_DIMENSION(dimension = dim), st, _, _)
+    case (UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, st, _, _)
+      equation
+        _ = arrayUpdate(inDimensions, inIndex, UNTYPED_DIMENSION(dim, true));
+        comp = BaseHashTable.get(inComponentName, st);
+        (comp, st) = typeComponentBinding(comp, NONE(), st);
+        dim = getComponentBindingDimension(comp, inIndex);
+        typed_dim = TYPED_DIMENSION(dim);
+        _ = arrayUpdate(inDimensions, inIndex, typed_dim);
+      then
+        (dim, st);
+
+    case (UNTYPED_DIMENSION(dimension = dim), _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, TYPED_DIMENSION(dim));
       then 
         (dim, st);
 
-    case (TYPED_DIMENSION(dimension = dim), st, _, _) then (dim, st);
+    case (TYPED_DIMENSION(dimension = dim), _, st, _, _) then (dim, st);
 
     else
       equation
@@ -1528,7 +1535,120 @@ algorithm
   end match;
 end typeDimension;
 
-protected function markComponentAsProcessing
+protected function getComponentBinding
+  input Component inComponent;
+  output Binding outBinding;
+algorithm
+  outBinding := match(inComponent)
+    local
+      Binding binding;
+
+    case UNTYPED_COMPONENT(binding = binding) then binding;
+    case TYPED_COMPONENT(binding = binding) then binding;
+
+  end match;
+end getComponentBinding;
+
+protected function getComponentBindingDimension
+  input Component inComponent;
+  input Integer inDimension;
+  output DAE.Dimension outDimension;
+protected
+  Binding binding;
+algorithm
+  binding := getComponentBinding(inComponent);
+  outDimension := getBindingDimension(binding, inDimension);
+end getComponentBindingDimension;
+
+protected function getBindingDimension
+  input Binding inBinding;
+  input Integer inDimension;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := match(inBinding, inDimension)
+    local
+      DAE.Exp exp;
+
+    case (TYPED_BINDING(bindingExp = exp), _)
+      then getExpDimension(exp, inDimension);
+
+  end match;
+end getBindingDimension;
+  
+protected function getExpDimension
+  input DAE.Exp inExp;
+  input Integer inDimension;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := match(inExp, inDimension)
+    local
+      DAE.Type ty;
+      list<DAE.Dimension> dims;
+      DAE.Dimension dim;
+
+    case (DAE.ARRAY(ty = ty), _)
+      equation
+        dims = Types.getDimensions(ty);
+        dim = listGet(dims, inDimension);
+      then
+        dim;
+
+  end match;
+end getExpDimension;
+    
+protected function typeComponentBinding
+  input Component inComponent;
+  input Option<DAE.Type> inType;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outComponent, outSymbolTable) := match(inComponent, inType, inSymbolTable)
+    local
+      Absyn.Path name;
+      Binding binding;
+      SymbolTable st;
+      Component comp;
+
+    case (UNTYPED_COMPONENT(name = name, binding = binding), _, st)
+      equation
+        st = markComponentBindingAsProcessing(inComponent, st);
+        (binding, st) = typeBinding(binding, st);
+        comp = updateComponentBinding(inComponent, binding, inType);
+        st = BaseHashTable.add((name, comp), st);
+      then
+        (comp, st);
+
+    else (inComponent, inSymbolTable);
+
+  end match;
+end typeComponentBinding;
+
+protected function updateComponentBinding
+  input Component inComponent;
+  input Binding inBinding;
+  input Option<DAE.Type> inType;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inBinding, inType)
+    local
+      Absyn.Path name;
+      DAE.Type ty;
+      SCode.Variability var;
+      SCode.Element el;
+      array<Dimension> dims;
+     
+    case (UNTYPED_COMPONENT(name = name, element = SCode.COMPONENT(attributes =
+        SCode.ATTR(variability = var))), _, SOME(ty))
+      then TYPED_COMPONENT(name, ty, var, inBinding);
+
+    case (UNTYPED_COMPONENT(name, el, ty, dims, _), _, NONE())
+      then UNTYPED_COMPONENT(name, el, ty, dims, inBinding);
+
+  end match;
+end updateComponentBinding;
+
+protected function markComponentBindingAsProcessing
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
@@ -1539,9 +1659,10 @@ algorithm
       SCode.Element el;
       DAE.Type ty;
       array<Dimension> dims;
-      Option<DAE.Exp> binding;
+      Binding binding;
       Component comp;
       SCode.Variability var;
+      DAE.Exp binding_exp;
 
     case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
             SCode.ATTR(variability = var))), _)
@@ -1550,11 +1671,15 @@ algorithm
       then
         inSymbolTable;
 
-    case (UNTYPED_COMPONENT(name, el, ty, dims, binding, _), _)
+    case (UNTYPED_COMPONENT(name, el, ty, dims, 
+        UNTYPED_BINDING(bindingExp = binding_exp)), _)
       equation
-        comp = UNTYPED_COMPONENT(name, el, ty, dims, binding, true);
+        comp = UNTYPED_COMPONENT(name, el, ty, dims, 
+          UNTYPED_BINDING(binding_exp, true));
       then
         BaseHashTable.add((name, comp), inSymbolTable);
+
+    case (UNTYPED_COMPONENT(binding = _), _) then inSymbolTable;
 
     else
       equation
@@ -1563,10 +1688,10 @@ algorithm
         fail();
 
   end matchcontinue;
-end markComponentAsProcessing;
+end markComponentBindingAsProcessing;
       
 protected function typeBinding
-  input Option<DAE.Exp> inBinding;
+  input Binding inBinding;
   input SymbolTable inSymbolTable;
   output Binding outBinding;
   output SymbolTable outSymbolTable;
@@ -1574,19 +1699,54 @@ algorithm
   (outBinding, outSymbolTable) := match(inBinding, inSymbolTable)
     local
       DAE.Exp binding;
-      SymbolTable symtab;
+      SymbolTable st;
       DAE.Type ty;
 
-    case (SOME(binding), symtab)
+    case (UNTYPED_BINDING(isProcessing = true), st)
       equation
-        (binding, ty, symtab) = typeExp(binding, symtab);
+        print("Found loop in binding\n");
       then
-        (BINDING(binding, ty), symtab);
+        fail();
+
+    case (UNTYPED_BINDING(bindingExp = binding), st)
+      equation
+        (binding, ty, st) = typeExp(binding, st);
+      then
+        (TYPED_BINDING(binding, ty), st);
+
+    case (TYPED_BINDING(bindingExp = _), st)
+      then (inBinding, st);
 
     else (UNBOUND(), inSymbolTable);
 
   end match;
 end typeBinding;
+
+protected function typeExpList
+  input list<DAE.Exp> inExpList;
+  input SymbolTable inSymbolTable;
+  output list<DAE.Exp> outExpList;
+  output DAE.Type outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outExpList, outType, outSymbolTable) := match(inExpList, inSymbolTable)
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> rest_expl;
+      SymbolTable st;
+      DAE.Type ty;
+
+    case ({}, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
+
+    case (exp :: rest_expl, st)
+      equation
+        (exp, ty, st) = typeExp(exp, st);
+        (rest_expl, _, st) = typeExpList(rest_expl, st);
+      then
+        (exp :: rest_expl, ty, st);
+
+  end match;
+end typeExpList;
 
 protected function typeExp
   input DAE.Exp inExp;
@@ -1605,6 +1765,7 @@ algorithm
       Component comp;
       Integer dim_int;
       DAE.Dimension dim;
+      list<DAE.Exp> expl;
 
     case (DAE.ICONST(integer = _), st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
     case (DAE.RCONST(real = _), st) then (inExp, DAE.T_REAL_DEFAULT, st);
@@ -1616,6 +1777,14 @@ algorithm
       then
         (e1, ty, st);
         
+    case (DAE.ARRAY(array = expl), st)
+      equation
+        (expl, ty, st) = typeExpList(expl, st);
+        dim_int = listLength(expl);
+        ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
+      then
+        (DAE.ARRAY(ty, true, expl), ty, st);
+
     case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), st)
       equation
         (e1, ty, st) = typeExp(e1, st);
@@ -1673,11 +1842,15 @@ algorithm
       Component comp;
       DAE.Type ty;
       DAE.Exp exp;
+      SCode.Variability var;
+      Boolean param_or_const;
 
     case (_, st)
       equation
         comp = lookupCrefInTable(inCref, st);
-        (exp, ty, st) = typeCref2(inCref, comp, st);
+        var = getComponentVariability(comp);
+        param_or_const = SCode.isParameterOrConst(var);
+        (exp, ty, st) = typeCref2(inCref, comp, param_or_const, st);
       then
         (exp, ty, st);
 
@@ -1686,22 +1859,39 @@ algorithm
         print("Failed to type cref " +&
             ComponentReference.printComponentRefStr(inCref) +& "\n");
       then
-        (DAE.ICONST(0), DAE.T_UNKNOWN_DEFAULT, inSymbolTable);
-        //fail();
+        fail();
 
   end matchcontinue;
 end typeCref;
         
+protected function getComponentVariability
+  input Component inComponent;
+  output SCode.Variability outVariability;
+algorithm
+  outVariability := match(inComponent)
+    local
+      SCode.Variability var;
+
+    case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
+        SCode.ATTR(variability = var)))) 
+      then var;
+
+    case (TYPED_COMPONENT(variability = var)) then var;
+
+  end match;
+end getComponentVariability;
+
 protected function typeCref2
   input DAE.ComponentRef inCref;
   input Component inComponent;
+  input Boolean inIsParamOrConst;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  matchcontinue(inCref, inComponent, inSymbolTable)
+  match(inCref, inComponent, inIsParamOrConst, inSymbolTable)
     local
       DAE.Type ty;
       SCode.Variability var;
@@ -1709,23 +1899,18 @@ algorithm
       SymbolTable st;
       DAE.Exp exp;
 
-    case (_, TYPED_COMPONENT(variability = var, ty = ty, binding = binding), st)
+    case (_, TYPED_COMPONENT(variability = var, ty = ty, binding = binding), true, st)
       equation
-        true = SCode.isParameterOrConst(var);
         exp = getBindingExp(binding);
       then
         (exp, ty, st);
 
-    case (_, TYPED_COMPONENT(variability = var, ty = ty), st)
-      equation
-        false = SCode.isParameterOrConst(var);
-      then
-        (DAE.CREF(inCref, ty), ty, st);
+    case (_, TYPED_COMPONENT(variability = var, ty = ty), false, st)
+      then (DAE.CREF(inCref, ty), ty, st);
 
     case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-            SCode.ATTR(variability = var))), st)
+        SCode.ATTR(variability = var))), true, st)
       equation
-        true = SCode.isParameterOrConst(var);
         (TYPED_COMPONENT(ty = ty, binding = binding), st) =
           typeComponent(inComponent, st);
         exp = getBindingExp(binding);
@@ -1733,14 +1918,14 @@ algorithm
         (exp, ty, st);
 
     case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-            SCode.ATTR(variability = var))), st)
+        SCode.ATTR(variability = var))), false, st)
       equation
         false = SCode.isParameterOrConst(var);
         (ty, st) = typeComponentDims(inComponent, st);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-  end matchcontinue;
+  end match;
 end typeCref2;
 
 protected function getBindingExp
@@ -1751,7 +1936,7 @@ algorithm
     local
       DAE.Exp exp;
 
-    case BINDING(bindingExp = exp) then exp;
+    case TYPED_BINDING(bindingExp = exp) then exp;
     else DAE.ICONST(0);
   end match;
 end getBindingExp;
@@ -1936,13 +2121,13 @@ algorithm
       DAE.Exp binding;
       DAE.Type ty, ty2;
 
-    case UNTYPED_COMPONENT(name = path, binding = SOME(binding))
+    case UNTYPED_COMPONENT(name = path, binding = UNTYPED_BINDING(bindingExp = binding))
       then Absyn.pathString(path) +& " = " +& ExpressionDump.printExpStr(binding);
 
     case UNTYPED_COMPONENT(name = path) 
       then Absyn.pathString(path);
       
-    case TYPED_COMPONENT(name = path, ty = ty, binding = BINDING(binding, ty2))
+    case TYPED_COMPONENT(name = path, ty = ty, binding = TYPED_BINDING(binding, ty2))
       then Types.unparseType(ty) +& " " +& Absyn.pathString(path) +& " = " +&
         Types.unparseType(ty2) +& " " +& ExpressionDump.printExpStr(binding);
 
