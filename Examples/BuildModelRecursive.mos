@@ -3,6 +3,7 @@
 log:="BuildModelRecursive.log";
 loadModel(Modelica,{"3.1"});
 
+system("ln -s '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x)) and isModel(x) and (not isPartial(x)) in getClassNames(recursive=true)};
 isModel(Modelica.Blocks.Examples.PID_Controller);
