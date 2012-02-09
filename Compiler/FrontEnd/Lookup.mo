@@ -372,10 +372,38 @@ public function lookupClass "Tries to find a specified class in an environment"
   output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
-  //print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& "\n"); 
-  (outCache,outClass,outEnv,_) := lookupClass2(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
-  //print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
+  // print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n"); 
+  (outCache,outClass,outEnv,_) := lookupClass1(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+  // print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
 end lookupClass;
+
+protected function lookupClass1 "help function to lookupClass, does all the work."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath "The path of the class to lookup";
+  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in previous frames of the environment";
+  input Boolean msg "Print error messages";
+  output Env.Cache outCache;
+  output SCode.Element outClass;
+  output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
+  output list<Env.Frame> outPrevFrames;
+algorithm
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
+    local
+      String id,scope;
+    case (inCache,inEnv,inPath,inPrevFrames,inState,msg)
+      equation
+        (outCache,outClass,outEnv,outPrevFrames) = lookupClass2(inCache,inEnv,inPath,inPrevFrames,inState,false);
+      then (outCache,outClass,outEnv,outPrevFrames);
+    case (inCache,inEnv,inPath,inPrevFrames,inState,true)
+      equation
+        id = Absyn.pathString(inPath);
+        scope = Env.printEnvPathStr(inEnv);
+        Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
+      then fail();
+  end matchcontinue;
+end lookupClass1;
 
 protected function lookupClass2 "help function to lookupClass, does all the work."
   input Env.Cache inCache;

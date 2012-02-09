@@ -15434,7 +15434,7 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
           b,access,env)
       equation
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, true);
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, false);
         SOME(envpath) = Env.getEnvPath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));

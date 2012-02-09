@@ -1229,7 +1229,7 @@ algorithm
    // partial functions are not complete!
    case (cache, env, fpath)
      equation
-       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, true); 
+       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, false); 
      then 
        false;
 
@@ -1247,7 +1247,7 @@ algorithm
        (_, 
         c as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.NOT_REDECLARE(), replaceablePrefix = SCode.REPLACEABLE(_))), 
        _) = 
-       Lookup.lookupClass(cache, env, fpath, true);
+       Lookup.lookupClass(cache, env, fpath, false);
      then 
        false;
    
@@ -1325,7 +1325,7 @@ algorithm
           partialPrefix = SCode.NOT_PARTIAL(), 
           restriction = res,
           classDef = cdef),
-         env) = Lookup.lookupClass(cache, env, funcpath, true);
+         env) = Lookup.lookupClass(cache, env, funcpath, false);
         isCevaluableFunction(sc);
         (cache, env, _) = Inst.implicitFunctionInstantiation(
           cache,

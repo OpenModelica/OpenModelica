@@ -9398,7 +9398,7 @@ algorithm
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
+        (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, false);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,mods_2,pre,cl,{},impl);
         type_mods = Mod.merge(mods_2, type_mods, env, pre);
       then
@@ -12280,7 +12280,7 @@ algorithm
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), 
                                                             modifications = mod1),info = info))  
       equation 
-        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache, env, cn, false /* Makes MultiBody gravityacceleration hacks shit itself */);
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, info);
         (cache,_,ih,_,dae,_,ty,_,_,_) =
           instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
