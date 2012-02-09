@@ -585,12 +585,14 @@ void PlotWindow::plotParametric()
         var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
         if(!var)
             throw NoVariableException(QString("Variable doesn't exist : ").append(xVariable).toStdString().c_str());
-        double *xVals = omc_matlab4_read_vals(&reader,var->index);
+        double *xVals = (double*) malloc(reader.nrows*sizeof(double));
+        memcpy(xVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
         //Fill variable y with data
         var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
         if(!var)
             throw NoVariableException(QString("Variable doesn't exist : ").append(yVariable).toStdString().c_str());
-        double *yVals = omc_matlab4_read_vals(&reader,var->index);
+        double *yVals = (double*) malloc(reader.nrows*sizeof(double));
+        memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
         pPlotCurve->setData(xVals, yVals, reader.nrows);
         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         pPlotCurve->attach(mpPlot);
