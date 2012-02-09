@@ -31,7 +31,7 @@
 #include "ModelicaUtilities.h"
 
 
-static const char* ModelicaStrings_substring(const char* string, int startIndex, int endIndex) {
+const char* ModelicaStrings_substring(const char* string, int startIndex, int endIndex) {
 
   /* Return string1(startIndex:endIndex) if endIndex >= startIndex,
      or return string1(startIndex:startIndex), if endIndex = 0.
@@ -68,14 +68,14 @@ static const char* ModelicaStrings_substring(const char* string, int startIndex,
 };
 
 
-static int ModelicaStrings_length(const char* string)
+int ModelicaStrings_length(const char* string)
 /* Returns the number of characters "string" */
 {
      return strlen(string);
 }
 
 
-static int ModelicaStrings_compare(const char* string1, const char* string2, int caseSensitive)
+int ModelicaStrings_compare(const char* string1, const char* string2, int caseSensitive)
 /* compares two strings, optionally ignoring case */
 {
     int result;
@@ -104,7 +104,7 @@ static int ModelicaStrings_compare(const char* string1, const char* string2, int
 
 #define MAX_TOKEN_SIZE 100
 
-static int ModelicaStrings_skipWhiteSpace(const char* string, int i)
+int ModelicaStrings_skipWhiteSpace(const char* string, int i)
 /* Return index in string after skipping ws, or position of terminating nul. */
 {
     while (string[i-1] != '\0' && isspace(string[i-1]))
@@ -115,13 +115,13 @@ static int ModelicaStrings_skipWhiteSpace(const char* string, int i)
 
 /* ----------------- utility functions used in scanXXX functions ----------- */
 
-static int InSet(const char* string, int i, const char* separators)
+int InSet(const char* string, int i, const char* separators)
 /* Returns true if string[i] is one of the characters in separators. */
 {
     return strchr(separators, string[i-1]) != NULL;
 }
 
-static int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* separators)
+int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* separators)
 /* Return index in string of first character which is ws or character in separators,
    or position of terminating nul. */
 {
@@ -130,7 +130,7 @@ static int SkipNonWhiteSpaceSeparator(const char* string, int i, const char* sep
     return i;
 }
 
-static int get_token(const char* string, int startIndex, const char* separators,
+int get_token(const char* string, int startIndex, const char* separators,
                      int* output_index, int* token_start, int* token_length)
 {
     int past_token;
@@ -159,7 +159,7 @@ static int get_token(const char* string, int startIndex, const char* separators,
     return 1; /* ok */
 }
 
-static int MatchUnsignedInteger(const char* string, int start)
+int MatchUnsignedInteger(const char* string, int start)
 /* Starts matching character which make an unsigned integer. The matching
    begins at the start index (first char has index 1). Returns the number
    of characters that could be matched, or zero if the first character
@@ -175,7 +175,7 @@ static int MatchUnsignedInteger(const char* string, int start)
 /* --------------- end of utility functions used in scanXXX functions ----------- */
 
 
-static void ModelicaStrings_scanIdentifier(const char* string, int startIndex, int* nextIndex, const char** identifier)
+void ModelicaStrings_scanIdentifier(const char* string, int startIndex, int* nextIndex, const char** identifier)
 {
     int token_length=0;
 
@@ -209,7 +209,7 @@ static void ModelicaStrings_scanIdentifier(const char* string, int startIndex, i
     return;
 }
 
-static void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsignedNumber,
+void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsignedNumber,
                                         int* nextIndex, int* integerNumber)
 {
     int number_length=0;
@@ -258,7 +258,7 @@ static void ModelicaStrings_scanInteger(const char* string, int startIndex, int 
      return;
 }
 
-static void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNumber,
+void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNumber,
                                      int* nextIndex, double* number)
 {
     /*
@@ -343,7 +343,7 @@ error:
 }
 
 
-static void ModelicaStrings_scanString(const char* string, int startIndex,
+void ModelicaStrings_scanString(const char* string, int startIndex,
                                        int* nextIndex, const char** result)
 {
     int i, token_start, past_token, token_length;
