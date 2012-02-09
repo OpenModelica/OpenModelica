@@ -80,7 +80,7 @@ void PlotWindow::setUpWidget()
 void PlotWindow::initializePlot(QStringList arguments)
 {
     // open the file
-    openFile(QString(arguments[1]));
+    initializeFile(QString(arguments[1]));
     //Set up arguments
     setTitle(QString(arguments[2]));
     if(QString(arguments[3]) == "true")
@@ -134,7 +134,6 @@ void PlotWindow::initializePlot(QStringList arguments)
         setPlotType(PlotWindow::PLOTPARAMETRIC);
         plotParametric();
     }
-    closeFile();
 }
 
 void PlotWindow::setVariablesList(QStringList variables)
@@ -152,23 +151,13 @@ PlotWindow::PlotType PlotWindow::getPlotType()
     return mPlotType;
 }
 
-void PlotWindow::openFile(QString file)
-{    
-    //Open file to a textstream
-    // close the file if it is already opened
-    if (mFile.isOpen())
-        mFile.close();
-
+void PlotWindow::initializeFile(QString file)
+{
     mFile.setFileName(file);
     if(!mFile.exists())
         throw NoFileException(QString("File not found : ").append(file).toStdString().c_str());
-    mFile.open(QIODevice::ReadOnly);
-    mpTextStream = new QTextStream(&mFile);
-}
-
-void PlotWindow::closeFile()
-{
-    mFile.close();
+//    mFile.open(QIODevice::ReadOnly);
+//    mpTextStream = new QTextStream(&mFile);
 }
 
 void PlotWindow::setupToolbar()
@@ -242,6 +231,9 @@ void PlotWindow::plot()
     //PLOT PLT
     if (mFile.fileName().endsWith("plt"))
     {
+        // open the file
+        mFile.open(QIODevice::ReadOnly);
+        mpTextStream = new QTextStream(&mFile);
         // read the interval size from the file
         int intervalSize;
         while (!mpTextStream->atEnd())
@@ -293,10 +285,15 @@ void PlotWindow::plot()
         // if plottype is PLOT then check which requested variables are not found in the file
         if (getPlotType() == PlotWindow::PLOT)
             checkForErrors(mVariablesList, variablesPlotted);
+        // close the file
+        mFile.close();
     }
     //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
+        // open the file
+        mFile.open(QIODevice::ReadOnly);
+        mpTextStream = new QTextStream(&mFile);
         currentLine = mpTextStream->readLine();
         currentLine.remove(QChar('"'));
         QStringList allVariablesInFile = currentLine.split(",");
@@ -351,6 +348,8 @@ void PlotWindow::plot()
         // if plottype is PLOT then check which requested variables are not found in the file
         if (getPlotType() == PlotWindow::PLOT)
             checkForErrors(mVariablesList, variablesPlotted);
+        // close the file
+        mFile.close();
     }
     //PLOT MAT
     else if(mFile.fileName().endsWith("mat"))
@@ -369,7 +368,8 @@ void PlotWindow::plot()
         double stopTime =  omc_matlab4_stopTime(&reader);
         if (reader.nvar < 1)
           throw NoVariableException("Variable doesnt exist: time");
-        double *timeVals = omc_matlab4_read_vals(&reader,1);
+        double *timeVals = (double*) malloc(reader.nrows*sizeof(double));
+        memcpy(timeVals, omc_matlab4_read_vals(&reader,1), reader.nrows*sizeof(double));
 
         // read in all values
         int counter = 0;
@@ -389,7 +389,8 @@ void PlotWindow::plot()
                 // if variable is not a parameter then
                 if (!var->isParam)
                 {
-                    double *vals = omc_matlab4_read_vals(&reader, var->index);
+                    double *vals = (double*) malloc(reader.nrows*sizeof(double));
+                    memcpy(vals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
                     // set plot curve data and attach it to plot
                     pPlotCurve->setData(timeVals, vals, reader.nrows);
                     pPlotCurve->attach(mpPlot);
@@ -416,6 +417,8 @@ void PlotWindow::plot()
         // if plottype is PLOT then check which requested variables are not found in the file
         if (getPlotType() == PlotWindow::PLOT)
             checkForErrors(mVariablesList, variablesPlotted);
+        // close the file
+        omc_free_matlab4_reader(&reader);
     }
 }
 
@@ -435,6 +438,9 @@ void PlotWindow::plotParametric()
     //PLOT PLT
     if (mFile.fileName().endsWith("plt"))
     {
+        // open the file
+        mFile.open(QIODevice::ReadOnly);
+        mpTextStream = new QTextStream(&mFile);
         // read the interval size from the file
         int intervalSize;
         while (!mpTextStream->atEnd())
@@ -498,10 +504,15 @@ void PlotWindow::plotParametric()
         }
         // check which requested variables are not found in the file
         checkForErrors(mVariablesList, variablesPlotted);
+        // close the file
+        mFile.close();
     }
     //PLOT CSV
     else if (mFile.fileName().endsWith("csv"))
     {
+        // open the file
+        mFile.open(QIODevice::ReadOnly);
+        mpTextStream = new QTextStream(&mFile);
         currentLine = mpTextStream->readLine();
         currentLine.remove(QChar('"'));
 
@@ -550,6 +561,8 @@ void PlotWindow::plotParametric()
         mpPlot->replot();
         // check which requested variables are not found in the file
         checkForErrors(mVariablesList, variablesPlotted);
+        // close the file
+        mFile.close();
     }
     //PLOT MAT
     else if(mFile.fileName().endsWith("mat"))
@@ -582,6 +595,7 @@ void PlotWindow::plotParametric()
         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         pPlotCurve->attach(mpPlot);
         mpPlot->replot();
+        omc_free_matlab4_reader(&reader);
     }
 }
 
