@@ -6198,7 +6198,9 @@ algorithm
         i2 = BackendVariable.numVariables(vars);
         s1 = intString(i1);
         s2 = intString(i2);
-        Error.assertionOrAddSourceMessage(i1 == i2, Error.OVERDET_EQN_SYSTEM, {s1,s2}, Absyn.dummyInfo);
+        Error.assertionOrAddSourceMessage(i1 == i2,
+          Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
+          {s1,s2}, Absyn.dummyInfo);
         
         partitionEquations(BackendDAEUtil.equationSize(arr),arr,ixs,ea);
         partitionVars(BackendDAEUtil.equationSize(arr),arr,vars,ixs,mT,va);
