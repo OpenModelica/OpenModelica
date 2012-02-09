@@ -345,12 +345,11 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
             // check the item checkstate
             if (pItem->checkState(column) == Qt::Checked)
             {
-                pPlotWindow->openFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
+                pPlotWindow->initializeFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
                 pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-                pPlotWindow->closeFile();
             }
             // if user unchecks the variable then remove it from the plot
             else if (pItem->checkState(column) == Qt::Unchecked)
@@ -398,7 +397,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             return;
                         }
                         mPlotParametricVariables.last().append(QStringList(pItem->getPlotVariable()));
-                        pPlotWindow->openFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
+                        pPlotWindow->initializeFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
                         pPlotWindow->setVariablesList(mPlotParametricVariables.last());
                         pPlotWindow->plotParametric();
                         if (mPlotParametricVariables.size() > 1)
@@ -408,7 +407,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         }
                         pPlotWindow->fitInView();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-                        pPlotWindow->closeFile();
                     }
                     else
                     {

@@ -175,6 +175,7 @@ public:
     bool simulate(QString modelName, QString simualtionParameters);
     bool buildModel(QString modelName, QString simualtionParameters);
     QList<QString> readSimulationResultVars(QString fileName);
+    bool closeSimulationResultFile();
     //bool plot(QString modelName, QString plotVariables);
     // modified plot API call
     bool plot(QString plotVariables, QString fileName);

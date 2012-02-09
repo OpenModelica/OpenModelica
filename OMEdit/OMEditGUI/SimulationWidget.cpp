@@ -414,6 +414,8 @@ void SimulationWidget::simulateModel(QString simulationParameters)
             OMCProxy *pOMCProxy = mpParentMainWindow->mpOMCProxy;
             QList<QString> list;
             list = pOMCProxy->readSimulationResultVars(QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
+            // close the simulation result file.
+            pOMCProxy->closeSimulationResultFile();
             emit showPlottingView();
             pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()),list);
             mpParentMainWindow->plotdock->show();

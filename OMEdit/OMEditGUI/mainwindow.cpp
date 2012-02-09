@@ -1053,6 +1053,7 @@ void MainWindow::importModelfromOMNotebook()
         }
         mpProgressBar->setValue(value++);
     }
+    file.close();
     // hide the progressbar and clear the message in status bar
     mpStatusBar->clearMessage();
     hideProgressBar();

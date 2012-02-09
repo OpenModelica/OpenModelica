@@ -1754,10 +1754,22 @@ bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
 QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
 {
     sendCommand("readSimulationResultVars(\"" + fileName + "\")");
-
     QList<QString> variablesList = StringHandler::getSimulationResultVars(getResult());
     qSort(variablesList.begin(), variablesList.end());
     return variablesList;
+}
+
+//! Closes the current simulation result file.
+//! @param fileName the result file name
+//! @return QList<QString> the list of variables.
+bool OMCProxy::closeSimulationResultFile()
+{
+    #ifdef Q_OS_WIN
+    sendCommand("closeSimulationResultFile()");
+    return StringHandler::unparseBool(getResult());
+    #else
+    return true;
+    #endif
 }
 
 //! Plot the variables
