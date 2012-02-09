@@ -8,7 +8,7 @@ omc:=getInstallationDirectoryPath()+"/bin/omc";
 a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x)) and isModel(x) and (not isPartial(x)) in getClassNames(recursive=true)};
 isModel(Modelica.Blocks.Examples.PID_Controller);
 getErrorString();
-print("Numer of classes to build: " + String(size(a,1)));
+print("Number of classes to build: " + String(size(a,1)));
 system("rm -f Modelica.* " + log);
 min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
