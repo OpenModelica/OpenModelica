@@ -1,6 +1,4 @@
-/*
- * RCS: $Id$
- */
+/* RCS: $Id$ */
 
 ---------------------------------------------------------------------------
          How to build the OpenModelica release on Windows using MSVC
