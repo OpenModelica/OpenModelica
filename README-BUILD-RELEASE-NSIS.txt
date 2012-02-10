@@ -61,16 +61,16 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
 05. Download and install NSIS 2.46 from http://nsis.sourceforge.net/Main_Page
 
 06. Open the file \trunk\Compiler\OpenModelicaSetup\OpenModelciaSetup.nsi
-	Change the version number everywhere.
-	Save the changes.
-	Close the file.
+	    Change the version number everywhere.
+	    Save the changes.
+	    Close the file.
 
 07. Right click \trunk\Compiler\OpenModelicaSetup\OpenModelciaSetup.nsi and choose Compile NSIS Script.
-	A dialog will show up showing the compilation details.
+	    A dialog will show up showing the compilation details.
 
 08. You get a OpenModelica.exe into \trunk\Compiler\OpenModelicaSetup
-    Copy it to a release folder with name:
-    OpenModelica-revision-NUMBER.exe
+      Copy it to a release folder with name:
+      OpenModelica-revision-NUMBER.exe
 
 09. Generate files in a release folder:
     See an example here:
