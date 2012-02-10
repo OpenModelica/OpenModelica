@@ -2,8 +2,10 @@
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
-loadModel(Modelica,{"3.1"});
+MSLVersion:="3.1";
+loadModel(Modelica,{MSLVersion});
 
+/*
 deleteClass(Modelica.Blocks);
 deleteClass(Modelica.Electrical);
 deleteClass(Modelica.Fluid);
@@ -12,9 +14,10 @@ deleteClass(Modelica.Mechanics);
 deleteClass(Modelica.Media);
 deleteClass(Modelica.Thermal);
 deleteClass(Modelica.Utilities);
+*/
 
 system("rm -f Modelica");
-system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
+system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/"+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 loadString("
 function subScript
@@ -67,10 +70,10 @@ function cell
   input Real time;
   output String str;
 algorithm
-  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else \\\"<td>\\\"+String(if time < 1e-5 then 0 else time,significantDigits=3)+\\\"</td>\\\";
+  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else \\\"<td>\\\"+OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\";
 end cell;
 \");getErrorString();
-str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+String(total,significantDigits=3)+\"</td>\" + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
+str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(\""+s+".stat\",str);getErrorString();
 ") for s in a);
 getErrorString();
