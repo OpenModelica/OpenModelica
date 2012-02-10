@@ -10,6 +10,9 @@
              Previous update: 2010-04-27 Adrian Pop, Adrian.Pop@liu.se 
              Last update:     2012-02-10 Adrian Pop, Adrian.Ppo@liu.se
 
+BIG WARNING:
+ THIS DOCUMENT IS OBSOLETE!
+
 The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
 using the Microsoft Visual Studio .NET 2010
