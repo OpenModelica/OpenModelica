@@ -1,9 +1,9 @@
 // Note: Run with +g=MetaModelica
 
+OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 loadModel(Modelica,{"3.1"});
 
-/*
 deleteClass(Modelica.Blocks);
 deleteClass(Modelica.Electrical);
 deleteClass(Modelica.Fluid);
@@ -12,7 +12,6 @@ deleteClass(Modelica.Mechanics);
 deleteClass(Modelica.Media);
 deleteClass(Modelica.Thermal);
 deleteClass(Modelica.Utilities);
-*/
 
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
@@ -50,13 +49,13 @@ if err <> \"\" then
 end if;
 
 echo(false);
-frontend :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
-backend  :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
-simcode  :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
-linearize:=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
-templates:=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
-total    :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
-build    :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
+frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
+backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
+simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
+linearize:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
+templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
+total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
+build    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
 frontend :=if frontend <> -1.0 then frontend-backend else -1.0;
 backend  :=if backend <> -1.0 then backend-simcode else -1.0;
 simcode  :=if simcode <> -1.0 then simcode-linearize else -1.0;
@@ -81,8 +80,10 @@ getErrorString();
 echo(false);
 system("rm -f " + log);
 str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
+<p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+getVersion()+"</p>
-<p>Tested Library: Modelica "+getVersion(Modelica)+"</p>";
+<p>Tested Library: Modelica "+getVersion(Modelica)+"</p>
+";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Linearize</th><th>Compile</th>",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();

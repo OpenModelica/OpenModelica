@@ -117,6 +117,7 @@ public constant Integer RT_CLOCK_SIMCODE = 15;
 public constant Integer RT_CLOCK_LINEARIZE = 16;
 public constant Integer RT_CLOCK_TEMPLATES = 17;
 public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
+public constant Integer RT_CLOCK_USER_RESERVED = 19;
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
@@ -1474,14 +1475,26 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
         
-    case (cache,env,"readTimer",{Values.INTEGER(i)},st,msg)
+    case (cache,env,"timerClear",{Values.INTEGER(i)},st,msg)
+      equation
+        System.realtimeClear(i);
+      then
+        (cache,Values.NORETCALL(),st);
+
+    case (cache,env,"timerTick",{Values.INTEGER(i)},st,msg)
+      equation
+        System.realtimeTick(i);
+      then
+        (cache,Values.NORETCALL(),st);
+
+    case (cache,env,"timerTock",{Values.INTEGER(i)},st,msg)
       equation
         true = System.realtimeNtick(i) > 0;
         r = System.realtimeTock(i);
       then
         (cache,Values.REAL(r),st);
 
-    case (cache,env,"readTimer",_,st,msg)
+    case (cache,env,"timerTock",_,st,msg)
       then (cache,Values.REAL(-1.0),st);
 
     case (cache,env,"regularFileExists",{Values.STRING(str)},st,msg)

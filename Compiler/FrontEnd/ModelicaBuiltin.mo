@@ -840,15 +840,46 @@ constant Integer RT_CLOCK_BACKEND = 14;
 constant Integer RT_CLOCK_SIMCODE = 15;
 constant Integer RT_CLOCK_LINEARIZE = 16;
 constant Integer RT_CLOCK_TEMPLATES = 17;
+constant Integer RT_CLOCK_UNCERTAINTIES = 18;
+constant Integer RT_CLOCK_USER_RESERVED = 19;
 
-function readTimer
+function readableTime
+  input Real sec;
+  output String str;
+protected
+  Integer tmp,min,hr;
+algorithm
+  tmp := mod(integer(sec),60);
+  min := div(integer(sec),60);
+  hr := div(min,60);
+  min := mod(min,60);
+  str := (if hr>0 then String(hr) + "h" else "") + (if min>0 then String(min) + "m" else "") + String(tmp) + "s"; 
+end readableTime;
+
+function timerTick
+  input Integer index;
+external "builtin";
+annotation(Documentation(info="<html>
+Starts the internal timer with the given index.
+</html>"),preferredView="text");
+end timerTick;
+
+function timerTock
   input Integer index;
   output Real elapsed;
 external "builtin";
 annotation(Documentation(info="<html>
 Reads the internal timer with the given index.
 </html>"),preferredView="text");
-end readTimer;
+end timerTock;
+
+function timerClear
+  input Integer index;
+external "builtin";
+annotation(Documentation(info="<html>
+Clears the internal timer with the given index.
+</html>"),preferredView="text");
+end timerClear;
 
 end Time;
 
