@@ -75,7 +75,6 @@ void KinsolCall::init()
 			memset(_yHelp,0,_dimSys*sizeof(double));
 			memset(_fHelp,0,_dimSys*sizeof(double));
 			memset(_jac,0,_dimSys*_dimSys*sizeof(double));  // Wird nur benötigt, falls symbolisch vorhanden
-
 			for (int i=0;i<_dimSys;i++)
 				_yHelp[i] = 1; 
 
@@ -92,8 +91,8 @@ void KinsolCall::init()
 			idid = KINSetUserData(_kinMem, _data);
 			if (check_flag(&idid, "KINSetUserData", 1)) 
 				 throw std::invalid_argument("KinsolCall::init()");
-			//idid = KINDense(_kinMem, _dimSys);
-			idid = KINSpgmr(_kinMem,_dimSys);
+			idid = KINDense(_kinMem, _dimSys);
+			//idid = KINSpgmr(_kinMem,0);
 			if (check_flag(&idid, "KINSpgmr", 1)) 
 				throw std::invalid_argument("KinsolCall::init()");
 		}
@@ -108,97 +107,28 @@ void KinsolCall::init()
 
 void KinsolCall::solve(const IContinous::UPDATE command)
 {
-
-	int idid;
-	idid = KINSol(_kinMem, _Kin_y, KIN_LINESEARCH, _Kin_yScale, _Kin_yScale);
-	if (check_flag(&idid, "KINSol", 1)) 
-		throw std::invalid_argument("KinsolCall::solve()");
-	/*
 	long int
 		dimRHS	= 1,					// Dimension of right hand side of linear system (=b)
 		irtrn	= 0;					// Retrun-flag of Fortran code
-
-	int 
-		totStps	= 0;					// Total number of steps
-
-	// If init() was not called yet
-	if (_firstCall)
-		init();	
-
-	// Get initial values from system
-	_algLoop->giveVars(_y,NULL,NULL);
-	//_algLoop->update(command);
-	_algLoop->giveRHS(_f,NULL,NULL);
-
-
-	// Reset status flag
-	_iterationStatus = CONTINUE;
-
-	while(_iterationStatus == CONTINUE)
+	int idid;
+	if(_algLoop->isLinear())
 	{
+		//calcFunction(_yHelp,_fHelp);
+		_algLoop->giveAMatrix(_jac);
+		dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
+		memcpy(_y,_f,_dimSys*sizeof(double));
+		_algLoop->setVars(_y,NULL,NULL);
 		_iterationStatus = DONE;
-
-		// Check stopping criterion
-		if(totStps)
-		{
-			for(int i=0; i<_dimSys; ++i)
-			{
-				if(fabs(_f[i]) > _kinsolSettings->getRtol() * (_kinsolSettings->getAtol() + fabs(_f[i])))
-				{
-					_iterationStatus = CONTINUE;
-					break;
-				}
-			}
-		}
-		else
-			_iterationStatus = CONTINUE;
-
-		// New right hand side
-		calcFunction(_y,_f);
-
-		if(_iterationStatus == CONTINUE)
-		{
-			if(totStps < _kinsolSettings->getNewtMax())
-			{
-				// Determination of Jacobian (Fortran-format)
-				if(_algLoop->isLinear())
-				{
-					//calcFunction(_yHelp,_fHelp);
-					_algLoop->giveAMatrix(_jac);
-					//dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
-					memcpy(_y,_f,_dimSys*sizeof(double));
-					_algLoop->setVars(_y,NULL,NULL);
-					_iterationStatus = DONE;
-					break;
-
-				}
-				else
-				{
-					calcJacobian();
-				}
-				// Solve linear System
-				//dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
-
-				if(irtrn!=0)
-				{
-					// TODO: Throw an error message here. 
-					_iterationStatus = SOLVERERROR;
-					break;
-				}
-
-				// Increase counter
-				++ totStps;
-
-				// New solution
-				for(int i=0; i<_dimSys; ++i)
-					_y[i] -= _kinsolSettings->getDelta() * _f[i];
-				
-			}
-			else 
-				_iterationStatus = SOLVERERROR;
-		}
 	}
-	*/
+	else
+	{
+
+
+		idid = KINSol(_kinMem, _Kin_y, KIN_LINESEARCH, _Kin_yScale, _Kin_yScale);
+		if (check_flag(&idid, "KINSol", 1)) 
+			throw std::invalid_argument("KinsolCall::solve()");
+	}
+	
 }
 
 IAlgLoopSolver::ITERATIONSTATUS KinsolCall::getIterationStatus()

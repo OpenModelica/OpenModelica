@@ -17,6 +17,7 @@ Auxillary functions for open modelica.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
+#define EPSILON		(std::numeric_limits<double>::epsilon( ))
 
 /// Definition of Signum function
 inline static int sgn (const double &c)
