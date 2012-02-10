@@ -16,7 +16,7 @@ using the Microsoft Visual Studio .NET 2010
 
 NOTE: for checkout of any of the SVN directories you will need this user/pass:
       user: anonymous
-      pass: none      <- write none here
+      pass: none      <- write "none" without quotes here
 
 BIG NOTE WARNING!
  - DO NOT ADD MinGW and omclibrary to the Setup project ever again
