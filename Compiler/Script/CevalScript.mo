@@ -117,7 +117,7 @@ public constant Integer RT_CLOCK_SIMCODE = 15;
 public constant Integer RT_CLOCK_LINEARIZE = 16;
 public constant Integer RT_CLOCK_TEMPLATES = 17;
 public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
-public constant list<Integer> buildModelClocks = {RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_BUILD_MODEL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
+public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),

@@ -2418,13 +2418,13 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      DAE.Exp exp, len_exp, justified_exp;
+      DAE.Exp exp, len_exp, justified_exp, sig_dig;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-      String str;
-      Integer i; Real r; Boolean b;
+      String str,format;
+      Integer i,len,sig; Real r; Boolean b, left_just;
       Absyn.Path p;
     
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
@@ -2435,11 +2435,14 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,{exp, len_exp, justified_exp, _},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp, sig_dig},impl,st,msg)
       equation
         (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st,msg);
-        str = realString(r);
-        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
+        (cache,Values.INTEGER(len),_) = ceval(cache,env, len_exp, impl, st,msg);
+        (cache,Values.BOOL(left_just),_) = ceval(cache,env, justified_exp, impl, st,msg);
+        (cache,Values.INTEGER(sig),_) = ceval(cache,env, sig_dig, impl, st,msg);
+        format = "%"+&Util.if_(left_just,"-","") +& intString(len) +& "." +& intString(sig) +& "g";
+        str = System.snprintff(format,len+20,r);
       then
         (cache,Values.STRING(str),st);
     

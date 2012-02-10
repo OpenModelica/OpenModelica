@@ -2042,3 +2042,16 @@ RML_BEGIN_LABEL(System__iconv)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__snprintff)
+{
+  const char *fmt = RML_STRINGDATA(rmlA0);
+  long len = RML_UNTAGFIXNUM(rmlA1);
+  double d = rml_prim_get_real(rmlA2);
+  char buf[len];
+  snprintf(buf,len,fmt,d);
+  buf[len-1] = 0;
+  rmlA0 = mk_scon(buf);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

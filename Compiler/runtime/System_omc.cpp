@@ -663,4 +663,12 @@ extern const char* System_getMakeCommand()
   return DEFAULT_MAKE;
 }
 
+extern const char* System_snprintff(const char *fmt, int len, double d)
+{
+  static char buf[1024];
+  assert(1024>len);
+  snprintf(buf,len,fmt,d);
+  buf[1024] = 0;
+}
+
 }

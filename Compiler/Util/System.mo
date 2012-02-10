@@ -883,4 +883,12 @@ function iconv "The iconv() function converts one multibyte characters from one 
 external "C" result=SystemImpl__iconv(string,from,to) annotation(Library = {"omcruntime"});
 end iconv;
 
+function snprintff "sprintf format string that takes one double as argument"
+  input String format;
+  input Integer maxlen;
+  input Real val;
+  output String str;
+external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcruntime"});
+end snprintff;
+
 end System;
