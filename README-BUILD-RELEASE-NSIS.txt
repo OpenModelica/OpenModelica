@@ -7,8 +7,8 @@
 ---------------------------------------------------------------------------
 
 
-The following step-by-step guides explain how to
-build the OpenModelica setup file on Windows
+The following step-by-step guides explain how 
+to build the OpenModelica setup file on Windows
 using the NullSoft Scriptable Install System(NSIS)
 
 NOTE: for checkout of any of the SVN directories you will need this user/pass:
