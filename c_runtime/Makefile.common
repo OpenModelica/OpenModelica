@@ -173,13 +173,9 @@ install: libSimulationRuntimeC.a libSimulationRuntimeQss.a $(LIBF2C) interactive
 	cp $(LIBS) $(builddir_lib)/
 	test -z "$(LIBF2C)" || cp libf2c/libf2c.* $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
-	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install || \
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
 
 clean :
 	test -z "$(LIBF2C)" || $(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
 	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE) clean
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
 	rm -f libSimulationRuntimeC.a libSimulationRuntimeQss.a
