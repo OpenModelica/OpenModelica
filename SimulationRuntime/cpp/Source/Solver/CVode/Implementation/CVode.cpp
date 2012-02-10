@@ -32,6 +32,8 @@ Cvode::Cvode(IDAESystem* system, ISolverSettings* settings)
 	, _doubleZero			(false)
 	, _f0					(NULL)
 	, _f1					(NULL)
+	, _zeroFound			(false)
+	,_updateCalls			(0)
 {
 	_data = ((void*)this);
 }
@@ -55,6 +57,11 @@ Cvode::~Cvode()
 	if(_f1)
 		delete [] _f1;
 
+	N_VDestroy_Serial(_CV_y0);
+	N_VDestroy_Serial(_CV_y);
+	N_VDestroy_Serial(_CV_yWrite);
+	
+	CVodeFree(&_cvodeMem);
 }
 
 
@@ -143,6 +150,7 @@ void Cvode::init()
 
 		_CV_y0 = N_VMake_Serial(_dimSys, _zInit);
 		_CV_y = N_VMake_Serial(_dimSys, _z);
+		_CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
 		if(check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
 		{
 			_idid = -5; 
@@ -158,7 +166,7 @@ void Cvode::init()
 		}
 
 		// Set Tolerances
-		_idid = CVodeSStolerances(_cvodeMem, 1e-6, 1e-6);					// RTOL and ATOL
+		_idid = CVodeSStolerances(_cvodeMem, 1e-4, 1e-4);					// RTOL and ATOL
 		if(_idid < 0)
 			throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
 
@@ -171,7 +179,7 @@ void Cvode::init()
 		if(_idid < 0)
 			throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
 
-		_idid = CVodeSetMinStep(_cvodeMem, 1e-14);							// MINIMUM STEPSIZE
+		_idid = CVodeSetMinStep(_cvodeMem, 1e-16);							// MINIMUM STEPSIZE
 		if(_idid < 0)
 			throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
 
@@ -200,10 +208,9 @@ void Cvode::init()
 	}
 }
 
-
 void Cvode::solve(const SOLVERCALL action)
 {
-	//_cvodesettings->bEventOutput = true;
+	//_eulerSettings->getEventOutput() = true;
 
 	if (_cvodesettings && _system)
 	{
@@ -214,15 +221,11 @@ void Cvode::solve(const SOLVERCALL action)
 			writeToFile(0, _tCurrent, _h);
 			saveInitState();
 			_tLastWrite = 0;
-			/*return;*/
+			
 		}
 
 
-		/*if(action & RECORDCALL)
-		{
-			writeToFile(0, _tCurrent, _h);
-			return;
-		}*/
+		
 
 		// Veranlasst das Auslesen des Systemzustandes bevor der erste Solverschritt erfolgt
 		if (action & RECALL)
@@ -236,7 +239,7 @@ void Cvode::solve(const SOLVERCALL action)
 				writeToFile(0, _tCurrent, _h);
 		}
 
-		// Curser wird an den Anfang gestzt und das Schreiben veranlasst (RESET&WRITE)
+		// Curser wird an den Anfang gestzt und das Schreiben veranlasst (RESET&IDAESystem::WRITE)
 		if (action & REPEATED_CALL)
 			_outputCommand = IDAESystem::OVERWRITE;
 		else if (action & REGULAR_CALL)
@@ -250,9 +253,9 @@ void Cvode::solve(const SOLVERCALL action)
 
 		while ( _solverStatus & IDAESolver::CONTINUE )
 		{
-
 			// Schrittweite auf initstep setzen es sei denn h > master step
 			if(!_zeroSearchActive)
+				
 				_h = max(min(_h,dynamic_cast<ISolverSettings*>(_cvodesettings)->getUpperLimit()),dynamic_cast<ISolverSettings*>(_cvodesettings)->getLowerLimit());
 
 
@@ -260,7 +263,7 @@ void Cvode::solve(const SOLVERCALL action)
 			//if(_idid == 1)
 			//	_idid = 0;
 
-			// Zuvor wurde init() aufgerufen und hat funktioniert => RESET IDID
+			// Zuvor wurde init aufgerufen und hat funktioniert => RESET IDID
 			if(_idid == 5000)
 				_idid = 0;
 
@@ -272,18 +275,18 @@ void Cvode::solve(const SOLVERCALL action)
 				_locStps = 0;
 
 				// Solverstart
-				callCVode();
+				CVodeCore();
 
 			}
 
 			// Integration war nicht erfolgreich und wurde auch nicht vom User unterbrochen
 			if(_idid != 0 && _idid !=1)
 			{
-				_solverStatus = SOLVERERROR;
-				throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::solve()");
+				_solverStatus = IDAESolver::SOLVERERROR;
+				//throw std::invalid_argument(_idid,_tCurrent,"CVode::solve()");
+				throw std::invalid_argument("CVode::solve()");
 			}
-
-
+			
 			// Abbruchkriterium (erreichen der Endzeit)
 			else if	( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())	
 				_solverStatus = DONE;
@@ -294,65 +297,190 @@ void Cvode::solve(const SOLVERCALL action)
 	}
 	else
 	{
-
-		throw std::invalid_argument(/*-1,_tCurrent,*/"Cvode::solve()");
+		
+		throw std::invalid_argument("CVode::solve()");
 	}
 }
-
-void Cvode::callCVode()
+/**
+Check for time events
+*/
+void Cvode::doTimeEvents()
 {
-	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
 
+	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
+
+	if(_time_events.size()>0)
+	{
+		event_times_type::iterator iter;
+
+		iter = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(_tCurrent,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTimeTol()) );
+
+		//Time event is reached
+		if(iter!=_time_events.end())
+		{
+			//Handle time event
+			event_system->handleEvent(iter->second);
+			//Handle all events that occured at this time
+			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events,boost::ref(update_event));
+
+			//Check if old time events were overrned because step size is not adequate 
+			if(distance(_time_events.begin(),iter)>0)
+				throw std::runtime_error("Time event was not reached, please check solver step size");
+			//Erase old time entries
+			_time_events.erase(iter);
+		}
+
+	}
+
+}
+void Cvode::CVodeCore()
+{
+	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
+	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
 	while(_solverStatus & IDAESolver::CONTINUE)
 	{
+		_zeroFound = false;
+		
+		//CVode für einen Schritt rufen
 		_idid = CVode(_cvodeMem, _tEnd, _CV_y, &_tHelp, CV_ONE_STEP);
-		if(check_flag(&_idid, "Cvode", 1))
+		
+		// Check, ob Schritt erfolgreich
+		if(check_flag(&_idid, "CVode", 1))
 		{
-			_solverStatus = SOLVERERROR;
+			_solverStatus = IDAESolver::SOLVERERROR;
 			break;
 		}
+		
+		_accStps++;
+		_locStps++;
+
 
 		// A root is found
 		if(_idid == 2)
 		{
+			_zeroFound = true;
+			continous_system->setTime(_tHelp);
+			continous_system->setVars(NV_DATA_S(_CV_y));
+			continous_system->update(IContinous::ALL );
+		}
+
+		// Falls über tEnd hinaus. Zustand bei tEnd holen
+		if(_tHelp <= _tEnd)
+		{
+			_tCurrent = _tHelp;
+			continous_system->giveVars(_z);
+		}
+		else
+		{
+			_idid = CVodeGetDky(_cvodeMem, _tEnd, 0, _CV_y);
+			_tCurrent = _tEnd;
+			_zeroFound = false;
+		}
+
+		// Eventiteration starten
+		if(_zeroFound)
+		{
+			
+
+			// Falls bEventOutput, den Zustand vor Eventbehandlung recorden
+			if (_cvodesettings->getDenseOutput() && abs(_tLastWrite - _tCurrent) > dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTimeTol())
+			{
+				
+				if(_cvodesettings->getEventOutput())
+				{
+					SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+				}
+			}else
+			{
+				SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+			}
+
 			//_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
 			event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
 
 			//Event Iteration starten
 			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
 			event_system->handleSystemEvents(_events,boost::ref(update_event));
-			//EVENT Iteration beendet
+		
+
+			// Zustand nach Eventbehandlung recorden
+			_locStps = 0;
+			if (_cvodesettings->getDenseOutput())
+			{
+				if(_cvodesettings->getEventOutput())
+					SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+			}else
+			{
+				SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+			}
 		}
+		//EVENT Iteration beendet
+
 		// Diagnostics
 		_idid = CVodeGetLastStep(_cvodeMem,&_h);
 		//_idid = CVodeGetNumSteps(_cvodeMem,&_locStps);
 
-		_tCurrent = _tHelp;
+		
 		//_z = NV_DATA_S(_CV_y);
-
-		_accStps++;
-
-		//if (_zeroState == UNCHANGED_SIGN)
-		//{
-		SolverDefaultImplementation::writeToFile(_accStps, _tCurrent, _h);
-
+		
+		// Zustand aus dem System holen
 		continous_system->giveVars(_z);
-		_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
-
+		if(!_zeroFound)
+		{
+			writeCVodeOutput(_tCurrent,_h,_locStps);
+		}
+		else
+		{
+			_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
+		}
+		
 		// Zähler für die Anzahl der ausgegebenen Schritte erhöhen
 		++ _outStps;
-
-		//saveLastSuccessfullState();
-		//}
 
 		if	( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())	
 		{
 			_solverStatus = DONE;
 		}
-
 	}
 }
+
+void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
+{
+	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
+	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
+
+	if (stp > 0)
+	{
+		if (_cvodesettings->getDenseOutput())
+		{
+			
+			_bWritten = false;
+			while (_tLastWrite +  dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput()  <= time + dynamic_cast<ISolverSettings*>(_cvodesettings)->getEndTimeTol())
+			{
+				_bWritten = true;
+				_tLastWrite = _tLastWrite +  dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput();
+				_idid = CVodeGetDky(_cvodeMem, _tLastWrite, 0, _CV_yWrite);
+				continous_system->setTime(_tLastWrite);
+				continous_system->setVars(NV_DATA_S(_CV_yWrite));
+				continous_system->update(IContinous::ALL );
+				_updateCalls++;
+				SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
+			}//end if time -_tLastWritten
+			if (_bWritten)
+			{
+				continous_system->setTime(time);
+				continous_system->setVars(_z,IContinous::ALL_STATES);
+				continous_system->update(IContinous::ALL );
+				_updateCalls++;
+			}
+		}
+		else
+			SolverDefaultImplementation::writeToFile(stp, time, h);
+	}
+}
+
+
 
 void Cvode::calcFunction(const double& time, const double* y, double* f)
 {

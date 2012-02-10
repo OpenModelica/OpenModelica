@@ -122,7 +122,7 @@ public:
 private:
 
 	// Solveraufruf
-	void callCVode(); 
+	void CVodeCore(); 
 
 	/// Kapselung der Berechnung der rechten Seite 
 	void calcFunction(const double& time, const double* y, double* yd);
@@ -135,7 +135,8 @@ private:
 
 	// Nulltellenfunktion
 	void giveZeroVal(const double &t,const double *y,double *zeroValue);
-
+	void writeCVodeOutput(const double &time,const double &h,const int &stp);
+	void doTimeEvents();
 	// Callback der Nullstellenfunktion
 	static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
 
@@ -153,8 +154,8 @@ private:
 		_locStps;									///< Output			- Number of Steps between two events
 
 	int
-		_outStps;									///< Output			- Total number of output-steps
-
+		_outStps,									///< Output			- Total number of output-steps
+	  _updateCalls;								///< Output			- Total number of update calls
 
 	double
 		*_z,										///< Output			- (Current) State vector
@@ -186,11 +187,14 @@ private:
 		_tLastWrite;								///< Temp			- Letzter Ausgabezeitpunkt
 
 	bool
-		_doubleZero;								///< Temp			- Flag to denote two zeros in intervall
+		_doubleZero,								///< Temp			- Flag to denote two zeros in intervall
+		_zeroFound,									///< Temp			- Flag to denote a root in he last step
+		_bWritten;									///< Temp			- Is output already written
 
 	N_Vector 
 		_CV_y0,									///< Temp			- Initial values in the Cvode Format
-		_CV_y;									///< Temp			- State in Cvode Format 
-
+		_CV_y,									///< Temp			- State in Cvode Format 
+	    _CV_yWrite;								///< Temp			- Vector for dense out
+	
 };
 

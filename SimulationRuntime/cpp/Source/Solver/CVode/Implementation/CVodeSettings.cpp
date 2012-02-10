@@ -4,6 +4,7 @@
 
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
 	: SolverSettings		(globalSettings)
+	,_denseOutput(false)
 
 {
 };
