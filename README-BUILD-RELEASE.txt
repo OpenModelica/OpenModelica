@@ -12,7 +12,7 @@
 
 BIG WARNING:
  THIS DOCUMENT IS OBSOLETE!
- We have discontinued the Visual Studio 2010 build since some years now!
+ We have discontinued the Visual Studio .NET 2010 build since some years now!
 
 The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
