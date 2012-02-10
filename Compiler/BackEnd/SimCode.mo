@@ -2683,6 +2683,10 @@ algorithm
       equation
         true = Flags.isSet(Flags.LINEARIZATION);
         
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES); 
+        
         // Prepare all needed variables
         varlst = BackendDAEUtil.varList(v);
         comref_vars = List.map(varlst,BackendVariable.varCref);
@@ -2792,8 +2796,11 @@ algorithm
 BackendDAE.SHARED(knownVars = kv)))      
       equation
         true = Flags.isSet(Flags.JACOBIAN);
-
-        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);        
+        
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+                
         (blt_states, _) = BackendDAEUtil.generateStatePartition(syst);
         
         newEqns = BackendDAEUtil.listEquation({});
@@ -2904,11 +2911,11 @@ algorithm
       BackendDAE.EqSystem syst,syst1;
       BackendDAE.Variables vars, knvars, knvars1, empty, orderedVars, diffVars, varswithDiffs;
       list<BackendDAE.Var> diffedVars, diffVarsTmp, varswithDiffsLst,seedlst, knvarsTmp, knvarsTmp1;
-      String s;
+      String s,s1;
       
       list<list<Integer>> sparsepattern;
       list<Integer> colsColors;
-      Integer maxColor;
+      Integer maxColor,nonZeroElements;
       
     case (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
       equation
@@ -2921,8 +2928,11 @@ algorithm
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, inName);
         comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
+        s1 =  intString(listLength(inVars));
  
-        
+        Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
+                       +& s +& " diffed equations: " +&  s1 +& "\n", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+                       
         // Differentiate the ODE system w.r.t states for jacobian
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         (backendDAE as BackendDAE.DAE(shared=shared)) = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars, inName);
@@ -2961,9 +2971,11 @@ algorithm
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);        
         (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
         maxColor = List.fold(colsColors, intMax, 1);
+        nonZeroElements = List.lengthListElements(sparsepattern);
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
-        Debug.execStat("analytical Jacobians -> generated sparse pattern and colored : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
-                
+        Debug.execStat("analytical Jacobians -> generated sparse pattern. Number of nonZeroElements " 
+                       +& intString(nonZeroElements) +& ".\n" +&
+                       "Graph colored with  " +& intString(maxColor) +& " color.",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
      then
         (({(columnEquations,columnVars,s)},seedVars,inName,sparsepattern,colsColors,maxColor));
     else

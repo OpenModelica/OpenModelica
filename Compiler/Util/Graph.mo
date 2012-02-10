@@ -561,7 +561,7 @@ algorithm
   end matchcontinue; 
 end insertNodetoGraph;
 
-public function allReachableNode
+public function allReachableNodes
 "This function searches for a starting node in M
  all reachabel nodes. Call with start node in M." 
   input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
@@ -597,20 +597,20 @@ algorithm
         //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
         M = listAppend(M,edges);
         //print("Start new round! \n");
-        reachableNodes = allReachableNode((M,L),inGraph,inEqualFunc);
+        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
     case((node::M,L),inGraph,inEqualFunc)
       equation
         L = listAppend(L,{node});
         failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
-        reachableNodes = allReachableNode((M,L),inGraph,inEqualFunc);
+        reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;        
         else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
       then fail();        
   end matchcontinue;
-end allReachableNode;
+end allReachableNodes;
 
 
 public function partialDistance2color 
@@ -660,12 +660,10 @@ algorithm
     case ({},_,_,_,_,inColored, _, _) then inColored;          
     case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
       equation
-        index = listLength(inColors) - listLength(rest);
-        //print("partial d2color:  Index = " +& intString(index) +& "\n");
+        index = arrayLength(inColored) - listLength(rest);
         ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
-        //inPrintFunc(nodes,"Rows:");
         forbiddenColor = addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
-        color = arrayFindMinColorIndex(forbiddenColor, node, 1, listLength(inColors)+1, inEqualFunc, inPrintFunc);
+        color = arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
         colored = arrayUpdate(inColored, index, color);
         colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
     then colored;
@@ -719,19 +717,7 @@ algorithm
         indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
         indexes = List.select1(indexes, arrayElemetGtZero, inColored);
         indexesColor = List.map1(indexes, getArrayElem, inColored);
-        // Debug output
-        //((inPrintFunc(nodes,"Column:" );
-        //print("Indexes for fobiddenColors : ");
-        //indexesStr = List.map(indexesColor, intString);
-        //List.map_0(indexesStr, print);
-        //print("\n");
 				List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
-				// Debug output
-				//print("List Length : " +& intString(arrayLength(forbiddenColor)) +& "\n");
-				//listOptFobiddenColors = arrayList(forbiddenColor);
-				//listFobiddenColors = List.map(listOptFobiddenColors,cleanOptList);
-				//List.map1_0(listFobiddenColors, inPrintFunc, "Forbidden Nodes for Color: ");
-				//print("updated forbiddenColor! \n\n");
         forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else
@@ -774,13 +760,6 @@ algorithm
      list<NodeType> arrElem;
     case (inIndex, inArray, inNode)
       equation
-      SOME(arrElem) = arrayGet(inArray, inIndex);
-      arrElem = List.union(arrElem, {inNode});
-      _ = arrayUpdate(inArray, inIndex, SOME(arrElem));
-    then ();
-    case (inIndex, inArray, inNode)
-      equation
-      NONE() = arrayGet(inArray, inIndex);
       _ = arrayUpdate(inArray, inIndex, SOME({inNode}));
     then ();
       else
@@ -825,11 +804,6 @@ algorithm
   local
     list<NodeType> nodes;
     Integer index;
-    case (_, _, inIndex, inmaxIndex, _, _)
-      equation
-        true = intEq(inIndex, inmaxIndex);
-        //print("Failed to find min Color!\n");
-      then 0;
     case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
@@ -941,6 +915,176 @@ algorithm
       then ();
   end match;
 end printNodesInt;
+
+public function allReachableNodesInt
+"This function searches for a starting node in M
+ all reachabel nodes. Call with start nodes in M. The
+ result is collected in L." 
+  input tuple<list<Integer>,list<Integer>>  intmpstorage;//(M,L)
+  input array<tuple<Integer, list<Integer>>> inGraph;
+  input Integer inMaxGraphNode;
+  input Integer inMaxNodexIndex;
+  output list<Integer> reachableNodes;
+algorithm
+  reachableNodes := matchcontinue(intmpstorage,inGraph,inMaxGraphNode,inMaxNodexIndex)
+    local
+      tuple<list<Integer>, list<Integer>> tmpstorage;
+      Integer node;
+      list<Integer> edges,M,L;
+    case(({},L),inGraph,_,_)
+    then L;
+    case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
+      equation
+        L = listAppend(L,{node});
+        false = intGe(node,inMaxGraphNode);
+        ((_,edges)) = arrayGet(inGraph, node);
+        edges = List.filter1OnTrue(edges, List.notMember, L);
+        M = listAppend(M,edges);
+        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+      then reachableNodes;       
+    case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
+      equation
+        L = listAppend(L,{node});
+        true = intGe(node,inMaxGraphNode);
+        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+      then reachableNodes;             
+        else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
+      then fail();        
+  end matchcontinue;
+end allReachableNodesInt;
+
+public function partialDistance2colorInt 
+"A greedy partial distance-2 coloring algorithm.
+procedure GREEDY PARTIAL D2COLORING(Gb = (V1 ,V2 , E))
+Let u1 , u2 , . . ., un be a given ordering of V2 , where n = |V2 |
+Initialize forbiddenColors with some value a in V2
+for i = 1 to n do
+for each vertex w such that (ui , w) in E do
+for each colored vertex x such that (w, x) in E do
+forbiddenColors[color[x]] <- ui
+color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
+"
+  input list<tuple<Integer, list<Integer>>> inGraphT;
+  input array<Option<list<Integer>>> inforbiddenColor;
+  input list<Integer> inColors;
+  input array<tuple<Integer, list<Integer>>> inGraph;
+  input array<Integer> inColored;
+  output array<Integer> outColored;
+algorithm
+  outColored := matchcontinue(inGraphT, inforbiddenColor, inColors, inGraph, inColored)
+  local
+    Integer node;
+    list<Integer> rest, nodes;
+    array<Option<list<Integer>>> forbiddenColor;
+    array<Integer> colored;
+    Integer color, index;
+    array<tuple<Integer, list<Integer>>> arrayGraph;
+    list<tuple<Integer, list<Integer>>> restGraph;
+    case ({},_,_,_,inColored) then inColored;          
+    case (((node,nodes))::restGraph, inforbiddenColor, inColors, inGraph, inColored)
+      equation
+        forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
+        color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
+        colored = arrayUpdate(inColored, node, color);
+        colored = partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
+    then colored;
+      else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."});
+      then fail();
+  end matchcontinue;
+end partialDistance2colorInt;
+
+protected function addForbiddenColorsInt
+  input Integer inNode;
+  input list<Integer> inNodes;
+  input array<Integer> inColored;
+  input array<Option<list<Integer>>> inForbiddenColor;
+  input array<tuple<Integer, list<Integer>>> inGraph;
+  output array<Option<list<Integer>>> outForbiddenColor;   
+algorithm
+  outForbiddenColor := match(inNode, inNodes, inColored, inForbiddenColor, inGraph)
+  local
+    Integer node;
+    list<Integer> rest;
+    list<Integer> indexes;
+    case (inNode, {}, _, inForbiddenColor, _) then inForbiddenColor;
+    case (inNode, node::rest, inColored, inForbiddenColor, inGraph)
+      equation
+        ((_,indexes)) = arrayGet(inGraph,node);
+        updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode); 
+        outForbiddenColor = addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
+      then outForbiddenColor;
+      else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+      then fail();        
+  end match;
+end addForbiddenColorsInt;
+
+protected function updateForbiddenColorArrayInt
+  input list<Integer> inIndexes;
+  input array<Integer> inColored;
+  input array<Option<list<Integer>>> inForbiddenColor;
+  input Integer inNode;
+algorithm 
+  _ := matchcontinue(inIndexes, inColored, inForbiddenColor, inNode)
+  local
+    Integer index;
+    list<Integer> rest;
+    Integer colorIndex;
+    Option<list<Integer>> forbiddenColorElement;
+    case ({}, _, _, _) then ();
+    case (index::rest, inColored, inForbiddenColor, inNode)
+      equation
+      colorIndex = arrayGet(inColored, index);
+      true = intGt(colorIndex,0);
+      _ = arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
+      updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
+    then ();
+    case (index::rest, inColored, inForbiddenColor, inNode)
+      equation
+      colorIndex = arrayGet(inColored, index);
+      false = intGt(colorIndex,0);
+      updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
+    then ();
+  end matchcontinue;      
+end updateForbiddenColorArrayInt;
+
+protected function arrayFindMinColorIndexInt
+  input array<Option<list<Integer>>> inForbiddenColor;
+  input Integer inNode;
+  input Integer inIndex;
+  output Integer outColor;   
+algorithm
+  outColor := matchcontinue(inForbiddenColor, inNode, inIndex)
+  local
+    list<Integer> nodes;
+    Integer index;
+    case (inForbiddenColor, inNode, inIndex)
+      equation
+        NONE() = arrayGet(inForbiddenColor, inIndex);
+        //print("Found color on index : " +& intString(inIndex) +& "\n");
+      then inIndex;        
+    case (inForbiddenColor, inNode, inIndex)
+      equation
+        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+        //inPrintFunc(nodes,"FobiddenColors:" );
+        failure(_ = List.getMemberOnTrue(inNode, nodes, intEq));
+        //print("Found color on index : " +& intString(inIndex) +& "\n");
+      then inIndex;
+    case (inForbiddenColor, inNode, inIndex)
+      equation
+        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+        //inPrintFunc(nodes,"FobiddenColors:" );
+        _ = List.getMemberOnTrue(inNode, nodes, intEq);
+        //print("Not found color on index : " +& intString(inIndex) +& "\n");
+        index = arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
+      then index;        
+  end matchcontinue;
+end arrayFindMinColorIndexInt;
 
 
 end Graph;

@@ -4123,57 +4123,35 @@ algorithm
 end createBipartiteGraph;
 
 protected function getSparsePattern
-input list<Integer> inNodes1; //nodesEqnsIndex
-input list<Integer> inNodes2; //nodesVarsIndex
-input list<tuple<Integer, list<Integer>>> inGraph;
-output list<list<Integer>> outSparsePattern;
+  input list<Integer> inNodes1; //nodesEqnsIndex
+  input Integer inMaxGraphIndex; //nodesVarsIndex
+  input Integer inMaxNodeIndex; //nodesVarsIndex
+  input array<tuple<Integer, list<Integer>>> inGraph;
+  output list<list<Integer>> outSparsePattern;
 algorithm 
-  outSparsePattern :=matchcontinue(inNodes1,inNodes2,inGraph)
+  outSparsePattern :=match(inNodes1,inMaxGraphIndex,inMaxNodeIndex,inGraph)
   local
     list<Integer> rest;
-    list<Integer> oneRow;
     Integer node;
-    list<Integer> reachableNodes,neededReachableNodes;
+    list<Integer> reachableNodes;
     list<list<Integer>> result;
-    list<String> oneRes;
-    case({}, _, _) then {{}};
-    case(node::{},inNodes2,inGraph)
+    case(node::{},inMaxGraphIndex,inMaxNodeIndex,inGraph)
       equation
-        reachableNodes = Graph.allReachableNode(({node},{}), inGraph, intEq);
-        /*
-        Debug.fcall(Flags.JAC_DUMP2, print, "current node : " +& intString(node) +& "\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, reachableNodes);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        */
-        neededReachableNodes = List.intersectionOnTrue(inNodes2,reachableNodes,intEq);
-        /*
-        Debug.fcall(Flags.JAC_DUMP2, print, "elements : ");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, neededReachableNodes);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        */
-      then {neededReachableNodes};        
-    case(node::rest,inNodes2,inGraph)
+        reachableNodes = Graph.allReachableNodesInt(({node},{}), inGraph, inMaxGraphIndex, inMaxNodeIndex);
+        reachableNodes = List.select1(reachableNodes, intGe, inMaxGraphIndex);
+      then {reachableNodes};        
+    case(node::rest,inMaxGraphIndex,inMaxNodeIndex,inGraph)
       equation
-        reachableNodes = Graph.allReachableNode(({node},{}), inGraph, intEq);
-        /*
-        Debug.fcall(Flags.JAC_DUMP2, print, "current node : " +& intString(node) +& "\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, reachableNodes);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        */
-        neededReachableNodes = List.intersectionOnTrue(inNodes2,reachableNodes,intEq);
-        /*
-        Debug.fcall(Flags.JAC_DUMP2, print, "elements : ");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, neededReachableNodes);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        */
-        result = getSparsePattern(rest,inNodes2,inGraph);
-        result = listAppend({neededReachableNodes},result);
+        reachableNodes = Graph.allReachableNodesInt(({node},{}), inGraph, inMaxGraphIndex, inMaxNodeIndex);
+        reachableNodes = List.select1(reachableNodes, intGe, inMaxGraphIndex);
+        result = getSparsePattern(rest,inMaxGraphIndex,inMaxNodeIndex,inGraph);
+        result = listAppend({reachableNodes},result);
       then result;      
     else
        equation
        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
        then fail();
-  end matchcontinue;
+  end match;
 end getSparsePattern;
 
 public function generateSparsePattern
@@ -4188,6 +4166,7 @@ public function generateSparsePattern
       BackendDAE.IncidenceMatrix adjMatrix,adjMatrixT;
       BackendDAE.Matching bdaeMatching;
       list<tuple<Integer, list<Integer>>> bdaeDirectedGraph, sparseGraph,sparseGraphT;
+      array<tuple<Integer, list<Integer>>> arraysparseGraph,arraysparseGraphT;
       Integer sizeofGraph, njacs;
       list<Integer> nodesList,nodesVarsList,nodesVarsIndex,nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT;
@@ -4242,7 +4221,10 @@ public function generateSparsePattern
         bdaeDirectedGraph = Graph.buildGraph(nodesList,createDirectedGraph,(adjMatrix,bdaeMatching));
         Debug.fcall(Flags.JAC_DUMP2,print,"Print the new created graph: \n");
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,bdaeDirectedGraph);
-        sparsepattern = getSparsePattern(nodesEqnsIndex,nodesVarsList,bdaeDirectedGraph);
+        arraysparseGraph = listArray(bdaeDirectedGraph);
+        Debug.execStat("analytical Jacobians[SPARSE] -> build sparse graph : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        sparsepattern = getSparsePattern(nodesEqnsIndex,arrayLength(adjMatrix)+1,arrayLength(adjMatrix)+1+njacs,arraysparseGraph);
+        Debug.execStat("analytical Jacobians[SPARSE] -> got sparse pattern : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         // intSub correct the index of the sparse pattern
         sparsepattern = List.map1List(sparsepattern, intSub, arrayLength(adjMatrix));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
@@ -4257,9 +4239,11 @@ public function generateSparsePattern
         
         // color sparse bipartite graph
         forbiddenColor = arrayCreate(njacs,NONE());
-        colored = arrayCreate(njacs,0);        
-        colored1 = Graph.partialDistance2color(nodesList, forbiddenColor, nodesList, sparseGraph, sparseGraphT, colored, intEq, Graph.printNodesInt);
+        colored = arrayCreate(njacs,0);
+        arraysparseGraph = listArray(sparseGraph);        
+        colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
         coloredlist = arrayList(colored1);
+        Debug.execStat("analytical Jacobians[SPARSE] -> colored graph : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         
         Debug.fcall(Flags.JAC_DUMP2,print,"Print Coloring Cols: \n");
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, coloredlist);
