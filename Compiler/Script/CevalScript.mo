@@ -1221,7 +1221,6 @@ algorithm
     case (cache,env,"buildModel",vals,st,msg)
       equation
         List.map_0(buildModelClocks,System.realtimeTick);
-        print("init'ed clocks\n");
         (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
