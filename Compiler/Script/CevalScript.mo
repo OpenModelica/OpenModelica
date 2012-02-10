@@ -109,8 +109,15 @@ protected import Uncertainties;
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
-public constant Integer RT_CLOCK_EXECSTAT_MAIN = Inst.RT_CLOCK_EXECSTAT_MAIN;
-public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES;
+public constant Integer RT_CLOCK_EXECSTAT_MAIN = Inst.RT_CLOCK_EXECSTAT_MAIN /* 11 */;
+public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES /* 12 */;
+public constant Integer RT_CLOCK_FRONTEND = 13;
+public constant Integer RT_CLOCK_BACKEND = 14;
+public constant Integer RT_CLOCK_SIMCODE = 15;
+public constant Integer RT_CLOCK_LINEARIZE = 16;
+public constant Integer RT_CLOCK_TEMPLATES = 17;
+public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
+public constant list<Integer> buildModelClocks = {RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_BUILD_MODEL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -763,7 +770,7 @@ algorithm
       Absyn.ComponentRef cr_1;
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
-      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
+      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts;
       Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
@@ -1213,6 +1220,8 @@ algorithm
 
     case (cache,env,"buildModel",vals,st,msg)
       equation
+        List.map_0(buildModelClocks,System.realtimeTick);
+        print("init'ed clocks\n");
         (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
@@ -1465,6 +1474,15 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
         
+    case (cache,env,"readTimer",{Values.INTEGER(i)},st,msg)
+      equation
+        r = System.realtimeTock(i);
+      then
+        (cache,Values.REAL(r),st);
+
+    case (cache,env,"readTimer",_,st,msg)
+      then (cache,Values.REAL(-1.0),st);
+
     case (cache,env,"regularFileExists",{Values.STRING(str)},st,msg)
       equation
         b = System.regularFileExists(str);

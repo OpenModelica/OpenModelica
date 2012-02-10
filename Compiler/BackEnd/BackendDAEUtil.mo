@@ -6558,14 +6558,14 @@ public function profilerinit
 algorithm
   setGlobalRoot(Global.profilerTime1Index, 0.0);
   setGlobalRoot(Global.profilerTime2Index, 0.0);
-  System.realtimeTick(8);
+  System.realtimeTick(BackendDAE.RT_PROFILER0);
 end profilerinit;
 
 public function profilerresults
 protected
    Real tg,t1,t2;
 algorithm
-  tg := System.realtimeTock(8);
+  tg := System.realtimeTock(BackendDAE.RT_PROFILER0);
   t1 := getGlobalRoot(Global.profilerTime1Index);
   t2 := getGlobalRoot(Global.profilerTime2Index);
   print("Time all: "); print(realString(tg)); print("\n");
@@ -6575,19 +6575,19 @@ end profilerresults;
 
 public function profilerstart1
 algorithm
-   System.realtimeTick(9);
+   System.realtimeTick(BackendDAE.RT_PROFILER1);
 end profilerstart1;
 
 public function profilerstart2
 algorithm
-   System.realtimeTick(10);
+   System.realtimeTick(BackendDAE.RT_PROFILER2);
 end profilerstart2;
 
 public function profilerstop1
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(9);
+   t := System.realtimeTock(BackendDAE.RT_PROFILER1);
    setGlobalRoot(Global.profilerTime1Index, 
      realAdd(getGlobalRoot(Global.profilerTime1Index),t));
 end profilerstop1;
@@ -6596,7 +6596,7 @@ public function profilerstop2
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(10);
+   t := System.realtimeTock(BackendDAE.RT_PROFILER2);
    setGlobalRoot(Global.profilerTime2Index, 
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;

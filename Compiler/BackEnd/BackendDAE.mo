@@ -47,6 +47,9 @@ public import HashTable4;
 public import HashTableCG;
 
 public constant String partialDerivativeNamePrefix="$pDER";
+public constant Integer RT_PROFILER0=6;
+public constant Integer RT_PROFILER1=7;
+public constant Integer RT_PROFILER2=8;
 public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
 public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=13;
 public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS_MODULES=14;

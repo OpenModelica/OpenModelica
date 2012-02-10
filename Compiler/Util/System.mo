@@ -642,14 +642,14 @@ end configureCommandLine;
 
 public function realtimeTick
 "Tock returns the time since the last tock; undefined if tick was never called.
-The clock index is 0-15. The function fails if the number is out of range."
+The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeTick(clockIndex) annotation(Library = "omcruntime");
 end realtimeTick;
 
 public function realtimeTock
 "Tock returns the time since the last tock, undefined if tick was never called.
-The clock index is 0-15. The function fails if the number is out of range."
+The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   output Real outTime;
   external "C" outTime = System_realtimeTock(clockIndex) annotation(Library = "omcruntime");

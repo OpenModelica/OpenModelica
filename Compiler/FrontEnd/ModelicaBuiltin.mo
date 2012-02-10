@@ -825,6 +825,35 @@ record CheckSettingsResult
 annotation(preferredView="text");
 end CheckSettingsResult;
 
+package Internal
+
+package Time
+  
+/* From CevalScript */
+constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
+constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
+constant Integer RT_CLOCK_BUILD_MODEL = 10;
+constant Integer RT_CLOCK_EXECSTAT_MAIN = 11;
+constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = 12;
+constant Integer RT_CLOCK_FRONTEND = 13;
+constant Integer RT_CLOCK_BACKEND = 14;
+constant Integer RT_CLOCK_SIMCODE = 15;
+constant Integer RT_CLOCK_LINEARIZE = 16;
+constant Integer RT_CLOCK_TEMPLATES = 17;
+
+function readTimer
+  input Integer index;
+  output Real elapsed;
+external "builtin";
+annotation(Documentation(info="<html>
+Reads the internal timer with the given index.
+</html>"),preferredView="text");
+end readTimer;
+
+end Time;
+
+end Internal;
+
 function checkSettings "Display some diagnostics"
   output CheckSettingsResult result;
 external "builtin";

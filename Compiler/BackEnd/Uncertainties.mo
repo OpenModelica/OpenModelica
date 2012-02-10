@@ -127,13 +127,13 @@ algorithm
         
         print("* Calling  modelEquationsUC\n");
         // calculate stuff that we need to create SimCode data structure 
-        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
+        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         
