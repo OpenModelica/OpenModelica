@@ -538,7 +538,7 @@ algorithm
        (var::_,_) = BackendVariable.getVar(cref, inVars);
        true = BackendVariable.isVarDiscrete(var);
        initExp = Expression.makeBuiltinCall("pre", {out}, type_);
-       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR), initExp, DAE.PROP(type_,DAE.C_VAR), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR()), initExp, DAE.PROP(type_,DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
        (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
        statements1 = listAppend({stmt},statements);
      then (DAE.ALGORITHM_STMTS(statements1));
@@ -550,7 +550,7 @@ algorithm
        (var::_,_) = BackendVariable.getVar(cref, inVars);
        false = BackendVariable.isVarDiscrete(var);
        initExp = Expression.makeBuiltinCall("$_start", {out}, type_);
-       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR), initExp, DAE.PROP(type_,DAE.C_VAR), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR()), initExp, DAE.PROP(type_,DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
        (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
        statements1 = listAppend({stmt},statements);
      then (DAE.ALGORITHM_STMTS(statements1));
