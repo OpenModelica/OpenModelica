@@ -1678,6 +1678,25 @@ RML_BEGIN_LABEL(System__realtimeTock)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__realtimeClear)
+{
+  int ix = RML_UNTAGFIXNUM(rmlA0);
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) RML_TAILCALLK(rmlFC);
+  rt_clear(ix);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__realtimeNtick)
+{
+  int ix = RML_UNTAGFIXNUM(rmlA0);
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_icon(rt_ncall(ix));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__resetTimer)
 {
   /* reset the timer */

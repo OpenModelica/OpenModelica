@@ -1220,7 +1220,8 @@ algorithm
 
     case (cache,env,"buildModel",vals,st,msg)
       equation
-        List.map_0(buildModelClocks,System.realtimeTick);
+        List.map_0(buildModelClocks,System.realtimeClear);
+        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
         (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
@@ -1475,6 +1476,7 @@ algorithm
         
     case (cache,env,"readTimer",{Values.INTEGER(i)},st,msg)
       equation
+        true = System.realtimeNtick(i) > 0;
         r = System.realtimeTock(i);
       then
         (cache,Values.REAL(r),st);

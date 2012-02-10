@@ -1,20 +1,60 @@
 // Note: Run with +g=MetaModelica
 
-log:="BuildModelRecursive.log";
+log:="BuildModelRecursive.html";
 loadModel(Modelica,{"3.1"});
 
-system("ln -s '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
+/*
+deleteClass(Modelica.Blocks);
+deleteClass(Modelica.Electrical);
+deleteClass(Modelica.Fluid);
+deleteClass(Modelica.Magnetic);
+deleteClass(Modelica.Mechanics);
+deleteClass(Modelica.Media);
+deleteClass(Modelica.Thermal);
+deleteClass(Modelica.Utilities);
+*/
+
+system("rm -f Modelica");
+system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x)) and isModel(x) and (not isPartial(x)) in getClassNames(recursive=true)};
-isModel(Modelica.Blocks.Examples.PID_Controller);
 getErrorString();
 print("Number of classes to build: " + String(size(a,1)));
 system("rm -f Modelica.* " + log);
 min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 loadModel(Modelica,{\"3.1\"});
-buildModel("+s+");
-getErrorString();
+res:=buildModel("+s+");
+errFile:=\""+s+".err\";
+err:=getErrorString();
+if err <> \"\" then
+  writeFile(errFile,err);
+end if;
+
+echo(false);
+frontend :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
+backend  :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
+simcode  :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
+linearize:=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
+templates:=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
+total    :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
+build    :=OpenModelica.Scripting.Internal.Time.readTimer(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
+frontend :=if frontend <> -1.0 then frontend-backend else -1.0;
+backend  :=if backend <> -1.0 then backend-simcode else -1.0;
+simcode  :=if simcode <> -1.0 then simcode-linearize else -1.0;
+linearize:=if linearize <> -1.0 then linearize-templates else -1.0;
+templates:=if templates <> -1.0 then templates-build else -1.0;
+
+loadString(\"
+function cell
+  input Real time;
+  output String str;
+algorithm
+  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else \\\"<td>\\\"+String(if time < 1e-5 then 0 else time,significantDigits=3)+\\\"</td>\\\";
+end cell;
+\");getErrorString();
+str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+String(total,significantDigits=3)+\"</td>\" + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
+writeFile(\""+s+".stat\",str);getErrorString();
 ") for s in a);
 getErrorString();
 min(0==system(omc + " " + s + ".mos") for s in a);
@@ -22,10 +62,10 @@ getErrorString();
 
 echo(false);
 system("rm -f " + log);
-line:="================================================================================\n";
-str:="";
-str:=line+"Results (" + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded)\n" + line;
-estr:=getErrorString();
-writeFile(log,if estr<>"" then estr else str);getErrorString();
-writeFile(log,sum(s + ": " + boolString(OpenModelica.Scripting.regularFileExists(s)) + "\n" for s in a),append=true);getErrorString();
-print(readFile(log));
+str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
+<p>OpenModelica Version: "+getVersion()+"</p>
+<p>Tested Library: Modelica "+getVersion(Modelica)+"</p>";
+writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
+writeFile(log,"<table><tr><th>Model</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Linearize</th><th>Compile</th>",append=true);getErrorString();
+writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
+writeFile(log,"</table></body></html>",append=true);getErrorString();

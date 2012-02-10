@@ -102,6 +102,18 @@ extern double System_realtimeTock(int ix)
   return rt_tock(ix);
 }
 
+extern void System_realtimeClear(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  rt_clear(ix);
+}
+
+extern int System_realtimeNtick(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  return rt_ncall(ix);
+}
+
 extern const char* System_getRTLibs()
 {
   return LDFLAGS_RT;

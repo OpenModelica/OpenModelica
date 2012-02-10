@@ -655,6 +655,21 @@ The clock index is 0-31. The function fails if the number is out of range."
   external "C" outTime = System_realtimeTock(clockIndex) annotation(Library = "omcruntime");
 end realtimeTock;
 
+public function realtimeClear
+"Clears the timer.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  external "C" System_realtimeClear(clockIndex) annotation(Library = "omcruntime");
+end realtimeClear;
+
+public function realtimeNtick
+"Returns the number of ticks since last clear.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Integer n;
+  external "C" n = System_realtimeNtick(clockIndex) annotation(Library = "omcruntime");
+end realtimeNtick;
+
 function resetTimer
 "@autor: adrpo
   this function will reset the timer to 0."
