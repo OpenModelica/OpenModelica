@@ -35,9 +35,9 @@
 extern "C" {
 #endif
 
-#define NUM_RT_CLOCKS 17
-#define NUM_USER_RT_CLOCKS 16
-#define RT_CLOCK_SPECIAL_STOPWATCH 16 /* The 17th clock */
+#define NUM_RT_CLOCKS 33
+#define NUM_USER_RT_CLOCKS 32
+#define RT_CLOCK_SPECIAL_STOPWATCH 32 /* The 33rd clock */
 
 /* Simulation-specific timing macros */
 #define SIM_TIMER_TOTAL          0
