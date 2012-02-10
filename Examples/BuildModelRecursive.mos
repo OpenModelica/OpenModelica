@@ -17,8 +17,26 @@ deleteClass(Modelica.Utilities);
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica 3.1/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
-a:={typeNameString(x) for x guard max("Examples" == s for s in typeNameStrings(x)) and isModel(x) and (not isPartial(x)) in getClassNames(recursive=true)};
+loadString("
+function subScript
+  input String strs[:];
+  input Integer ix;
+  output String str;
+algorithm
+  str := if size(strs,1)<ix then \"\" else strs[ix];
+end subScript;
+");
+a:={typeNameString(x) for x guard
+        max("Examples" == s for s in typeNameStrings(x))
+    and ((not max("Utilities" == s for s in typeNameStrings(x))) or subScript(typeNameStrings(x),2) == "Utilities")
+    and (not max("Components" == s for s in typeNameStrings(x)))
+    and isModel(x)
+    and (not isPartial(x))
+  in getClassNames(recursive=true)};
 getErrorString();
+
+// writeFile("x",sum(s + "\n" for s in a));
+
 print("Number of classes to build: " + String(size(a,1)));
 system("rm -f Modelica.* " + log);
 min(writeFile(s + ".mos","
