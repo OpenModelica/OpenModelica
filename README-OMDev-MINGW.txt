@@ -4,7 +4,7 @@
 
 Compiling OMC using OMDev package
 ========================================
-Adrian Pop, adrpo@ida.liu.se, date above.
+Adrian Pop, Adrian.Pop@liu.se, date above.
 
 
 1. Checkout the OMDev package from Subversion:
