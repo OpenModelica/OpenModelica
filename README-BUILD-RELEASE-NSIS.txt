@@ -16,7 +16,7 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
       pass: none      <- write "none" without quotes here
 
 00. Checkout the sources from Subversion:
-     https://openmodelica.org/svn/OpenModelica/trunk -> trunk
+      https://openmodelica.org/svn/OpenModelica/trunk -> trunk
 
     Checkout the OpenModelicaSetup directory from Subversion:
       https://openmodelica.org/svn/OpenModelica/installers/windows/OpenModelicaSetup
