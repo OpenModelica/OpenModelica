@@ -5,7 +5,6 @@ log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
 loadModel(Modelica,{MSLVersion});
 
-/*
 deleteClass(Modelica.Blocks);
 deleteClass(Modelica.Electrical);
 deleteClass(Modelica.Fluid);
@@ -14,7 +13,6 @@ deleteClass(Modelica.Mechanics);
 deleteClass(Modelica.Media);
 deleteClass(Modelica.Thermal);
 deleteClass(Modelica.Utilities);
-*/
 
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/"+MSLVersion+"/' Modelica");
@@ -43,6 +41,8 @@ print("Number of classes to build: " + String(size(a,1)));
 system("rm -f Modelica.* " + log);
 min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
+statFile := \""+s+".stat\";
+writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 loadModel(Modelica,{\"3.1\"});
 res:=buildModel("+s+");
 errFile:=\""+s+".err\";
@@ -74,7 +74,7 @@ algorithm
 end cell;
 \");getErrorString();
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
-writeFile(\""+s+".stat\",str);getErrorString();
+writeFile(statFile,str);getErrorString();
 ") for s in a);
 getErrorString();
 min(0==system(omc + " " + s + ".mos") for s in a);
