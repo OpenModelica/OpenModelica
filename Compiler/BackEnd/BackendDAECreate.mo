@@ -2258,6 +2258,31 @@ algorithm
   end matchcontinue;
 end detectImplicitDiscreteAlgs;
 
+protected function getVarsFromExp
+"function: getVarsFromExp
+  This function collects all variables from an expression-list."
+  input list<DAE.Exp> inExpLst;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  outVarLst := matchcontinue(inExpLst, inVariables)
+    local
+      DAE.ComponentRef cref;
+      list<DAE.Exp> expLst;
+      BackendDAE.Variables variables;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> varLst;
+    case({}, _) then {};
+    case(DAE.CREF(componentRef=cref)::expLst, variables) equation
+      ((var::_), _) = BackendVariable.getVar(cref, variables);
+      varLst = getVarsFromExp(expLst, variables);
+    then var::varLst;
+    case(_::expLst, variables) equation
+      varLst = getVarsFromExp(expLst, variables);
+    then varLst;
+  end matchcontinue;
+end getVarsFromExp;
+
 protected function detectImplicitDiscreteAlgsStatemens
 "function: detectImplicitDiscreteAlgsStatemens
   This function updates the variable kind to discrete
@@ -2280,7 +2305,7 @@ algorithm
       DAE.Type tp;
       DAE.Ident iteratorName;
       DAE.Exp e,iteratorExp;
-      list<DAE.Exp> iteratorexps;
+      list<DAE.Exp> iteratorexps, expExpLst;
     case (v,_,{},_) then v;
     case (v,knv,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
       equation
@@ -2290,6 +2315,14 @@ algorithm
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2;
+        
+      case(v, knv, (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst)::xs), true) equation
+        vars = getVarsFromExp(expExpLst, v);
+        vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
+        v_1 = BackendVariable.addVars(vars, v);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+      then v_2;
+        
     case (v,knv,(DAE.STMT_ASSIGN_ARR(componentRef = cr) :: xs),true)
       equation
         (vars,_) = BackendVariable.getVar(cr, v);
