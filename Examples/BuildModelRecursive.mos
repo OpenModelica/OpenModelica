@@ -90,6 +90,6 @@ str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModeli
 <p>Tested Library: Modelica "+getVersion(Modelica)+"</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Linearize</th><th>Compile</th>",append=true);getErrorString();
+writeFile(log,"<table><tr><th>Model</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Linearize</th><th>Templates</th><th>Compile</th>",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table></body></html>",append=true);getErrorString();
