@@ -5,6 +5,7 @@ log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
 loadModel(Modelica,{MSLVersion});
 
+/*
 deleteClass(Modelica.Blocks);
 deleteClass(Modelica.Electrical);
 deleteClass(Modelica.Fluid);
@@ -13,6 +14,7 @@ deleteClass(Modelica.Mechanics);
 deleteClass(Modelica.Media);
 deleteClass(Modelica.Thermal);
 deleteClass(Modelica.Utilities);
+*/
 
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/"+MSLVersion+"/' Modelica");
