@@ -5,6 +5,10 @@ log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
 loadModel(Modelica,{MSLVersion});
 
+if MSLVersion == "3.2" then
+  loadModel(ModelicaTest,{"1.1"});
+end if;
+
 /*
 deleteClass(Modelica.Blocks);
 deleteClass(Modelica.Electrical);
@@ -29,9 +33,10 @@ algorithm
 end subScript;
 ");
 a:={typeNameString(x) for x guard
-        max("Examples" == s for s in typeNameStrings(x))
+        (subScript(typeNameStrings(x),1) == "ModelicaTest" or max("Examples" == s for s in typeNameStrings(x)))
     and ((not max("Utilities" == s for s in typeNameStrings(x))) or subScript(typeNameStrings(x),2) == "Utilities")
     and (not max("Components" == s for s in typeNameStrings(x)))
+    and (not max("BaseClasses" == s for s in typeNameStrings(x)))
     and isModel(x)
     and (not isPartial(x))
   in getClassNames(recursive=true)};
