@@ -17,7 +17,7 @@ deleteClass(Modelica.Utilities);
 */
 
 system("rm -f Modelica");
-system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/"+MSLVersion+"/' Modelica");
+system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 loadString("
 function subScript
