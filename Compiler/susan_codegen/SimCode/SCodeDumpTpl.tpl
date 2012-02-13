@@ -850,9 +850,10 @@ match attributes
   case ATTR(__) then
     let flow_str = dumpFlow(flowPrefix)
     let stream_str = dumpStream(streamPrefix)
+    let prl_str = dumpParallelism(parallelism)
     let var_str = dumpVariability(variability)
     let dir_str = dumpDirection(direction)
-    '<%dir_str%><%var_str%><%flow_str%><%stream_str%>'
+    '<%prl_str%><%dir_str%><%var_str%><%flow_str%><%stream_str%>'
 end dumpAttributes;
 
 template dumpFlow(SCode.Flow flow)
@@ -862,6 +863,13 @@ end dumpFlow;
 template dumpStream(SCode.Stream stream)
 ::= match stream case STREAM(__) then 'stream '
 end dumpStream;
+
+template dumpParallelism(SCode.Parallelism parallelism)
+::=
+match parallelism
+  case PARGLOBAL(__) then 'parglobal '
+  case PARLOCAL(__) then 'parlocal '
+end dumpParallelism;
 
 template dumpVariability(SCode.Variability variability)
 ::=

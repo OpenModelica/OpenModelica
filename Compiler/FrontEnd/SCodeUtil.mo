@@ -389,6 +389,7 @@ algorithm
       Absyn.Direction dir;
       SCode.Flow sf;
       SCode.Stream ss;
+      SCode.Parallelism sp;
       SCode.Variability sv;
       
     case (Absyn.ATTR(f, s, p, v, dir, adim),extraADim)
@@ -396,9 +397,10 @@ algorithm
         sf = SCode.boolFlow(f);
         ss = SCode.boolStream(s);
         sv = translateVariability(v);
+        sp = translateParallelism(p);
         adim = listAppend(extraADim, adim);
       then
-        SCode.ATTR(adim, sf, ss,  sv, dir);
+        SCode.ATTR(adim, sf, ss, sp, sv, dir);
   end matchcontinue;
 end translateAttributes;
 
@@ -1240,7 +1242,8 @@ algorithm
       SCode.Mod mod;
       list<Absyn.ElementArg> args;
       list<SCode.Element> xs_1;
-      SCode.Variability pa_1;
+      SCode.Parallelism prl1;
+      SCode.Variability var1;
       list<SCode.Subscript> tot_dim,ad,d;
       Absyn.ElementAttributes attr;
       Absyn.Direction di;
@@ -1335,7 +1338,8 @@ algorithm
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
           Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
-        pa_1 = translateVariability(variability);
+        prl1 = translateParallelism(parallelism);
+        var1 = translateVariability(variability);
         // PR. This adds the arraydimension that may be specified together with the type of the component. 
         tot_dim = listAppend(d, ad);
         (repl_1, redecl) = translateRedeclarekeywords(repl);
@@ -1349,7 +1353,7 @@ algorithm
       then
         (SCode.COMPONENT(n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          SCode.ATTR(tot_dim,sFl,sSt,pa_1,di),
+          SCode.ATTR(tot_dim,sFl,sSt,prl1,var1,di),
           t,mod,comment_1,cond,info) :: xs_1);
 
     case (cc,finalPrefix,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
@@ -1477,6 +1481,19 @@ algorithm
     else NONE();
   end match;
 end translateConstrainClass;
+
+protected function translateParallelism
+"function: translateParallelism
+  Converts an Absyn.Parallelism to SCode.Parallelism."
+  input Absyn.Parallelism inParallelism;
+  output SCode.Parallelism outParallelism;
+algorithm
+  outParallelism := match (inParallelism)
+    case (Absyn.PARGLOBAL())      then SCode.PARGLOBAL();
+    case (Absyn.PARLOCAL()) then SCode.PARLOCAL();
+    case (Absyn.NON_PARALLEL())    then SCode.NON_PARALLEL();
+  end match;
+end translateParallelism;
 
 protected function translateVariability
 "function: translateVariability
@@ -2205,7 +2222,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
-                      SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR()),
+                      SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()),
                       NONE());
   elt := SCode.CLASS(
            str,

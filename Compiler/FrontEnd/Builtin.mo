@@ -128,8 +128,8 @@ public constant SCode.Prefixes commonPrefixes =
     SCode.NOT_REPLACEABLE()); 
 
 protected
-constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.CONST(),Absyn.BIDIR()); 
-constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR());
+constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR()); 
+constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
 
 /*
 - The primitive types

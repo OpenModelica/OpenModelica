@@ -4414,7 +4414,7 @@ algorithm
                         SCode.R_TYPE(),
                         SCode.DERIVED(
                           tSpec,SCode.NOMOD(),
-                          SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.VAR(), Absyn.BIDIR()),
+                          SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                           NONE()),
                         Absyn.dummyInfo);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY, inSets);
@@ -6710,7 +6710,8 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
-      SCode.Variability param;
+      SCode.Parallelism prl;
+      SCode.Variability var;
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
@@ -6736,7 +6737,7 @@ algorithm
     // a component
     case (cache,env,ih,mods,pre,ci_state,
           ((comp as SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),
-                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir),
+                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,prl,var,dir),
                                     t,m,comment,condition,info),cmod) :: xs),
           inst_dims,impl)
       equation
@@ -6763,7 +6764,7 @@ algorithm
 
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),vis,
+          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,var,dir,io),vis,
           DAE.T_UNKNOWN_DEFAULT,DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, ci_state, xs, inst_dims, impl);
       then
@@ -7244,7 +7245,7 @@ algorithm
         
         cls = SCode.CLASS(id, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), 
           SCode.NOT_PARTIAL(), SCode.R_TYPE(), SCode.DERIVED(ts, SCode.NOMOD(),
-          SCode.ATTR(ad, fp, sp,  SCode.VAR(), Absyn.BIDIR()),
+          SCode.ATTR(ad, fp, sp, SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
           NONE()), info);
        
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
@@ -9642,7 +9643,8 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
-      SCode.Variability param;
+      SCode.Parallelism prl1;
+      SCode.Variability var1;
       Absyn.Direction dir;
       Absyn.Path t;
       Absyn.TypeSpec tsNew,tsOld;
@@ -9713,14 +9715,14 @@ algorithm
         cmod = DAE.NOMOD();
         pf = prefixes;
         io = SCode.prefixesInnerOuter(pf);
-        SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir) = attr;
+        SCode.ATTR(ad,flowPrefix,streamPrefix,prl1,var1,dir) = attr;
 
         (cache,tyVar,SOME((SCode.COMPONENT(n,_,_,Absyn.TPATH(t, _),_,comment,cond,info),_)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
-        (mods,cmod,m) = noModForUpdatedComponents(param,updatedComps,cref,mods,cmod,m);
+        (mods,cmod,m) = noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
         crefs = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
@@ -9728,7 +9730,7 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
       then
@@ -9777,12 +9779,12 @@ algorithm
     case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
+        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,prl1,var1,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
-        (mods,cmod,m) = noModForUpdatedComponents(param,updatedComps,cref,mods,cmod,m);
+        (mods,cmod,m) = noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
         crefs = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
@@ -9795,7 +9797,7 @@ algorithm
         crefs_2 = removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,updatedComps);
 
@@ -14864,6 +14866,7 @@ algorithm
       Boolean impl;
       SCode.Attributes attr;
       list<Absyn.Subscript> dim;
+      SCode.Parallelism prl;
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.Path t;
@@ -14888,7 +14891,7 @@ algorithm
                           ),
                           attributes = (attr as 
                           SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
-                                     variability = var,direction = dir)),
+                                     parallelism = prl,variability = var,direction = dir)),
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
                           comment = comment,
                           info = info),
@@ -14897,7 +14900,7 @@ algorithm
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();
         dir = Absyn.INPUT();
-        attr = SCode.ATTR(dim,f,s,var,dir);
+        attr = SCode.ATTR(dim,f,s,prl,var,dir);
 
         //Debug.fprint(Flags.REC_CONST, "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
@@ -16417,6 +16420,7 @@ algorithm
       SCode.Flow fl;
       SCode.Stream st;
       Absyn.Direction dir;
+      SCode.Parallelism prl;
       SCode.Variability vt;
 
     // if classprefix is variable, keep component variability
@@ -16424,8 +16428,8 @@ algorithm
     // if variability is constant, do not override it!
     case(attr as SCode.ATTR(variability = SCode.CONST()),_) then attr;
     // if classprefix is parameter or constant, override component variability
-    case(SCode.ATTR(ad,fl,st,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
-      then SCode.ATTR(ad,fl,st,vt,dir);
+    case(SCode.ATTR(ad,fl,st,prl,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
+      then SCode.ATTR(ad,fl,st,prl,vt,dir);
     // anything else
     case(attr,_) then attr;
   end matchcontinue;

@@ -70,10 +70,10 @@ public constant SCode.Prefixes BUILTIN_PREFIXES = SCode.PREFIXES(
   Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE());
 
 public constant SCode.Attributes BUILTIN_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.VAR(), Absyn.BIDIR());
+  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR());
 
 public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
-  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.CONST(), Absyn.BIDIR());
+  {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR());
 
 public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
   {}, {}, {}, {}, {}, NONE(), {}, NONE());

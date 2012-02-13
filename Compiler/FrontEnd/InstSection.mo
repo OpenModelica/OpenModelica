@@ -3157,6 +3157,7 @@ algorithm
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
       SCode.Variability vt1,vt2;
+      SCode.Parallelism prl;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String componentName;
@@ -3401,7 +3402,7 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
-           SCode.ATTR({}, flowPrefix1, streamPrefix1, vt1, dir1), 
+           SCode.ATTR({}, flowPrefix1, streamPrefix1, SCode.NON_PARALLEL(), vt1, dir1), 
            SCode.PUBLIC(), NONE(), {}, NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, SCode.NOT_FINAL(), source, true);

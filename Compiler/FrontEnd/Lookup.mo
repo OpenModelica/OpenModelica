@@ -2164,6 +2164,7 @@ algorithm
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
+      SCode.Parallelism prl;
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
@@ -2181,7 +2182,7 @@ algorithm
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
-        SCode.ATTR(d,fl,st,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,fl,st,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2201,14 +2202,14 @@ algorithm
         // dir = Absyn.INPUT();
         vis = SCode.PROTECTED();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
     
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case ((((comp as 
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,fl,st,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,fl,st,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2228,14 +2229,14 @@ algorithm
         //dir = Absyn.INPUT();
         vis = SCode.PROTECTED();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
     
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case ((((comp as 
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,fl,st,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,fl,st,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2254,7 +2255,7 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,fl,st,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
 
     case ((comp,cmod)::_,mods,_)
       equation
@@ -2279,7 +2280,7 @@ algorithm
   //print(" creating element of type: " +& id +& "\n");
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
-          SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.OUTPUT()),
+          SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
           SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo);
 end buildRecordConstructorResultElt;

@@ -549,10 +549,18 @@ uniontype Attributes "- Attributes"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
     Flow   flowPrefix   "the flow prefix";
     Stream streamPrefix "the stream prefix";
+    Parallelism parallelism "parallelism prefix: parglobal, parlocal, parprivate";
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
   end ATTR;
 end Attributes;
+
+public
+uniontype Parallelism "Parallelism"
+  record PARGLOBAL  "Global variables for CUDA and OpenCL"            end PARGLOBAL;
+  record PARLOCAL "Shared for CUDA and local for OpenCL"              end PARLOCAL;
+  record NON_PARALLEL  "Non parallel/Normal variables"                 end NON_PARALLEL;
+end Parallelism;
 
 public
 uniontype Variability "the variability of a component"
@@ -580,9 +588,9 @@ public constant Prefixes defaultPrefixes =
     NOT_REPLACEABLE()); 
 
 public constant Attributes defaultVarAttr =
-  ATTR({}, NOT_FLOW(), NOT_STREAM(), VAR(), Absyn.BIDIR());
+  ATTR({}, NOT_FLOW(), NOT_STREAM(), NON_PARALLEL(), VAR(), Absyn.BIDIR());
 public constant Attributes defaultConstAttr =
-  ATTR({}, NOT_FLOW(), NOT_STREAM(), CONST(), Absyn.BIDIR());
+  ATTR({}, NOT_FLOW(), NOT_STREAM(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
  
 // .......... functionality .........
 protected import Util;
@@ -1578,16 +1586,18 @@ public function attributesEqual
 algorithm
   equal:= matchcontinue(attr1,attr2)
     local
+      Parallelism prl1,prl2;
       Variability var1,var2;
       Flow fl1,fl2;
       Stream st1,st2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
       
-    case(ATTR(ad1,fl1,st1,var1,dir1),ATTR(ad2,fl2,st2,var2,dir2))
+    case(ATTR(ad1,fl1,st1,prl1,var1,dir1),ATTR(ad2,fl2,st2,prl2,var2,dir2))
       equation
         true = arrayDimEqual(ad1,ad2);
         true = valueEq(fl1,fl2);
+        true = parallelismEqual(prl1,prl2);
         true = variabilityEqual(var1,var2);
         true = directionEqual(dir1,dir2);
         true = valueEq(st1,st2);  // added Modelica 3.1 stream connectors
@@ -1598,6 +1608,21 @@ algorithm
     
   end matchcontinue;
 end attributesEqual;
+
+public function parallelismEqual
+"function parallelismEqual
+  Returns true if two Parallelism prefixes are equal"
+  input Parallelism prl1;
+  input Parallelism prl2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(prl1,prl2)
+    case(PARGLOBAL(),PARGLOBAL()) then true;
+    case(PARLOCAL(),PARLOCAL()) then true;
+    case(NON_PARALLEL(),NON_PARALLEL()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end parallelismEqual;
 
 public function variabilityEqual
 "function variabilityEqual
@@ -3349,6 +3374,7 @@ public function mergeAttributes
 algorithm 
   outoEle := match(ele, oEle)
     local
+      Parallelism p1,p2,p;
       Variability v1,v2,v;
       Absyn.Direction d1,d2,d;
       Absyn.ArrayDim ad1,ad2,ad;
@@ -3356,17 +3382,37 @@ algorithm
       Stream s1,s2,s;
     
     case(ele,NONE()) then SOME(ele);
-    case(ATTR(ad1,f1,s1,v1,d1), SOME(ATTR(ad2,f2,s2,v2,d2)))
+    case(ATTR(ad1,f1,s1,p1,v1,d1), SOME(ATTR(ad2,f2,s2,p2,v2,d2)))
       equation
         f = boolFlow(boolOr(flowBool(f1),flowBool(f2)));
         s = boolStream(boolOr(streamBool(s1),streamBool(s2)));
+        p = propagateParallelism(p1,p2);
         v = propagateVariability(v1,v2);
         d = propagateDirection(d1,d2);
         ad = ad1; // TODO! CHECK if ad1 == ad2!
       then
-        SOME(ATTR(ad,f,s,v,d));
+        SOME(ATTR(ad,f,s,p,v,d));
   end match;
 end mergeAttributes;
+
+protected function propagateParallelism
+"Helper function for mergeAttributes"
+  input Parallelism p1;
+  input Parallelism p2;
+  output Parallelism p;
+algorithm 
+  p := matchcontinue(p1,p2)
+    case(p1,p2) 
+      equation
+        true = parallelismEqual(p1,p2);
+      then p1;
+    case(_,_) 
+      equation
+        print(" failure in propagateParallelism, Parallelism mismatch.");
+      then 
+        fail();
+  end matchcontinue;
+end propagateParallelism;
 
 protected function propagateVariability 
 "Helper function for mergeAttributes"
@@ -3543,10 +3589,11 @@ protected
   Flow f;
   Stream s;
   Variability v;
+  Parallelism p;
   Absyn.Direction d;
 algorithm
-  ATTR(_, f, s, v, d) := inAttributes;
-  outAttributes := ATTR({}, f, s, v, d);
+  ATTR(_, f, s, p, v, d) := inAttributes;
+  outAttributes := ATTR({}, f, s, p, v, d);
 end removeAttributeDimensions;
 
 public function setAttributesDirection
@@ -3557,10 +3604,11 @@ protected
   Absyn.ArrayDim ad;
   Flow f;
   Stream s;
+  Parallelism p;
   Variability v;
 algorithm
-  ATTR(ad, f, s, v, _) := inAttributes;
-  outAttributes := ATTR(ad, f, s, v, inDirection);
+  ATTR(ad, f, s, p, v, _) := inAttributes;
+  outAttributes := ATTR(ad, f, s, p, v, inDirection);
 end setAttributesDirection;
 
 public function attrVariability

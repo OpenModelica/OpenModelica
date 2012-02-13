@@ -1140,7 +1140,7 @@ protected
 algorithm
   SCode.ENUM(literal = lit_name) := inEnum;
   enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.CONST(), Absyn.BIDIR()),
+    SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
     inEnumType, SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
@@ -1168,7 +1168,7 @@ protected
 algorithm
   Absyn.ITERATOR(name=iter_name) := inIterator;
   iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.CONST(), Absyn.BIDIR()),
+    SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
     NONE(), NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(iter, inEnv);

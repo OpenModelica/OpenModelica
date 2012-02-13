@@ -746,11 +746,18 @@ package SCode
     record ATTR
       Absyn.ArrayDim arrayDims;
       Flow flowPrefix;
+      Parallelism parallelism;
       Stream streamPrefix;
       Variability variability;
       Absyn.Direction direction;
     end ATTR;
   end Attributes;
+
+uniontype Parallelism 
+  record PARGLOBAL      end PARGLOBAL;
+  record PARLOCAL       end PARLOCAL;
+  record NON_PARALLEL   end NON_PARALLEL;
+end Parallelism;
 
   uniontype Variability
     record VAR      end VAR;

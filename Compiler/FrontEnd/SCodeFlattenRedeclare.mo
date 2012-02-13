@@ -939,17 +939,19 @@ protected
   Absyn.ArrayDim dims1, dims2;
   SCode.Flow fp1, fp2;
   SCode.Stream sp1, sp2;
+  SCode.Parallelism prl1,prl2;
   SCode.Variability var1, var2;
   Absyn.Direction dir1, dir2;
 algorithm
-  SCode.ATTR(dims1, fp1, sp1, var1, dir1) := inOriginalAttributes;
-  SCode.ATTR(dims2, fp2, sp2, var2, dir2) := inNewAttributes;
+  SCode.ATTR(dims1, fp1, sp1, prl1, var1, dir1) := inOriginalAttributes;
+  SCode.ATTR(dims2, fp2, sp2, prl2, var2, dir2) := inNewAttributes;
   dims2 := propagateArrayDimensions(dims1, dims2);
   fp2 := propagateFlowPrefix(fp1, fp2);
   sp2 := propagateStreamPrefix(sp1, sp2);
+  prl2 := propagateParallelism(prl1,prl2);
   var2 := propagateVariability(var1, var2);
   dir2 := propagateDirection(dir1, dir2);
-  outNewAttributes := SCode.ATTR(dims2, fp2, sp2, var2, dir2);
+  outNewAttributes := SCode.ATTR(dims2, fp2, sp2, prl2, var2, dir2);
 end propagateAttributes;
 
 protected function propagateArrayDimensions
@@ -984,6 +986,17 @@ algorithm
     else inNewStream;
   end match;
 end propagateStreamPrefix;
+
+protected function propagateParallelism
+  input SCode.Parallelism inOriginalParallelism;
+  input SCode.Parallelism inNewParallelism;
+  output SCode.Parallelism outNewParallelism;
+algorithm
+  outNewParallelism := match(inOriginalParallelism, inNewParallelism)
+    case (_, SCode.NON_PARALLEL()) then inOriginalParallelism;
+    else inNewParallelism;
+  end match;
+end propagateParallelism;
 
 protected function propagateVariability
   input SCode.Variability inOriginalVariability;

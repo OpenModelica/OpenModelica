@@ -2089,6 +2089,7 @@ algorithm
       SCode.Prefixes pf;
       SCode.Flow fp;
       SCode.Stream sp;
+      SCode.Parallelism prl;
       SCode.Variability vp;
       Absyn.Direction dp;
       SCode.Mod mod;
@@ -2097,11 +2098,11 @@ algorithm
       Absyn.Info info;
 
     case (_, SCode.COMPONENT(_, pf, 
-          SCode.ATTR(_, fp, sp, vp, dp), _, mod, cmt, cond, info), _,
+          SCode.ATTR(_, fp, sp, prl, vp, dp), _, mod, cmt, cond, info), _,
         SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()))
       equation
         name = printPrefix(inName);
-        var = SCode.COMPONENT(name, pf, SCode.ATTR({}, fp, sp, vp, dp), 
+        var = SCode.COMPONENT(name, pf, SCode.ATTR({}, fp, sp, prl, vp, dp), 
           Absyn.TPATH(inClassPath, NONE()), mod, cmt, cond, info);
         print("  " +& SCodeDump.unparseElementStr(var) +& ";\n");
       then

@@ -195,6 +195,7 @@ algorithm
       Absyn.TypeSpec typath;
       SCode.Mod mod;
       SCode.Element cl;
+      SCode.Parallelism prl;
       SCode.Variability var;
       Option<SCode.Comment> comment;
       Absyn.Path path;
@@ -225,13 +226,13 @@ algorithm
 
     case (_, SCode.COMPONENT(name = n,
                              prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
-                             attributes = SCode.ATTR(ad, fp, sp, var, direction),
+                             attributes = SCode.ATTR(ad, fp, sp, prl, var, direction),
                              typeSpec = typath,
                              modifications = mod,
                              condition = cond), inMod)
       equation
         s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
-        s2 = flowStr(fp) +& streamStr(sp) +& variabilityStr(var) +& directionStr(direction);    
+        s2 = flowStr(fp) +& streamStr(sp) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);    
         s3 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
         s4 = Dump.unparseComponentCondition(cond);  
         res = stringAppendList({s1, "|", s2, "|", s3, s4});
@@ -239,10 +240,10 @@ algorithm
         res;
 
     // derived
-    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, fp, sp, var, direction))), inMod)
+    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, fp, sp, prl, var, direction))), inMod)
       equation
         true = stringEq(inName, SCodeFlat.derivedName);
-        s1 = flowStr(fp) +& streamStr(sp) +& variabilityStr(var) +& directionStr(direction);
+        s1 = flowStr(fp) +& streamStr(sp) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
         s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod); 
         res = stringAppendList({s1, "|", s2});
       then
@@ -330,6 +331,17 @@ algorithm
     case (SCode.PROTECTED()) then "x";
   end match;
 end visibilityStr;
+
+public function parallelismStr
+  input SCode.Parallelism inParallelism;
+  output String outString;
+algorithm
+  outString := match (inParallelism)
+    case (SCode.PARGLOBAL()) then "parglobal";
+    case (SCode.PARLOCAL()) then "parlocal";
+    case (SCode.NON_PARALLEL()) then "non_parallel";
+  end match;
+end parallelismStr;
 
 public function variabilityStr
   input SCode.Variability inVariability;
