@@ -249,6 +249,15 @@ inline static int anyStringWork(void* any, int ix)
   numslots = MMC_HDRSLOTS(hdr);
   ctor = MMC_HDRCTOR(hdr);
 
+  /* Ugly hack to "detect" function pointers. If these parameters are outside
+   * these bounds, then we probably have a function pointer. This is just to
+   * keep the debugger from crashing. */
+  if (numslots < 0 || numslots > 1024 || ctor > 255) {
+    checkAnyStringBufSize(ix, 2);
+    ix += sprintf(anyStringBuf+ix, "0");
+    return ix;
+  }
+
   if (numslots>0 && ctor == MMC_FREE_OBJECT_CTOR) { /* FREE OBJECT! */
     checkAnyStringBufSize(ix,100);
     ix += sprintf(anyStringBuf+ix, "FREE(%u)", numslots);
@@ -504,6 +513,15 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
+
+  /* Ugly hack to "detect" function pointers. If these parameters are outside
+   * these bounds, then we probably have a function pointer. This is just to
+   * keep the debugger from crashing. */
+  if (numslots < 0 || numslots > 1024 || ctor > 255) {
+    checkAnyStringBufSize(ix, 8);
+    ix += sprintf(anyStringBuf+ix, "%s", "Integer");
+    return ix;
+  }
 
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
     checkAnyStringBufSize(ix,7);
