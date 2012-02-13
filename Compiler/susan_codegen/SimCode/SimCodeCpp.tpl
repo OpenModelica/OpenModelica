@@ -2951,32 +2951,7 @@ template writeoutput1(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
-  <</*  
-      <%{(vars.algVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.intAlgVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.boolAlgVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.aliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.intAliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.boolAliasVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.stateVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.derivativeVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=",")}
-    ;separator=","%>;*/
+  << 
       <%{(vars.algVars |> SIMVAR(__) =>
         ' "<%crefStr(name)%>" '
       ;separator=","),
@@ -3071,6 +3046,14 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numIntAlgvar;
 
+template numBoolAlgvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numBoolAlgVars%>
+>>
+end numBoolAlgvar;
 
 template numDerivativevars(ModelInfo modelInfo)
 ::=
@@ -3087,13 +3070,15 @@ template writeoutput2(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
+
+
  <<  
     
-     <%vars.algVars |> SIMVAR(__) =>'v(<%index%>)=<%cref(name)%>;'%>
-     <%vars.intAlgVars |> SIMVAR(__) =>'v(<%numAlgvar(modelInfo)%>+<%index%>)=<%cref(name)%>;'%>
-     <%vars.boolAlgVars |> SIMVAR(__) =>'v(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%index%>)=<%cref(name)%>;'%>
-     <%(vars.stateVars  |> SIMVAR(__) =>' v(<%numAlgvars(modelInfo)%>+<%index%>)=_z[<%index%>]; ')%>
-     <%(vars.derivativeVars  |> SIMVAR(__) =>' v2(<%index%>)=_zDot[<%index%>]; ')%>
+     <%vars.algVars |> SIMVAR(__) hasindex i0 =>'v(<%i0%>)=<%cref(name)%>;'%>
+     <%vars.intAlgVars |> SIMVAR(__) hasindex i1 =>'v(<%i1%>+<%numAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
+     <%vars.boolAlgVars |> SIMVAR(__)hasindex i2  =>'v(<%i2%>+ <%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
+     <%(vars.stateVars  |> SIMVAR(__) hasindex i3 =>' v(<%i3%> +<%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%> +<%numBoolAlgvar(modelInfo)%>)=_z[<%index%>]; ')%>
+     <%(vars.derivativeVars  |> SIMVAR(__) hasindex i4 =>' v2(<%i4%>)=_zDot[<%index%>]; ')%>
    
  >>
 end writeoutput2;
@@ -3121,7 +3106,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
         '_event_handling.save(_z[<%index%>],"<%cref(name)%>");'
       ;separator="\n")}
      ;separator="\n"%>
+     
      _event_handling.saveH();
+     //save all zero crossing condtions
+      <%saveconditionvar(zeroCrossings,simCode)%>
     }
   >>    
 end saveall;
@@ -3526,7 +3514,8 @@ case SES_MIXED(__) then
     }
     if(iter<%num%>>max_iter<%num%> && (restart<%num%> == true) )
     {
-    	throw std::runtime_error("Number of iteration steps exceeded for discrete varibales check . ");
+    	//throw std::runtime_error("Number of iteration steps exceeded for discrete varibales check . ");
+    	cout << "Number of iteration steps exceeded for discrete varibales check at time " << time << std::endl;
     }
   
   >>
@@ -5717,17 +5706,32 @@ end giveZeroFunc2;
 
 template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
+ let &preExp = buffer "" /*BUFD*/
   match relation
-  case RELATION(__) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    //let op = zeroCrossingOpFunc(operator)
-    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    <<
-    f[<%index1%>]=(<%e2%>-<%e1%>);
-    >> 
+  case rel as  RELATION(index=zerocrossingIndex) then
+  	 let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+ 	 let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  	 match rel.operator
+  	  
+  	  case LESS(__) 
+  	  case LESSEQ(__) then
+ 	  <<
+ 	    if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
+   		 	f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+   		else
+   		 	f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+      >>
+      case GREATER(__)
+      case GREATEREQ(__) then
+        <<
+ 	    if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
+   		 	f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+   		else
+   		 	f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+     	>>
+     end match  
 end giveZeroFunc3;
-
+/*+sgn(<%e2%>-<%e1%>)*eps*/
 template conditionvarZero(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
@@ -5743,6 +5747,24 @@ template conditionvarZero1(Integer index1, Exp relation,SimCode simCode)
      bool _condition<%zerocrossingIndex%>;
     >>
 end conditionvarZero1;
+
+template saveconditionvar(list<ZeroCrossing> zeroCrossings,SimCode simCode)
+::=
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+    conditionvarZero1(i0, relation_, simCode)
+  ;separator="\n")
+end saveconditionvar;
+
+template saveconditionvar1(Integer index1, Exp relation,SimCode simCode)
+::=
+  match relation
+  case RELATION(index=zerocrossingIndex) then
+    <<
+     _event_handling.save(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>");
+    >>
+end saveconditionvar1;
+
+
 
 template conditionvarSample(list<SampleCondition> sampleConditions,SimCode simCode)
 ::=
