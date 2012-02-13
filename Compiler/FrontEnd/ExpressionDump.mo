@@ -319,8 +319,8 @@ public function unaryopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.UMINUS(ty = _)) then "-";
-    case (DAE.UMINUS_ARR(ty = _)) then "-";
+    case (DAE.UMINUS(ty = _)) then Util.if_(Config.typeinfo(),"-<UMINUS>","-");
+    case (DAE.UMINUS_ARR(ty = _)) then Util.if_(Config.typeinfo(),"-<UMINUS_ARR>","-");
   end match;
 end unaryopSymbol;
 
