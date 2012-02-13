@@ -5443,14 +5443,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       else tempDecl(retType, &varDecls)
     let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
-      #ifdef _OMC_MEASURE_TIME
+      <%\n%>#ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_FN(<%funName%>_index);
       #endif<%\n%>
       >>
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
-      #ifdef _OMC_MEASURE_TIME
+      <%\n%>#ifdef _OMC_MEASURE_TIME
       SIM_PROF_ACC_FN(<%funName%>_index);
       #endif<%\n%>
       >>
