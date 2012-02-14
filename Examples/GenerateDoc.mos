@@ -274,7 +274,7 @@ for filepath in sorted(glob.glob('*.html')):
 writeFile("FindFiles.sh","#!/bin/bash
 rm -f *.png *.pdf FindFiles.log
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
-grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.: -]*/[A-Za-z_0-9%.:/ -]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\" | sed 's/ /%20/g' > tmp
+grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.: -]*/[A-Za-z_0-9%.:/ -]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\"  > tmp
 for f in `cat tmp`; do
   f=`echo $f | sed 's/%20/ /'`
   if test -f \"$OMLIBRARY/$f\"; then
