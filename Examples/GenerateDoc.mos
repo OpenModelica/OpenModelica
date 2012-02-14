@@ -120,9 +120,11 @@ function itemString
 protected
   String docInfo, revision;
 algorithm
-  docInfo := if item.docInfo[1] == \"\" or (not OpenModelica.Scripting.regexBool(docInfo,\"^.*<[Hh][Tt][Mm][Ll]>.*$\"))
+  docInfo := if item.docInfo[1] == \"\"
     then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
-    else \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1];
+    else if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\") or OpenModelica.Scripting.regexBool(item.docInfo[1],\"<HTML>\")
+    then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
+    else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.docInfo[1], \"</pre>\");
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
   res := item.head + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
 end itemString;
@@ -131,6 +133,11 @@ function itemFile
   input Item item;
   output String file := item.file;
 end itemFile;
+
+function toHtml
+  input String str;
+  output String ostr := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"&\",\"&amp;\"),\"<\",\"&lt;\"),\">\",\"&gt;\");
+end toHtml;
 
 record Item
   String file;
@@ -153,14 +160,14 @@ items:={Item(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
         sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
-             OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.getClassComment(cl),"&","&amp;") +
+             toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
              for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
         "</table>"
         ),
-      OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.getClassComment(c),"&","&amp;"),
-      preSuffixIfNotEmpty("\n<h4><a name=\"text\">Interface</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,interfaceOnly=true),"</pre></blockquote>"),
-      preSuffixIfNotEmpty("\n<h4><a name=\"text\">Definition</a></h4>\n<blockquote><pre>",OpenModelica.Scripting.list(c,shortOnly=true),"</pre></blockquote>")
+      toHtml(OpenModelica.Scripting.getClassComment(c)),
+      preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
+      preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
     ) for c in allClassNames};
 echo(true);
 "Start writing items to file";
