@@ -58,8 +58,7 @@ public:
 	/// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 	virtual int getDimRHS(const INDEX index = ALL_VARS) const = 0;
 
-	/// (Re-) initialize the system of equations
-	virtual void init(double ts,double te) = 0;
+	
 
 	/// Set current integration time
 	virtual void setTime(const double& time) = 0;

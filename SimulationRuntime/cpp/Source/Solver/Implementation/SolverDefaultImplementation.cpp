@@ -40,6 +40,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 , _outputCommand		(IDAESystem::WRITE)
 
 {
+	_initialization = new Initialization(dynamic_cast<ISystemInitialization*>(_system));
 }
 SolverDefaultImplementation::~SolverDefaultImplementation()
 {
@@ -51,6 +52,7 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
 		delete [] _zeroValLastSuccess;
 	if(_events)
 		delete [] _events;
+	delete _initialization;
 }
 
 		void SolverDefaultImplementation::setStartTime(const double& t)
@@ -78,11 +80,13 @@ void SolverDefaultImplementation::init()
 {
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
 	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
+	ISystemInitialization* init_system = dynamic_cast<ISystemInitialization*>(_system);
 	// Set current start time to the system
 	continous_system->setTime(_tCurrent);
 
 	// Assemble the system 
-	continous_system->init(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
+	//init_system->init(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
+	_initialization->initializeSystem(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
 	
 
 	//// Write out head line

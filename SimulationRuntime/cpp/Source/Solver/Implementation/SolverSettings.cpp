@@ -9,7 +9,7 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
 	, _hLowerLimit	(10*UROUND)
 	, _endTimeTol	(1e-6)
 	, _zeroTol		(1e-6)
-	, _zeroTimeTol	(1e-6)
+	, _zeroTimeTol	(1e-10)
 	,_zeroRatio(1.0)
 
 {	

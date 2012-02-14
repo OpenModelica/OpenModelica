@@ -5,8 +5,8 @@
 
 GlobalSettings::GlobalSettings()
 : _startTime			(0.0)
-, _endTime			(1)
-, _hOutput			(1e-4)
+, _endTime			(3)
+, _hOutput			(1e-3)
 , _resultsOutput		(true)	
 , _infoOutput		(true)
 , selected_solver("Euler")

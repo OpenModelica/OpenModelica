@@ -3,9 +3,10 @@
 #include "System/Interfaces/IDAESystem.h"		// System interface
 #include "System/Interfaces/IContinous.h"		
 #include "System/Interfaces/IEvent.h"
+#include "System/Interfaces/ISystemInitialization.h"
 #include "Solver/Interfaces/IDAESolver.h"				// Solver interface
 #include "Solver/Interfaces/ISolverSettings.h"			// SolverSettings interface
-
+#include "Initialization.h"
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 
@@ -115,7 +116,7 @@ public:
 	IDAESystem::OUTPUT	
 		_outputCommand;					///< Controls the output
 	
-
+	Initialization* _initialization;
 
 private:
 	/// Definition of signum function

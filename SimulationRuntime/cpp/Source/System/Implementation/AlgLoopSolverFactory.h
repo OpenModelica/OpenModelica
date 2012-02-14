@@ -3,6 +3,7 @@
 #include "System/Interfaces/IAlgLoop.h"				// Interface for algebraic loops
 #include "System/Interfaces/IAlgLoopSolver.h"		// Interface for algebraic loops
 #include "System/Newton/Interfaces/INewtonSettings.h"
+#include "System/KinSol/Interfaces/IKinSolSettings.h"
 #include "System/Interfaces/IAlgLoopSolverFactory.h"	
 /*****************************************************************************/
 /**
@@ -28,6 +29,7 @@ public:
 	virtual boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
+	//std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
 	std::vector<boost::shared_ptr<INewtonSettings> > _algsolversettings;
 	std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
 };

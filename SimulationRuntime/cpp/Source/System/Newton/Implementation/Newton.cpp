@@ -92,7 +92,7 @@ void Newton::solve(const IContinous::UPDATE command)
 	// Get initial values from system
 	_algLoop->giveVars(_y,NULL,NULL);
 	//_algLoop->update(command);
-	//_algLoop->giveRHS(_f,NULL,NULL);
+	_algLoop->giveRHS(_f,NULL,NULL);
 
 
 	// Reset status flag

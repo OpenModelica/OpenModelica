@@ -17,7 +17,33 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 {
 	if(algLoop->getDimVars(IAlgLoop::REAL) > 0)
 	{
-		std::string newton_name(NEWTON_LIB );
+		//std::string newton_name("Kinsol.dll" );
+		//type_map types;
+		//if(!load_single_library(types, newton_name))
+		//	throw std::invalid_argument(" Newton library could not be loaded");
+		//std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, IKinsolSettings*> >::iterator iter;
+		//std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, IKinsolSettings*> >& Newtonfactory(types.get());
+		//std::map<std::string, factory<IKinsolSettings> >::iterator iter2;
+		//std::map<std::string, factory<IKinsolSettings> >& Newtonsettingsfactory(types.get());
+		//iter2 = Newtonsettingsfactory.find("KinsolSettings");
+		//if (iter2 ==Newtonsettingsfactory.end()) 
+		//{
+		//	throw std::invalid_argument("No such Newton Settings");
+		//}
+		//boost::shared_ptr<IKinsolSettings> algsolversetting= boost::shared_ptr<IKinsolSettings>(iter2->second.create());
+		//_algsolversettings.push_back(algsolversetting);
+		////Todo load or configure settings
+		////_algsolversettings->load("config/Newtonsettings.xml");
+		//iter = Newtonfactory.find("KinsolCall");
+		//if (iter ==Newtonfactory.end()) 
+		//{
+		//	throw std::invalid_argument("No such Newton Solver");
+		//}
+
+		//boost::shared_ptr<IAlgLoopSolver> algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,algsolversetting.get()));
+		//_algsolvers.push_back(algsolver);
+		//return algsolver;
+		std::string newton_name("Newton.dll" );
 		type_map types;
 		if(!load_single_library(types, newton_name))
 			throw std::invalid_argument(" Newton library could not be loaded");

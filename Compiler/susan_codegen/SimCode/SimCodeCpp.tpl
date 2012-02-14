@@ -222,6 +222,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
+   <%DimInitEquations(simCode)%>
+   <%DimUnfixedStates(simCode)%>
+   <%DimUnfixedParameters(simCode)%>
+   <%DimIntialResiduals(simCode)%>
+   <%GetIntialStatus(simCode)%>
+   <%SetIntialStatus(simCode)%>
    <%checkConditions(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
@@ -1742,7 +1748,7 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties <%if modelInfo.labels then ',public IReduceDAE '%>,public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public  ISystemInitialization <%if modelInfo.labels then ',public IReduceDAE '%>,public SystemDefaultImplementation
   { 
   public: 
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings& globalSettings); 
@@ -1752,8 +1758,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   
   private:    
     //Methods:
-	//Saves all variables before an event is handled, is needed for the pre, edge and change operator
-     void saveAll();
+	
 
 	 void resetHelpVar(const int index);
 	 
@@ -2039,9 +2044,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual int getDimVars(const INDEX index = ALL_VARS) const;
 	//Provide number (dimension) of right hand sides (equations and/or residuals) according to the index 
 	virtual int getDimRHS(const INDEX index = ALL_VARS)const;
-    //(Re-) initialize the system of equations
-	virtual void init(double ts,double te);
-	//Resets all time events
+  	//Resets all time events
 	virtual void resetTimeEvents();
 	//Set current integration time 
     virtual void setTime(const double& t);
@@ -2079,6 +2082,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual void handleEvent(unsigned long index);
 	//Checks if a discrete variable has changed and triggers an event 
 	virtual bool checkForDiscreteEvents();
+	 //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+	virtual void saveAll();
 	//Returns the vector with all time events 
 	virtual event_times_type getTimeEvents();
 	// No input
@@ -2097,6 +2102,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual bool hasStateDependentMass(); 
 	// System is able to provide the Jacobian symbolically 
 	virtual bool provideSymbolicJacobian();
+	//Systeminitialization methods
+	virtual unsigned int getDimInitEquations() ; 
+	virtual unsigned int getDimUnfixedStates() ; 
+	virtual unsigned int getDimUnfixedParameters(); 
+	virtual unsigned int getDimIntialResiduals() ;
+	virtual bool initial();
+	virtual void setInitial(bool);
+	/// (Re-) initialize the system of equations and bounded parameters
+	virtual void init(double ts,double te);
+	
 	<%if modelInfo.labels then 
 	<<
 	// Returns the history object to query simulation results 
@@ -4880,6 +4895,88 @@ end DimZeroFunc;
 
 
 
+
+template DimInitEquations(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+  <<
+   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimInitEquations()
+    {
+      return <%varInfo.numInitEquations%>;
+    }
+  >>
+  end match
+end DimInitEquations;
+
+template DimUnfixedStates(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimUnfixedStates()
+    {
+      return 0;
+    }
+  >>
+end DimUnfixedStates;
+
+
+template DimUnfixedParameters(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+  <<
+   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimUnfixedParameters()
+    {
+      return <%varInfo.numResiduals%>;
+    }
+  >>
+  end match
+end DimUnfixedParameters;
+
+
+template DimIntialResiduals(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimIntialResiduals()
+    {
+      return 0;
+    }
+  >>
+end DimIntialResiduals;
+
+template SetIntialStatus(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   void <%lastIdentOfPath(modelInfo.name)%>::setInitial(bool status)
+    {
+      _initial = status;
+    }
+  >>
+end SetIntialStatus;
+
+template GetIntialStatus(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+   bool <%lastIdentOfPath(modelInfo.name)%>::initial()
+    {
+      return _initial;
+    }
+  >>
+end GetIntialStatus;
+
+
 template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context context, Text &preExp,Text &varDecls,SimCode simCode) ::=
   let e1 = daeExp(exp1, context, &preExp, &varDecls,simCode)
   let e2 = daeExp(exp2, context, &preExp, &varDecls,simCode)
@@ -5629,8 +5726,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     int iter=0;
     while(restart && !(iter++ > 10))
     {
-    	//save all variables for pre and edge operators
-	saveAll();
+    
     <%zeroCrossingsCode%>
     double h[<%helpvarlength(simCode)%>];
     <%helpvarvector(whenClauses,simCode)%>
@@ -5751,7 +5847,7 @@ end conditionvarZero1;
 template saveconditionvar(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    conditionvarZero1(i0, relation_, simCode)
+    saveconditionvar1(i0, relation_, simCode)
   ;separator="\n")
 end saveconditionvar;
 

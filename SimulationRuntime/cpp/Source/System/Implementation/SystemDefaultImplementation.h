@@ -1,10 +1,11 @@
 #pragma once
 
-#include "System/Interfaces/IDAESystem.h"				// System interface
-#include "System/Interfaces/IContinous.h"				// System interface
-#include "System/Interfaces/IEvent.h"				// System interface
-#include "System/Interfaces/ISystemProperties.h"				// System interface
-#include "Math/Implementation/Functions.h"	// Include for use of abs
+#include "System/Interfaces/IDAESystem.h"				// interface for solver including dae system inforamtion
+#include "System/Interfaces/IContinous.h"				// interface for solver including continous system information 
+#include "System/Interfaces/IEvent.h"			 	    // interface for event handling
+#include "System/Interfaces/ISystemProperties.h"		// Interface describes properties of System
+#include "System/Interfaces/ISystemInitialization.h"	// Interface to initialize the system
+#include "Math/Implementation/Functions.h"				// Include for use of abs
 
 
 
@@ -69,7 +70,7 @@ public:
 protected:
      void Assert(bool cond,string msg);
 	 void Terminate(string msg); 
-	 bool initial();
+	
 	double
 		time;				///< current simulation time (given by the solver) 
 
