@@ -25,7 +25,7 @@ clean:
 	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
 	rm -rf $(NAME) $(NAME)$(EXE) Makefile
 
-$(NAME)$(EXE): Makefile
+$(NAME)$(EXE): Makefile $(LIB)
 	$(MAKE) -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
