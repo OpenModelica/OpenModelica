@@ -109,7 +109,7 @@ testSummary:
 testPar:
 	(cd testsuite/partest && time ./runtests.pl -j8)
 
-mosh: omc
+mosh:
 	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
 
 
