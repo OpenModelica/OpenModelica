@@ -677,7 +677,7 @@ extern const char* System_getMakeCommand()
 
 extern const char* System_snprintff(const char *fmt, int len, double d)
 {
-  static char buf[1024];
+  static char buf[1024] /* It's ok to keep me static because snprintf is not reentrant either */;
   assert(1024>len);
   snprintf(buf,len,fmt,d);
   buf[1023] = 0;
