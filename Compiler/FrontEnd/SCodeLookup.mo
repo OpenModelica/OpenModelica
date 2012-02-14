@@ -348,7 +348,12 @@ public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
 public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
   SCode.CLASS("StateSelect",  SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
-      SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.ENUMERATION({
+        SCode.ENUM("never", NONE()),
+        SCode.ENUM("avoid", NONE()),
+        SCode.ENUM("default", NONE()),
+        SCode.ENUM("prefer", NONE()),
+        SCode.ENUM("always", NONE())}, NONE()),
       Absyn.dummyInfo), BUILTIN_STATESELECT_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
@@ -1127,12 +1132,13 @@ algorithm
       then
         (item, inName, SCodeEnv.emptyEnv, BUILTIN_ORIGIN());
 
-    // A builtin type with qualified path, i.e. StateSelect.something.
-    case (Absyn.QUALIFIED(name = id), _, _, _)
+    // Builtin type StateSelect. The only builtin type that can be qualified,
+    // i.e. StateSelect.always.
+    case (Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(id)), _, _, _)
       equation
-        item = lookupBuiltinType(id);
+        (SOME(item), _, _) = lookupInLocalScope(id, BUILTIN_STATESELECT_ENV, {});
       then
-        (item, inName, SCodeEnv.emptyEnv, BUILTIN_ORIGIN());
+        (item, inName, BUILTIN_STATESELECT_ENV, BUILTIN_ORIGIN());
 
     // Simple name.
     case (Absyn.IDENT(name = id), _, _, _)
@@ -1661,4 +1667,15 @@ algorithm
   end match;
 end itemOrigin;
 
+public function originIsGlobal
+  input Origin inOrigin;
+  output Boolean outRes;
+algorithm
+  outRes := match(inOrigin)
+    case CLASS_ORIGIN() then true;
+    case BUILTIN_ORIGIN() then true;
+    else false;
+  end match;
+end originIsGlobal;
+    
 end SCodeLookup;

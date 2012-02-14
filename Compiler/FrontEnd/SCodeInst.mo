@@ -225,6 +225,7 @@ algorithm
       String name;
       FlatProgram program, const_prog;
       SymbolTable symtab;
+      list<Absyn.Path> consts;
 
     case (_, _, _)
       equation
@@ -239,8 +240,7 @@ algorithm
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         (program, _) = instClassItem(item, SCodeMod.NOMOD(), env, {});
-        const_prog = instGlobalConstants(inGlobalConstants, inEnv,
-          EMPTY_FLAT_PROGRAM());
+        const_prog = instGlobalConstants(inGlobalConstants, inEnv, EMPTY_FLAT_PROGRAM());
         program = mergeFlatProgram(const_prog, program);
         symtab = buildSymbolTable(program);
         symtab = typeComponents(program, symtab);
@@ -294,21 +294,20 @@ end mergeFlatProgram;
 
 protected function addComponentToFlatProgram
   input Component inComponent;
-  input SCode.Variability inVariability;
   input FlatProgram inProgram;
   output FlatProgram outProgram;
 protected
 algorithm
-  outProgram := match(inComponent, inVariability, inProgram)
+  outProgram := match(inComponent, inProgram)
     local
       list<Component> cl, cdl;
       list<SCode.Equation> eq, ie;
       list<SCode.AlgorithmSection> al, ia;
 
-    case (_, _, FLAT_PROGRAM(cl, cdl, eq, ie, al, ia))
+    case (_, FLAT_PROGRAM(cl, cdl, eq, ie, al, ia))
       then FLAT_PROGRAM(inComponent :: cl, cdl, eq, ie, al, ia);
 
-    case (_, _, EMPTY_FLAT_PROGRAM())
+    case (_, EMPTY_FLAT_PROGRAM())
       then FLAT_PROGRAM({inComponent}, {}, {}, {}, {}, {});
 
   end match;
@@ -355,8 +354,8 @@ algorithm
       DAE.Type ty;
       Absyn.ArrayDim dims;
       list<DAE.Var> vars;
-
-      list<DAE.Element> del;
+      list<SCode.Enum> enums;
+      Absyn.Path path;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _) 
@@ -374,9 +373,6 @@ algorithm
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
-
-        //del = List.map2(nel, instEquation, env, inPrefix);
-        //print(stringDelimitList(List.map(del, DAEDump.dumpEquationStr), "\n") +& "\n");
         prog = makeClassFlatProgram(nel, iel, nal, ial);
         prog = instElementList(mel, env, inPrefix, prog);
       then
@@ -395,10 +391,18 @@ algorithm
       then
         (prog, ty);
         
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
+        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _)
+      equation
+        path = prefixToPath(inPrefix);
+        ty = makeEnumType(enums, path);
+      then
+        (EMPTY_FLAT_PROGRAM(), ty);
+
     else (EMPTY_FLAT_PROGRAM(), DAE.T_UNKNOWN_DEFAULT);
   end match;
 end instClassItem2;
-
+  
 protected function convertDerivedBasicTypeToShortDef
   input Item inItem;
   output Item outItem;
@@ -656,9 +660,9 @@ algorithm
       array<Dimension> dim_arr;
 
     // A component, look up it's type and instantiate that class.
-    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad,
-        variability = var), typeSpec = Absyn.TPATH(path = path), 
-        modifications = smod, condition = NONE(), info = info), _, _, _)
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
+        typeSpec = Absyn.TPATH(path = path), modifications = smod,
+        condition = NONE(), info = info), _, _, _)
       equation
         // Look up the class of the component.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -683,7 +687,7 @@ algorithm
         // Create the component and add it to the program.
         path = prefixToPath(prefix);
         comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, binding);
-        prog = addComponentToFlatProgram(comp, var, prog);
+        prog = addComponentToFlatProgram(comp, prog);
       then
         prog;
 
@@ -720,6 +724,41 @@ algorithm
     else EMPTY_FLAT_PROGRAM();
   end match;
 end instElement;
+
+protected function makeEnumType
+  input list<SCode.Enum> inEnumLiterals;
+  input Absyn.Path inEnumPath;
+  output DAE.Type outType;
+protected
+  list<String> names;
+algorithm
+  names := List.map(inEnumLiterals, SCode.enumName);
+  outType := DAE.T_ENUMERATION(NONE(), inEnumPath, names, {}, {}, DAE.emptyTypeSource);
+end makeEnumType;
+
+protected function instEnumLiteral
+  input SCode.Enum inEnumLiteral;
+  input Absyn.Path inEnumPath;
+  input DAE.Type inType;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inEnumLiteral, inEnumPath, inType, inProgram)
+    local
+      String name;
+      Absyn.Path path;
+      Component comp;
+
+    case (SCode.ENUM(literal = name), _, _, _)
+      equation
+        path = Absyn.suffixPath(inEnumPath, name);
+        comp = TYPED_COMPONENT(path, inType, SCode.CONST(),
+          TYPED_BINDING(DAE.ENUM_LITERAL(path, 1), inType));
+      then
+        addComponentToFlatProgram(comp, inProgram);
+
+  end match;
+end instEnumLiteral;
 
 protected function instBinding
   input Binding inBinding;
@@ -1003,13 +1042,15 @@ algorithm
       Env env;
       String name;
       DAE.ComponentRef cref;
+      SCodeLookup.Origin origin;
 
     case (Absyn.CREF_QUAL(name = _), _, _)
       equation
         path = Absyn.crefToPath(inName);
         (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, attributes = SCode.ATTR(
-            variability = SCode.CONST()))), path, env, SCodeLookup.CLASS_ORIGIN()) =
+            variability = SCode.CONST()))), path, env, origin) =
           SCodeLookup.lookupName(path, inEnv, Absyn.dummyInfo, NONE());
+        true = SCodeLookup.originIsGlobal(origin);
         path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
         cref = ComponentReference.pathToCref(path);
       then
@@ -1195,30 +1236,97 @@ protected function instGlobalConstants
   input FlatProgram inProgram;
   output FlatProgram outProgram;
 algorithm
+  outProgram := matchcontinue(inGlobalConstants, inEnv, inProgram)
+    local
+      FlatProgram prog;
+
+    case (_, _, _)
+      equation
+        prog = instGlobalConstants2(inGlobalConstants, inEnv, inProgram);
+        prog = instGlobalConstant(SCodeLookup.BUILTIN_STATESELECT,
+          Absyn.IDENT("StateSelect"), {}, prog);
+      then
+        prog;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("SCodeInst.instGlobalConstants failed\n");
+      then
+        fail();
+
+  end matchcontinue;
+end instGlobalConstants;
+
+protected function instGlobalConstants2
+  input list<Absyn.Path> inGlobalConstants;
+  input Env inEnv;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
   outProgram := match(inGlobalConstants, inEnv, inProgram)
     local
-      Absyn.Path const, pre_path;
+      Absyn.Path const;
       list<Absyn.Path> rest_const;
       FlatProgram prog;
-      Prefix prefix;
-      SCode.Element el;
+      Item item;
       Env env;
 
     case ({}, _, _) then inProgram;
 
     case (const :: rest_const, _, _)
       equation
-        pre_path = Absyn.pathPrefix(const);
-        prefix = pathPrefix(pre_path);
-        (SCodeEnv.VAR(var = el), _, env) = 
-          SCodeLookup.lookupFullyQualified(const, inEnv);
-        prog = instElement(el, SCodeMod.NOMOD(), env, prefix);
-        prog = mergeFlatProgram(prog, inProgram);
+        (item, _, env) = SCodeLookup.lookupFullyQualified(const, inEnv);
+        prog = instGlobalConstant(item, const, env, inProgram);
       then
-        instGlobalConstants(rest_const, inEnv, prog);
+        instGlobalConstants2(rest_const, inEnv, prog);
 
   end match;
-end instGlobalConstants;
+end instGlobalConstants2;
+
+protected function instGlobalConstant
+  input Item inItem;
+  input Absyn.Path inPath;
+  input Env inEnv;
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := matchcontinue(inItem, inPath, inEnv, inProgram)
+    local
+      Absyn.Path pre_path;
+      Prefix prefix;
+      SCode.Element el;
+      FlatProgram prog;
+      list<SCode.Enum> enuml;
+      DAE.Type ty;
+
+    case (SCodeEnv.VAR(var = el), _, _, _)
+      equation
+        pre_path = Absyn.pathPrefix(inPath);
+        prefix = pathPrefix(pre_path);
+        prog = instElement(el, SCodeMod.NOMOD(), inEnv, prefix);
+      then
+        mergeFlatProgram(prog, inProgram);
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
+        SCode.ENUMERATION(enumLst = enuml))), _, _, _)
+      equation
+        ty = makeEnumType(enuml, inPath);
+        prog = EMPTY_FLAT_PROGRAM();
+        prog = List.fold2(enuml, instEnumLiteral, inPath, ty, prog);
+      then
+        mergeFlatProgram(prog, inProgram);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("SCodeInst.instGlobalConstant failed on " +&
+          Absyn.pathString(inPath) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end instGlobalConstant;
 
 protected function buildSymbolTable
   input FlatProgram inProgram;
@@ -1271,6 +1379,9 @@ algorithm
     case (CONDITIONAL_COMPONENT(name = name), _)
       then BaseHashTable.addNoUpdCheck((name, inComponent), inSymbolTable);
 
+    case (TYPED_COMPONENT(name = name), _)
+      then BaseHashTable.addNoUpdCheck((name, inComponent), inSymbolTable);
+
     case (UNTYPED_COMPONENT(name = name), _)
       equation
         print("Failed to add component " +& Absyn.pathString(name) +& " to symbol table!\n");
@@ -1300,10 +1411,10 @@ algorithm
 
     case (FLAT_PROGRAM(components = cl), st)
       equation
-        print("Components [" +& intString(listLength(cl)) +& "]: \n");
-        print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
+        //print("Untyped components [" +& intString(listLength(cl)) +& "]: \n");
+        //print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
         (cl, st) = typeComponents2(cl, st, {});
-        //print("Components [" +& intString(listLength(cl)) +& "]: \n");
+        //print("Typed components [" +& intString(listLength(cl)) +& "]: \n");
         //print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
       then
         st;
@@ -1333,6 +1444,12 @@ algorithm
         comp = BaseHashTable.get(name, st);
         (comp, st) = typeComponent(comp, st);
         (rest_comps, st) = typeComponents2(rest_comps, st, comp :: inAccumComps);
+      then
+        (rest_comps, st);
+
+    case (TYPED_COMPONENT(name = _) :: rest_comps, st, _)
+      equation
+        (rest_comps, st) = typeComponents2(rest_comps, st, inAccumComps);
       then
         (rest_comps, st);
 

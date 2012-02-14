@@ -1937,6 +1937,9 @@ algorithm
         (SCode.CLASS_EXTENDS(bc, mods, 
           SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt)), env, consts);
 
+    case (SCode.ENUMERATION(enumLst = _), _, _, _, _, _)
+      then (inClassDef, {inClassEnv}, inAccumPath :: inGlobalConstants);
+
     else then (inClassDef, {inClassEnv}, inGlobalConstants);
   end match;
 end collectUsedClassDef;
