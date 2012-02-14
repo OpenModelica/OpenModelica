@@ -247,20 +247,21 @@ for filepath in sorted(glob.glob('*.html')):
 #  sys.stdout.write(tag)  # not much point in writing the tags to stdout
   sys.stderr.write(tag)
   pid = sub.call(['tidy', '-modify', '-quiet', filepath])
-  with open(filepath,'r') as html_file:
-    soup = BeautifulSoup(html_file)
-    for a in soup.findAll('a'):
-      try:
-        a['href'] = linkreplace(a['href'])
-      except:
-        pass
-      for img in soup.findAll('img'):
+  if pid <> 2 then
+    with open(filepath,'r') as html_file:
+      soup = BeautifulSoup(html_file)
+      for a in soup.findAll('a'):
         try:
-          img['src'] = linkreplace(img['src'])
+          a['href'] = linkreplace(a['href'])
         except:
           pass
-  with open(filepath,'w') as html_file:
-    html_file.write(soup.__str__())
+        for img in soup.findAll('img'):
+          try:
+            img['src'] = linkreplace(img['src'])
+          except:
+            pass
+    with open(filepath,'w') as html_file:
+      html_file.write(soup.__str__())
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
