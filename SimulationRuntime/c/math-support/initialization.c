@@ -320,7 +320,7 @@ static void NelderMeadOptimization(long N,
         xb = x;
     }
 
-    if(fvalues[xb] < acc)
+    if(lambda >= 1.0 && fvalues[xb] < acc)
       break;
 
     if(maxIt < iteration)
