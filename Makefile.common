@@ -105,6 +105,9 @@ testfmi:
 	
 testSummary:
 	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
+	
+testPar:
+	(cd testsuite/partest && time ./runtests.pl -j8)
 
 mosh: omc
 	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
