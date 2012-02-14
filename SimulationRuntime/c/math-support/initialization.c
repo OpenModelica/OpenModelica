@@ -75,7 +75,7 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
   int indz = 0;
   fortran_integer i = 0;
   long j = 0;
-  double funcValue = 0;
+  double funcValue = 0.0;
   double scalingCoefficient;
 
   for(i=0; i<data->modelData.nStates; ++i)
@@ -272,7 +272,7 @@ static void NelderMeadOptimization(long N,
   long x = 0;
   long i = 0;
 
-  double lambda = 0.0;
+  double lambda = *pLambda;
   long iteration = 0;
 
   /* check Memory */
@@ -297,7 +297,6 @@ static void NelderMeadOptimization(long N,
     simplex[i*N + i] += 1.0;    /* canonical simplex */
   }
 
-  /*DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(data, N, simplex, scale, initialResidualScalingCoefficients, lambda, initialResiduals));*/
   computeInitialResidualScalingCoefficients(data, N, simplex, scale, initialResidualScalingCoefficients);
 
   do
@@ -305,7 +304,7 @@ static void NelderMeadOptimization(long N,
     /* lambda-control */
     double sigma = 0.0;
     double average = 0.0;
-    double g = 0.00001;
+    double g = 1e-8;
 
     iteration++;
 
@@ -320,6 +319,12 @@ static void NelderMeadOptimization(long N,
       if(fvalues[x] < fvalues[xb])
         xb = x;
     }
+
+    if(fvalues[xb] < acc)
+      break;
+
+    if(maxIt < iteration)
+      break;
 
     xs = xb;
     xz = xb;
@@ -345,16 +350,19 @@ static void NelderMeadOptimization(long N,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xz]);
+      INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
 
-    if((sigma < (g*g)) && (lambda < 1.0))
+    if(sigma < g)
     {
-      lambda += lambda_step;
-      if(lambda > 1.0)
-        lambda = 1.0;
+      if(lambda < 1.0)
+      {
+        lambda += lambda_step;
+        if(lambda >= 1.0)
+          break;
 
-      DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
-      continue;
+        DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        continue;
+      }
     }
 
     /* calculate central point for the n best vertices */
@@ -441,11 +449,11 @@ static void NelderMeadOptimization(long N,
       /* not possible to be here */
       INFO("not possible to be here");
     }
-  }while((lambda < 1.0 || fvalues[xb] > acc) && iteration < maxIt);
+  }while(1.0);
 
   /* copying solution */
   for(i=0; i<N; i++)
-    var[i] = simplex[xs*N+i];
+    var[i] = simplex[xb*N+i];
 
   if(pLambda)
     *pLambda = lambda;
@@ -506,9 +514,9 @@ static int reportResidualValue(DATA* data, double funcValue, double* initialResi
  */
 static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals)
 {
-  double STOPCR = 1.e-16;
-  double lambda_step = 0.1;
-  long NLOOP = 10000 * nz;
+  double STOPCR = 1.e-12;
+  double lambda_step = 0.2;
+  long NLOOP = 1000 * nz;
 
   double funcValue;
 
@@ -538,7 +546,7 @@ static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zN
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
-    DEBUG_INFO1(LOG_INIT, "initialization-nr. %d", (int)l);
+    DEBUG_INFO1(LOG_INIT, "initialization-nr. %ld", l);
 
     NelderMeadOptimization(nz, z, zNominal, initialResidualScalingCoefficients, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? 10000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
 
