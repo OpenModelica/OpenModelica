@@ -218,7 +218,7 @@ algorithm
         (item, type_env) = lookupClass(type_path, inEnv, info, inPrintError);
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv);
+          redeclares, item, type_env, inEnv, {});
         (item, env) = lookupNameInItem(inName, item, type_env, inPrintError);
       then
         (item, env);

@@ -94,6 +94,7 @@ encapsulated package SCodeFlattenRedeclare
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
+public import SCodeInst;
 public import SCodeLookup;
 
 public type Env = SCodeEnv.Env;
@@ -458,9 +459,10 @@ public function qualifyRedeclare
   where P1 is not reachable from A."
   input SCodeEnv.Redeclaration inRedeclare;
   input Env inEnv;
+  input SCodeInst.Prefix inPrefix;
   output SCodeEnv.Redeclaration outRedeclare;
 algorithm
-  outRedeclare := match(inRedeclare, inEnv)
+  outRedeclare := match(inRedeclare, inEnv, inPrefix)
     local
       SCode.Ident name;
       SCode.Partial pp;
@@ -488,26 +490,28 @@ algorithm
               attributes = attr, 
               comment = cmt),
             info = info
-          )), _)
+          )), _, _)
       equation
         path = SCodeLookup.qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
         prefixes = SCode.prefixesSetRedeclare(prefixes, SCode.NOT_REDECLARE());
+        mods = prefixMod(mods, inEnv, inPrefix);
       then
         SCodeEnv.RAW_MODIFIER(SCode.CLASS(name, prefixes, ep, pp, res,
             SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
             info));
 
-    case (SCodeEnv.RAW_MODIFIER(SCode.CLASS(name = _)), _) then inRedeclare;
+    case (SCodeEnv.RAW_MODIFIER(SCode.CLASS(name = _)), _, _) then inRedeclare;
 
     case (SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
-        Absyn.TPATH(path, array_dim), mods, cmt, cond, info)), _)
+        Absyn.TPATH(path, array_dim), mods, cmt, cond, info)), _, _)
       equation
         path = SCodeLookup.qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
+        mods = prefixMod(mods, inEnv, inPrefix);
       then
         SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
           Absyn.TPATH(path, array_dim), mods, cmt, cond, info));
     
-    case (SCodeEnv.PROCESSED_MODIFIER(modifier = _), _) then inRedeclare;
+    case (SCodeEnv.PROCESSED_MODIFIER(modifier = _), _, _) then inRedeclare;
 
     else
       equation
@@ -519,6 +523,148 @@ algorithm
         fail();
   end match;
 end qualifyRedeclare;
+
+protected function prefixMod
+  input SCode.Mod inMod;
+  input Env inEnv;
+  input SCodeInst.Prefix inPrefix;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inMod, inEnv, inPrefix)
+    local
+      SCode.Final fp;
+      SCode.Each ep;
+      list<SCode.SubMod> submods;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Absyn.Info info;
+
+    case (SCode.MOD(fp, ep, submods, binding, info), _, _)
+      equation
+        submods = List.map2(submods, prefixSubMod, inEnv, inPrefix);
+        binding = prefixBinding(binding, inEnv, inPrefix);
+      then
+        SCode.MOD(fp, ep, submods, binding, info);
+
+    else inMod;
+  end match;
+end prefixMod;
+
+protected function prefixSubMod
+  input SCode.SubMod inSubMod;
+  input Env inEnv;
+  input SCodeInst.Prefix inPrefix;
+  output SCode.SubMod outSubMod;
+protected
+  SCode.Ident ident;
+  SCode.Mod mod;
+algorithm
+  SCode.NAMEMOD(ident, mod) := inSubMod;
+  mod := prefixMod(mod, inEnv, inPrefix);
+  outSubMod := SCode.NAMEMOD(ident, mod);
+end prefixSubMod;
+
+protected function prefixBinding
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Env inEnv;
+  input SCodeInst.Prefix inPrefix;
+  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
+algorithm
+  outBinding := match(inBinding, inEnv, inPrefix)
+    local
+      Absyn.Exp exp;
+      Boolean b;
+
+    case (SOME((exp, b)), _, _)
+      equation
+        ((exp, _)) = Absyn.traverseExp(exp, prefixCrefTraverser, (inEnv, inPrefix));
+      then
+        SOME((exp, b));
+
+    else inBinding;
+
+  end match;
+end prefixBinding;
+
+protected function prefixCrefTraverser
+  input tuple<Absyn.Exp, tuple<Env, SCodeInst.Prefix>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env, SCodeInst.Prefix>> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      Absyn.ComponentRef cref;
+      Env env;
+      SCodeInst.Prefix prefix;
+
+    case ((Absyn.CREF(cref), (env, prefix)))
+      equation
+        cref = prefixCref(cref, env, prefix);
+      then
+        ((Absyn.CREF(cref), (env, prefix)));
+
+    else inTuple;
+
+  end match;
+end prefixCrefTraverser;
+
+protected function prefixCref
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input SCodeInst.Prefix inPrefix;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inEnv, inPrefix)
+    local
+      Absyn.Path path;
+      String name;
+      Absyn.ComponentRef cref;
+      Env env;
+
+    case (Absyn.CREF_QUAL(name = _), _, _)
+      equation
+        path = Absyn.crefToPath(inCref);
+        (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, attributes = SCode.ATTR(
+            variability = SCode.CONST()))), path, env, SCodeLookup.CLASS_ORIGIN()) = 
+          SCodeLookup.lookupName(path, inEnv, Absyn.dummyInfo, NONE());
+        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
+        cref = Absyn.pathToCref(path);
+      then
+        Absyn.CREF_FULLYQUALIFIED(cref);
+
+    case (_, _, _ :: _)
+      equation
+        cref = prefixCref2(inCref, inPrefix);
+      then
+        Absyn.CREF_FULLYQUALIFIED(cref);
+ 
+    else inCref;
+
+  end match;
+end prefixCref;
+
+protected function prefixCref2
+  input Absyn.ComponentRef inCref;
+  input SCodeInst.Prefix inPrefix;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inPrefix)
+    local
+      String name;
+      list<Absyn.Subscript> subs;
+      SCodeInst.Prefix rest_prefix;
+      Absyn.ComponentRef cref;
+
+    case (_, {}) then inCref;
+    case (_, {(name, subs)})
+      then Absyn.CREF_QUAL(name, subs, inCref);
+
+    case (_, (name, subs) :: rest_prefix)
+      equation
+        cref = Absyn.CREF_QUAL(name, subs, inCref);
+      then
+        prefixCref2(cref, rest_prefix);
+
+  end match;
+end prefixCref2;
 
 public function replaceRedeclares
   "Replaces redeclares in the environment. This function takes a list of
@@ -547,7 +693,7 @@ algorithm
     case (_, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
         (item, env) = replaceRedeclaredElementsInEnv(inRedeclares,
-          inClassItem, inClassEnv, inElementEnv);
+          inClassItem, inClassEnv, inElementEnv, {});
       then
         (SOME(item), SOME(env));
 
@@ -565,10 +711,12 @@ public function replaceRedeclaredElementsInEnv
   input Item inItem "The type of the element.";
   input Env inTypeEnv "The enclosing scopes of the type.";
   input Env inElementEnv "The environment in which the element was declared.";
+  input SCodeInst.Prefix inPrefix;
   output Item outItem;
   output Env outEnv;
 algorithm
-  (outItem, outEnv) := matchcontinue(inRedeclares, inItem, inTypeEnv, inElementEnv)
+  (outItem, outEnv) :=
+  matchcontinue(inRedeclares, inItem, inTypeEnv, inElementEnv, inPrefix)
     local
       SCode.Element cls;
       Env env;
@@ -577,17 +725,17 @@ algorithm
       list<SCodeEnv.Redeclaration> redecls;
 
     // no redeclares!
-    case ({}, _, _, _) then (inItem, inTypeEnv);
+    case ({}, _, _, _, _) then (inItem, inTypeEnv);
 
-    case (_, SCodeEnv.VAR(var = _), _, _) then (inItem, inTypeEnv);
+    case (_, SCodeEnv.VAR(var = _), _, _, _) then (inItem, inTypeEnv);
 
-    case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _)
+    case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _, _)
       equation
         // Merge the types environment with it's enclosing scopes to get the
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
         // Fully qualify the redeclares to make sure they can be found.
-        redecls = List.map1(inRedeclares, qualifyRedeclare, inElementEnv);
+        redecls = List.map2(inRedeclares, qualifyRedeclare, inElementEnv, inPrefix);
         env = List.fold(redecls, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then

@@ -891,7 +891,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv);
+          redeclares, item, type_env, inEnv, {});
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
@@ -937,7 +937,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv);
+          redeclares, item, type_env, inEnv, {});
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);

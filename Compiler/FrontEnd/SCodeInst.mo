@@ -53,7 +53,6 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
-protected import Graph;
 protected import List;
 protected import SCodeDump;
 protected import SCodeLookup;
@@ -65,6 +64,7 @@ protected import Util;
 
 public type Env = SCodeEnv.Env;
 protected type Item = SCodeEnv.Item;
+protected type Modifier = SCodeMod.Modifier;
 
 public type Prefix = list<tuple<String, Absyn.ArrayDim>>;
 
@@ -94,6 +94,12 @@ end Dimension;
 
 public uniontype Binding
   record UNBOUND end UNBOUND;
+
+  record RAW_BINDING
+    Absyn.Exp bindingExp;
+    Env env;
+    Prefix prefix;
+  end RAW_BINDING;
 
   record UNTYPED_BINDING
     DAE.Exp bindingExp;
@@ -232,7 +238,7 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
-        (program, _) = instClassItem(item, SCode.NOMOD(), env, {});
+        (program, _) = instClassItem(item, SCodeMod.NOMOD(), env, {});
         const_prog = instGlobalConstants(inGlobalConstants, inEnv,
           EMPTY_FLAT_PROGRAM());
         program = mergeFlatProgram(const_prog, program);
@@ -310,7 +316,7 @@ end addComponentToFlatProgram;
 
 protected function instClassItem
   input Item inItem;
-  input SCode.Mod inMod;
+  input Modifier inMod;
   input Env inEnv;
   input Prefix inPrefix;
   output FlatProgram outProgram;
@@ -324,7 +330,7 @@ end instClassItem;
 
 protected function instClassItem2
   input Item inItem;
-  input SCode.Mod inMod;
+  input Modifier inMod;
   input Env inEnv;
   input Prefix inPrefix;
   output FlatProgram outProgram;
@@ -333,11 +339,13 @@ algorithm
   (outProgram, outType) := match(inItem, inMod, inEnv, inPrefix)
     local
       list<SCode.Element> el;
+      list<tuple<SCode.Element, Modifier>> mel;
       Absyn.TypeSpec dty;
       Item item;
       Env env;
       Absyn.Info info;
-      SCode.Mod mod;
+      SCode.Mod smod;
+      Modifier mod;
       SCodeEnv.AvlTree cls_and_vars;
       String name;
       list<SCode.Equation> nel, iel;
@@ -353,7 +361,7 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _) 
       equation
-        vars = instBasicTypeAttributes(inMod, env, inPrefix);
+        vars = instBasicTypeAttributes(inMod, env);
         ty = instBasicType(name, inMod, vars);
       then 
         (EMPTY_FLAT_PROGRAM(), ty);
@@ -365,20 +373,21 @@ algorithm
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
-        el = SCodeMod.applyModifications(inMod, el, inPrefix, env);
+        mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
 
         //del = List.map2(nel, instEquation, env, inPrefix);
         //print(stringDelimitList(List.map(del, DAEDump.dumpEquationStr), "\n") +& "\n");
         prog = makeClassFlatProgram(nel, iel, nal, ial);
-        prog = instElementList(el, env, inPrefix, prog);
+        prog = instElementList(mel, env, inPrefix, prog);
       then
         (prog, DAE.T_COMPLEX_DEFAULT);
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.DERIVED(modifications = mod, typeSpec = dty), info = info)), _, _, _)
+        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
         (prog, ty) = instClassItem(item, mod, env, inPrefix);
         dims = Absyn.typeSpecDimensions(dty);
@@ -475,7 +484,7 @@ end makeClassComment;
 
 protected function instBasicType
   input SCode.Ident inTypeName;
-  input SCode.Mod inMod;
+  input Modifier inMod;
   input list<DAE.Var> inAttributes;
   output DAE.Type outType;
 algorithm
@@ -488,31 +497,29 @@ algorithm
   end match;
 end instBasicType;
 
-
 protected function instBasicTypeAttributes
-  input SCode.Mod inMod;
+  input Modifier inMod;
   input Env inEnv;
-  input Prefix inPrefix;
   output list<DAE.Var> outVars;
 algorithm
-  outVars := match(inMod, inEnv, inPrefix)
+  outVars := match(inMod, inEnv)
     local
-      list<SCode.SubMod> submods;
+      list<Modifier> submods;
       SCodeEnv.AvlTree attrs;
       list<DAE.Var> vars;
       SCode.Element el;
       Absyn.Info info;
 
-    case (SCode.NOMOD(), _, _) then {};
+    case (SCodeMod.NOMOD(), _) then {};
 
-    case (SCode.MOD(subModLst = submods), 
-        SCodeEnv.FRAME(clsAndVars = attrs) :: _, _)
+    case (SCodeMod.MODIFIER(subModifiers = submods), 
+        SCodeEnv.FRAME(clsAndVars = attrs) :: _)
       equation
-        vars = List.map3(submods, instBasicTypeAttribute, attrs, inEnv, inPrefix);
+        vars = List.map1(submods, instBasicTypeAttribute, attrs);
       then
         vars;
 
-    case (SCode.REDECL(element = el), _, _)
+    case (SCodeMod.REDECLARE(element = el), _)
       equation
         info = SCode.elementInfo(el);
         Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
@@ -523,27 +530,27 @@ algorithm
 end instBasicTypeAttributes;
 
 protected function instBasicTypeAttribute
-  input SCode.SubMod inSubMod;
+  input Modifier inMod;
   input SCodeEnv.AvlTree inAttributes;
-  input Env inEnv;
-  input Prefix inPrefix;
   output DAE.Var outAttribute;
 algorithm
-  outAttribute := matchcontinue(inSubMod, inAttributes, inEnv, inPrefix)
+  outAttribute := matchcontinue(inMod, inAttributes)
     local
       String ident, tspec;
       DAE.Type ty;
       Absyn.Exp bind_exp;
       DAE.Exp inst_exp;
       DAE.Binding binding;
+      Env env;
+      Prefix prefix;
 
-    case (SCode.NAMEMOD(ident = ident, 
-        A = SCode.MOD(subModLst = {}, binding = SOME((bind_exp, _)))), _, _, _)
+    case (SCodeMod.MODIFIER(name = ident, subModifiers = {}, 
+        binding = RAW_BINDING(bind_exp, env, prefix)), _)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
         ty = instBasicTypeAttributeType(tspec);
-        inst_exp = instExp(bind_exp, inEnv, inPrefix);
+        inst_exp = instExp(bind_exp, env, prefix);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
@@ -595,7 +602,7 @@ algorithm
 end lookupElement;
         
 protected function instElementList
-  input list<SCode.Element> inElements;
+  input list<tuple<SCode.Element, Modifier>> inElements;
   input Env inEnv;
   input Prefix inPrefix;
   input FlatProgram inProgram;
@@ -604,14 +611,15 @@ algorithm
   outProgram := match(inElements, inEnv, inPrefix, inProgram)
     local
       SCode.Element elem;
-      list<SCode.Element> rest_el;
+      Modifier mod;
+      list<tuple<SCode.Element, Modifier>> rest_el;
       FlatProgram prog;
 
     case ({}, _, _, _) then inProgram;
 
-    case (elem :: rest_el, _, _, _)
+    case ((elem, mod) :: rest_el, _, _, _)
       equation
-        prog = instElement(elem, inEnv, inPrefix);
+        prog = instElement(elem, mod, inEnv, inPrefix);
         prog = mergeFlatProgram(prog, inProgram);
       then
         instElementList(rest_el, inEnv, inPrefix, prog);
@@ -621,11 +629,12 @@ end instElementList;
 
 protected function instElement
   input SCode.Element inElement;
+  input Modifier inClassMod;
   input Env inEnv;
   input Prefix inPrefix;
   output FlatProgram outProgram;
 algorithm
-  outProgram := match(inElement, inEnv, inPrefix)
+  outProgram := match(inElement, inClassMod, inEnv, inPrefix)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -636,11 +645,11 @@ algorithm
       FlatProgram prog;
       Item item;
       list<SCodeEnv.Redeclaration> redecls;
-      Option<Absyn.Exp> binding;
-      Binding inst_binding;
+      Binding binding;
       Prefix prefix;
       SCodeEnv.ExtendsTable exts;
-      SCode.Mod mod;
+      SCode.Mod smod;
+      Modifier mod;
       String name;
       SCode.Variability var;
       list<Dimension> dims;
@@ -649,36 +658,39 @@ algorithm
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad,
         variability = var), typeSpec = Absyn.TPATH(path = path), 
-        modifications = mod, condition = NONE(), info = info), _, _)
+        modifications = smod, condition = NONE(), info = info), _, _, _)
       equation
         // Look up the class of the component.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
+
         // Apply the redeclarations to the class.
-        redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mod);
-        (item, env) =
-          SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
+        redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
+        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+          redecls, item, env, inEnv, inPrefix);
+
         // Instantiate the class.
         prefix = (name, ad) :: inPrefix;
+        mod = SCodeMod.translateMod(smod, name, inPrefix, inEnv);
+        mod = SCodeMod.mergeMod(inClassMod, mod);
         (prog, ty) = instClassItem(item, mod, env, prefix);
 
         // Instantiate array dimensions and binding.
         dims = List.map2(ad, instDimension, inEnv, inPrefix);
         dim_arr = listArray(dims);
-        binding = SCode.getModifierBinding(mod);
-        inst_binding = instBinding(binding, inEnv, inPrefix);
+        binding = SCodeMod.getModifierBinding(mod);
+        binding = instBinding(binding);
 
         // Create the component and add it to the program.
         path = prefixToPath(prefix);
-        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, inst_binding);
+        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, binding);
         prog = addComponentToFlatProgram(comp, var, prog);
-
-        //print("Type of " +& name +& ": " +& Types.printTypeStr(ty) +& "\n");
       then
         prog;
 
     // A conditional component, save it for later.
-    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _)
+    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _)
       equation
+        // TODO: Save modification?
         path = prefixPath(Absyn.IDENT(name), inPrefix);
         comp = CONDITIONAL_COMPONENT(path, inElement, inEnv, inPrefix);
         prog = FLAT_PROGRAM({}, {comp}, {}, {}, {}, {});
@@ -686,17 +698,21 @@ algorithm
         prog;
 
     // An extends, look up the extended class and instantiate it.
-    case (SCode.EXTENDS(baseClassPath = path, modifications = mod, info = info),
-        SCodeEnv.FRAME(extendsTable = exts) :: _, _)
+    case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
+        _, SCodeEnv.FRAME(extendsTable = exts) :: _, _)
       equation
         // Look up the extended class.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
+
         // Apply the redeclarations.
         redecls = SCodeFlattenRedeclare.lookupExtendsRedeclaresInTable(path, exts);
-        (item, env) =
-          SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
+        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+          redecls, item, env, inEnv, inPrefix);
+
         // Instantiate the class.
+        mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
+        mod = SCodeMod.mergeMod(inClassMod, mod);
         (prog, ty) = instClassItem(item, mod, env, inPrefix);
       then
         prog;
@@ -706,22 +722,23 @@ algorithm
 end instElement;
 
 protected function instBinding
-  input Option<Absyn.Exp> inExp;
-  input Env inEnv;
-  input Prefix inPrefix;
-  output Binding outExp;
+  input Binding inBinding;
+  output Binding outBinding;
 algorithm
-  outExp := match(inExp, inEnv, inPrefix)
+  outBinding := match(inBinding)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
+      Env env;
+      Prefix prefix;
 
-    case (NONE(), _, _) then UNBOUND();
-    case (SOME(aexp), _, _)
+    case RAW_BINDING(aexp, env, prefix)
       equation
-        dexp = instExp(aexp, inEnv, inPrefix);
+        dexp = instExp(aexp, env, prefix);
       then
         UNTYPED_BINDING(dexp, false);
+
+    else inBinding;
 
   end match;
 end instBinding;
@@ -950,11 +967,11 @@ algorithm
 
     case (Absyn.WILD(), _, _) then DAE.WILD();
     case (Absyn.ALLWILD(), _, _) then DAE.WILD();
-    //case (Absyn.CREF_FULLYQUALIFIED(_), _, _)
-    //  equation
-    //    print("Found fully qualified path " +& Dump.printComponentRefStr(inCref) +& "!\n");
-    //  then
-    //    fail();
+    case (Absyn.CREF_FULLYQUALIFIED(_), _, _)
+      equation
+        cref = instCref2(inCref);
+      then
+        cref;
 
     case (_, _, _)
       equation
@@ -1195,7 +1212,7 @@ algorithm
         prefix = pathPrefix(pre_path);
         (SCodeEnv.VAR(var = el), _, env) = 
           SCodeLookup.lookupFullyQualified(const, inEnv);
-        prog = instElement(el, env, prefix);
+        prog = instElement(el, SCodeMod.NOMOD(), env, prefix);
         prog = mergeFlatProgram(prog, inProgram);
       then
         instGlobalConstants(rest_const, inEnv, prog);
@@ -1283,9 +1300,11 @@ algorithm
 
     case (FLAT_PROGRAM(components = cl), st)
       equation
-        (cl, st) = typeComponents2(cl, st, {});
         print("Components [" +& intString(listLength(cl)) +& "]: \n");
         print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
+        (cl, st) = typeComponents2(cl, st, {});
+        //print("Components [" +& intString(listLength(cl)) +& "]: \n");
+        //print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
       then
         st;
 
@@ -1340,10 +1359,6 @@ algorithm
       equation
         (ty, st) = typeComponentDims(inComponent, st);
         (comp, st ) = typeComponentBinding(inComponent, SOME(ty), st);
-        //st = markComponentBindingAsProcessing(inComponent, st);
-        //(binding, st) = typeBinding(binding, st);
-        //comp = TYPED_COMPONENT(name, ty, var, binding);
-        //st = BaseHashTable.add((name, comp), st);
       then
         (comp, st);
 
@@ -1407,7 +1422,7 @@ algorithm
 
     case (TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, st)
       equation
-        typed_dim = listNth(dims, inIndex);
+        typed_dim = listGet(dims, inIndex);
       then
         (typed_dim, st);
 
@@ -1580,20 +1595,23 @@ protected function getExpDimension
   input Integer inDimension;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := match(inExp, inDimension)
+  outDimension := matchcontinue(inExp, inDimension)
     local
       DAE.Type ty;
       list<DAE.Dimension> dims;
       DAE.Dimension dim;
 
-    case (DAE.ARRAY(ty = ty), _)
+    case (_, _)
       equation
+        ty = Expression.typeof(inExp);
         dims = Types.getDimensions(ty);
         dim = listGet(dims, inDimension);
       then
         dim;
 
-  end match;
+    else DAE.DIM_UNKNOWN();
+
+  end matchcontinue;
 end getExpDimension;
     
 protected function typeComponentBinding
@@ -1969,79 +1987,30 @@ algorithm
   end matchcontinue;
 end lookupCrefInTable;
 
-public function printMod
-  input SCode.Mod inMod;
-  output String outString;
-algorithm
-  outString := match(inMod)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      SCode.Element el;
-      String fstr, estr, submod_str, bind_str, el_str;
-
-    case SCode.MOD(fp, ep, submods, binding, _)
-      equation
-        fstr = SCodeDump.finalStr(fp);
-        estr = SCodeDump.eachStr(ep);
-        submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
-        bind_str = printBinding(binding);
-      then
-        "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
-
-    case SCode.REDECL(fp, ep, el)
-      equation
-        fstr = SCodeDump.finalStr(fp);
-        estr = SCodeDump.eachStr(ep);
-        el_str = SCodeDump.unparseElementStr(el);
-      then
-        "REDECL(" +& fstr +& estr +& el_str +& ")";
-
-    case SCode.NOMOD() then "NOMOD()";
-  end match;
-end printMod;
-
-protected function printSubMod
-  input SCode.SubMod inSubMod;
-  output String outString;
-algorithm
-  outString := match(inSubMod)
-    local
-      SCode.Mod mod;
-      list<SCode.Subscript> subs;
-      String id, mod_str, subs_str;
-
-    case SCode.NAMEMOD(ident = id, A = mod)
-      equation
-        mod_str = printMod(mod);
-      then
-        "NAMEMOD(" +& id +& " = " +& mod_str +& ")";
-
-    case SCode.IDXMOD(subscriptLst = subs, an = mod)
-      equation
-        subs_str = Dump.printSubscriptsStr(subs);
-        mod_str = printMod(mod);
-      then
-        "IDXMOD(" +& subs_str +& ", " +& mod_str +& ")";
-
-  end match;
-end printSubMod;
-
-protected function printBinding
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+public function printBinding
+  input Binding inBinding;
   output String outString;
 algorithm
   outString := match(inBinding)
     local
-      Absyn.Exp exp;
+      Absyn.Exp aexp;
+      DAE.Exp dexp;
+      DAE.Type ty;
 
-    case SOME((exp, _)) then " = " +& Dump.printExpStr(exp);
+    case (RAW_BINDING(bindingExp = aexp))
+      then " = " +& Dump.printExpStr(aexp);
+
+    case (UNTYPED_BINDING(bindingExp = dexp))
+      then " = " +& ExpressionDump.printExpStr(dexp);
+
+    case (TYPED_BINDING(dexp, ty))
+      then " = (" +& Types.unparseType(ty) +& ") " +&
+        ExpressionDump.printExpStr(dexp);
+
     else "";
   end match;
 end printBinding;
-        
+
 protected function printFlatProgram
   input SCode.Ident inName;
   input FlatProgram inProgram;
@@ -2119,21 +2088,15 @@ algorithm
   outString := match(inComponent)
     local
       Absyn.Path path;
-      DAE.Exp binding;
-      DAE.Type ty, ty2;
+      Binding binding;
+      DAE.Type ty;
 
-    case UNTYPED_COMPONENT(name = path, binding = UNTYPED_BINDING(bindingExp = binding))
-      then Absyn.pathString(path) +& " = " +& ExpressionDump.printExpStr(binding);
+    case UNTYPED_COMPONENT(name = path, binding = binding)
+      then Absyn.pathString(path) +& printBinding(binding);
 
-    case UNTYPED_COMPONENT(name = path) 
-      then Absyn.pathString(path);
-      
-    case TYPED_COMPONENT(name = path, ty = ty, binding = TYPED_BINDING(binding, ty2))
-      then Types.unparseType(ty) +& " " +& Absyn.pathString(path) +& " = " +&
-        Types.unparseType(ty2) +& " " +& ExpressionDump.printExpStr(binding);
-
-    case TYPED_COMPONENT(name = path, ty = ty)
-      then Types.unparseType(ty) +& " " +& Absyn.pathString(path);
+    case TYPED_COMPONENT(name = path, ty = ty, binding = binding)
+      then Types.unparseType(ty) +& " " +& Absyn.pathString(path) +&
+        printBinding(binding);
 
     case CONDITIONAL_COMPONENT(name = path) 
       then "conditional " +& Absyn.pathString(path);

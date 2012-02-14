@@ -48,44 +48,136 @@ public import SCodeInst;
 
 protected import Error;
 protected import List;
+protected import SCodeDump;
 protected import SCodeLookup;
 
+public type Binding = SCodeInst.Binding;
 public type Env = SCodeEnv.Env;
-public type Mod = SCode.Mod;
 public type Prefix = SCodeInst.Prefix;
-public type SubMod = SCode.SubMod;
+
+public uniontype Modifier
+  record MODIFIER
+    String name;
+    SCode.Final finalPrefix;
+    SCode.Each eachPrefix;
+    Binding binding;
+    list<Modifier> subModifiers;
+    Absyn.Info info;
+  end MODIFIER;
+
+  record REDECLARE
+    SCode.Final finalPrefix;
+    SCode.Each eachPrefix;
+    SCode.Element element;
+  end REDECLARE;
+
+  record NOMOD end NOMOD;
+end Modifier;
+
+public function translateMod
+  input SCode.Mod inMod;
+  input String inElementName;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Modifier outMod;
+algorithm
+  outMod := match(inMod, inElementName, inPrefix, inEnv)
+    local
+      SCode.Final fp;
+      SCode.Each ep;
+      list<SCode.SubMod> submods;
+      Option<tuple<Absyn.Exp, Boolean>> binding_exp;
+      Absyn.Info info;
+      list<Modifier> mods;
+      Binding binding;
+      SCode.Element el;
+
+    case (SCode.NOMOD(), _, _, _) then NOMOD();
+
+    case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _)
+      equation
+        mods = List.map2(submods, translateSubMod, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, inPrefix, inEnv);
+      then
+        MODIFIER(inElementName, fp, ep, binding, mods, info);
+
+    case (SCode.REDECL(fp, ep, el), _, _, _)
+      then REDECLARE(fp, ep, el);
+
+  end match;
+end translateMod;
+
+protected function translateSubMod
+  input SCode.SubMod inSubMod;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Modifier outMod;
+protected
+  String name;
+  SCode.Mod mod;
+algorithm
+  SCode.NAMEMOD(name, mod) := inSubMod;
+  outMod := translateMod(mod, name, inPrefix, inEnv);
+end translateSubMod;
+
+protected function translateBinding
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Binding outBinding;
+algorithm
+  outBinding := match(inBinding, inPrefix, inEnv)
+    local
+      Absyn.Exp bind_exp;
+
+    case (NONE(), _, _) then SCodeInst.UNBOUND();
+
+    case (SOME((bind_exp, _)), _, _)
+      then SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix);
+
+  end match;
+end translateBinding;
 
 public function applyModifications
   "Applies a class modifier to the class' elements."
-  input Mod inMod;
+  input Modifier inMod;
   input list<SCode.Element> inElements;
   input Prefix inPrefix;
   input Env inEnv;
-  output list<SCode.Element> outElements;
+  output list<tuple<SCode.Element, Modifier>> outElements;
 protected
-  list<tuple<String, Mod>> mods;
-  list<tuple<String, Option<Absyn.Path>, Mod>> upd_mods;
+  list<tuple<String, Modifier>> mods;
+  list<tuple<String, Option<Absyn.Path>, Modifier>> upd_mods;
+  list<tuple<SCode.Element, Modifier>> el;
 algorithm
   mods := splitMod(inMod, inPrefix);
   upd_mods := List.map2(mods, updateModElement, inEnv, inPrefix);
-  outElements := List.fold(upd_mods, applyModifications2, inElements);
+  el := List.map(inElements, addNoMod);
+  outElements := List.fold(upd_mods, applyModifications2, el);
 end applyModifications;
+
+protected function addNoMod
+  input SCode.Element inElement;
+  output tuple<SCode.Element, Modifier> outElement;
+algorithm
+  outElement := (inElement, NOMOD());
+end addNoMod;
 
 protected function updateModElement
   "Given a tuple of an element name and a modifier, checks if the element 
    is in the local scope, or if it comes from an extends clause. If it comes
    from an extends, return a new tuple that also contains the path of the
    extends, otherwise the option will be NONE."
-  input tuple<String, Mod> inMod;
+  input tuple<String, Modifier> inMod;
   input Env inEnv;
   input Prefix inPrefix;
-  output tuple<String, Option<Absyn.Path>, Mod> outMod;
+  output tuple<String, Option<Absyn.Path>, Modifier> outMod;
 protected
 algorithm
   outMod := matchcontinue(inMod, inEnv, inPrefix)
     local
       String name, pre_str;
-      Mod mod;
+      Modifier mod;
       Absyn.Path path;
       Env env;
       SCodeEnv.AvlTree tree;
@@ -110,7 +202,7 @@ algorithm
     case ((name, mod), _, _)
       equation
         pre_str = SCodeInst.printPrefix(inPrefix);
-        info = SCode.getModifierInfo(mod);
+        info = getModifierInfo(mod);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {name, pre_str}, info);
       then
@@ -119,55 +211,60 @@ algorithm
   end matchcontinue;
 end updateModElement;
   
+protected function getModifierInfo
+  input Modifier inMod;
+  output Absyn.Info outInfo;
+algorithm
+  outInfo := match(inMod)
+    local
+      Absyn.Info info;
+
+    case MODIFIER(info = info) then info;
+    else Absyn.dummyInfo;
+
+  end match;
+end getModifierInfo;
+
 protected function applyModifications2
-  "Given a tuple of an element name, and optional path and a modifier, apply
-   the modifier to the correct element in the list of elements given."
-  input tuple<String, Option<Absyn.Path>, Mod> inMod;
-  input list<SCode.Element> inElements;
-  output list<SCode.Element> outElements;
+  input tuple<String, Option<Absyn.Path>, Modifier> inMod;
+  input list<tuple<SCode.Element, Modifier>> inElements;
+  output list<tuple<SCode.Element, Modifier>> outElements;
 algorithm
   outElements := matchcontinue(inMod, inElements)
     local
       String name, id;
       Absyn.Path path, bc_path;
-      SCode.Prefixes pf;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      Option<SCode.Comment> cmt;
-      Option<Absyn.Exp> cond;
-      Absyn.Info info;
-      Mod inner_mod, outer_mod;
-      SCode.Element e;
-      list<SCode.Element> rest_el;
-      SCode.Visibility vis;
-      Option<SCode.Annotation> ann;
+      Modifier outer_mod, inner_mod;
+      SCode.Element el;
+      list<tuple<SCode.Element, Modifier>> rest_el;
+      tuple<SCode.Element, Modifier> e;
 
     // No more elements, this should actually be an error!
     case (_, {}) then {};
 
     // The optional path is NONE, we are looking for an element.
-    case ((id, NONE(), outer_mod), 
-        SCode.COMPONENT(name, pf, attr, ty, inner_mod, cmt, cond, info) :: rest_el)
+    case ((id, NONE(), outer_mod),
+        (el as SCode.COMPONENT(name = name), inner_mod) :: rest_el)
       equation
         true = stringEq(id, name);
         // Element name matches, merge the modifiers.
         inner_mod = mergeMod(outer_mod, inner_mod);
       then
-        SCode.COMPONENT(name, pf, attr, ty, inner_mod, cmt, cond, info) :: rest_el;
-    
+        (el, inner_mod) :: rest_el;
+
     // The optional path is SOME, we are looking for an extends.
     case ((id, SOME(path), outer_mod),
-        SCode.EXTENDS(bc_path, vis, inner_mod, ann, info) :: rest_el)
+        (el as SCode.EXTENDS(baseClassPath = bc_path), inner_mod) :: rest_el)
       equation
         true = Absyn.pathEqual(path, bc_path);
         // Element name matches. Create a new modifier with the given modifier
-        // as a named modifier, since the modifier is meant for an element in
-        // the extended class, and merge the modifiers.
-        outer_mod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), 
-          {SCode.NAMEMOD(id, outer_mod)}, NONE(), Absyn.dummyInfo);
+        // as a named sub modifier, since the modifier is meant for an element
+        // in the extended class, and merge the modifiers.
+        outer_mod = MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+          SCodeInst.UNBOUND(), {outer_mod}, Absyn.dummyInfo);
         inner_mod = mergeMod(outer_mod, inner_mod);
       then
-        SCode.EXTENDS(bc_path, vis, inner_mod, ann, info) :: rest_el;
+        (el, inner_mod) :: rest_el;
 
     // No match, search the rest of the elements.
     case (_, e :: rest_el)
@@ -178,57 +275,61 @@ algorithm
 
   end matchcontinue;
 end applyModifications2;
-
+        
 public function mergeMod
   "Merges two modifiers, where the outer modifier has higher priority than the
    inner one."
-  input Mod inOuterMod;
-  input Mod inInnerMod;
-  output Mod outMod;
+  input Modifier inOuterMod;
+  input Modifier inInnerMod;
+  output Modifier outMod;
 algorithm
   outMod := match(inOuterMod, inInnerMod)
     local
-      SCode.Final fp1, fp2;
+      SCode.Final fp;
       SCode.Each ep;
-      list<SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
+      list<Modifier> submods1, submods2;
+      Binding binding;
       Absyn.Info info;
+      String name;
 
     // One of the modifiers is NOMOD, return the other.
-    case (SCode.NOMOD(), _) then inInnerMod;
-    case (_, SCode.NOMOD()) then inOuterMod;
+    case (NOMOD(), _) then inInnerMod;
+    case (_, NOMOD()) then inOuterMod;
 
     // Neither of the modifiers have a binding, just merge the submods.
-    case (SCode.MOD(subModLst = submods1, binding = NONE(), info = info),
-          SCode.MOD(subModLst = submods2, binding = NONE()))
+    case (MODIFIER(subModifiers = submods1, binding = SCodeInst.UNBOUND(), info = info),
+          MODIFIER(name = name, subModifiers = submods2, binding = SCodeInst.UNBOUND()))
       equation
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods1, NONE(), info);
+        MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(), SCodeInst.UNBOUND(),
+          submods1, info);
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
-    case (SCode.MOD(fp1, ep, submods1, binding as SOME(_), info),
-        SCode.MOD(finalPrefix = fp2, subModLst = submods2))
+    case (MODIFIER(name, fp, ep, binding as SCodeInst.RAW_BINDING(bindingExp = _),
+            submods1, info),
+          MODIFIER(subModifiers = submods2))
       equation
         checkModifierFinalOverride(inOuterMod, inInnerMod);
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCode.MOD(fp1, ep, submods1, binding, info);
+        MODIFIER(name, fp, ep, binding, submods1, info);
 
     // The inner modifier has a binding, but not the outer, so keep it.
-    case (SCode.MOD(subModLst = submods1),
-          SCode.MOD(fp1, ep, submods2, binding as SOME(_), info))
+    case (MODIFIER(subModifiers = submods1),
+        MODIFIER(name, fp, ep, binding as SCodeInst.RAW_BINDING(bindingExp = _),
+            submods2, info))
       equation
         checkModifierFinalOverride(inOuterMod, inInnerMod);
         submods2 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCode.MOD(fp1, ep, submods2, binding, info);
+        MODIFIER(name, fp, ep, binding, submods2, info);
 
-    case (SCode.MOD(subModLst = _), SCode.REDECL(element = _))
+    case (MODIFIER(name = _), REDECLARE(element = _))
       then inOuterMod;
 
-    case (SCode.REDECL(element = _), _) then inInnerMod;
+    case (REDECLARE(element = _), _) then inInnerMod;
 
     else
       equation
@@ -240,14 +341,14 @@ algorithm
 end mergeMod;
 
 protected function checkModifierFinalOverride
-  input Mod inOuterMod;
-  input Mod inInnerMod;
+  input Modifier inOuterMod;
+  input Modifier inInnerMod;
 algorithm
   _ := match(inOuterMod, inInnerMod)
-    case (_, SCode.MOD(finalPrefix = SCode.FINAL()))
+    case (_, MODIFIER(finalPrefix = SCode.FINAL()))
       equation
-        print("Trying to override final modifier " +& SCodeInst.printMod(inInnerMod) +& 
-          " with modifier " +& SCodeInst.printMod(inOuterMod) +& "\n");
+        print("Trying to override final modifier " +& printMod(inInnerMod) +& 
+          " with modifier " +& printMod(inOuterMod) +& "\n");
       then
         fail();
 
@@ -257,35 +358,34 @@ end checkModifierFinalOverride;
 
 protected function mergeSubMod
   "Merges a sub modifier into a list of sub modifiers."
-  input SubMod inSubMod;
-  input list<SubMod> inSubMods;
-  output list<SubMod> outSubMods;
+  input Modifier inSubMod;
+  input list<Modifier> inSubMods;
+  output list<Modifier> outSubMods;
 algorithm
   outSubMods := matchcontinue(inSubMod, inSubMods)
     local
       SCode.Ident id1, id2;
-      Mod mod1, mod2;
-      SubMod submod;
-      list<SubMod> rest_mods;
+      Modifier mod;
+      list<Modifier> rest_mods;
 
     // No matching sub modifier found, add the given sub modifier as it is.
     case (_, {}) then {inSubMod};
 
     // Check if the sub modifier matches the first in the list.
-    case (SCode.NAMEMOD(id1, mod1), SCode.NAMEMOD(id2, mod2) :: rest_mods)
+    case (MODIFIER(name = id1), (mod as MODIFIER(name = id2)) :: rest_mods)
       equation
         true = stringEq(id1, id2);
         // Match found, merge the sub modifiers.
-        mod1 = mergeMod(mod1, mod2);
+        mod = mergeMod(inSubMod, mod);
       then
-        SCode.NAMEMOD(id1, mod1) :: rest_mods;
+        mod :: rest_mods;
 
     // No match found, search the rest of the list.
-    case (_, submod :: rest_mods)
+    case (_, mod :: rest_mods)
       equation
         rest_mods = mergeSubMod(inSubMod, rest_mods);
       then 
-        submod :: rest_mods;
+        mod :: rest_mods;
 
   end matchcontinue;
 end mergeSubMod;
@@ -295,22 +395,20 @@ protected function splitMod
    element names with their corresponding modifiers. Ex:
      MOD(x(w = 2), y = 3, x(z = 4) = 5 => 
       {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}" 
-  input Mod inMod;
+  input Modifier inMod;
   input Prefix inPrefix;
-  output list<tuple<String, Mod>> outMods;
+  output list<tuple<String, Modifier>> outMods;
 algorithm
   outMods := match(inMod, inPrefix)
     local
       SCode.Final fp;
       SCode.Each ep;
-      list<SubMod> submods;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      Option<Absyn.Exp> bind_exp;
-      list<tuple<String, Mod>> mods;
+      list<Modifier> submods;
+      list<tuple<String, Modifier>> mods;
       Absyn.Info info;
 
     // TOOD: print an error if this modifier has a binding?
-    case (SCode.MOD(subModLst = submods, binding = binding), _)
+    case (MODIFIER(subModifiers = submods), _)
       equation
         mods = List.fold1(submods, splitSubMod, inPrefix, {});
       then
@@ -323,31 +421,29 @@ end splitMod;
 
 protected function splitSubMod
   "Splits a named sub modifier."
-  input SubMod inSubMod;
+  input Modifier inSubMod;
   input Prefix inPrefix;
-  input list<tuple<String, Mod>> inMods;
-  output list<tuple<String, Mod>> outMods;
+  input list<tuple<String, Modifier>> inMods;
+  output list<tuple<String, Modifier>> outMods;
 algorithm
   outMods := match(inSubMod, inPrefix, inMods)
     local
       SCode.Ident id;
-      Mod mod;
-      list<tuple<String, Mod>> mods;
+      list<tuple<String, Modifier>> mods;
 
     // Filter out redeclarations, they have already been applied.
-    case (SCode.NAMEMOD(A = SCode.REDECL(element = _)), _, _)
+    case (REDECLARE(element = _), _, _)
       then inMods;
 
-    case (SCode.NAMEMOD(ident = id, A = mod), _, _)
+    case (MODIFIER(name = id), _, _)
       equation
-        mods = splitMod2(id, mod, inPrefix, inMods);
+        mods = splitMod2(id, inSubMod, inPrefix, inMods);
       then
         mods;
 
-    case (SCode.IDXMOD(an = _), _, _)
+    case (NOMOD(), _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Subscripted modifiers are not supported."});
+        print("Got nomod in splitSubMod!\n");
       then
         fail();
 
@@ -359,19 +455,17 @@ protected function splitMod2
    as the given modifier, and in that case merges them. Otherwise, add the
    modifier to the given list."
   input String inId;
-  input Mod inMod;
+  input Modifier inMod;
   input Prefix inPrefix;
-  input list<tuple<String, Mod>> inMods;
-  output list<tuple<String, Mod>> outMods;
+  input list<tuple<String, Modifier>> inMods;
+  output list<tuple<String, Modifier>> outMods;
 algorithm
   outMods := matchcontinue(inId, inMod, inPrefix, inMods)
     local
-      Mod mod;
-      tuple<String, Mod> tup_mod;
-      list<tuple<String, Mod>> rest_mods;
+      Modifier mod;
+      tuple<String, Modifier> tup_mod;
+      list<tuple<String, Modifier>> rest_mods;
       String id;
-      SubMod submod;
-      list<SubMod> submods;
 
     // No match, add the modifier to the list.
     case (_, _, _, {}) then {(inId, inMod)};
@@ -396,42 +490,42 @@ end splitMod2;
 protected function mergeModsInSameScope
   "Merges two modifier in the same scope, i.e. they have the same priority. It's
    thus an error if the modifiers modify the same element."
-  input Mod inMod1;
-  input Mod inMod2;
+  input Modifier inMod1;
+  input Modifier inMod2;
   input String inElementName;
   input Prefix inPrefix;
-  output Mod outMod;
+  output Modifier outMod;
 algorithm
   outMod := match(inMod1, inMod2, inElementName, inPrefix)
     local
       SCode.Final fp;
       SCode.Each ep;
-      list<SubMod> submods1, submods2;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      String comp_str;
+      list<Modifier> submods1, submods2;
+      Binding binding;
+      String name, comp_str;
       Absyn.Info info1, info2;
 
     // The second modifier has no binding, use the binding from the first.
-    case (SCode.MOD(fp, ep, submods1, binding, info1), 
-          SCode.MOD(subModLst = submods2, binding = NONE()), _, _)
+    case (MODIFIER(name, fp, ep, binding, submods1, info1),
+          MODIFIER(subModifiers = submods2, binding = SCodeInst.UNBOUND()), _, _)
       equation
         submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
           inElementName, submods2);
       then
-        SCode.MOD(fp, ep, submods1, binding, info1);
+        MODIFIER(name, fp, ep, binding, submods1, info1);
 
     // The first modifier has no binding, use the binding from the second.
-    case (SCode.MOD(subModLst = submods1, binding = NONE()),
-        SCode.MOD(fp, ep, submods2, binding, info2), _, _)
+    case (MODIFIER(subModifiers = submods1, binding = SCodeInst.UNBOUND()),
+          MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
       equation
         submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
           inElementName, submods2);
       then
-        SCode.MOD(fp, ep, submods1, binding, info2);
+        MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-    case (SCode.MOD(binding = SOME(_), info = info1), 
-          SCode.MOD(binding = SOME(_), info = info2), _, _)
+    case (MODIFIER(binding = SCodeInst.RAW_BINDING(bindingExp = _), info = info1),
+          MODIFIER(binding = SCodeInst.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
         comp_str = SCodeInst.printPrefix(inPrefix);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
@@ -445,39 +539,101 @@ end mergeModsInSameScope;
 
 protected function mergeSubModInSameScope
   "Merges two sub modifiers in the same scope."
-  input SubMod inSubMod;
+  input Modifier inSubMod;
   input Prefix inPrefix;
   input String inElementName;
-  input list<SubMod> inSubMods;
-  output list<SubMod> outSubMods;
+  input list<Modifier> inSubMods;
+  output list<Modifier> outSubMods;
 algorithm
   outSubMods := match(inSubMod, inPrefix, inElementName, inSubMods)
     local
       SCode.Ident id1, id2;
-      Mod mod1, mod2;
-      list<SubMod> rest_mods;
-      SubMod submod;
+      Modifier mod;
+      list<Modifier> rest_mods;
 
     case (_, _, _, {}) then inSubMods;
-    case (SCode.NAMEMOD(id1, mod1), _, _, SCode.NAMEMOD(id2, mod2) :: rest_mods)
+
+    case (MODIFIER(name = id1), _, _, 
+        (mod as MODIFIER(name = id2)) :: rest_mods)
       equation
         true = stringEq(id1, id2);
         id1 = inElementName +& "." +& id1;
-        mod1 = mergeModsInSameScope(mod1, mod2, id1, inPrefix);
+        mod = mergeModsInSameScope(inSubMod, mod, id1, inPrefix);
       then
-        SCode.NAMEMOD(id1, mod1) :: rest_mods;
+        mod :: rest_mods;
 
-    case (_, _, _, submod :: rest_mods)
+    case (_, _, _, mod :: rest_mods)
       equation
         rest_mods = mergeSubModInSameScope(inSubMod, inPrefix, inElementName, rest_mods);
       then
-        submod :: rest_mods;
+        mod :: rest_mods;
 
   end match;
 end mergeSubModInSameScope;
 
+public function getModifierBinding
+  input Modifier inModifier;
+  output Binding outBinding;
+algorithm
+  outBinding := match(inModifier)
+    local
+      Binding binding;
 
+    case MODIFIER(binding = binding) then binding;
+    else SCodeInst.UNBOUND();
 
+  end match;
+end getModifierBinding;
+
+public function printMod
+  input Modifier inMod;
+  output String outString;
+algorithm
+  outString := match(inMod)
+    local
+      SCode.Final fp;
+      SCode.Each ep;
+      list<Modifier> submods;
+      Binding binding;
+      SCode.Element el;
+      String fstr, estr, submod_str, bind_str, el_str;
+
+    case MODIFIER(_, fp, ep, binding, submods, _)
+      equation
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
+        bind_str = SCodeInst.printBinding(binding);
+      then
+        "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
+
+    case REDECLARE(fp, ep, el)
+      equation
+        fstr = SCodeDump.finalStr(fp);
+        estr = SCodeDump.eachStr(ep);
+        el_str = SCodeDump.unparseElementStr(el);
+      then
+        "REDECL(" +& fstr +& estr +& el_str +& ")";
+
+    case NOMOD() then "NOMOD()";
+  end match;
+end printMod;
+
+protected function printSubMod
+  input Modifier inSubMod;
+  output String outString;
+algorithm
+  outString := match(inSubMod)
+    local
+      list<SCode.Subscript> subs;
+      String id, mod_str, subs_str;
+
+    case MODIFIER(name = id)
+      then id +& " = " +& printMod(inSubMod);
+
+    else "";
+  end match;
+end printSubMod;
 
 /* Below is the instance specific code. For each hashtable the user must define:
 

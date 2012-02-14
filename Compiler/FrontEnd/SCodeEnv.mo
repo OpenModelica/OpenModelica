@@ -921,7 +921,7 @@ algorithm
       equation
         SCodeCheck.checkExtendsReplaceability(item, obc, inEnv, info);
         bc = Absyn.makeFullyQualified(bc);
-        rl = List.map1(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv);
+        rl = List.map2(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv, {});
         List.map2_0(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
       then
         EXTENDS(bc, rl, info);
