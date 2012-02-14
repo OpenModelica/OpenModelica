@@ -240,14 +240,12 @@ def linkreplace(link):
       pass
   return link
 
-log = open('tidy.log','w')
-verblog = open('tidy.verbose','w')
 for filepath in sorted(glob.glob('*.html')):
   tag = '[Checking file %s]:\\n' % filepath
 #  sys.stdout.write(tag)  # not much point in writing the tags to stdout
   sys.stderr.write(tag)
   pid = sub.call(['tidy', '-modify', '-quiet', filepath])
-  if pid <> 2 then
+  if pid <> 2:
     with open(filepath,'r') as html_file:
       soup = BeautifulSoup(html_file)
       for a in soup.findAll('a'):
@@ -262,6 +260,8 @@ for filepath in sorted(glob.glob('*.html')):
             pass
     with open(filepath,'w') as html_file:
       html_file.write(soup.__str__())
+  else:
+    print('Tidy failed with %s, skipping link-replacement for %s!'  % (pid,filepath))
 ");
 
 writeFile("FindFiles.sh","#!/bin/bash
