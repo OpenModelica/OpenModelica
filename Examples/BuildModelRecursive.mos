@@ -7,6 +7,9 @@ loadModel(Modelica,{MSLVersion});
 
 if MSLVersion == "3.2" then
   loadModel(ModelicaTest,{"1.1"});
+  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});";
+else
+  loadModelicaTest:="";
 end if;
 
 /*
@@ -50,7 +53,7 @@ min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
-loadModel(Modelica,{\"3.1\"});
+loadModel(Modelica,{\"3.1\"});"+loadModelicaTest+"
 res:=buildModel("+s+");
 errFile:=\""+s+".err\";
 err:=getErrorString();
