@@ -43,7 +43,7 @@ a:={typeNameString(x) for x guard
     and (not max("EngineV6" == s for s in typeNameStrings(x))) /* Until it has acceptable performance */
     and isModel(x)
     and (not isPartial(x))
-  in getClassNames(recursive=true)};
+  in getClassNames(recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
