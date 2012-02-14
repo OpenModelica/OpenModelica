@@ -64,7 +64,7 @@ classNames := getClassNames(builtin=generateBuiltin,sort=true);
 loadString("
 function filename \"Replace characters that mess with filesystems and shell expansions\"
   input String str;
-  output String ostr := 
+  output String ostr :=
         OpenModelica.Scripting.stringReplace(
           OpenModelica.Scripting.stringReplace(
             OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),
@@ -150,7 +150,7 @@ items:={Item(
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
         sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
-                    last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + 
+                    last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" +
                     "<td>" + OpenModelica.Scripting.getClassComment(cl) + "</td></tr>\n"
                 for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=true)),
         "</table>"
@@ -281,6 +281,15 @@ done
 ");
 
 writeFile("style.css","
+h1
+{
+    font-family: mono;
+    font-size: x-large;
+    color:rgb(153,0,0);
+}
+
+h1 a {font-size:small;}
+
 table
 {
     border-color: black;
