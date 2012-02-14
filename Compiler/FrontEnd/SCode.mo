@@ -3795,5 +3795,21 @@ algorithm
   end match;
 end getModifierBinding;
 
+public function removeComponentCondition
+  input Element inElement;
+  output Element outElement;
+protected
+  Ident name;
+  Prefixes pf;
+  Attributes attr;
+  Absyn.TypeSpec ty;
+  Mod mod;
+  Option<Comment> cmt;
+  Absyn.Info info;
+algorithm
+  COMPONENT(name, pf, attr, ty, mod, cmt, _, info) := inElement;
+  outElement := COMPONENT(name, pf, attr, ty, mod, cmt, NONE(), info);
+end removeComponentCondition;
+  
 end SCode;
 

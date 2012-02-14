@@ -55,8 +55,8 @@ protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import SCodeDump;
-protected import SCodeLookup;
 protected import SCodeFlattenRedeclare;
+protected import SCodeLookup;
 protected import SCodeMod;
 protected import System;
 protected import Types;
@@ -64,7 +64,6 @@ protected import Util;
 
 public type Env = SCodeEnv.Env;
 protected type Item = SCodeEnv.Item;
-protected type Modifier = SCodeMod.Modifier;
 
 public type Prefix = list<tuple<String, Absyn.ArrayDim>>;
 
@@ -131,17 +130,37 @@ public uniontype Component
   record CONDITIONAL_COMPONENT
     Absyn.Path name;
     SCode.Element element;
+    Modifier modifier;
     Env env;
     Prefix prefix;
   end CONDITIONAL_COMPONENT; 
 end Component;
 
-public type Key = Absyn.Path;
-public type Value = Component;
+public uniontype Modifier
+  record MODIFIER
+    String name;
+    SCode.Final finalPrefix;
+    SCode.Each eachPrefix;
+    Binding binding;
+    list<Modifier> subModifiers;
+    Absyn.Info info;
+  end MODIFIER;
 
-public type HashTableFunctionsType = tuple<FuncHashKey, FuncKeyEqual, FuncKeyStr, FuncValueStr>;
+  record REDECLARE
+    SCode.Final finalPrefix;
+    SCode.Each eachPrefix;
+    SCode.Element element;
+  end REDECLARE;
 
-public type SymbolTable = tuple<
+  record NOMOD end NOMOD;
+end Modifier;
+
+protected type Key = Absyn.Path;
+protected type Value = Component;
+
+protected type HashTableFunctionsType = tuple<FuncHashKey, FuncKeyEqual, FuncKeyStr, FuncValueStr>;
+
+protected type SymbolTable = tuple<
   array<list<tuple<Key, Integer>>>,
   tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
   Integer,
@@ -171,7 +190,7 @@ partial function FuncValueStr
   output String outString;
 end FuncValueStr;
 
-public function hashFunc
+protected function hashFunc
   input Key inKey;
   input Integer inMod;
   output Integer outHash;
@@ -182,13 +201,13 @@ algorithm
   outHash := System.stringHashDjb2Mod(str, inMod);
 end hashFunc;
 
-public function emptySymbolTable
+protected function emptySymbolTable
   output SymbolTable outSymbolTable;
 algorithm
   outSymbolTable := emptySymbolTableSized(BaseHashTable.defaultBucketSize);
 end emptySymbolTable;
 
-public function emptySymbolTableSized
+protected function emptySymbolTableSized
   input Integer inSize;
   output SymbolTable outSymbolTable;
 algorithm
@@ -223,7 +242,7 @@ algorithm
       Absyn.Path path;
       Env env; 
       String name;
-      FlatProgram program, const_prog;
+      FlatProgram program, const_prog, cond_prog;
       SymbolTable symtab;
       list<Absyn.Path> consts;
 
@@ -239,11 +258,17 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
-        (program, _) = instClassItem(item, SCodeMod.NOMOD(), env, {});
+        (program, _) = instClassItem(item, NOMOD(), env, {});
         const_prog = instGlobalConstants(inGlobalConstants, inEnv, EMPTY_FLAT_PROGRAM());
         program = mergeFlatProgram(const_prog, program);
         symtab = buildSymbolTable(program);
         symtab = typeComponents(program, symtab);
+        // Type normal equations and algorithm here.
+        (cond_prog, symtab) = instConditionalComponents(program, symtab);
+        symtab = typeComponents(cond_prog, symtab);
+        // Type connects here.
+        program = removeConditionalComponentsFromProgram(program);
+        program = mergeFlatProgram(cond_prog, program);
         System.stopTimer();
         print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
           " seconds.\n");
@@ -296,7 +321,6 @@ protected function addComponentToFlatProgram
   input Component inComponent;
   input FlatProgram inProgram;
   output FlatProgram outProgram;
-protected
 algorithm
   outProgram := match(inComponent, inProgram)
     local
@@ -312,6 +336,24 @@ algorithm
 
   end match;
 end addComponentToFlatProgram;
+
+protected function removeConditionalComponentsFromProgram
+  input FlatProgram inProgram;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inProgram)
+    local
+      list<Component> cl;
+      list<SCode.Equation> eq, ie;
+      list<SCode.AlgorithmSection> al, ia;
+
+    case EMPTY_FLAT_PROGRAM() then inProgram;
+
+    case FLAT_PROGRAM(cl, _, eq, ie, al, ia)
+      then FLAT_PROGRAM(cl, {}, eq, ie, al, ia);
+
+  end match;
+end removeConditionalComponentsFromProgram;
 
 protected function instClassItem
   input Item inItem;
@@ -514,16 +556,16 @@ algorithm
       SCode.Element el;
       Absyn.Info info;
 
-    case (SCodeMod.NOMOD(), _) then {};
+    case (NOMOD(), _) then {};
 
-    case (SCodeMod.MODIFIER(subModifiers = submods), 
+    case (MODIFIER(subModifiers = submods), 
         SCodeEnv.FRAME(clsAndVars = attrs) :: _)
       equation
         vars = List.map1(submods, instBasicTypeAttribute, attrs);
       then
         vars;
 
-    case (SCodeMod.REDECLARE(element = el), _)
+    case (REDECLARE(element = el), _)
       equation
         info = SCode.elementInfo(el);
         Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
@@ -548,7 +590,7 @@ algorithm
       Env env;
       Prefix prefix;
 
-    case (SCodeMod.MODIFIER(name = ident, subModifiers = {}, 
+    case (MODIFIER(name = ident, subModifiers = {}, 
         binding = RAW_BINDING(bind_exp, env, prefix)), _)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
@@ -696,7 +738,7 @@ algorithm
       equation
         // TODO: Save modification?
         path = prefixPath(Absyn.IDENT(name), inPrefix);
-        comp = CONDITIONAL_COMPONENT(path, inElement, inEnv, inPrefix);
+        comp = CONDITIONAL_COMPONENT(path, inElement, inClassMod, inEnv, inPrefix);
         prog = FLAT_PROGRAM({}, {comp}, {}, {}, {}, {});
       then
         prog;
@@ -1304,7 +1346,7 @@ algorithm
       equation
         pre_path = Absyn.pathPrefix(inPath);
         prefix = pathPrefix(pre_path);
-        prog = instElement(el, SCodeMod.NOMOD(), inEnv, prefix);
+        prog = instElement(el, NOMOD(), inEnv, prefix);
       then
         mergeFlatProgram(prog, inProgram);
 
@@ -1396,6 +1438,38 @@ algorithm
 
   end matchcontinue;
 end addComponentToTable;
+
+protected function updateSymbolTableWithProgram
+  input FlatProgram inProgram;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inProgram, inSymbolTable)
+    local
+      list<Component> cl;
+
+    case (EMPTY_FLAT_PROGRAM(), _) then inSymbolTable;
+
+    case (FLAT_PROGRAM(components = cl), _)
+      then List.fold(cl, updateComponentInTable, inSymbolTable);
+
+  end match;
+end updateSymbolTableWithProgram;
+
+protected function updateComponentInTable
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inComponent, inSymbolTable)
+    local
+      Absyn.Path name;
+
+    case (UNTYPED_COMPONENT(name = name), _)
+      then BaseHashTable.add((name, inComponent), inSymbolTable);
+
+  end match;
+end updateComponentInTable;
 
 protected function typeComponents
   input FlatProgram inProgram;
@@ -1943,7 +2017,6 @@ algorithm
     //        ExpressionDump.printExpStr(inExp) +& "\n");
     //  then
     //    fail();
-    //case (DAE.SIZE(exp = e1, sz = SOME(
 
   end match;
 end typeExp;
@@ -2104,6 +2177,170 @@ algorithm
   end matchcontinue;
 end lookupCrefInTable;
 
+protected function instConditionalComponents
+  input FlatProgram inProgram;
+  input SymbolTable inSymbolTable;
+  output FlatProgram outProgram;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outProgram, outSymbolTable) := matchcontinue(inProgram, inSymbolTable)
+    local
+      list<Component> cl;
+      FlatProgram prog;
+      SymbolTable st;
+
+    case (EMPTY_FLAT_PROGRAM(), _) then (inProgram, inSymbolTable);
+
+    case (FLAT_PROGRAM(conditionals = cl), st)
+      equation
+        (prog, st) = instConditionalComponents2(cl, EMPTY_FLAT_PROGRAM(), st);
+        st = updateSymbolTableWithProgram(prog, st);
+      then
+        (prog, st);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("SCodeInst.instConditionalComponents failed\n");
+      then
+        fail();
+
+  end matchcontinue;
+end instConditionalComponents;
+
+protected function instConditionalComponents2
+  input list<Component> inComponents;
+  input FlatProgram inProgram;
+  input SymbolTable inSymbolTable;
+  output FlatProgram outProgram;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outProgram, outSymbolTable) :=
+  match(inComponents, inProgram, inSymbolTable)
+    local
+      Component comp;
+      list<Component> rest_comps;
+      FlatProgram prog;
+      SymbolTable st;
+
+    case ({}, prog, st) then (prog, st);
+
+    case (comp :: rest_comps, _, st)
+      equation
+        (prog, st) = instConditionalComponent(comp, st);
+        prog = mergeFlatProgram(prog, inProgram);
+        (prog, st) = instConditionalComponents2(rest_comps, prog, st);
+      then
+        (prog, st);
+
+  end match;
+end instConditionalComponents2;
+
+protected function instConditionalComponent
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output FlatProgram outProgram;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outProgram, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+    local
+      SCode.Element el;
+      Absyn.Exp cond_exp;
+      Env env;
+      Prefix prefix;
+      SymbolTable st;
+      DAE.Exp inst_exp;
+      DAE.Type ty;
+      Boolean cond;
+      Absyn.Info info;
+      Absyn.Path name;
+      FlatProgram prog;
+      Modifier mod;
+
+    case (CONDITIONAL_COMPONENT(name, el as SCode.COMPONENT(condition = 
+      SOME(cond_exp), info = info), mod, env, prefix), st)
+      equation
+        inst_exp = instExp(cond_exp, env, prefix);
+        (inst_exp, ty, st) = typeExp(inst_exp, st);
+        cond = evaluateConditionalExp(inst_exp, ty, name, info);
+        prog = instConditionalComponent2(cond, el, mod, env, prefix);
+      then
+        (prog, st);
+         
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("SCodeInst.instConditionalComponent failed on " +&
+          printComponent(inComponent) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end instConditionalComponent;
+
+protected function instConditionalComponent2
+  input Boolean inCondition;
+  input SCode.Element inElement;
+  input Modifier inMod;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output FlatProgram outProgram;
+algorithm
+  outProgram := match(inCondition, inElement, inMod, inEnv, inPrefix)
+    local
+      SCode.Element el;
+      FlatProgram prog;
+
+    case (true, _, _, _, _)
+      equation
+        el = SCode.removeComponentCondition(inElement);
+        prog = instElement(el, inMod, inEnv, inPrefix);
+      then
+        prog;
+
+    else EMPTY_FLAT_PROGRAM();
+  end match;
+end instConditionalComponent2;
+
+protected function evaluateConditionalExp
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input Absyn.Path inName;
+  input Absyn.Info inInfo;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inExp, inType, inName, inInfo)
+    local
+      Boolean cond;
+      String exp_str, name_str, ty_str;
+
+    case (DAE.BCONST(bool = cond), DAE.T_BOOL(varLst = _), _, _) then cond;
+
+    case (_, DAE.T_BOOL(varLst = _), _, _)
+      equation
+        // TODO: Return the variability of an expression from instExp, so that
+        // we can see whether we got a variable expression here (which is an
+        // error), or if we simply failed to evaluate it (which is a fault in
+        // the compiler).
+        exp_str = ExpressionDump.printExpStr(inExp);
+        Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY,
+          {exp_str}, inInfo);
+      then
+        fail();
+
+    case (_, _, _, _)
+      equation
+        exp_str = ExpressionDump.printExpStr(inExp);
+        name_str = Absyn.pathString(inName);
+        ty_str = Types.printTypeStr(inType);
+        Error.addSourceMessage(Error.CONDITION_TYPE_ERROR,
+          {exp_str, name_str, ty_str}, inInfo);
+      then
+        fail();
+
+  end match;
+end evaluateConditionalExp;
+
 public function printBinding
   input Binding inBinding;
   output String outString;
@@ -2149,6 +2386,8 @@ algorithm
       equation
         print("class " +& inName +& "\n");
         print("Components: " +& intString(listLength(cl)) +& "\n");
+        //print("Components [" +& intString(listLength(cl)) +& "]: \n");
+        //print(stringDelimitList(List.map(cl, printComponent), "\n") +& "\n");
         print("Conditionals: " +& intString(listLength(cdl)) +& "\n");
         print("Equations:  " +& intString(listLength(eq)) +& "\n");
         //print(stringDelimitList(List.map(eq, SCodeDump.equationStr2), "\n") +& "\n");
