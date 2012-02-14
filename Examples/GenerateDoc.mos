@@ -107,7 +107,7 @@ algorithm
   <h1><a href = \\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
-    file := compound+\".html\";
+    file := filename(compound+\".html\");
     head := head + \"<a href = \\\"\"+file+\"\\\">\"+ident+\"</a>.\";
   end for;
   head := head + strs[end] + \"</h1>\";
