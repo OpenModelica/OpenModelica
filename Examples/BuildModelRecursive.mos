@@ -40,6 +40,7 @@ a:={typeNameString(x) for x guard
     and ((not max("Utilities" == s for s in typeNameStrings(x))) or subScript(typeNameStrings(x),2) == "Utilities")
     and (not max("Components" == s for s in typeNameStrings(x)))
     and (not max("BaseClasses" == s for s in typeNameStrings(x)))
+    and (not max("EngineV6" == s for s in typeNameStrings(x))) /* Until it has acceptable performance */
     and isModel(x)
     and (not isPartial(x))
   in getClassNames(recursive=true)};
