@@ -3,7 +3,7 @@
  */
 
 ---------------------------------------------------------------------------
-         How to build the OpenModelica release on Windows using NSIS
+         How to build the OpenModelica release on Windows using NSIS 
 ---------------------------------------------------------------------------
 
 
