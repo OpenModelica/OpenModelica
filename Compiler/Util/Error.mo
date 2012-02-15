@@ -732,6 +732,10 @@ public constant Message OPERATOR_OVERLOADING_WARNING = MESSAGE(7002, TRANSLATION
   "Operator Overloading: %s.");
 public constant Message OPERATOR_OVERLOADING_ERROR = MESSAGE(7003, TRANSLATION(), ERROR(),
   "Operator Overloading: %s.");
+public constant Message PARMODELICA_WARNING = MESSAGE(7004, TRANSLATION(), WARNING(),
+  "ParModelica: %s.");
+public constant Message PARMODELICA_ERROR = MESSAGE(7005, TRANSLATION(), ERROR(),
+  "ParModelica: %s.");
 
 protected import ErrorExt;
 protected import Print;

@@ -2219,6 +2219,18 @@ algorithm
   end match;
 end unparseDirectionSymbolStr;
 
+public function unparseParallelismSymbolStr 
+  input Absyn.Parallelism inParallelism;
+  output String outString;
+algorithm
+  outString:=
+  match (inParallelism)
+    case (Absyn.NON_PARALLEL()) then "";
+    case (Absyn.PARGLOBAL()) then "parglobal ";
+    case (Absyn.PARLOCAL()) then "parlocal ";
+  end match;
+end unparseParallelismSymbolStr;
+
 public function printComponent "function: printComponent
   Prints a Component to the Print buffer."
   input Absyn.Component inComponent;

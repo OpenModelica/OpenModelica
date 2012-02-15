@@ -455,6 +455,19 @@ algorithm
   end match;
 end variabilityString;
 
+public function parallelismString
+"function: parallelismString
+  Print parallelism to a string."
+  input SCode.Parallelism inParallelism;
+  output String outString;
+algorithm
+  outString := match (inParallelism)
+    case (SCode.PARGLOBAL()) then "PARGLOBAL";
+    case (SCode.PARLOCAL()) then "PARLOCAL";
+    case (SCode.NON_PARALLEL()) then "NON_PARALLEL";
+  end match;
+end parallelismString;
+
 public function innerouterString
 "function: innerouterString
   Print a inner outer info to a string."

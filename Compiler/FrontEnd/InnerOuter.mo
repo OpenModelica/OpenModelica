@@ -1300,7 +1300,6 @@ public function switchInnerToOuterAndPrefix
     local
       list<DAE.Element> lst,r_1,r,lst_1;
       DAE.Element v;
-      DAE.VarDirection dir_1;
       DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.Type t;
@@ -1311,6 +1310,7 @@ public function switchInnerToOuterAndPrefix
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       String s1,s2;
       DAE.Element x;
       Absyn.InnerOuter io;
@@ -1327,6 +1327,7 @@ public function switchInnerToOuterAndPrefix
     case ((DAE.VAR(componentRef = cr,
                    kind = vk,
                    direction = dir,
+                   parallelism = prl,
                    protection=prot,
                    ty = t,
                    binding = e,
@@ -1341,7 +1342,7 @@ public function switchInnerToOuterAndPrefix
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
     // If var already have inner/outer, keep it.
     case ( (v as DAE.VAR(componentRef = _)) :: r,io,pre)
@@ -1377,7 +1378,6 @@ public function prefixOuterDaeVars
     local
       list<DAE.Element> lst,r_1,r,lst_1;
       DAE.Element v;
-      DAE.VarDirection dir_1;
       DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.Type t;
@@ -1388,6 +1388,7 @@ public function prefixOuterDaeVars
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       String s1,s2;
       DAE.Element x;
       Absyn.InnerOuter io;
@@ -1402,6 +1403,7 @@ public function prefixOuterDaeVars
     case ((DAE.VAR(componentRef = cr,
                    kind = vk,
                    direction = dir,
+                   parallelism = prl,
                    protection=prot,
                    ty = t,
                    binding = e,
@@ -1416,7 +1418,7 @@ public function prefixOuterDaeVars
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
     // Traverse components
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),crefPrefix)
@@ -1547,6 +1549,7 @@ algorithm
 
       SCode.Flow flowPrefix "flow" ;
       SCode.Stream streamPrefix "stream" ;
+      SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
       Option<DAE.Const> cnstForRange;
@@ -1554,16 +1557,16 @@ algorithm
     // inner
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, variability, direction, Absyn.INNER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, variability, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER()) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
     
     // inner outer
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, variability, direction, Absyn.INNER_OUTER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, variability, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER_OUTER()) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
 

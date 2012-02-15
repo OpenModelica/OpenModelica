@@ -539,6 +539,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.VarKind kind;
       DAE.VarDirection direction;
+      DAE.VarParallelism parallelism;
       DAE.VarVisibility protection;
       DAE.Type ty;
       Option<DAE.Exp> binding;
@@ -557,12 +558,12 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Function> dae;
 
-    case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
+    case(DAE.VAR(cref,kind,direction,parallelism,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter),dae)
       equation
         (binding,dae) = elabExpOption(binding,dae);
       then
-        (DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
+        (DAE.VAR(cref,kind,direction,parallelism,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter),dae);
 
     case(DAE.DEFINE(cref,e,source),dae)
@@ -1233,7 +1234,7 @@ algorithm
       equation
         i = ComponentReference.printComponentRefStr(cref);
         // TODO: FIXME: binding?
-        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),ty,DAE.UNBOUND(),NONE()); 
+        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),ty,DAE.UNBOUND(),NONE()); 
       then
         res;
     case(_)
@@ -1377,6 +1378,7 @@ algorithm
       DAE.ComponentRef componentRef " The variable name";
       DAE.VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
       DAE.VarDirection direction "input, output or bidir" ;
+      DAE.VarParallelism parallelism "parglobal,parlocal,non_parallel";
       DAE.VarVisibility protection "if protected or public";
       DAE.Type ty "Full type information required";
       DAE.Exp binding "Binding expression e.g. for parameters ; value of start attribute" ;
@@ -1389,13 +1391,13 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case({},_,_,_,_) then {};
-    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,source,
+    case(DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae,p,inputs,current)
       equation
         ((binding,_)) = Expression.traverseExp(binding,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
-        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,source,
+        DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,source,
                 variableAttributesOption,absynCommentOption,innerOuter) :: cdr_1;
 
     case(DAE.DEFINE(cref,e,source) :: cdr,dae,p,inputs,current)

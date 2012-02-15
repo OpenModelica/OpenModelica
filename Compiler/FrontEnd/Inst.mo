@@ -2194,26 +2194,26 @@ end isBuiltInClass;
 protected constant DAE.Type stateSelectType = 
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
-          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);
           
 protected constant DAE.Type uncertaintyType = 
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine"},
           {
-             DAE.TYPES_VAR("given",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.TYPES_VAR("given",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-             DAE.TYPES_VAR("sought",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.TYPES_VAR("sought",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-             DAE.TYPES_VAR("refine",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+             DAE.TYPES_VAR("refine",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);          
 
@@ -2589,7 +2589,7 @@ algorithm
         // convert the value also if needed!!
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case (cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
@@ -2601,7 +2601,7 @@ algorithm
         // convert the value also if needed!!
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case (cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
@@ -2609,7 +2609,7 @@ algorithm
         false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache, env, bind1, false, NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case (cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
@@ -2619,14 +2619,14 @@ algorithm
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
@@ -6764,7 +6764,7 @@ algorithm
 
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,var,dir,io),vis,
+          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl,var,dir,io),vis,
           DAE.T_UNKNOWN_DEFAULT,DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, ci_state, xs, inst_dims, impl);
       then
@@ -8951,6 +8951,7 @@ algorithm
      DAE.ComponentRef cref;
      DAE.VarKind kind;
      DAE.VarDirection dir;
+     DAE.VarParallelism prl;
      DAE.VarVisibility vis;
      DAE.Type ty;
      Option<DAE.Exp> bind;
@@ -8966,14 +8967,14 @@ algorithm
      DAE.Exp newBindExp;    
     
     case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::{}),
-      DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::{}))
-      then (DAE.DAE({DAE.VAR(cref, kind, dir, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)}));
+      DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::{}))
+      then (DAE.DAE({DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)}));
     
     case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::restDae1),
-      DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2))
+      DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2))
       equation
          DAE.DAE(restDae2) = moveBindings(DAE.DAE(restDae1),DAE.DAE(restDae2));
-      then (DAE.DAE(DAE.VAR(cref, kind, dir, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2));
+      then (DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(newBindExp), dims, flowP, sPrefix, src, varAttOpt, commOpt, inOut)::restDae2));
     
     case (_,_)
       equation
@@ -9455,7 +9456,7 @@ algorithm
         env = Env.extendFrameV(inEnv,
           DAE.TYPES_VAR(
             lit,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
             SCode.PUBLIC(),
             DAE.T_UNKNOWN_DEFAULT,
             DAE.UNBOUND(),
@@ -9730,7 +9731,7 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
       then
@@ -9797,7 +9798,7 @@ algorithm
         crefs_2 = removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,updatedComps);
 
@@ -10220,6 +10221,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vdir;
+      DAE.VarParallelism vprl;
       DAE.VarVisibility vvis;
       DAE.Type ty;
       Option<DAE.Exp> binding;
@@ -10232,6 +10234,7 @@ algorithm
       Option<DAE.VariableAttributes> var_attrs;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io1, io2;
+      SCode.Parallelism sprl;
       SCode.Variability var;
       Absyn.Direction dir;
       SCode.Final fp;
@@ -10242,7 +10245,8 @@ algorithm
     case (_, 
         SCode.ATTR(
           flowPrefix = SCode.NOT_FLOW(), 
-          streamPrefix = SCode.NOT_STREAM(), 
+          streamPrefix = SCode.NOT_STREAM(),
+          parallelism = SCode.NON_PARALLEL(), 
           variability = SCode.VAR(), 
           direction = Absyn.BIDIR()), 
         SCode.PREFIXES(
@@ -10256,6 +10260,7 @@ algorithm
           componentRef = cr,
           kind = vk,
           direction = vdir,
+          parallelism = vprl,
           protection = vvis,
           ty = ty,
           binding = binding,
@@ -10269,6 +10274,7 @@ algorithm
         SCode.ATTR(
           flowPrefix = flow1,
           streamPrefix = stream1,
+          parallelism = sprl,
           variability = var,
           direction = dir),
         SCode.PREFIXES(
@@ -10277,12 +10283,13 @@ algorithm
       equation
         vdir = propagateDirection(vdir, dir, cr, inInfo);
         vk = propagateVariability(vk, var);
+        vprl = propagateParallelism(vprl,sprl,cr,inInfo);
         var_attrs = propagateFinal(var_attrs, fp);
         io2 = propagateInnerOuter(io2, io1);
         flow2 = propagateFlow(flow2, flow1, cr, inInfo);
         stream2 = propagateStream(stream2, stream1, cr, inInfo);
       then
-        DAE.VAR(cr, vk, vdir, vvis, ty, binding, dims, flow2, stream2, source, var_attrs, cmt, io2);
+        DAE.VAR(cr, vk, vdir, vprl, vvis, ty, binding, dims, flow2, stream2, source, var_attrs, cmt, io2);
 
     // Structured component.
     case (DAE.COMP(ident = ident, dAElist = el, source = source, comment = cmt), _, _, _)
@@ -10330,6 +10337,60 @@ algorithm
         fail();
   end match;
 end propagateDirection;
+
+protected function propagateParallelism
+  "Helper function to propagateAttributes. Propagates the input/output
+  attribute to variables of a structured component."
+  input DAE.VarParallelism inVarParallelism;
+  input SCode.Parallelism inParallelism;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+  output DAE.VarParallelism outVarParallelism;
+algorithm
+  outVarParallelism := matchcontinue(inVarParallelism, inParallelism, inCref, inInfo)
+    local
+      String s1, s2, s3, s4;
+      DAE.VarParallelism daeprl1,daeprl2;
+      SCode.Parallelism sprl;
+
+    // Component that is non parallel does not change Parallelism on subcomponents.
+    case (_, SCode.NON_PARALLEL(), _, _) then inVarParallelism;
+
+    // non_parallel variables are changed to parlocal or parglobal 
+    // depending on the component
+    case (DAE.NON_PARALLEL(), _, _, _) then DAEUtil.scodePrlToDaePrl(inParallelism);
+
+    // if the two parallelisms are equal then it is OK
+    case(daeprl1,sprl,_,_)
+      equation
+        daeprl2 = DAEUtil.scodePrlToDaePrl(inParallelism);
+        true = DAEUtil.daeParallelismEqual(daeprl1,daeprl2);
+      then
+        daeprl1;
+        
+    // Reaches here If the component is declared as parlocal or parglobal 
+    // and the subcomponent is declared as parglobal or parlocal, respectively. 
+    // Print a warning and override the subcomponent's parallelism.
+    else
+      equation
+        daeprl2 = DAEUtil.scodePrlToDaePrl(inParallelism);
+        
+        s1 = DAEDump.dumpVarParallelismStr(daeprl2);
+        s2 = ComponentReference.printComponentRefStr(inCref);
+        s3 = DAEDump.dumpVarParallelismStr(inVarParallelism);
+        
+        s4 = "\n" +& 
+             "- Component declared as '" +& s1 +&
+             "' when having the variable '" +& s2 +& 
+             "' declared as '" +& s3 +& "' : Subcomponent parallelism modified to." +&
+             s1
+             ;   
+        Error.addSourceMessage(Error.PARMODELICA_WARNING, 
+          {s4}, inInfo);
+      then
+        daeprl2;
+  end matchcontinue;
+end propagateParallelism;
 
 protected function propagateVariability
   "Helper function to propagateAttributes. Propagates the variability (parameter
@@ -13200,27 +13261,32 @@ algorithm
       DAE.Stream streamPrefix1;
       DAE.DAElist dae;
       DAE.ComponentRef vn;
+      DAE.VarParallelism daeParallelism;
       ClassInf.State ci_state;
       DAE.Type ty;
       SCode.Flow flowPrefix;
       SCode.Stream streamPrefix;
       SCode.Visibility vis;
-      SCode.Variability par;
+      SCode.Variability var;
+      SCode.Parallelism prl;
       Absyn.Direction dir;
       Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
+      Absyn.Info info;
     
     case (vn,ci_state,ty,
           SCode.ATTR(flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix,
-                     variability = par,direction = dir),
+                     parallelism = prl,variability = var,direction = dir),
           vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
+        DAE.SOURCE(info,_,_,_,_,_,_) = source;
         flowPrefix1 = DAEUtil.toFlow(flowPrefix, ci_state);
         streamPrefix1 = DAEUtil.toStream(streamPrefix, ci_state);
-        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        daeParallelism = DAEUtil.toDaeParallelism(vn,prl,ci_state,info);
+        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, var, dir, daeParallelism, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,source,_)
@@ -13240,6 +13306,7 @@ protected function daeDeclare2
   input DAE.Stream inStream;
   input SCode.Variability inVariability;
   input Absyn.Direction inDirection;
+  input DAE.VarParallelism inParallelism;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
@@ -13252,7 +13319,7 @@ protected function daeDeclare2
   input Boolean declareComplexVars;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,visibility,inExpExpOption,
+  outDae := matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,inParallelism,visibility,inExpExpOption,
                            inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,
                            source,declareComplexVars)
     local
@@ -13261,6 +13328,7 @@ algorithm
       DAE.Type ty;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      DAE.VarParallelism daePrl;
       Absyn.Direction dir;
       Option<DAE.Exp> e,start;
       InstDims inst_dims;
@@ -13268,27 +13336,27 @@ algorithm
       Option<SCode.Comment> comment;
       SCode.Visibility vis;
       
-    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
         Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare2 failed");
       then
@@ -13305,6 +13373,7 @@ protected function daeDeclare3
   input DAE.Stream inStream;
   input DAE.VarKind inVarKind;
   input Absyn.Direction inDirection;
+  input DAE.VarParallelism inParallelism;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
@@ -13317,7 +13386,7 @@ protected function daeDeclare3
   input Boolean declareComplexVars;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := match (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,visibility,inExpExpOption,inInstDims,
+  outDae := match (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,inParallelism,visibility,inExpExpOption,inInstDims,
                    inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       DAE.DAElist dae;
@@ -13326,6 +13395,7 @@ algorithm
       DAE.Flow fl;
       DAE.Stream st;
       DAE.VarKind vk;
+      DAE.VarParallelism daePrl;
       Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -13333,25 +13403,25 @@ algorithm
       SCode.Visibility vis;
       DAE.VarVisibility prot1;
       
-    case (vn,ty,fl,st,vk,Absyn.INPUT(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.INPUT(),daePrl,vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(vis);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(), daePrl, prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.OUTPUT(), daePrl, vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(vis);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(), daePrl, prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.BIDIR(),vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.BIDIR(), daePrl, vis,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(vis);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(), daePrl, prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
         //Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare3 failed");
       then
@@ -13379,6 +13449,7 @@ protected function daeDeclare4
   input DAE.Stream inStream;
   input DAE.VarKind inVarKind;
   input DAE.VarDirection inVarDirection;
+  input DAE.VarParallelism inParallelism;
   input DAE.VarVisibility protection;
   input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
@@ -13392,7 +13463,7 @@ protected function daeDeclare4
   output DAE.DAElist outDAe;
 algorithm 
   outDAe :=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,
+  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,inParallelism,protection,inExpExpOption,inInstDims,
                  inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       DAE.ComponentRef vn,c;
@@ -13400,6 +13471,7 @@ algorithm
       DAE.Stream st;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism daePrl;
       Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -13415,80 +13487,80 @@ algorithm
       Absyn.Path path;
       DAE.Type tty;
 
-    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty,fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         // print("daeDeclare4: " +& ComponentReference.printComponentRefStr(vn) +& " " +& SCode.finalStr(finalPrefix) +& "\n");
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then 
         fail();
 
-    case (vn,ty as DAE.T_INTEGER(varLst = _),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty as DAE.T_INTEGER(varLst = _),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
-    case (vn,ty as DAE.T_REAL(varLst = _),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty as DAE.T_REAL(varLst = _),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_REAL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
-    case (vn,ty as DAE.T_BOOL(varLst = _),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty as DAE.T_BOOL(varLst = _),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
-    case (vn,ty as DAE.T_STRING(varLst = _),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty as DAE.T_STRING(varLst = _),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
-    case (vn,ty as DAE.T_ENUMERATION(index = SOME(_)),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty as DAE.T_ENUMERATION(index = SOME(_)),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
     then DAEUtil.emptyDae;
 
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
     // instantiation of complex type extending from basic type  
-    case (vn,ty as DAE.T_ENUMERATION(names = l),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty as DAE.T_ENUMERATION(names = l),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+      then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
 
      // complex type that is ExternalObject
-     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+     case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
        equation 
          finst_dims = List.flatten(inst_dims);
          dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
             
     // instantiation of complex type extending from basic type  
-    case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = ci,complexType = tp),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = ci,complexType = tp),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, DAE.NOMOD(), tp, {});
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
-        dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn,tp,fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
     then dae;
     
     // array that extends basic type          
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = dim)},ty = tp),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = dim)},ty = tp),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn, tp, fl, st, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
 
     // Arrays with unknown dimension are allowed if not expanded
-    case (vn,DAE.T_ARRAY(dims = _, ty = tp),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,DAE.T_ARRAY(dims = _, ty = tp),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         false = Config.splitArrays();
-        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
+        dae = daeDeclare4(vn, tp, fl, st, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
         
     // if arrays are expanded and dimension is unknown, report an error
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = tp),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = tp),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
@@ -13497,40 +13569,40 @@ algorithm
         fail();
         
     // Complex/Record components, only if declareComplexVars is true
-    case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,true)
+    case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,true)
       equation
         finst_dims = List.flatten(inst_dims);
       then 
-        DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
              
     // MetaModelica extensions
-    case (vn,tty as DAE.T_FUNCTION(funcArg = _),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,tty as DAE.T_FUNCTION(funcArg = _),fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
         path = ComponentReference.crefToPath(vn);
         ty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(path)));
       then 
-        DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     
     // MetaModelica extension
-    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,ty,fl,st,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then 
-        DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     /*----------------------------*/
     
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
+    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation
         true = Types.isBoxedType(ty);
       then
         fail();
         
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_) then DAEUtil.emptyDae;
+    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_) then DAEUtil.emptyDae;
   end matchcontinue;
 end daeDeclare4;
 
@@ -14918,7 +14990,7 @@ algorithm
         Debug.fcall(Flags.REC_CONST, Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
-        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
+        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,prl,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
 
     case (cache,env,ih,elt,outerMod,impl)
       equation
@@ -16220,7 +16292,8 @@ algorithm
       Env.Env env,compenv,cenv;
       Integer i1,i2;
       list<Absyn.Subscript> ad;
-      SCode.Variability param;
+      SCode.Parallelism prl1;
+      SCode.Variability var1;
       Absyn.Direction dir;
       Ident n;
       SCode.Element c;
@@ -16247,7 +16320,7 @@ algorithm
 
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,
          (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
-                             variability = param, direction = dir)),
+                             parallelism= prl1, variability = var1, direction = dir)),
          _,impl,inst_dims,pre,mods,info)
          // we have reference to ourself, try to instantiate type.
       equation
@@ -16264,7 +16337,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),vis,ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),vis,ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
       then
@@ -16272,7 +16345,7 @@ algorithm
         
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,
          (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
-                             variability = param, direction = dir)),
+                             parallelism= prl1, variability = var1, direction = dir)),
          _,impl,inst_dims,pre,mods,info)
       equation
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
@@ -16736,6 +16809,7 @@ algorithm
     DAE.ComponentRef componentRef;
     DAE.VarKind kind;
     DAE.VarDirection direction;
+    DAE.VarParallelism parallelism;
     DAE.VarVisibility protection;
     DAE.Type ty;
     DAE.InstDims  dims;
@@ -16747,14 +16821,14 @@ algorithm
     DAE.ElementSource source "the origin of the element";
     case (DAE.DAE(vars),DAE.DAE({})) then DAE.DAE(vars);
     case (DAE.DAE({}),_) then DAE.DAE({});
-    case (DAE.DAE(DAE.VAR(componentRef,kind,direction,protection,ty,NONE(),dims,
-                  flowPrefix,streamPrefix,source,variableAttributesOption,
-                  absynCommentOption,innerOuter)::vars), DAE.DAE(equations))
+    case (DAE.DAE(DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,NONE(),
+                          dims,flowPrefix,streamPrefix,source,variableAttributesOption,
+                          absynCommentOption,innerOuter)::vars), DAE.DAE(equations))
       equation
         SOME(e)=findCorrespondingBinding(componentRef, equations);
         DAE.DAE(vars1) = propagateBinding(DAE.DAE(vars),DAE.DAE(equations));
       then
-        DAE.DAE(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(e),dims,
+        DAE.DAE(DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(e),dims,
                 flowPrefix,streamPrefix,source,variableAttributesOption,
                 absynCommentOption,innerOuter)::vars1);
 

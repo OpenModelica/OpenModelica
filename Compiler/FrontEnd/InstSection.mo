@@ -1823,7 +1823,7 @@ algorithm
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),/*SCode.RW()*/_,_,_),_,DAE.UNBOUND(),_,_,_,_,_) 
+        (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),/*SCode.RW()*/_,_,_),_,DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info)) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, ci_state, i, v, sl, source, initial_, impl, unrollForLoops);
@@ -2990,6 +2990,7 @@ algorithm
       Absyn.ComponentRef c1,c2;
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
+      SCode.Parallelism prl1,prl2;
       SCode.Variability vt1,vt2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -3027,8 +3028,8 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1) "Check that the type of the connectors are good." ;
         validConnector(ty2);
         checkConnectTypes(env, ih, c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
@@ -3157,7 +3158,7 @@ algorithm
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
       SCode.Variability vt1,vt2;
-      SCode.Parallelism prl;
+      SCode.Parallelism prl1,prl2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String componentName;
@@ -3178,8 +3179,8 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt1,_,io1) = attr1;
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt2,_,io2) = attr2;
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),prl1,vt1,_,io1) = attr1;
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),prl2,vt2,_,io2) = attr2;
         true = isExpandableConnectorType(ty1);
         true = isExpandableConnectorType(ty2);
 
@@ -3255,7 +3256,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
@@ -3291,7 +3292,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dirFlipped,io2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dirFlipped,io2),
           SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
           // add empty here to connect individual components!
           envComponentEmpty);
@@ -3328,7 +3329,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
@@ -3362,7 +3363,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dirFlipped,io2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dirFlipped,io2),
           SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(),
           envComponent);
         // ******************************************************************************
@@ -3391,7 +3392,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix1,streamPrefix1,vt1,dir1,io1) = attr1;
+        DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,dir1,io1) = attr1;
         
         // then connect the components normally.
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
@@ -3402,7 +3403,7 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
-           SCode.ATTR({}, flowPrefix1, streamPrefix1, SCode.NON_PARALLEL(), vt1, dir1), 
+           SCode.ATTR({}, flowPrefix1, streamPrefix1, prl1, vt1, dir1), 
            SCode.PUBLIC(), NONE(), {}, NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, SCode.NOT_FINAL(), source, true);

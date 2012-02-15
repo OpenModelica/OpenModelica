@@ -980,6 +980,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ComponentRef cRef;
       DAE.VarKind v1 "varible kind variable, constant, parameter, etc." ;
+      DAE.VarParallelism prl;
       DAE.VarDirection v2 "input, output or bidir" ;
       DAE.VarVisibility prot "if protected or public";
       DAE.Type ty "the type" ;
@@ -997,12 +998,12 @@ algorithm
     
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
     // variables
-    case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,
+    case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,
                             flowPrefix,streamPrefix,source,vAttr,com,inOut)
        :: rest,localAccList,pre)
     equation
       (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
-      elem = DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,source,vAttr,com,inOut);
+      elem = DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,flowPrefix,streamPrefix,source,vAttr,com,inOut);
       localAccList = listAppend(localAccList,List.create(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,ih,rest,localAccList,pre);
     then (localCache,temp);

@@ -638,6 +638,29 @@ algorithm
   end matchcontinue;
 end dumpDirection;
 
+protected function dumpParallelism "function: dumpParallelism
+  Dump VarParallelism."
+  input DAE.VarParallelism inVarParallelism;
+algorithm
+  _ := matchcontinue (inVarParallelism)
+    case DAE.NON_PARALLEL()
+      equation
+        Print.printBuf("        ");
+      then
+        ();
+    case DAE.PARGLOBAL()
+      equation
+        Print.printBuf(" parglobal ");
+      then
+        ();
+    case DAE.PARLOCAL()
+      equation
+        Print.printBuf(" parlocal ");
+      then
+        ();
+  end matchcontinue;
+end dumpParallelism;
+
 public function dumpDirectionStr "function: dumpDirectionStr
   Dump VarDirection to a string"
   input DAE.VarDirection inVarDirection;
@@ -794,6 +817,7 @@ algorithm
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       DAE.Type typ;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -807,6 +831,7 @@ algorithm
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
+             parallelism = prl,
              ty = typ,
              binding = NONE(),
              flowPrefix = flowPrefix,
@@ -817,6 +842,7 @@ algorithm
       equation
         dumpKind(kind);
         dumpDirection(dir);
+        dumpParallelism(prl);
         Print.printBuf(Types.unparseType(typ));
         Print.printBuf(" ");
         ComponentReference.printComponentRef(id);
@@ -829,6 +855,7 @@ algorithm
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
+             parallelism = prl,
              ty = typ,
              binding = SOME(e),
              flowPrefix = flowPrefix,
@@ -839,6 +866,7 @@ algorithm
       equation
         dumpKind(kind);
         dumpDirection(dir);
+        dumpParallelism(prl);
         Print.printBuf(Types.unparseType(typ));
         Print.printBuf(" ");
         ComponentReference.printComponentRef(id);
@@ -861,6 +889,18 @@ algorithm
     case DAE.PROTECTED() then "protected ";
   end match;
 end dumpVarVisibilityStr;
+
+public function dumpVarParallelismStr "function: dumVarParallelismStr
+  Dump VarParallelism to a string"
+  input DAE.VarParallelism inVarParallelism;
+  output String outString;
+algorithm
+  outString := match (inVarParallelism)
+    case DAE.NON_PARALLEL() then "";
+    case DAE.PARGLOBAL() then "parglobal ";
+    case DAE.PARLOCAL() then "parlocal ";
+  end match;
+end dumpVarParallelismStr;
 
 public function dumpCommentOptionStr "function: dumpCommentOptionStr
   Dump Comment option to a string."
@@ -3146,10 +3186,11 @@ protected function dumpVarStream "function: dumpVarStream
 algorithm
   outStream := matchcontinue (inElement, printTypeDimension, inStream)
     local
-      String s1,s2,s3,s4,comment_str,s5,s6,s7,s3_subs,sFinal;
+      String s1,s2,s3,s4,comment_str,s5,s6,s7,s3_subs,sFinal,sPrl;
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       DAE.Type typ;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -3164,6 +3205,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
+             parallelism = prl,
              protection=prot,
              ty = typ,
              dims = dims,
@@ -3181,15 +3223,17 @@ algorithm
         s3_subs = unparseDimensions(dims, printTypeDimension);
         s4 = ComponentReference.printComponentRefStr(id);
         s7 = dumpVarVisibilityStr(prot);
+        sPrl = dumpVarParallelismStr(prl);
         comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = IOStream.appendList(str, {"  ",s7,sFinal,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
+        str = IOStream.appendList(str, {"  ",s7,sFinal,sPrl,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
       then
         str;
     // we have a binding
     case (DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
+             parallelism = prl,
              protection=prot,
              ty = typ,
              dims = dims,
@@ -3209,8 +3253,9 @@ algorithm
         s5 = ExpressionDump.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
+        sPrl = dumpVarParallelismStr(prl);
         s7 = dumpVarVisibilityStr(prot);
-        str = IOStream.appendList(str, {"  ",s7,sFinal,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
+        str = IOStream.appendList(str, {"  ",s7,sFinal,sPrl,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
       then
         str;
     case (_,_,str) then str;

@@ -549,6 +549,7 @@ algorithm
       DAE.ComponentRef componentRef;
       DAE.VarKind kind;
       DAE.VarDirection direction;
+      DAE.VarParallelism parallelism;
       DAE.VarVisibility protection;
       DAE.Type ty;
       DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
@@ -567,11 +568,11 @@ algorithm
       DAE.Function f1,f2;      
 
     case ({},_) then {};
-    case (DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
+    case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
                  source,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
         (binding_1,source) = inlineExp(binding,fns,source);
-        res = DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,
+        res = DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,
                       source,variableAttributesOption,absynCommentOption,innerOuter);
         cdr_1 = inlineDAEElements(cdr,fns);
       then

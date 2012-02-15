@@ -1625,7 +1625,7 @@ protected function makeFunctionVariable
 algorithm
   outVar := DAE.TYPES_VAR(
     inName,
-    DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+    DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
     SCode.PUBLIC(), inType, inBinding, NONE());
 end makeFunctionVariable;
 

@@ -791,7 +791,7 @@ algorithm
         new_env_1 = extendFrameV(env,
           DAE.TYPES_VAR(
             name,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(),  variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
             SCode.PUBLIC(),
             type_,
             binding,
@@ -1737,6 +1737,7 @@ algorithm
       Absyn.TypeSpec tsp;
       SCode.Flow flowPrefix "flow";
       SCode.Stream streamPrefix "stream";
+      SCode.Parallelism parallelism;
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
@@ -1748,22 +1749,24 @@ algorithm
       Env env;
       
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, variability, direction, innerOuter),ty=tp,binding=binding),
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, innerOuter),ty=tp,binding=binding),
              declaration = elAndmod, instStatus=instStatus, env = env)) 
       equation
         s1 = SCodeDump.flowStr(flowPrefix);
         s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
         s2 = SCodeDump.streamStr(streamPrefix);
         s2 = Util.if_(stringEq(s2, ""), "", s2 +& ", ");
-        s3 = SCodeDump.variabilityString(variability); 
+        s3 = SCodeDump.parallelismString(parallelism); 
         s3 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
-        s4 = Dump.unparseDirectionSymbolStr(direction);
-        s4 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
-        s5 = SCodeDump.innerouterString(innerOuter);
-        s5 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
+        s4 = SCodeDump.variabilityString(variability); 
+        s4 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
+        s5 = Dump.unparseDirectionSymbolStr(direction);
+        s5 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
+        s6 = SCodeDump.innerouterString(innerOuter);
+        s6 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
                 
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
-        +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
+        +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +& s6 +&
         printElementAndModOpt(elAndmod) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env); 
       then str;
     

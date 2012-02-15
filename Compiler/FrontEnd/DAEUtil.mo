@@ -514,7 +514,7 @@ algorithm
       DAE.ComponentRef cr,oldVar,newVar;
       list<DAE.Element> elist,elist2,elist3;
       DAE.Element e,v,u,o; String id;
-      DAE.VarKind kind;
+      DAE.VarKind kind; DAE.VarParallelism prl;
       DAE.VarDirection dir; DAE.Type tp;
       Option<DAE.Exp> bind; DAE.InstDims dim;
       DAE.Flow flow_; list<Absyn.Path> cls;
@@ -528,23 +528,23 @@ algorithm
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass"
      */
-    case(var,DAE.DAE(DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,(io as Absyn.INNER_OUTER()))::elist))
+    case(var,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,flow_,st,source,attr,cmt,(io as Absyn.INNER_OUTER()))::elist))
       equation
         true = compareUniquedVarWithNonUnique(var,oldVar);
         newVar = nameInnerouterUniqueCref(oldVar);
-        o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE(),dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
-        u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
+        o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
+        u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
         elist3 = u::{o};
         elist= listAppend(elist3,elist);
       then
         DAE.DAE(elist);
 
-    case(var,DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io)::elist))
+    case(var,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,flow_,st,source,attr,cmt,io)::elist))
       equation
         true = ComponentReference.crefEqualNoStringCompare(var,cr);
         io2 = removeInnerAttribute(io);
       then
-        DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::elist);
+        DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::elist);
 
     case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
       equation
@@ -822,14 +822,14 @@ algorithm
   outVar := match(var,varOpt)
     local
       DAE.ComponentRef cr; DAE.VarKind k;
-      DAE.VarDirection d ; DAE.VarVisibility p;
-      DAE.Type ty; Option<DAE.Exp> b;
+      DAE.VarDirection d ; DAE.VarParallelism prl;
+      DAE.VarVisibility v; DAE.Type ty; Option<DAE.Exp> b;
       DAE.InstDims  dims; DAE.Flow fl; DAE.Stream st;
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt; Absyn.InnerOuter io;
 
-    case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,_,cmt,io),varOpt)
-      then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,varOpt,cmt,io);
+    case(DAE.VAR(cr,k,d,prl,v,ty,b,dims,fl,st,source,_,cmt,io),varOpt)
+      then DAE.VAR(cr,k,d,prl,v,ty,b,dims,fl,st,source,varOpt,cmt,io);
   end match;
 end setVariableAttributes;
 
@@ -1626,6 +1626,79 @@ algorithm
   end matchcontinue;
 end toStream;
 
+public function toDaeParallelism "function: toDaeParallel
+  Converts scode parallelsim to dae parallelism.
+  Prints a warning if parallel variables are used
+  in a non-function class."
+  input DAE.ComponentRef inCref;
+  input SCode.Parallelism inParallelism;
+  input ClassInf.State inState;
+  input Absyn.Info inInfo;
+  output DAE.VarParallelism outParallelism;
+algorithm
+  outParallelism := matchcontinue (inCref,inParallelism,inState,inInfo)
+    local
+      String str1;
+      Absyn.Path path;
+      
+    case (_, SCode.NON_PARALLEL(), _, _) then DAE.NON_PARALLEL();
+    
+    //In functions. No worries.
+    case (_, SCode.PARGLOBAL(), ClassInf.FUNCTION(_), _) then DAE.PARGLOBAL();
+    case (_, SCode.PARLOCAL(), ClassInf.FUNCTION(_), _) then DAE.PARLOCAL();
+      
+    // In other classes print warning  
+    case (_, SCode.PARGLOBAL(), _, _) 
+      equation
+        path = ClassInf.getStateName(inState);
+        str1 = "\n" +&
+        "- DAEUtil.toDaeParallelism: parglobal component '" +& ComponentReference.printComponentRefStr(inCref) 
+        +& "' in non-function class: " +& ClassInf.printStateStr(inState) +& " " +& Absyn.pathString(path);
+        
+        Error.addSourceMessage(Error.PARMODELICA_WARNING,
+          {str1}, inInfo);
+      then DAE.PARGLOBAL();
+        
+    case (_, SCode.PARLOCAL(), _, _) 
+      equation
+        path = ClassInf.getStateName(inState);
+        str1 = "\n" +&
+        "- DAEUtil.toDaeParallelism: parlocal component '" +& ComponentReference.printComponentRefStr(inCref) 
+        +& "' in non-function class: " +& ClassInf.printStateStr(inState) +& " " +& Absyn.pathString(path);
+        
+        Error.addSourceMessage(Error.PARMODELICA_WARNING,
+          {str1}, inInfo);
+      then DAE.PARLOCAL();
+  end matchcontinue;
+end toDaeParallelism;
+
+public function scodePrlToDaePrl
+"function: scodePrlToDaePrl
+  Translates SCode.Parallelism to DAE.VarParallelism
+  without considering if it is a function or not."
+  input SCode.Parallelism inParallelism;
+  output DAE.VarParallelism outVarParallelism;
+algorithm
+  outVarParallelism := match (inParallelism)
+    case SCode.NON_PARALLEL() then DAE.NON_PARALLEL();
+    case SCode.PARGLOBAL() then DAE.PARGLOBAL();
+    case SCode.PARLOCAL() then DAE.PARLOCAL();
+  end match;
+end scodePrlToDaePrl;
+
+public function daeParallelismEqual
+  input DAE.VarParallelism inParallelism1;
+  input DAE.VarParallelism inParallelism2;
+  output Boolean equal;
+algorithm
+  equal := match(inParallelism1,inParallelism2)  
+    case(DAE.NON_PARALLEL(),DAE.NON_PARALLEL()) then true;  
+    case(DAE.PARGLOBAL(),DAE.PARGLOBAL()) then true;
+    case(DAE.PARLOCAL(),DAE.PARLOCAL()) then true;
+    case(_,_) then false;
+  end match;
+end daeParallelismEqual;
+
 public function getFlowVariables "function: getFlowVariables
   Retrive the flow variables of an Element list."
   input list<DAE.Element> inElementLst;
@@ -1834,6 +1907,7 @@ algorithm
       DAE.Type ty;
       DAE.VarKind a;
       DAE.VarDirection b;
+      DAE.VarParallelism prl;
       DAE.Type t;
       DAE.InstDims instDim;
       DAE.Flow g;
@@ -1860,6 +1934,7 @@ algorithm
     case ((DAE.VAR(componentRef = cr,
                kind = a,
                direction = b,
+               parallelism = prl,
                protection = prot,
                ty = t,
                binding = d,
@@ -1878,7 +1953,7 @@ algorithm
         ty = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(str_1,ty,{});
       then
-        (DAE.VAR(cref_,a,b,prot,t,d_1,instDim,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
+        (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
 
     case ((DAE.DEFINE(componentRef = cr,exp = e,source = source) :: elts))
       equation
@@ -2018,15 +2093,16 @@ algorithm
   outelem := match(newCr, inelem)
     local
       DAE.ComponentRef a1; DAE.VarKind a2;
-      DAE.VarDirection a3; DAE.VarVisibility a4;
+      DAE.VarDirection a3; DAE.VarParallelism prl;
+      DAE.VarVisibility a4;
       DAE.Type a5; DAE.InstDims a7; DAE.Flow a8;
       DAE.Stream a9; Option<DAE.Exp> a6;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
       
-    case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13))
-      then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13);
+    case(newCr, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,a8,a9,source,a11,a12,a13))
+      then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,a8,a9,source,a11,a12,a13);
   end match;
 end replaceCrefInVar;
 
@@ -2681,6 +2757,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.VarKind kind,kind1;
       DAE.VarDirection direction;
+      DAE.VarParallelism parallelism;
       DAE.VarVisibility protection;
       DAE.Type ty;
       Option<DAE.Exp> binding;
@@ -2697,13 +2774,15 @@ algorithm
         (sublist1,ht1) = List.mapFold(sublist,evaluateAnnotation3,ht);
       then
         (DAE.COMP(ident,sublist1,source,comment),ht1);
-    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,streamPrefix=streamPrefix,
-            source=source,variableAttributesOption=variableAttributesOption,absynCommentOption=absynCommentOption,innerOuter=innerOuter),ht)
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
+                  protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,
+                  streamPrefix=streamPrefix,source=source,variableAttributesOption=variableAttributesOption,
+                  absynCommentOption=absynCommentOption,innerOuter=innerOuter),ht)
       equation
         ((e1,(_,i,j))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1) = evaluateAnnotation4(cr,e1,i,j,ht);
       then
-        (DAE.VAR(cr,DAE.PARAM(),direction,protection,ty,SOME(e2),dims,flowPrefix,streamPrefix,
+        (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,flowPrefix,streamPrefix,
             source,variableAttributesOption,absynCommentOption,innerOuter),ht1);
     else (iel,inHt);
   end matchcontinue;
@@ -3709,6 +3788,7 @@ algorithm
       DAE.InstDims dims;
       DAE.Flow fl;
       DAE.Stream st;
+      DAE.VarParallelism prl;
       DAE.VarVisibility prot;
       DAE.Exp e,e2,e22,e1,e11,maybeCrExp;
       Option<DAE.VariableAttributes> attr;
@@ -3725,7 +3805,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Type_a extraArg;      
   
-    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io),func,extraArg)
+    case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,fl,st,source,attr,cmt,io),func,extraArg)
       equation
         ((maybeCrExp,extraArg)) = func((Expression.crefExp(cr), extraArg));
         // If the result is DAE.CREF, we replace the name of the variable.
@@ -3733,7 +3813,7 @@ algorithm
         cr2 = Util.makeValueOrDefault(Expression.expCref,maybeCrExp,cr);
         (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
-        elt = DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io);
+        elt = DAE.VAR(cr2,kind,dir,prl,prot,tp,optExp,dims,fl,st,source,attr,cmt,io);
       then 
         (elt,extraArg);
  
@@ -4285,6 +4365,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       DAE.Type tp;
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
@@ -4300,6 +4381,7 @@ algorithm
     case (DAE.VAR(componentRef = cr,
                kind = kind,
                direction = dir,
+               parallelism = prl,
                protection = prot,
                ty = tp,
                binding = bind,
@@ -4313,7 +4395,7 @@ algorithm
       equation
         source = addElementSourceType(source, newtype);
       then
-        DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,source,dae_var_attr,comment,io);
+        DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,flowPrefix,streamPrefix,source,dae_var_attr,comment,io);
     else elt;
   end match;
 end addComponentType2;
@@ -5585,24 +5667,20 @@ public function setAttrVariability
 protected
   SCode.Flow fp;
   SCode.Stream sp;
+  SCode.Parallelism prl;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
 algorithm
-  DAE.ATTR(fp, sp, _, dir, io) := inAttr;
-  outAttr := DAE.ATTR(fp, sp, inVar, dir, io);
+  DAE.ATTR(fp, sp, prl, _, dir, io) := inAttr;
+  outAttr := DAE.ATTR(fp, sp, prl, inVar, dir, io);
 end setAttrVariability;
 
 public function getAttrVariability
   "Get the variability attribute in an Attributes record."
   input DAE.Attributes inAttr;
   output SCode.Variability outVar;
-protected
-  SCode.Flow fp;
-  SCode.Stream sp;
-  Absyn.Direction dir;
-  Absyn.InnerOuter io;
 algorithm
-  DAE.ATTR(fp, sp, outVar, dir, io) := inAttr;
+  DAE.ATTR(_, _, _, outVar, _, _) := inAttr;
 end getAttrVariability;
 
 public function addSymbolicTransformation
@@ -5699,13 +5777,14 @@ public function translateSCodeAttrToDAEAttr
 protected
   SCode.Flow fp;
   SCode.Stream sp;
+  SCode.Parallelism prl;
   SCode.Variability var;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
 algorithm
-  SCode.ATTR(flowPrefix = fp, streamPrefix = sp, variability = var, direction = dir) := inAttributes;
+  SCode.ATTR(flowPrefix = fp, streamPrefix = sp, parallelism = prl, variability = var, direction = dir) := inAttributes;
   SCode.PREFIXES(innerOuter = io) := inPrefixes;
-  outAttributes := DAE.ATTR(fp, sp, var, dir, io);
+  outAttributes := DAE.ATTR(fp, sp, prl, var, dir, io);
 end translateSCodeAttrToDAEAttr;
 
 public function varName

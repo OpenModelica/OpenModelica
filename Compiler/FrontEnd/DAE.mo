@@ -85,6 +85,12 @@ public uniontype VarDirection
   record BIDIR  "neither input or output" end BIDIR;
 end VarDirection;
 
+public uniontype VarParallelism
+  record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
+  record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
+  record NON_PARALLEL  "Non parallel/Normal variables"            end NON_PARALLEL;
+end VarParallelism;
+
 public uniontype VarVisibility
   record PUBLIC "public variables"       end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
@@ -155,6 +161,7 @@ public uniontype Element
     ComponentRef componentRef " The variable name";
     VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
+    VarParallelism parallelism "parglobal, parlocal, or non_parallel";
     VarVisibility protection "if protected or public";
     Type ty "Full type information required";
     Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute";
@@ -653,6 +660,7 @@ uniontype Attributes "- Attributes"
   record ATTR
     SCode.Flow          flowPrefix "flow" ;
     SCode.Stream        streamPrefix "stream" ;
+    SCode.Parallelism   parallelism "parallelism";
     SCode.Variability   variability "variability" ;
     Absyn.Direction     direction "direction" ;
     Absyn.InnerOuter    innerOuter "inner, outer,  inner outer or unspecified";
@@ -660,9 +668,9 @@ uniontype Attributes "- Attributes"
 end Attributes;
 
 public 
-constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()); 
-constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
-constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
+constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()); 
+constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
+constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;
