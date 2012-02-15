@@ -1,9 +1,11 @@
+all: release
 
 top_builddir=../..
 builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
+runtimedir=$(top_builddir)/Compiler/runtime/
 
 
 CC=@CC@
@@ -13,20 +15,10 @@ EXEEXT=@EXEEXT@
 
 USE_CORBA = @USE_CORBA@
 
-ifdef USE_CORBA
-  CORBAIMPL = -I$(top_builddir)/Compiler/runtime
-  CORBAOBJS = $(top_builddir)/Compiler/runtime/omc_communication.o #$(top_builddir)/Compiler/runtime/omc_communication_impl.o
-  CORBALIB = @CORBALIBS@
-  CORBAINC = @CORBACFLAGS@
-else
-  CORBAIMPL =
-  CORBAOBJS =
-  CORBALIB =
-endif
+CORBALIB = @CORBALIBS@
+CORBAINC = @CORBACFLAGS@
 
-INCP = $(CORBAIMPL) $(CORBAINC)
-
-CFLAGS = @CFLAGS@ $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
+CFLAGS = @CFLAGS@ -Wall $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = @LDFLAGS@
 
@@ -35,10 +27,12 @@ LIBS = @LIBREADLINE@ -lncurses $(CORBALIB) -lm -lpthread
 
 OBJS += mosh.o options.o
 
+ifdef USE_CORBA
+  OBJS += omc_communication.o
+mosh.o: omc_communication.h
+endif
+
 PROG = OMShell-terminal
-
-all: release
-
 
 release: $(PROG)$(EXEEXT)
 	cp $(PROG)$(EXEEXT) $(builddir_bin)/
@@ -49,6 +43,8 @@ $(PROG)$(EXEEXT) : $(OBJS)
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
+omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+	@IDLCMD@ $<
 
 clean:
 	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
