@@ -612,7 +612,7 @@ protected function prefixCref
   input SCodeInst.Prefix inPrefix;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inEnv, inPrefix)
+  outCref := matchcontinue(inCref, inEnv, inPrefix)
     local
       Absyn.Path path;
       String name;
@@ -638,7 +638,7 @@ algorithm
  
     else inCref;
 
-  end match;
+  end matchcontinue;
 end prefixCref;
 
 protected function prefixCref2
