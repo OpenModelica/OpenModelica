@@ -219,7 +219,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end simulationFileHeader;
 
-template pupulateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
  "Generates information for data.modelInfo struct."
 ::=
 match modelInfo
@@ -260,7 +260,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
   data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
   >>
-end pupulateModelInfo;
+end populateModelInfo;
 
 template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
  "Generates function in simulation file."
@@ -269,7 +269,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   void setupDataStruc(DATA *data)
   {  
     ASSERT(data,"Error while initialize Data");
-    <%pupulateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, delayed)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, delayed)%>
   }
   >>
 end functionInitializeDataStruc;

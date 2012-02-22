@@ -28,7 +28,7 @@ SimCodeCSharp.mo : SimCodeCSharp.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "
 
-SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo CodegenC.tpl
+SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo SimCodeC.tpl
 	@echo " ** SimCodeFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
@@ -46,13 +46,13 @@ Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo
+SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenC.tpl
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo CodegenC.tpl
+SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo SimCodeC.tpl 
 	@echo " ** SimCodeQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
