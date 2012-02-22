@@ -12,6 +12,8 @@ SystemDefaultImplementation::SystemDefaultImplementation()
 , _z				(NULL)
 , _zDot				(NULL)
 , _dimODE			(0)
+,_conditions0(NULL)
+,_conditions1(NULL)
 {
 }
 
@@ -88,8 +90,20 @@ int SystemDefaultImplementation::getDimRHS(const IContinous::INDEX index) const
 		memset(_z,0,(_dimODE + _dimAE)*sizeof(double));
 		memset(_zDot,0,(_dimODE + _dimAE)*sizeof(double));
 	}
+	if(_dimZeroFunc > 0)
+	{
+		if(_conditions0) delete [] _conditions0 ; 
+		if(_conditions1) delete [] _conditions1;
+		_conditions0 = new bool[_dimZeroFunc];
+		_conditions1 = new bool[_dimZeroFunc];
+		memset(_conditions0,false,(_dimZeroFunc)*sizeof(bool));
+		memset(_conditions1,false,(_dimZeroFunc)*sizeof(bool));
+	}
 };
-
+ void SystemDefaultImplementation::saveConditions()
+ {
+	memcpy(_conditions0,_conditions1,_dimZeroFunc*sizeof(bool));
+ }
 
 /// Set current integration time
 void SystemDefaultImplementation::setTime(const double& t)

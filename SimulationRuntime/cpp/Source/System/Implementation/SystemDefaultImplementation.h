@@ -64,7 +64,7 @@ public:
 
 	/// Provide the right hand side (according to the index)
 	void giveRHS(double* f, const IContinous::INDEX index = IContinous::ALL_VARS);
-	
+	void saveConditions();
 	// Member variables
 	//---------------------------------------------------------------
 protected:
@@ -77,7 +77,9 @@ protected:
 	double
 		*_z,				///< "Extended state vector", containing all states and algebraic variables of all types
 		*_zDot;				///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-
+	bool   
+		* _conditions0,
+		* _conditions1;
 	ostream
 		*_outputStream;		///< Output stream for results
 
@@ -85,7 +87,8 @@ protected:
 		_dimODE1stOrder,	///< Number (dimension) of first order ordinary differential equations 
 		_dimODE2ndOrder,	///< Number (dimension) of second order ordinary differential equations (RHS of a mechanical system)
 		_dimResidues,       ///< Number of residues
-		_dimAE;				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+		_dimAE,				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+		_dimZeroFunc;		///< Number of Zero crossings
 	bool _initial;		
 
 private:

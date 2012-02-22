@@ -171,6 +171,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     { 
     //Number of equations
     <%dimension1(simCode)%>
+    _dimZeroFunc= <%zerocrosslength(simCode)%>;
     //Number of residues
     <%if modelInfo.labels then 
       <<     
@@ -1207,7 +1208,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%varDecls%>  
     <%initVariables%>
    <%initFunctions%>
-    <%initZeroCrossings%>
+   checkConditions(0,true);
     <%initTimeEventFunctions%>
     <%initEventHandling%>
     _event_handling.init(this,<%helpvarlength(simCode)%>);
@@ -1219,9 +1220,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initALgloopSolvers%>
     //initialize equations
    <%initBoundParameters%>
-    _initial=true;
-   update(ALL);
-  _initial=false;
+   saveConditions();
     }
    >>
 end init;
@@ -3123,10 +3122,13 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
      ;separator="\n"%>
      
      _event_handling.saveH();
-     //save all zero crossing condtions
-      <%saveconditionvar(zeroCrossings,simCode)%>
+    
     }
-  >>    
+  >>  
+  /*
+  //save all zero crossing condtions
+   <%saveconditionvar(zeroCrossings,simCode)%>
+   */  
 end saveall;
 
 template initvar(ModelInfo modelInfo,SimCode simCode)
@@ -4246,7 +4248,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-     '_condition<%eIndex%>'
+     '_conditions1[<%eIndex%>]'
   case CALL(path=IDENT(name="initial") ) then
       'initial()'
    
@@ -4876,7 +4878,7 @@ match simCode
 case SIMCODE(__) then
   let size = listLength(zeroCrossings)
   <<
-    return <%size%>
+     <%size%>
   >>
 end zerocrosslength;
 
@@ -4888,7 +4890,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
     {
-      <%zerocrosslength(simCode)%>;
+      return _dimZeroFunc;
     }
   >>
 end DimZeroFunc;
@@ -5011,30 +5013,30 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
       end match
   case _ then 
      match op
-    case LESS(ty = T_BOOL(__))        then '_condition<%index%>'
+    case LESS(ty = T_BOOL(__))        then '_conditions1[<%index%>]'
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
     case LESS(ty = T_INTEGER(__))
-    case LESS(ty = T_REAL(__))        then '_condition<%index%>'
-    case GREATER(ty = T_BOOL(__))     then '_condition<%index%>'
+    case LESS(ty = T_REAL(__))        then '_conditions1[<%index%>]'
+    case GREATER(ty = T_BOOL(__))     then '_conditions1[<%index%>]'
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))
-    case GREATER(ty = T_REAL(__))     then '_condition<%index%>'
-    case LESSEQ(ty = T_BOOL(__))      then '_condition<%index%>'
+    case GREATER(ty = T_REAL(__))     then '_conditions1[<%index%>]'
+    case LESSEQ(ty = T_BOOL(__))      then '_conditions1[<%index%>]'
     case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = T_INTEGER(__))
-    case LESSEQ(ty = T_REAL(__))       then '_condition<%index%>'
-    case GREATEREQ(ty = T_BOOL(__))   then '_condition<%index%>'
+    case LESSEQ(ty = T_REAL(__))       then '_conditions1[<%index%>]'
+    case GREATEREQ(ty = T_BOOL(__))   then '_conditions1[<%index%>]'
     case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
     case GREATEREQ(ty = T_INTEGER(__))
-    case GREATEREQ(ty = T_REAL(__))   then '_condition<%index%>'
-    case EQUAL(ty = T_BOOL(__))       then '_condition<%index%>'
+    case GREATEREQ(ty = T_REAL(__))   then '_conditions1[<%index%>]'
+    case EQUAL(ty = T_BOOL(__))       then '_conditions1[<%index%>]'
     case EQUAL(ty = T_STRING(__))
     case EQUAL(ty = T_INTEGER(__))
-    case EQUAL(ty = T_REAL(__))       then '_condition<%index%>'
-    case NEQUAL(ty = T_BOOL(__))      then '_condition<%index%>'
+    case EQUAL(ty = T_REAL(__))       then '_conditions1[<%index%>]'
+    case NEQUAL(ty = T_BOOL(__))      then '_conditions1[<%index%>]'
     case NEQUAL(ty = T_STRING(__))
     case NEQUAL(ty = T_INTEGER(__))
-    case NEQUAL(ty = T_REAL(__))      then '_condition<%index%>'
+    case NEQUAL(ty = T_REAL(__))      then '_conditions1[<%index%>]'
     case _                         then "daeExpRelation:ERR"
       end match
 end daeExpRelation;
@@ -5707,7 +5709,7 @@ template checkConditions2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,
     if(index==<%zerocrossingIndex%> || all)
     {
       <%res%>=(<%e1%><%op%><%e2%>);
-      _condition<%zerocrossingIndex%>=<%res%>;
+      _conditions1[<%zerocrossingIndex%>]=<%res%>;
     }
    >>
 end checkConditions2;
@@ -5726,14 +5728,15 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     int iter=0;
     while(restart && !(iter++ > 10))
     {
-    
-    <%zeroCrossingsCode%>
-    double h[<%helpvarlength(simCode)%>];
-    <%helpvarvector(whenClauses,simCode)%>
-     _event_handling.setHelpVars(h);
-    //iterate and handle all events inside the eventqueue
-    restart=_event_handling.IterateEventQueue(events,update_event);
-    }
+    	 saveAll();
+   		 <%zeroCrossingsCode%>
+    	double h[<%helpvarlength(simCode)%>];
+    	<%helpvarvector(whenClauses,simCode)%>
+   	 	 _event_handling.setHelpVars(h);
+   	 	//iterate and handle all events inside the eventqueue
+   		 restart=_event_handling.IterateEventQueue(events,update_event);
+     }
+      saveConditions();
      resetTimeEvents();
     if(iter>10){
      throw std::runtime_error("Number of event iteration steps exceeded. ");}
@@ -5812,6 +5815,35 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Sim
   	  case LESS(__) 
   	  case LESSEQ(__) then
  	  <<
+ 	    if(_conditions0[<%zerocrossingIndex%>])
+   		 	f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+   		else
+   		 	f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+      >>
+      case GREATER(__)
+      case GREATEREQ(__) then
+        <<
+ 	    if(_conditions0[<%zerocrossingIndex%>])
+   		 	f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+   		else
+   		 	f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+     	>>
+     end match  
+end giveZeroFunc3;
+
+/*
+template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
+::=
+ let &preExp = buffer "" /*BUFD*/
+  match relation
+  case rel as  RELATION(index=zerocrossingIndex) then
+  	 let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+ 	 let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  	 match rel.operator
+  	  
+  	  case LESS(__) 
+  	  case LESSEQ(__) then
+ 	  <<
  	    if(_event_handling.pre(_condition<%zerocrossingIndex%>,"_condition<%zerocrossingIndex%>"))
    		 	f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
    		else
@@ -5827,7 +5859,8 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Sim
      	>>
      end match  
 end giveZeroFunc3;
-/*+sgn(<%e2%>-<%e1%>)*eps*/
+*/
+
 template conditionvarZero(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
@@ -5885,9 +5918,14 @@ template conditionvariable(list<ZeroCrossing> zeroCrossings,list<SampleCondition
 ::=
   let conditionvariable = conditionvarZero(zeroCrossings,simCode)
   let conditionvarsample = conditionvarSample(sampleConditions,simCode)
+  /*
   <<
    <%conditionvariable%>
    <%conditionvarsample%>
+  >>
+  */
+  <<
+    <%conditionvarsample%>
   >>
 end conditionvariable;
 
