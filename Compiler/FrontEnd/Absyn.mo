@@ -1020,9 +1020,10 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_EXP_CONNECTOR "expandable connector class" end R_EXP_CONNECTOR;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
-  record R_FUNCTION end R_FUNCTION;
+  record R_FUNCTION 
+    FunctionRestriction functionRestriction;
+  end R_FUNCTION;
   record R_OPERATOR "an operator" end R_OPERATOR;
-  record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;
   record R_OPERATOR_RECORD   "an operator record"   end R_OPERATOR_RECORD;
   record R_ENUMERATION end R_ENUMERATION;
   record R_PREDEFINED_INTEGER end R_PREDEFINED_INTEGER;
@@ -1040,6 +1041,12 @@ uniontype Restriction "These constructors each correspond to a different kind of
   end R_METARECORD;
   record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
 end Restriction;
+
+public 
+uniontype FunctionRestriction
+  record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+  record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
+end FunctionRestriction;
 
 public
 uniontype Annotation "An Annotation is a class_modification.
@@ -4091,7 +4098,8 @@ algorithm
     case R_EXP_CONNECTOR() then "EXPANDABLE CONNECTOR";
     case R_TYPE() then "TYPE";
     case R_PACKAGE() then "PACKAGE";
-    case R_FUNCTION() then "FUNCTION";
+    case R_FUNCTION(FR_NORMAL_FUNCTION()) then "FUNCTION";
+    case R_FUNCTION(FR_OPERATOR_FUNCTION()) then "OPERATOR FUNCTION";
     case R_PREDEFINED_INTEGER() then "PREDEFINED_INT";
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
@@ -4285,6 +4293,17 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isPackageRestriction;
+
+public function isFunctionRestriction "function isFunctionRestriction
+  checks if restriction is a function or not"
+  input Restriction inRestriction;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inRestriction)
+    case (R_FUNCTION(_)) then true;
+    case (_) then false;
+  end matchcontinue;
+end isFunctionRestriction;
 
 public function subscriptEqual "
 Author BZ, 2009-01
@@ -5505,10 +5524,11 @@ algorithm
       list<String> typeVars;
       list<ClassPart> classParts;
       list<ElementItem> elts;
-    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,classParts,_),info)
+      FunctionRestriction funcRest;
+    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classParts,_),info)
       equation
         (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
-      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(),PARTS(typeVars,PUBLIC(elts)::{},NONE()),info);
+      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,PUBLIC(elts)::{},NONE()),info);
   end match;
 end getFunctionInterface;
 

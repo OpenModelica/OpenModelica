@@ -2456,9 +2456,9 @@ public function restrictionToScopeType
   output Option<ScopeType> outType;
 algorithm
   outType := matchcontinue(inRestriction)
-    case SCode.R_FUNCTION() then SOME(FUNCTION_SCOPE());
-    case SCode.R_EXT_FUNCTION() then SOME(FUNCTION_SCOPE());
-    case SCode.R_OPERATOR_FUNCTION() then SOME(FUNCTION_SCOPE());
+    case SCode.R_FUNCTION(_) then SOME(FUNCTION_SCOPE());
+    // case SCode.R_EXT_FUNCTION() then SOME(FUNCTION_SCOPE());
+    // case SCode.R_OPERATOR_FUNCTION() then SOME(FUNCTION_SCOPE());
     case _ then SOME(CLASS_SCOPE());
   end matchcontinue;
 end restrictionToScopeType;

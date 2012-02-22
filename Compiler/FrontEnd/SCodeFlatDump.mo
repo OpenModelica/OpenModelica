@@ -449,13 +449,14 @@ algorithm
     case SCode.R_BLOCK() then "BL";
     case SCode.R_CONNECTOR(true) then "EC";
     case SCode.R_CONNECTOR(false) then "CN";
-    case SCode.R_OPERATOR_FUNCTION() then "OF";
     case SCode.R_OPERATOR_RECORD() then "OR";
     case SCode.R_OPERATOR() then "OP";
     case SCode.R_TYPE() then "TY";
     case SCode.R_PACKAGE() then "PK";
-    case SCode.R_FUNCTION() then "FU";
-    case SCode.R_EXT_FUNCTION() then "EF";
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()) then "FU";
+    case SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()) then "OF";
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) then "EF";
+    case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "RC";
     case SCode.R_ENUMERATION() then "EN";
     case SCode.R_PREDEFINED_INTEGER() then "Ti";
     case SCode.R_PREDEFINED_REAL() then "Tr";

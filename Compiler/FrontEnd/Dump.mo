@@ -589,14 +589,14 @@ algorithm
     case Absyn.R_TYPE() then "type";
     case Absyn.R_UNIONTYPE() then "uniontype";
     case Absyn.R_PACKAGE() then "package";
-    case Absyn.R_FUNCTION() then "function";
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) then "function";
+    case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) then "operator function";
     case Absyn.R_PREDEFINED_INTEGER() then "Integer";
     case Absyn.R_PREDEFINED_REAL() then "Real";
     case Absyn.R_PREDEFINED_STRING() then "String";
     case Absyn.R_PREDEFINED_BOOLEAN() then "Boolean";
     case Absyn.R_METARECORD(index=_) then "metarecord";
     case Absyn.R_OPERATOR() then "operator";
-    case Absyn.R_OPERATOR_FUNCTION() then "operator function";
     case Absyn.R_OPERATOR_RECORD() then "operator record";
     else "*unknown*";
   end match;
@@ -881,7 +881,8 @@ algorithm
     case Absyn.R_TYPE() equation Print.printBuf("Absyn.R_TYPE"); then ();
     case Absyn.R_UNIONTYPE() equation Print.printBuf("Absyn.R_UNIONTYPE"); then ();
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
-    case Absyn.R_FUNCTION() equation Print.printBuf("Absyn.R_FUNCTION"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION)"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION)"); then ();
     case Absyn.R_ENUMERATION() equation Print.printBuf("Absyn.R_ENUMERATION"); then ();
     case Absyn.R_PREDEFINED_INTEGER() equation Print.printBuf("Absyn.R_PREDEFINED_INTEGER"); then ();
     case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
@@ -5716,19 +5717,19 @@ algorithm
         Print.printBuf("record Absyn.R_PACKAGE end Absyn.R_PACKAGE;");
       then ();
     
-    case Absyn.R_FUNCTION()
+    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())
       equation
-        Print.printBuf("record Absyn.R_FUNCTION end Absyn.R_FUNCTION;");
+        Print.printBuf("record Absyn.FR_NORMAL_FUNCTION end Absyn.FR_NORMAL_FUNCTION;");
+      then ();
+
+    case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())
+      equation
+        Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;");
       then ();
     
     case Absyn.R_OPERATOR()
       equation
         Print.printBuf("record Absyn.R_OPERATOR end Absyn.R_OPERATOR;");
-      then ();
-    
-    case Absyn.R_OPERATOR_FUNCTION()
-      equation
-        Print.printBuf("record Absyn.R_OPERATOR_FUNCTION end Absyn.R_OPERATOR_FUNCTION;");
       then ();
     
     case Absyn.R_ENUMERATION()

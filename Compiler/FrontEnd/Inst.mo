@@ -1242,7 +1242,7 @@ algorithm
         //str = SCodeDump.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
 
         // First check if the class is non-partial or a partial function
-        isFn = SCode.isFunctionOrExtFunctionOrOperatorFunction(r);
+        isFn = SCode.isFunctionRestriction(r);
         notIsPartial = not SCode.partialBool(partialPrefix);
         isPartialFn = isFn and SCode.partialBool(partialPrefix);
         true = notIsPartial or isPartialFn;
@@ -1900,7 +1900,7 @@ algorithm
     // anything else but functions, do not check equality
     case (SCode.CLASS(restriction = r),_)
       equation
-        failure(equality(r = SCode.R_FUNCTION()));
+        false = SCode.isFunctionRestriction(r);
       then
         true;
 
@@ -3017,7 +3017,7 @@ algorithm
       
     case(env,{},_) then NONE();
     
-    case(env, (el as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(),
+    case(env, (el as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(_),
          classDef = SCode.PARTS(elementLst = els))) :: _, info)
       equation
         SOME(path) = Env.getEnvPath(env);
@@ -3159,10 +3159,14 @@ algorithm
   _ := matchcontinue(r1, r2)
     // package can be extendended by package
     case (SCode.R_PACKAGE(), SCode.R_PACKAGE()) then ();
-    // function -> function
-    case (SCode.R_FUNCTION(), SCode.R_FUNCTION()) then ();
-    // external function -> function
-    case (SCode.R_EXT_FUNCTION(), SCode.R_FUNCTION()) then ();
+    // normal function -> normal function
+    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    // external function -> normal function
+    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    // operator function -> normal function 
+    case (SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then ();
+    // operator function -> operator function
+    case (SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION())) then ();
     // type -> type
     case (SCode.R_TYPE(), SCode.R_TYPE()) then ();
     // record -> record
@@ -3197,10 +3201,6 @@ algorithm
     case (SCode.R_CLASS(), SCode.R_CLASS()) then ();
     // operator -> operator
     case (SCode.R_OPERATOR(), SCode.R_OPERATOR()) then ();
-    // operator function -> function 
-    case (SCode.R_OPERATOR_FUNCTION(), SCode.R_FUNCTION()) then ();
-    // operator function -> operator function
-    case (SCode.R_OPERATOR_FUNCTION(), SCode.R_OPERATOR_FUNCTION()) then ();
     // operator record
     case (SCode.R_OPERATOR_RECORD(), SCode.R_OPERATOR_RECORD()) then ();
   end matchcontinue;
@@ -3526,9 +3526,7 @@ algorithm
         // adpro: if is a model, package, function, external function, record is not a basic type!
         false = valueEq(SCode.R_MODEL(), re);
         false = valueEq(SCode.R_PACKAGE(), re);
-        false = valueEq(SCode.R_FUNCTION(), re);
-        false = valueEq(SCode.R_EXT_FUNCTION(), re);
-        false = valueEq(SCode.R_OPERATOR_FUNCTION(), re);
+        false = SCode.isFunctionRestriction(re);
         false = valueEq(SCode.R_RECORD(), re);
         false = valueEq(SCode.R_OPERATOR_RECORD(), re);
         // no components and at least one extends!
@@ -3702,7 +3700,7 @@ algorithm
           instList(cache, env5, ih, mods, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, alwaysUnroll, graph);
 
         // do NOT unroll for loops for functions!
-        unrollForLoops = Util.if_(SCode.isFunctionOrExtFunction(re), neverUnroll, alwaysUnroll);
+        unrollForLoops = Util.if_(SCode.isFunctionRestriction(re), neverUnroll, alwaysUnroll);
         
         //Instantiate algorithms  (see function "instAlgorithm")
         (cache,env5,ih,dae4,csets4,ci_state5,graph) = 
@@ -9344,13 +9342,13 @@ algorithm
 
     // Partial function definitions with no output - stefan
     case (cache,env,ih,_,_,
-      cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),
+      cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
                         partialPrefix = SCode.PARTIAL()),_,_) 
       then 
         (cache,{},cl,DAE.NOMOD());
 
     case (cache,env,ih,_,_,
-      SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(),
+      SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
                   partialPrefix = SCode.NOT_PARTIAL()),_,_)
       equation
         Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id}, info);
@@ -11595,12 +11593,13 @@ algorithm
       Option<SCode.Comment> cmt;
       SCode.Restriction r;
       SCode.Encapsulated encflag;
+      SCode.FunctionRestriction funcRest;
     
     /* normal functions */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = r,info = info)),inst_dims,instFunctionTypeOnly)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info)),inst_dims,instFunctionTypeOnly)
       equation
         
-        true = SCode.isFunctionOrOperatorFunction(r);
+        failure(equality(funcRest = SCode.FR_EXTERNAL_FUNCTION()));
         
         // if we're not MetaModelica set it to non-partial
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
@@ -11634,7 +11633,7 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
 
     /* External functions should also have their type in env, but no dae. */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION())),
         classDef = cd as (parts as SCode.PARTS(elementLst = els)), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,instFunctionTypeOnly)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
@@ -11669,7 +11668,7 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source,cmt)});
 
     /* Instantiate overloaded functions */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())),
           classDef = SCode.OVERLOAD(pathLst = funcnames,comment=cmt))),inst_dims,_)
       equation
         (cache,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
@@ -12411,7 +12410,7 @@ algorithm
       equation
         // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
         (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=rest,info=info)),cenv) = Lookup.lookupClass(cache, env, fn, true);
-        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(rest);
+        true = SCode.isFunctionRestriction(rest);
         (cache,_,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
         (cache,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns);
       then (cache,ih,listAppend(resfns1,resfns2));
@@ -17306,7 +17305,7 @@ algorithm
       DAE.InlineType inlineType;
       String name;
       list<DAE.Var> inVars,outVars;
-    case (SCode.CLASS(restriction=SCode.R_EXT_FUNCTION()),vl)
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION())),vl)
       equation
         inVars = List.filter(vl,Types.isInputVar);
         outVars = List.filter(vl,Types.isOutputVar);

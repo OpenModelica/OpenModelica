@@ -64,12 +64,14 @@ uniontype Restriction
     Boolean isExpandable "is expandable?";
   end R_CONNECTOR;
   record R_OPERATOR end R_OPERATOR;
-  record R_OPERATOR_FUNCTION end R_OPERATOR_FUNCTION;
+
   record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
-  record R_FUNCTION end R_FUNCTION;
-  record R_EXT_FUNCTION "Added c.t. Absyn" end R_EXT_FUNCTION;
+  record R_FUNCTION 
+    FunctionRestriction functionRestriction;
+  end R_FUNCTION;
+
   record R_ENUMERATION end R_ENUMERATION;
 
   // predefined internal types
@@ -89,6 +91,16 @@ uniontype Restriction
   record R_UNIONTYPE "Metamodelica extension"
   end R_UNIONTYPE; /* added by simbj */
 end Restriction;
+
+// Same as Absyn.FunctionRestriction except this contains
+// FR_EXTERNAL_FUNCTION and FR_RECORD_CONSTRUCTOR.
+public 
+uniontype FunctionRestriction
+  record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+  record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
+  record FR_EXTERNAL_FUNCTION "an external function" end FR_EXTERNAL_FUNCTION;
+  record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
+end FunctionRestriction;
 
 public
 uniontype Mod "- Modifications"
@@ -895,13 +907,53 @@ public function isFunction
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inClass)
-    local String n; ClassDef def;
-    case CLASS(name = n,restriction = R_FUNCTION(),classDef = def) then true;
-    case CLASS(name = n,restriction = R_EXT_FUNCTION(),classDef = def) then true;
-    case CLASS(name = n,restriction = R_OPERATOR_FUNCTION(),classDef = def) then true;
+    case CLASS(restriction = R_FUNCTION(_)) then true;
     case _ then false;
   end matchcontinue;
 end isFunction;
+
+public function isFunctionRestriction
+"function: isFunctionRestriction
+  Return true if restriction is a function."
+  input Restriction inRestriction;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inRestriction)
+    case R_FUNCTION(_) then true;
+    case _ then false;
+  end matchcontinue;
+end isFunctionRestriction;
+
+public function isFunctionOrExtFunctionRestriction
+"function isFunctionOrExtFunction
+  This function returns true if the class
+  restriction is function or external function.
+  Otherwise false is returned."
+  input Restriction r;
+  output Boolean res;
+algorithm
+  res := matchcontinue(r)
+    case (R_FUNCTION(FR_NORMAL_FUNCTION())) then true;
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION())) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isFunctionOrExtFunctionRestriction;
+ 
+ 
+public function isOperator
+"function isOperator
+  This function returns true if the class
+  restriction is operator or operator function.
+  Otherwise false is returned."
+  input Element el;
+  output Boolean res;
+algorithm
+  res := matchcontinue(el)
+    case (CLASS(_,_,_,_,R_OPERATOR(),_,_)) then true;
+    case (CLASS(_,_,_,_,R_FUNCTION(FR_OPERATOR_FUNCTION()),_,_)) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isOperator;
 
 public function className
 "function: className
@@ -943,69 +995,6 @@ algorithm
       then CLASS(id,prefixes,enc,partialPrefix,restr,def,info);
   end match;
 end classSetPartial;
-
-public function isFunctionOrExtFunctionOrOperatorFunction
-"function isFunctionOrExtFunction
-  This function returns true if the class
-  restriction is function or external function or operator function.
-  Otherwise false is returned."
-  input Restriction r;
-  output Boolean res;
-algorithm
-  res := matchcontinue(r)
-    case (R_FUNCTION()) then true;
-    case (R_EXT_FUNCTION()) then true;
-    case (R_OPERATOR_FUNCTION()) then true;
-    //case (R_OPERATOR()) then true;
-    case(_) then false;
-  end matchcontinue;
- end isFunctionOrExtFunctionOrOperatorFunction;
-
-public function isFunctionOrExtFunction
-"function isFunctionOrExtFunction
-  This function returns true if the class
-  restriction is function or external function.
-  Otherwise false is returned."
-  input Restriction r;
-  output Boolean res;
-algorithm
-  res := matchcontinue(r)
-    case(R_FUNCTION()) then true;
-    case (R_EXT_FUNCTION()) then true;
-    case(_) then false;
-  end matchcontinue;
- end isFunctionOrExtFunction;
- 
- 
-public function isOperator
-"function isOperator
-  This function returns true if the class
-  restriction is operator or operator function.
-  Otherwise false is returned."
-  input Element el;
-  output Boolean res;
-algorithm
-  res := matchcontinue(el)
-    case (CLASS(_,_,_,_,R_OPERATOR(),_,_)) then true;
-    case (CLASS(_,_,_,_,R_OPERATOR_FUNCTION(),_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
- end isOperator;
- 
- public function isFunctionOrOperatorFunction
-"function isFunctionOrExtFunction
-  This function returns true if the class
-  restriction is function or external function.
-  Otherwise false is returned."
-  input Restriction r;
-  output Boolean res;
-algorithm
-  res := matchcontinue(r)
-    case(R_FUNCTION()) then true;
-    case (R_OPERATOR_FUNCTION()) then true;
-    case(_) then false;
-  end matchcontinue;
- end isFunctionOrOperatorFunction;
 
 public function elementEqual
 "function elementEqual
@@ -1112,6 +1101,9 @@ public function restrictionEqual "Returns true if two Restriction's are equal."
   output Boolean equal;
 algorithm
    equal := matchcontinue(restr1,restr2)
+   local
+     FunctionRestriction funcRest1,funcRest2;
+     
      case (R_CLASS(),R_CLASS()) then true;
      case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;
      case (R_MODEL(),R_MODEL()) then true;
@@ -1120,12 +1112,10 @@ algorithm
      case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
      case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
      case (R_OPERATOR(),R_OPERATOR()) then true; // operator
-     case (R_OPERATOR_FUNCTION(),R_OPERATOR_FUNCTION()) then true; // operator function
      case (R_OPERATOR_RECORD(),R_OPERATOR_RECORD()) then true; // operator function
      case (R_TYPE(),R_TYPE()) then true;
      case (R_PACKAGE(),R_PACKAGE()) then true;
-     case (R_FUNCTION(),R_FUNCTION()) then true;
-     case (R_EXT_FUNCTION(),R_EXT_FUNCTION()) then true;
+     case (R_FUNCTION(funcRest1),R_FUNCTION(funcRest2)) then funcRestrictionEqual(funcRest1,funcRest2);
      case (R_ENUMERATION(),R_ENUMERATION()) then true;
      case (R_PREDEFINED_INTEGER(),R_PREDEFINED_INTEGER()) then true;
      case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
@@ -1135,6 +1125,19 @@ algorithm
      case (_,_) then false;
    end matchcontinue;
 end restrictionEqual;
+
+public function funcRestrictionEqual
+  input FunctionRestriction funcRestr1;
+  input FunctionRestriction funcRestr2;
+  output Boolean equal;
+algorithm
+  equal := match(funcRestr1,funcRestr2)     
+    case (FR_NORMAL_FUNCTION(),FR_NORMAL_FUNCTION()) then true;
+    case (FR_EXTERNAL_FUNCTION(),FR_EXTERNAL_FUNCTION()) then true;
+    case (FR_OPERATOR_FUNCTION(),FR_OPERATOR_FUNCTION()) then true;
+    else false;
+  end match;
+end funcRestrictionEqual;
 
 function enumEqual
   input Enum e1;
@@ -3015,11 +3018,11 @@ algorithm
       String inc,outVar1,outVar2,name1,name2;
       list<String> argsStr;
       list<Absyn.Exp> args;
-    case (CLASS(name=name,restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_EXT_FUNCTION(), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 ==& outVar1;
@@ -3027,7 +3030,7 @@ algorithm
         equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
-      restriction=R_EXT_FUNCTION(),
+      restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),
       classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
         true = listMember(name,knownExternalCFunctions);

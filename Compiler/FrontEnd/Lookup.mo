@@ -246,10 +246,9 @@ algorithm
     // If we find a class definition that is a function or external function
     // with the same name then we implicitly instantiate that function, look
     // up the type.
-    case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=restr))
+    case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
-        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(restr);
         (cache,env_2,_) =
         Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
@@ -1735,7 +1734,7 @@ algorithm
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop!
         //           Did not investigate this further then that it can crasch the kernel.
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
-        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(restr);
+        true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_)
@@ -1918,9 +1917,8 @@ algorithm
         (cache,ty,env_3);
 
         /* Found function */
-    case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=SCode.R_FUNCTION(_))),cenv),env,id)
       equation
-        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(restr);
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
@@ -1991,7 +1989,7 @@ algorithm
     case (cache,ht,httypes,env,id,info)
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
-        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(restr) "If found class that is function.";
+        true = SCode.isFunctionRestriction(restr) "If found class that is function.";
         //function dae collected from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_) =
@@ -2066,7 +2064,7 @@ algorithm
       equation
         (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
-        cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE(),{},NONE()),info);
+        cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE(),{},NONE()),info);
       then
         (cache,env,cl);
     case (cache,env,cl)
@@ -2300,11 +2298,13 @@ algorithm
       list<Env.Frame> i_env;
       Absyn.Path path;
       Env.Cache cache;
+      SCode.FunctionRestriction funcRest;
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,SCode.CLASS(restriction = SCode.R_FUNCTION()),_) = lookupClass(cache,i_env,path,false);
+        (cache,SCode.CLASS(restriction = SCode.R_FUNCTION(funcRest)),_) = lookupClass(cache,i_env,path,false);
         // External functions without external declaration have parts. We don't consider them builtin.
+        failure(equality(funcRest = SCode.FR_EXTERNAL_FUNCTION()));
       then (cache,false);
     case (cache,path)
       equation

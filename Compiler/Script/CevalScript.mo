@@ -3453,7 +3453,7 @@ algorithm
         // non-functions
         Absyn.CLASS(partialPrefix = _, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
         // this case should not handle functions so here we check anything but functions!
-        false = listMember(restriction, {Absyn.R_FUNCTION()});
+        false = Absyn.isFunctionRestriction(restriction);
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -3492,7 +3492,7 @@ algorithm
       equation
         ptot = Dependency.getTotalProgram(className,p);
         
-        (c as Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_)) = Interactive.getPathedClassInProgram(className, p);
+        (c as Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,_)) = Interactive.getPathedClassInProgram(className, p);
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);

@@ -1313,6 +1313,7 @@ algorithm
       DAE.Function func;
       SCode.Restriction res;
       Interactive.SymbolTable syt;
+      Absyn.FunctionRestriction funcRest;
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
@@ -1351,7 +1352,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
         
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
         // see if the build time from the class is the same as the build time from the compiled functions list
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
@@ -1374,7 +1375,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
                 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
         // note, this should only work for classes that have no file name!
         true = stringEq(fNew,""); // see that we don't have a file!
 
@@ -1418,7 +1419,7 @@ algorithm
         System.freeLibrary(libHandle, print_debug);
         buildTime = System.getCurrentTime();
         // update the build time in the class!
-        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
 
         info = Absyn.setBuildTimeInInfo(buildTime,info);
         ts = Absyn.setTimeStampBuild(ts, buildTime);
@@ -1426,7 +1427,7 @@ algorithm
         
         Debug.fprintln(Flags.DYN_LOAD, "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
         
-        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts), p);
+        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
         
         syt = Interactive.SYMBOLTABLE(
@@ -1519,9 +1520,11 @@ protected
   Option<String> lan;
   Option<Absyn.ComponentRef> out;
   list<Absyn.Exp> args;
+  SCode.FunctionRestriction funcRest;
 algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
-  SCode.CLASS(name=fid,restriction = SCode.R_EXT_FUNCTION(), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
+  SCode.CLASS(name=fid,restriction = SCode.R_FUNCTION(funcRest), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
+  SCode.FR_EXTERNAL_FUNCTION() := funcRest;
   SOME(SCode.EXTERNALDECL(SOME(id),lan,out,args,_)) := extdecl;
   isKnownExternalFunc(fid, id);
   res := cevalKnownExternalFuncs2(fid, id, vals, msg);
@@ -1562,20 +1565,21 @@ algorithm
       SCode.Mod mod;
       Absyn.Exp lib;
 
-    // All functions can be evaluated.
-    case (SCode.CLASS(restriction = SCode.R_FUNCTION())) then ();
-
-    // But only some external functions.
-    case (SCode.CLASS(restriction = SCode.R_EXT_FUNCTION(), 
-        classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-          funcName = SOME(fid), 
-          annotation_ = SOME(SCode.ANNOTATION(mod)))))))
+    //only some external functions.
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), 
+      classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
+        funcName = SOME(fid), 
+        annotation_ = SOME(SCode.ANNOTATION(mod)))))))
       equation
         SCode.MOD(binding = SOME((lib, _))) = Mod.getUnelabedSubMod(mod, "Library");
         true = checkLibraryUsage("Lapack", lib);
         isCevaluableFunction2(fid);
       then
         ();
+        
+    // All other functions can be evaluated.
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION(_))) then ();
+
   end match;
 end isCevaluableFunction;
 

@@ -243,7 +243,7 @@ algorithm
   outName := match (inOperatorFunction)        
     local
       SCode.Ident name;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(),_,_))        
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))        
     then Absyn.IDENT(name);
       
   end match;  
@@ -257,7 +257,7 @@ algorithm
   outName := match (inOperatorFunction,operName)        
     local
       SCode.Ident name,opname;
-    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(),_,_),opname)        
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(_),_,_),opname)        
     then Absyn.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
       
   end match;  
@@ -282,7 +282,7 @@ algorithm
         names;
         
       //If operator function return its name  
-    case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR_FUNCTION(),_,_))
+    case (SCode.CLASS(opername,_,_,_, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()),_,_))
       equation
         names = {Absyn.IDENT(opername)};
       then
@@ -308,7 +308,12 @@ algorithm
       Integer index;
       Boolean singleton;
 
-    case (d,Absyn.R_FUNCTION()) then Util.if_(containsExternalFuncDecl(d),SCode.R_EXT_FUNCTION(),SCode.R_FUNCTION());
+    // ?? Only normal functions can have 'external'     
+    case (d,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())) 
+      then Util.if_(containsExternalFuncDecl(d), SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) ,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()));
+        
+    case (_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION());
+    
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
     case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();
     case (_,Absyn.R_MODEL()) then SCode.R_MODEL();
@@ -319,7 +324,6 @@ algorithm
     case (_,Absyn.R_EXP_CONNECTOR()) equation System.setHasExpandableConnectors(true); then SCode.R_CONNECTOR(true);
 
     case (_,Absyn.R_OPERATOR()) then SCode.R_OPERATOR();
-    case (_,Absyn.R_OPERATOR_FUNCTION()) then SCode.R_OPERATOR_FUNCTION();
     case (_,Absyn.R_OPERATOR_RECORD()) then SCode.R_OPERATOR_RECORD();
 
     case (_,Absyn.R_TYPE()) then SCode.R_TYPE();

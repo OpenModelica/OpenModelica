@@ -762,13 +762,13 @@ algorithm
         fail();      
     
     //operator functions in operator record might be used later. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR_FUNCTION(), info = info), _, SCode.R_OPERATOR_RECORD())
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, SCode.R_OPERATOR_RECORD())
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then();  
         
-     //operators in any other class type are error. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _)
+     //operators functions in any other class type are error. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _)
       equation
         //mahge: FIX HERE.
         errorMessage = "Operator functions are allowed in OPERATOR RECORD only. Error on:" +& name;
@@ -777,15 +777,17 @@ algorithm
         fail();     
     
     //functions in operator might be used later. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(), info = info), _, SCode.R_OPERATOR())
+    case (SCode.CLASS(name = name, restriction=res, info = info), _, SCode.R_OPERATOR())
       equation
+        // Allowing external functions to be used operator functions
+        true = SCode.isFunctionOrExtFunctionRestriction(res);
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then();  
         
     //operators should only contain function definitions    
     case (SCode.CLASS(name = name, restriction = res, info = info), _, SCode.R_OPERATOR())
       equation
-        false = SCode.restrictionEqual(res, SCode.R_FUNCTION());
+        false = SCode.isFunctionOrExtFunctionRestriction(res);
         //mahge: FIX HERE.
         errorMessage = "Operators can only contain functions. Error on:" +& name;
         Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);

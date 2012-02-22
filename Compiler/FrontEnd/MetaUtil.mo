@@ -786,7 +786,7 @@ algorithm
       Absyn.Exp comp,inputs;
       Absyn.Info info;
     case (false,_) then true;
-    case (_,SCode.CLASS(info = info, restriction = SCode.R_FUNCTION(), classDef = SCode.PARTS(elementLst = elts, normalAlgorithmLst = {SCode.ALGORITHM({SCode.ALG_ASSIGN(assignComponent = comp, value = Absyn.MATCHEXP(inputExp = inputs))})})))
+    case (_,SCode.CLASS(info = info, restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()), classDef = SCode.PARTS(elementLst = elts, normalAlgorithmLst = {SCode.ALGORITHM({SCode.ALG_ASSIGN(assignComponent = comp, value = Absyn.MATCHEXP(inputExp = inputs))})})))
       equation
         outcrefs = extractListFromTuple(comp,0);
         increfs = extractListFromTuple(inputs,0);

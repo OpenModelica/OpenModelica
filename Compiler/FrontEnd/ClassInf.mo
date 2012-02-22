@@ -393,9 +393,7 @@ algorithm
     case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable);
     case (SCode.R_TYPE(),p) then TYPE(p);
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
-    case (SCode.R_FUNCTION(),p) then FUNCTION(p);
-    case (SCode.R_EXT_FUNCTION(),p) then FUNCTION(p);
-    case (SCode.R_OPERATOR_FUNCTION(),p) then FUNCTION(p);
+    case (SCode.R_FUNCTION(_),p) then FUNCTION(p);
     case (SCode.R_OPERATOR(),p) then RECORD(p);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
@@ -554,8 +552,8 @@ algorithm
     case (PACKAGE(path = p),SCode.R_PACKAGE()) then ();
     case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
 
-    case (FUNCTION(path = p),SCode.R_FUNCTION()) then ();
-    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false),SCode.R_FUNCTION()) then ();
+    case (FUNCTION(path = p),SCode.R_FUNCTION(_)) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false),SCode.R_FUNCTION(_)) then ();
     case (META_TUPLE(p),SCode.R_TYPE()) then ();
     case (META_LIST(p),SCode.R_TYPE()) then ();
     case (META_OPTION(p),SCode.R_TYPE()) then ();

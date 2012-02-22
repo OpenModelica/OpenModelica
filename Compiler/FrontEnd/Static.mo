@@ -7673,7 +7673,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* class found; not function */
       equation
         (cache,SCode.CLASS(restriction = re),_) = Lookup.lookupClass(cache,env,fn,false);
-        false = SCode.isFunctionOrExtFunction(re);
+        false = SCode.isFunctionRestriction(re);
         fn_str = Absyn.pathString(fn);
         s = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);

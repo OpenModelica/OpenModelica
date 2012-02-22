@@ -343,7 +343,9 @@ package SCode
     record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
     record R_TYPE end R_TYPE;
     record R_PACKAGE end R_PACKAGE;
-    record R_FUNCTION end R_FUNCTION;
+    record R_FUNCTION 
+      FunctionRestriction functionRestriction;
+    end R_FUNCTION;
     record R_EXT_FUNCTION end R_EXT_FUNCTION;
     record R_ENUMERATION end R_ENUMERATION;
 
@@ -361,6 +363,13 @@ package SCode
     record R_UNIONTYPE
     end R_UNIONTYPE;
   end Restriction;
+  
+  uniontype FunctionRestriction
+    record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
+    record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
+    record FR_EXTERNAL_FUNCTION "an operator function" end FR_EXTERNAL_FUNCTION;
+    record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
+  end FunctionRestriction;
 
   uniontype Mod
     record MOD

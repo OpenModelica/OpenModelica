@@ -781,12 +781,10 @@ match restriction
   case R_CONNECTOR(__) then
     if isExpandable then 'expandable connector' else 'connector'
   case R_OPERATOR(__) then 'operator'
-  case R_OPERATOR_FUNCTION(__) then 'operator function'
   case R_OPERATOR_RECORD(__) then 'operator record'
   case R_TYPE(__) then 'type'
   case R_PACKAGE(__) then 'package'
-  case R_FUNCTION(__) then 'function'
-  case R_EXT_FUNCTION(__) then 'function'
+  case R_FUNCTION(__) then dumpFunctionRestriction(functionRestriction)
   case R_ENUMERATION(__) then 'enumeration'
   case R_PREDEFINED_INTEGER(__) then 'IntegerType'
   case R_PREDEFINED_REAL(__) then 'RealType'
@@ -797,6 +795,16 @@ match restriction
   case R_UNIONTYPE(__) then 'uniontype'
   else errorMsg("SCodeDimp.dumpRestriction: Unknown restriction.")
 end dumpRestriction;
+
+template dumpFunctionRestriction(SCode.FunctionRestriction funcRest)
+::=
+match funcRest
+  case FR_NORMAL_FUNCTION(__) then 'function'
+  case FR_OPERATOR_FUNCTION(__) then 'operator function'
+  case FR_EXTERNAL_FUNCTION(__) then 'external function'
+  case FR_RECORD_CONSTRUCTOR(__) then 'function'
+  else errorMsg("SCodeDimp.dumpFunctionRestriction: Unknown Function restriction.")
+end dumpFunctionRestriction;
 
 template dumpModifier(SCode.Mod modifier)
 ::=

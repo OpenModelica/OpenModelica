@@ -414,7 +414,7 @@ algorithm
     // If it is not a function, return succeess
     case (Absyn.PROGRAM(classes = {Absyn.CLASS(restriction = restriction)}),st)
       equation
-        failure(equality(restriction = Absyn.R_FUNCTION()));
+        false = Absyn.isFunctionRestriction(restriction);
       then
         ();
     case (Absyn.PROGRAM(classes = {Absyn.CLASS(partialPrefix = true)}),st) then ();
@@ -8591,7 +8591,7 @@ algorithm
     case (cr,p)
       equation
         path = Absyn.crefToPath(cr);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()),_,_) = getPathedClassInProgram(path, p);
       then
         true;
     case (cr,p) then false;
@@ -9110,7 +9110,7 @@ algorithm
     local
       list<CompiledCFunction> cfs_1,cfs;
       String id;
-    case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION())}),cfs)
+    case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION(_))}),cfs)
       equation
         cfs_1 = removeCf(cfs, Absyn.IDENT(id));
       then
@@ -9133,7 +9133,7 @@ algorithm
       list<CompiledCFunction> cf, newCF;
       Absyn.Path p;
       list<Absyn.ClassPart> parts;
-    case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION()), cf)
+    case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)), cf)
       equation
         newCF = removeCf(cf, p);
       then
@@ -18685,14 +18685,19 @@ algorithm
         strs = getDefinitionParts(parts, addFunctions);
         strs = ident :: strs;
       then stringDelimitList(strs, "\n");
-    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),_)
+    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())),_)
       equation
         strs = {"(partial function", ident, ")"};
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),true)
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())),true)
       equation
         strs = getDefinitionParts(parts, true);
         strs = "(function" :: ident :: strs;
+      then stringDelimitList(strs, " ");
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())),true)
+      equation
+        strs = getDefinitionParts(parts, true);
+        strs = "(operator function" :: ident :: strs;
       then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_UNIONTYPE()),_)
       equation
@@ -19451,7 +19456,7 @@ algorithm
       list<Absyn.Class> rest;
       
     case ({},acc) then acc;
-    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION()))::rest,acc)
+    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)))::rest,acc)
       equation
         funcs = getFunctionsInClasses(rest,cl::acc);
       then funcs;

@@ -3529,7 +3529,7 @@ static void *Absyn__R_5fPACKAGE = MMC_REFSTRUCTLIT(Absyn__R_5fPACKAGE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__FUNCTION__desc_added
 #define Absyn_Restriction_R__FUNCTION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__FUNCTION__desc__fields[1] = {"functionRestriction"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__FUNCTION__desc = {
   "Absyn_Restriction_R__FUNCTION",
   "Absyn.Restriction.R_FUNCTION",
@@ -3539,9 +3539,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__FUNCTIO
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__FUNCTION__desc;
 #endif
-#define Absyn__R_5fFUNCTION_3dBOX0 12
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fFUNCTION__struct,1,12) {&Absyn_Restriction_R__FUNCTION__desc}};
-static void *Absyn__R_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fFUNCTION__struct);
+#define Absyn__R_5fFUNCTION_3dBOX1 12
+#define Absyn__R_5fFUNCTION(functionRestriction) (mmc_mk_box2(12,&Absyn_Restriction_R__FUNCTION__desc,functionRestriction))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__desc_added
 #define Absyn_Restriction_R__OPERATOR__desc_added
@@ -3559,22 +3558,6 @@ extern struct record_description Absyn_Restriction_R__OPERATOR__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR__struct,1,13) {&Absyn_Restriction_R__OPERATOR__desc}};
 static void *Absyn__R_5fOPERATOR = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
-#define Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPERATOR__FUNCTION__desc__fields[1] = {"no fileds"};
-ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc = {
-  "Absyn_Restriction_R__OPERATOR__FUNCTION",
-  "Absyn.Restriction.R_OPERATOR_FUNCTION",
-  Absyn_Restriction_R__OPERATOR__FUNCTION__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc;
-#endif
-#define Absyn__R_5fOPERATOR_5fFUNCTION_3dBOX0 14
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR_5fFUNCTION__struct,1,14) {&Absyn_Restriction_R__OPERATOR__FUNCTION__desc}};
-static void *Absyn__R_5fOPERATOR_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR_5fFUNCTION__struct);
-#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__RECORD__desc_added
 #define Absyn_Restriction_R__OPERATOR__RECORD__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPERATOR__RECORD__desc__fields[1] = {"no fileds"};
@@ -3587,8 +3570,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPERATO
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__OPERATOR__RECORD__desc;
 #endif
-#define Absyn__R_5fOPERATOR_5fRECORD_3dBOX0 15
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR_5fRECORD__struct,1,15) {&Absyn_Restriction_R__OPERATOR__RECORD__desc}};
+#define Absyn__R_5fOPERATOR_5fRECORD_3dBOX0 14
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fOPERATOR_5fRECORD__struct,1,14) {&Absyn_Restriction_R__OPERATOR__RECORD__desc}};
 static void *Absyn__R_5fOPERATOR_5fRECORD = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR_5fRECORD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__ENUMERATION__desc_added
@@ -3603,8 +3586,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__ENUMERA
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__ENUMERATION__desc;
 #endif
-#define Absyn__R_5fENUMERATION_3dBOX0 16
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fENUMERATION__struct,1,16) {&Absyn_Restriction_R__ENUMERATION__desc}};
+#define Absyn__R_5fENUMERATION_3dBOX0 15
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fENUMERATION__struct,1,15) {&Absyn_Restriction_R__ENUMERATION__desc}};
 static void *Absyn__R_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fENUMERATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__INTEGER__desc_added
@@ -3619,8 +3602,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__PREDEFINED__INTEGER__desc;
 #endif
-#define Absyn__R_5fPREDEFINED_5fINTEGER_3dBOX0 17
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fINTEGER__struct,1,17) {&Absyn_Restriction_R__PREDEFINED__INTEGER__desc}};
+#define Absyn__R_5fPREDEFINED_5fINTEGER_3dBOX0 16
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fINTEGER__struct,1,16) {&Absyn_Restriction_R__PREDEFINED__INTEGER__desc}};
 static void *Absyn__R_5fPREDEFINED_5fINTEGER = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fINTEGER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__REAL__desc_added
@@ -3635,8 +3618,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__PREDEFINED__REAL__desc;
 #endif
-#define Absyn__R_5fPREDEFINED_5fREAL_3dBOX0 18
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fREAL__struct,1,18) {&Absyn_Restriction_R__PREDEFINED__REAL__desc}};
+#define Absyn__R_5fPREDEFINED_5fREAL_3dBOX0 17
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fREAL__struct,1,17) {&Absyn_Restriction_R__PREDEFINED__REAL__desc}};
 static void *Absyn__R_5fPREDEFINED_5fREAL = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fREAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__STRING__desc_added
@@ -3651,8 +3634,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__PREDEFINED__STRING__desc;
 #endif
-#define Absyn__R_5fPREDEFINED_5fSTRING_3dBOX0 19
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fSTRING__struct,1,19) {&Absyn_Restriction_R__PREDEFINED__STRING__desc}};
+#define Absyn__R_5fPREDEFINED_5fSTRING_3dBOX0 18
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fSTRING__struct,1,18) {&Absyn_Restriction_R__PREDEFINED__STRING__desc}};
 static void *Absyn__R_5fPREDEFINED_5fSTRING = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fSTRING__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc_added
@@ -3667,8 +3650,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc;
 #endif
-#define Absyn__R_5fPREDEFINED_5fBOOLEAN_3dBOX0 20
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fBOOLEAN__struct,1,20) {&Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc}};
+#define Absyn__R_5fPREDEFINED_5fBOOLEAN_3dBOX0 19
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fBOOLEAN__struct,1,19) {&Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc}};
 static void *Absyn__R_5fPREDEFINED_5fBOOLEAN = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fBOOLEAN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc_added
@@ -3683,8 +3666,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFI
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc;
 #endif
-#define Absyn__R_5fPREDEFINED_5fENUMERATION_3dBOX0 21
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fENUMERATION__struct,1,21) {&Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc}};
+#define Absyn__R_5fPREDEFINED_5fENUMERATION_3dBOX0 20
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fENUMERATION__struct,1,20) {&Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc}};
 static void *Absyn__R_5fPREDEFINED_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFINED_5fENUMERATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNIONTYPE__desc_added
@@ -3699,8 +3682,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNIONTY
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__UNIONTYPE__desc;
 #endif
-#define Absyn__R_5fUNIONTYPE_3dBOX0 22
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct,1,22) {&Absyn_Restriction_R__UNIONTYPE__desc}};
+#define Absyn__R_5fUNIONTYPE_3dBOX0 21
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct,1,21) {&Absyn_Restriction_R__UNIONTYPE__desc}};
 static void *Absyn__R_5fUNIONTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
@@ -3715,8 +3698,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__METAREC
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__METARECORD__desc;
 #endif
-#define Absyn__R_5fMETARECORD_3dBOX3 23
-#define Absyn__R_5fMETARECORD(name,index,singleton) (mmc_mk_box4(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton))
+#define Absyn__R_5fMETARECORD_3dBOX3 22
+#define Absyn__R_5fMETARECORD(name,index,singleton) (mmc_mk_box4(22,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNKNOWN__desc_added
 #define Absyn_Restriction_R__UNKNOWN__desc_added
@@ -3730,9 +3713,41 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNKNOWN
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__UNKNOWN__desc;
 #endif
-#define Absyn__R_5fUNKNOWN_3dBOX0 24
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,24) {&Absyn_Restriction_R__UNKNOWN__desc}};
+#define Absyn__R_5fUNKNOWN_3dBOX0 23
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,23) {&Absyn_Restriction_R__UNKNOWN__desc}};
 static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc_added
+#define Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc = {
+  "Absyn_FunctionRestriction_FR__NORMAL__FUNCTION",
+  "Absyn.FunctionRestriction.FR_NORMAL_FUNCTION",
+  Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc;
+#endif
+#define Absyn__FR_5fNORMAL_5fFUNCTION_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__FR_5fNORMAL_5fFUNCTION__struct,1,3) {&Absyn_FunctionRestriction_FR__NORMAL__FUNCTION__desc}};
+static void *Absyn__FR_5fNORMAL_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fNORMAL_5fFUNCTION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc_added
+#define Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc = {
+  "Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION",
+  "Absyn.FunctionRestriction.FR_OPERATOR_FUNCTION",
+  Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc;
+#endif
+#define Absyn__FR_5fOPERATOR_5fFUNCTION_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__FR_5fOPERATOR_5fFUNCTION__struct,1,4) {&Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc}};
+static void *Absyn__FR_5fOPERATOR_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fOPERATOR_5fFUNCTION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Annotation_ANNOTATION__desc_added
 #define Absyn_Annotation_ANNOTATION__desc_added

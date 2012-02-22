@@ -86,12 +86,13 @@ algorithm
     case SCode.R_CONNECTOR(false) then "CONNECTOR";
     case SCode.R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
     case SCode.R_OPERATOR() then "OPERATOR";
-    case SCode.R_OPERATOR_FUNCTION() then "OPERATOR_FUNCTION";
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()) then "FUNCTION";
+    case SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()) then "OPERATOR_FUNCTION";
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) then "EXTERNAL_FUNCTION";
+    case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "RECORD_CONSTRUCTOR";
     case SCode.R_OPERATOR_RECORD() then "OPERATOR_RECORD";
     case SCode.R_TYPE() then "TYPE";
     case SCode.R_PACKAGE() then "PACKAGE";
-    case SCode.R_FUNCTION() then "FUNCTION";
-    case SCode.R_EXT_FUNCTION() then "EXTFUNCTION";
     case SCode.R_ENUMERATION() then "ENUMERATION";
     case SCode.R_METARECORD(index=_) then "METARECORD";
     case SCode.R_UNIONTYPE() then "UNIONTYPE";
