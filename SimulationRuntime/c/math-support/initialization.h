@@ -43,7 +43,8 @@ extern "C"
 {
 #endif
 
-extern int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod);
+extern int initialization(DATA *data, const char* pInitMethod,
+    const char* pOptiMethod, const char* pInitFile, double initTime);
 
 #ifdef __cplusplus
 }

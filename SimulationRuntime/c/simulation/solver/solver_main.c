@@ -94,17 +94,20 @@ solver_main_step(int flag, DATA* simData, SOLVER_INFO* solverInfo) {
 
 
 
-/* The main function for a solver with synchronous event handling
+/**
+ * The main function for a solver with synchronous event handling
  * flag 1=explicit euler
  * 2=rungekutta
  * 3=dassl
  * 4=inline
  * 5=free
- * 6=dopri5 with stepsize control & dense output */
-
-int
-solver_main(DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag) {
-
+ * 6=dopri5 with stepsize control & dense output
+ */
+int solver_main(DATA* simData, double start, double stop, double step,
+    long outputSteps, double tolerance, const char* init_initMethod,
+    const char* init_optiMethod, const char* init_file, double init_time,
+    int flag)
+{
   int i;
 
   SOLVER_INFO solverInfo;
@@ -206,7 +209,7 @@ solver_main(DATA* simData, double start, double stop, double step, long outputSt
     rt_tick(SIM_TIMER_INIT);
   }
 
-  if(initialization(simData, "state", "nelder_mead_ex"))
+  if(initialization(simData, init_initMethod, init_optiMethod, init_file, init_time))
   {
     /* THROW("Error in initialization. Storing results and exiting."); */
   }

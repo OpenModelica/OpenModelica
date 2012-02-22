@@ -37,6 +37,7 @@
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "model_help.h"
+#include "read_matlab4.h"
 
 #include <math.h>
 #include <string.h>
@@ -44,10 +45,12 @@
 enum INIT_INIT_METHOD
 {
   IIM_UNKNOWN = 0,
-  IIM_STATE
+  IIM_NONE,
+  IIM_STATE,
+  IIM_FILE
 };
 
-const char *initMethodStr[2] = {"unknown", "state"};
+const char *initMethodStr[4] = {"unknown", "none", "state", "file"};
 
 enum INIT_OPTI_METHOD
 {
@@ -392,7 +395,7 @@ static void NelderMeadOptimization(long N,
       for(i=0; i<N; i++)
         simplex[xs*N+i] = xr[i];
     }
-    else if(fxr < fvalues[xb])
+    else if(fxr <= fvalues[xb])
     {
       for(i=0; i<N; i++)
         xe[i] = xbar[i] + beta*(xr[i] - xbar[i]);
@@ -411,7 +414,7 @@ static void NelderMeadOptimization(long N,
           simplex[xs*N+i] = xr[i];
       }
     }
-    else if(fxr > fvalues[xz])
+    else if(fvalues[xz] <= fxr)
     {
       if(fxr >= fvalues[xs])
       {
@@ -674,7 +677,7 @@ static INIT_DATA *initializeInitData(DATA *data)
       if(initData->zNominal[iz] == 0.0)
         initData->zNominal[iz] = 1.0;
       initData->z[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->zName[iz] = data->modelData.realVarsData[i].info.name;
+      initData->zName[iz] = (char*)data->modelData.realVarsData[i].info.name;
       iz++;
     }
   }
@@ -687,7 +690,7 @@ static INIT_DATA *initializeInitData(DATA *data)
       if(initData->zNominal[iz] == 0.0)
         initData->zNominal[iz] = 1.0;
       initData->z[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->zName[iz] = data->modelData.realParameterData[i].info.name;
+      initData->zName[iz] = (char*)data->modelData.realParameterData[i].info.name;
       iz++;
     }
   }
@@ -815,6 +818,63 @@ static int initialize(DATA *data, int optiMethod)
   return retVal;
 }
 
+/*! \fn none_initialization
+ *
+ *  \param [ref] [data]
+ *
+ *  \author lochel
+ */
+static int none_initialization(DATA *data)
+{
+  int retVal = 0;
+  long i;
+  INIT_DATA *initData = initializeInitData(data);
+
+  /* set up all variables and parameters with their start-values */
+  setAllVarsToStart(data);
+  setAllParamsToStart(data);
+  updateBoundStartValues(data);
+  updateBoundParameters(data);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+  update_DAEsystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  resetAllHelpVars(data);
+  storePreValues(data);
+
+  /* start with the real initialization */
+  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+
+  DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
+  for(i=0; i<initData->nStates; ++i)
+    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+
+  DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
+  for(; i<initData->nStates+initData->nParameters; ++i)
+    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
+  update_DAEsystem(data);           /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+  SaveZeroCrossings(data);
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
+
+  data->simulationInfo.initial = 0;
+
+  return retVal;
+}
+
 /*! \fn state_initialization
  *
  *  \param [ref] [data]
@@ -874,15 +934,106 @@ static int state_initialization(DATA *data, int optiMethod)
   return retVal;
 }
 
+/*! \fn file_initialization
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [pInitFile]
+ *  \param [in]  [initTime]
+ *
+ *  \author lochel
+ */
+static int file_initialization(DATA *data, const char* pInitFile, double initTime)
+{
+  long i;
+  INIT_DATA *initData = initializeInitData(data);
+  ModelicaMatReader reader;
+  ModelicaMatVariable_t *pVar = NULL;
+  const char *pError = NULL;
+
+  /* set up all variables and parameters with their start-values */
+  setAllVarsToStart(data);
+  setAllParamsToStart(data);
+  updateBoundStartValues(data);
+  updateBoundParameters(data);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+  update_DAEsystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  resetAllHelpVars(data);
+  storePreValues(data);
+
+/* start with the real initialization */
+  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+
+  pError = omc_new_matlab4_reader(pInitFile, &reader);
+  if(pError)
+  {
+    WARNING1("%s", pError);
+    return 1;
+  }
+  else
+  {
+    DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
+    for(i=0; i<initData->nStates; ++i)
+    {
+      pVar = omc_matlab4_find_var(&reader, initData->zName[i]);
+      if(pVar)
+        omc_matlab4_val(&initData->z[i], &reader, pVar, initTime);
+      else
+        WARNING2("'%s' not found in '%s'", initData->zName[i], pInitFile);
+
+      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+    }
+
+    DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
+    for(; i<initData->nStates+initData->nParameters; ++i)
+    {
+      pVar = omc_matlab4_find_var(&reader, initData->zName[i]);
+      if(pVar)
+        omc_matlab4_val(&initData->z[i], &reader, pVar, initTime);
+      else
+        WARNING2("'%s' not found in '%s'", initData->zName[i], pInitFile);
+
+      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+    }
+
+    omc_free_matlab4_reader(&reader);
+  }
+
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
+  update_DAEsystem(data);           /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+  SaveZeroCrossings(data);
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
+
+  data->simulationInfo.initial = 0;
+
+  return 0;
+}
+
 /*! \fn initialization
  *
  *  \param [ref] [data]
  *  \param [in]  [pInitMethod] user defined initialization method
  *  \param [in]  [pOptiMethod] user defined optimization method
+ *  \param [in]  [pInitFile] extra argument for initialization-method "file"
+ *  \param [in]  [initTime] extra argument for initialization-method "file"
  *
  *  \author lochel
  */
-int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod)
+int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
+    const char* pInitFile, double initTime)
 {
   int initMethod = IIM_STATE;               /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
@@ -893,12 +1044,16 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod)
   /* if there are user-specified options, use them! */
   if(pInitMethod)
   {
-    if(!strcmp(pInitMethod, "state"))
-      initMethod = IIM_STATE;
+    if(!strcmp(pInitMethod, "none"))
+          initMethod = IIM_NONE;
+    else if(!strcmp(pInitMethod, "state"))
+          initMethod = IIM_STATE;
+    else if(!strcmp(pInitMethod, "file"))
+          initMethod = IIM_FILE;
     else
     {
       WARNING1("unrecognized option -iim %s", pInitMethod);
-      WARNING_AL("current options are: state");
+      WARNING_AL("current options are: none, state or file");
       initMethod = IIM_UNKNOWN;
     }
   }
@@ -919,9 +1074,19 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod)
   DEBUG_INFO_AL1(LOG_INIT, "optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */
-  if(initMethod == IIM_STATE)
+  if(initMethod == IIM_NONE)
+  {
+    retVal = none_initialization(data);
+  }
+  else if(initMethod == IIM_STATE)
   {
     retVal = state_initialization(data, optiMethod);
+  }
+  else if(initMethod == IIM_FILE)
+  {
+    DEBUG_INFO_AL1(LOG_INIT, "initialization file:   %s", pInitFile);
+    DEBUG_INFO_AL1(LOG_INIT, "initialization time:   %g", initTime);
+    retVal = file_initialization(data, pInitFile, initTime);
   }
   else
   {

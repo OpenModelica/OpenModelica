@@ -114,20 +114,9 @@ extern const int ERROR_NONLINSYS = -1;
 extern const int ERROR_LINSYS = -2;
 
 /* function with template for linear model */
-int callSolver(DATA*, string, string, string, double, double, double, long, double);
+int callSolver(DATA*, string, string, string, double, double, double, long, double, string, string, string, double);
 
 int isInteractiveSimulation();
-
-/*
-int
-startInteractiveSimulation(int, char**);
-*/
-int
-startNonInteractiveSimulation(int, char**, DATA* data);
-int
-initRuntimeAndSimulation(int, char**, DATA *data);
-
-
 
 /*! \fn void setTermMsg(DATA* simData, const char* msg )
  *
@@ -309,8 +298,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
 /**
  * Starts a non-interactive simulation
  */
-int
-startNonInteractiveSimulation(int argc, char**argv, DATA* data)
+int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 {
   int retVal = -1;
 
@@ -319,7 +307,8 @@ startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string* lintime = (string*) getFlagValue("l", argc, argv);
 
   /* mesure time option is set : -mt */
-  if (flagSet("mt", argc, argv)) {
+  if(flagSet("mt", argc, argv))
+  {
     fprintf(stderr, "Error: The -mt was replaced by the simulate option measureTime, which compiles a simulation more suitable for profiling.\n");
     return 1;
   }
@@ -336,8 +325,9 @@ startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
   setupDataStruc2(data);
 
-  if (measure_time_flag) {
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /*sentinel */ );
+  if(measure_time_flag)
+  {
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /*sentinel */);
     rt_tick( SIM_TIMER_TOTAL );
     rt_tick( SIM_TIMER_PREINIT );
     rt_clear( SIM_TIMER_OUTPUT );
@@ -345,43 +335,67 @@ startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_clear( SIM_TIMER_INIT );
   }
 
-  if (create_linearmodel) {
-    if (lintime == NULL) {
+  if(create_linearmodel)
+  {
+    if(lintime == NULL)
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
-    } else {
+    else
       data->simulationInfo.stopTime = atof(lintime->c_str());
-    }
     cout << "Linearization will performed at point of time: " << data->simulationInfo.stopTime << endl;
     data->simulationInfo.solverMethod = "dassl";
   }
 
   int methodflag = flagSet("s", argc, argv);
-  if (methodflag) {
+  if(methodflag)
+  {
     string* method = (string*) getFlagValue("s", argc, argv);
-    if (!(method == NULL))
+    if(!(method == NULL))
       data->simulationInfo.solverMethod = method->c_str();
   }
 
   // Create a result file
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
-  if (!result_file) {
+  if(!result_file)
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
-  } else {
+  else
     result_file_cstr = *result_file;
+
+  string init_initMethod = "state";
+  string init_optiMethod = "nelder_mead_ex";
+  string init_file = "";
+  string init_time_string = "";
+  double init_time = 0;
+
+  if(flagSet("iim", argc, argv))
+    init_initMethod = *getFlagValue("iim", argc, argv);
+  if(flagSet("iom", argc, argv))
+    init_optiMethod = *getFlagValue("iom", argc, argv);
+  if(flagSet("iif", argc, argv))
+  {
+    init_initMethod = "file";
+    init_file = *getFlagValue("iif", argc, argv);
+  }
+  if(flagSet("iit", argc, argv))
+  {
+    init_time_string = *getFlagValue("iit", argc, argv);
+    init_time = atof(init_time_string.c_str());
   }
 
-  retVal = callSolver(data, method, outputFormat, result_file_cstr, start, stop, stepSize,
-      outputSteps, tolerance);
+  retVal = callSolver(data, method, outputFormat, result_file_cstr, start, stop,
+      stepSize, outputSteps, tolerance, init_initMethod, init_optiMethod,
+      init_file, init_time);
 
-  if (retVal == 0 && create_linearmodel) {
+  if(retVal == 0 && create_linearmodel)
+  {
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
     cout << "Linear model is created!" << endl;
   }
 
-  if (retVal == 0 && measure_time_flag && ! globalDebugFlags) {
+  if(retVal == 0 && measure_time_flag && ! globalDebugFlags)
+  {
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
@@ -402,11 +416,10 @@ startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int
-callSolver(DATA* simData, string method, string outputFormat,
-    string result_file_cstr,
-    double start, double stop, double stepSize, long outputSteps,
-    double tolerance)
+int callSolver(DATA* simData, string method, string outputFormat,
+    string result_file_cstr, double start, double stop, double stepSize,
+    long outputSteps, double tolerance, string init_initMethod,
+    string init_optiMethod, string init_file, double init_time)
 {
   int retVal = -1;
 
@@ -433,39 +446,39 @@ callSolver(DATA* simData, string method, string outputFormat,
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
   } else if (method == std::string("euler")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 1);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1);
   } else if (method == std::string("rungekutta")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 2);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
   } else if (method == std::string("dassljac")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
   } else if (method == std::string("dasslnum")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     num_jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
   } else if (method == std::string("dopri5")) {
        if (DEBUG_FLAG(LOG_SOLVER)) {
        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
        }
-       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 6);
+       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 6);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
@@ -476,7 +489,7 @@ callSolver(DATA* simData, string method, string outputFormat,
       if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4);
     }
   } else if (method == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
@@ -488,7 +501,7 @@ callSolver(DATA* simData, string method, string outputFormat,
       if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4);
     }
 #ifdef _OMC_QSS_LIB
   } else if (method == std::string("qss")) {
@@ -513,26 +526,31 @@ callSolver(DATA* simData, string method, string outputFormat,
 /**
  * Initialization is the same for interactive or non-interactive simulation
  */
-int
-initRuntimeAndSimulation(int argc, char**argv, DATA *data)
+int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
-  if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
+  if(flagSet("?", argc, argv) || flagSet("help", argc, argv))
+  {
     cout << "usage: " << argv[0]
-                              << " <-f initfile> <-r result file> -m solver:{dassl,euler,rungekutta,dopri5,inline-euler or inline-rungekutta} <-interactive> <-port value> "
-                              << "-lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
-                              << endl;
+         << " <-f initfile> <-r result file> <-m solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta}> <-interactive> <-port value>"
+         << " <-iim init method:{none,state,file}> <-iif init file> <iit init time>"
+         << " -lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
+         << endl;
     EXIT(0);
   }
-  initializeDataStruc(data);
 
-  if (!data) {
+  initializeDataStruc(data);
+  if(!data)
+  {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
-  //this sets the static variable that is in the file with the generated-model functions
-  if (data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean) {
+
+  // this sets the static variable that is in the file with the generated-model functions
+  if(data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean)
+  {
     std::cerr << "No variables in the model." << std::endl;
     return 1;
   }
+
   /* verbose flag is set : -v */
   globalDebugFlags = flagSet("v", argc, argv);
   sim_noemit = flagSet("noemit", argc, argv);
@@ -554,21 +572,23 @@ initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     setPortOfControlServer(userPort);
   } else if (!interactiveSimulation && flagSet("port", argc, argv)) {
   */
-  if (!interactiveSimulation && flagSet("port", argc, argv)) {
+  if(!interactiveSimulation && flagSet("port", argc, argv))
+  {
     string *portvalue = (string*) getFlagValue("port", argc, argv);
     std::istringstream stream(*portvalue);
     int port;
     stream >> port;
     sim_communication_port_open = 1;
     sim_communication_port_open &= sim_communication_port.create();
-    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1",port);
-    communicateStatus("Starting",0.0);
+    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
+    communicateStatus("Starting", 0.0);
   }
 #endif
 
   int verbose_flags = verboseLevel(argc, argv);
   globalDebugFlags = verbose_flags ? verbose_flags : globalDebugFlags;
-  if (globalDebugFlags){
+  if(globalDebugFlags)
+  {
     globalDebugFlags |= LOG_STATS;
     measure_time_flag = 1;
   }
@@ -576,7 +596,8 @@ initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   return 0;
 }
 
-void SimulationRuntime_printStatus(int sig) {
+void SimulationRuntime_printStatus(int sig)
+{
   printf("<status>\n");
   printf("<phase>UNKNOWN</phase>\n");
   /*
@@ -621,9 +642,9 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
 int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 {
   int retVal = -1;
-  if(!setjmp(globalJmpbuf) ) 
+  if(!setjmp(globalJmpbuf))
   {
-      if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
+      if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
         return 1;
       /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
