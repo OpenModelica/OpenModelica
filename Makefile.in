@@ -74,6 +74,8 @@ fix-svn-eol-style:
 	svn propset svn:eol-style LF `find SimulationRuntime/c Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$" | grep -v "[ ]"`
 	svn propset svn:eol-style LF `find . | grep /Makefile\$$`
 	svn propset svn:eol-style LF `find . | grep /Makefile.in\$$`
+fix-bom:
+	find -type f|while read file;do [ "`head -c3 -- "$file"`" == $'\xef\xbb\xbf' ] && echo "found BOM in: $file"; && sed -i '1 s/^\xef\xbb\xbf//' "$file";done 
 
 .PRECIOUS: Makefile
 
