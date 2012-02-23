@@ -84,7 +84,8 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
 
 	// Provides current values of root/zero functions 
 	 virtual void giveZeroFunc(double* f,const double& eps);
-
+	virtual void giveConditions(bool* c);
+    virtual void setConditions(bool* c);
 	//Called to handle all  events occured at same time  
 	 virtual void handleSystemEvents(const bool* events,update_events_type update_event);
 

@@ -75,7 +75,14 @@ int Modelica::getDimVars(const INDEX index) const
 {
 	return(SystemDefaultImplementation::getDimVars(index));
 }
-
+  void Modelica::giveConditions(bool* c)
+   {
+     memcpy(c,_conditions0,_dimZeroFunc*sizeof(bool));
+   }
+  void Modelica::setConditions(bool* c)
+   {
+     memcpy(_conditions0,c,_dimZeroFunc*sizeof(bool));
+   }
 // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int Modelica::getDimRHS(const INDEX index ) const
 {

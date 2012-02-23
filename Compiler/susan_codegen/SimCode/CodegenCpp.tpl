@@ -2762,7 +2762,7 @@ template cref(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
-  else "$"+crefToCStr(cr)
+  else "_"+crefToCStr(cr)
 end cref;
 
 template cref2(ComponentRef cr)
@@ -2772,7 +2772,7 @@ template cref2(ComponentRef cr)
   case CREF_IDENT(ident = "xloc") then '<%crefStr(cr)%>'
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
-  else "$"+crefToCStr(cr)
+  else "_"+crefToCStr(cr)
 end cref2;
 
 template crefToCStr(ComponentRef cr)
@@ -2780,7 +2780,7 @@ template crefToCStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>_P_<%crefToCStr(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -2806,14 +2806,14 @@ template arraycref(ComponentRef cr)
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
-  else "$"+crefToCStr1(cr)
+  else "_"+crefToCStr1(cr)
 end arraycref;
 
 template crefToCStr1(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then 			  '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
+  case CREF_QUAL(__) then 			  '<%ident%><%subscriptsToCStr(subscriptLst)%>_P_<%crefToCStr1(componentRef)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -3376,14 +3376,14 @@ template dimension(Dimension d)
 end dimension;
 
 template arrayCrefCStr(ComponentRef cr)
-::= '$<%arrayCrefCStr2(cr)%>'
+::= '_<%arrayCrefCStr2(cr)%>'
 end arrayCrefCStr;
 
 template arrayCrefCStr2(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%>$P<%arrayCrefCStr2(componentRef)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%>_P_<%arrayCrefCStr2(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
 
@@ -6184,9 +6184,9 @@ IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
 
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
-   label_list_type $labels = tuple_list_of 
-   <%(labels |> label hasindex index0 => '(&$<%label%>_1,<%index0%>,&$<%label%>_2)') ;separator=" "%>;
-   return $labels;
+   label_list_type labels = tuple_list_of 
+   <%(labels |> label hasindex index0 => '(&<%label%>_1,<%index0%>,&<%label%>_2)') ;separator=" "%>;
+   return labels;
 }
  
 void <%lastIdentOfPath(modelInfo.name)%>::setVariables(const ublas::vector<double>& variables,const ublas::vector<double>& variables2)
