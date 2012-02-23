@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT(c_runtime/boolean_array.c)
+AC_INIT(SimulationRuntime/c/util/boolean_array.c)
 AC_SUBST(date)
 AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
@@ -495,12 +495,12 @@ AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile \
+GENERATED_AUTOCONF_FILES="Makefile \
 Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile \
 Compiler/omc_profiler/Makefile Compiler/runtime/Makefile \
-Compiler/modpar/Makefile c_runtime/interactive/Makefile \
+Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
-Parser/Makefile c_runtime/ModelicaExternalC/Makefile \
+Parser/Makefile \
 OMNotebook/OMNotebookGUI/OMNotebook.config \
 OMNotebook/OMNotebookGUI/Makefile.unix \
 OMShell/OMShellGUI/OMShell.config \
@@ -512,7 +512,6 @@ OMPlot/OMPlotGUI/OMPlotGUI.config \
 OMOptim/build/Makefile.unix \
 OMOptim/build/OMOptim.config \
 testsuite/bootstrapping/LinkMain.makefile \
-c_runtime/libf2c/makefile.u \
 FMI/import/source/Makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
