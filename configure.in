@@ -527,6 +527,7 @@ SimulationRuntime/c/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/interactive/Makefile \
+mosh/src/Makefile \
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
