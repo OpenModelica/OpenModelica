@@ -38,6 +38,7 @@ AC_SUBST(SQLITE3_LIBS)
 AC_SUBST(OPENMP_CFLAGS)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
+AC_SUBST(LD_LAPACK)
 
 if test -z "$MAKE"; then
   MAKE=make
@@ -284,6 +285,15 @@ elif test ! -f "$WANT_STATIC_SQLITE" ; then
 else
   SQLITE3_LIBS=$WANT_STATIC_SQLITE
 fi
+
+# Cannot use AX_LAPACK since it assumes a Fortran compiler is used
+AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
+if test "$LD_LAPACK" = "yes"; then
+  LD_LAPACK="-llapack -lblas"
+fi
+LIBS="$LD_LAPACK"
+AC_MSG_CHECKING([LAPACK flags])
+AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([failed using $LD_LAPACK])])
 
 dnl should we use corba?
 
