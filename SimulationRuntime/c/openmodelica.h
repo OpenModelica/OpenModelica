@@ -267,7 +267,7 @@ struct type_desc_s {
 #define MODELICA_ASSERT(info,msg) { terminationAssert = 1; setTermMsg(msg); TermInfo = info; }
 #endif
 #ifndef MODELICA_TERMINATE
-#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = (struct FILEINFO){"",-1,-1,-1,-1,1}; }
+#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = (struct FILE_INFO){"",-1,-1,-1,-1,1}; }
 #endif
 
 #if defined(__cplusplus)

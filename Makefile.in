@@ -75,7 +75,7 @@ fix-svn-eol-style:
 	svn propset svn:eol-style LF `find . | grep /Makefile\$$`
 	svn propset svn:eol-style LF `find . | grep /Makefile.in\$$`
 fix-bom:
-	find OMOptim/ -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
+	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
 .PRECIOUS: Makefile
 
