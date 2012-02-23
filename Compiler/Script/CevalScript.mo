@@ -773,6 +773,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts;
+      String legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str;
       Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
@@ -1888,6 +1889,7 @@ algorithm
     case (cache,env,"plotAll",
         {
           Values.BOOL(externalWindow),
+          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -1921,6 +1923,44 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"plotAll",
+        {
+          Values.BOOL(externalWindow),
+          Values.BOOL(true),
+          Values.STRING(filename),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
+          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
+        },
+        st,
+        msg)
+      equation
+        // get the simulation filename
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
+        pd = System.pathDelimiter();
+        // create absolute path of simulation result file
+        str1 = System.pwd() +& pd +& filename;
+        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        legendStr = boolString(legend);
+        gridStr = boolString(grid);
+        logXStr = boolString(logX);
+        logYStr = boolString(logY);
+        x1Str = realString(x1);
+        x2Str = realString(x2);
+        y1Str = realString(y1);
+        y2Str = realString(y2);
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str};
+        vals = List.map(args, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
+    
     case (cache,env,"plotAll",_,st,msg)
       then (cache,Values.BOOL(false),st);
 
@@ -1929,6 +1969,7 @@ algorithm
         {
           Values.ARRAY(valueLst = cvars),
           Values.BOOL(externalWindow),
+          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -1964,6 +2005,49 @@ algorithm
         0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
+    
+    case (cache,env,"plot",
+        {
+          Values.ARRAY(valueLst = cvars),
+          Values.BOOL(externalWindow),
+          Values.BOOL(true),
+          Values.STRING(filename),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
+          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
+        },
+        st,msg)
+      equation
+        // get the variables list
+        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
+        // seperate the variables
+        str = stringDelimitList(vars_1,"\" \"");
+        // get the simulation filename
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
+        pd = System.pathDelimiter();
+        // create absolute path of simulation result file
+        str1 = System.pwd() +& pd +& filename;
+        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        legendStr = boolString(legend);
+        gridStr = boolString(grid);
+        logXStr = boolString(logX);
+        logYStr = boolString(logY);
+        x1Str = realString(x1);
+        x2Str = realString(x2);
+        y1Str = realString(y1);
+        y2Str = realString(y2);
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str};
+        args = listAppend(args, vars_1);
+        vals = List.map(args, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
         
     case (cache,env,"plot",_,st,msg)
       then
@@ -2229,6 +2313,7 @@ algorithm
           cvar,
           cvar2,
           Values.BOOL(externalWindow),
+          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -2263,6 +2348,48 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"plotParametric",
+        {
+          cvar,
+          cvar2,
+          Values.BOOL(externalWindow),
+          Values.BOOL(true),
+          Values.STRING(filename),
+          Values.STRING(title),
+          Values.BOOL(legend),
+          Values.BOOL(grid),
+          Values.BOOL(logX),
+          Values.BOOL(logY),
+          Values.STRING(xLabel),
+          Values.STRING(yLabel),
+          Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
+          Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
+        },
+        st,msg)
+      equation
+        // get the variables
+        str = ValuesUtil.printCodeVariableName(cvar);
+        str3 = ValuesUtil.printCodeVariableName(cvar2);
+        // get the simulation filename
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
+        pd = System.pathDelimiter();
+        // create absolute path of simulation result file
+        str1 = System.pwd() +& pd +& filename;
+        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        legendStr = boolString(legend);
+        gridStr = boolString(grid);
+        logXStr = boolString(logX);
+        logYStr = boolString(logY);
+        x1Str = realString(x1);
+        x2Str = realString(x2);
+        y1Str = realString(y1);
+        y2Str = realString(y2);
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,str,str3};
+        vals = List.map(args, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
+    
     case (cache,env,"plotParametric",_,st,msg)
       then (cache,Values.BOOL(false),st);
     

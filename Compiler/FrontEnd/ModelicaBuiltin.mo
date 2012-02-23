@@ -1843,6 +1843,7 @@ function plot "Launches a plot window using OMPlot. Returns true on success.
   "
   input VariableNames vars "The variables you want to plot";
   input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
@@ -1854,6 +1855,7 @@ function plot "Launches a plot window using OMPlot. Returns true on success.
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plot;
@@ -1867,6 +1869,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
   
   input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
@@ -1878,6 +1881,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotAll;
@@ -1938,6 +1942,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input VariableName xVariable;
   input VariableName yVariable;
   input Boolean externalWindow := false "Opens the plot in a new plot window";
+  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
@@ -1949,6 +1954,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
+  output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
 annotation(preferredView="text");
 end plotParametric;
