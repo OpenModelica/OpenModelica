@@ -221,6 +221,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%DefaultImplementationCode(simCode)%>
    <%checkForDiscreteEvents(discreteModelVars,simCode)%>
    <%giveZeroFunc1(zeroCrossings,simCode)%>
+   <%giveConditions(simCode)%>
+   <%setConditions(simCode)%>
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
    <%DimInitEquations(simCode)%>
@@ -2073,6 +2075,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual int getDimZeroFunc();
 	//Provides current values of root/zero functions 
 	 virtual void giveZeroFunc(double* f,const double& eps);
+	virtual void giveConditions(bool* c);
+	virtual void setConditions(bool* c);
 	//Called to check conditions for event-handling
 	virtual void checkConditions(unsigned int, bool all);
 	//Called to handle all  events occured at same time  
@@ -5794,6 +5798,31 @@ template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
   }   
 >>
 end giveZeroFunc1;
+
+
+template giveConditions(SimCode simCode)
+::=
+ match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+ void <%lastIdentOfPath(modelInfo.name)%>::giveConditions(bool* c)
+  {
+    memcpy(c,_conditions0,_dimZeroFunc*sizeof(bool));
+  }   
+>>
+end giveConditions;
+
+template setConditions(SimCode simCode)
+::=
+ match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+ void <%lastIdentOfPath(modelInfo.name)%>::setConditions(bool* c)
+  {
+    memcpy(_conditions0,c,_dimZeroFunc*sizeof(bool));
+  }   
+>>
+end setConditions;
 
 template giveZeroFunc2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
