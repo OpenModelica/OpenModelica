@@ -24,10 +24,10 @@ settings:
 
 difftool: mkbuilddirs
 	$(MAKE) -C testsuite/difftool
-omc: difftool c_runtime docs fmi
+omc: difftool interactive docs fmi
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: difftool c_runtime docs fmi
+omcd: difftool interactive docs fmi
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
@@ -71,7 +71,7 @@ endif
 
 fix-svn-eol-style:
 	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ | egrep "\.(mos\?|tpl)\$$" | grep -v parser/ParseModel | grep -v "[ ]" | grep -v _temp[0-9]*\$$`
-	svn propset svn:eol-style LF `find c_runtime/ Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$" | grep -v "[ ]"`
+	svn propset svn:eol-style LF `find SimulationRuntime/c Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$" | grep -v "[ ]"`
 	svn propset svn:eol-style LF `find . | grep /Makefile\$$`
 	svn propset svn:eol-style LF `find . | grep /Makefile.in\$$`
 

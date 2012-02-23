@@ -1,5 +1,5 @@
 #
-# Makefile for c_runtime/interactive
+# Makefile for SimulationRuntime/interactive
 #
 
 top_builddir= ../..

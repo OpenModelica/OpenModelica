@@ -45,7 +45,7 @@ ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h .
 ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h
 
 Parser_rml.o: $(HFILES) parse.c lookupTokenName.c
-Parser_omc.o: $(HFILES) parse.c lookupTokenName.c ../c_runtime/meta/rml_compatibility.h
+Parser_omc.o: $(HFILES) parse.c lookupTokenName.c ../SimulationRuntime/c/meta/rml_compatibility.h
 
 libomparse_rml.a: Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	rm -f $@

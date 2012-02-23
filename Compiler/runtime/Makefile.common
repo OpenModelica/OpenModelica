@@ -11,6 +11,8 @@ builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 
+SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/util/
+
 ifndef OMDEV
 	configUnix = config.unix.h
 else
@@ -51,8 +53,8 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 omc_communication_impl.o: omc_communication.h
 Corba_rml.o: omc_communication.h corbaimpl.cpp
 Corba_omc.o: omc_communication.h corbaimpl.cpp
-Dynload_rml.o: systemimpl.h errorext.h ../Absyn.h ../Values.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
-Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp $(RML_COMPAT)
+Dynload_rml.o: systemimpl.h errorext.h ../Absyn.h ../Values.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp
+Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
 Database_rml.o: Database.c Database_rml.c
 Database_omc.o: Database.c Database_omc.c
 Print_rml.o : printimpl.c
@@ -73,8 +75,8 @@ BackendDAEEXT_rml.o : BackendDAEEXT.cpp
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT)
 Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c
-SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c errorext.h ../../c_runtime/read_matlab4.h
-SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c errorext.h ../../c_runtime/read_matlab4.h
+SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
+SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
 ptolemyio_rml.o : ptolemyio.cpp errorext.h
 ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp

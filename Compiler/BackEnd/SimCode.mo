@@ -84,6 +84,10 @@ protected import CevalScript;
 protected import ClassInf;
 protected import CodegenC;
 protected import CodegenFMU;
+protected import CodegenQSS;
+protected import CodegenAdevs;
+protected import CodegenCSharp;
+protected import CodegenCpp;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
@@ -103,13 +107,7 @@ protected import PartFn;
 protected import PriorityQueue;
 protected import SCodeUtil;
 protected import Settings;
-protected import SimCodeC;
-protected import SimCodeCpp;
-protected import SimCodeCSharp;
 protected import SimCodeDump;
-protected import SimCodeFMU;
-protected import SimCodeQSS;
-protected import SimCodeAdevs;
 protected import System;
 protected import Util;
 protected import ValuesUtil;
@@ -131,7 +129,7 @@ type JacobianMatrix = tuple<list<JacobianColumn>,   // column
                             Integer>;               // max color used
 
   
-public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For SimCodeC.tpl";
+public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 
 // Root data structure containing information required for templates to
 // generate simulation code for a Modelica model.
@@ -1129,15 +1127,15 @@ algorithm
       
     case (simCode,_,"CSharp")
       equation
-        Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
+        Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
       then ();
    case (simCode,_,"Cpp")
       equation
-        Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
+        Tpl.tplNoret(CodegenCpp.translateModel, simCode);
       then ();
    case (simCode,_,"Adevs")
       equation
-        Tpl.tplNoret(SimCodeAdevs.translateModel, simCode);
+        Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
       then ();
     case (simCode,outIndexedBackendDAE as BackendDAE.DAE(eqs={
         BackendDAE.EQSYSTEM(m=SOME(incidenceMatrix), mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents))
@@ -1145,11 +1143,7 @@ algorithm
       equation
         Debug.trace("Generating QSS solver code\n");
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
-        Tpl.tplNoret2(SimCodeQSS.translateModel, simCode, qssInfo);
-      then ();
-    case (simCode,_,"c")
-      equation
-        Tpl.tplNoret(SimCodeC.translateModel, simCode);
+        Tpl.tplNoret2(CodegenQSS.translateModel, simCode, qssInfo);
       then ();
     case (simCode,_,"C")
       equation
@@ -1182,10 +1176,6 @@ algorithm
       BackendDAE.StrongComponents strongComponents;
       String str;
       
-    case (simCode,"c")
-      equation
-        Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
-      then ();
     case (simCode,"C")
       equation
         Tpl.tplNoret(CodegenFMU.translateModel, simCode);

@@ -2,16 +2,10 @@
 
 OMC = OPENMODELICAHOME=`pwd`/../../../build/ ../../../build/bin/omc +d=failtrace
 
-all : CodegenC.mo CodegenFMU.mo SimCodeC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
+all : CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo
 
-SimCodeC.mo : SimCodeC.tpl SimCodeTV.mo
-	@echo " ** SimCodeC template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	cp -pf $@ ../../Template/
-	@echo " "
-
-SimCodeAdevs.mo : SimCodeAdevs.tpl SimCodeTV.mo
-	@echo " ** SimCodeAdevs template compilation ** "
+CodegenAdevs.mo : CodegenAdevs.tpl SimCodeTV.mo
+	@echo " ** CodegenAdevs template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "
@@ -22,14 +16,8 @@ CodegenC.mo : CodegenC.tpl SimCodeTV.mo
 	cp -pf $@ ../../Template/
 	@echo " "
 
-SimCodeCSharp.mo : SimCodeCSharp.tpl SimCodeTV.mo
-	@echo " ** SimCodeCSharp template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	cp -pf $@ ../../Template/
-	@echo " "
-
-SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo SimCodeC.tpl
-	@echo " ** SimCodeFMU template compilation ** "
+CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
+	@echo " ** CodegenCSharp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "
@@ -52,14 +40,14 @@ SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenC.tpl
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeQSS.mo : SimCodeQSS.tpl SimCodeTV.mo SimCodeC.tpl 
-	@echo " ** SimCodeQSS template compilation ** "
+CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl 
+	@echo " ** CodegenQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "	
 
-SimCodeCpp.mo : SimCodeCpp.tpl SimCodeTV.mo
-	@echo " ** SimCodeCpp template compilation ** "
+CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo
+	@echo " ** CodegenCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
 	@echo " "	

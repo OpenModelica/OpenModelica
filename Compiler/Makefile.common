@@ -131,14 +131,12 @@ Global.mo
 TEMPLATE = \
 CodegenC.mo \
 CodegenFMU.mo \
+CodegenAdevs.mo \
+CodegenQSS.mo \
+CodegenCpp.mo \
+CodegenCSharp.mo \
 SCodeDumpTpl.mo \
-SimCodeC.mo \
-SimCodeCSharp.mo \
 SimCodeDump.mo \
-SimCodeQSS.mo \
-SimCodeAdevs.mo \
-SimCodeCpp.mo \
-SimCodeFMU.mo \
 Tpl.mo \
 TplAbsyn.mo \
 TplCodegen.mo \

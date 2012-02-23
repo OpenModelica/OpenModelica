@@ -20,7 +20,7 @@ INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst
+.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -38,7 +38,7 @@ debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc
 
-c_runtime: .testvariables mkbuilddirs
+interactive: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -47,11 +47,11 @@ docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
-	cp -p ./c_runtime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
+	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
 	# man pages
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
-fmi: c_runtime
+fmi: interactive
 	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget)
 	(cp -p FMI/import/source/fmuWrapper.h FMI/import/source/xmlparser.h $(builddir_inc))
 	
@@ -141,7 +141,6 @@ distclean: clean
 	rm -f config.status config.log
 	rm -rf build/
 clean: qtclean
-	(cd c_runtime && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) clean)
