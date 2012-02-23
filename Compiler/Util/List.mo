@@ -59,6 +59,7 @@ encapsulated package List
            IntN: A special version for integers between 1 and N.
            Last: Operates on the tail of the list.
            List: Operates on a list of lists.
+              N: Returns a list of N elements.
          OnBool: Decides which operation to do based on a given boolean value.
       OnSuccess: Takes an operation function that succeeds or fails.
          OnTrue: Takes an operation function that returns true or false.
@@ -637,7 +638,7 @@ public function second
 algorithm
   outSecond := listGet(inList, 2);
 end second;
-
+ 
 public function last
   "Returns the last element of a list. Fails if the list is empty."
   input list<ElementType> inList;
@@ -660,6 +661,42 @@ public function rest
 algorithm
   _ :: outList := inList;
 end rest;
+
+public function firstN
+  "Returns the first N elements of a list, or fails if there are not enough
+   elements in the list."
+  input list<ElementType> inList;
+  input Integer inN;
+  output list<ElementType> outList;
+algorithm
+  true := (inN >= 0);
+  outList := firstN_tail(inList, inN, {});
+  outList := listReverse(outList);
+end firstN;  
+
+protected function firstN_tail
+  "Tail recursive implementation of firstN."
+  input list<ElementType> inList;
+  input Integer inN;
+  input list<ElementType> inAccum;
+  output list<ElementType> outList;
+algorithm
+  outList := match(inList, inN, inAccum)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      Integer n;
+
+      case (_, 0, inAccum) then inAccum;
+
+      case (e :: rest, n, _)
+        equation
+          n = n - 1;
+        then
+          firstN_tail(rest, n, e :: inAccum);
+
+  end match;
+end firstN_tail;
 
 public function stripFirst
   "Removes the first element of a list, but returns the empty list if the given

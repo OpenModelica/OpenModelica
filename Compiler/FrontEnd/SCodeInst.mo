@@ -114,16 +114,19 @@ public uniontype Binding
     Absyn.Exp bindingExp;
     Env env;
     Prefix prefix;
+    Integer propagatedLevels "See SCodeMod.propagateMod.";
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     DAE.Exp bindingExp;
     Boolean isProcessing;
+    Integer propagatedLevels "See SCodeMod.propagateMod.";
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
+    Integer propagatedLevels "See SCodeMod.propagateMod.";
   end TYPED_BINDING;
 end Binding;
 
@@ -274,7 +277,6 @@ algorithm
         (cls, symtab) = typeClass(cls, symtab);
         // Type normal equations and algorithm here.
         (cls, symtab) = instConditionalComponents(cls, symtab);
-        print("Conditional components instantiated\n");
         (cls, symtab) = typeClass(cls, symtab);
         // Type connects here.
         System.stopTimer();
@@ -282,9 +284,9 @@ algorithm
         print(printClass(cls));
         print("\nend " +& name +& "\n");
 
-        _ = SCodeExpand.expand(name, cls);
         print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
           " seconds.\n");
+        _ = SCodeExpand.expand(name, cls);
       then
         ();
 
@@ -572,7 +574,7 @@ algorithm
       Prefix prefix;
 
     case (MODIFIER(name = ident, subModifiers = {}, 
-        binding = RAW_BINDING(bind_exp, env, prefix)), _)
+        binding = RAW_BINDING(bind_exp, env, prefix, _)), _)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
@@ -691,7 +693,7 @@ algorithm
       Binding binding;
       Prefix prefix;
       SCode.Mod smod;
-      Modifier mod;
+      Modifier mod, cmod;
       String name;
       SCode.Variability var;
       list<Dimension> dims;
@@ -724,7 +726,8 @@ algorithm
         // Instantiate the class.
         prefix = (name, ad) :: inPrefix;
         mod = SCodeMod.translateMod(smod, name, inPrefix, inEnv);
-        mod = SCodeMod.mergeMod(inClassMod, mod);
+        cmod = SCodeMod.propagateMod(inClassMod);
+        mod = SCodeMod.mergeMod(cmod, mod);
         (cls, ty) = instClassItem(item, mod, env, prefix);
 
         // Instantiate array dimensions and binding.
@@ -861,7 +864,7 @@ algorithm
       equation
         path = Absyn.suffixPath(inEnumPath, name);
         comp = TYPED_COMPONENT(path, inType, SCode.CONST(), Absyn.NOT_INNER_OUTER(),
-          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType));
+          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType, 1));
       then
         ELEMENT(comp, BASIC_TYPE());
 
@@ -878,12 +881,13 @@ algorithm
       DAE.Exp dexp;
       Env env;
       Prefix prefix;
+      Integer pl;
 
-    case RAW_BINDING(aexp, env, prefix)
+    case RAW_BINDING(aexp, env, prefix, pl)
       equation
         dexp = instExp(aexp, env, prefix);
       then
-        UNTYPED_BINDING(dexp, false);
+        UNTYPED_BINDING(dexp, false, pl);
 
     else inBinding;
 
@@ -978,6 +982,7 @@ algorithm
       DAE.Operator dop;
       list<Absyn.Exp> aexpl;
       list<DAE.Exp> dexpl;
+      list<list<Absyn.Exp>> mat_expl;
 
     case (Absyn.REAL(value = rval), _, _) then DAE.RCONST(rval);
     case (Absyn.INTEGER(value = ival), _, _) then DAE.ICONST(ival);
@@ -1033,10 +1038,14 @@ algorithm
       then
         DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl);
 
+    case (Absyn.MATRIX(matrix = mat_expl), _, _)
+      equation
+        dexpl = List.map2(mat_expl, instArray, inEnv, inPrefix);
+      then
+        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl);
+
     //Absyn.CALL
     //Absyn.PARTEVALFUNCTION
-    //Absyn.ARRAY
-    //Absyn.MATRIX
     //Absyn.RANGE
     //Absyn.TUPLE
     //Absyn.END
@@ -1054,9 +1063,21 @@ algorithm
       then
         DAE.SIZE(dexp1, SOME(dexp2));
 
-    else DAE.ICONST(0);
+    else DAE.SCONST("fixme");
   end match;
 end instExp;
+
+protected function instArray
+  input list<Absyn.Exp> inExpl;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Exp outArray;
+protected
+  list<DAE.Exp> expl;
+algorithm
+  expl := List.map2(inExpl, instExp, inEnv, inPrefix);
+  outArray := DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
+end instArray;
 
 protected function instOperator
   input Absyn.Operator inOperator;
@@ -1431,7 +1452,7 @@ algorithm
         enum_count = listLength(enum_exps);
         arr_ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(enum_count)}, DAE.emptyTypeSource);
         bind_exp = DAE.ARRAY(arr_ty, true, enum_exps);
-        binding = TYPED_BINDING(bind_exp, arr_ty);
+        binding = TYPED_BINDING(bind_exp, arr_ty, 1);
       then
         ELEMENT(TYPED_COMPONENT(inPath, ty, SCode.CONST(), Absyn.NOT_INNER_OUTER(), UNBOUND()),
           COMPLEX_CLASS(enum_el, {}, {}, {}, {}));
@@ -2120,6 +2141,7 @@ algorithm
       Component comp;
       SCode.Variability var;
       DAE.Exp binding_exp;
+      Integer pl;
 
     case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
             SCode.ATTR(variability = var))), _)
@@ -2129,10 +2151,10 @@ algorithm
         inSymbolTable;
 
     case (UNTYPED_COMPONENT(name, el, ty, dims, 
-        UNTYPED_BINDING(bindingExp = binding_exp)), _)
+        UNTYPED_BINDING(binding_exp, _, pl)), _)
       equation
         comp = UNTYPED_COMPONENT(name, el, ty, dims, 
-          UNTYPED_BINDING(binding_exp, true));
+          UNTYPED_BINDING(binding_exp, true, pl));
       then
         BaseHashTable.add((name, comp), inSymbolTable);
 
@@ -2158,6 +2180,7 @@ algorithm
       DAE.Exp binding;
       SymbolTable st;
       DAE.Type ty;
+      Integer pl;
 
     case (UNTYPED_BINDING(isProcessing = true), st)
       equation
@@ -2165,11 +2188,11 @@ algorithm
       then
         fail();
 
-    case (UNTYPED_BINDING(bindingExp = binding), st)
+    case (UNTYPED_BINDING(bindingExp = binding, propagatedLevels = pl), st)
       equation
         (binding, ty, st) = typeExp(binding, st);
       then
-        (TYPED_BINDING(binding, ty), st);
+        (TYPED_BINDING(binding, ty, pl), st);
 
     case (TYPED_BINDING(bindingExp = _), st)
       then (inBinding, st);
@@ -2827,7 +2850,7 @@ algorithm
     case (UNTYPED_BINDING(bindingExp = dexp))
       then " = " +& ExpressionDump.printExpStr(dexp);
 
-    case (TYPED_BINDING(dexp, ty))
+    case (TYPED_BINDING(bindingExp = dexp, bindingType = ty))
       then " = (" +& Types.unparseType(ty) +& ") " +&
         ExpressionDump.printExpStr(dexp);
 

@@ -45,6 +45,9 @@ protected import Absyn;
 protected import DAEDump;
 protected import Debug;
 protected import Error;
+protected import Expression;
+protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import SCode;
@@ -364,17 +367,20 @@ algorithm
       DAE.Element elem;
       SCode.Variability var;
       DAE.VarKind var_kind;
+      SCodeInst.Binding binding;
+      Option<DAE.Exp> bind_exp;
 
     case (SCodeInst.TYPED_COMPONENT(variability = SCode.CONST()), _, _)
       then inAccumEl;
       
-    case (SCodeInst.TYPED_COMPONENT(name = name, ty = ty, variability = var), subs, _)
+    case (SCodeInst.TYPED_COMPONENT(name, ty, var, _, binding), subs, _)
       equation
+        bind_exp = expandBinding(binding, subs);
         subs = listReverse(subs);
         cref = subscriptPath(name, subs);
         var_kind = variabilityToVarKind(var);
         elem = DAE.VAR(cref, var_kind, DAE.BIDIR(), DAE.NON_PARALLEL(),
-          DAE.PUBLIC(), ty, NONE(), {}, DAE.NON_FLOW(), DAE.NON_STREAM(),
+          DAE.PUBLIC(), ty, bind_exp, {}, DAE.NON_FLOW(), DAE.NON_STREAM(),
           DAE.emptyElementSource, NONE(), NONE(), Absyn.NOT_INNER_OUTER());
       then
         elem :: inAccumEl;
@@ -396,6 +402,65 @@ algorithm
 
   end match;
 end expandScalar;
+
+protected function expandBinding
+  input SCodeInst.Binding inBinding;
+  input list<list<DAE.Subscript>> inSubscripts;
+  output Option<DAE.Exp> outBinding;
+algorithm
+  outBinding := match(inBinding, inSubscripts)
+    local
+      DAE.Exp exp;
+      Integer pl;
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Subscript> flat_subs;
+      list<DAE.Exp> sub_exps;
+
+    case (SCodeInst.UNBOUND(), _) then NONE();
+
+    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedLevels = -1), _)
+      then SOME(exp);
+
+    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedLevels = pl), _)
+      equation
+        subs = List.firstN(inSubscripts, pl);
+        flat_subs = List.flatten(subs);
+        flat_subs = listReverse(flat_subs);
+        sub_exps = List.map(flat_subs, Expression.subscriptExp);
+        exp = subscriptBindingExp(exp, sub_exps);
+        (exp, _) = ExpressionSimplify.simplify(exp);
+      then 
+        SOME(exp);
+
+    else
+      equation
+        print("SCodeExpand.expandBinding got unknown binding\n");
+      then
+        fail();
+
+  end match;
+end expandBinding;
+
+protected function subscriptBindingExp
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inSubscripts;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inSubscripts)
+    local
+      DAE.Exp exp, sub;
+      list<DAE.Exp> rest_subs;
+
+    case (_, {}) then inExp;
+
+    case (exp, sub :: rest_subs)
+      equation
+        exp = DAE.ASUB(exp, {sub});
+      then
+        subscriptBindingExp(exp, rest_subs);
+
+  end match;
+end subscriptBindingExp;
 
 protected function variabilityToVarKind
   input SCode.Variability inVariability;

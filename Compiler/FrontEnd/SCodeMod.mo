@@ -50,6 +50,7 @@ protected import Error;
 protected import List;
 protected import SCodeDump;
 protected import SCodeLookup;
+protected import Util;
 
 public type Binding = SCodeInst.Binding;
 public type Env = SCodeEnv.Env;
@@ -79,7 +80,7 @@ algorithm
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _)
       equation
         mods = List.map2(submods, translateSubMod, inPrefix, inEnv);
-        binding = translateBinding(binding_exp, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, ep, inPrefix, inEnv);
       then
         SCodeInst.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
@@ -104,18 +105,24 @@ end translateSubMod;
 
 protected function translateBinding
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input SCode.Each inEachPrefix;
   input Prefix inPrefix;
   input Env inEnv;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding, inPrefix, inEnv)
+  outBinding := match(inBinding, inEachPrefix, inPrefix, inEnv)
     local
       Absyn.Exp bind_exp;
+      Integer pl;
 
-    case (NONE(), _, _) then SCodeInst.UNBOUND();
+    case (NONE(), _, _, _) then SCodeInst.UNBOUND();
 
-    case (SOME((bind_exp, _)), _, _)
-      then SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix);
+    case (SOME((bind_exp, _)), _, _, _)
+      equation
+        // See propagateBinding for how this works.
+        pl = Util.if_(SCode.eachBool(inEachPrefix), -1, 1);
+      then 
+        SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix, pl);
 
   end match;
 end translateBinding;
@@ -567,6 +574,86 @@ algorithm
 
   end match;
 end getModifierBinding;
+
+public function propagateMod
+  "Saves information about how a modifier has been propagated. Since arrays are
+   not expanded during the instantiation we need to know where a binding comes
+   from, e.g:
+  
+     model A
+       Real x;
+     end A;
+
+     model B
+       A a[3](x = {1, 2, 3});
+     end B;
+
+     model C
+       B b[2];
+     end C;
+
+   This results in a component b[2].a[3].x = {1, 2, 3}. Since x is a scalar we
+   need to add dimensions to it (or remove from the binding) when doing type
+   checking, so that it matches the binding. But to do this we need to know how
+   many hierarchies the binding has been propagated through. In this case it's
+   been propagated through only one level, from b.a to b.a.x, so with that
+   information we know that we should take the dimensions of b.a, [3], and add
+   it to either x or remove it from the type of the binding to make the types
+   match. This information is saved as a simple integer in the Binding type,
+   where 1 means a local binding, 2 a binding from one level above, etc. We also
+   have the case of the 'each' prefix, in which case we use -1 to mean that we
+   shouldn't increment the counter since the binding should be applied as is.
+
+   This function simply goes through a modifier recursively and increments the
+   levels counter by one, symbolizing a propagation through one level."
+  input Modifier inModifier;
+  output Modifier outModifier;
+algorithm
+  outModifier := match(inModifier)
+    local
+      String name;
+      SCode.Final fp;
+      SCode.Each ep;
+      SCodeInst.Binding binding;
+      list<Modifier> submods;
+      Absyn.Info info;
+
+    case SCodeInst.MODIFIER(name, fp, ep, binding, submods, info)
+      equation
+        binding = propagateBinding(binding);
+        submods = List.map(submods, propagateMod);
+      then
+        SCodeInst.MODIFIER(name, fp, ep, binding, submods, info);
+
+    else inModifier;
+
+  end match;
+end propagateMod;
+
+protected function propagateBinding
+  input Binding inBinding;
+  output Binding outBinding;
+algorithm
+  outBinding := match(inBinding)
+    local
+      Absyn.Exp bind_exp;
+      Env env;
+      Prefix prefix;
+      Integer pl;
+
+    // Special case for the each prefix, don't do anything.
+    case SCodeInst.RAW_BINDING(bind_exp, env, prefix, -1) then inBinding;
+
+    // A normal binding, increment with one.
+    case SCodeInst.RAW_BINDING(bind_exp, env, prefix, pl)
+      equation
+        pl = pl + 1;
+      then 
+        SCodeInst.RAW_BINDING(bind_exp, env, prefix, pl);
+
+    else inBinding;
+  end match;
+end propagateBinding;
 
 public function printMod
   input Modifier inMod;
