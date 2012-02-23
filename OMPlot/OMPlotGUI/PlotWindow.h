@@ -40,7 +40,7 @@
 #include <qwt_compat.h>
 #endif
 #include <stdexcept>
-#include "../../c_runtime/read_matlab4.h"
+#include "../../SimulationRuntime/c/util/read_matlab4.h"
 #include "Plot.h"
 
 namespace OMPlot

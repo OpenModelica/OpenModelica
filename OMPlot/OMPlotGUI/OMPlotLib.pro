@@ -13,7 +13,7 @@ CONFIG += release staticlib
 QMAKE_LFLAGS += -enable-auto-import
 
 SOURCES += main.cpp \
-    ../../c_runtime/read_matlab4.c \
+    ../../SimulationRuntime/c/util/read_matlab4.c \
     Plot.cpp \
     PlotZoomer.cpp \
     Legend.cpp \
@@ -25,7 +25,7 @@ SOURCES += main.cpp \
     PlotWindowContainer.cpp \
     PlotMainWindow.cpp
 
-HEADERS  += ../../c_runtime/read_matlab4.h \
+HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
     Plot.h \
     PlotZoomer.h \
     Legend.h \
