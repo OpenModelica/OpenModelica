@@ -296,7 +296,12 @@ algorithm
       then
         s;
     case (DAE.MUL_ARR(ty = _)) then " *<MUL_ARRAY> ";
-    case (DAE.DIV_ARR(ty = _)) then " / ";
+    case (DAE.DIV_ARR(ty = t))
+      equation
+        ts = typeString(t);
+        s = stringAppendList({" /<DIV_ARR><", ts, "> "});
+      then
+        s;
     case (DAE.POW_ARR(ty = _)) then " ^ ";
     case (DAE.POW_ARR2(ty = _)) then " ^ ";
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " *<MUL_ARRAY_SCALAR> ";

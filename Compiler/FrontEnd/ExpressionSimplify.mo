@@ -127,7 +127,7 @@ algorithm
       DAE.Exp e,res,exp,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,sub,exp1;
       Type t,tp;
       Boolean b,b1,remove_if,tpl,builtin,b2;
-      Ident idn;
+      String idn,str;
       list<DAE.Exp> exps,exps_1,expl,matrix;
       list<Subscript> s;
       ComponentRef c_1;
@@ -275,6 +275,17 @@ algorithm
         (riters,b2) = simplifyReductionIterators(riters, {}, false);
         exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
       then ((simplifyReduction(exp1,b2),true));
+
+      /*
+      // Look for things we really *should* have simplified
+    case ((e,_))
+      equation
+        true = Expression.isConst(e);
+        false = Expression.isConstValue(e);
+        str = ExpressionDump.printExpStr(e);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
+      then fail();
+      */
 
     // anything else
     else inTpl;
@@ -1297,16 +1308,16 @@ algorithm
       then
         a1;
     
-    case (e1,DAE.MUL_ARR(ty = _),e2)
+    case (e1,op as DAE.MUL_ARR(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
-        a1 = simplifyVectorBinary(e1, DAE.MUL(tp), e2);
+        a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 
-    case (e1,DAE.DIV_ARR(ty = _),e2)
+    case (e1,op as DAE.DIV_ARR(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
-        a1 = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
+        a1 = simplifyVectorBinary(e1, op, e2);
       then a1;
 
     case (e1,DAE.POW_ARR(ty = _),e2)
@@ -1727,7 +1738,7 @@ protected function simplifyVectorBinary
   input DAE.Exp inExp3;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp1,inOperator2,inExp3)
+  outExp := match (inExp1,inOperator2,inExp3)
     local
       Type tp1,tp2;
       Boolean scalar1,scalar2;
@@ -1751,7 +1762,7 @@ algorithm
         op2 = removeOperatorDimension(op);
       then
         DAE.ARRAY(tp1,scalar1,(DAE.BINARY(e1,op2,e2) :: es_1));
-  end matchcontinue;
+  end match;
 end simplifyVectorBinary;
 
 protected function simplifyMatrixBinary
@@ -4043,6 +4054,18 @@ algorithm outop := match(inop)
       ty2 = Expression.unliftArray(ty1);
       b = DAEUtil.expTypeArray(ty2);
       op = Util.if_(b, DAE.SUB_ARR(ty2), DAE.SUB(ty2));
+    then op;
+  case DAE.DIV_ARR(ty=ty1)
+    equation
+      ty2 = Expression.unliftArray(ty1);
+      b = DAEUtil.expTypeArray(ty2);
+      op = Util.if_(b, DAE.DIV_ARR(ty2), DAE.DIV(ty2));
+    then op;
+  case DAE.MUL_ARR(ty=ty1)
+    equation
+      ty2 = Expression.unliftArray(ty1);
+      b = DAEUtil.expTypeArray(ty2);
+      op = Util.if_(b, DAE.MUL_ARR(ty2), DAE.MUL(ty2));
     then op;
 end match;
 end removeOperatorDimension;

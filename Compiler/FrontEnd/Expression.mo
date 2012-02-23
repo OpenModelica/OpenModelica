@@ -4990,6 +4990,8 @@ algorithm
     
     case (DAE.ASUB(exp=e,sub=ae),_) then isConstWorkList(ae,isConstWork(e,true));
     
+    case (DAE.TSUB(exp=e),_) then isConstWork(e,true);
+
     case (DAE.SIZE(exp=e,sz=NONE()),_) then isConstWork(e,true);
     
     case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
@@ -5002,6 +5004,54 @@ algorithm
 
   end match;
 end isConstWork;
+
+protected function isConstValueWork
+"Returns true if an expression is a constant value"
+  input DAE.Exp inExp;
+  input Boolean res;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp,res)
+    local
+      Boolean res;
+      Operator op;
+      DAE.Exp e,e1,e2;
+      Type t;
+      list<DAE.Exp> ae;
+      list<list<DAE.Exp>> matrix;
+    
+    case (_,false) then false;
+    case (DAE.ICONST(integer = _),_) then true;
+    case (DAE.RCONST(real = _),_) then true;
+    case (DAE.BCONST(bool = _),_) then true;
+    case (DAE.SCONST(string = _),_) then true;
+    case (DAE.ENUM_LITERAL(name = _),_) then true;
+
+    /* A bit torn if we should simplify ranges or not */
+    case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
+
+    case (DAE.ARRAY(array = ae),_) then isConstValueWorkList(ae,true);
+    
+    case (DAE.MATRIX(matrix = matrix),_)
+      equation
+        res = List.fold(matrix,isConstValueWorkList,true);
+      then res;
+    
+    case (DAE.TUPLE(PR = ae),_) then isConstWorkList(ae,true);
+    
+    else false;
+
+  end match;
+end isConstValueWork;
+
+public function isConstValue
+"Returns true if an expression is a constant value (not a composite operation)"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := isConstValueWork(inExp,true);
+end isConstValue;
 
 public function isConstWorkList
 "Returns true if a list of expressions is constant"
@@ -5018,25 +5068,20 @@ algorithm
   end match;
 end isConstWorkList;
 
-protected function isConstMatrixExpList
-"Helper to isConst. The input is the same as a DAE.MATRIX stores."
-  input list<tuple<DAE.Exp,Boolean>> inLst;
+public function isConstValueWorkList
+"Returns true if a list of expressions is a constant value"
+  input list<DAE.Exp> inExps;
+  input Boolean inBoolean;
   output Boolean outBoolean;
 algorithm
-  outBoolean := List.mapAllValueBool(inLst,isConstMatrixExp,true);
-end isConstMatrixExpList;
-
-protected function isConstMatrixExp
-"Helper to isConst. The input is the same as a DAE.MATRIX stores."
-  input tuple<DAE.Exp,Boolean> inTpl;
-  output Boolean outBoolean;
-  replaceable type TypeA subtypeof Any;
-protected
-  DAE.Exp exp;
-algorithm
-  exp := Util.tuple21(inTpl);
-  outBoolean := isConst(exp);
-end isConstMatrixExp;
+  outBoolean := match (inExps,inBoolean)
+    local
+      DAE.Exp e; list<DAE.Exp> exps;
+    case (_,false) then false;
+    case ({},_) then true;
+    case (e::exps,_) then isConstValueWorkList(exps,isConstValueWork(e,true));
+  end match;
+end isConstValueWorkList;
 
 public function isNotConst
 "function isNotConst

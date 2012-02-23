@@ -13061,10 +13061,10 @@ algorithm
      case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _) 
        equation
          (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
-         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, inPre, inInfo);  
+         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, inPre, inInfo);
          const = Types.constAnd(const1, const2);
-         exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);      
-         (exp,_) = ExpressionSimplify.simplify(exp);  
+         exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);
+         (exp,_) = ExpressionSimplify.simplify(exp);
          prop = DAE.PROP(otype,const);      
          warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre);      
        then
