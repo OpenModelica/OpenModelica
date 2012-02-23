@@ -1370,7 +1370,7 @@ algorithm
     local
       Absyn.Program p_1,p,newp,p1;
       list<Absyn.Class> aclasses;
-      String resstr,name,top_names_str,str,cmt,s1,res_str,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,causality,parallelism,variability,filenameprefix,file_dir,method;
+      String resstr,name,top_names_str,str,cmt,s1,res_str,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,causality,parallelism,variability,filenameprefix,file_dir,method,reductionMethod;
       Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident,crident;
       Absyn.Exp exp;
       SymbolTable st,newst;
@@ -1390,7 +1390,7 @@ algorithm
       list<DAE.Exp> simOptions;
       Absyn.ClassDef cdef;
       Env.Env env;
-      list<Absyn.Exp> exp_list;
+      list<Absyn.Exp> exp_list,exp_list2;
       Env.Cache cache;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
@@ -2332,37 +2332,55 @@ algorithm
         resstr = stringAppendList({"\"", resstr, "\""});
       then
         (resstr,st);
-   
+        
+    //builds model and writes results to buffer
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "writeToBuffer");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);      
+        _=Flags.enableDebug(Flags.WRITE_TO_BUFFER); 
+        (cache,simOptions) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
+        (_,_,_) = Ceval.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG());        
+      then
+        ("true",st); 
+      
      //starts label DAE algorithm        
     case (istmts, st)
       equation
-        matchApiFunction(istmts, "generateLabeledDAE");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);      
-        //modelpath = Absyn.crefToPath(cr);
-        //filenameprefix = Absyn.pathLastIdent(modelpath);
-        //env = buildEnvFromSymboltable(st);
-        Config.setGenerateLabeledDAE(true);
-        //(_,_,_,_,libs,file_dir,_) = SimCode.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),Absyn.FUNCTIONARGS({},{}));
-        //CevalScript.compileModel(filenameprefix,libs, file_dir,"","Explicit Euler");   
-        (cache,simOptions) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
-        //(_,_,_) = Ceval.ceval(cache,env,DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG());
-        (_,_,_) = Ceval.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG());        
+        matchApiFunction(istmts, "generateLabeledSimCode");
+        {Absyn.CREF(componentRef = cr),Absyn.STRING(value = reductionMethod), Absyn.ARRAY(arrayExp = exp_list)} = getApiFunctionArgs(istmts);      
+        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
+        Flags.setConfigString(Flags.REDUCTION_METHOD,reductionMethod); 
+        /*(cache,simOptions) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
+        (_,_,_) = Ceval.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG()); */
+        modelpath = Absyn.crefToPath(cr);
+        filenameprefix = Absyn.pathLastIdent(modelpath);
+        (env,st) = buildEnvFromSymboltable(st);  
+        (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
+        (_,_,_,_,libs,file_dir,_) = SimCode.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
+        Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list)},{}));
+        CevalScript.compileModel(filenameprefix,libs, file_dir,"",method);        
       then
         ("true",st);
-        
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "generateLabeledSimCode");        
+      then
+        ("No such reduction method!",st);        
      //starts remove terms from DAE algorithm        
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation         
-        matchApiFunction(istmts, "removeTerms");
-        {Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = exp_list),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+        matchApiFunction(istmts, "reduceTerms");
+        {Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = exp_list),Absyn.ARRAY(arrayExp = exp_list2)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         filenameprefix = Absyn.pathLastIdent(modelpath);
         (env,st) = buildEnvFromSymboltable(st);
-        Config.setRemoveTerms(true);
-        Config.setGenerateLabeledDAE(false);
+        Flags.setConfigBool(Flags.REDUCE_TERMS,true);
+        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,false);
+        _=Flags.disableDebug(Flags.WRITE_TO_BUFFER); 
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = Static.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
         (_,_,_,_,libs,file_dir,_) = SimCode.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
-        Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list),Absyn.INTEGER(n)},{}));
+        Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list),Absyn.ARRAY(exp_list2)},{}));
         CevalScript.compileModel(filenameprefix,libs, file_dir,"",method);   
       then
         ("true",st); 

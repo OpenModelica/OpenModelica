@@ -2173,6 +2173,7 @@ package Flags
   uniontype DebugFlag end DebugFlag;
 
   constant DebugFlag OPENMP;
+  constant DebugFlag WRITE_TO_BUFFER;
 
   function isSet
     input DebugFlag inFlag;

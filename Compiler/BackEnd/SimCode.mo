@@ -2186,7 +2186,7 @@ algorithm
       list<DAE.Statement> allDivStmts;
       list<BackendDAE.Variables> orderedVars;
       BackendDAE.Variables knownVars,vars;
-      list<BackendDAE.Var> varlst,varlst1,varlst2;
+      list<BackendDAE.Var> varlst,varlst1,varlst2,labellst;
       list<RecordDeclaration> recordDecls;
       
       list<JacobianMatrix> LinearMatrices;
@@ -2200,23 +2200,21 @@ algorithm
       
       list<DAE.Exp> lits;
       list<String> labels;
-      
-/*  //create simCode for labeled DAE  
+/*      
+  //create simCode for labeled DAE  
 		case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
-        //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-        true = Config.generateLabeledDAE();
+         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        true = Flags.getConfigBool(Flags.GENERATE_LABELED_SIMCODE);
+        _=Flags.enableDebug(Flags.WRITE_TO_BUFFER);
         cname = Absyn.pathStringNoQual(class_);
-         
-        (dlow,labels) = ReduceDAE.buildLabel(dlow);
-        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
-        //(dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
-        BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs)) = dlow2;
+       
+        (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
+        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs)) = dlow2;
         
-        residualEquations = createInitialResiduals(dlow2);
-        nres = listLength(residualEquations);
+        (residualEquations, numberOfInitialEquations, numberOfInitialResiduals) = createInitialResiduals(dlow2);
         
         extObjInfo = createExtObjInfo(shared);
         
@@ -2225,33 +2223,36 @@ algorithm
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
         sampleEquations = createSampleEquations(sampleEqns);
         n_h = listLength(helpVarInfo);
-        
+
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, labels, n_h, nres, fileDir,ifcpp);
-        
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialResiduals, fileDir,ifcpp);
+                
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
-        
+       
+        (allEquations,modelInfo) = ReduceDAE.buildLabels(allEquations,modelInfo,{},args);
+
         odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
         // Assertions and crap
         startValueEquations = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
         parameterEquations = createParameterEquations(shared,parameterEquations);
-        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
-        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
-        
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,({},algs));
+       
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
         makefileParams = createMakefileParams(includeDirs,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
-        
+      
         // replace div operator with div operator with check of Division by zero
         orderedVars = List.map(systs,BackendVariable.daeVars);
         knownVars = BackendVariable.daeKnVars(shared);
+        labellst = ReduceDAE.createBackendLabelVars(modelInfo);
         varlst = List.mapFlat(orderedVars,BackendDAEUtil.varList);
-        varlst1 = BackendDAEUtil.varList(knownVars);
-        varlst2 = listAppend(varlst,varlst1);
+        varlst1 = BackendDAEUtil.varList(knownVars);        
+        varlst2 = listAppend(varlst,varlst1);   
+        varlst2 = listAppend(varlst2,labellst); 
         vars = BackendDAEUtil.listVar(varlst2);
         (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
@@ -2263,21 +2264,20 @@ algorithm
         // add equations with only parameters as division expression
         allDivStmts = List.map(divLst,generateParameterDivisionbyZeroTestEqn);
         parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
-        
+     
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
         allEquations = List.map(allEquations,applyResidualReplacements);
 
         // generate jacobian or linear model matrices
-        // can be activeted by debug flag "+d=jacobian|linearization"        
-        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
-        modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
+        // can be activeted by debug flag "+d=jacobian|linearization"
+        LinearMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
-        simCode = SIMCODE(modelInfo,
+        simCode = SIMCODE(modelInfo,  
           {}, // Set by the traversal below... 
           recordDecls,
           externalFunctionIncludes,
@@ -2309,44 +2309,44 @@ algorithm
         // simCode = collectAllFiles(simCode);
         Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
-        simCode; 
+        simCode;
     //create simCode for removed terms     
     case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
-        //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-        true = Config.removeTerms();
+         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        true = Flags.getConfigBool(Flags.REDUCE_TERMS);
         cname = Absyn.pathStringNoQual(class_);
-         
-        dlow = ReduceDAE.removeTerms(dlow,args);
-        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
-        //(dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
-        BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs)) = dlow2;
+       
+        (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
+        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs)) = dlow2;
         
-        residualEquations = createInitialResiduals(dlow2);
-        nres = listLength(residualEquations);
+        (residualEquations, numberOfInitialEquations, numberOfInitialResiduals) = createInitialResiduals(dlow2);
+        
         extObjInfo = createExtObjInfo(shared);
+        
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
         sampleEquations = createSampleEquations(sampleEqns);
         n_h = listLength(helpVarInfo);
-        
+ 
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, nres, fileDir,ifcpp);
-        
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialResiduals, fileDir,ifcpp);
+                 
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
         
+        (allEquations,modelInfo)=ReduceDAE.replaceTerms(allEquations,modelInfo,args);
+               
         odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
         // Assertions and crap
         startValueEquations = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
         parameterEquations = createParameterEquations(shared,parameterEquations);
-        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
-        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,({},algs));
         
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
@@ -2376,17 +2376,16 @@ algorithm
         allEquations = List.map(allEquations,applyResidualReplacements);
 
         // generate jacobian or linear model matrices
-        // can be activeted by debug flag "+d=jacobian|linearization"        
-        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
-        modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
+        // can be activeted by debug flag "+d=jacobian|linearization"
+        LinearMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
-        simCode = SIMCODE(modelInfo, 
+        simCode = SIMCODE(modelInfo,  
           {}, // Set by the traversal below... 
-         recordDecls,
+          recordDecls,
           externalFunctionIncludes,
           allEquations,
           odeEquations,
@@ -2395,7 +2394,7 @@ algorithm
           startValueEquations,
           parameterEquations,
           removedEquations,
-          algorithmAndEquationAsserts, 
+          algorithmAndEquationAsserts,
           zeroCrossings,
           sampleConditions,
           sampleEquations,
@@ -2416,7 +2415,7 @@ algorithm
         // simCode = collectAllFiles(simCode);
         Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
-        simCode;  */
+        simCode; */
     case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
@@ -9214,7 +9213,7 @@ algorithm
   end match;
 end typesVar;
 
-protected function dlowvarToSimvar
+public function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
   input Option<BackendDAE.AliasVariables> optAliasVars;
   input BackendDAE.Variables inVars;

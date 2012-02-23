@@ -173,7 +173,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%dimension1(simCode)%>
     _dimZeroFunc= <%zerocrosslength(simCode)%>;
     //Number of residues
-    <%if modelInfo.labels then 
+    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then 
       <<     
       _dimResidues=<%numResidues(allEquations)%>;
       >>
@@ -258,7 +258,7 @@ match eq
   <<
    #include "Modelica.h"
    #include "<%modelname%>Algloop<%index%>.h"
-   <%if modelInfo.labels then '#include "Math/Implementation/ArrayOperations.h"'%>
+   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/Implementation/ArrayOperations.h"'%>
 
    
     
@@ -283,7 +283,7 @@ match eq
    			if(_residuals) delete [] _residuals;
     }
    <%algloopRHSCode(simCode,eq)%>
-   <%if modelInfo.labels then algloopResiduals(simCode,eq)%>
+   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode,eq)%>
    <%initAlgloop(simCode,eq)%>
    <%upateAlgloopNonLinear(simCode,eq)%>
    <%upateAlgloopLinear(simCode,eq)%>    
@@ -1343,18 +1343,28 @@ match eq
 		int* intUnknowns = new int[_dim[1]];
 		bool* boolUnknowns = new bool[_dim[2]];
 		giveVars(doubleUnknowns,intUnknowns,boolUnknowns);
-		//ublas::vector<double> x (_dim[0]);
-		//for (int i = 0; i < x.size (); i++)
-        //x (i) = *(_xd+i);
         ublas::vector<double> x=toVector(_dim[0],doubleUnknowns);
 		ublas::vector<double> b=toVector(_dim[0],_b.data());
-		b=ublas::prod(ublas::trans(A),x)-b;
-		//b*=-1;
-		//ublas::axpy_prod(ublas::trans(A),x,b,false); 		
+		b=ublas::prod(ublas::trans(A),x)-b; 		
 		if(doubleResiduals) std::copy(b.data().begin(), b.data().end(), doubleResiduals);
-		//if(doubleResiduals) memcpy(doubleResiduals,b->data(),_dim[0]*sizeof(double));
 	}
    >>  
+ case SES_NONLINEAR(__) then
+    <<
+    int <%modelname%>Algloop<%index%>::giveDimResiduals(int index)
+    {
+      if(index == 0) return _dim[0];
+      else if(index == 1) return _dim[1];
+      else if(index == 2) return _dim[2];
+    }
+   
+	void <%modelname%>Algloop<%index%>::giveResiduals(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
+	{		
+      	if(doubleResiduals)
+		memcpy(doubleResiduals,_residuals,_dim[0]*sizeof(double));
+	}
+   >>  
+ case SES_MIXED(__) then algloopResiduals(simCode,cont)
 end algloopResiduals;
 
 template isLinearCode(SimCode simCode,SimEqSystem eq)
@@ -1597,7 +1607,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
 	HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
 	<%writeoutput2(modelInfo)%>
-	<%if modelInfo.labels then
+	<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
 	  <<
 	  HistoryImplType::value_type_r v3(<%numResidues(allEquations)%>);	  
 	  <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
@@ -1621,6 +1631,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode)
   match eq
   case SES_LINEAR(__)
   case SES_NONLINEAR(__)
+  case SES_MIXED(__)
     then 
     let num = index
     match simCode
@@ -1654,14 +1665,13 @@ template writeoutput3(SimEqSystem eqn, SimCode simCode)
   >>
   case e as SES_LINEAR(__) then
   <<
-  <%(vars |> var hasindex myindex2 => writeoutputLinear(e.index,myindex2));separator=","%>
+  <%(vars |> var hasindex myindex2 => writeoutput4(e.index,myindex2));separator=","%>
   >>
-  case SES_NONLINEAR(__) then
+  case e as SES_NONLINEAR(__) then
   <<
+  <%(eqs |> eq hasindex myindex2 => writeoutput4(e.index,myindex2));separator=","%>
   >>
-  case SES_MIXED(__) then
-  <<
-  >>
+  case SES_MIXED(__) then writeoutput3(cont,simCode)
   case SES_WHEN(__) then
   <<
   >>
@@ -1670,12 +1680,12 @@ template writeoutput3(SimEqSystem eqn, SimCode simCode)
   >>
 end writeoutput3;
 
-template writeoutputLinear(Integer index, Integer myindex2)
+template writeoutput4(Integer index, Integer myindex2)
 ::=
  <<
  *(doubleResiduals<%index%>+<%myindex2%>)
  >>
-end writeoutputLinear;
+end writeoutput4;
 
 template generateHeaderInlcudeString(SimCode simCode)
  "Generates header part of simulation file."
@@ -1697,17 +1707,11 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <%algloopfilesInclude(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
   #include "DataExchange/Interfaces/IHistory.h"
   #include "HistoryImpl.h"
-  <%if modelInfo.labels then
+  <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
   #include "policies/BufferReaderWriter.h"
-
-  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;  
-
-
-  //typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>> HistoryImplType;  
   typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;  
-
 
   >>
   else
@@ -1749,7 +1753,7 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public  ISystemInitialization <%if modelInfo.labels then ',public IReduceDAE '%>,public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public  ISystemInitialization <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ',public IReduceDAE '%>,public SystemDefaultImplementation
   { 
   public: 
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings& globalSettings); 
@@ -1870,12 +1874,15 @@ void <%lastIdentOfPath(modelInfo.name)%>::setVars(const double* z, const INDEX i
 // Provide the right hand side (according to the index) 
 void <%lastIdentOfPath(modelInfo.name)%>::giveRHS(double* f, const INDEX index)
 {
-<%if modelInfo.labels then
+<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
 <<
-	/*<%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
+if(index == IContinous::ALL_RESIDUES)
+{
+	<%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
 	double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
-	for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];*/
-	SystemDefaultImplementation::giveRHS(f,index);
+	for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
+}
+else SystemDefaultImplementation::giveRHS(f,index);
 >>
 else
 <<
@@ -2115,19 +2122,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	/// (Re-) initialize the system of equations and bounded parameters
 	virtual void init(double ts,double te);
 	
-	<%if modelInfo.labels then 
+	<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then 
 	<<
 	// Returns the history object to query simulation results 
 	virtual IHistory* getHistory();
 	// Returns labels for a labeled DAE
 	virtual label_list_type getLabels();
 	//Sets all algebraic and state varibales for current time
-
 	virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
-
-	virtual void setVariables(const ublas::vector<double>& variables, const ublas::vector<double>& variables2);
-	//Gives back residues
-	virtual void giveResidues(double* f);
 
 	>>%>
 >>
@@ -2161,7 +2163,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual void update(const  IContinous::UPDATE command =IContinous::UNDEF_UPDATE);
 	/// Provide the right hand side (according to the index)
 	virtual void giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
-	<%if modelInfo.labels then
+	<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
 	<<
 	/// Provide dimensions of residuals for linear equation systems
 	virtual int giveDimResiduals(int index);	
@@ -2854,10 +2856,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   then
   <<
   <%arrayConstruct(modelInfo)%>
-  <%initVals(vars.constVars, simCode)%>
-  <%initVals(vars.intConstVars, simCode)%>
-  <%initVals(vars.boolConstVars, simCode)%>
-  <%initVals(vars.stringConstVars, simCode)%>
+  <%initVals(vars.constVars,simCode)%>
+  <%initVals(vars.intConstVars,simCode)%>
+  <%initVals(vars.boolConstVars,simCode)%>
+  <%initVals(vars.stringConstVars,simCode)%>
   <%initVals(vars.paramVars,simCode)%>
   <%initVals(vars.intParamVars,simCode)%>
   <%initVals(vars.boolParamVars,simCode)%>
@@ -3016,10 +3018,9 @@ case lin as SES_LINEAR(__) then
 >>
 case SES_NONLINEAR(__) then
 <<
+<%(eqs |> eq => '1');separator="+"%>
 >>
-case SES_MIXED(__) then
-<<
->>
+case SES_MIXED(__) then numResidues2(cont)
 case SES_WHEN(__) then
 <<
 >>
@@ -4356,6 +4357,24 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
     
    case CALL(path=IDENT(name="cos"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = '<%funName%>_rettype'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+
+   case CALL(path=IDENT(name="tan"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = '<%funName%>_rettype'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    
+   case CALL(path=IDENT(name="atan"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
@@ -6172,7 +6191,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
 end functionWhenReinitStatementThen;
 
 template LabeledDAE(list<String> labels, SimCode simCode) ::=
-if labels then match simCode
+if Flags.isSet(Flags.WRITE_TO_BUFFER) then match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
 <<
@@ -6182,23 +6201,26 @@ IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
    return _historyImpl;
 }
 
+<%if labels then
+<<
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
    label_list_type labels = tuple_list_of 
-   <%(labels |> label hasindex index0 => '(&<%label%>_1,<%index0%>,&<%label%>_2)') ;separator=" "%>;
+   <%(labels |> label hasindex index0 => '(<%index0%>,&<%label%>_1,&<%label%>_2)') ;separator=" "%>;
    return labels;
 }
+>>
+else
+<<
+label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
+{
+   return label_list_type();
+}
+>>%>
  
 void <%lastIdentOfPath(modelInfo.name)%>::setVariables(const ublas::vector<double>& variables,const ublas::vector<double>& variables2)
 {
    <%setVariables(modelInfo)%>
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::giveResidues(double* f)
-{
-	<%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
-	double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
-	for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];	
 }
 >>
 end LabeledDAE; 
@@ -6209,20 +6231,20 @@ match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__))
 then 
 <<
- <%{(vars.algVars |> SIMVAR(__) =>
-       '<%cref(name)%>=variables(<%index%>);'
+ <%{(vars.algVars |> SIMVAR(__) hasindex myindex =>
+       '<%cref(name)%>=variables(<%myindex%>);'
       ;separator="\n"),
-      (vars.intAlgVars |> SIMVAR(__) =>
-       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%index%>);'
+      (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
+       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%myindex%>);'
       ;separator="\n"),
-      (vars.boolAlgVars |> SIMVAR(__) =>
-       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%index%>);'
+      (vars.boolAlgVars |> SIMVAR(__) hasindex myindex =>
+       '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
       ;separator="\n"),
-      (vars.stateVars |> SIMVAR(__)  =>
-       '_z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%index%>);'
+      (vars.stateVars |> SIMVAR(__) hasindex myindex =>
+       '_z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
       ;separator="\n"),
-      (vars.derivativeVars |> SIMVAR(__) =>
-      '_zDot[<%index%>]=variables2(<%index%>);'
+      (vars.derivativeVars |> SIMVAR(__) hasindex myindex =>
+      '_zDot[<%index%>]=variables2(<%myindex%>);'
       ;separator="\n")}
      ;separator="\n"%>     
 >>

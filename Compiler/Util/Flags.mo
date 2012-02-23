@@ -339,6 +339,8 @@ constant DebugFlag SCODE_INST = DEBUG_FLAG(88, "scodeInst",
   "Enables experimental SCode instantiation phase.");
 constant DebugFlag DELAY_BREAK_LOOP = DEBUG_FLAG(89, "delayBreakLoop",
   "Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization.");
+constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(90, "writeToBuffer",
+  "Enables writing simulation results to buffer.");
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -433,7 +435,8 @@ constant list<DebugFlag> allDebugFlags = {
   PERF_TIMES,
   CHECK_SIMPLIFY,
   SCODE_INST,
-  DELAY_BREAK_LOOP
+  DELAY_BREAK_LOOP,
+  WRITE_TO_BUFFER
 };
 
 // CONFIGURATION FLAGS
@@ -578,12 +581,16 @@ constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(33,
 constant ConfigFlag ENV_CACHE = CONFIG_FLAG(34,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag GENERATE_LABELED_DAE = CONFIG_FLAG(35,
-  "generateLabeledDAE", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  "");
-constant ConfigFlag REMOVE_TERMS = CONFIG_FLAG(36,
-  "removeTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  "");
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(35,
+  "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Turns on labeled SimCode generation for reduction algorithms.");
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(36,
+  "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "Turns on reducing terms for reduction algorithms.");
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(37, "reductionMethod",
+  NONE(), EXTERNAL(), STRING_FLAG("deletion"),
+  SOME(STRING_OPTION({"deletion","substitution","linearization"})),
+    "Sets the reduction method to be used.");
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -623,8 +630,9 @@ constant list<ConfigFlag> allConfigFlags = {
   UNIT_CHECKING,
   TRANSLATE_DAE_STRING,
   ENV_CACHE,
-  GENERATE_LABELED_DAE,
-  REMOVE_TERMS
+  GENERATE_LABELED_SIMCODE,
+  REDUCE_TERMS,
+  REDUCTION_METHOD
 };
 
 public function new
