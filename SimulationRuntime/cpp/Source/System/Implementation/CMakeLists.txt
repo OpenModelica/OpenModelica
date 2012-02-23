@@ -15,6 +15,7 @@ install (FILES ../Interfaces/IAlgLoop.h
 				../Interfaces/IDataExchange.h 
 				../Interfaces/IEvent.h
 				../Interfaces/ISystemProperties.h
+				../Interfaces/ISystemIntialization.h
 			DESTINATION include/omc/cpp/System/Interfaces)
 
 

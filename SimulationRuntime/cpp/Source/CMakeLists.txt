@@ -18,27 +18,30 @@ SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release
 elseif(MINGW)
 SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw)
 endif()
-
 ENDIF( WIN32 )
 
-
-
-message(STATUS ${CVODES_LIB})
-
-SET(Boost_USE_STATIC_LIBS OFF)
-SET(Boost_USE_MULTITHREADED ON)
-SET(Boost_USE_STATIC_RUNTIME OFF)
 SET(MODELICA_MODEL "ModelicaSystem")
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
 SET(USE_SUNDIALS ON)
 SET(INSTALL_OMDEV_LIBS ON)
 
-
+# Boost
+SET(Boost_USE_STATIC_LIBS OFF)
+SET(Boost_USE_MULTITHREADED ON)
+SET(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
+# Lapack and Blas
 find_package( BLAS )
 find_package( LAPACK  )
-
+if(MSVC)
+	#workaround  because cmake does not find the lapack libraries for Visual Studio 10
+	SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
+	SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
+	SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
+endif()
+message(STATUS "Lapack Libraries")
+message(STATUS ${LAPACK_LIBRARIES})
 # Sundials solvers
 if(USE_SUNDIALS)
 
@@ -55,6 +58,8 @@ find_library(SUNDIALS_IDAS_LIB "sundials_idas"
 		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
 set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB})
+
+message(STATUS "Sundials Libraries:")
 message(STATUS ${SUNDIALS_LIBS})
 add_definitions(-DPMC_USE_SUNDIALS)
 endif()
