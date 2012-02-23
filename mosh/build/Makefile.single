@@ -8,7 +8,7 @@
 OMC=$(MOSHHOME)/../Compiler/omc
 CC=gcc
 
-CRTHOME=$(MOSHHOME)/../c_runtime
+CRTHOME=$(MOSHHOME)/../SimulationRuntime/c
 
 #CFLAGS= -W -Wall -ansi -pedantic-errors -Werror -g -I$(CRTHOME) -I.
 CFLAGS= -O3 -finline-functions -I$(CRTHOME) -I.
