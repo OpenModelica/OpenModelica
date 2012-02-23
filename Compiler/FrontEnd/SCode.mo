@@ -3814,5 +3814,23 @@ algorithm
   outElement := COMPONENT(name, pf, attr, ty, mod, cmt, NONE(), info);
 end removeComponentCondition;
   
+public function isInnerComponent
+  "Returns true if the given element is an element with the inner prefix,
+   otherwise false."
+  input Element inElement;
+  output Boolean outIsInner;
+algorithm
+  outIsInner := match(inElement)
+    local
+      Absyn.InnerOuter io;
+
+    case COMPONENT(prefixes = PREFIXES(innerOuter = io))
+      then Absyn.isInner(io);
+
+    else false;
+
+  end match;
+end isInnerComponent;
+
 end SCode;
 

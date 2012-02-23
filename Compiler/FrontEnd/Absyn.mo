@@ -2810,6 +2810,43 @@ algorithm
   end matchcontinue;
 end stringListPath;
 
+public function stringListPathReversed
+  "Converts a list of strings into a qualified path, in reverse order.
+   Ex: {'a', 'b', 'c'} => c.b.a"
+  input list<String> inStrings;
+  output Path outPath;
+protected
+  String id;
+  list<String> rest_str;
+  Path path;
+algorithm
+  id :: rest_str := inStrings;
+  path := IDENT(id);
+  outPath := stringListPathReversed2(rest_str, path);
+end stringListPathReversed;
+
+protected function stringListPathReversed2
+  input list<String> inStrings;
+  input Path inAccumPath;
+  output Path outPath;
+algorithm
+  outPath := match(inStrings, inAccumPath)
+    local
+      String id;
+      list<String> rest_str;
+      Path path;
+
+    case ({}, _) then inAccumPath;
+
+    case (id :: rest_str, _)
+      equation
+        path = QUALIFIED(id, inAccumPath);
+      then
+        stringListPathReversed2(rest_str, path);
+
+  end match;
+end stringListPathReversed2;
+
 public function pathTwoLastIdents "Returns the two last idents of a path"
   input Path p;
   output Path twoLast;

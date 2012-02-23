@@ -4572,7 +4572,7 @@ end threadTuple_tail;
 
 public function thread3Tuple
   "Takes three lists and threads (interleaves) the arguments into a list of tuples
-   consisting of the two element types."
+   consisting of the three element types."
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   input list<ElementType3> inList3;
@@ -4606,8 +4606,8 @@ algorithm
 end thread3Tuple_tail;
 
 public function thread4Tuple
-  "Takes three lists and threads (interleaves) the arguments into a list of tuples
-   consisting of the two element types."
+  "Takes four lists and threads (interleaves) the arguments into a list of tuples
+   consisting of the four element types."
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   input list<ElementType3> inList3;
@@ -4618,7 +4618,7 @@ algorithm
 end thread4Tuple;
 
 protected function thread4Tuple_tail
-  "Tail recursive implementation of thread3Tuple."
+  "Tail recursive implementation of thread4Tuple."
   input list<ElementType1> inList1;
   input list<ElementType2> inList2;
   input list<ElementType3> inList3;

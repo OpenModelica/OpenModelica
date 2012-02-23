@@ -2186,5 +2186,30 @@ algorithm
   end match;
 end replaceWholeDimSubscript2;
 
+public function splitCrefLast
+  "Splits a cref at the end, e.g. a.b.c.d => {a.b.c, d}."
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outPrefixCref;
+  output DAE.ComponentRef outLastCref;
+algorithm
+  (outPrefixCref, outLastCref) := match(inCref)
+    local
+      DAE.Ident id;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef prefix, last;
+      
+    case DAE.CREF_QUAL(id, ty, subs, last as DAE.CREF_IDENT(ident = _))
+      then (DAE.CREF_IDENT(id, ty, subs), last);
+
+    case DAE.CREF_QUAL(id, ty, subs, last)
+      equation
+        (prefix, last) = splitCrefLast(last);
+      then
+        (DAE.CREF_QUAL(id, ty, subs, prefix), last);
+
+  end match;
+end splitCrefLast;
+
 end ComponentReference;
 
