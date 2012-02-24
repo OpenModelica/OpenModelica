@@ -4,7 +4,7 @@
 # Adrian Pop [adrpo@ida.liu.se] 2008-10-02
 # Adeel Asghar [adrpo@ida.liu.se] 2011-03-05
 
-QT += network core gui xml
+QT += network core gui xml svg
 
 TARGET = OMNotebook
 TEMPLATE = app
@@ -61,7 +61,8 @@ SOURCES += \
     ../OMSketch/Draw_Ellipse.cpp \
     ../OMSketch/Draw_Arrow.cpp \
     ../OMSketch/Draw_Arc.cpp \
-    ../OMSketch/CustomDailog.cpp
+    ../OMSketch/CustomDailog.cpp \
+    ../../OMEdit/OMEditGUI/StringHandler.cpp
 
 HEADERS += \
     omc_communication.h \
@@ -140,7 +141,8 @@ HEADERS += \
     ../OMSketch/Draw_Arrow.h \
     ../OMSketch/Draw_Arc.h \
     ../OMSketch/CustomDialog.h \
-    ../OMSketch/basic.h
+    ../OMSketch/basic.h \
+    ../../OMEdit/OMEditGUI/StringHandler.h
 
 FORMS += ImageSizeDlg.ui \
     OtherDlg.ui \
@@ -155,14 +157,20 @@ win32 {
   CORBAINC = $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
   CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 -lomniORB414_rt -lomnithread34_rt
   USE_CORBA = USE_OMNIORB
+  PLOTLIBS = -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwt5 \
+             -L../../OMPlot/bin -lOMPlot
+  PLOTINC = $$(OMDEV)/lib/qwt-5.2.1-mingw/include \
+            ../../OMPlot/OMPlotGUI
 } else {
   include(OMNotebook.config)
 }
 #---------End OMNIorb
 
 DEFINES += $${USE_CORBA}
-LIBS += $${CORBALIBS}
+LIBS += $${CORBALIBS} \
+        $${PLOTLIBS}
 INCLUDEPATH += $${CORBAINC} \
+               $${PLOTINC} \
                ../OMSketch \
                ../../
 
@@ -181,5 +189,3 @@ MOC_DIR = ../generatedfiles/moc
 RCC_DIR = ../generatedfiles/rcc
 
 CONFIG += warn_off
-
-

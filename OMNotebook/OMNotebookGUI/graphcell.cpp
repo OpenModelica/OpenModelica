@@ -75,6 +75,9 @@
 #include "indent.h"
 
 #include "evalthread.h"
+#include "../../OMEdit/OMEditGUI/StringHandler.h"
+
+using namespace OMPlot;
 
 namespace IAEX {
   /*!
@@ -504,7 +507,7 @@ namespace IAEX {
   */
   GraphCell::GraphCell(Document *doc, QWidget *parent) : 
    Cell(parent), evaluated_(false), closed_(true), delegate_(0), 
-   oldHeight_( 0 ), document_(doc)
+    oldHeight_( 0 ), document_(doc), mpPlotWindow(0)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -520,6 +523,7 @@ namespace IAEX {
 
     createGraphCell();
     createOutputCell();
+    createPlotWindow();
 
     connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
 
@@ -555,6 +559,7 @@ namespace IAEX {
         break;
     }
 
+    delete mpPlotWindow;
     delete input_;
     delete output_;
     if(imageFile)
@@ -676,6 +681,14 @@ namespace IAEX {
       Qt::LinksAccessibleByMouse|
       Qt::LinksAccessibleByKeyboard);
     output_->hide();
+  }
+
+  void GraphCell::createPlotWindow()
+  {
+      mpPlotWindow = new PlotWindow();
+      mpPlotWindow->setMinimumHeight(400);
+      layout_->addWidget( mpPlotWindow, 3, 1 /*, Qt::AlignHCenter*/);
+      mpPlotWindow->hide();
   }
 
   bool MyTextEdit2::lessIndented(QString s)
@@ -1238,6 +1251,11 @@ namespace IAEX {
       height += outHeight;
     }
 
+    if(mpPlotWindow && mpPlotWindow->isVisible())
+    {
+      height += mpPlotWindow->height();
+    }
+
     setHeight( height );
     emit textChanged();
 
@@ -1308,7 +1326,26 @@ namespace IAEX {
         return true;
       else
         return false;
+    }
+  }
 
+  QString GraphCell::getQtPlot(QString text)
+  {
+    QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
+
+    if( text.isNull() )
+    {
+      if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
+        return exp.cap(0);
+      else
+        return "";
+    }
+    else
+    {
+      if( 0 <= text.indexOf( exp, 0 ) )
+        return exp.cap(0);
+      else
+        return "";
     }
   }
 
@@ -1336,6 +1373,26 @@ namespace IAEX {
       else
         return false;
 
+    }
+  }
+
+  void GraphCell::plotVariables(QStringList lst)
+  {
+    try
+    {
+      // clear any curves if we have.
+      foreach (PlotCurve *pPlotCurve, mpPlotWindow->getPlot()->getPlotCurvesList())
+      {
+        mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
+        pPlotCurve->detach();
+      }
+      mpPlotWindow->initializePlot(lst);
+      mpPlotWindow->fitInView();
+      mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+    }
+    catch (PlotException &e)
+    {
+      QMessageBox::warning( 0, "Error", e.what(), "OK" );
     }
   }
 
@@ -1417,8 +1474,19 @@ namespace IAEX {
 
       if(newPlot)
       {
+        mpPlotWindow->show();
         setClosed(false);
-      } 
+        // make the plot command silent i.e don't pop-up the OMPlot window.
+        QString plotCmd = getQtPlot(input_->toPlainText());
+        QString plotArgs = plotCmd.mid(plotCmd.indexOf("(")+1);
+        plotArgs = plotArgs.left(plotArgs.lastIndexOf(")"));
+        QString newPlotCmd = plotCmd.left(plotCmd.lastIndexOf(")"));
+        if (plotArgs.trimmed().length() > 0)
+          newPlotCmd = newPlotCmd.append(",silent=true)");
+        else
+          newPlotCmd = newPlotCmd.append("silent=true)");
+        expr.replace(plotCmd, newPlotCmd, Qt::CaseInsensitive);
+      }
 
       // 2006-02-02 AF, Added try-catch
       QString res, error;
@@ -1441,7 +1509,7 @@ namespace IAEX {
           //       they appear in the notebook, otherwise a simulate command
           //       might finish later than a plot!
           EvalThread* et = new EvalThread(getDelegate(), expr);
-          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));          
+          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
           et->start();
           if (!newPlot) { et->wait(); }
         }
@@ -1467,8 +1535,32 @@ namespace IAEX {
     QString error = et->getError();
 
     delete sender();
-
     guard->unlock();
+    // if the result is one the plot commands output.
+    QStringList resLst = StringHandler::unparseStrings(res);
+    if (resLst.size() > 0)
+    {
+      if (resLst.at(0).compare("_omc_PlotResult") == 0)
+      {
+        plotVariables(resLst);
+        res = tr("");
+      }
+    }
+    // if user has mixed plot command with other OMC commands.
+    // we must extract the plot command result.
+    else if (res.contains("_omc_PlotResult"))
+    {
+      QString plotResult = res.mid(res.indexOf("_omc_PlotResult"));
+      plotResult.prepend("{\"");
+      QStringList resLst = StringHandler::unparseStrings(plotResult);
+      if (resLst.size() > 0)
+      {
+        if (resLst.at(0).compare("_omc_PlotResult") == 0)
+        {
+          plotVariables(resLst);
+        }
+      }
+    }
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
     {

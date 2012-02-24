@@ -52,6 +52,7 @@
 //#include "highlighter.h"
 #include "document.h"
 //#include <QToolBar>
+#include "PlotWindow.h"
 
 class IndentationState;
 
@@ -87,8 +88,10 @@ namespace IAEX
     virtual bool isEditable();
     virtual bool isEvaluated();              // Added 2005-11-23 AF
     virtual bool isQtPlot(QString text = QString::null);
+    virtual QString getQtPlot(QString text = QString::null);
     virtual bool isVisualize(QString text = QString::null);
 
+    void plotVariables(QStringList lst);
 
   signals:
     void heightChanged();
@@ -144,8 +147,8 @@ namespace IAEX
   private:
     void createGraphCell();
     void createOutputCell();
+    void createPlotWindow();
 
-    void createCompoundWidget();
     void createChapterCounter();
     void exceptionInEval(exception &e);          // Added 2006-02-02 AF
     void setOutputStyle();                // Added 2006-04-21 AF
@@ -166,6 +169,7 @@ namespace IAEX
     Document *document_;
 
   public:
+    OMPlot::PlotWindow *mpPlotWindow;
     QPushButton* variableButton;
     QTemporaryFile* imageFile;
   };
