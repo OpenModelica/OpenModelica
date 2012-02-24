@@ -5290,6 +5290,18 @@ algorithm
   end matchcontinue;
 end isExpReal;
 
+public function isConstZeroLength
+  "Return true if expression has zero-dimension"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    case DAE.ARRAY(array={}) then true;
+    case DAE.MATRIX(matrix={}) then true;
+    else false;
+  end match;
+end isConstZeroLength;
+
 public function isConstFalse
 "Return true if expression is false"
   input DAE.Exp inExp;

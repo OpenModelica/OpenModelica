@@ -579,6 +579,8 @@ public constant Message INVALID_STREAM_CONNECTOR = MESSAGE(216, TRANSLATION(), E
   "Invalid stream connector %s: %s\n");
 public constant Message CONDITION_TYPE_ERROR = MESSAGE(217, TRANSLATION(), ERROR(),
   "Type mismatch in condition '%s' of component %s. Expected a Boolean expression, but got an expression of type %s");
+public constant Message SIMPLIFY_CONSTANT_ERROR = MESSAGE(218, TRANSLATION(), NOTIFICATION(),
+  "The compiler tried to perform constant folding on expression %s. Please report this bug to the developers and we will fix it as soon as possible (using the +t compiler option if possible).");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

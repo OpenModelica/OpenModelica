@@ -193,7 +193,6 @@ algorithm
     case (DAE.MUL(ty = _)) then " * ";
     case (DAE.DIV(ty = _)) then " / ";
     case (DAE.POW(ty = _)) then " ^ ";
-    case (DAE.EQUAL(ty = _)) then " = ";
     case (DAE.ADD_ARR(ty = _)) then " + ";
     case (DAE.SUB_ARR(ty = _)) then " - ";
     case (DAE.MUL_ARR(ty = _)) then " * ";
@@ -209,6 +208,7 @@ algorithm
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " * ";
     case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / ";
     case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / ";
+    else " <UNKNOWN_SYMBOL> ";
   end match;
 end binopSymbol1;
 

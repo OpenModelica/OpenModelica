@@ -276,14 +276,14 @@ algorithm
         exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
       then ((simplifyReduction(exp1,b2),true));
 
+      // Look for things we really *should* have simplified, but only if we did not modify anything!
       /*
-      // Look for things we really *should* have simplified
-    case ((e,_))
+    case ((e,false))
       equation
         true = Expression.isConst(e);
         false = Expression.isConstValue(e);
         str = ExpressionDump.printExpStr(e);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
+        Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, Absyn.dummyInfo);
       then fail();
       */
 
@@ -1329,7 +1329,7 @@ algorithm
     case (e1,DAE.POW_ARR2(ty = _),e2)
       equation
         tp = Expression.typeof(e1);
-        a1 = simplifyVectorBinary(e1, DAE.POW(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.POW_ARR2(tp), e2);
       then a1;
 
     // v1 - -v2 => v1 + v2
@@ -1472,6 +1472,22 @@ algorithm
         a1 = simplifyMatrixBinary(e1, op, e2);
         // print("simplifyMatrixBinary: " +& ExpressionDump.printExpStr(e1) +& "=>" +& ExpressionDump.printExpStr(a1) +& "\n");
       then a1;
+
+    case (e1,op as DAE.MUL_ARR(ty = _),e2)
+      equation
+        a1 = simplifyMatrixBinary(e1, op, e2);
+      then a1;
+
+    case (e1,op as DAE.DIV_ARR(ty = _),e2)
+      equation
+        a1 = simplifyMatrixBinary(e1, op, e2);
+      then a1;
+
+    case (e1,op as DAE.POW_ARR2(ty = _),e2)
+      equation
+        a1 = simplifyMatrixBinary(e1, op, e2);
+      then a1;
+
   end matchcontinue;
 end simplifyBinaryArray;
 
@@ -3165,6 +3181,12 @@ algorithm
         DAE.RCONST(re3);
     
     // Relation operations
+    case(DAE.LESS(ty=_),DAE.BCONST(false),DAE.BCONST(true))
+      then DAE.BCONST(true);
+
+    case(DAE.LESS(ty=_),DAE.BCONST(_),DAE.BCONST(_))
+      then DAE.BCONST(false);
+
     case(DAE.LESS(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3173,6 +3195,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.LESSEQ(ty=_),DAE.BCONST(true),DAE.BCONST(false))
+      then DAE.BCONST(false);
+
+    case(DAE.LESSEQ(ty=_),DAE.BCONST(_),DAE.BCONST(_))
+      then DAE.BCONST(true);
+
     case(DAE.LESSEQ(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3181,6 +3209,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.GREATER(ty=_),DAE.BCONST(true),DAE.BCONST(false))
+      then DAE.BCONST(true);
+
+    case(DAE.GREATER(ty=_),DAE.BCONST(_),DAE.BCONST(_))
+      then DAE.BCONST(false);
+
     case(DAE.GREATER(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3189,6 +3223,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.GREATEREQ(ty=_),DAE.BCONST(false),DAE.BCONST(true))
+      then DAE.BCONST(false);
+
+    case(DAE.GREATEREQ(ty=_),DAE.BCONST(_),DAE.BCONST(_))
+      then DAE.BCONST(true);
+
     case(DAE.GREATEREQ(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3197,6 +3237,18 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.EQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
+      equation
+        b = boolEq(b1,b2);
+      then 
+        DAE.BCONST(b);
+
+    case(DAE.EQUAL(ty=_),DAE.SCONST(s1),DAE.SCONST(s2)) 
+      equation
+        b = stringEqual(s1,s2);
+      then 
+        DAE.BCONST(b);
+
     case(DAE.EQUAL(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3205,6 +3257,18 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.NEQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
+      equation
+        b = not boolEq(b1,b2);
+      then 
+        DAE.BCONST(b);
+
+    case(DAE.NEQUAL(ty=_),DAE.SCONST(s1),DAE.SCONST(s2)) 
+      equation
+        b = not stringEqual(s1,s2);
+      then 
+        DAE.BCONST(b);
+
     case(DAE.NEQUAL(ty=_),exp1,exp2) 
       equation
         v1 = Expression.getRealConst(exp1);
@@ -3466,17 +3530,24 @@ algorithm
       Boolean b;
       Real r,r1,r2,r3;
     
-    // constants   
+    // constants
     case (oper,e1,e2)
       equation
         true = Expression.isConst(e1);
         true = Expression.isConst(e2);
-        //print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& ExpressionDump.binopSymbol1(oper) +& ExpressionDump.printExpStr(e2) +& "\n");
+        // print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& ExpressionDump.binopSymbol1(oper) +& ExpressionDump.printExpStr(e2) +& "\n");
         e3 = simplifyBinaryConst(oper, e1, e2);
-        //print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& "," +& ExpressionDump.printExpStr(e2) +& " => " +& ExpressionDump.printExpStr(e3) +& "\n");
+        // print("simplifyBinaryConst " +& ExpressionDump.printExpStr(e1) +& "," +& ExpressionDump.printExpStr(e2) +& " => " +& ExpressionDump.printExpStr(e3) +& "\n");
       then
         e3;
     
+    // Look for empty arrays
+    case (oper,e1,e2)
+      equation
+        true = Expression.isConstZeroLength(e1) or Expression.isConstZeroLength(e2);
+        checkZeroLengthArrayOp(oper);
+      then e1;
+
     // a^e*b^e => (a*b)^e
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = ty2),exp2 = e2),DAE.BINARY(exp1 = e3,operator = DAE.POW(ty = _),exp2 = e4))
       equation
@@ -4067,6 +4138,12 @@ algorithm outop := match(inop)
       b = DAEUtil.expTypeArray(ty2);
       op = Util.if_(b, DAE.MUL_ARR(ty2), DAE.MUL(ty2));
     then op;
+  case DAE.POW_ARR2(ty=ty1)
+    equation
+      ty2 = Expression.unliftArray(ty1);
+      b = DAEUtil.expTypeArray(ty2);
+      op = Util.if_(b, DAE.POW_ARR2(ty2), DAE.POW(ty2));
+    then op;
 end match;
 end removeOperatorDimension;
 
@@ -4287,6 +4364,26 @@ algorithm
       then simplifyList(rest_expl,exp::acc);
   end match;
 end simplifyList;
+
+protected function checkZeroLengthArrayOp
+  "If this succeeds, and either argument to the operation is empty, the whole operation is empty"
+  input DAE.Operator op;
+algorithm
+  _ := match op
+    case DAE.ADD_ARR(ty=_) then ();
+    case DAE.SUB_ARR(ty=_) then ();
+    case DAE.MUL_ARR(ty=_) then ();
+    case DAE.DIV_ARR(ty=_) then ();
+    case DAE.POW_ARR(ty=_) then ();
+    case DAE.POW_ARR2(ty=_) then ();
+    case DAE.MUL_ARRAY_SCALAR(ty=_) then ();
+    case DAE.ADD_ARRAY_SCALAR(ty=_) then ();
+    case DAE.DIV_ARRAY_SCALAR(ty=_) then ();
+    case DAE.SUB_SCALAR_ARRAY(ty=_) then ();
+    case DAE.DIV_SCALAR_ARRAY(ty=_) then ();
+    case DAE.MUL_MATRIX_PRODUCT(ty=_) then ();
+  end match;
+end checkZeroLengthArrayOp;
 
 end ExpressionSimplify;
 
