@@ -681,6 +681,7 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   assert(1024>len);
   snprintf(buf,len,fmt,d);
   buf[1023] = 0;
+  return buf;
 }
 
 }
