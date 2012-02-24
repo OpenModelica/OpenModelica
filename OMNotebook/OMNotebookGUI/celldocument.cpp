@@ -1051,7 +1051,7 @@ namespace IAEX
       if( filename_.isEmpty() )
       {
         // replace '\' with '/' in the link path
-        QString linkpath = link->toLocalFile();
+        QString linkpath = link->path();
         linkpath.replace( "\\", "/" );
 
         QDir dir;
@@ -1060,7 +1060,7 @@ namespace IAEX
       else
       {
         // replace '\' with '/' in the link path
-        QString linkpath = link->toLocalFile();
+        QString linkpath = link->path();
         linkpath.replace( "\\", "/" );
 
         executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
