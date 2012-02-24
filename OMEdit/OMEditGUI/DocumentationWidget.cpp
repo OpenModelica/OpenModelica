@@ -261,7 +261,7 @@ void DocumentationViewer::processLinkClick(QUrl url)
     }
 
     // if the user has clicked on some Modelica Links like Modelica://
-    else if (url.toString().startsWith("Modelica"))
+    else if (url.toString().startsWith("Modelica", Qt::CaseInsensitive))
     {
         // remove Modelica:// from link
         QString className;
