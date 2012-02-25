@@ -1342,6 +1342,32 @@ algorithm
   end match;
 end applyOption;
 
+public function applyOption1 "Like applyOption but takes an additional argument"
+  input Option<Type_a> ao;
+  input Func func;
+  input Type_b b;
+  output Option<Type_c> co;
+  partial function Func
+    input Type_a a;
+    input Type_b b;
+    output Type_c c;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  co := match (ao,func,b)
+    local
+      Type_a a;
+      Type_c c;
+    case (NONE(),_,_) then NONE();
+    case (SOME(a),func,b)
+      equation
+        c = func(a,b);
+      then SOME(c);
+  end match;
+end applyOption1;
+
 public function applyOptionOrDefault
   "Takes an optional value, a function and an extra value. If the optional value
    is SOME, applies the function on that value and returns the result.

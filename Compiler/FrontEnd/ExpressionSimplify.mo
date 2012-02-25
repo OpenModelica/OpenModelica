@@ -536,6 +536,8 @@ algorithm
       Type t,tp_1,tp1,tp2,t1,t2;
       DAE.Exp res,e1,e2,cond,e1_1,e2_1,e;
       list<list<DAE.Exp>> mexps,mexps_1;
+      DAE.Dimensions dims1,dims2;
+      Option<DAE.Exp> eo;
     
     // Real -> Real
     case(DAE.RCONST(r),DAE.T_REAL(varLst = _)) then DAE.RCONST(r);
@@ -567,6 +569,15 @@ algorithm
         exps_1 = List.map1(exps, addCast, tp_1);
       then
         DAE.ARRAY(tp,b,exps_1);
+
+    // cast of array
+    case (DAE.RANGE(ty=DAE.T_INTEGER(source=_),exp=e1,expOption=eo,range=e2),tp1 as DAE.T_ARRAY(ty=tp2 as DAE.T_REAL(source=_)))
+      equation
+        e1 = addCast(e1,tp2);
+        e2 = addCast(e2,tp2);
+        eo = Util.applyOption1(eo, addCast, tp2);
+      then
+        DAE.RANGE(tp2,e1,eo,e2);
     
     // simplify cast in an if expression
     case (DAE.IFEXP(cond,e1,e2),tp) 
