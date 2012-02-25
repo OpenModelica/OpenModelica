@@ -208,6 +208,10 @@ algorithm
       then
         ((e,true));
 
+    // Subscripting without subscripting is the identity function
+    case ((DAE.ASUB(exp = e,sub = {}),_))
+      then ((e,true));
+
     // unary operations
     case (((exp as DAE.UNARY(operator = op,exp = e1)),_)) 
       equation
