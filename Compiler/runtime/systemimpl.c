@@ -475,6 +475,36 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
   return res;
 }
 
+void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
+{
+  int length=strlen(str);
+  int start_pos = 0;
+  int end_pos = length - 1;
+  char* res;
+  if (length == 0) {
+    return mk_scon("");
+  }
+  while(start_pos < end_pos){
+    if(str[start_pos] == char_to_be_trimmed)
+      start_pos++;
+    if(str[end_pos] == char_to_be_trimmed)
+      end_pos--;
+    if(str[start_pos] != char_to_be_trimmed && str[end_pos] != char_to_be_trimmed)
+      break;
+  }
+  if(end_pos >= start_pos) {
+    void *rmlRes;
+    res= (char*)malloc(end_pos - start_pos +2);
+    strncpy(res,&str[start_pos],end_pos - start_pos+1);
+    res[end_pos - start_pos+1] = '\0';
+    rmlRes = (void*) mk_scon(res);
+    free(res);
+    return rmlRes;
+  } else {
+    return mk_scon("");
+  }
+}
+
 const char* SystemImpl__basename(const char *str)
 {
   const char* res = NULL;

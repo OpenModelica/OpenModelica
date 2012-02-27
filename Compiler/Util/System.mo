@@ -47,7 +47,7 @@ public function removeFirstAndLastChar
 end removeFirstAndLastChar;
 
 public function trim
-"removes chars in charsToRemove from inString"
+"removes chars in charsToRemove from begin and end of inString"
   input String inString;
   input String charsToRemove;
   output String outString;

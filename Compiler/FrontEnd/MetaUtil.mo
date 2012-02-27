@@ -126,109 +126,6 @@ algorithm
   end matchcontinue;
 end getTypeFromProp;
 
-/*
-public function typeMatching
-  input DAE.Type t;
-  input list<DAE.Properties> propList;
-  output Boolean outBool;
-algorithm
-  outBool :=
-  matchcontinue (t,propList)
-    local
-      Boolean b;
-      DAE.Type tLocal;
-      list<DAE.Properties> restList;
-    case (_,{}) then true;
-    case (tLocal as DAE.T_INTEGER(varLst = _),DAE.PROP(DAE.T_INTEGER(varLst = _),_) :: restList)
-      equation
-        b = typeMatching(tLocal,restList);
-      then b;
-    case (tLocal as DAE.T_REAL(varLst = _),DAE.PROP(DAE.T_REAL(varLst = _),_) :: restList)
-      equation
-        b = typeMatching(tLocal,restList);
-      then b;
-    case (tLocal as DAE.T_STRING(varLst = _),DAE.PROP(DAE.T_STRING(varLst = _),_) :: restList)
-     equation
-        b = typeMatching(tLocal,restList);
-      then b;
-    case (tLocal as DAE.T_BOOL(varLst = _),DAE.PROP(DAE.T_BOOL(varLst = _),_) :: restList)
-     equation
-        b = typeMatching(tLocal,restList);
-      then b;
-    case (tLocal as (DAE.T_UNKNOWN(),_),DAE.PROP((DAE.T_UNKNOWN(),_),_) :: restList)
-     equation
-        b = typeMatching(tLocal,restList);
-      then b;
-    case (tLocal as (DAE.T_COMPLEX(ClassInf.RECORD(s1),_,_),_),
-      DAE.PROP((DAE.T_COMPLEX(ClassInf.RECORD(s2),_,_),_),_) :: restList)
-      local String s1,s2;
-      equation
-        true = (s1 ==& s2);
-        b = typeMatching(tLocal,restList);
-      then b;
-
-    case (tLocal as (DAE.T_METALIST(t1),_),
-      DAE.PROP((DAE.T_METALIST(t2),_),_) :: restList)
-      local String s1,s2;
-      equation
-        true = (s1 ==& s2);
-        b = typeMatching(tLocal,restList);
-      then b;
-
-    case (_,_) then false;
-  end matchcontinue;
-end typeMatching;  */
-/*
-public function createMatchcontinueResultVars "function: createMatchcontinueResultVars"
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.Exp> refList;
-  input Integer num;
-  input list<Absyn.ElementItem> accDeclList;
-  input list<Absyn.Exp> accVarList;
-  output Env.Cache outCache;
-  output list<Absyn.ElementItem> outDecls;
-  output list<Absyn.Exp> outVarList;
-algorithm
-  (outCache,outDecls,outVarList) :=
-  matchcontinue (cache,env,refList,num)
-    local
-      Env.Cache localCache;
-      Env.Env localEnv;
-      list<Absyn.ElementItem> localAccDeclList;
-      list<Absyn.Exp> localAccVarList;
-    case (localCache,_,{},_,localAccDeclList,localAccVarList)
-    then (localCache,localAccDeclList,localAccVarList);
-    case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(c,{})) :: restExp,n,localAccDeclList,localAccVarList)
-      local
-        Absyn.Ident varName,c;
-        list<Absyn.ElementItem> varList;
-        list<Absyn.Exp> restExp;
-        Integer n;
-        DAE.Type t;
-        Absyn.TypeSpec t2;
-      equation
-        (localCache,DAE.TYPES_VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
-        t2 = typeConvert(t);
-        varName = stringAppend("RES__",intString(n));
-
-        varList = List.create(Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          false,NONE(),Absyn.NOT_INNER_OUTER(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            t2,
-            {Absyn.COMPONENTITEM(Absyn.COMPONENT(varName,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE())));
-
-        localAccVarList = listAppend(localAccVarList,{Absyn.CREF(Absyn.CREF_IDENT(varName,{}))});
-        localAccDeclList = listAppend(localAccDeclList,varList);
-        (localCache,localAccDeclList,localAccVarList) = createMatchcontinueResultVars(
-          localCache,localEnv,restExp,n+1,localAccDeclList,localAccVarList);
-      then (localCache,localAccDeclList,localAccVarList);
-    case (_,_,_,_,_,_) then fail();
-  end matchcontinue;
-end createMatchcontinueResultVars;
-*/
-
 public function getListOfStrings
   input list<SCode.Element> els;
   output list<String> outStrings;
@@ -410,6 +307,8 @@ algorithm
       Boolean replaceable_;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)
       then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
+    /* Annotations, comments */
+    else elementItem;
   end match;
 end setElementItemClass;
 
@@ -463,6 +362,10 @@ algorithm
         clst = convertElementsToClasses(rest);
       then 
         c::clst;
+
+    /* Strip annotation, comment */
+    case(_::rest)
+      then convertElementsToClasses(rest);
   end match;
 end convertElementsToClasses;
 
@@ -606,6 +509,9 @@ algorithm
       equation
         element = fixElement(element,name,index,singleton);
       then Absyn.ELEMENTITEM(element);
+      // Don't fix comments, annotations
+    case(_,name,index,singleton)
+      then elementItemin;
   end match;
 end fixElementItem;
 

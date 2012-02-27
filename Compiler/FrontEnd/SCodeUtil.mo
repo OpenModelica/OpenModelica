@@ -198,7 +198,7 @@ algorithm
         // Print out an internal error msg only if no other errors have already
         // been printed.
         true = intEq(Error.getNumMessages(), inNumMessages);
-        n = "SCodeUtil.translateAbsyn2SCodeClass failed: " +& n;
+        n = "SCodeUtil.translateClass2 failed: " +& n;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{n},file_info);
       then
         fail();
@@ -517,6 +517,12 @@ algorithm
         scodeCmt = translateComment(cmt);
       then
         SCode.PDER(path,vars,scodeCmt);
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SCodeUtil.translateClassdef failed"});
+      then
+        fail();
   end match;
 end translateClassdef;
 
@@ -1019,6 +1025,14 @@ algorithm
         l = listAppend(e_1, es_1);
       then
         l;
+
+    case ((Absyn.LEXER_COMMENT(comment = _) :: es),vis)
+      then translateEitemlist(es, vis);
+    
+    case ((_ :: es),vis)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SCodeUtil.translateEitemlist failed"});
+      then translateEitemlist(es, vis);
   end match;
 end translateEitemlist;
 

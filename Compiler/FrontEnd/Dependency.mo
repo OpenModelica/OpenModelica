@@ -48,6 +48,7 @@ public import Interactive;
 
 // protected imports
 protected import BaseHashTable;
+protected import Dump;
 protected import HashTable2;
 protected import ComponentReference;
 protected import Connect;
@@ -1201,8 +1202,9 @@ algorithm
   local
     list<Absyn.ElementItem> elemis;
     HashTable2.HashTable table1,table2;
-    String id;
+    String id,str;
     Absyn.ElementSpec spec;
+    Absyn.ElementItem elit;
   case({},inTable) then inTable;
   case((Absyn.ELEMENTITEM(Absyn.ELEMENT(name = id,specification=spec)))::elemis,inTable)
     equation
@@ -1219,7 +1221,17 @@ algorithm
       table1 = createLocalVariableStruct2(elemis,inTable);
     then
       table1;
-  case(_,_) equation print("createLocalVariableStruct2 failed\n"); then fail();
+  case((Absyn.LEXER_COMMENT(_))::elemis,inTable)
+    equation
+      table1 = createLocalVariableStruct2(elemis,inTable);
+    then
+      table1;
+  case(elit::_,_)
+    equation
+      print("createLocalVariableStruct2 failed: ");
+      print(Dump.unparseElementitemStr(0,elit));
+      print("\n");
+    then fail();
   end matchcontinue;
 end createLocalVariableStruct2;
 

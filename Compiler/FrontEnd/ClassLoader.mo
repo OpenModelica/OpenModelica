@@ -392,7 +392,7 @@ algorithm
     // faliling
     case _
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&inString+&"\n");
       then
         fail();
   end matchcontinue;

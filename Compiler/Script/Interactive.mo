@@ -5525,6 +5525,7 @@ algorithm
           ", replaceable=",repl,", inout=",inout_str,", ",element_str});
       then
         str;
+    case (Absyn.LEXER_COMMENT(comment=_)) then "elementtype=comment";
     case (_) then "elementtype=annotation";  /* for annotations we don\'t care */
   end matchcontinue;
 end getElementInfo;

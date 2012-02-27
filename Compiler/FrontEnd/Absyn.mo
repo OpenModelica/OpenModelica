@@ -208,7 +208,6 @@ uniontype ClassDef
     list<Ident>  vars "derived variables" ;
     Option<Comment> comment "comment";
   end PDER;
-
 end ClassDef;
 
 public
@@ -298,6 +297,10 @@ uniontype ElementItem "An element item is either an element or an annotation"
   record ANNOTATIONITEM
     Annotation  annotation_ ;
   end ANNOTATIONITEM;
+
+  record LEXER_COMMENT
+    String comment;
+  end LEXER_COMMENT;
 
 end ElementItem;
 

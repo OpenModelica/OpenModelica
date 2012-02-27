@@ -56,6 +56,7 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import Print;
+protected import System;
 protected import Util;
 
 public function dumpExpStr
@@ -1484,6 +1485,11 @@ algorithm
         str = stringAppend(s1, ";");
       then
         str;
+    case (i,Absyn.LEXER_COMMENT(comment=str))
+      equation
+        str = System.trimChar(str,"\n");
+        str = indentStr(i) +& str;
+      then str;
   end match;
 end unparseElementitemStr;
 

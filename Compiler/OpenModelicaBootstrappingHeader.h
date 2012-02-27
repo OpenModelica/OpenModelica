@@ -1291,6 +1291,21 @@ extern struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc;
 #define Absyn__ANNOTATIONITEM_3dBOX1 4
 #define Absyn__ANNOTATIONITEM(annotation_) (mmc_mk_box2(4,&Absyn_ElementItem_ANNOTATIONITEM__desc,annotation_))
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_ElementItem_LEXER__COMMENT__desc_added
+#define Absyn_ElementItem_LEXER__COMMENT__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementItem_LEXER__COMMENT__desc__fields[1] = {"comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementItem_LEXER__COMMENT__desc = {
+  "Absyn_ElementItem_LEXER__COMMENT",
+  "Absyn.ElementItem.LEXER_COMMENT",
+  Absyn_ElementItem_LEXER__COMMENT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ElementItem_LEXER__COMMENT__desc;
+#endif
+#define Absyn__LEXER_5fCOMMENT_3dBOX1 5
+#define Absyn__LEXER_5fCOMMENT(comment) (mmc_mk_box2(5,&Absyn_ElementItem_LEXER__COMMENT__desc,comment))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Element_ELEMENT__desc__fields[7] = {"finalPrefix","redeclareKeywords","innerOuter","name","specification","info","constrainClass"};

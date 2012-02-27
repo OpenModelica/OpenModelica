@@ -103,6 +103,7 @@ goto rule ## func ## Ex; }}
     int offset2;
   } fileinfo;
   extern int isReadOnly;
+  extern long omc_first_comment;
 }
 
 @members
@@ -112,6 +113,7 @@ goto rule ## func ## Ex; }}
   int ModelicaParser_readonly = 0;
   int ModelicaParser_flags = 0;
   int isReadOnly;
+  long omc_first_comment;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
   double getCurrentTime(void) {             
     time_t t;
@@ -325,23 +327,36 @@ language_specification returns [void* ast] :
 
 element_list returns [void* ast] @init {
   e.ast = 0;
+  int first,last;
+  $ast = 0;
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
 } :
   (((e=element | a=annotation) s=SEMICOLON) es=element_list)?
     {
-      if (e.ast)
+      if (e.ast) {
         ast = mk_cons(Absyn__ELEMENTITEM(e.ast), es);
-      else if (a)
+      } else if (a)
         ast = mk_cons(Absyn__ANNOTATIONITEM(a), es);
       else
         ast = mk_nil();
+      for (;first<last;first++) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,first);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mk_cons(Absyn__LEXER_5fCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
     }
   ;
 
-element returns [void* ast] @declarations {
+element returns [void* ast]
+@declarations {
   void *final;
   void *innerouter;
   void *redecl;
-} :
+}
+  :
     ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("import"), ic, INFO($start), mk_none());}
   | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("extends"), ec, INFO($start),mk_none());}
   | du=defineunit_clause { $ast = du;}
@@ -1277,7 +1292,7 @@ code_expression returns [void* ast] :
         } else if (alg) {
           ast = Absyn__CODE(Absyn__C_5fALGORITHMSECTION(mk_bcon(initial), alg));
         } else {
-          ast = Absyn__CODE(Absyn__C_5fELEMENT(el.ast));
+          ast = Absyn__CODE(Absyn__C_5fELEMENT($el.ast));
         }
       }
   | CODE_NAME LPAR name=name_path RPAR {ast = Absyn__CODE(Absyn__C_5fTYPENAME(name));}

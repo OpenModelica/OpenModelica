@@ -164,6 +164,13 @@ extern const char* System_trim(const char* str, const char* chars_to_remove)
   return SystemImpl__trim(str,chars_to_remove);
 }
 
+extern const char* System_trimChar(const char* str, const char* char_to_remove)
+{
+  if (!char_to_remove[0] || char_to_remove[1])
+    MMC_THROW();
+  return MMC_STRINGDATA(SystemImpl__trimChar(str,*char_to_remove));
+}
+
 extern const char* System_basename(const char* str)
 {
   return strdup(SystemImpl__basename(str));

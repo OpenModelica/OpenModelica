@@ -56,6 +56,7 @@ protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Env;
+protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
@@ -361,7 +362,10 @@ algorithm
     case (exp,n,_)
       equation
         // print("simplify1 start: " +& ExpressionDump.printExpStr(exp) +& "\n");
+        ErrorExt.setCheckpoint("ExpressionSimplify");
         ((exp,b)) = Expression.traverseExp(exp,simplifyWork,false);
+        Debug.bcall1(b,ErrorExt.rollBack,"ExpressionSimplify");
+        Debug.bcall1(not b,ErrorExt.delCheckpoint,"ExpressionSimplify");
         // print("simplify1 iter: " +& ExpressionDump.printExpStr(exp) +& "\n");
         (exp,_) = simplify1FixP(exp,n-1,b);
       then (exp,b);
