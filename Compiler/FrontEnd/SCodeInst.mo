@@ -52,6 +52,7 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import SCodeDump;
@@ -280,9 +281,9 @@ algorithm
         (cls, symtab) = typeClass(cls, symtab);
         // Type connects here.
         System.stopTimer();
-        print("\nclass " +& name +& "\n");
-        print(printClass(cls));
-        print("\nend " +& name +& "\n");
+        //print("\nclass " +& name +& "\n");
+        //print(printClass(cls));
+        //print("\nend " +& name +& "\n");
 
         print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
           " seconds.\n");
@@ -404,9 +405,8 @@ algorithm
         mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
         (cls, ty) = instClassItem(item, mod, env, inPrefix);
-        // TODO: Fix type dimensions!
-        //dims = Absyn.typeSpecDimensions(dty);
-        //ty = liftArrayType(dims, ty, inEnv, inPrefix);
+        dims = Absyn.typeSpecDimensions(dty);
+        ty = liftArrayType(dims, ty, inEnv, inPrefix);
       then
         (cls, ty);
         
@@ -696,7 +696,7 @@ algorithm
       Modifier mod, cmod;
       String name;
       SCode.Variability var;
-      list<Dimension> dims;
+      list<DAE.Dimension> dims;
       array<Dimension> dim_arr;
       Class cls;
       Element el;
@@ -730,9 +730,12 @@ algorithm
         mod = SCodeMod.mergeMod(cmod, mod);
         (cls, ty) = instClassItem(item, mod, env, prefix);
 
-        // Instantiate array dimensions and binding.
-        dims = List.map2(ad, instDimension, inEnv, inPrefix);
-        dim_arr = listArray(dims);
+        // Instantiate array dimensions.
+        dims = instDimensions(ad, inEnv, inPrefix);
+        dims = addDimensionsFromType(dims, ty);
+        dim_arr = makeDimensionArray(dims);
+
+        // Instantiate binding.
         binding = SCodeMod.getModifierBinding(mod);
         binding = instBinding(binding);
 
@@ -894,11 +897,20 @@ algorithm
   end match;
 end instBinding;
 
+protected function instDimensions
+  input list<Absyn.Subscript> inSubscript;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<DAE.Dimension> outDimensions;
+algorithm
+  outDimensions := List.map2(inSubscript, instDimension, inEnv, inPrefix);
+end instDimensions;
+
 protected function instDimension
   input Absyn.Subscript inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
-  output Dimension outDimension;
+  output DAE.Dimension outDimension;
 algorithm
   outDimension := match(inSubscript, inEnv, inPrefix)
     local
@@ -906,19 +918,34 @@ algorithm
       DAE.Exp dexp;
       DAE.Dimension dim;
 
-    case (Absyn.NOSUB(), _, _) 
-      then UNTYPED_DIMENSION(DAE.DIM_UNKNOWN(), false);
+    case (Absyn.NOSUB(), _, _) then DAE.DIM_UNKNOWN();
 
     case (Absyn.SUBSCRIPT(subscript = aexp), _, _)
       equation
         dexp = instExp(aexp, inEnv, inPrefix);
-        dim = makeDimension(dexp);
       then
-        UNTYPED_DIMENSION(dim, false);
+        makeDimension(dexp);
 
   end match;
 end instDimension;
 
+protected function makeDimensionArray
+  input list<DAE.Dimension> inDimensions;
+  output array<Dimension> outDimensions;
+protected
+  list<Dimension> dims;
+algorithm
+  dims := List.map(inDimensions, wrapDimension);
+  outDimensions := listArray(dims);
+end makeDimensionArray;
+
+protected function wrapDimension
+  input DAE.Dimension inDimension;
+  output Dimension outDimension;
+algorithm
+  outDimension := UNTYPED_DIMENSION(inDimension, false);
+end wrapDimension;
+  
 protected function makeDimension
   input DAE.Exp inExp;
   output DAE.Dimension outDimension;
@@ -932,35 +959,55 @@ algorithm
   end match;
 end makeDimension;
 
-//protected function liftArrayType
-//  input Absyn.ArrayDim inDims;
-//  input DAE.Type inType;
-//  input Env inEnv;
-//  input Prefix inPrefix;
-//  output DAE.Type outType;
-//algorithm
-//  outType := match(inDims, inType, inEnv, inPrefix)
-//    local
-//      DAE.Dimensions dims1, dims2;
-//      DAE.TypeSource src;
-//      DAE.Type ty;
-//
-//    case ({}, _, _, _) then inType;
-//    case (_, DAE.T_ARRAY(ty, dims1, src), _, _)
-//      equation
-//        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
-//        dims1 = listAppend(dims2, dims1);
-//      then
-//        DAE.T_ARRAY(ty, dims1, src);
-//
-//    else
-//      equation
-//        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
-//      then
-//        DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource);
-//  
-//  end match;
-//end liftArrayType;
+protected function liftArrayType
+  input Absyn.ArrayDim inDims;
+  input DAE.Type inType;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Type outType;
+algorithm
+  outType := match(inDims, inType, inEnv, inPrefix)
+    local
+      DAE.Dimensions dims1, dims2;
+      DAE.TypeSource src;
+      DAE.Type ty;
+
+    case ({}, _, _, _) then inType;
+    case (_, DAE.T_ARRAY(ty, dims1, src), _, _)
+      equation
+        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+        dims1 = listAppend(dims2, dims1);
+      then
+        DAE.T_ARRAY(ty, dims1, src);
+
+    else
+      equation
+        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+      then
+        DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource);
+  
+  end match;
+end liftArrayType;
+
+protected function addDimensionsFromType
+  input list<DAE.Dimension> inDimensions;
+  input DAE.Type inType;
+  output list<DAE.Dimension> outDimensions;
+algorithm
+  outDimensions := match(inDimensions, inType)
+    local
+      list<DAE.Dimension> dims;
+
+    case (_, DAE.T_ARRAY(dims = dims))
+      equation
+        dims = listAppend(dims, inDimensions);
+      then
+        dims;
+
+    else inDimensions;
+
+  end match;
+end addDimensionsFromType;
 
 protected function instExp
   input Absyn.Exp inExp;
@@ -1020,7 +1067,8 @@ algorithm
     case (Absyn.LUNARY(op = aop, exp = aexp1), _, _)
       equation
         dexp1 = instExp(aexp1, inEnv, inPrefix);
-        dop = instOperator(aop);
+        //dop = instOperator(aop);
+        dop = DAE.NOT(DAE.T_BOOL_DEFAULT);
       then
         DAE.LUNARY(dop, dexp1);
 
@@ -2272,6 +2320,19 @@ algorithm
       then
         (DAE.BINARY(e1, op, e2), ty, st);
 
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), st)
+      equation
+        (e1, ty, st) = typeExp(e1, st);
+        (e2, ty, st) = typeExp(e2, st);
+      then
+        (DAE.LBINARY(e1, op, e2), ty, st);
+
+    case (DAE.LUNARY(operator = op, exp = e1), st)
+      equation
+        (e1, ty, st) = typeExp(e1, st);
+      then
+        (DAE.LUNARY(op, e1), ty, st);
+
     case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), st)
       equation
         (DAE.ICONST(dim_int), _, st) = typeExp(e2, st);
@@ -2649,6 +2710,7 @@ algorithm
       equation
         inst_exp = instExp(cond_exp, env, prefix);
         (inst_exp, ty, st) = typeExp(inst_exp, st);
+        (inst_exp, _) = ExpressionSimplify.simplify(inst_exp);
         cond = evaluateConditionalExp(inst_exp, ty, name, info);
         (el, st) = instConditionalComponent2(cond, sel, mod, env, prefix, st);
       then
@@ -2710,6 +2772,9 @@ algorithm
 
     case (DAE.BCONST(bool = cond), DAE.T_BOOL(varLst = _), _, _) then cond;
 
+    // TODO: remove this case once typing is fixed!
+    case (DAE.BCONST(bool = cond), _, _, _) then cond;
+
     case (_, DAE.T_BOOL(varLst = _), _, _)
       equation
         // TODO: Return the variability of an expression from instExp, so that
@@ -2730,7 +2795,7 @@ algorithm
         Error.addSourceMessage(Error.CONDITION_TYPE_ERROR,
           {exp_str, name_str, ty_str}, inInfo);
       then
-        false;
+        fail();
 
   end match;
 end evaluateConditionalExp;
