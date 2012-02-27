@@ -3826,7 +3826,7 @@ algorithm
       equation
         arrexp = List.first(aexps);
         (cache,exp_1,DAE.PROP(t,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
-        (tp,_) = Types.flattenArrayType(t);
+        tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
         exp_2 = Expression.makeBuiltinCall("sum", {exp_1}, etp);
       then

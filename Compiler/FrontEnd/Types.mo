@@ -1792,18 +1792,14 @@ public function arrayElementType "function: arrayElementType
   input Type inType;
   output Type outType;
 algorithm
-  outType := matchcontinue (inType)
-    local Type ty_1,ty,t;
+  outType := match (inType)
+    local Type ty;
     
-    case (DAE.T_ARRAY(ty = ty))
-      equation
-        ty_1 = arrayElementType(ty);
-      then
-        ty_1;
+    case (DAE.T_ARRAY(ty = ty)) then arrayElementType(ty);
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then arrayElementType(ty);
+    else inType;
     
-    case t then t;
-    
-  end matchcontinue;
+  end match;
 end arrayElementType;
 
 public function unparseEqMod
