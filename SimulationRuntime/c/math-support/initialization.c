@@ -47,10 +47,9 @@ enum INIT_INIT_METHOD
   IIM_UNKNOWN = 0,
   IIM_NONE,
   IIM_STATE,
-  IIM_FILE
 };
 
-const char *initMethodStr[4] = {"unknown", "none", "state", "file"};
+const char *initMethodStr[3] = {"unknown", "none", "state"};
 
 enum INIT_OPTI_METHOD
 {
@@ -824,7 +823,7 @@ static int initialize(DATA *data, int optiMethod)
  *
  *  \author lochel
  */
-static int none_initialization(DATA *data)
+static int none_initialization(DATA *data, int updateStartValues)
 {
   int retVal = 0;
   long i;
@@ -833,7 +832,8 @@ static int none_initialization(DATA *data)
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
   setAllParamsToStart(data);
-  updateBoundStartValues(data);
+  if(updateStartValues)
+    updateBoundStartValues(data);
   updateBoundParameters(data);
 
   /* initialize all relations that are ZeroCrossings */
@@ -882,14 +882,15 @@ static int none_initialization(DATA *data)
  *
  *  \author lochel
  */
-static int state_initialization(DATA *data, int optiMethod)
+static int state_initialization(DATA *data, int optiMethod, int updateStartValues)
 {
   int retVal = 0, i;
 
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
   setAllParamsToStart(data);
-  updateBoundStartValues(data);
+  if(updateStartValues)
+    updateBoundStartValues(data);
   updateBoundParameters(data);
 
   /* initialize all relations that are ZeroCrossings */
@@ -934,7 +935,7 @@ static int state_initialization(DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn file_initialization
+/*! \fn importStartValues
  *
  *  \param [ref] [data]
  *  \param [in]  [pInitFile]
@@ -942,32 +943,18 @@ static int state_initialization(DATA *data, int optiMethod)
  *
  *  \author lochel
  */
-static int file_initialization(DATA *data, const char* pInitFile, double initTime)
+static int importStartValues(DATA *data, const char* pInitFile, double initTime)
 {
-  long i;
-  INIT_DATA *initData = initializeInitData(data);
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
   const char *pError = NULL;
 
-  /* set up all variables and parameters with their start-values */
-  setAllVarsToStart(data);
-  setAllParamsToStart(data);
-  updateBoundStartValues(data);
-  updateBoundParameters(data);
+  MODEL_DATA *mData = &(data->modelData);
+  long i;
 
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-  update_DAEsystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  resetAllHelpVars(data);
-  storePreValues(data);
-
-/* start with the real initialization */
-  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+  DEBUG_INFO    (LOG_INIT, "import start values");
+  DEBUG_INFO_AL1(LOG_INIT, "  file: %s", pInitFile);
+  DEBUG_INFO_AL1(LOG_INIT, "  time: %g", initTime);
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
@@ -977,47 +964,33 @@ static int file_initialization(DATA *data, const char* pInitFile, double initTim
   }
   else
   {
-    DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
-    for(i=0; i<initData->nStates; ++i)
+    DEBUG_INFO(LOG_INIT, "import real variables");
+    for(i=0; i<mData->nVariablesReal; ++i)
     {
-      pVar = omc_matlab4_find_var(&reader, initData->zName[i]);
+      pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
       if(pVar)
-        omc_matlab4_val(&initData->z[i], &reader, pVar, initTime);
+      {
+        omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
+        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+      }
       else
-        WARNING2("'%s' not found in '%s'", initData->zName[i], pInitFile);
-
-      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+        WARNING2("  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
     }
 
-    DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
-    for(; i<initData->nStates+initData->nParameters; ++i)
+    DEBUG_INFO(LOG_INIT, "import real parameters");
+    for(i=0; i<mData->nParametersReal; ++i)
     {
-      pVar = omc_matlab4_find_var(&reader, initData->zName[i]);
+      pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
       if(pVar)
-        omc_matlab4_val(&initData->z[i], &reader, pVar, initTime);
+      {
+        omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
+        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+      }
       else
-        WARNING2("'%s' not found in '%s'", initData->zName[i], pInitFile);
-
-      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+        WARNING2("  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
     }
-
     omc_free_matlab4_reader(&reader);
   }
-
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
-  storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */
-  update_DAEsystem(data);           /* evaluate discrete variables */
-
-  /* valid system for the first time! */
-  SaveZeroCrossings(data);
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
-  storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */
-
-  data->simulationInfo.initial = 0;
 
   return 0;
 }
@@ -1038,18 +1011,24 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int initMethod = IIM_STATE;               /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
   int retVal = -1;
+  int updateStartValues = 1;
 
   DEBUG_INFO(LOG_INIT, "### START INITIALIZATION ###");
+
+  /* import start values from extern mat-file */
+  if(pInitFile && strcmp(pInitFile, ""))
+  {
+    importStartValues(data, pInitFile, initTime);
+    updateStartValues = 0;
+  }
 
   /* if there are user-specified options, use them! */
   if(pInitMethod)
   {
     if(!strcmp(pInitMethod, "none"))
-          initMethod = IIM_NONE;
+      initMethod = IIM_NONE;
     else if(!strcmp(pInitMethod, "state"))
-          initMethod = IIM_STATE;
-    else if(!strcmp(pInitMethod, "file"))
-          initMethod = IIM_FILE;
+      initMethod = IIM_STATE;
     else
     {
       WARNING1("unrecognized option -iim %s", pInitMethod);
@@ -1072,26 +1051,15 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   DEBUG_INFO1(LOG_INIT,    "initialization method: %s", initMethodStr[initMethod]);
   DEBUG_INFO_AL1(LOG_INIT, "optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO_AL1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
 
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
-  {
-    retVal = none_initialization(data);
-  }
+    retVal = none_initialization(data, updateStartValues);
   else if(initMethod == IIM_STATE)
-  {
-    retVal = state_initialization(data, optiMethod);
-  }
-  else if(initMethod == IIM_FILE)
-  {
-    DEBUG_INFO_AL1(LOG_INIT, "initialization file:   %s", pInitFile);
-    DEBUG_INFO_AL1(LOG_INIT, "initialization time:   %g", initTime);
-    retVal = file_initialization(data, pInitFile, initTime);
-  }
+    retVal = state_initialization(data, optiMethod, updateStartValues);
   else
-  {
     WARNING1("unrecognized option -iim %s", initMethodStr[initMethod]);
-  }
 
   DEBUG_INFO(LOG_INIT, "### END INITIALIZATION ###");
   return retVal;

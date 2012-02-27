@@ -372,10 +372,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if(flagSet("iom", argc, argv))
     init_optiMethod = *getFlagValue("iom", argc, argv);
   if(flagSet("iif", argc, argv))
-  {
-    init_initMethod = "file";
     init_file = *getFlagValue("iif", argc, argv);
-  }
   if(flagSet("iit", argc, argv))
   {
     init_time_string = *getFlagValue("iit", argc, argv);
@@ -532,7 +529,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   {
     cout << "usage: " << argv[0]
          << " <-f initfile> <-r result file> <-m solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta}> <-interactive> <-port value>"
-         << " <-iim init method:{none,state,file}> <-iif init file> <iit init time>"
+         << " <-iim init method:{none,state}> <-iif init file> <iit init time>"
          << " -lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
          << endl;
     EXIT(0);
