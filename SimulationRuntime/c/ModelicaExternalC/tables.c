@@ -46,7 +46,7 @@
 /* #define DEBUG_INFOS */
 
 /* Definition to make a copy of the arrays */
-/* #define COPY_ARRAYS */
+#define COPY_ARRAYS */
 
 
 typedef struct InterpolationTable
