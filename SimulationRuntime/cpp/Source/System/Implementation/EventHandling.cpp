@@ -168,10 +168,10 @@ bool EventHandling::IterateEventQueue(const bool* events,update_events_type upda
 	countinous_system->update(IContinous::DISCRETE);
 
 	drestart= event_system->checkForDiscreteEvents();
-	update_event();//Update the event vector
+	//update_event();//Update the event vector
+	event_system->checkConditions(0,true);
 	//check if new events occured
 	crestart = !(std::equal (events, events+dimf,events_before));
-
 	return((drestart||crestart)); //returns true if new events occured
 }
 
@@ -195,6 +195,12 @@ void  EventHandling::addTimeEvents( event_times_type times)
    }
 
 }
+/**
+Checks if the discete variables are changed during the continous system is solved.
+pre_values values of discrete varibales before continous system is solved.
+next_values values of discrete varibales after continous system is solved.
+
+*/
 bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values)
 {
 
@@ -202,9 +208,14 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
 	found = (std::equal (next_values, next_values+size,pre_values));
 	if(!found)
 	{
+		//Calculate start index for iteration 
 		int offset = cur_index * size;
+		
+		if((num_values - offset) < 0 )
+			return false;
+		
+		// calculate end index i_max  for iteration 
 		int i_max;
-
 		if((offset+size) > num_values)
 		{
 			i_max = num_values - offset;
@@ -213,7 +224,7 @@ bool  EventHandling::CheckDiscreteValues(bool* values,bool* pre_values,bool* nex
 		{
 			i_max = size;
 		}
-
+		//modify discrete variables with new values 
 		for (int i = 0; i < i_max; i++)
 		{
 			*cur_values[i] = values[offset + i];

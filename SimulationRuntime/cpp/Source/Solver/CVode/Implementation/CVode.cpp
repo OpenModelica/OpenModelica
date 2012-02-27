@@ -32,8 +32,11 @@ Cvode::Cvode(IDAESystem* system, ISolverSettings* settings)
 	, _doubleZero			(false)
 	, _f0					(NULL)
 	, _f1					(NULL)
+	, _zeroSign				(NULL)
 	, _zeroFound			(false)
 	,_updateCalls			(0)
+	, _Cond					(NULL)
+	, _zeroInit				(NULL)
 {
 	_data = ((void*)this);
 }
@@ -56,6 +59,12 @@ Cvode::~Cvode()
 		delete [] _f0;
 	if(_f1)
 		delete [] _f1;
+	if(_zeroSign)
+		delete [] _zeroSign;
+	if(_zeroInit)
+		delete [] _zeroInit;
+	if(_Cond)
+		delete [] _Cond;
 
 	N_VDestroy_Serial(_CV_y0);
 	N_VDestroy_Serial(_CV_y);
@@ -69,6 +78,7 @@ void Cvode::init()
 {
 	ISystemProperties* properties = dynamic_cast<ISystemProperties*>(_system);
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
+	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
 	// Kennzeichnung, dass init()() (vor der Integration) aufgerufen wurde
 	_idid = 5000;
 
@@ -79,6 +89,8 @@ void Cvode::init()
 	SolverDefaultImplementation::init();
 
 	_dimSys		= continous_system->getDimVars(IContinous::ALL_STATES);
+	_dimZeroFunc = event_system->getDimZeroFunc();
+	
 	int dimAEq	= continous_system->getDimVars(IContinous::DIFF_INDEX3);
 
 	if(_dimSys <= 0 || dimAEq > 0)
@@ -94,6 +106,9 @@ void Cvode::init()
 		if(_zLastSucess)	delete [] _zLastSucess;
 		if(_zLargeStep)		delete [] _zLargeStep;
 		if(_zWrite)			delete [] _zWrite;
+		if(_zeroSign)		delete [] _zeroSign;
+		if(_Cond)			delete [] _Cond;
+		if(_zeroInit)		delete [] _zeroInit;
 
 		_z				= new double[_dimSys];
 		_zInit			= new double[_dimSys];
@@ -102,6 +117,9 @@ void Cvode::init()
 		_zWrite		    = new double[_dimSys];
 		_f0				= new double[_dimSys];
 		_f1				= new double[_dimSys];
+		_zeroSign		= new int[_dimZeroFunc];
+		_Cond			= new bool[_dimZeroFunc];
+		_zeroInit		= new bool[_dimZeroFunc];
 
 		memset(_z,0,_dimSys*sizeof(double));
 		memset(_zInit,0,_dimSys*sizeof(double));
@@ -338,22 +356,66 @@ void Cvode::CVodeCore()
 {
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
 	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
+	
+	// Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
+	// Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
+	event_system->giveZeroFunc(_zeroValLastSuccess,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+	event_system->giveConditions(_Cond);
+	for(int i=0;i<_dimZeroFunc;i++)
+	{
+		_Cond[i] = !_Cond[i];
+	}
+	event_system->setConditions(_Cond);
+	event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+	for(int i=0;i<_dimZeroFunc;i++)
+	{
+		if(_zeroValLastSuccess[i] == _zeroVal[i])
+		{
+			_zeroInit[i] = true;
+		}else
+		{
+			_zeroInit[i] = false;
+		}
+	}
+	for(int i=0;i<_dimZeroFunc;i++)
+	{
+		_Cond[i] = !_Cond[i];
+	}
+	event_system->setConditions(_Cond);
+
+	//
+
+
+	//
 	while(_solverStatus & IDAESolver::CONTINUE)
 	{
 		_zeroFound = false;
-		
+
 		//CVode für einen Schritt rufen
 		_idid = CVode(_cvodeMem, _tEnd, _CV_y, &_tHelp, CV_ONE_STEP);
-		
+
 		// Check, ob Schritt erfolgreich
 		if(check_flag(&_idid, "CVode", 1))
 		{
 			_solverStatus = IDAESolver::SOLVERERROR;
 			break;
 		}
-		
+
 		_accStps++;
 		_locStps++;
+
+		//Beachtung von kritischen (mit Null initialisierten) Nullstellen
+		if(_tCurrent == 0.0)
+		{
+			for(int i=0;i<_dimZeroFunc;i++)
+			{
+				if(_zeroInit[i])
+				{
+					event_system->checkConditions(i,false);
+				}
+			}
+		event_system->saveConditions();
+		}
 
 
 		// A root is found
@@ -377,7 +439,7 @@ void Cvode::CVodeCore()
 			_tCurrent = _tEnd;
 			_zeroFound = false;
 		}
-
+	
 		// Eventiteration starten
 		if(_zeroFound)
 		{
@@ -396,9 +458,11 @@ void Cvode::CVodeCore()
 				SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
 			}
 
-			//_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-			event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
-
+			_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
+			for(int i=0;i<_dimZeroFunc;i++)
+				_events[i] = bool(_zeroSign[i]);
+			//event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+			
 			//Event Iteration starten
 			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
 			event_system->handleSystemEvents(_events,boost::ref(update_event));

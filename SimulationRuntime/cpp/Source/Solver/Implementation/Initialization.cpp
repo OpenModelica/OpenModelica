@@ -26,13 +26,14 @@ void Initialization::initializeSystem(double start_time, double end_time)
   
    while(restart && !(iter++ > 10))
    {
-	 event_system->saveAll();
+	
      continous_system->update(IContinous::ALL);
 	  restart = event_system->checkForDiscreteEvents();
    }
 
    event_system->saveAll();
- 
+    event_system->checkConditions(0,true);
+	 event_system->saveConditions();
+  _system->setInitial(false);
 
- _system->setInitial(false);
 }

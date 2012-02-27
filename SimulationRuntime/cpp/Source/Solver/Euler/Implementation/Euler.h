@@ -203,7 +203,9 @@ private:
 		_tLastWrite;								///< Temp			- Letzter Ausgabezeitpunkt
 
 	bool
-		_doubleZero;								///< Temp			- Flag to denote two zeros in intervall
+		_doubleZero,								///< Temp			- Flag to denote two zeros in intervall
+		*_Cond,
+		*_zeroInit;
 
 	int
 		*_zeroSignIter;								///< Temp			- Temporary zeroSign Vector

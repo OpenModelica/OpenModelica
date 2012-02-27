@@ -223,6 +223,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%giveConditions(simCode)%>
    <%setConditions(simCode)%>
+   <%saveConditions(simCode)%>
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
    <%DimInitEquations(simCode)%>
@@ -1222,7 +1223,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initALgloopSolvers%>
     //initialize equations
    <%initBoundParameters%>
-   saveConditions();
+  
     }
    >>
 end init;
@@ -2086,6 +2087,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual void setConditions(bool* c);
 	//Called to check conditions for event-handling
 	virtual void checkConditions(unsigned int, bool all);
+	virtual void saveConditions();
 	//Called to handle all  events occured at same time  
 	virtual void handleSystemEvents(const bool* events,update_events_type update_event);
 	//Called to handle an event  
@@ -3522,7 +3524,7 @@ case SES_MIXED(__) then
   	bool new_disc_vars<%num%>[<%numDiscVarsStr%>];
   	bool restart<%num%> = true;
   	int iter<%num%>=0;
-  	int max_iter<%num%> = <%valuesLenStr%> / <%numDiscVarsStr%>;
+  	int max_iter<%num%> = (<%valuesLenStr%> / <%numDiscVarsStr%>)+1;
    	while(restart<%num%> && !(iter<%num%> > max_iter<%num%>))
    	{
    	  <%discVars |> SIMVAR(__) hasindex i0 => 'pre_disc_vars<%num%>[<%i0%>] = <%cref(name)%>;' ;separator="\n"%> 
@@ -5749,19 +5751,19 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     <%varDecls%>
     bool restart=true;
     int iter=0;
-    while(restart && !(iter++ > 10))
+    <%zeroCrossingsCode%>
+     while(restart && !(iter++ > _dimZeroFunc))
     {
-    	 saveAll();
-   		 <%zeroCrossingsCode%>
     	double h[<%helpvarlength(simCode)%>];
     	<%helpvarvector(whenClauses,simCode)%>
    	 	 _event_handling.setHelpVars(h);
    	 	//iterate and handle all events inside the eventqueue
    		 restart=_event_handling.IterateEventQueue(events,update_event);
+   		 saveAll();
      }
-      saveConditions();
+     saveConditions();
      resetTimeEvents();
-    if(iter>10){
+    if(iter>_dimZeroFunc && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded. ");}
    }
   >>
@@ -5842,6 +5844,18 @@ template setConditions(SimCode simCode)
   }   
 >>
 end setConditions;
+
+template saveConditions(SimCode simCode)
+::=
+ match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+ void <%lastIdentOfPath(modelInfo.name)%>::saveConditions()
+  {
+    SystemDefaultImplementation::saveConditions();
+  }   
+>>
+end saveConditions;
 
 template giveZeroFunc2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=

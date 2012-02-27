@@ -155,7 +155,9 @@ private:
 
 	int
 		_outStps,									///< Output			- Total number of output-steps
-	  _updateCalls;								///< Output			- Total number of update calls
+		_updateCalls,								///< Output			- Total number of update calls
+		*_zeroSign;
+
 
 	double
 		*_z,										///< Output			- (Current) State vector
@@ -189,7 +191,9 @@ private:
 	bool
 		_doubleZero,								///< Temp			- Flag to denote two zeros in intervall
 		_zeroFound,									///< Temp			- Flag to denote a root in he last step
-		_bWritten;									///< Temp			- Is output already written
+		_bWritten,									///< Temp			- Is output already written
+		*_Cond,
+		*_zeroInit;
 
 	N_Vector 
 		_CV_y0,									///< Temp			- Initial values in the Cvode Format

@@ -36,6 +36,8 @@ Euler::Euler(IDAESystem* system, ISolverSettings* settings)
 	, _f0					(NULL)
 	, _f1					(NULL)
 	, _zeroSignIter			(NULL)
+	, _Cond					(NULL)
+	,_zeroInit				(NULL)
 {
 }
 
@@ -53,6 +55,8 @@ Euler::~Euler()
 		delete [] _zLastSucess;
 	if(_zLargeStep)				
 		delete [] _zLargeStep;
+	if(_zWrite)				
+		delete [] _zWrite;
 	if(_denseOutPolynominal)	
 		delete [] _denseOutPolynominal;
 	if(_zeroSignIter)
@@ -61,6 +65,10 @@ Euler::~Euler()
 		delete [] _f0;
 	if(_f1)
 		delete [] _f1;
+	if(_Cond)
+		delete [] _Cond;
+	if(_zeroInit)
+		delete [] _zeroInit;
 
 }
 
@@ -90,7 +98,9 @@ void Euler::init()
 		if(_zInit)			delete [] _zInit;
 		if(_zLastSucess)	delete [] _zLastSucess;
 		if(_zLargeStep)		delete [] _zLargeStep;
-		//if(_zWrite)			delete [] _zWrite;
+		if(_Cond)			delete [] _Cond;
+		if(_zWrite)			delete [] _zWrite;
+		if(_zeroInit)		delete [] _zeroInit;
 
 		_z				= new double[_dimSys];
 		_zInit			= new double[_dimSys];
@@ -100,6 +110,8 @@ void Euler::init()
 		_f0				= new double[_dimSys];
 		_f1				= new double[_dimSys];
 		_zeroSignIter	= new int[_dimZeroFunc];
+		_Cond			= new bool[_dimZeroFunc];
+		_zeroInit		= new bool[_dimZeroFunc];
 
 		memset(_z,0,_dimSys*sizeof(double));
 		memset(_f0,0,_dimSys*sizeof(double));
@@ -160,6 +172,7 @@ void Euler::solve(const SOLVERCALL command)
 
 	if (_eulerSettings && _system)
 	{
+		IEvent* event_system =  dynamic_cast<IEvent*>(_system);
 
 		// Prepare solver and system for integration
 		if (command & IDAESolver::FIRST_CALL)
@@ -204,6 +217,33 @@ void Euler::solve(const SOLVERCALL command)
 
 				// Get initial values from system, write out initial state vector
 				solverOutput(_accStps,_tCurrent,_z,_h);
+
+				// Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
+				event_system->giveZeroFunc(_zeroValLastSuccess,dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTol());
+				event_system->giveConditions(_Cond);
+				for(int i=0;i<_dimZeroFunc;i++)
+				{
+					_Cond[i] = !_Cond[i];
+				}
+				event_system->setConditions(_Cond);
+				event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTol());
+				for(int i=0;i<_dimZeroFunc;i++)
+				{
+					if(_zeroValLastSuccess[i] == _zeroVal[i])
+					{
+						_zeroInit[i] = true;
+					}else
+					{
+						_zeroInit[i] = false;
+					}
+				}
+				for(int i=0;i<_dimZeroFunc;i++)
+				{
+					_Cond[i] = !_Cond[i];
+				}
+				event_system->setConditions(_Cond);
+
+				//
 
 				// Choose integration method
 				if (_eulerSettings->getEulerMethod()  == EulerSettings::EULERFORWARD)
@@ -356,7 +396,7 @@ void Euler::doEulerForward()
 void Euler::doEulerBackward()
 {
 	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-
+	
 	int			numberOfIterations = 0; 
 	double		tHelp;
 	double		nu,
@@ -482,16 +522,27 @@ void Euler::doEulerBackward()
 		for(int i = 0; i < _dimSys; ++i) 
 			_z[i] += Z[i];
 
-		calcFunction(_tCurrent,_z,_f1);
+		calcFunction(tHelp,_z,_f1);
 		memcpy(_z1,_z,_dimSys*sizeof(double));
+
+		//Beachtung von kritischen (mit Null initialisierten) Nullstellen
+		if(_tCurrent == 0.0)
+		{
+			for(int i=0;i<_dimZeroFunc;i++)
+			{
+				if(_zeroInit[i])
+				{
+					event_system->checkConditions(i,false);
+				}
+			}
+		event_system->saveConditions();
+		}
 
 		if (_idid != 0)
 			throw invalid_argument("Euler::doEulerBackward() error" );
 
 		++_totStps;
 		++_accStps;
-
-		memcpy(_z1,_z,_dimSys*sizeof(double));
 
 		solverOutput(_accStps,tHelp,_z,_h);
 		doMyZeroSearch();
@@ -1113,7 +1164,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
 
 
 		if (_zeroVal)
-		{
+		{	
 			// read values of zero functions
 			event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTol());
 

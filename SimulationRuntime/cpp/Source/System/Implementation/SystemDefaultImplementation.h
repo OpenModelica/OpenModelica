@@ -60,10 +60,9 @@ public:
 	/// Set variables with given index to the system
 	void setVars(const double* z, const IContinous::INDEX index = IContinous::ALL_VARS);
 	
-
-
 	/// Provide the right hand side (according to the index)
 	void giveRHS(double* f, const IContinous::INDEX index = IContinous::ALL_VARS);
+	/// Stores the internal conditions in the external conditions
 	void saveConditions();
 	// Member variables
 	//---------------------------------------------------------------
@@ -78,8 +77,8 @@ protected:
 		*_z,				///< "Extended state vector", containing all states and algebraic variables of all types
 		*_zDot;				///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
 	bool   
-		* _conditions0,
-		* _conditions1;
+		* _conditions0,		///< External conditions changed by the solver
+		* _conditions1;		///< Internal conditions changed by the system 
 	ostream
 		*_outputStream;		///< Output stream for results
 

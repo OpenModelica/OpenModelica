@@ -31,7 +31,9 @@ public:
 	virtual void giveZeroFunc(double* f,const double& eps) = 0;
 	virtual void giveConditions(bool* c) = 0;
 	virtual void setConditions(bool* c) = 0;
-	 //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+	virtual void checkConditions(unsigned int, bool all) = 0;
+	virtual void saveConditions() = 0;
+	//Saves all variables before an event is handled, is needed for the pre, edge and change operator
 	virtual void saveAll() = 0;
 	/// Called to handle all  events occured at same time 
 	virtual void handleSystemEvents(const bool* events,update_events_type update_event) = 0;
