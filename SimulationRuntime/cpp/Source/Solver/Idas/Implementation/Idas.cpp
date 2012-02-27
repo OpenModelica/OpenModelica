@@ -313,8 +313,8 @@ void Idas::callIDA()
 			event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_idasSettings)->getZeroTol());
 
 			//Event Iteration starten
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 			//EVENT Iteration beendet
 		}
 		

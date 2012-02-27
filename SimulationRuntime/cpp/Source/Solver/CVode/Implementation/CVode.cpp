@@ -339,8 +339,8 @@ void Cvode::doTimeEvents()
 			//Handle time event
 			event_system->handleEvent(iter->second);
 			//Handle all events that occured at this time
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 
 			//Check if old time events were overrned because step size is not adequate 
 			if(distance(_time_events.begin(),iter)>0)
@@ -464,8 +464,8 @@ void Cvode::CVodeCore()
 			//event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
 			
 			//Event Iteration starten
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 		
 
 			// Zustand nach Eventbehandlung recorden

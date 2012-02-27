@@ -44,7 +44,7 @@ public:
 	//removes an event from the eventqueue
 	void removeEvent(long index);
 	//Handles  all events occured a the same time. Returns true if a second event iteration is needed
-	bool IterateEventQueue(const bool* events,update_events_type update_event);
+	bool IterateEventQueue(const bool* events);
 
 	
 	void addTimeEvent(long index,double time);

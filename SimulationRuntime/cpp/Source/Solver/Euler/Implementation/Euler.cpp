@@ -331,8 +331,8 @@ void Euler::doEulerForward()
 			_h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
 			//handle all events that occured at this t
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 
 			_zeroStatus = EQUAL_ZERO;
 			memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
@@ -564,8 +564,8 @@ void Euler::doEulerBackward()
 			_h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
 			//handle all events that occured at this t
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 			_zeroStatus = IDAESolver::EQUAL_ZERO;
 
 		}
@@ -754,8 +754,8 @@ void Euler::doMidpoint()
 			_hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
 			_h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit()* dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 
 
 		}
@@ -805,8 +805,8 @@ void Euler::doTimeEvents()
 			//Handle time event
 			event_system->handleEvent(iter->second);
 			//Handle all events that occured at this time
-			update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-			event_system->handleSystemEvents(_events,boost::ref(update_event));
+			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
+			event_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
 
 			//Check if old time events were overrned because step size is not adequate 
 			if(distance(_time_events.begin(),iter)>0)

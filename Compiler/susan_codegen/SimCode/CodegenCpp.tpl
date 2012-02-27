@@ -2089,7 +2089,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	virtual void checkConditions(unsigned int, bool all);
 	virtual void saveConditions();
 	//Called to handle all  events occured at same time  
-	virtual void handleSystemEvents(const bool* events,update_events_type update_event);
+	virtual void handleSystemEvents(const bool* events);
 	//Called to handle an event  
 	virtual void handleEvent(unsigned long index);
 	//Checks if a discrete variable has changed and triggers an event 
@@ -5746,7 +5746,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then 
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(const bool* events,update_events_type update_event)
+   void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(const bool* events)
    { 
     <%varDecls%>
     bool restart=true;
@@ -5758,7 +5758,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     	<%helpvarvector(whenClauses,simCode)%>
    	 	 _event_handling.setHelpVars(h);
    	 	//iterate and handle all events inside the eventqueue
-   		 restart=_event_handling.IterateEventQueue(events,update_event);
+   		 restart=_event_handling.IterateEventQueue(_conditions1);
    		 saveAll();
      }
      saveConditions();

@@ -144,7 +144,7 @@ void  EventHandling::removeEvent(long index)
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
-bool EventHandling::IterateEventQueue(const bool* events,update_events_type update_event)
+bool EventHandling::IterateEventQueue(const bool* events)
 {
 	IContinous*  countinous_system = dynamic_cast<IContinous*>(_system);
 	IEvent* event_system= dynamic_cast<IEvent*>(_system);
