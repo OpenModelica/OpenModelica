@@ -43,7 +43,7 @@ qtclients:
 	@echo "*** OpenModelica configured without support for CORBA"
 qtclean: qtclean-common
 else
-omnotebook: mkbuilddirs
+omnotebook: mkbuilddirs omplot
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
