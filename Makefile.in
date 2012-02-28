@@ -77,6 +77,14 @@ fix-svn-eol-style:
 fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
+bom-error:
+	rm -f bom-error.log bom-error.sh
+	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
+	find OM*/ Compiler/ SimulationRuntime/ mosh/ -type f \( ! -path '*/.svn/*' -prune \) -exec sh bom-error.sh "{}" ';'
+	@if test -e bom-error.log; then cat bom-error.log; fi
+	@test ! -e bom-error.log
+	rm -f bom-error.log bom-error.sh
+
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in config.status
