@@ -7743,6 +7743,7 @@ protected
   DAE.Const const;
   DAE.Type restype,functype;
   DAE.FunctionBuiltin isBuiltin;
+  DAE.FunctionParallelism funcParal;
   Boolean isPure,tuple_,builtin;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
@@ -7760,10 +7761,12 @@ algorithm
    args_1,
    constlist,
    restype,
-   functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),
+   functype as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType, functionParallelism = funcParal)),
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
+  //check the env to see if a call to a parallel or kernle function is a valid one.
+  true := isValidWRTParallelScope(fn,funcParal,inEnv,info);
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
@@ -7796,6 +7799,110 @@ algorithm
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;
+
+protected function isValidWRTParallelScope
+  input Absyn.Path inFn;
+  input DAE.FunctionParallelism inFuncParallelism;
+  input Env.Env inEnv;
+  input Absyn.Info inInfo;
+  output Boolean isValid;
+algorithm
+  isValid := matchcontinue(inFn,inFuncParallelism, inEnv, inInfo)
+  local
+    String scopeName, errorString;
+    Env.ScopeType scopeType;
+    list<Env.Frame> restFrames;
+    
+    // This two are common cases so keep them at the top.
+    // normal(non parallel) function call in a normal scope (function and class scopes) is OK.
+    case(_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.CLASS_SCOPE()))::_, _) 
+      then true;
+    case(_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.FUNCTION_SCOPE()))::_, _) 
+      then true;
+    
+    //parallel function call in a parallel scope (kernel function, parallel function, or parfor) is OK.
+    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+      equation
+        // make sure the function is not calling itself
+        // recurrsion is not allowed.
+        false = stringEqual(scopeName,Absyn.pathString(inFn));
+      then true;
+        
+    // If the above case failed this will print the error message
+    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+      equation
+        // make sure the function is not calling itself
+        // recurrsion is not allowed.
+        true = stringEqual(scopeName,Absyn.pathString(inFn));
+        errorString = "\n" +& 
+             "- Parallel function '" +& Absyn.pathString(inFn) +& 
+             "' can not call itself. Recurrsion is not allowed for parallel functions currently." +& "\n" +&
+             "- Parallel functions can only be called from: 'kernel' functions," +&
+             " OTHER 'parallel' functions (no recurrsion) or from a body of a" +& 
+             " 'parfor' loop"
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+      
+    // If we have a parallel function call in an implicit scope type, then go 
+    // up recursively to find the actuall scope.
+    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
+      equation 
+        true = listMember(scopeName, Env.implicitScopeNames);
+      then isValidWRTParallelScope(inFn,inFuncParallelism,restFrames,inInfo);
+      
+    //parallel function call in non parallel scope types is error.
+    case(_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(optName = SOME(scopeName))::_,_) 
+      equation
+        errorString = "\n" +& 
+             "- Parallel function '" +& Absyn.pathString(inFn) +& 
+             "' can not be called from a non parallel scope '" +& scopeName +& "'.\n" +&
+             "- Parallel functions can only be called from: 'kernel' functions," +&
+             " other 'parallel' functions (no recurrsion) or from a body of a" +& 
+             " 'parfor' loop"
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+     
+    //kernel function call in a parallel scope (kernel function, parallel function, or parfor) is Error.
+    case(_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+      equation
+        errorString = "\n" +& 
+             "- Kernel function '" +& Absyn.pathString(inFn) +& 
+             "' can not be called from a parallel scope '" +& scopeName +& "'.\n" +&
+             "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
+             " 'parallel' functions or from a body of a" +& 
+             " 'parfor' loop"
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+        
+    // If we have a kernel function call in an implicit scope type, then go 
+    // up recursively to find the actuall scope.
+    case(_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
+      equation 
+        true = listMember(scopeName, Env.implicitScopeNames);
+      then isValidWRTParallelScope(inFn,inFuncParallelism,restFrames,inInfo);
+     
+    case(_,_,_,_) then true;
+        /*
+    //Normal (non parallel) function call in a normal function scope is OK.
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    //Normal (non parallel) function call in a normal class scope is OK.
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.CLASS_SCOPE())) then();
+    //Normal (non parallel) function call in a normal function scope is OK.
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    //Normal (non parallel) function call in a normal class scope is OK.
+    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optType = Env.CLASS_SCOPE())) then();
+    //Normal (non parallel) function call in a normal function scope is OK.
+    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    */
+    
+ end matchcontinue;
+end isValidWRTParallelScope;
 
 protected function elabCallArgsMetarecord
   input Env.Cache inCache;
@@ -12897,7 +13004,7 @@ algorithm
       String str1;
       Absyn.Path path,path2;
       list<Absyn.Path> operNames;
-      Env.Env operatorEnv,env;
+      Env.Env recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
       Env.Cache cache;
       list<DAE.Type> types;
@@ -12913,13 +13020,18 @@ algorithm
         
         // prepare the call path for the operator. 
         // if *   => recordPath.'*'  , !!also if .*   => recordPath.'*'
-        path = getRecordPath(type1);                  
+        path = getRecordPath(type1);  
+        path = Absyn.makeFullyQualified(path);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);     
+                  
         str1 = "'" +& Dump.opSymbolCompact(op) +& "'";
         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
-    
+       
+        
         // check if the operator is defined. i.e overloaded
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
         true = SCode.isOperator(operatorCl);
+       
         
         // get the list of functions in the operator. !! there can be multiple options
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -12939,11 +13051,13 @@ algorithm
       equation
          
         path = getRecordPath(type1);  
+        path = Absyn.makeFullyQualified(path);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);     
                 
         str1 = "'constructor'";
         path2 = Absyn.joinPaths(path, Absyn.IDENT(str1));
         
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path2, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path2, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -12990,7 +13104,7 @@ algorithm
       Absyn.Path path;
       Option<Interactive.SymbolTable> st_1;
       list<Absyn.Path> operNames;
-      Env.Env operatorEnv,env;
+      Env.Env recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
       Env.Cache cache;
       list<DAE.Type> types;
@@ -13005,11 +13119,14 @@ algorithm
       equation       
         (cache,_,DAE.PROP(type1,_),st_1) = elabExp(cache,env,exp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo);
         
-        path = getRecordPath(type1);
+        path = getRecordPath(type1);  
+        path = Absyn.makeFullyQualified(path);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+        
         str1 = "'String'";
         path = Absyn.joinPaths(path, Absyn.IDENT(str1));
         
-        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
         true = SCode.isOperator(operatorCl);
         
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
@@ -13130,7 +13247,7 @@ algorithm
        Env.Cache cache;
        list<Absyn.Path> operNames;
        Absyn.Path path;
-       Env.Env operatorEnv;
+       Env.Env operatorEnv,recordEnv;
        SCode.Element operatorCl;
        list<DAE.Type> types;
        Env.Env env;
@@ -13157,12 +13274,15 @@ algorithm
       // if we have a record check for overloaded operators   
      case(cache, env, aboper, DAE.PROP(type1,const) , _, _, absexp1, _, _, _, _)
        equation       
-         path = getRecordPath(type1);
+ 
+         path = getRecordPath(type1);  
+         path = Absyn.makeFullyQualified(path);
+         (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
          
          str1 = "'" +& Dump.opSymbolCompact(aboper) +& "'";
          path = Absyn.joinPaths(path, Absyn.IDENT(str1));
          
-         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,env,path, false);
+         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
          true = SCode.isOperator(operatorCl);
          
          operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);

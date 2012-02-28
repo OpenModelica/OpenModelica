@@ -3812,6 +3812,38 @@ extern struct record_description Absyn_FunctionRestriction_FR__OPERATOR__FUNCTIO
 static const MMC_DEFSTRUCTLIT(Absyn__FR_5fOPERATOR_5fFUNCTION__struct,1,4) {&Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION__desc}};
 static void *Absyn__FR_5fOPERATOR_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fOPERATOR_5fFUNCTION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc_added
+#define Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc = {
+  "Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION",
+  "Absyn.FunctionRestriction.FR_PARALLEL_FUNCTION",
+  Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc;
+#endif
+#define Absyn__FR_5fPARALLEL_5fFUNCTION_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__FR_5fPARALLEL_5fFUNCTION__struct,1,5) {&Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION__desc}};
+static void *Absyn__FR_5fPARALLEL_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fPARALLEL_5fFUNCTION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc_added
+#define Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc = {
+  "Absyn_FunctionRestriction_FR__KERNEL__FUNCTION",
+  "Absyn.FunctionRestriction.FR_KERNEL_FUNCTION",
+  Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc;
+#endif
+#define Absyn__FR_5fKERNEL_5fFUNCTION_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Absyn__FR_5fKERNEL_5fFUNCTION__struct,1,6) {&Absyn_FunctionRestriction_FR__KERNEL__FUNCTION__desc}};
+static void *Absyn__FR_5fKERNEL_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__FR_5fKERNEL_5fFUNCTION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Annotation_ANNOTATION__desc_added
 #define Absyn_Annotation_ANNOTATION__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Annotation_ANNOTATION__desc__fields[1] = {"elementArgs"};

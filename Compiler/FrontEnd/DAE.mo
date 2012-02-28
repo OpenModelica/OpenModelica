@@ -884,9 +884,9 @@ public uniontype CodeType
   end C_VARIABLENAMES;
 end CodeType;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE()));
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_BUILTIN(NONE()),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
 
 public
 uniontype FunctionAttributes
@@ -894,6 +894,7 @@ uniontype FunctionAttributes
     InlineType inline;
     Boolean isPure;
     FunctionBuiltin isBuiltin;
+    FunctionParallelism functionParallelism;
   end FUNCTION_ATTRIBUTES;
 end FunctionAttributes;
 
@@ -910,6 +911,15 @@ uniontype FunctionBuiltin
   end FUNCTION_BUILTIN_PTR;
   
 end FunctionBuiltin;
+
+//This was a function restriction in SCode and Absyn
+//Now it is part of function attributes.
+public
+uniontype FunctionParallelism
+  record FP_NON_PARALLEL   "a normal function i.e non_parallel"    end FP_NON_PARALLEL;
+  record FP_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FP_PARALLEL_FUNCTION;
+  record FP_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FP_KERNEL_FUNCTION;
+end FunctionParallelism;
 
 type Dimensions = list<Dimension> "a list of dimensions";
 

@@ -162,9 +162,11 @@ class_type returns [void* ast] :
   | ( e=EXPANDABLE )? CONNECTOR { ast = e ? Absyn__R_5fEXP_5fCONNECTOR : Absyn__R_5fCONNECTOR; }
   | TYPE { ast = Absyn__R_5fTYPE; }
   | T_PACKAGE { ast = Absyn__R_5fPACKAGE; }
-  | (opr=OPERATOR)? FUNCTION 
+  | (opr=OPERATOR | prl=T_PARALLEL | ker=T_KERNEL)? FUNCTION 
 		  { 
 		    ast = opr ? Absyn__R_5fFUNCTION(Absyn__FR_5fOPERATOR_5fFUNCTION) :
+		          prl ? Absyn__R_5fFUNCTION(Absyn__FR_5fPARALLEL_5fFUNCTION) :
+		          ker ? Absyn__R_5fFUNCTION(Absyn__FR_5fKERNEL_5fFUNCTION) :
 				  Absyn__R_5fFUNCTION(Absyn__FR_5fNORMAL_5fFUNCTION); 
 		  } 
   | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }

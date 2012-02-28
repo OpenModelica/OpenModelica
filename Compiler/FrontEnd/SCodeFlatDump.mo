@@ -457,6 +457,8 @@ algorithm
     case SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()) then "OF";
     case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) then "EF";
     case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "RC";
+    case SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()) then "PF";
+    case SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()) then "KF";
     case SCode.R_ENUMERATION() then "EN";
     case SCode.R_PREDEFINED_INTEGER() then "Ti";
     case SCode.R_PREDEFINED_REAL() then "Tr";

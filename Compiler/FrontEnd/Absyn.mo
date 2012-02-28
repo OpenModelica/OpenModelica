@@ -1056,6 +1056,8 @@ public
 uniontype FunctionRestriction
   record FR_NORMAL_FUNCTION   "a normal function"    end FR_NORMAL_FUNCTION;
   record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
+  record FR_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FR_PARALLEL_FUNCTION;
+  record FR_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FR_KERNEL_FUNCTION;
 end FunctionRestriction;
 
 public

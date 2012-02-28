@@ -313,6 +313,8 @@ algorithm
       then Util.if_(containsExternalFuncDecl(d), SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) ,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()));
         
     case (_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION());
+    case (_,Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION());
+    case (_,Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION())) then SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION());
     
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
     case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();

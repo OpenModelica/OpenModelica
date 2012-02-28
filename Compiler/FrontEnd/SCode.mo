@@ -100,6 +100,8 @@ uniontype FunctionRestriction
   record FR_OPERATOR_FUNCTION "an operator function" end FR_OPERATOR_FUNCTION;
   record FR_EXTERNAL_FUNCTION "an external function" end FR_EXTERNAL_FUNCTION;
   record FR_RECORD_CONSTRUCTOR "record constructor"  end FR_RECORD_CONSTRUCTOR;
+  record FR_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FR_PARALLEL_FUNCTION;
+  record FR_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FR_KERNEL_FUNCTION;
 end FunctionRestriction;
 
 public
@@ -1135,6 +1137,9 @@ algorithm
     case (FR_NORMAL_FUNCTION(),FR_NORMAL_FUNCTION()) then true;
     case (FR_EXTERNAL_FUNCTION(),FR_EXTERNAL_FUNCTION()) then true;
     case (FR_OPERATOR_FUNCTION(),FR_OPERATOR_FUNCTION()) then true;
+    case (FR_RECORD_CONSTRUCTOR(),FR_RECORD_CONSTRUCTOR()) then true;
+    case (FR_PARALLEL_FUNCTION(),FR_PARALLEL_FUNCTION()) then true;
+    case (FR_KERNEL_FUNCTION(),FR_KERNEL_FUNCTION()) then true;
     else false;
   end match;
 end funcRestrictionEqual;

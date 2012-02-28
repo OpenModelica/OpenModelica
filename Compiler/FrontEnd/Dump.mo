@@ -592,6 +592,8 @@ algorithm
     case Absyn.R_PACKAGE() then "package";
     case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) then "function";
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) then "operator function";
+    case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) then "parallel function";
+    case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()) then "kernel function";
     case Absyn.R_PREDEFINED_INTEGER() then "Integer";
     case Absyn.R_PREDEFINED_REAL() then "Real";
     case Absyn.R_PREDEFINED_STRING() then "String";
@@ -884,6 +886,8 @@ algorithm
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION)"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION)"); then ();
+    case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION)"); then ();
     case Absyn.R_ENUMERATION() equation Print.printBuf("Absyn.R_ENUMERATION"); then ();
     case Absyn.R_PREDEFINED_INTEGER() equation Print.printBuf("Absyn.R_PREDEFINED_INTEGER"); then ();
     case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
@@ -5731,6 +5735,16 @@ algorithm
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())
       equation
         Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;");
+      then ();
+    
+    case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())
+      equation
+        Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;");
+      then ();
+       
+    case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION())
+      equation
+        Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;");
       then ();
     
     case Absyn.R_OPERATOR()

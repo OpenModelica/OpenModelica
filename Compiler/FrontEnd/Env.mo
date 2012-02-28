@@ -139,6 +139,8 @@ type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
 public uniontype ScopeType
   record FUNCTION_SCOPE end FUNCTION_SCOPE;
   record CLASS_SCOPE end CLASS_SCOPE;
+  
+  record PARALLEL_SCOPE end PARALLEL_SCOPE;
 end ScopeType;
 
 public
@@ -2456,9 +2458,9 @@ public function restrictionToScopeType
   output Option<ScopeType> outType;
 algorithm
   outType := matchcontinue(inRestriction)
+    case SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()) then SOME(PARALLEL_SCOPE());
+    case SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()) then SOME(PARALLEL_SCOPE());
     case SCode.R_FUNCTION(_) then SOME(FUNCTION_SCOPE());
-    // case SCode.R_EXT_FUNCTION() then SOME(FUNCTION_SCOPE());
-    // case SCode.R_OPERATOR_FUNCTION() then SOME(FUNCTION_SCOPE());
     case _ then SOME(CLASS_SCOPE());
   end matchcontinue;
 end restrictionToScopeType;
