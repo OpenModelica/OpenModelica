@@ -254,6 +254,8 @@ template<typename FPT>
 inline FPT 
 safe_fpt_division( FPT uf1, FPT uf2 )
 {
+   #undef max
+	#undef min
 	return  ( uf1 < 1 && uf1 > uf2 * std::numeric_limits<FPT>::max())   
 		? std::numeric_limits<FPT>::max() :
 	((uf2 > 1 && uf1 < uf2 * std::numeric_limits<FPT>::min() || 

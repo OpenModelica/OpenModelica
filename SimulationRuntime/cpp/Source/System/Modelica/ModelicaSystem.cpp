@@ -117,7 +117,7 @@ void Modelica::handleEvent(unsigned long index)
   
 }
 
-void Modelica::handleSystemEvents(const bool* events,update_events_type update_event)
+void Modelica::handleSystemEvents(const bool* events)
 {
  
 }
@@ -128,6 +128,14 @@ bool Modelica::checkForDiscreteEvents()
   
   return restart;
 }
+void Modelica::saveConditions()
+{
+  
+  
+}
+ void Modelica::checkConditions(unsigned int, bool all) 
+ {
+ }
 
 void Modelica::giveJacobianSparsityPattern(SparcityPattern pattern)
 {

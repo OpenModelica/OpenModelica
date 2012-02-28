@@ -13,16 +13,18 @@ SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
 SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
 #set sundials solvers include and library directories
 SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
+
 if(MSVC)
 SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
 elseif(MINGW)
 SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw)
 endif()
+
 ENDIF( WIN32 )
 
 SET(MODELICA_MODEL "ModelicaSystem")
-SET(USE_MICO OFF)
-SET(REDUCE_DAE OFF)
+SET(USE_MICO ON)
+SET(REDUCE_DAE ON)
 SET(USE_SUNDIALS ON)
 SET(INSTALL_OMDEV_LIBS ON)
 

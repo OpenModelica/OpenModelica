@@ -53,6 +53,7 @@ typedef double sin_rettype;
 typedef double sinh_rettype;
 typedef double log_rettype;
 typedef double tan_rettype;
+typedef double atan_rettype;
 typedef double tanh_rettype;
 typedef double exp_rettype;
 typedef double sqrt_rettype;

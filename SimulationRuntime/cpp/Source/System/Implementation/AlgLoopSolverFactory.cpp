@@ -43,7 +43,7 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 		//boost::shared_ptr<IAlgLoopSolver> algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,algsolversetting.get()));
 		//_algsolvers.push_back(algsolver);
 		//return algsolver;
-		std::string newton_name("Newton.dll" );
+		std::string newton_name(NEWTON_LIB);
 		type_map types;
 		if(!load_single_library(types, newton_name))
 			throw std::invalid_argument(" Newton library could not be loaded");

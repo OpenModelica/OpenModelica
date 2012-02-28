@@ -87,8 +87,9 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
 	virtual void giveConditions(bool* c);
     virtual void setConditions(bool* c);
 	//Called to handle all  events occured at same time  
-	 virtual void handleSystemEvents(const bool* events,update_events_type update_event);
-
+	 virtual void handleSystemEvents(const bool* events);
+	virtual void saveConditions();
+	virtual void checkConditions(unsigned int, bool all);
 	//Called to handle an event  
 	 virtual void handleEvent(unsigned long index);
 
