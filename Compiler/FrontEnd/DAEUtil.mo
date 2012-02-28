@@ -1250,6 +1250,17 @@ algorithm
   end matchcontinue;
 end isParameterOrConstant;
 
+public function isParamOrConstVarKind
+  input DAE.VarKind inVarKind;
+  output Boolean outIsParamOrConst;
+algorithm
+  outIsParamOrConst := match(inVarKind)
+    case DAE.PARAM() then true;
+    case DAE.CONST() then true;
+    else false;
+  end match;
+end isParamOrConstVarKind;
+
 public function isInnerVar "function isInnerVar
   author: PA
 
@@ -1344,6 +1355,26 @@ public function isStreamVar
 algorithm
   DAE.VAR(kind = DAE.VARIABLE(), streamPrefix = DAE.STREAM()) := inElement;
 end isStreamVar;
+
+public function isFlow
+  input DAE.Flow inFlow;
+  output Boolean outIsFlow;
+algorithm
+  outIsFlow := match(inFlow)
+    case DAE.FLOW() then true;
+    else false;
+  end match;
+end isFlow;
+
+public function isStream
+  input DAE.Stream inStream;
+  output Boolean outIsStream;
+algorithm
+  outIsStream := match(inStream)
+    case DAE.STREAM() then true;
+    else false;
+  end match;
+end isStream;
 
 public function isOutputVar
 "Succeeds if Element is an output variable."

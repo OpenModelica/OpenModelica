@@ -47,6 +47,7 @@ public import SCodeEnv;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEDump;
+protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -134,24 +135,26 @@ end Binding;
 public uniontype Component
   record UNTYPED_COMPONENT
     Absyn.Path name;
-    SCode.Element element;
     DAE.Type baseType;
     array<Dimension> dimensions;
+    Prefixes prefixes;
     Binding binding;
+    Absyn.Info info;
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT
     Absyn.Path name;
     DAE.Type ty;
-    SCode.Variability variability;
-    Absyn.InnerOuter innerOuter;
+    Prefixes prefixes;
     Binding binding;
+    Absyn.Info info;
   end TYPED_COMPONENT;
     
   record CONDITIONAL_COMPONENT
     Absyn.Path name;
     SCode.Element element;
     Modifier modifier;
+    Prefixes prefixes;
     Env env;
     Prefix prefix;
   end CONDITIONAL_COMPONENT; 
@@ -180,6 +183,25 @@ public uniontype Modifier
 
   record NOMOD end NOMOD;
 end Modifier;
+
+public uniontype Prefixes
+  record NO_PREFIXES end NO_PREFIXES;
+
+  record PREFIXES
+    DAE.VarVisibility visibility;
+    DAE.VarKind variability;
+    SCode.Final finalPrefix;
+    Absyn.InnerOuter innerOuter;
+    tuple<DAE.VarDirection, Absyn.Info> direction;
+    tuple<DAE.Flow, Absyn.Info> flowPrefix;
+    tuple<DAE.Stream, Absyn.Info> streamPrefix;
+  end PREFIXES;
+end Prefixes;
+
+protected constant Prefixes DEFAULT_CONST_PREFIXES = PREFIXES(
+  DAE.PUBLIC(), DAE.CONST(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
+  (DAE.BIDIR(), Absyn.dummyInfo), (DAE.NON_CONNECTOR(), Absyn.dummyInfo),
+  (DAE.NON_STREAM_CONNECTOR(), Absyn.dummyInfo));
 
 protected type Key = Absyn.Path;
 protected type Value = Component;
@@ -270,7 +292,7 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
-        (cls, _) = instClassItem(item, NOMOD(), env, {});
+        (cls, _) = instClassItem(item, NOMOD(), NO_PREFIXES(), env, {});
         const_el = instGlobalConstants(inGlobalConstants, inEnv);
         cls = addElementsToClass(const_el, cls);
 
@@ -333,6 +355,7 @@ end addElementsToClass;
 protected function instClassItem
   input Item inItem;
   input Modifier inMod;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   output Class outClass;
@@ -341,18 +364,19 @@ protected
   Item item;
 algorithm
   item := convertDerivedBasicTypeToShortDef(inItem);
-  (outClass, outType) := instClassItem2(item, inMod, inEnv, inPrefix);
+  (outClass, outType) := instClassItem2(item, inMod, inPrefixes, inEnv, inPrefix);
 end instClassItem;
 
 protected function instClassItem2
   input Item inItem;
   input Modifier inMod;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   output Class outClass;
   output DAE.Type outType;
 algorithm
-  (outClass, outType) := match(inItem, inMod, inEnv, inPrefix)
+  (outClass, outType) := match(inItem, inMod, inPrefixes, inEnv, inPrefix)
     local
       list<SCode.Element> el;
       list<tuple<SCode.Element, Modifier>> mel;
@@ -376,7 +400,7 @@ algorithm
       SCode.Element sel;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
-        classType = SCodeEnv.BASIC_TYPE()), _, _, _) 
+        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
       equation
         vars = instBasicTypeAttributes(inMod, env);
         ty = instBasicType(name, inMod, vars);
@@ -384,14 +408,14 @@ algorithm
         (BASIC_TYPE(), ty);
 
     // A class with parts, instantiate all elements in it.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, 
-          classDef = SCode.PARTS(el, nel, iel, nal, ial, _, _, _)), 
-        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _)
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name,
+          classDef = SCode.PARTS(el, nel, iel, nal, ial, _, _, _), info = info),
+        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _)
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
-        elems = instElementList(mel, env, inPrefix);
+        elems = instElementList(mel, inPrefixes, env, inPrefix);
         // TODO: Check for duplicate elements from extends.
         cls = COMPLEX_CLASS(elems, nel, iel, nal, ial);
       then
@@ -399,19 +423,19 @@ algorithm
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _)
+        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _, _)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
         mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
-        (cls, ty) = instClassItem(item, mod, env, inPrefix);
+        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
         dims = Absyn.typeSpecDimensions(dty);
         ty = liftArrayType(dims, ty, inEnv, inPrefix);
       then
         (cls, ty);
         
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _)
+        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _)
       equation
         path = prefixToPath(inPrefix);
         ty = makeEnumType(enums, path);
@@ -632,43 +656,45 @@ end lookupElement;
         
 protected function instElementList
   input list<tuple<SCode.Element, Modifier>> inElements;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   output list<Element> outElements;
 algorithm
-  outElements := instElementList2(inElements, inEnv, inPrefix, {});
+  outElements := instElementList2(inElements, inPrefixes, inEnv, inPrefix, {});
 end instElementList;
 
 protected function instElementList2
   input list<tuple<SCode.Element, Modifier>> inElements;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   input list<Element> inAccumEl;
   output list<Element> outElements;
 algorithm
-  outElements := match(inElements, inEnv, inPrefix, inAccumEl)
+  outElements := match(inElements, inPrefixes, inEnv, inPrefix, inAccumEl)
     local
       SCode.Element elem;
       Modifier mod;
       list<tuple<SCode.Element, Modifier>> rest_el;
       Element res;
 
-    case ({}, _, _, _) then inAccumEl;
+    case ({}, _, _, _, _) then inAccumEl;
 
-    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _)
+    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _)
       equation
-        res = instElement(elem, mod, inEnv, inPrefix);
+        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix);
       then
-        instElementList2(rest_el, inEnv, inPrefix, res :: inAccumEl);
+        instElementList2(rest_el, inPrefixes, inEnv, inPrefix, res :: inAccumEl);
 
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _, _, _)
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _, _, _, _)
       equation
-        res = instExtends(elem, mod, inEnv, inPrefix);
+        res = instExtends(elem, mod, inPrefixes, inEnv, inPrefix);
       then
-        instElementList2(rest_el, inEnv, inPrefix, res :: inAccumEl);
+        instElementList2(rest_el, inPrefixes, inEnv, inPrefix, res :: inAccumEl);
 
-    case (_ :: rest_el, _, _, _)
-      then instElementList2(rest_el, inEnv, inPrefix, inAccumEl);
+    case (_ :: rest_el, _, _, _, _)
+      then instElementList2(rest_el, inPrefixes, inEnv, inPrefix, inAccumEl);
 
   end match;
 end instElementList2;
@@ -676,11 +702,12 @@ end instElementList2;
 protected function instElement
   input SCode.Element inElement;
   input Modifier inClassMod;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   output Element outElement;
 algorithm
-  outElement := match(inElement, inClassMod, inEnv, inPrefix)
+  outElement := match(inElement, inClassMod, inPrefixes, inEnv, inPrefix)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -700,9 +727,12 @@ algorithm
       array<Dimension> dim_arr;
       Class cls;
       Element el;
+      SCode.Prefixes pf;
+      SCode.Attributes attr;
+      Prefixes prefs;
 
-    case (SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(innerOuter =
-        Absyn.OUTER())), _, _, _)
+    case (SCode.COMPONENT(name = name, 
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _)
       equation
         prefix = (name, {}) :: inPrefix;
         path = prefixToPath(prefix);
@@ -711,9 +741,10 @@ algorithm
         ELEMENT(comp, BASIC_TYPE());
 
     // A component, look up it's type and instantiate that class.
-    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
+    case (SCode.COMPONENT(name = name, prefixes = pf, 
+        attributes = attr as SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = path), modifications = smod,
-        condition = NONE(), info = info), _, _, _)
+        condition = NONE(), info = info), _, _, _, _)
       equation
         // Look up the class of the component.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -723,12 +754,15 @@ algorithm
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
 
+
         // Instantiate the class.
         prefix = (name, ad) :: inPrefix;
+        path = prefixToPath(prefix);
+        prefs = mergePrefixes(path, pf, attr, inPrefixes, info);
         mod = SCodeMod.translateMod(smod, name, inPrefix, inEnv);
         cmod = SCodeMod.propagateMod(inClassMod);
         mod = SCodeMod.mergeMod(cmod, mod);
-        (cls, ty) = instClassItem(item, mod, env, prefix);
+        (cls, ty) = instClassItem(item, mod, prefs, env, prefix);
 
         // Instantiate array dimensions.
         dims = instDimensions(ad, inEnv, inPrefix);
@@ -740,16 +774,15 @@ algorithm
         binding = instBinding(binding);
 
         // Create the component and add it to the program.
-        path = prefixToPath(prefix);
-        comp = UNTYPED_COMPONENT(path, inElement, ty, dim_arr, binding);
+        comp = UNTYPED_COMPONENT(path, ty, dim_arr, prefs, binding, info);
       then
         ELEMENT(comp, cls);
 
     // A conditional component, save it for later.
-    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _)
+    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _, _)
       equation
         path = prefixPath(Absyn.IDENT(name), inPrefix);
-        comp = CONDITIONAL_COMPONENT(path, inElement, inClassMod, inEnv, inPrefix);
+        comp = CONDITIONAL_COMPONENT(path, inElement, inClassMod, inPrefixes, inEnv, inPrefix);
       then
         CONDITIONAL_ELEMENT(comp);
 
@@ -766,11 +799,12 @@ end instElement;
 protected function instExtends
   input SCode.Element inExtends;
   input Modifier inClassMod;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   output Element outElement;
 algorithm
-  outElement := match(inExtends, inClassMod, inEnv, inPrefix)
+  outElement := match(inExtends, inClassMod, inPrefixes, inEnv, inPrefix)
     local
       Absyn.Path path;
       SCode.Mod smod;
@@ -784,7 +818,7 @@ algorithm
       DAE.Type ty;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, SCodeEnv.FRAME(extendsTable = exts) :: _, _)
+        _, _, SCodeEnv.FRAME(extendsTable = exts) :: _, _)
       equation
         // Look up the extended class.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -798,7 +832,7 @@ algorithm
         // Instantiate the class.
         mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty) = instClassItem(item, mod, env, inPrefix);
+        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
       then
         EXTENDED_ELEMENTS(path, cls);
         
@@ -811,6 +845,313 @@ algorithm
 
   end match;
 end instExtends;
+
+protected function mergePrefixes
+  input Absyn.Path inComponentName;
+  input SCode.Prefixes inInnerPrefixes;
+  input SCode.Attributes inAttributes;
+  input Prefixes inOuterPrefixes;
+  input Absyn.Info inInfo;
+  output Prefixes outPrefixes;
+algorithm
+  outPrefixes :=
+  match(inComponentName, inInnerPrefixes, inAttributes, inOuterPrefixes, inInfo)
+    local
+      SCode.Visibility vis1;
+      DAE.VarVisibility vis2;
+      SCode.Variability var1;
+      DAE.VarKind var2;
+      SCode.Final fp1, fp2;
+      Absyn.InnerOuter io;
+      Absyn.Direction dir1;
+      tuple<DAE.VarDirection, Absyn.Info> dir2;
+      SCode.Flow flp1;
+      tuple<DAE.Flow, Absyn.Info> flp2;
+      SCode.Stream sp1;
+      tuple<DAE.Stream, Absyn.Info> sp2;
+
+    case (_, SCode.PREFIXES(SCode.PUBLIC(), _, SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(), _), 
+        SCode.ATTR(_, SCode.NOT_FLOW(), SCode.NOT_STREAM(), _, SCode.VAR(), Absyn.BIDIR()), _, _)
+      then inOuterPrefixes;
+
+    case (_, _, _, NO_PREFIXES(), _) 
+      then makePrefixes(inInnerPrefixes, inAttributes, inInfo);
+
+    case (_, SCode.PREFIXES(vis1, _, fp1, io, _), SCode.ATTR(_, flp1, sp1, _, var1, dir1),
+        PREFIXES(vis2, var2, fp2, _, dir2, flp2, sp2), _)
+      equation
+        vis2 = mergeVisibility(vis1, vis2);
+        var2 = mergeVariability(var1, var2);
+        fp2 = mergeFinal(fp1, fp2);
+        dir2 = mergeDirection(dir1, dir2, inComponentName, inInfo);
+        (flp2, sp2) = mergeFlowStream(flp1, sp1, flp2, sp2, inComponentName, inInfo);
+      then
+        PREFIXES(vis2, var2, fp2, io, dir2, flp2, sp2);
+
+  end match;
+end mergePrefixes;
+
+protected function makePrefixes
+  input SCode.Prefixes inPrefixes;
+  input SCode.Attributes inAttributes;
+  input Absyn.Info inInfo;
+  output Prefixes outPrefixes;
+protected
+  SCode.Visibility vis;
+  DAE.VarVisibility dvis;
+  SCode.Variability var;
+  DAE.VarKind vkind;
+  SCode.Final fp;
+  Absyn.InnerOuter io;
+  Absyn.Direction dir;
+  DAE.VarDirection ddir;
+  SCode.Flow flp;
+  DAE.Flow dflp;
+  SCode.Stream sp;
+  DAE.Stream dsp;
+algorithm
+  SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io) := inPrefixes;
+  SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
+    direction = dir) := inAttributes;
+  dvis := makeVarVisibility(vis);
+  vkind := makeVarKind(var);
+  ddir := makeVarDirection(dir);
+  dflp := makeVarFlow(flp);
+  dsp := makeVarStream(sp);
+  outPrefixes := PREFIXES(dvis, vkind, fp, io, 
+    (ddir, inInfo), (dflp, inInfo), (dsp, inInfo));
+end makePrefixes;
+
+protected function makeVarVisibility
+  input SCode.Visibility inVisibility;
+  output DAE.VarVisibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case SCode.PUBLIC() then DAE.PUBLIC();
+    else DAE.PROTECTED();
+  end match;
+end makeVarVisibility;
+
+protected function makeVarKind
+  input SCode.Variability inVariability;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case SCode.VAR() then DAE.VARIABLE();
+    case SCode.PARAM() then DAE.PARAM();
+    case SCode.CONST() then DAE.CONST();
+    case SCode.DISCRETE() then DAE.DISCRETE();
+  end match;
+end makeVarKind;
+
+protected function makeVarDirection
+  input Absyn.Direction inDirection;
+  output DAE.VarDirection outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case Absyn.BIDIR() then DAE.BIDIR();
+    case Absyn.OUTPUT() then DAE.OUTPUT();
+    case Absyn.INPUT() then DAE.INPUT();
+  end match;
+end makeVarDirection;
+
+protected function makeVarFlow
+  input SCode.Flow inFlow;
+  output DAE.Flow outFlow;
+algorithm
+  outFlow := match(inFlow)
+    case SCode.NOT_FLOW() then DAE.NON_CONNECTOR();
+    else DAE.FLOW();
+  end match;
+end makeVarFlow;
+
+protected function makeVarStream
+  input SCode.Stream inStream;
+  output DAE.Stream outStream;
+algorithm
+  outStream := match(inStream)
+    case SCode.NOT_STREAM() then DAE.NON_STREAM_CONNECTOR();
+    else DAE.STREAM();
+  end match;
+end makeVarStream;
+
+protected function mergeVisibility
+  input SCode.Visibility inInnerVisibility;
+  input DAE.VarVisibility inOuterVisibility;
+  output DAE.VarVisibility outVisibility;
+algorithm
+  outVisibility := match(inInnerVisibility, inOuterVisibility)
+    case (_, DAE.PROTECTED()) then DAE.PROTECTED();
+    else makeVarVisibility(inInnerVisibility);
+  end match;
+end mergeVisibility;
+
+protected function mergeVariability
+  input SCode.Variability inInnerVariability;
+  input DAE.VarKind inOuterVariability;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inInnerVariability, inOuterVariability)
+    case (_, DAE.CONST()) then DAE.CONST();
+    case (SCode.CONST(), _) then DAE.CONST();
+    case (_, DAE.PARAM()) then DAE.PARAM();
+    case (SCode.PARAM(), _) then DAE.PARAM();
+    case (_, DAE.DISCRETE()) then DAE.DISCRETE();
+    case (SCode.DISCRETE(), _) then DAE.DISCRETE();
+    else DAE.VARIABLE();
+  end match;
+end mergeVariability;
+
+protected function mergeFinal
+  input SCode.Final inInnerFinal;
+  input SCode.Final inOuterFinal;
+  output SCode.Final outFinal;
+algorithm
+  outFinal := match(inInnerFinal, inOuterFinal)
+    case (_, SCode.FINAL()) then SCode.FINAL();
+    else inInnerFinal;
+  end match;
+end mergeFinal;
+
+protected function mergeDirection
+  input Absyn.Direction inInnerDirection;
+  input tuple<DAE.VarDirection, Absyn.Info> inOuterDirection;
+  input Absyn.Path inComponentName;
+  input Absyn.Info inInfo;
+  output tuple<DAE.VarDirection, Absyn.Info> outDirection;
+algorithm
+  outDirection := match(inInnerDirection, inOuterDirection, inComponentName, inInfo)
+    local
+      DAE.VarDirection dir;
+      Absyn.Info info;
+      String dir_str1, dir_str2, comp_name;
+
+    case (Absyn.BIDIR(), _, _, _) then inOuterDirection;
+
+    case (_, (DAE.BIDIR(), _), _, _)
+      equation
+        dir = makeVarDirection(inInnerDirection);
+      then
+        ((dir, inInfo));
+
+    case (_, (dir, info), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        dir_str1 = varDirectionString(dir);
+        dir_str2 = directionString(inInnerDirection);
+        comp_name = Absyn.pathString(inComponentName);
+        Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,
+          {dir_str1, comp_name, dir_str2}, info);
+      then
+        fail();
+
+  end match;
+end mergeDirection;
+
+protected function mergeFlowStream
+  input SCode.Flow inInnerFlow;
+  input SCode.Stream inInnerStream;
+  input tuple<DAE.Flow, Absyn.Info> inOuterFlow;
+  input tuple<DAE.Stream, Absyn.Info> inOuterStream;
+  input Absyn.Path inComponentName;
+  input Absyn.Info inInfo;
+  output tuple<DAE.Flow, Absyn.Info> outFlow;
+  output tuple<DAE.Stream, Absyn.Info> outStream;
+algorithm
+  (outFlow, outStream) := matchcontinue(inInnerFlow, inInnerStream, inOuterFlow,
+      inOuterStream, inComponentName, inInfo)
+    local
+      DAE.Flow fp;
+      DAE.Stream sp;
+      Absyn.Info info;
+      String fp_str, sp_str, pf_str, comp_name;
+      tuple<DAE.Flow, Absyn.Info> new_fp;
+      tuple<DAE.Stream, Absyn.Info> new_sp;
+
+    case (SCode.NOT_FLOW(), SCode.NOT_STREAM(), _, _, _, _) 
+      then (inOuterFlow, inOuterStream);
+
+    case (_, _, (fp, _), (sp, _), _, _)
+      equation
+        false = ((SCode.flowBool(inInnerFlow) or SCode.streamBool(inInnerStream)) and
+                 (DAEUtil.isFlow(fp) or DAEUtil.isStream(sp)));
+        new_fp = mergeFlow(inInnerFlow, inOuterFlow, inInfo);
+        new_sp = mergeStream(inInnerStream, inOuterStream, inInfo);
+      then
+        (new_fp, new_sp);
+        
+    case (_, _, (DAE.FLOW(), info), _, _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        fp_str = SCodeDump.flowStr(inInnerFlow);
+        sp_str = SCodeDump.streamStr(inInnerStream);
+        pf_str = fp_str +& sp_str;
+        comp_name = Absyn.pathString(inComponentName);
+        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {"flow", comp_name, pf_str}, info);
+      then
+        fail();
+
+    case (_, _, _, (DAE.STREAM(), info), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        fp_str = SCodeDump.flowStr(inInnerFlow);
+        sp_str = SCodeDump.streamStr(inInnerStream);
+        pf_str = fp_str +& sp_str;
+        comp_name = Absyn.pathString(inComponentName);
+        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {"stream", comp_name, pf_str}, info);
+      then
+        fail();
+
+  end matchcontinue;
+end mergeFlowStream;
+
+protected function mergeFlow
+  input SCode.Flow inInnerFlow;
+  input tuple<DAE.Flow, Absyn.Info> inOuterFlow;
+  input Absyn.Info inInfo;
+  output tuple<DAE.Flow, Absyn.Info> outFlow;
+algorithm
+  outFlow := match(inInnerFlow, inOuterFlow, inInfo)
+    case (SCode.NOT_FLOW(), _, _) then inOuterFlow;
+    else ((DAE.FLOW(), inInfo));
+  end match;
+end mergeFlow;
+
+protected function mergeStream
+  input SCode.Stream inInnerStream;
+  input tuple<DAE.Stream, Absyn.Info> inOuterStream;
+  input Absyn.Info inInfo;
+  output tuple<DAE.Stream, Absyn.Info> outStream;
+algorithm
+  outStream := match(inInnerStream, inOuterStream, inInfo)
+    case (SCode.NOT_STREAM(), _, _) then inOuterStream;
+    else ((DAE.STREAM(), inInfo));
+  end match;
+end mergeStream;
+   
+protected function directionString
+  input Absyn.Direction inDirection;
+  output String outString;
+algorithm
+  outString := match(inDirection)
+    case Absyn.INPUT() then "input";
+    case Absyn.OUTPUT() then "output";
+    else "";
+  end match;
+end directionString;
+
+protected function varDirectionString
+  input DAE.VarDirection inDirection;
+  output String outString;
+algorithm
+  outString := match(inDirection)
+    case DAE.INPUT() then "input";
+    case DAE.OUTPUT() then "output";
+    else "";
+  end match;
+end varDirectionString;
 
 protected function makeEnumType
   input list<SCode.Enum> inEnumLiterals;
@@ -866,8 +1207,8 @@ algorithm
     case (SCode.ENUM(literal = name), _, _, _)
       equation
         path = Absyn.suffixPath(inEnumPath, name);
-        comp = TYPED_COMPONENT(path, inType, SCode.CONST(), Absyn.NOT_INNER_OUTER(),
-          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType, 1));
+        comp = TYPED_COMPONENT(path, inType, DEFAULT_CONST_PREFIXES,
+          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType, 1), Absyn.dummyInfo);
       then
         ELEMENT(comp, BASIC_TYPE());
 
@@ -1486,7 +1827,7 @@ algorithm
         pre_path = Absyn.pathPrefix(inPath);
         prefix = pathPrefix(pre_path);
       then
-        instElement(el, NOMOD(), inEnv, prefix);
+        instElement(el, NOMOD(), NO_PREFIXES(), inEnv, prefix);
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
         SCode.ENUMERATION(enumLst = enuml))), _, _)
@@ -1502,7 +1843,7 @@ algorithm
         bind_exp = DAE.ARRAY(arr_ty, true, enum_exps);
         binding = TYPED_BINDING(bind_exp, arr_ty, 1);
       then
-        ELEMENT(TYPED_COMPONENT(inPath, ty, SCode.CONST(), Absyn.NOT_INNER_OUTER(), UNBOUND()),
+        ELEMENT(TYPED_COMPONENT(inPath, ty, DEFAULT_CONST_PREFIXES, UNBOUND(), Absyn.dummyInfo),
           COMPLEX_CLASS(enum_el, {}, {}, {}, {}));
 
     else
@@ -2154,22 +2495,16 @@ algorithm
     local
       Absyn.Path name;
       DAE.Type ty;
-      SCode.Variability var;
-      Absyn.InnerOuter io;
+      Prefixes pf;
       SCode.Element el;
       array<Dimension> dims;
+      Absyn.Info info;
      
-    case (UNTYPED_COMPONENT(name = name, element = 
-        SCode.COMPONENT(
-          attributes = SCode.ATTR(
-            variability = var),
-          prefixes = SCode.PREFIXES(
-            innerOuter = io)
-          )), _, SOME(ty))
-      then TYPED_COMPONENT(name, ty, var, io, inBinding);
+    case (UNTYPED_COMPONENT(name = name, prefixes = pf, info = info), _, SOME(ty))
+      then TYPED_COMPONENT(name, ty, pf, inBinding, info);
 
-    case (UNTYPED_COMPONENT(name, el, ty, dims, _), _, NONE())
-      then UNTYPED_COMPONENT(name, el, ty, dims, inBinding);
+    case (UNTYPED_COMPONENT(name, ty, dims, pf, _, info), _, NONE())
+      then UNTYPED_COMPONENT(name, ty, dims, pf, inBinding, info);
 
   end match;
 end updateComponentBinding;
@@ -2187,22 +2522,23 @@ algorithm
       array<Dimension> dims;
       Binding binding;
       Component comp;
-      SCode.Variability var;
+      DAE.VarKind var;
       DAE.Exp binding_exp;
       Integer pl;
+      Prefixes pf;
+      Absyn.Info info;
 
-    case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-            SCode.ATTR(variability = var))), _)
+    case (UNTYPED_COMPONENT(prefixes = PREFIXES(variability = var)), _)
       equation
-        false = SCode.isParameterOrConst(var);
+        false = DAEUtil.isParamOrConstVarKind(var);
       then
         inSymbolTable;
 
-    case (UNTYPED_COMPONENT(name, el, ty, dims, 
-        UNTYPED_BINDING(binding_exp, _, pl)), _)
+    case (UNTYPED_COMPONENT(name, ty, dims, pf,
+        UNTYPED_BINDING(binding_exp, _, pl), info), _)
       equation
-        comp = UNTYPED_COMPONENT(name, el, ty, dims, 
-          UNTYPED_BINDING(binding_exp, true, pl));
+        comp = UNTYPED_COMPONENT(name, ty, dims, pf,
+          UNTYPED_BINDING(binding_exp, true, pl), info);
       then
         BaseHashTable.add((name, comp), inSymbolTable);
 
@@ -2382,7 +2718,7 @@ algorithm
       Component comp;
       DAE.Type ty;
       DAE.Exp exp;
-      SCode.Variability var;
+      DAE.VarKind var;
       Boolean param_or_const;
       DAE.ComponentRef cref;
 
@@ -2390,7 +2726,7 @@ algorithm
       equation
         comp = lookupCrefInTable(inCref, st);
         var = getComponentVariability(comp);
-        param_or_const = SCode.isParameterOrConst(var);
+        param_or_const = DAEUtil.isParamOrConstVarKind(var);
         (exp, ty, st) = typeCref2(inCref, comp, param_or_const, st);
       then
         (exp, ty, st);
@@ -2414,19 +2750,15 @@ end typeCref;
         
 protected function getComponentVariability
   input Component inComponent;
-  output SCode.Variability outVariability;
+  output DAE.VarKind outVariability;
 algorithm
   outVariability := match(inComponent)
     local
-      SCode.Variability var;
+      DAE.VarKind var;
 
-    case (UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-        SCode.ATTR(variability = var)))) 
-      then var;
-
-    case (TYPED_COMPONENT(variability = var)) then var;
-
-    case (OUTER_COMPONENT(name = _)) then SCode.VAR();
+    case UNTYPED_COMPONENT(prefixes = PREFIXES(variability = var)) then var;
+    case TYPED_COMPONENT(prefixes = PREFIXES(variability = var)) then var;
+    else DAE.VARIABLE();
 
   end match;
 end getComponentVariability;
@@ -2444,7 +2776,6 @@ algorithm
   match(inCref, inComponent, inIsParamOrConst, inSymbolTable)
     local
       DAE.Type ty;
-      SCode.Variability var;
       Binding binding;
       SymbolTable st;
       DAE.Exp exp;
@@ -2452,17 +2783,16 @@ algorithm
       Component inner_comp;
       DAE.ComponentRef inner_cref;
 
-    case (_, TYPED_COMPONENT(variability = var, ty = ty, binding = binding), true, st)
+    case (_, TYPED_COMPONENT(ty = ty, binding = binding), true, st)
       equation
         exp = getBindingExp(binding);
       then
         (exp, ty, st);
 
-    case (_, TYPED_COMPONENT(variability = var, ty = ty), false, st)
+    case (_, TYPED_COMPONENT(ty = ty), false, st)
       then (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-        SCode.ATTR(variability = var))), true, st)
+    case (_, UNTYPED_COMPONENT(name = _), true, st)
       equation
         (TYPED_COMPONENT(ty = ty, binding = binding), st) =
           typeComponent(inComponent, st);
@@ -2470,10 +2800,8 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, UNTYPED_COMPONENT(element = SCode.COMPONENT(attributes =
-        SCode.ATTR(variability = var))), false, st)
+    case (_, UNTYPED_COMPONENT(name = _), false, st)
       equation
-        false = SCode.isParameterOrConst(var);
         (ty, st) = typeComponentDims(inComponent, st);
       then
         (DAE.CREF(inCref, ty), ty, st);
@@ -2704,15 +3032,16 @@ algorithm
       Absyn.Path name;
       Modifier mod;
       Option<Element> el;
+      Prefixes prefs;
 
     case (CONDITIONAL_COMPONENT(name, sel as SCode.COMPONENT(condition = 
-      SOME(cond_exp), info = info), mod, env, prefix), st)
+      SOME(cond_exp), info = info), mod, prefs, env, prefix), st)
       equation
         inst_exp = instExp(cond_exp, env, prefix);
         (inst_exp, ty, st) = typeExp(inst_exp, st);
         (inst_exp, _) = ExpressionSimplify.simplify(inst_exp);
         cond = evaluateConditionalExp(inst_exp, ty, name, info);
-        (el, st) = instConditionalComponent2(cond, sel, mod, env, prefix, st);
+        (el, st) = instConditionalComponent2(cond, sel, mod, prefs, env, prefix, st);
       then
         (el, st);
          
@@ -2731,6 +3060,7 @@ protected function instConditionalComponent2
   input Boolean inCondition;
   input SCode.Element inElement;
   input Modifier inMod;
+  input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
@@ -2738,18 +3068,18 @@ protected function instConditionalComponent2
   output SymbolTable outSymbolTable;
 algorithm
   (outElement, outSymbolTable) := 
-  match(inCondition, inElement, inMod, inEnv, inPrefix, inSymbolTable)
+  match(inCondition, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable)
     local
       SCode.Element sel;
       Element el;
       SymbolTable st;
 
-    case (true, _, _, _, _, st)
+    case (true, _, _, _, _, _, st)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
-        el = instElement(sel, inMod, inEnv, inPrefix);
+        el = instElement(sel, inMod, inPrefixes, inEnv, inPrefix);
         st = updateTableWithElement(el, st);
       then
         (SOME(el), st);
@@ -2886,10 +3216,10 @@ algorithm
       SCode.Element el;
       Absyn.InnerOuter io;
 
-    case UNTYPED_COMPONENT(element = el)
-      then SCode.isInnerComponent(el);
+    case UNTYPED_COMPONENT(prefixes = PREFIXES(innerOuter = io))
+      then Absyn.isInner(io);
 
-    case TYPED_COMPONENT(innerOuter = io)
+    case TYPED_COMPONENT(prefixes = PREFIXES(innerOuter = io))
       then Absyn.isInner(io);
 
     case CONDITIONAL_COMPONENT(element = el)

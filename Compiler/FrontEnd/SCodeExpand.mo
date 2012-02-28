@@ -367,18 +367,28 @@ algorithm
       DAE.Element elem;
       SCode.Variability var;
       DAE.VarKind var_kind;
+      DAE.VarDirection dir;
+      DAE.VarVisibility vis;
+      DAE.Flow fp;
+      DAE.Stream sp;
       SCodeInst.Binding binding;
       Option<DAE.Exp> bind_exp;
+      SCodeInst.Prefixes prefs;
 
-    case (SCodeInst.TYPED_COMPONENT(variability = SCode.CONST()), _, _)
+    case (SCodeInst.TYPED_COMPONENT(prefixes = 
+        SCodeInst.PREFIXES(variability = DAE.CONST())), _, _)
+      then inAccumEl;
+
+    case (SCodeInst.TYPED_COMPONENT(prefixes = 
+        SCodeInst.PREFIXES(variability = DAE.PARAM())), _, _)
       then inAccumEl;
       
-    case (SCodeInst.TYPED_COMPONENT(name, ty, var, _, binding), subs, _)
+    case (SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
       equation
         bind_exp = expandBinding(binding, subs);
         subs = listReverse(subs);
         cref = subscriptPath(name, subs);
-        var_kind = variabilityToVarKind(var);
+        (var_kind, dir, vis, fp, sp) = getPrefixes(prefs);
         elem = DAE.VAR(cref, var_kind, DAE.BIDIR(), DAE.NON_PARALLEL(),
           DAE.PUBLIC(), ty, bind_exp, {}, DAE.NON_FLOW(), DAE.NON_STREAM(),
           DAE.emptyElementSource, NONE(), NONE(), Absyn.NOT_INNER_OUTER());
@@ -462,18 +472,6 @@ algorithm
   end match;
 end subscriptBindingExp;
 
-protected function variabilityToVarKind
-  input SCode.Variability inVariability;
-  output DAE.VarKind outVarKind;
-algorithm
-  outVarKind := match(inVariability)
-    case SCode.VAR() then DAE.VARIABLE();
-    case SCode.DISCRETE() then DAE.DISCRETE();
-    case SCode.PARAM() then DAE.PARAM();
-    case SCode.CONST() then DAE.CONST();
-  end match;
-end variabilityToVarKind;
-
 protected function subscriptPath
   input Absyn.Path inPath;
   input list<list<DAE.Subscript>> inSubscripts;
@@ -522,12 +520,39 @@ protected function unliftComponentType
 protected
   Absyn.Path name;
   DAE.Type ty;
-  SCode.Variability var;
-  Absyn.InnerOuter io;
+  SCodeInst.Prefixes prefs;
   SCodeInst.Binding binding;
+  Absyn.Info info;
 algorithm
-  SCodeInst.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), var, io, binding) := inComponent;
-  outComponent := SCodeInst.TYPED_COMPONENT(name, ty, var, io, binding);
+  SCodeInst.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), prefs, binding, info) := inComponent;
+  outComponent := SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, info);
 end unliftComponentType;
+
+protected function getPrefixes
+  input SCodeInst.Prefixes inPrefixes;
+  output DAE.VarKind outVarKind;
+  output DAE.VarDirection outDirection;
+  output DAE.VarVisibility outVisibility;
+  output DAE.Flow outFlow;
+  output DAE.Stream outStream;
+algorithm
+  (outVarKind, outDirection, outVisibility, outFlow, outStream) :=
+  match(inPrefixes)
+    local
+      DAE.VarKind kind;
+      DAE.VarDirection dir;
+      DAE.VarVisibility vis;
+      DAE.Flow fp;
+      DAE.Stream sp;
+
+    case SCodeInst.PREFIXES(vis, kind, _, _, (dir, _), (fp, _), (sp, _))
+      then (kind, dir, vis, fp, sp);
+    
+    case SCodeInst.NO_PREFIXES()
+      then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR(),
+          DAE.NON_STREAM_CONNECTOR());
+
+  end match;
+end getPrefixes;
 
 end SCodeExpand;

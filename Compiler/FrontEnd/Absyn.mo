@@ -666,6 +666,13 @@ uniontype Parallelism "Parallelism"
 end Parallelism;
 
 public
+uniontype FlowStream
+  record FLOW end FLOW;
+  record STREAM end STREAM;
+  record NOT_FLOW_STREAM end NOT_FLOW_STREAM;
+end FlowStream;
+
+public
 uniontype Variability "Variability"
   record VAR end VAR;
 
