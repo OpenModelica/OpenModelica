@@ -2177,6 +2177,54 @@ extern struct record_description Absyn_Parallelism_NON__PARALLEL__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__NON_5fPARALLEL__struct,1,5) {&Absyn_Parallelism_NON__PARALLEL__desc}};
 static void *Absyn__NON_5fPARALLEL = MMC_REFSTRUCTLIT(Absyn__NON_5fPARALLEL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FlowStream_FLOW__desc_added
+#define Absyn_FlowStream_FLOW__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FlowStream_FLOW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FlowStream_FLOW__desc = {
+  "Absyn_FlowStream_FLOW",
+  "Absyn.FlowStream.FLOW",
+  Absyn_FlowStream_FLOW__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FlowStream_FLOW__desc;
+#endif
+#define Absyn__FLOW_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__FLOW__struct,1,3) {&Absyn_FlowStream_FLOW__desc}};
+static void *Absyn__FLOW = MMC_REFSTRUCTLIT(Absyn__FLOW__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FlowStream_STREAM__desc_added
+#define Absyn_FlowStream_STREAM__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FlowStream_STREAM__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FlowStream_STREAM__desc = {
+  "Absyn_FlowStream_STREAM",
+  "Absyn.FlowStream.STREAM",
+  Absyn_FlowStream_STREAM__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FlowStream_STREAM__desc;
+#endif
+#define Absyn__STREAM_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__STREAM__struct,1,4) {&Absyn_FlowStream_STREAM__desc}};
+static void *Absyn__STREAM = MMC_REFSTRUCTLIT(Absyn__STREAM__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_FlowStream_NOT__FLOW__STREAM__desc_added
+#define Absyn_FlowStream_NOT__FLOW__STREAM__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_FlowStream_NOT__FLOW__STREAM__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FlowStream_NOT__FLOW__STREAM__desc = {
+  "Absyn_FlowStream_NOT__FLOW__STREAM",
+  "Absyn.FlowStream.NOT_FLOW_STREAM",
+  Absyn_FlowStream_NOT__FLOW__STREAM__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_FlowStream_NOT__FLOW__STREAM__desc;
+#endif
+#define Absyn__NOT_5fFLOW_5fSTREAM_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__NOT_5fFLOW_5fSTREAM__struct,1,5) {&Absyn_FlowStream_NOT__FLOW__STREAM__desc}};
+static void *Absyn__NOT_5fFLOW_5fSTREAM = MMC_REFSTRUCTLIT(Absyn__NOT_5fFLOW_5fSTREAM__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_VAR__desc_added
 #define Absyn_Variability_VAR__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Variability_VAR__desc__fields[1] = {"no fileds"};
