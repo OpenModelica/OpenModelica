@@ -83,7 +83,7 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
 	 virtual int getDimZeroFunc() ;
 
 	// Provides current values of root/zero functions 
-	 virtual void giveZeroFunc(double* f,const double& eps);
+	 virtual void giveZeroFunc(double* f);
 	virtual void giveConditions(bool* c);
     virtual void setConditions(bool* c);
 	//Called to handle all  events occured at same time  

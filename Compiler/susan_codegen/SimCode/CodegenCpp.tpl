@@ -1215,8 +1215,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initTimeEventFunctions%>
     <%initEventHandling%>
     _event_handling.init(this,<%helpvarlength(simCode)%>);
-    saveAll();
-    vector<unsigned int> var_ouputs_idx;
+      vector<unsigned int> var_ouputs_idx;
     <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
@@ -2082,7 +2081,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	//Provide number (dimension) of zero functions 
 	virtual int getDimZeroFunc();
 	//Provides current values of root/zero functions 
-	 virtual void giveZeroFunc(double* f,const double& eps);
+	 virtual void giveZeroFunc(double* f);
 	virtual void giveConditions(bool* c);
 	virtual void setConditions(bool* c);
 	//Called to check conditions for event-handling
@@ -5759,7 +5758,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
    	 	 _event_handling.setHelpVars(h);
    	 	//iterate and handle all events inside the eventqueue
    		 restart=_event_handling.IterateEventQueue(_conditions1);
-   		 saveAll();
+   		
      }
      saveConditions();
      resetTimeEvents();
@@ -5812,7 +5811,7 @@ template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
- void <%lastIdentOfPath(modelInfo.name)%>::giveZeroFunc(double* f,const double& eps)
+ void <%lastIdentOfPath(modelInfo.name)%>::giveZeroFunc(double* f)
   {
    <%varDecls%>
    <%zeroCrossingsCode%>
@@ -6141,6 +6140,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
   { 
     <%varDecls%>
+     saveAll();
     if(IContinous::RANKING) checkConditions(0,true);
   	<%all_equations%>
     <%reinit%>

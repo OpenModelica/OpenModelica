@@ -27,8 +27,9 @@ install (FILES
 				
 install (FILES HistoryImpl.h Modelica.h DESTINATION include/omc/cpp)
 install (FILES Policies/TextfileWriter.h DESTINATION include/omc/cpp/policies)
+if(REDUCE_DAE)
 install (FILES Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/policies)
-
+endif()
   
   
  

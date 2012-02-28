@@ -123,7 +123,7 @@ void SolverDefaultImplementation::init()
 		_events				= new bool[_dimZeroFunc];
 		_zeroValInit			= new double[_dimZeroFunc];
 		_zeroValLargeStep		= new double[_dimZeroFunc];
-		event_system->giveZeroFunc(_zeroVal,_settings->getZeroTol());
+		event_system->giveZeroFunc(_zeroVal);
 		memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
 		memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
 		memset(_events,false,_dimZeroFunc*sizeof(bool));
@@ -272,7 +272,7 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
 }
 void SolverDefaultImplementation::updateEventState()
 {
-	dynamic_cast<IEvent*>(_system)->giveZeroFunc(_zeroVal,_settings->getZeroTol());
+	dynamic_cast<IEvent*>(_system)->giveZeroFunc(_zeroVal);
 	setZeroState();
 	if (_zeroStatus == IDAESolver::ZERO_CROSSING)	 // An event triggered an other event
 	{

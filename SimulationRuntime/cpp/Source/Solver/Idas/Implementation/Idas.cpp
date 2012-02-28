@@ -310,7 +310,7 @@ void Idas::callIDA()
 		if(_idid == 2)
 		{
 			//_idid = IDAGetRootInfo(_idaMem, _zeroSign);
-			event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_idasSettings)->getZeroTol());
+			event_system->giveZeroFunc(_zeroVal);
 
 			//Event Iteration starten
 			//update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
@@ -378,7 +378,7 @@ void Idas::giveZeroVal(const double &t,const double *y,double *zeroValue)
 	// System aktualisieren
 	continous_system->update(IContinous::CONTINOUS);
 
-	event_system->giveZeroFunc(zeroValue,dynamic_cast<ISolverSettings*>(_idasSettings)->getZeroTol());
+	event_system->giveZeroFunc(zeroValue);
 
 }
 

@@ -28,7 +28,7 @@ public:
 	virtual int getDimZeroFunc() /*const*/ = 0;
 
 	/// Provides current values of root/zero functions
-	virtual void giveZeroFunc(double* f,const double& eps) = 0;
+	virtual void giveZeroFunc(double* f) = 0;
 	virtual void giveConditions(bool* c) = 0;
 	virtual void setConditions(bool* c) = 0;
 	virtual void checkConditions(unsigned int, bool all) = 0;

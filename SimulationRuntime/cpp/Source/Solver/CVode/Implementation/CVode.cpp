@@ -359,14 +359,14 @@ void Cvode::CVodeCore()
 	
 	// Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
 	// Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
-	event_system->giveZeroFunc(_zeroValLastSuccess,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+	event_system->giveZeroFunc(_zeroValLastSuccess);
 	event_system->giveConditions(_Cond);
 	for(int i=0;i<_dimZeroFunc;i++)
 	{
 		_Cond[i] = !_Cond[i];
 	}
 	event_system->setConditions(_Cond);
-	event_system->giveZeroFunc(_zeroVal,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+	event_system->giveZeroFunc(_zeroVal);
 	for(int i=0;i<_dimZeroFunc;i++)
 	{
 		if(_zeroValLastSuccess[i] == _zeroVal[i])
@@ -573,7 +573,7 @@ void Cvode::giveZeroVal(const double &t,const double *y,double *zeroValue)
 	// System aktualisieren
 	continous_system->update(IContinous::CONTINOUS);
 
-	event_system->giveZeroFunc(zeroValue,dynamic_cast<ISolverSettings*>(_cvodesettings)->getZeroTol());
+	event_system->giveZeroFunc(zeroValue);
 
 }
 

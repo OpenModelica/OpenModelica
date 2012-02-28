@@ -107,7 +107,7 @@ void Modelica::giveRHS(double* f, const INDEX index)
 	SystemDefaultImplementation::giveRHS(f,index);
 }
 
-void Modelica::giveZeroFunc(double* f,const double& eps)
+void Modelica::giveZeroFunc(double* f)
 {
   
 }
