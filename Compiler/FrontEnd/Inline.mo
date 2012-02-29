@@ -1020,6 +1020,7 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
+      DAE.Type ty1,ty2;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
@@ -1030,6 +1031,10 @@ algorithm
         argmap = List.threadTuple(crefs,args);
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
+        // compare types
+        ty1 = Expression.typeof(e1);
+        ty2 = Expression.typeof(newExp);
+        true = Types.equivtypes(ty1,ty2);        
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
@@ -1057,6 +1062,7 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
+      DAE.Type ty1,ty2;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         fn = getFunctionBody(p,fns);
@@ -1066,6 +1072,10 @@ algorithm
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
+        // compare types
+        ty1 = Expression.typeof(e1);
+        ty2 = Expression.typeof(newExp);
+        true = Types.equivtypes(ty1,ty2);
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
