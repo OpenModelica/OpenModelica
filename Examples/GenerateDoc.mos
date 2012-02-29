@@ -68,9 +68,7 @@ function filename \"Replace characters that mess with filesystems and shell expa
   input String str;
   output String ostr :=
         OpenModelica.Scripting.stringReplace(
-          OpenModelica.Scripting.stringReplace(
-            OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),
-            \"/\",\"Division\"),
+          OpenModelica.Scripting.stringReplace(str,\"/\",\"Division\"),
           \"*\",\"Multiplication\")
 ;
 end filename;
