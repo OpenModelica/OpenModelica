@@ -1238,6 +1238,7 @@ algorithm
         i = Expression.sizeOf(ty);
         (e1_1,source) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        BackendDump.debugStrExpStrExpStr(("",e1_1," = ",e2_1,"\n"));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
@@ -3781,11 +3782,12 @@ algorithm
     list<DAE.Exp> e1lst,e2lst;
     list<DAE.Var> varLst;
     Integer i;
-    list<tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>>> compmultilistlst,compmultilistlst1;
+    list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>>> compeqnmultilistlst;
+    list<tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>>> compmultilistlst;
     list<list<BackendDAE.MultiDimEquation>> multiEqsLst,multiEqsLst1;
-    list<list<BackendDAE.Equation>> complexEqsLst,complexEqsLst1;
+    list<list<BackendDAE.Equation>> complexEqsLst,complexEqsLst1,othereqnslst;
     list<BackendDAE.MultiDimEquation> multiEqs,multiEqs1,multiEqs2;
-    list<BackendDAE.Equation> complexEqs,complexEqs1;
+    list<BackendDAE.Equation> complexEqs,complexEqs1,othereqns,normaleqs;
     DAE.ElementSource source;
     Absyn.Path path,fname;
     list<DAE.Exp> expLst;
@@ -3797,20 +3799,23 @@ algorithm
       e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
       e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
       exptpllst = List.threadTuple(e1lst,e2lst);
-      compmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
-      complexEqsLst = List.map(compmultilistlst,Util.tuple21);
-      multiEqsLst = List.map(compmultilistlst,Util.tuple22);
+      compeqnmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
+      complexEqsLst = List.map(compeqnmultilistlst,Util.tuple31);
+      othereqnslst = List.map(compeqnmultilistlst,Util.tuple32);
+      multiEqsLst = List.map(compeqnmultilistlst,Util.tuple33);
       complexEqs = List.flatten(complexEqsLst);
       multiEqs = List.flatten(multiEqsLst);
+      othereqns = List.flatten(othereqnslst);
       // nested Records
-      compmultilistlst1 = List.map1(complexEqs,extendRecordEqns,funcs);
-      complexEqsLst1 = List.map(compmultilistlst1,Util.tuple21);
-      multiEqsLst1 = List.map(compmultilistlst1,Util.tuple22);
+      compmultilistlst = List.map1(complexEqs,extendRecordEqns,funcs);
+      complexEqsLst1 = List.map(compmultilistlst,Util.tuple21);
+      multiEqsLst1 = List.map(compmultilistlst,Util.tuple22);
       complexEqs1 = List.flatten(complexEqsLst1);
       multiEqs1 = List.flatten(multiEqsLst1);
       multiEqs2 = listAppend(multiEqs,multiEqs1);
+      normaleqs = listAppend(othereqns,complexEqs1);
     then
-      ((complexEqs1,multiEqs2));
+      ((normaleqs,multiEqs2));
   // a=Record()
   case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
@@ -3818,25 +3823,23 @@ algorithm
       // create as many equations as the dimension of the record
       e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
       exptpllst = List.threadTuple(e1lst,expLst);
-      compmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
-      complexEqsLst = List.map(compmultilistlst,Util.tuple21);
-      multiEqsLst = List.map(compmultilistlst,Util.tuple22);
+      compeqnmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
+      complexEqsLst = List.map(compeqnmultilistlst,Util.tuple31);
+      othereqnslst = List.map(compeqnmultilistlst,Util.tuple32);
+      multiEqsLst = List.map(compeqnmultilistlst,Util.tuple33);
       complexEqs = List.flatten(complexEqsLst);
       multiEqs = List.flatten(multiEqsLst);
+      othereqns = List.flatten(othereqnslst);
       // nested Records
-      compmultilistlst1 = List.map1(complexEqs,extendRecordEqns,funcs);
-      complexEqsLst1 = List.map(compmultilistlst1,Util.tuple21);
-      multiEqsLst1 = List.map(compmultilistlst1,Util.tuple22);
+      compmultilistlst = List.map1(complexEqs,extendRecordEqns,funcs);
+      complexEqsLst1 = List.map(compmultilistlst,Util.tuple21);
+      multiEqsLst1 = List.map(compmultilistlst,Util.tuple22);
       complexEqs1 = List.flatten(complexEqsLst1);
       multiEqs1 = List.flatten(multiEqsLst1);
       multiEqs2 = listAppend(multiEqs,multiEqs1);
+      normaleqs = listAppend(othereqns,complexEqs1);
     then
-      ((complexEqs1,multiEqs2));
-  
-  // due to recursive call above we might get normal equations here!
-  case (inEqn,funcs)
-    then
-      (({inEqn}, {}));
+      ((normaleqs,multiEqs2));
       
 end match;
 end extendRecordEqns;
@@ -3846,7 +3849,7 @@ Author: Frenkel TUD 2010-05"
   input tuple<DAE.Exp,DAE.Exp> inExp;
   input DAE.ElementSource Source;
   input DAE.FunctionTree inFuncs;
-  output tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>> outTuplEqnLst;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>> outTuplEqnLst;
 algorithm 
   outTuplEqnLst := matchcontinue(inExp,Source,inFuncs)
   local
@@ -3865,7 +3868,7 @@ algorithm
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       ds = List.map(ad, Expression.dimensionSize);
     then
-      (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
+      (({},{},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
   // other types  
   case ((e1 as DAE.CREF(componentRef=cr1),e2),source,inFuncs)
     equation 
@@ -3876,14 +3879,14 @@ algorithm
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
       eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
     then
-      (({eqn},{}));
+      (({},{eqn},{}));
   // complex type
   case ((e1,e2),source,inFuncs)
     equation 
       tp = Expression.typeof(e1);
       true = DAEUtil.expTypeComplex(tp);
     then
-      (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{}));
+      (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{},{}));
  end matchcontinue;
 end generateextendedRecordEqn;
 
