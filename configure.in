@@ -521,6 +521,8 @@ OMPlot/OMPlotGUI/Makefile.unix \
 OMPlot/OMPlotGUI/OMPlotGUI.config \
 OMOptim/build/Makefile.unix \
 OMOptim/build/OMOptim.config \
+OMOptim/OMOptimBasis/build/Makefile.unix \
+OMOptim/OMOptimBasis/build/OMOptimBasis.config \
 testsuite/bootstrapping/LinkMain.makefile \
 FMI/import/source/Makefile \
 SimulationRuntime/c/Makefile \
