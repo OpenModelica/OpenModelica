@@ -1238,7 +1238,6 @@ algorithm
         i = Expression.sizeOf(ty);
         (e1_1,source) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2_1,source) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        BackendDump.debugStrExpStrExpStr(("",e1_1," = ",e2_1,"\n"));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
