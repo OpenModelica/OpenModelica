@@ -389,9 +389,9 @@ algorithm
         subs = listReverse(subs);
         cref = subscriptPath(name, subs);
         (var_kind, dir, vis, fp, sp) = getPrefixes(prefs);
-        elem = DAE.VAR(cref, var_kind, DAE.BIDIR(), DAE.NON_PARALLEL(),
-          DAE.PUBLIC(), ty, bind_exp, {}, DAE.NON_FLOW(), DAE.NON_STREAM(),
-          DAE.emptyElementSource, NONE(), NONE(), Absyn.NOT_INNER_OUTER());
+        elem = DAE.VAR(cref, var_kind, dir, DAE.NON_PARALLEL(), vis, ty,
+          bind_exp, {}, fp, sp, DAE.emptyElementSource, NONE(), NONE(),
+          Absyn.NOT_INNER_OUTER());
       then
         elem :: inAccumEl;
 

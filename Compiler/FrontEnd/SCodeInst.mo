@@ -83,6 +83,7 @@ public uniontype Element
   record EXTENDED_ELEMENTS
     Absyn.Path baseClass;
     Class cls;
+    DAE.Type ty;
   end EXTENDED_ELEMENTS;
 end Element;
 
@@ -398,6 +399,7 @@ algorithm
       Class cls;
       list<Element> elems;
       SCode.Element sel;
+      Boolean cse;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
@@ -415,11 +417,12 @@ algorithm
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
-        elems = instElementList(mel, inPrefixes, env, inPrefix);
-        // TODO: Check for duplicate elements from extends.
-        cls = COMPLEX_CLASS(elems, nel, iel, nal, ial);
+        (elems, cse) = instElementList(mel, inPrefixes, env, inPrefix);
+        (cls, ty) = makeClass(elems, nel, iel, nal, ial, cse);
+        //cls = COMPLEX_CLASS(elems, nel, iel, nal, ial);
       then
-        (cls, DAE.T_COMPLEX_DEFAULT);
+        (cls, ty);
+        //(cls, DAE.T_COMPLEX_DEFAULT);
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
@@ -452,6 +455,81 @@ algorithm
   end match;
 end instClassItem2;
   
+protected function makeClass
+  input list<Element> inElements;
+  input list<SCode.Equation> inEquations;
+  input list<SCode.Equation> inInitialEquations;
+  input list<SCode.AlgorithmSection> inAlgorithms;
+  input list<SCode.AlgorithmSection> inInitialAlgorithms;
+  input Boolean inContainsSpecialExtends;
+  output Class outClass;
+  output DAE.Type outClassType;
+algorithm
+  (outClass, outClassType) := match(inElements, inEquations, inInitialEquations,
+      inAlgorithms, inInitialAlgorithms, inContainsSpecialExtends)
+    local
+      list<Element> elems;
+      list<SCode.Equation> eq, ieq;
+      list<SCode.AlgorithmSection> al, ial;
+      Class cls;
+      DAE.Type ty;
+
+    case (elems, eq, ieq, al, ial, false)
+      then (COMPLEX_CLASS(elems, eq, ieq, al, ial), DAE.T_COMPLEX_DEFAULT);
+
+    case (_, {}, {}, {}, {}, true)
+      equation
+        (EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
+          getSpecialExtends(inElements);
+      then
+        (cls, ty);
+
+  end match;
+end makeClass;
+        
+protected function getSpecialExtends
+  input list<Element> inElements;
+  output Element outSpecialExtends;
+  output list<Element> outRestElements;
+algorithm
+  (outSpecialExtends, outRestElements) := getSpecialExtends2(inElements, {});
+end getSpecialExtends;
+
+protected function getSpecialExtends2
+  input list<Element> inElements;
+  input list<Element> inAccumEl;
+  output Element outSpecialExtends;
+  output list<Element> outRestElements;
+algorithm
+  (outSpecialExtends, outRestElements) := matchcontinue(inElements, inAccumEl)
+    local
+      Element el;
+      list<Element> rest_el, accum_el;
+      DAE.Type ty;
+
+    case ((el as EXTENDED_ELEMENTS(ty = ty)) :: rest_el, _)
+      equation
+        true = isSpecialExtends(ty);
+        rest_el = listAppend(listReverse(inAccumEl), rest_el);
+      then
+        (el, rest_el);
+
+    case (el :: rest_el, _)
+      equation
+        (el, rest_el) = getSpecialExtends2(rest_el, el :: inAccumEl);
+      then
+        (el, rest_el);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeInst.getSpecialExtends2 failed!");
+      then
+        fail();
+
+  end matchcontinue;
+end getSpecialExtends2;
+
 protected function convertDerivedBasicTypeToShortDef
   input Item inItem;
   output Item outItem;
@@ -660,8 +738,10 @@ protected function instElementList
   input Env inEnv;
   input Prefix inPrefix;
   output list<Element> outElements;
+  output Boolean outContainsSpecialExtends;
 algorithm
-  outElements := instElementList2(inElements, inPrefixes, inEnv, inPrefix, {});
+  (outElements, outContainsSpecialExtends) :=
+    instElementList2(inElements, inPrefixes, inEnv, inPrefix, {}, false);
 end instElementList;
 
 protected function instElementList2
@@ -670,31 +750,45 @@ protected function instElementList2
   input Env inEnv;
   input Prefix inPrefix;
   input list<Element> inAccumEl;
+  input Boolean inContainsSpecialExtends;
   output list<Element> outElements;
+  output Boolean outContainsSpecialExtends;
 algorithm
-  outElements := match(inElements, inPrefixes, inEnv, inPrefix, inAccumEl)
+  (outElements, outContainsSpecialExtends) :=
+  match(inElements, inPrefixes, inEnv, inPrefix, inAccumEl, inContainsSpecialExtends)
     local
       SCode.Element elem;
       Modifier mod;
       list<tuple<SCode.Element, Modifier>> rest_el;
       Element res;
+      Boolean cse;
+      list<Element> accum_el;
 
-    case ({}, _, _, _, _) then inAccumEl;
+    case ({}, _, _, _, _, cse) then (inAccumEl, cse);
 
-    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _)
+    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _, cse)
       equation
         res = instElement(elem, mod, inPrefixes, inEnv, inPrefix);
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
+          res :: inAccumEl, cse);
       then
-        instElementList2(rest_el, inPrefixes, inEnv, inPrefix, res :: inAccumEl);
+        (accum_el, cse);
 
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _, _, _, _)
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _, _, _, _, _)
       equation
-        res = instExtends(elem, mod, inPrefixes, inEnv, inPrefix);
+        (res, cse) = instExtends(elem, mod, inPrefixes, inEnv, inPrefix);
+        cse = inContainsSpecialExtends or cse;
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
+          res :: inAccumEl, cse);
       then
-        instElementList2(rest_el, inPrefixes, inEnv, inPrefix, res :: inAccumEl);
+        (accum_el, cse);
 
-    case (_ :: rest_el, _, _, _, _)
-      then instElementList2(rest_el, inPrefixes, inEnv, inPrefix, inAccumEl);
+    case (_ :: rest_el, _, _, _, _, cse)
+      equation
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
+          inAccumEl, cse);
+      then
+        (accum_el, cse);
 
   end match;
 end instElementList2;
@@ -767,6 +861,7 @@ algorithm
         // Instantiate array dimensions.
         dims = instDimensions(ad, inEnv, inPrefix);
         dims = addDimensionsFromType(dims, ty);
+        ty = Types.arrayElementType(ty);
         dim_arr = makeDimensionArray(dims);
 
         // Instantiate binding.
@@ -803,8 +898,10 @@ protected function instExtends
   input Env inEnv;
   input Prefix inPrefix;
   output Element outElement;
+  output Boolean outContainsSpecialExtends;
 algorithm
-  outElement := match(inExtends, inClassMod, inPrefixes, inEnv, inPrefix)
+  (outElement, outContainsSpecialExtends) :=
+  match(inExtends, inClassMod, inPrefixes, inEnv, inPrefix)
     local
       Absyn.Path path;
       SCode.Mod smod;
@@ -816,6 +913,7 @@ algorithm
       Modifier mod;
       Class cls;
       DAE.Type ty;
+      Boolean cse;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
         _, _, SCodeEnv.FRAME(extendsTable = exts) :: _, _)
@@ -833,8 +931,9 @@ algorithm
         mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
         (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
+        cse = isSpecialExtends(ty);
       then
-        EXTENDED_ELEMENTS(path, cls);
+        (EXTENDED_ELEMENTS(path, cls, ty), cse);
         
     else
       equation
@@ -845,6 +944,16 @@ algorithm
 
   end match;
 end instExtends;
+
+protected function isSpecialExtends
+  input DAE.Type inType;
+  output Boolean outResult;
+algorithm
+  outResult := match(inType)
+    case DAE.T_COMPLEX(varLst = _) then false;
+    else true;
+  end match;
+end isSpecialExtends;
 
 protected function mergePrefixes
   input Absyn.Path inComponentName;
@@ -2114,6 +2223,7 @@ algorithm
       Class cls;
       Absyn.Path name;
       SymbolTable st;
+      DAE.Type ty;
 
     case (ELEMENT(comp as UNTYPED_COMPONENT(name = name), cls), st)
       equation
@@ -2129,11 +2239,11 @@ algorithm
       then
         (ELEMENT(comp, cls), st);
 
-    case (EXTENDED_ELEMENTS(name, cls), st)
+    case (EXTENDED_ELEMENTS(name, cls, ty), st)
       equation
         (cls, st) = typeClass(cls, st);
       then
-        (EXTENDED_ELEMENTS(name, cls), st);
+        (EXTENDED_ELEMENTS(name, cls, ty), st);
 
     else (inElement, inSymbolTable);
 
@@ -2976,6 +3086,7 @@ algorithm
       Component comp;
       Absyn.Path bc;
       Class cls;
+      DAE.Type ty;
 
     case ({}, st, accum_el) then (listReverse(accum_el), st);
 
@@ -2995,10 +3106,10 @@ algorithm
       then
         (accum_el, st);
 
-    case (EXTENDED_ELEMENTS(bc, cls) :: rest_el, st, accum_el)
+    case (EXTENDED_ELEMENTS(bc, cls, ty) :: rest_el, st, accum_el)
       equation
         (cls, st) = instConditionalComponents(cls, st);
-        el = EXTENDED_ELEMENTS(bc, cls);
+        el = EXTENDED_ELEMENTS(bc, cls, ty);
         (accum_el, st) = instConditionalComponents2(rest_el, st, el :: accum_el);
       then
         (accum_el, st);
