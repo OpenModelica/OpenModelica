@@ -6220,7 +6220,7 @@ IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
    label_list_type labels = tuple_list_of 
-   <%(labels |> label hasindex index0 => '(<%index0%>,&<%label%>_1,&<%label%>_2)') ;separator=" "%>;
+   <%(labels |> label hasindex index0 => '(<%index0%>,&_<%label%>_1,&_<%label%>_2)') ;separator=" "%>;
    return labels;
 }
 >>
