@@ -113,8 +113,8 @@ static void printStrXML(FILE *fout, const char *str)
   case '<': fputs("&lt;",fout);break;
   case '>': fputs("&gt;",fout);break;
   case '\'': fputs("&apos;",fout);break;
-  case '"': fputs("\\\"",fout);break;
-  case '\\': fputs("\\\\",fout);break;
+  case '"': fputs("&quot;",fout);break;
+  /* case '\\': fputs("\\\\",fout);break; */
   default: fputc(*str,fout); break;
   }
   str++;
@@ -131,7 +131,7 @@ static void printInfoTag(FILE *fout, int level, const FILE_INFO info) {
 static void printVar(FILE *fout, int level, VAR_INFO* info) {
 
   indent(fout,level);
-  fprintf(fout, "<variable id=\"%d\" name=\"", info->id);
+  fprintf(fout, "<variable id=\"var%d\" name=\"", info->id);
   printStrXML(fout, info->name);
   fprintf(fout, "\" comment=\"");
   printStrXML(fout, info->comment);
@@ -148,7 +148,7 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
     printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
-    fprintf(fout, "<function id=\"%d\">\n", funcs[i].id);
+    fprintf(fout, "<function id=\"fun%d\">\n", funcs[i].id);
     indent(fout,4);fprintf(fout, "<name>");printStrXML(fout, funcs[i].name);fprintf(fout,"</name>\n");
     indent(fout,4);fprintf(fout, "<ncall>%d</ncall>\n", (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<time>%.9f</time>\n",rt_total(i + SIM_TIMER_FIRST_FUNCTION));
@@ -166,7 +166,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
     printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
-    indent(fout,4);fprintf(fout, "<ref refid=\"%d\"/>\n", (int) eq->id);
+    indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq->id);
     indent(fout,4);fprintf(fout, "<ncall>%d</ncall>\n", (int) rt_ncall_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<time>%.9f</time>\n", rt_total(i + SIM_TIMER_FIRST_FUNCTION));
     indent(fout,4);fprintf(fout, "<maxTime>%.9f</maxTime>\n",rt_max_accumulated(i + SIM_TIMER_FIRST_FUNCTION));
@@ -177,10 +177,10 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
 static void printEquations(FILE *fout, int n, EQUATION_INFO *eqns) {
   int i,j;
   for (i=0; i<n; i++) {
-    indent(fout,2);fprintf(fout, "<equation id=\"%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
+    indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
     for (j=0; j<eqns[i].numVar; j++) {
-      indent(fout,6);fprintf(fout, "<ref refid=\"%d\" />\n", eqns[i].vars[j]->id);
+      indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", eqns[i].vars[j]->id);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
     indent(fout,2);fprintf(fout, "</equation>\n");
