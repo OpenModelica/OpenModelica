@@ -1003,6 +1003,43 @@ algorithm
   end match;
 end inlineExps;
 
+public function checkExpsTypeEquiv
+"@author: adrpo
+  check two types for equivalence"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean bEquiv;
+algorithm
+  bEquiv := matchcontinue(inExp1, inExp2)
+    local
+      DAE.Type ty1,ty2;
+      Boolean b;
+    case (inExp1, inExp2)
+      equation
+        // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
+        true = Config.acceptMetaModelicaGrammar();
+      then true;
+    case (inExp1, inExp2)
+      equation
+        false = Config.acceptMetaModelicaGrammar();
+        ty1 = Expression.typeof(inExp1);
+        ty2 = Expression.typeof(inExp2);
+        true = Types.equivtypes(ty1,ty2);
+      then 
+        true;
+    case (inExp1, inExp2)
+      equation
+        false = Config.acceptMetaModelicaGrammar();
+        ty1 = Expression.typeof(inExp1);
+        ty2 = Expression.typeof(inExp2);
+        false = Types.equivtypes(ty1,ty2);
+        print("Error: ty1:[" +& Types.printTypeStr(ty1) +& 
+              "] != ty2:[t" +& Types.printTypeStr(ty2) +& "]\n");
+      then 
+        false;
+  end matchcontinue;  
+end checkExpsTypeEquiv;
+
 public function inlineCall
 "function: inlineCall
   replaces an inline call with the expression from the function"
@@ -1024,24 +1061,6 @@ algorithm
       DAE.Type ty1,ty2;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
-        // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
-        true = Config.acceptMetaModelicaGrammar();
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
-        true = checkInlineType(inlineType,fns);
-        fn = getFunctionBody(p,fns);
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
-        argmap = List.threadTuple(crefs,args);
-        argmap = extendCrefRecords(argmap);
-        newExp = getRhsExp(fn);
-        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
-        // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
-      then
-        ((newExp1,(fns,true)));
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
-      equation
-        false = Config.acceptMetaModelicaGrammar();
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
         fn = getFunctionBody(p,fns);
@@ -1051,11 +1070,7 @@ algorithm
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
         // compare types
-        ty1 = Expression.typeof(e1);
-        ty2 = Expression.typeof(newExp);
-        ty1 = Types.simplifyType(ty1);
-        ty2 = Types.simplifyType(ty2);
-        true = Types.equivtypes(ty1,ty2);
+        true = checkExpsTypeEquiv(e1, newExp);
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
@@ -1086,21 +1101,6 @@ algorithm
       DAE.Type ty1,ty2;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
-        // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
-        true = Config.acceptMetaModelicaGrammar();        
-        fn = getFunctionBody(p,fns);
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
-        argmap = List.threadTuple(crefs,args);
-        argmap = extendCrefRecords(argmap);
-        newExp = getRhsExp(fn);
-        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
-        // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
-      then
-        ((newExp1,(fns,true)));
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
-      equation
         false = Config.acceptMetaModelicaGrammar();
         fn = getFunctionBody(p,fns);
         crefs = List.map(fn,getInputCrefs);
@@ -1110,11 +1110,7 @@ algorithm
         newExp = getRhsExp(fn);
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
         // compare types
-        ty1 = Expression.typeof(e1);
-        ty2 = Expression.typeof(newExp);
-        ty1 = Types.simplifyType(ty1);
-        ty2 = Types.simplifyType(ty2);
-        true = Types.equivtypes(ty1,ty2);
+        true = checkExpsTypeEquiv(e1, newExp);
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then

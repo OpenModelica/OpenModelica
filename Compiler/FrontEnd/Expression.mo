@@ -6541,6 +6541,29 @@ algorithm
   end matchcontinue;
 end dimensionsEqual;
 
+public function dimsEqual
+  "Returns whether two dimensions are equal or not."
+  input DAE.Dimensions dims1;
+  input DAE.Dimensions dims2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dims1, dims2)
+    local 
+      Boolean b;
+      DAE.Dimension d1, d2;
+      DAE.Dimensions dl1, dl2; 
+      
+    case ({}, {}) then true;
+    case (d1::dl1, d2::dl2)
+      equation
+        true = dimensionsEqual(d1, d2);
+        true = dimsEqual(dl1, dl2);    
+      then 
+        true;
+    case (_, _) then false;
+  end matchcontinue;
+end dimsEqual;
+
 public function dimensionsKnownAndEqual
   "Checks that two dimensions are specified and equal."
   input DAE.Dimension dim1;

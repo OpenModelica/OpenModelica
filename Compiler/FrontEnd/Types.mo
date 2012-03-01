@@ -1213,6 +1213,7 @@ algorithm
       list<Type> type_list1,type_list2,tList1,tList2;
       list<String> names1, names2;
       DAE.Dimension dim1,dim2;
+      DAE.Dimensions dlst1, dlst2;
       list<FuncArg> farg1,farg2;
       DAE.CodeType c1,c2;
       DAE.Exp e1,e2;
@@ -1233,7 +1234,15 @@ algorithm
         res = List.isEqualOnTrue(names1, names2, stringEq);
       then
         res;
-    
+        
+    case (DAE.T_ARRAY(dims = dlst1 as _::_::_, ty = t1),
+          DAE.T_ARRAY(dims = dlst2 as _::_::_, ty = t2))
+      equation
+        true = Expression.dimsEqual(dlst1, dlst2);
+        true = subtype(t1, t2);
+      then
+        true;
+        
     case (DAE.T_ARRAY(ty = t1),DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t2))
       equation
         true = subtype(t1, t2);
@@ -1245,7 +1254,7 @@ algorithm
         true = subtype(t1, t2);
       then
         true;
-        
+                
     case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = e1)}, ty = t1), 
           DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = e2)}, ty = t2))
       equation
