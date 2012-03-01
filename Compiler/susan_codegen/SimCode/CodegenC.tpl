@@ -2115,18 +2115,28 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
-  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
-  MAINOBJ=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.o
+  FILEPREFIX=<%fileNamePrefix%>
+  MAINFILE=$(FILEPREFIX)<% if acceptMetaModelicaGrammar() then ".conv"%>.c
+  MAINOBJ=$(FILEPREFIX)<% if acceptMetaModelicaGrammar() then ".conv"%>.o 
+  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
   
-  .PHONY: clean <%fileNamePrefix%>
-  <%fileNamePrefix%>: clean $(MAINOBJ) <%fileNamePrefix%>_records.o
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
-  <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
-  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
-  <%\t%> @mv $@.tmp $@
-  $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
+  .PHONY: omc_main_target clean bundle 
+  
+  # This is to make sure that <%fileNamePrefix%>_records.c is always compiled.
+  .PHONY: $(FILEPREFIX)_records.c
+  
+  omc_main_target: $(MAINOBJ) $(FILEPREFIX)_records.o $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
+  <%\t%>$(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
+  
+  <%fileNamePrefix%>.conv.c: $(FILEPREFIX).c
+  <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
+  <%\t%>@mv $@.tmp $@
+
   clean:
-  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) 
+  <%\t%>@rm -f $(FILEPREFIX)_records.o $(MAINOBJ) 
+  
+  bundle:
+  <%\t%>@tar -cvf $(FILEPREFIX)_Files.tar $(GENERATEDFILES)
   >>
 end simulationMakefile;
 
