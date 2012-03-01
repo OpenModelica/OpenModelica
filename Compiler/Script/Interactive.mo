@@ -8854,15 +8854,42 @@ algorithm
       list<Absyn.ElementItem> public_elementitem_list, protected_elementitem_list;
       Absyn.ComponentRef model_;
       Absyn.Program p;
-    /* a class with parts */
+    /* a class with parts - public elements */
     case (model_,str,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
-        protected_elementitem_list = getProtectedList(parts);
         public_res = isReplaceableInElements(public_elementitem_list, str);
         res = Util.if_(public_res, true, false);
+      then
+        res;
+    /* a class with parts - protected elements */
+    case (model_,str,p)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(modelpath, p);
+        protected_elementitem_list = getProtectedList(parts);
+        protected_res = isReplaceableInElements(protected_elementitem_list, str);
+        res = Util.if_(protected_res, true, false);
+      then
+        res;
+    /* an extended class with parts: model extends M end M; public elements */
+    case (model_,str,p)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(modelpath, p);
+        public_elementitem_list = getPublicList(parts);
+        public_res = isReplaceableInElements(public_elementitem_list, str);
+        res = Util.if_(public_res, true, false);
+      then
+        res;
+    /* an extended class with parts: model extends M end M; protected elements */
+    case (model_,str,p)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(modelpath, p);
+        protected_elementitem_list = getProtectedList(parts);
         protected_res = isReplaceableInElements(protected_elementitem_list, str);
         res = Util.if_(protected_res, true, false);
       then
