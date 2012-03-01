@@ -52,10 +52,13 @@ public slots:
     void selectColor();
     void toggleHide(bool hide);
     void automaticColor(bool automatic);
+    void setLegendItemStr(QString value);
+    QAction* getAutomaticColorAction();
+    QAction* getHideAction();
 private:
     PlotCurve *mpPlotCurve;
     Plot *mpPlot;
-    QString legendItem;
+    QString mLegendItemStr;
     QAction *mpChangeColorAction;
     QAction *mpAutomaticColorAction;
     QAction *mpHideAction;

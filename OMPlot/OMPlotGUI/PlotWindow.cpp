@@ -211,13 +211,13 @@ void PlotWindow::setupToolbar()
     toolBar->addWidget(mpGridButton);
     toolBar->addSeparator();
     //LOG x LOG y
-    mpXCheckBox = new QCheckBox("Log X", this);
-    connect(mpXCheckBox, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
-    toolBar->addWidget(mpXCheckBox);
+    mpLogXCheckBox = new QCheckBox("Log X", this);
+    connect(mpLogXCheckBox, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
+    toolBar->addWidget(mpLogXCheckBox);
     toolBar->addSeparator();
-    mpYCheckBox = new QCheckBox("Log Y", this);
-    connect(mpYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
-    toolBar->addWidget(mpYCheckBox);
+    mpLogYCheckBox = new QCheckBox("Log Y", this);
+    connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
+    toolBar->addWidget(mpLogYCheckBox);
     // finally add the tool bar to the mainwindow
     addToolBar(toolBar);
 }
@@ -392,6 +392,10 @@ void PlotWindow::plot()
                     double *vals = (double*) malloc(reader.nrows*sizeof(double));
                     memcpy(vals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
                     // set plot curve data and attach it to plot
+                    for (int i = 0 ; i < reader.nrows ; i++)
+                      pPlotCurve->addXAxisValue(timeVals[i]);
+                    for (int i = 0 ; i < reader.nrows ; i++)
+                      pPlotCurve->addYAxisValue(vals[i]);
                     pPlotCurve->setData(timeVals, vals, reader.nrows);
                     pPlotCurve->attach(mpPlot);
                     mpPlot->replot();
@@ -593,6 +597,10 @@ void PlotWindow::plotParametric()
             throw NoVariableException(QString("Variable doesn't exist : ").append(yVariable).toStdString().c_str());
         double *yVals = (double*) malloc(reader.nrows*sizeof(double));
         memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+        for (int i = 0 ; i < reader.nrows ; i++)
+          pPlotCurve->addXAxisValue(xVals[i]);
+        for (int i = 0 ; i < reader.nrows ; i++)
+          pPlotCurve->addYAxisValue(yVals[i]);
         pPlotCurve->setData(xVals, yVals, reader.nrows);
         pPlotCurve->setTitle(yVariable + "(" + xVariable + ")");
         pPlotCurve->attach(mpPlot);
@@ -611,6 +619,16 @@ void PlotWindow::setLegend(bool on)
     mpPlot->getLegend()->setVisible(on);
 }
 
+QCheckBox* PlotWindow::getLogXCheckBox()
+{
+  return mpLogXCheckBox;
+}
+
+QCheckBox* PlotWindow::getLogYCheckBox()
+{
+  return mpLogYCheckBox;
+}
+
 void PlotWindow::setXLabel(QString label)
 {
     mpPlot->setAxisTitle(QwtPlot::xBottom, label);
@@ -625,12 +643,36 @@ void PlotWindow::setXRange(double min, double max)
 {
     if(!(max == 0 && min == 0))
         mpPlot->setAxisScale(QwtPlot::xBottom, min, max);
+    mXRangeMin = QString::number(min);
+    mXRangeMax = QString::number(max);
+}
+
+QString PlotWindow::getXRangeMin()
+{
+  return mXRangeMin;
+}
+
+QString PlotWindow::getXRangeMax()
+{
+  return mXRangeMax;
 }
 
 void PlotWindow::setYRange(double min, double max)
 {
     if(!(max == 0 && min == 0))
         mpPlot->setAxisScale(QwtPlot::yLeft, min, max);
+    mYRangeMin = QString::number(min);
+    mYRangeMax = QString::number(max);
+}
+
+QString PlotWindow::getYRangeMin()
+{
+  return mYRangeMin;
+}
+
+QString PlotWindow::getYRangeMax()
+{
+  return mYRangeMax;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
@@ -783,13 +825,17 @@ void PlotWindow::setLogX(bool on)
     {
         mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
         mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-        if(!mpXCheckBox->isChecked())
-            mpXCheckBox->setChecked(true);
+        mpLogXCheckBox->blockSignals(true);
+        mpLogXCheckBox->setChecked(true);
+        mpLogXCheckBox->blockSignals(false);
     }
     else
     {
         mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
         mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+        mpLogXCheckBox->blockSignals(true);
+        mpLogXCheckBox->setChecked(false);
+        mpLogXCheckBox->blockSignals(false);
     }
     mpPlot->replot();
 }
@@ -800,13 +846,17 @@ void PlotWindow::setLogY(bool on)
     {
         mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
         mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-        if(!mpYCheckBox->isChecked())
-            mpYCheckBox->setChecked(true);
+        mpLogYCheckBox->blockSignals(true);
+        mpLogYCheckBox->setChecked(true);
+        mpLogYCheckBox->blockSignals(false);
     }
     else
     {
         mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
         mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+        mpLogYCheckBox->blockSignals(true);
+        mpLogYCheckBox->setChecked(false);
+        mpLogYCheckBox->blockSignals(false);
     }
     mpPlot->replot();
 }

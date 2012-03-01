@@ -68,7 +68,7 @@ void Legend::legendMenu(const QPoint& pos)
 
     if(lgdItem)
     {
-        legendItem = lgdItem->text().text();
+        mLegendItemStr = lgdItem->text().text();
 
         QMenu menu(mpPlot);
         menu.addAction(mpChangeColorAction);
@@ -88,7 +88,7 @@ void Legend::selectColor()
     {
         for(int i = 0; i < list.length(); i++)
         {
-            if(list[i]->title() == legendItem)
+            if(list[i]->title() == mLegendItemStr)
             {
                 list[i]->setCustomColor(true);
                 QPen pen = list[i]->pen();
@@ -107,7 +107,7 @@ void Legend::toggleHide(bool hide)
 
     for(int i = 0; i < list.length(); i++)
     {
-        if(list[i]->title().text() == legendItem)
+        if(list[i]->title().text() == mLegendItemStr)
         {
             if (hide)
             {
@@ -134,7 +134,7 @@ void Legend::automaticColor(bool automatic)
 
     for(int i = 0; i < list.length(); i++)
     {
-        if(list[i]->title().text() == legendItem)
+        if(list[i]->title().text() == mLegendItemStr)
         {
             if (automatic)
             {
@@ -156,4 +156,19 @@ void Legend::automaticColor(bool automatic)
         }
     }
     mpPlot->replot();
+}
+
+void Legend::setLegendItemStr(QString value)
+{
+  mLegendItemStr = value;
+}
+
+QAction* Legend::getAutomaticColorAction()
+{
+  return mpAutomaticColorAction;
+}
+
+QAction* Legend::getHideAction()
+{
+  return mpHideAction;
 }

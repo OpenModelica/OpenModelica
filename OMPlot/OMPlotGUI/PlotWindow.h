@@ -55,8 +55,8 @@ public:
     enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC};
 private:
     Plot *mpPlot;
-    QCheckBox *mpXCheckBox;
-    QCheckBox *mpYCheckBox;
+    QCheckBox *mpLogXCheckBox;
+    QCheckBox *mpLogYCheckBox;
     QToolButton *mpGridButton;
     QToolButton *mpZoomButton;
     QToolButton *mpPanButton;
@@ -64,6 +64,10 @@ private:
     QFile mFile;
     QStringList mVariablesList;
     PlotType mPlotType;
+    QString mXRangeMin;
+    QString mXRangeMax;
+    QString mYRangeMin;
+    QString mYRangeMax;
 public:
     PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
     ~PlotWindow();
@@ -79,10 +83,16 @@ public:
     void plotParametric();
     void setTitle(QString title);
     void setLegend(bool on);
+    QCheckBox* getLogXCheckBox();
+    QCheckBox* getLogYCheckBox();
     void setXLabel(QString label);
     void setYLabel(QString label);
     void setXRange(double min, double max);
+    QString getXRangeMin();
+    QString getXRangeMax();
     void setYRange(double min, double max);
+    QString getYRangeMin();
+    QString getYRangeMax();
     void checkForErrors(QStringList variables, QStringList variablesPlotted);
     Plot* getPlot();
     QToolButton* getPanButton();

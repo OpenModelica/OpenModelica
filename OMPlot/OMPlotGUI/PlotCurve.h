@@ -56,7 +56,9 @@ public:
     void setXAxisVector(QVector<double> vector);
     void addXAxisValue(double value);
     const double* getXAxisVector() const;
+    QVector<double> getXAxisData();
     void setYAxisVector(QVector<double> vector);
+    QVector<double> getYAxisData();
     void addYAxisValue(double value);
     const double* getYAxisVector() const;
     int getSize();
