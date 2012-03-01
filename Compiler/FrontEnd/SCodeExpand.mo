@@ -379,10 +379,6 @@ algorithm
         SCodeInst.PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
-    case (SCodeInst.TYPED_COMPONENT(prefixes = 
-        SCodeInst.PREFIXES(variability = DAE.PARAM())), _, _)
-      then inAccumEl;
-      
     case (SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
       equation
         bind_exp = expandBinding(binding, subs);

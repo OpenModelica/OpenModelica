@@ -297,7 +297,7 @@ algorithm
         const_el = instGlobalConstants(inGlobalConstants, inEnv);
         cls = addElementsToClass(const_el, cls);
 
-        symtab = buildSymbolTable(cls);
+        (cls, symtab) = buildSymbolTable(cls);
         (cls, symtab) = typeClass(cls, symtab);
         // Type normal equations and algorithm here.
         (cls, symtab) = instConditionalComponents(cls, symtab);
@@ -2017,12 +2017,14 @@ end countElementsInElement;
 
 protected function buildSymbolTable
   input Class inClass;
+  output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable := match(inClass)
+  (outClass, outSymbolTable) := match(inClass)
     local
       SymbolTable symtab;
       Integer comp_size, bucket_size;
+      Class cls;
 
     case (_)
       equation
@@ -2031,9 +2033,9 @@ algorithm
         comp_size = countElementsInClass(inClass);
         bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3));
         symtab = emptySymbolTableSized(bucket_size);
-        symtab = fillSymbolTable(inClass, symtab);
+        (cls, symtab) = fillSymbolTable(inClass, symtab);
       then
-        symtab;
+        (cls, symtab);
 
   end match;
 end buildSymbolTable;
@@ -2041,107 +2043,245 @@ end buildSymbolTable;
 protected function fillSymbolTable
   input Class inClass;
   input SymbolTable inSymbolTable;
+  output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable := match(inClass, inSymbolTable)
+  (outClass, outSymbolTable) := match(inClass, inSymbolTable)
     local
       list<Element> comps;
+      list<SCode.Equation> eq, ieq;
+      list<SCode.AlgorithmSection> al, ial;
       SymbolTable st;
 
-    case (BASIC_TYPE(), st) then st;
+    case (BASIC_TYPE(), st) then (inClass, st);
 
-    case (COMPLEX_CLASS(components = comps), st)
+    case (COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
       equation
-        st = List.fold(comps, addElementToSymbolTable, st);
+        (comps, st) = addElementsToSymbolTable(comps, st);
       then
-        st;
+        (COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
 
   end match;
 end fillSymbolTable;
 
+protected function addElementsToSymbolTable
+  input list<Element> inElements;
+  input SymbolTable inSymbolTable;
+  output list<Element> outElements;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outElements, outSymbolTable) :=
+    addElementsToSymbolTable2(inElements, inSymbolTable, {});
+end addElementsToSymbolTable;
+
+protected function addElementsToSymbolTable2
+  input list<Element> inElements;
+  input SymbolTable inSymbolTable;
+  input list<Element> inAccumEl;
+  output list<Element> outElements;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outElements, outSymbolTable) := match(inElements, inSymbolTable, inAccumEl)
+    local
+      Element el;
+      list<Element> rest_el, accum_el;
+      Boolean added;
+      SymbolTable st;
+
+    case ({}, st, _) then (inAccumEl, st);
+
+    case (el :: rest_el, st, _)
+      equation
+        (el, st, added) = addElementToSymbolTable(el, st);
+        accum_el = List.consOnTrue(added, el, inAccumEl);
+        (rest_el, st) = addElementsToSymbolTable2(rest_el, st, accum_el);
+      then
+        (rest_el, st);
+
+  end match;
+end addElementsToSymbolTable2;
+
 protected function addElementToSymbolTable
   input Element inElement;
   input SymbolTable inSymbolTable;
+  output Element outElement;
   output SymbolTable outSymbolTable;
+  output Boolean outAdded;
 algorithm
-  outSymbolTable := match(inElement, inSymbolTable)
+  (outElement, outSymbolTable, outAdded) := matchcontinue(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
       SymbolTable st;
+      Boolean added;
+      Absyn.Path bc;
+      DAE.Type ty;
 
-    case (ELEMENT(component = comp, cls = cls), st)
+    case (ELEMENT(comp, cls), st)
       equation
-        st = addComponentToTable(comp, st);
-        st = fillSymbolTable(cls, st);
+        (st, added) = addComponentToTable(comp, st);
+        (cls, st) = fillSymbolTableOnTrue(cls, st, added);
       then
-        st;
+        (ELEMENT(comp, cls), st, added);
 
-    case (CONDITIONAL_ELEMENT(component = comp), st)
-      then addComponentToTable(comp, st);
+    case (CONDITIONAL_ELEMENT(comp), st)
+      equation
+        (st, added) = addComponentToTable(comp, st);
+      then
+        (CONDITIONAL_ELEMENT(comp), st, added);
 
-    case (EXTENDED_ELEMENTS(cls = cls), st)
-      then fillSymbolTable(cls, st);
+    case (EXTENDED_ELEMENTS(bc, cls, ty), st)
+      equation
+        (cls, st) = fillSymbolTable(cls, st);
+      then
+        (EXTENDED_ELEMENTS(bc, cls, ty), st, true);
+
+  end matchcontinue;
+end addElementToSymbolTable;
+
+protected function fillSymbolTableOnTrue
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  input Boolean inCondition;
+  output Class outClass;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outClass, outSymbolTable) := match(inClass, inSymbolTable, inCondition)
+    local
+      Class cls;
+      SymbolTable st;
+
+    case (cls, st, false) then (cls, st);
+    case (cls, st, true)
+      equation
+        (cls, st) = fillSymbolTable(cls, st);
+      then
+        (cls, st);
 
   end match;
-end addElementToSymbolTable;
+end fillSymbolTableOnTrue;
 
 protected function addComponentToTable
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
+  output Boolean outAdded;
 algorithm
-  outSymbolTable := matchcontinue(inComponent, inSymbolTable) 
+  (outSymbolTable, outAdded) := matchcontinue(inComponent, inSymbolTable) 
     local
       Absyn.Path name;
+      Option<Component> comp;
+      SymbolTable st;
+      Boolean added;
 
-    case (_, _)
+    case (_, st)
       equation
         name = getComponentName(inComponent);
+        comp = lookupNameInTable(name, st);
+        (st, added) = addOptionalComponentToTable(name, inComponent, comp, st);
       then
-        BaseHashTable.addNoUpdCheck((name, inComponent), inSymbolTable);
+        (st, added);
 
     else
       equation
         print("Failed to add unknown component to symbol table!\n");
       then
-        inSymbolTable;
+        (inSymbolTable, false);
 
   end matchcontinue;
 end addComponentToTable;
 
-protected function updateTableWithElement
-  input Element inElement;
+protected function addOptionalComponentToTable
+  input Absyn.Path inName;
+  input Component inNewComponent;
+  input Option<Component> inOldComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
+  output Boolean outAdded;
 algorithm
-  outSymbolTable := match(inElement, inSymbolTable)
+  (outSymbolTable, outAdded) :=
+  match(inName, inNewComponent, inOldComponent, inSymbolTable)
+    local
+      Component comp;
+      SymbolTable st;
+
+    case (_, comp, NONE(), st)
+      equation
+        st = BaseHashTable.addNoUpdCheck((inName, comp), st);
+      then
+        (st, true);
+
+    case (_, _, SOME(comp), st)
+      equation
+        //checkEqualComponents
+      then
+        (inSymbolTable, false);
+
+  end match;
+end addOptionalComponentToTable;
+
+protected function addInstCondElementToTable
+  input Element inElement;
+  input SymbolTable inSymbolTable;
+  output Element outElement;
+  output SymbolTable outSymbolTable;
+  output Boolean outAdded;
+algorithm
+  (outElement, outSymbolTable, outAdded) := match(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
+      Absyn.Path name;
+      Option<Component> opt_comp;
+      Boolean added;
       SymbolTable st;
 
-    case (ELEMENT(component = comp, cls = cls), st)
+    case (ELEMENT(comp, cls), st)
       equation
-        st = updateTableWithComponent(comp, st);
-        st = updateTableWithClass(cls, st);
+        name = getComponentName(comp);
+        opt_comp = lookupNameInTable(name, st);
+        (st, added) = addInstCondComponentToTable(name, comp, opt_comp, st);
+        (cls, st) = fillSymbolTableOnTrue(cls, st, added);
       then
-        st;
-
-    case (CONDITIONAL_ELEMENT(component = comp), st)
-      equation
-        st = updateTableWithComponent(comp, st);
-      then
-        st;
-
-    case (EXTENDED_ELEMENTS(cls = cls), st)
-      equation
-        st = updateTableWithClass(cls, st);
-      then
-        st;
+        (ELEMENT(comp, cls), st, added);
 
   end match;
-end updateTableWithElement;
+end addInstCondElementToTable;
+    
+protected function addInstCondComponentToTable
+  input Absyn.Path inName;
+  input Component inNewComponent;
+  input Option<Component> inOldComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+  output Boolean outAdded;
+algorithm
+  (outSymbolTable, outAdded) :=
+  match(inName, inNewComponent, inOldComponent, inSymbolTable)
+    local
+      Component comp;
+      SymbolTable st;
+
+    case (_, _, SOME(CONDITIONAL_COMPONENT(name = _)), st)
+      equation
+        st = BaseHashTable.addNoUpdCheck((inName, inNewComponent), st);
+      then
+        (st, true);
+
+    case (_, _, SOME(comp), st)
+      equation
+        //checkEqualComponents
+      then
+        (st, false);
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeInst.addInstCondElementToTable couldn't find existing conditional component!\n"});
+      then
+        fail();
+  end match;
+end addInstCondComponentToTable;
 
 public function getComponentName
   input Component inComponent;
@@ -2158,34 +2298,6 @@ algorithm
 
   end match;
 end getComponentName;
-
-protected function updateTableWithComponent
-  input Component inComponent;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
-protected
-  Absyn.Path name;
-algorithm
-  name := getComponentName(inComponent);
-  outSymbolTable := BaseHashTable.add((name, inComponent), inSymbolTable);
-end updateTableWithComponent;
-
-protected function updateTableWithClass
-  input Class inClass;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
-algorithm
-  outSymbolTable := match(inClass, inSymbolTable)
-    local
-      list<Element> comps;
-
-    case (COMPLEX_CLASS(components = comps), _)
-      then List.fold(comps, updateTableWithElement, inSymbolTable);
-
-    else inSymbolTable;
-
-  end match;
-end updateTableWithClass;
 
 protected function typeClass
   input Class inClass;
@@ -2952,6 +3064,25 @@ algorithm
   outComponent := BaseHashTable.get(path, inSymbolTable);
 end lookupCrefInTable;
 
+protected function lookupNameInTable
+  input Absyn.Path inName;
+  input SymbolTable inSymbolTable;
+  output Option<Component> outComponent;
+algorithm
+  outComponent := matchcontinue(inName, inSymbolTable)
+    local
+      Component comp;
+
+    case (_, _)
+      equation
+        comp = BaseHashTable.get(inName, inSymbolTable);
+      then
+        SOME(comp);
+
+    else NONE();
+  end matchcontinue;
+end lookupNameInTable;
+
 protected function removeCrefOuterPrefix
   input Absyn.Path inInnerPath;
   input DAE.ComponentRef inOuterCref;
@@ -3061,7 +3192,7 @@ algorithm
 
     case (COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
       equation
-        (comps, st) = instConditionalComponents2(comps, st, {});
+        (comps, st) = instConditionalElements(comps, st, {});
       then
         (COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
 
@@ -3070,7 +3201,7 @@ algorithm
   end match;
 end instConditionalComponents;
 
-protected function instConditionalComponents2
+protected function instConditionalElements
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
   input list<Element> inAccumEl;
@@ -3090,39 +3221,81 @@ algorithm
 
     case ({}, st, accum_el) then (listReverse(accum_el), st);
 
-    case (ELEMENT(component = comp, cls = cls) :: rest_el, st, accum_el)
-      equation
-        (cls, st) = instConditionalComponents(cls, st);
-        el = ELEMENT(comp, cls);
-        (accum_el, st) = instConditionalComponents2(rest_el, st, el :: accum_el);
-      then
-        (accum_el, st);
-
-    case (CONDITIONAL_ELEMENT(comp) :: rest_el, st, accum_el)
-      equation
-        (oel, st) = instConditionalComponent(comp, st);
-        accum_el = List.consOption(oel, accum_el);
-        (accum_el, st) = instConditionalComponents2(rest_el, st, accum_el);
-      then
-        (accum_el, st);
-
-    case (EXTENDED_ELEMENTS(bc, cls, ty) :: rest_el, st, accum_el)
-      equation
-        (cls, st) = instConditionalComponents(cls, st);
-        el = EXTENDED_ELEMENTS(bc, cls, ty);
-        (accum_el, st) = instConditionalComponents2(rest_el, st, el :: accum_el);
-      then
-        (accum_el, st);
-
     case (el :: rest_el, st, accum_el)
       equation
-        (accum_el, st) = instConditionalComponents2(rest_el, st, el :: accum_el);
+        (oel, st) = instConditionalElement(el, st);
+        accum_el = List.consOption(oel, accum_el);
+        (accum_el, st) = instConditionalElements(rest_el, st, accum_el);
       then
         (accum_el, st);
 
   end match;
-end instConditionalComponents2;
+end instConditionalElements;
         
+protected function instConditionalElementOnTrue
+  input Boolean inCondition;
+  input Element inElement;
+  input SymbolTable inSymbolTable;
+  output Option<Element> outElement;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outElement, outSymbolTable) := match(inCondition, inElement, inSymbolTable)
+    local
+      Option<Element> oel;
+      SymbolTable st;
+
+    case (true, _, st)
+      equation
+        (oel, st) = instConditionalElement(inElement, st);
+      then
+        (oel, st);
+
+    else (NONE(), inSymbolTable);
+
+  end match;
+end instConditionalElementOnTrue;
+
+protected function instConditionalElement
+  input Element inElement;
+  input SymbolTable inSymbolTable;
+  output Option<Element> outElement;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outElement, outSymbolTable) := match(inElement, inSymbolTable)
+    local
+      Component comp;
+      Class cls;
+      SymbolTable st;
+      Element el;
+      Option<Element> oel;
+      Absyn.Path bc;
+      DAE.Type ty;
+
+    case (ELEMENT(comp, cls), st)
+      equation
+        (cls, st) = instConditionalComponents(cls, st);
+        el = ELEMENT(comp, cls);
+      then
+        (SOME(el), st);
+
+    case (CONDITIONAL_ELEMENT(comp), st)
+      equation
+        (oel, st) = instConditionalComponent(comp, st);
+      then
+        (oel, st);
+
+    case (EXTENDED_ELEMENTS(bc, cls, ty), st)
+      equation
+        (cls, st) = instConditionalComponents(cls, st);
+        el = EXTENDED_ELEMENTS(bc, cls, ty);
+      then
+        (SOME(el), st);
+
+    else (SOME(inElement), inSymbolTable);
+
+  end match;
+end instConditionalElement;
+
 protected function instConditionalComponent
   input Component inComponent;
   input SymbolTable inSymbolTable;
@@ -3184,16 +3357,21 @@ algorithm
       SCode.Element sel;
       Element el;
       SymbolTable st;
+      Boolean added;
+      Option<Element> oel;
 
     case (true, _, _, _, _, _, st)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
+        // Instantiate the element and update the symbol table.
         el = instElement(sel, inMod, inPrefixes, inEnv, inPrefix);
-        st = updateTableWithElement(el, st);
+        (el, st, added) = addInstCondElementToTable(el, st);
+        // Recursively instantiate any conditional components in this element.
+        (oel, st) = instConditionalElementOnTrue(added, el, st);
       then
-        (SOME(el), st);
+        (oel, st);
 
     else (NONE(), inSymbolTable);
   end match;

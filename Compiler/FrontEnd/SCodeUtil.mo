@@ -208,7 +208,7 @@ end translateClass2;
 
 //mahge: FIX HERE. Check for proper input and output 
 //declarations in operators according to the specifications.
-public function translateOpertaorDef
+public function translateOperatorDef
   input Absyn.ClassDef inClassDef;
   input Absyn.Ident operatorName;
   input Absyn.Info info;
@@ -230,11 +230,10 @@ algorithm
         els = translateClassdefElements(parts);    
         anns = translateClassdefAnnotations(parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
-        SCodeCheck.checkDuplicateElements(els);
       then
         SCode.PARTS(els,{},{},{},{},NONE(),anns,scodeCmt);
   end match;
-end translateOpertaorDef;
+end translateOperatorDef;
 
 public function getOperatorGivenName
   input SCode.Element inOperatorFunction;
@@ -469,7 +468,6 @@ algorithm
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
-        SCodeCheck.checkDuplicateElements(els);
       then
         SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
 
@@ -478,7 +476,6 @@ algorithm
         // Debug.fprintln(Flags.TRANSLATE, "translating enumerations");
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
-        SCodeCheck.checkDuplicateEnums(lst_1);
       then
         SCode.ENUMERATION(lst_1, scodeCmt);
 
@@ -509,7 +506,6 @@ algorithm
         decl = translateAlternativeExternalAnnotation(decl,parts);
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
-        SCodeCheck.checkDuplicateElements(els);
       then
         SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt));
 
@@ -1295,7 +1291,7 @@ algorithm
 
     case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
       equation
-        de_1 = translateOpertaorDef(de,n,i);
+        de_1 = translateOperatorDef(de,n,i);
         (_, redecl) = translateRedeclarekeywords(repl);
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);

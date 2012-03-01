@@ -1447,6 +1447,18 @@ algorithm
   outTypeAOption:= SOME(inTypeA);
 end makeOption;
 
+public function makeOptionOnTrue
+  input Boolean inCondition;
+  input ArgType inArg;
+  output Option<ArgType> outArg;
+  replaceable type ArgType subtypeof Any;
+algorithm
+  outArg := match(inCondition, inArg)
+    case (true, _) then SOME(inArg);
+    else NONE();
+  end match;
+end makeOptionOnTrue;
+
 public function stringOption "function: stringOption
   author: PA
   Returns string value or empty string from string option."

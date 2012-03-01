@@ -41,6 +41,7 @@ encapsulated package SCodeCheck
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
+public import SCodeInst;
 
 protected import Config;
 protected import Dump;
@@ -117,40 +118,6 @@ algorithm
   end matchcontinue;
 end checkRecursiveShortDefinition;
         
-public function checkDuplicateElements
-  input list<SCode.Element> inElements;
-algorithm
-  _ := matchcontinue(inElements)
-    local
-      SCode.Element e;
-      list<SCode.Element> rest;
-    
-    case ({}) then ();
-    
-    case (e::rest)
-      equation
-      then
-        ();
-  end matchcontinue;
-end checkDuplicateElements;
-
-public function checkDuplicateEnums
-  input list<SCode.Enum> inEnumLst;
-algorithm
-  _ := matchcontinue(inEnumLst)
-    local
-      SCode.Enum e;
-      list<SCode.Enum> rest;
-    
-    case ({}) then ();
-    
-    case (e::rest)
-      equation
-      then
-        ();
-  end matchcontinue;
-end checkDuplicateEnums;
-
 protected function isSelfReference
   input String inTypeName;
   input Absyn.Path inTypePath;
@@ -622,5 +589,19 @@ algorithm
     else true;
   end matchcontinue;
 end checkIdentNotEqTypeName;
+
+public function checkComponentsEqual
+  input SCodeInst.Component inComponent1;
+  input SCodeInst.Component inComponent2;
+algorithm
+  _ := match(inComponent1, inComponent2)
+    case (_, _)
+      equation
+        print("Found duplicate component\n");
+      then
+        ();
+
+  end match;
+end checkComponentsEqual;
 
 end SCodeCheck;
