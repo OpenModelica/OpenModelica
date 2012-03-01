@@ -44,7 +44,7 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendDump;
+//protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashTable;
@@ -139,6 +139,7 @@ algorithm
   aliasVars := BackendDAEUtil.emptyAliasVariables();
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,einfo,extObjCls,BackendDAE.SIMULATION()));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
+  Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(listLength(eqns_1)) +& " No. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
 end lower;
 
 protected function lower2

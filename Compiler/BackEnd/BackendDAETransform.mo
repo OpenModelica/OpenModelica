@@ -231,7 +231,7 @@ algorithm
         fail();
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- BackendDAE.checkMatching failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- BackendDAETransform.checkMatching failed\n");
       then
         fail();
   end matchcontinue;
@@ -954,7 +954,7 @@ algorithm
       equation
         v = ass2[compelem];  
       then BackendDAE.SINGLEEQUATION(compelem,v);        
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,_)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,false)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
@@ -968,6 +968,7 @@ algorithm
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
+        // false = BackendVariable.hasDiscreteVar(var_lst); ToDo: Is this right, than it should be commited in
         varindxs = List.map(var_varindx_lst,Util.tuple22);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
@@ -2215,9 +2216,9 @@ algorithm
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         true = intEq(listLength(eqns_1),0);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\ndiff equations: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (diff_eqns,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (diff_eqns,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\nmarked equations: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString," "));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},shared));
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
@@ -2234,9 +2235,9 @@ algorithm
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\nmarked equations: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns_1,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns_1,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\ndiff equations: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (diff_eqns,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (diff_eqns,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\n");
         smeqs = BackendDump.dumpMarkedEqns(syst, eqns_1);
         Debug.fcall(Flags.BLT_DUMP, print, smeqs);
@@ -2505,7 +2506,7 @@ algorithm
         eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
         eqnslst1 = collectVarEqns(ilst,e::eqnslst,mt,arrayLength(mt));
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\n");        
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
@@ -3643,7 +3644,7 @@ algorithm
         // analyse jac 
         (eqnjac,l) = analyseJac1(jac,inStates,knvars,1);
         Debug.fcall(Flags.BLT_DUMP,  print ,"\n");
-        Debug.fcall(Flags.BLT_DUMP,  BackendDump.debuglst ,(eqnjac,dumpEqnJac));
+        Debug.fcall(Flags.BLT_DUMP,  BackendDump.debuglst ,(eqnjac,dumpEqnJac," "));
         Debug.fcall(Flags.BLT_DUMP,  print ,"\n");
         // next 
         (jacsys,orgeqns) = calculateJacobianSystem(rest,syst,shared,inStates);
@@ -4094,7 +4095,7 @@ algorithm
         ep2 = ep1+1;
         ep3 = ep1+2;
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,({ep1,ep2,ep3},intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,({ep1,ep2,ep3},intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\n");
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, {ep1,ep2,ep3});
         ast =  getAssigned(stateno,ass1,ass2);
@@ -4182,7 +4183,7 @@ algorithm
       equation
         (state,stateno) = selectDummyState(dummystates, stateindx, syst, shared);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Selected ",state," as dummy state\n From candidates: "));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst ,(dummystates,ComponentReference.printComponentRefStr));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst ,(dummystates,ComponentReference.printComponentRefStr," "));
         Debug.fcall(Flags.BLT_DUMP, print ,"\n");
         // update statecandidates
         states = removeStatefromCandidates(stateno,states);
@@ -4232,7 +4233,7 @@ algorithm
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, dummystate);
         Debug.fcall(Flags.BLT_DUMP, print ,"Update Incidence Matrix: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (changedeqns,intString));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (changedeqns,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print ,"\n");
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, changedeqns);
       then

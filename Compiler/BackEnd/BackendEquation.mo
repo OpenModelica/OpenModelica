@@ -1188,7 +1188,7 @@ algorithm
     case ((eqn,_))
       equation
         str = BackendDump.equationStr(eqn);
-        str = "dlowEqToExp failed: " +& str;
+        str = "BackendEquation.equationToExp failed: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
       then
         fail();

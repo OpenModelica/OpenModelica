@@ -2080,6 +2080,197 @@ algorithm
   end match;  
 end dumpComponent;
 
+public function dumpCompShort
+  input BackendDAE.BackendDAE inDAE;
+protected
+  Integer sys,inp,st,seq,salg,sarr; 
+  list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr;
+  list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj;  
+algorithm
+  ((sys,inp,st,seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj))) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{})));
+  print("##########################################################\n");
+  print("Statistics\n");
+  print("##########################################################\n");
+  print("Number of independent Subsystems: " +& intString(sys) +& "\n");
+  print("Number of States:                 " +& intString(st) +& "\n");
+  print("Toplevel Inputs:                  " +& intString(inp) +& "\n\n");
+  print("Single Equations: " +& intString(seq) +& "\n");
+  print("Array Equations:  " +& intString(sarr) +& "\n");
+  print("Algorithms:       " +& intString(salg) +& "\n\n");
+  print("Equationsystems with constant Jacobian:     " +& intString(listLength(e_jc)) +& " {");
+  debuglst((e_jc,intString,", "));
+  print("}\n");
+  print("Equationsystems with time varying Jacobian: " +& intString(listLength(e_jt)) +& " {");
+  debuglst((e_jt,intString,", "));
+  print("}\n");
+  print("Equationsystems with nonlinear Jacobian:    " +& intString(listLength(e_jn)) +& " {");
+  debuglst((e_jn,intString,", "));
+  print("}\n");
+  print("Equationsystems without analytic Jacobian:  " +& intString(listLength(e_nj)) +& " {");
+  debuglst((e_nj,intString,", "));
+  print("}\n\n");
+  print("mixed Equationsystems with Single Equation:       " +& intString(listLength(m_se)) +& " {");
+  debuglst((m_se,intString,", "));
+  print("}\n");
+  print("mixed Equationsystems with Array Equation:        " +& intString(listLength(m_sarr)) +& " {");
+  debuglst((m_sarr,intString,", "));
+  print("}\n");
+  print("mixed Equationsystems with Algorithm:             " +& intString(listLength(m_salg)) +& " {");
+  debuglst((m_salg,intString,", "));
+  print("}\n");
+  print("mixed Equationsystems with constant Jacobian:     " +& intString(listLength(me_jc)) +& " {");
+  debuglst((me_jc,intTplString,", "));
+  print("}\n");
+  print("mixed Equationsystems with time varying Jacobian: " +& intString(listLength(me_jt)) +& " {");
+  debuglst((me_jt,intTplString,", "));
+  print("}\n");
+  print("mixed Equationsystems with nonlinear Jacobian:    " +& intString(listLength(me_jn)) +& " {");
+  debuglst((me_jn,intTplString,", "));
+  print("}\n");  
+  print("mixed Equationsystems without analytic Jacobian:  " +& intString(listLength(me_nj)) +& " {");
+  debuglst((me_nj,intTplString,", "));
+  print("}\n");
+  print("##########################################################\n");
+end dumpCompShort;
+
+protected function intTplString
+  input tuple<Integer,Integer> inTpl;
+  output String outStr;
+protected
+  Integer e,d;
+algorithm
+  (d,e) := inTpl;
+  outStr := intString(d) +& " " +& intString(e);
+end intTplString;
+
+protected function dumpCompShort1
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared inShared;
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
+  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
+algorithm
+  outTpl:=
+  match (inSyst,inShared,inTpl)
+    local  
+      BackendDAE.EqSystem syst;
+      BackendDAE.Variables vars;
+      BackendDAE.StrongComponents comps;  
+      Integer sys,inp,st,seq,salg,sarr,inp1,st1,seq1,salg1,sarr1;
+      tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> eqsys,eqsys1;
+      tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys,meqsys1;
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars),_,(sys,inp,st,seq,salg,sarr,eqsys,meqsys))
+      equation
+        ((inp1,st1)) = BackendVariable.traverseBackendDAEVars(vars,traversingisStateTopInputVarFinder,(inp,st));
+        comps = BackendDAEUtil.getStrongComponents(syst);
+        ((seq1,salg1,sarr1,eqsys1,meqsys1)) = List.fold(comps,dumpCompShort2,(seq,salg,sarr,eqsys,meqsys));
+      then
+        ((sys+1,inp1,st1,seq1,salg1,sarr1,eqsys1,meqsys1));
+  end match;
+end dumpCompShort1;
+
+protected function traversingisStateTopInputVarFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<Integer,Integer> > inTpl;
+ output tuple<BackendDAE.Var, tuple<Integer,Integer> > outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      Integer inp,st;
+    case ((v,(inp,st)))
+      equation
+        true = BackendVariable.isStateVar(v);
+      then ((v,(inp,st+1)));
+    case ((v,(inp,st)))
+      equation
+        true = BackendVariable.isVarOnTopLevelAndInput(v);
+      then ((v,(inp+1,st)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end traversingisStateTopInputVarFinder;
+
+protected function dumpCompShort2
+  input BackendDAE.StrongComponent inComp;
+  input tuple<Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
+  output tuple<Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
+algorithm
+  outTpl:=
+  match (inComp,inTpl)
+    local
+      BackendDAE.Value e,d;
+      list<BackendDAE.Value> ilst,ilst1;
+      Integer seq,salg,sarr;
+      list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr;
+      list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj;
+      tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> eqsys;
+      tuple<list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys; 
+    case (BackendDAE.SINGLEEQUATION(eqn=_),(seq,salg,sarr,eqsys,meqsys))
+      then 
+        ((seq+1,salg,sarr,eqsys,meqsys));
+    case (BackendDAE.SINGLEARRAY(arrayIndx=_),(seq,salg,sarr,eqsys,meqsys))
+      then 
+        ((seq,salg,sarr+1,eqsys,meqsys));        
+    case (BackendDAE.SINGLEALGORITHM(algorithmIndx=_),(seq,salg,sarr,eqsys,meqsys))
+      then 
+        ((seq,salg+1,sarr,eqsys,meqsys));        
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
+      equation
+        e = listLength(ilst);
+      then 
+        ((seq,salg,sarr,(e::e_jc,e_jt,e_jn,e_nj),meqsys));
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_TIME_VARYING()),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
+      equation
+        e = listLength(ilst);
+      then 
+        ((seq,salg,sarr,(e_jc,e::e_jt,e_jn,e_nj),meqsys));
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NONLINEAR()),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
+      equation
+        e = listLength(ilst);
+      then 
+        ((seq,salg,sarr,(e_jc,e_jt,e::e_jn,e_nj),meqsys));
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NO_ANALYTIC()),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
+      equation
+        e = listLength(ilst);
+      then 
+        ((seq,salg,sarr,(e_jc,e_jt,e_jn,e::e_nj),meqsys));
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLEEQUATION(eqn=_),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+      then 
+        ((seq,salg,sarr,eqsys,(d::m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)));        
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLEALGORITHM(algorithmIndx=_),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+      then 
+        ((seq,salg,sarr,eqsys,(m_se,d::m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj))); 
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_CONSTANT),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+        e = listLength(ilst1);
+      then 
+        ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,(d,e)::me_jc,me_jt,me_jn,me_nj)));  
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_TIME_VARYING),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+        e = listLength(ilst1);
+      then 
+        ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,(d,e)::me_jt,me_jn,me_nj))); 
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NONLINEAR),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+        e = listLength(ilst1);
+      then 
+        ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,(d,e)::me_jn,me_nj))); 
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NO_ANALYTIC),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+      equation
+        d = listLength(ilst);
+        e = listLength(ilst1);
+      then 
+        ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,(d,e)::me_nj)));                                     
+  end match;  
+end dumpCompShort2;
+
 /*******************************************/
 /* Debug dump functions */
 /*******************************************/
@@ -2261,27 +2452,32 @@ algorithm
 end debugStrEqnStrEqnStr;
 
 public function debuglst
-  input tuple<list<Type_a>,FuncTypeType_aToStr> inTpl;
+  input tuple<list<Type_a>,FuncTypeType_aToStr,String> inTpl;
   partial function FuncTypeType_aToStr
     input Type_a inTypeA;
     output String outTypeA;
   end FuncTypeType_aToStr;
   replaceable type Type_a subtypeof Any;
 algorithm
-   _ := matchcontinue(inTpl)
+   _ := match(inTpl)
     local  
       Type_a a;
       list<Type_a> rest;
       FuncTypeType_aToStr f;
-      String s;
-    case (({},_)) then ();
-    case ((a::rest,f))
+      String s,c;
+    case (({},_,_)) then ();
+    case ((a::{},f,c))
       equation 
        s = f(a);
-       print(s); print(" ");
-       debuglst((rest,f));
+       print(s);
     then ();  
-  end matchcontinue;  
+    case ((a::rest,f,c))
+      equation 
+       s = f(a);
+       print(s); print(c);
+       debuglst((rest,f,c));
+    then ();  
+  end match;  
 end debuglst;
 
 end BackendDump;

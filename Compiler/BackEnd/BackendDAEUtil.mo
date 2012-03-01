@@ -6037,6 +6037,7 @@ algorithm
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
   Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
+  Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);  
 end getSolvedSystem;
 
 public function preOptimiseBackendDAE
@@ -6600,6 +6601,10 @@ algorithm
    setGlobalRoot(Global.profilerTime2Index, 
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
+
+/*************************************************
+ * traverse BackendDAE equation systems
+ ************************************************/
 
 public function mapEqSystem1
   "Helper to map a preopt module over each equation system"

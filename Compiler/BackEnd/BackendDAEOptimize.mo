@@ -2439,14 +2439,14 @@ algorithm
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
         expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {},BackendDAE.NORMAL());
-        // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
+        // print("expvars "); BackendDump.debuglst((expvars,intString," ")); print("\n");
         (expvars1::expvarseqns) = List.map1(expvars,varEqns,(pos,mT));
-        // print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");
+        // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ")); print("\n");
         controleqns = getControlEqns(expvars1,expvarseqns);
-        // print("controleqns "); BackendDump.debuglst((controleqns,intString)); print("\n");
+        // print("controleqns "); BackendDump.debuglst((controleqns,intString," ")); print("\n");
         (eqns1,arreqns1,algorithms1,einfo1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,arreqns,algorithms,einfo,changed);
-        //print("changed1 "); BackendDump.debuglst((changed1,intString)); print("\n");
-        //print("changed2 "); BackendDump.debuglst((changed2,intString)); print("\n");
+        //print("changed1 "); BackendDump.debuglst((changed1,intString," ")); print("\n");
+        //print("changed2 "); BackendDump.debuglst((changed2,intString," ")); print("\n");
         // print("Next\n");
       then (({},m,(mT,vars,eqns1,arreqns1,algorithms1,einfo1,changed)));
     case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,einfo,changed)))
