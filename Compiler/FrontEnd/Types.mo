@@ -4083,13 +4083,6 @@ algorithm
       then 
         (DAE.CAST(t, e), expected);
       
-    // Implicit conversion from enumeration literal to Real 
-    case (e,
-          DAE.T_ENUMERATION(index = _),
-          DAE.T_REAL(varLst = _, source = ts),_)
-      then 
-        (DAE.CAST(DAE.T_REAL_DEFAULT,e),DAE.T_REAL({},ts));
-
     // Complex type inheriting primitive type
     case (e, DAE.T_SUBTYPE_BASIC(complexType = t1),t2,printFailtrace) equation
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
