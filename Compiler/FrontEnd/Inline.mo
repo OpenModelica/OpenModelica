@@ -1024,19 +1024,9 @@ algorithm
         false = Config.acceptMetaModelicaGrammar();
         ty1 = Expression.typeof(inExp1);
         ty2 = Expression.typeof(inExp2);
-        true = Types.equivtypes(ty1,ty2);
+        b = Types.equivtypes(ty1,ty2);
       then 
-        true;
-    case (inExp1, inExp2)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        ty1 = Expression.typeof(inExp1);
-        ty2 = Expression.typeof(inExp2);
-        false = Types.equivtypes(ty1,ty2);
-        print("Error: ty1:[" +& Types.printTypeStr(ty1) +& 
-              "] != ty2:[t" +& Types.printTypeStr(ty2) +& "]\n");
-      then 
-        false;
+        b;
   end matchcontinue;  
 end checkExpsTypeEquiv;
 
