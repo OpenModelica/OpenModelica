@@ -2214,7 +2214,7 @@ algorithm
     case (BackendDAE.SINGLEALGORITHM(algorithmIndx=_),(seq,salg,sarr,eqsys,meqsys))
       then 
         ((seq,salg+1,sarr,eqsys,meqsys));        
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,(e_jc,e_jt,e_jn,e_nj),meqsys))
       equation
         e = listLength(ilst);
       then 
@@ -2244,25 +2244,25 @@ algorithm
         d = listLength(ilst);
       then 
         ((seq,salg,sarr,eqsys,(m_se,d::m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj))); 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_CONSTANT),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_CONSTANT()),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
         e = listLength(ilst1);
       then 
         ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,(d,e)::me_jc,me_jt,me_jn,me_nj)));  
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_TIME_VARYING),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_TIME_VARYING()),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
         e = listLength(ilst1);
       then 
         ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,(d,e)::me_jt,me_jn,me_nj))); 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NONLINEAR),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NONLINEAR()),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
         e = listLength(ilst1);
       then 
         ((seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,(d,e)::me_jn,me_nj))); 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NO_ANALYTIC),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_NO_ANALYTIC()),disc_eqns=ilst),(seq,salg,sarr,eqsys,(m_se,m_salg,m_sarr,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
         e = listLength(ilst1);
