@@ -2077,7 +2077,7 @@ algorithm
         // create the path till OMVisualize
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMVisualize",s1});
         // create the list of arguments for OMVisualize
-        str3 = "--visualizationfile=\"" +& str1 +& "\" --simulationfile=\"" +& filename +& "\"";
+        str3 = "--visualizationfile=\"" +& str1 +& "\" --simulationfile=\"" +& filename +& "\"" +& " --new-window=" +& boolString(externalWindow);
         call = str2 +& " " +& str3;
         
         0 = System.spawnCall(str2, call);
