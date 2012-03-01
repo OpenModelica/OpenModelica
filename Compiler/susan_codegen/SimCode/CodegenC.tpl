@@ -3081,12 +3081,13 @@ case efn as EXTERNAL_FUNCTION(__) then
   {
     void* states = push_memory_states(1);  
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
-    <%retType%> out;
+    <%if outVars then '<%retType%> out;'%>
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
     MMC_TRY_TOP()
-    out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
+    <%if outVars then "out = "%>_<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%outVars |> var as VARIABLE(__) hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n"%>
+    <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    fflush(NULL);
     pop_memory_states(states);
     return 0;
   }
