@@ -833,8 +833,10 @@ static int none_initialization(DATA *data, int updateStartValues)
   setAllVarsToStart(data);
   setAllParamsToStart(data);
   if(updateStartValues)
+  {
     updateBoundStartValues(data);
-  updateBoundParameters(data);
+    updateBoundParameters(data);
+  }
 
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
@@ -890,8 +892,10 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   setAllVarsToStart(data);
   setAllParamsToStart(data);
   if(updateStartValues)
+  {
     updateBoundStartValues(data);
-  updateBoundParameters(data);
+    updateBoundParameters(data);
+  }
 
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
