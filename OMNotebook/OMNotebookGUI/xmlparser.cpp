@@ -69,6 +69,7 @@
 #include <QPushButton>
 
 using namespace std;
+using namespace OMPlot;
 
 namespace IAEX
 {
@@ -589,6 +590,76 @@ namespace IAEX
         else if( e.tagName() == XML_GRAPHCELL_DATA ) {}
         else if( e.tagName() == XML_GRAPHCELL_GRAPH ) {}
         else if( e.tagName() == XML_GRAPHCELL_SHAPE ) {}
+        else if( e.tagName() == XML_GRAPHCELL_OMCPLOT )
+        {
+          GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
+          // read attributes and set the plotwindow values
+          gCell->mpPlotWindow->setTitle(e.attribute(XML_GRAPHCELL_TITLE));
+          gCell->mpPlotWindow->setGrid((e.attribute(XML_GRAPHCELL_GRID) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setLegend((e.attribute(XML_GRAPHCELL_LEGEND) == XML_TRUE) ? true : false);
+          int type = e.attribute(XML_GRAPHCELL_PLOTTYPE).toInt();
+          if (type == 1)
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTALL);
+          else if (type == 2)
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOTPARAMETRIC);
+          else
+            gCell->mpPlotWindow->setPlotType(PlotWindow::PLOT);
+          gCell->mpPlotWindow->setLogX((e.attribute(XML_GRAPHCELL_LOGX) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setLogY((e.attribute(XML_GRAPHCELL_LOGY) == XML_TRUE) ? true : false);
+          gCell->mpPlotWindow->setXRange(e.attribute(XML_GRAPHCELL_XRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_XRANGE_MAX).toDouble());
+          gCell->mpPlotWindow->setYRange(e.attribute(XML_GRAPHCELL_YRANGE_MIN).toDouble(), e.attribute(XML_GRAPHCELL_YRANGE_MAX).toDouble());
+          gCell->mpPlotWindow->setXLabel(e.attribute(XML_GRAPHCELL_XLABEL));
+          gCell->mpPlotWindow->setYLabel(e.attribute(XML_GRAPHCELL_YLABEL));
+          // read curves
+          for (QDomNode n = e.firstChild(); !n.isNull(); n = n.nextSibling())
+          {
+            QDomElement curveElement = n.toElement();
+            if (curveElement.tagName() == XML_GRAPHCELL_CURVE)
+            {
+              PlotCurve *pPlotCurve = new PlotCurve(gCell->mpPlotWindow->getPlot());
+              // read the curve data
+              if (curveElement.hasAttribute(XML_GRAPHCELL_XDATA) && curveElement.hasAttribute(XML_GRAPHCELL_YDATA))
+              {
+                QByteArray xByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_XDATA).toStdString().c_str());
+                QDataStream xInStream(xByteArray);
+                while (!xInStream.atEnd())
+                {
+                  double d;
+                  xInStream >> d;
+                  pPlotCurve->addXAxisValue(d);
+                }
+                QByteArray yByteArray = QByteArray::fromBase64(curveElement.attribute(XML_GRAPHCELL_YDATA).toStdString().c_str());
+                QDataStream yInStream(yByteArray);
+                while (!yInStream.atEnd())
+                {
+                  double d;
+                  yInStream >> d;
+                  pPlotCurve->addYAxisValue(d);
+                }
+                // set the curve data
+                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+              }
+              gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
+              pPlotCurve->attach(gCell->mpPlotWindow->getPlot());
+              // read the curve attributes
+              pPlotCurve->setTitle(curveElement.attribute(XML_GRAPHCELL_TITLE));
+              pPlotCurve->setCustomColor(true);
+              pPlotCurve->setPen(QPen(curveElement.attribute(XML_GRAPHCELL_COLOR).toUInt()));
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(true);
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->setChecked(false);
+              gCell->mpPlotWindow->getPlot()->getLegend()->getAutomaticColorAction()->blockSignals(false);
+              if (curveElement.attribute(XML_GRAPHCELL_VISIBLE) == XML_FALSE)
+              {
+                gCell->mpPlotWindow->getPlot()->getLegend()->setLegendItemStr(pPlotCurve->title().text());
+                gCell->mpPlotWindow->getPlot()->getLegend()->getHideAction()->setChecked(true);
+                gCell->mpPlotWindow->getPlot()->getLegend()->toggleHide(true);
+              }
+            }
+          }
+          gCell->mpPlotWindow->show();
+          gCell->mpPlotWindow->fitInView();
+          gCell->mpPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
+        }
         else
         {
           string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";

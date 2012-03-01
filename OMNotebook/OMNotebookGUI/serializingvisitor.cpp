@@ -64,6 +64,7 @@
 #include <QDataStream>
 #include <QGraphicsRectItem>
 
+using namespace OMPlot;
 
 namespace IAEX
 {
@@ -254,12 +255,52 @@ namespace IAEX
     else
       graphcell.setAttribute( XML_CLOSED, XML_FALSE );
 
+    if(node->mpPlotWindow && node->mpPlotWindow->isVisible())
+    {
+      // Create a OMCPLOT tag
+      QDomElement omcPlotElement = domdoc_.createElement( XML_GRAPHCELL_OMCPLOT );
+      // set all attributes
+      omcPlotElement.setAttribute(XML_GRAPHCELL_TITLE, node->mpPlotWindow->getPlot()->title().text());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_LEGEND, node->mpPlotWindow->getPlot()->legend()->isVisible() ? "true" : "false");
+      omcPlotElement.setAttribute(XML_GRAPHCELL_GRID, node->mpPlotWindow->getPlot()->getPlotGrid()->isVisible() ? "true" : "false");
+      omcPlotElement.setAttribute(XML_GRAPHCELL_PLOTTYPE, node->mpPlotWindow->getPlotType());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_LOGX, node->mpPlotWindow->getLogXCheckBox()->isChecked() ? "true" : "false");
+      omcPlotElement.setAttribute(XML_GRAPHCELL_LOGY, node->mpPlotWindow->getLogXCheckBox()->isChecked() ? "true" : "false");
+      omcPlotElement.setAttribute(XML_GRAPHCELL_XLABEL, node->mpPlotWindow->getPlot()->axisTitle(QwtPlot::xBottom).text());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_YLABEL, node->mpPlotWindow->getPlot()->axisTitle(QwtPlot::yLeft).text());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_XRANGE_MIN, node->mpPlotWindow->getXRangeMin());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_XRANGE_MAX, node->mpPlotWindow->getXRangeMax());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_YRANGE_MIN, node->mpPlotWindow->getYRangeMin());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_YRANGE_MAX, node->mpPlotWindow->getYRangeMax());
+
+      foreach (PlotCurve *pPlotCurve, node->mpPlotWindow->getPlot()->getPlotCurvesList())
+      {
+        QDomElement omcPlotCurve = domdoc_.createElement( XML_GRAPHCELL_CURVE );
+        // set the curve attributes
+        omcPlotCurve.setAttribute(XML_GRAPHCELL_TITLE, pPlotCurve->title().text());
+        omcPlotCurve.setAttribute(XML_GRAPHCELL_VISIBLE, pPlotCurve->isVisible() ? "true" : "false");
+        omcPlotCurve.setAttribute(XML_GRAPHCELL_COLOR, pPlotCurve->pen().color().rgba());
+        // set the curve data
+        QByteArray xByteArray, yByteArray;
+        QDataStream xOutStream(&xByteArray,QIODevice::WriteOnly);
+        QVector<double> xAxisData = pPlotCurve->getXAxisData();
+        foreach (double d, xAxisData)
+          xOutStream << d;
+        QDataStream yOutStream(&yByteArray,QIODevice::WriteOnly);
+        QVector<double> yAxisData = pPlotCurve->getYAxisData();
+        foreach (double d, yAxisData)
+          yOutStream << d;
+        omcPlotCurve.setAttribute(XML_GRAPHCELL_XDATA, QString(xByteArray.toBase64()));
+        omcPlotCurve.setAttribute(XML_GRAPHCELL_YDATA, QString(yByteArray.toBase64()));
+        omcPlotElement.appendChild(omcPlotCurve);
+      }
+      graphcell.appendChild(omcPlotElement);
+    }
     // Create an text element (for input) and append it to the element
     QDomElement textelement = domdoc_.createElement( XML_INPUTPART );
     QDomText textnode = domdoc_.createTextNode( node->text() );
     textelement.appendChild( textnode );
     graphcell.appendChild( textelement );
-
 
     // Create an text element (for output) and append it to the element
     QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
