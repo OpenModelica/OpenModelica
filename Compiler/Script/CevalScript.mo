@@ -907,7 +907,6 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-
     case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         paths = Interactive.getPackagesInPath(path, p);
@@ -1861,6 +1860,12 @@ algorithm
         
     case (cache,env,"compareSimulationResults",_,st,msg)
       then (cache,Values.STRING(""),st);
+        
+    case (cache,env,"getPlotSilent",{},st,msg)
+      equation
+        b = Config.getPlotSilent();
+      then
+        (cache,Values.BOOL(b),st);
 
     case (cache,env,"plot2",{Values.ARRAY(valueLst = cvars),Values.STRING(filename)},st,msg)
       equation
@@ -1889,7 +1894,6 @@ algorithm
     case (cache,env,"plotAll",
         {
           Values.BOOL(externalWindow),
-          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -1904,6 +1908,8 @@ algorithm
         st,
         msg)
       equation
+        // check if plot is set to silent or not
+        false = Config.getPlotSilent();
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -1923,10 +1929,10 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    /* in case plot is set to silent */
     case (cache,env,"plotAll",
         {
           Values.BOOL(externalWindow),
-          Values.BOOL(true),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -1941,6 +1947,8 @@ algorithm
         st,
         msg)
       equation
+        // check if plot is set to silent or not
+        true = Config.getPlotSilent();
         // get the simulation filename
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         pd = System.pathDelimiter();
@@ -1969,7 +1977,6 @@ algorithm
         {
           Values.ARRAY(valueLst = cvars),
           Values.BOOL(externalWindow),
-          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -1983,6 +1990,8 @@ algorithm
         },
         st,msg)
       equation
+        // check if plot is set to silent or not
+        false = Config.getPlotSilent();
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
@@ -2005,12 +2014,12 @@ algorithm
         0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
-    
+        
+    /* in case plot is set to silent */
     case (cache,env,"plot",
         {
           Values.ARRAY(valueLst = cvars),
           Values.BOOL(externalWindow),
-          Values.BOOL(true),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -2024,6 +2033,8 @@ algorithm
         },
         st,msg)
       equation
+        // check if plot is set to silent or not
+        true = Config.getPlotSilent();
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
@@ -2313,7 +2324,6 @@ algorithm
           cvar,
           cvar2,
           Values.BOOL(externalWindow),
-          Values.BOOL(false),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -2327,6 +2337,8 @@ algorithm
         },
         st,msg)
       equation
+        // check if plot is set to silent or not
+        false = Config.getPlotSilent();
         // get the variables
         str = ValuesUtil.printCodeVariableName(cvar) +& "\" \"" +& ValuesUtil.printCodeVariableName(cvar2);
         // get OPENMODELICAHOME
@@ -2348,12 +2360,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    /* in case plot is set to silent */
     case (cache,env,"plotParametric",
         {
           cvar,
           cvar2,
           Values.BOOL(externalWindow),
-          Values.BOOL(true),
           Values.STRING(filename),
           Values.STRING(title),
           Values.BOOL(legend),
@@ -2367,6 +2379,8 @@ algorithm
         },
         st,msg)
       equation
+        // check if plot is set to silent or not
+        true = Config.getPlotSilent();
         // get the variables
         str = ValuesUtil.printCodeVariableName(cvar);
         str3 = ValuesUtil.printCodeVariableName(cvar2);

@@ -1812,6 +1812,21 @@ external "builtin";
 annotation(preferredView="text");
 end getPackages;
 
+function setPlotSilent
+  input Boolean silent;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+plotSilent=" + String(silent));
+annotation(preferredView="text");
+end setPlotSilent;
+
+function getPlotSilent
+  output Boolean plotSilent;
+external "builtin";
+annotation(preferredView="text");
+end getPlotSilent;
+
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String interpolation := "linear" "
@@ -1843,7 +1858,6 @@ function plot "Launches a plot window using OMPlot. Returns true on success.
   "
   input VariableNames vars "The variables you want to plot";
   input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
@@ -1869,7 +1883,6 @@ function plotAll "Works in the same way as plot(), but does not accept any
   simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
   
   input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
@@ -1942,7 +1955,6 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input VariableName xVariable;
   input VariableName yVariable;
   input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input Boolean silent := false "Don't open the OMPlot window. Used by OMNotebook";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
   input Boolean legend := true "Determines whether or not the variable legend is shown.";
