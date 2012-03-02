@@ -8,4 +8,5 @@ SUBDIRS += ../OMPlot/OMPlotGUI \
     ../OMShell/OMShellGUI \
     ../OMNotebook/OMNotebookGUI \
     ../OMOptim/OMOptimBasis/build/OMOptimBasis.pro \
+    ../OMOptim/build/OMOptimLib.pro \
     ../OMOptim/build/OMOptim.pro \
