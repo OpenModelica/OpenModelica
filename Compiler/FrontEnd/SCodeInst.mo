@@ -308,9 +308,9 @@ algorithm
         //print(printClass(cls));
         //print("\nend " +& name +& "\n");
 
+        _ = SCodeExpand.expand(name, cls);
         print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
           " seconds.\n");
-        _ = SCodeExpand.expand(name, cls);
       then
         ();
 
@@ -429,7 +429,7 @@ algorithm
         SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _, _)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
-        mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
+        mod = SCodeMod.translateMod(smod, "", true, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
         (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
         dims = Absyn.typeSpecDimensions(dty);
@@ -853,7 +853,7 @@ algorithm
         prefix = (name, ad) :: inPrefix;
         path = prefixToPath(prefix);
         prefs = mergePrefixes(path, pf, attr, inPrefixes, info);
-        mod = SCodeMod.translateMod(smod, name, inPrefix, inEnv);
+        mod = SCodeMod.translateMod(smod, name, false, inPrefix, inEnv);
         cmod = SCodeMod.propagateMod(inClassMod);
         mod = SCodeMod.mergeMod(cmod, mod);
         (cls, ty) = instClassItem(item, mod, prefs, env, prefix);
@@ -928,7 +928,7 @@ algorithm
           redecls, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
-        mod = SCodeMod.translateMod(smod, "", inPrefix, inEnv);
+        mod = SCodeMod.translateMod(smod, "", true, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
         (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
         cse = isSpecialExtends(ty);

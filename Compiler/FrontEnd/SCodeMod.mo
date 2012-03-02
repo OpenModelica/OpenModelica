@@ -60,11 +60,12 @@ public type Modifier = SCodeInst.Modifier;
 public function translateMod
   input SCode.Mod inMod;
   input String inElementName;
+  input Boolean inFromExtends;
   input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
 algorithm
-  outMod := match(inMod, inElementName, inPrefix, inEnv)
+  outMod := match(inMod, inElementName, inFromExtends, inPrefix, inEnv)
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -75,16 +76,16 @@ algorithm
       Binding binding;
       SCode.Element el;
 
-    case (SCode.NOMOD(), _, _, _) then SCodeInst.NOMOD();
+    case (SCode.NOMOD(), _, _, _, _) then SCodeInst.NOMOD();
 
-    case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _)
+    case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
-        mods = List.map2(submods, translateSubMod, inPrefix, inEnv);
-        binding = translateBinding(binding_exp, ep, inPrefix, inEnv);
+        mods = List.map3(submods, translateSubMod, inFromExtends, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, ep, inFromExtends, inPrefix, inEnv);
       then
         SCodeInst.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
-    case (SCode.REDECL(fp, ep, el), _, _, _)
+    case (SCode.REDECL(fp, ep, el), _, _, _, _)
       then SCodeInst.REDECLARE(fp, ep, el);
 
   end match;
@@ -92,6 +93,7 @@ end translateMod;
 
 protected function translateSubMod
   input SCode.SubMod inSubMod;
+  input Boolean inFromExtends;
   input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
@@ -100,27 +102,30 @@ protected
   SCode.Mod mod;
 algorithm
   SCode.NAMEMOD(name, mod) := inSubMod;
-  outMod := translateMod(mod, name, inPrefix, inEnv);
+  outMod := translateMod(mod, name, inFromExtends, inPrefix, inEnv);
 end translateSubMod;
 
 protected function translateBinding
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input SCode.Each inEachPrefix;
+  input Boolean inFromExtends;
   input Prefix inPrefix;
   input Env inEnv;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding, inEachPrefix, inPrefix, inEnv)
+  outBinding := match(inBinding, inEachPrefix, inFromExtends, inPrefix, inEnv)
     local
       Absyn.Exp bind_exp;
-      Integer pl;
+      Integer def_pl, pl;
 
-    case (NONE(), _, _, _) then SCodeInst.UNBOUND();
+    case (NONE(), _, _, _, _) then SCodeInst.UNBOUND();
 
-    case (SOME((bind_exp, _)), _, _, _)
+    // See propagateMod for how this works.
+    case (SOME((bind_exp, _)), _, _, _, _)
       equation
-        // See propagateBinding for how this works.
-        pl = Util.if_(SCode.eachBool(inEachPrefix), -1, 1);
+        // Extends doesn't add a level, so start with level 0 instead of 1.
+        def_pl = Util.if_(inFromExtends, 0, 1);
+        pl = Util.if_(SCode.eachBool(inEachPrefix), -1, def_pl);
       then 
         SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix, pl);
 
