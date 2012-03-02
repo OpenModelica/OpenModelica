@@ -572,11 +572,7 @@ namespace IAEX
         else if( e.tagName() == XML_OUTPUTPART )
         {
           GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
-
-          if( iCell->isQtPlot() )
-            iCell->setTextOutputHtml( e.text() );
-          else
-            iCell->setTextOutput( e.text() );
+          iCell->setTextOutput( e.text() );
         }
         else if( e.tagName() == XML_IMAGE )
         {

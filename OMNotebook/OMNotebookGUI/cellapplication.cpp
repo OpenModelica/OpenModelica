@@ -125,6 +125,9 @@ namespace IAEX
     //Create a commandCenter.
     cmdCenter_ = new CellCommandCenter(this);
 
+    // set the plot command silent in OMC
+    OmcInteractiveEnvironment::setPlotSilent(tr("true"));
+
     // 2006-04-10 AF, use environment variable to find xml files
     QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
 

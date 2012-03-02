@@ -2865,7 +2865,7 @@ void NotebookWindow::saveas()
     //window->insertImage(filename);
     //window->SaveSketchImage(filename);
 
-    QMessageBox::about(this,"entered ","image witten ");
+    //QMessageBox::about(this,"entered ","image witten ");
 
     statusBar()->showMessage("Saving file");
     application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, filename));

@@ -56,6 +56,7 @@ namespace IAEX
     virtual bool startDelegate();
     static bool startOMC();
     static QString OMCVersion();
+    static bool setPlotSilent(QString silent);
     static QString OpenModelicaHome();
     static QString TmpPath();
 

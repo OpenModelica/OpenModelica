@@ -1307,79 +1307,18 @@ namespace IAEX {
   bool GraphCell::isEvaluated()
   {
     return evaluated_;
-  }
-
-  bool GraphCell::isQtPlot(QString text)
-  {
-    QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
-
-    if( text.isNull() )
-    {
-      if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
-        return true;
-      else
-        return false;
-    }
-    else
-    {
-      if( 0 <= text.indexOf( exp, 0 ) )
-        return true;
-      else
-        return false;
-    }
-  }
-
-  QString GraphCell::getQtPlot(QString text)
-  {
-    QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
-
-    if( text.isNull() )
-    {
-      if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
-        return exp.cap(0);
-      else
-        return "";
-    }
-    else
-    {
-      if( 0 <= text.indexOf( exp, 0 ) )
-        return exp.cap(0);
-      else
-        return "";
-    }
-  }
+  }  
 
   void GraphCell::setExpr(QString expr)
   {
     input_->setPlainText(expr);
   }
 
-  bool GraphCell::isVisualize(QString text)
-  {
-    QRegExp exp( "visualize[ ]*\\((.*)" );
-
-
-    if( text.isNull() )
-    {
-      if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
-        return true;
-      else
-        return false;
-    }
-    else
-    {
-      if( 0 <= text.indexOf( exp, 0 ) )
-        return true;
-      else
-        return false;
-
-    }
-  }
-
   void GraphCell::plotVariables(QStringList lst)
   {
     try
     {
+      mpPlotWindow->show();
       // clear any curves if we have.
       foreach (PlotCurve *pPlotCurve, mpPlotWindow->getPlot()->getPlotCurvesList())
       {
@@ -1468,29 +1407,6 @@ namespace IAEX {
       output_->update();
       QCoreApplication::processEvents();
 
-      // remove plot.png if it already exist, don't want any
-      // old plot.
-      bool newPlot = isQtPlot(input_->toPlainText());
-
-      if(newPlot)
-      {
-        mpPlotWindow->show();
-        setClosed(false);
-        // make the plot command silent i.e don't pop-up the OMPlot window.
-        QString plotCmd = getQtPlot(input_->toPlainText());
-        QString plotArgs = plotCmd.mid(plotCmd.indexOf("(")+1);
-        plotArgs = plotArgs.left(plotArgs.lastIndexOf(")"));
-        QString newPlotCmd = plotCmd.left(plotCmd.lastIndexOf(")"));
-        if (plotArgs.trimmed().length() > 0)
-          newPlotCmd = newPlotCmd.append(",silent=true)");
-        else
-          newPlotCmd = newPlotCmd.append("silent=true)");
-        expr.replace(plotCmd, newPlotCmd, Qt::CaseInsensitive);
-      }
-
-      // 2006-02-02 AF, Added try-catch
-      QString res, error;
-
       // 2005-11-24 AF, added check to see if the user wants to quit
       if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
       {
@@ -1511,7 +1427,6 @@ namespace IAEX {
           EvalThread* et = new EvalThread(getDelegate(), expr);
           connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
           et->start();
-          if (!newPlot) { et->wait(); }
         }
         catch( exception &e )
         {
@@ -1545,6 +1460,7 @@ namespace IAEX {
         plotVariables(resLst);
         res = tr("");
       }
+      else { mpPlotWindow->hide(); }
     }
     // if user has mixed plot command with other OMC commands.
     // we must extract the plot command result.
@@ -1559,8 +1475,10 @@ namespace IAEX {
         {
           plotVariables(resLst);
         }
+        else { mpPlotWindow->hide(); }
       }
     }
+    else { mpPlotWindow->hide(); }
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
     {

@@ -87,9 +87,6 @@ namespace IAEX
     virtual bool isClosed();              // Added 2006-01-17 AF
     virtual bool isEditable();
     virtual bool isEvaluated();              // Added 2005-11-23 AF
-    virtual bool isQtPlot(QString text = QString::null);
-    virtual QString getQtPlot(QString text = QString::null);
-    virtual bool isVisualize(QString text = QString::null);
 
     void plotVariables(QStringList lst);
 

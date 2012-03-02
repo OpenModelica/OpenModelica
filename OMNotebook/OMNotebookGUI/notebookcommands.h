@@ -179,8 +179,8 @@ namespace IAEX
             file.fileName().toStdString();
           throw runtime_error( msg.c_str() );
         }
-        
-        if(file.exists() && (fileInfo.permission(QFile::WriteUser) != true))
+
+        if(file.exists() && (file.permissions().testFlag(QFile::WriteUser) != true))
         {
           string msg = "The file for saving the document is not writable: " + 
             file.fileName().toStdString() + "\nPlease use Save As.";
