@@ -3468,6 +3468,34 @@ match var
 case var as VARIABLE(ty = T_STRING(__)) then 
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
+      if instDims then
+      let instDimsInit = (instDims |> exp =>
+          daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+        ;separator=", ")
+      let loopVar = tempDecl("long", &varDecls)
+      let sz = tempDecl("long", &varDecls)
+      let strVar = tempDecl("modelica_string_t *", &varDecls)
+      let &varCopy += '<%sz%> = base_array_nr_of_elements(&<%contextCref(var.name,contextFunction)%>);<%\n%>'
+      let &varCopy +=
+        <<
+        <%strVar%> = (modelica_string_t*) malloc(<%sz%>*sizeof(modelica_string_t));
+        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++) {
+          <%strVar%>[<%loopVar%>] = strdup(string_get(&<%contextCref(var.name,contextFunction)%>,<%loopVar%>));<%\n%>
+        }
+        <%\n%>>>
+      let destTarget = '(&<%dest%>.targ<%ix%>)'
+      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(<%destTarget%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      // let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.targ<%ix%>);<%\n%>'
+      let &varAssign +=
+        <<
+        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++) {
+          ((modelica_string_t*) <%destTarget%>->data)[<%loopVar%>] = init_modelica_string(<%strVar%>[<%loopVar%>]);
+          free(<%strVar%>[<%loopVar%>]);<%\n%>
+        }
+        free(<%strVar%>);<%\n%>
+        >>
+      ""
+      else
       let strVar = tempDecl("modelica_string_t", &varDecls)
       let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction)%>);<%\n%>'
       let &varAssign +=

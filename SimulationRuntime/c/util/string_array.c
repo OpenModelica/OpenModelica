@@ -937,3 +937,18 @@ void convert_alloc_string_array_from_f77(const string_array_t * a,
     }
     transpose_string_array(a, dest);
 }
+
+void fill_alloc_string_array(string_array_t* dest, modelica_string value, int ndims, ...)
+{
+  size_t i;
+  size_t elements = 0;
+  va_list ap;
+  va_start(ap, ndims);
+  elements = alloc_base_array(dest, ndims, ap);
+  va_end(ap);
+  dest->data = string_alloc(0,elements);
+
+  for(i = 0; i < elements; ++i) {
+      string_set(dest, i, value);
+  }
+}
