@@ -168,6 +168,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       list<DAE.Algorithm> algs;
@@ -180,7 +181,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (arraylisteqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
+    case (arraylisteqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
       equation
         len = arrayLength(arraylisteqns);
         true = intGt(len,0);
@@ -189,7 +190,7 @@ algorithm
         (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         syst = BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching);
-        shared = BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns1,arreqns,algorithms,einfo,eoc,btp);
+        shared = BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns1,arreqns,algorithms,complEqs,einfo,eoc,btp);
       then
         (syst,shared,updateeqns,true);
     case (arraylisteqns,syst,shared)
@@ -415,6 +416,7 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1,algorithms2;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       list<list<DAE.Exp>> crefOrDerCreflst;
@@ -426,7 +428,7 @@ algorithm
       Boolean b;
       BackendDAE.BackendDAEType btp;      
     case (false,syst,shared,_,_,_,_) then (syst,shared);
-    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp),repl,movedVars,movedAVars,meqns)
+    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp),repl,movedVars,movedAVars,meqns)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         // delete alias variables from orderedVars
@@ -448,7 +450,7 @@ algorithm
         (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         // update array eqn wrapper
-      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars2,exobj,aliasVars,inieqns1,remeqns1,arreqns1,algorithms1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp));
+      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars2,exobj,aliasVars,inieqns1,remeqns1,arreqns1,algorithms1,complEqs,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp));
   end match;
 end removeSimpleEquations2;
 
@@ -694,6 +696,7 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo,einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.IncidenceMatrix m1,m;
@@ -706,7 +709,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (0,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),m,mT,meqns,inFuncs)
+    case (0,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -716,7 +719,7 @@ algorithm
         knvars1 = BackendVariable.addVar(v,knvars);
         // update IncidenceMatrix
         syst = BackendDAE.EQSYSTEM(ordvars1,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp);
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
         pos_1 = pos - 1;
       then (vareqns1,syst,shared,m,mT,repl,pos_1::meqns);
@@ -736,17 +739,17 @@ algorithm
         syst = BackendDAE.EQSYSTEM(ordvars,eqns2,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
       then (vareqns1,syst,shared,m,mT,repl_1,pos_1::meqns);
-    case (2,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),m,mT,meqns,inFuncs)
+    case (2,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
         vareqns1 = List.removeOnTrue(pos,intEq,vareqns);
         vareqns2 = List.removeOnTrue(0,intGt,vareqns1);
         // replace der(a)=b in vareqns
-        (eqns1,arreqns1,algorithms1,einfo1) = replacementsInEqns2(vareqns2,exp,cr,eqns,arreqns,algorithms,einfo);
+        (eqns1,arreqns1,algorithms1,complEqs1,einfo1) = replacementsInEqns2(vareqns2,exp,cr,eqns,arreqns,algorithms,complEqs,einfo);
         // update IncidenceMatrix
         syst = BackendDAE.EQSYSTEM(ordvars,eqns1,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns1,algorithms1,einfo1,eoc,btp);
+        shared = BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns1,algorithms1,complEqs1,einfo1,eoc,btp);
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
       then (vareqns2,syst,shared,m,mT,repl,meqns);
   end match;
@@ -788,33 +791,36 @@ protected function replacementsInEqns2
   input BackendDAE.EquationArray inEqns;
   input array<BackendDAE.MultiDimEquation> inArreqns;
   input array<DAE.Algorithm> inAlgs;
+  input array<BackendDAE.ComplexEquation> inCE;
   input  BackendDAE.EventInfo inEinfo;
   output BackendDAE.EquationArray outEqns;
   output array<BackendDAE.MultiDimEquation> outArreqns;
   output array<DAE.Algorithm> outAlgs;
+  output array<BackendDAE.ComplexEquation> outCE;
   output  BackendDAE.EventInfo outEinfo;
 algorithm
-  (outEqns,outArreqns,outAlgs,outEinfo):=
-  match (inEqsLst,derExp,inCr,inEqns,inArreqns,inAlgs,inEinfo)
+  (outEqns,outArreqns,outAlgs,outCE,outEinfo):=
+  match (inEqsLst,derExp,inCr,inEqns,inArreqns,inAlgs,inCE,inEinfo)
     local
       BackendDAE.EquationArray eqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> ae,ae1,ae2;
       array<DAE.Algorithm> al,al1,al2;
+      array<BackendDAE.ComplexEquation> ce,ce1,ce2;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zcl;
       BackendDAE.EventInfo einfo;
       BackendDAE.Equation eqn,eqn1;
       Integer pos,pos_1;
       list<Integer> rest;
-    case ({},_,_,eqns,inArreqns,inAlgs,inEinfo) then (eqns,inArreqns,inAlgs,inEinfo);
-    case (pos::rest,derExp,inCr,eqns,inArreqns,inAlgs,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl))
+    case ({},_,_,eqns,inArreqns,inAlgs,ce,inEinfo) then (eqns,inArreqns,inAlgs,ce,inEinfo);
+    case (pos::rest,derExp,inCr,eqns,inArreqns,inAlgs,ce,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl))
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        (eqn1,al1,ae1,wclst1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, inAlgs, inArreqns, wclst, replaceAliasDer,(derExp,inCr));
+        (eqn1,al1,ae1,ce1,wclst1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, inAlgs, inArreqns, ce, wclst, replaceAliasDer,(derExp,inCr));
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        (eqns2,ae2,al2,einfo) = replacementsInEqns2(rest,derExp,inCr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl));
-      then (eqns2,ae2,al2,einfo);
+        (eqns2,ae2,al2,ce2,einfo) = replacementsInEqns2(rest,derExp,inCr,eqns1,ae1,al1,ce1,BackendDAE.EVENT_INFO(wclst1,zcl));
+      then (eqns2,ae2,al2,ce2,einfo);
   end match;
 end replacementsInEqns2;
 
@@ -2000,6 +2006,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendVarTransform.VariableReplacements repl,repl1,repl2;
@@ -2008,7 +2015,7 @@ algorithm
       list<DAE.Algorithm> algs,algs_1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
       equation
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2024,7 +2031,7 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs,einfo,eoc,btp));
   end match;
 end removeFinalParametersWork;
 
@@ -2133,6 +2140,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendVarTransform.VariableReplacements repl,repl1,repl2;
@@ -2141,7 +2149,7 @@ algorithm
       list<DAE.Algorithm> algs,algs_1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp)),funcs)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp)),funcs)
       equation      
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2157,7 +2165,7 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching)::{},BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc,btp)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching)::{},BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs,einfo,eoc,btp)));
   end match;
 end removeParameters;
 
@@ -2211,6 +2219,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendVarTransform.VariableReplacements repl,repl1;
@@ -2219,7 +2228,7 @@ algorithm
       list<DAE.Algorithm> algs,algs_1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp)),funcs)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp)),funcs)
       equation      
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2234,7 +2243,7 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc,btp)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs,einfo,eoc,btp)));
   end match;
 end removeProtectedParameters;
 
@@ -2339,6 +2348,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,ineq;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo,einfo1;
       list<Integer> changed;
       Boolean b;
@@ -2346,15 +2356,15 @@ algorithm
       BackendDAE.Shared shared;
 
       
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,eventInfo=einfo),funcs)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,complEqs=complEqs,eventInfo=einfo),funcs)
       equation
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         // check equations
-        (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
+        (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,complEqs1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,complEqs,einfo,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING());
-        (syst,shared) = removeEqualFunctionCalls2(b,syst,shared,eqns1,arreqns1,algorithms1,einfo1);
+        (syst,shared) = removeEqualFunctionCalls2(b,syst,shared,eqns1,arreqns1,algorithms1,complEqs1,einfo1);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,changed);
       then (syst,shared,b);
   end match;
@@ -2369,11 +2379,12 @@ protected function removeEqualFunctionCalls2
   input BackendDAE.EquationArray eqns;
   input array<BackendDAE.MultiDimEquation> arreqns;
   input array<DAE.Algorithm> algorithms;
+  input array<BackendDAE.ComplexEquation> inComplEqs;
   input BackendDAE.EventInfo einfo;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := match (b,syst,shared,eqns,arreqns,algorithms,einfo)
+  (osyst,oshared) := match (b,syst,shared,eqns,arreqns,algorithms,inComplEqs,einfo)
     local
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars,knvars,exobj;
@@ -2381,6 +2392,7 @@ algorithm
       BackendDAE.EquationArray remeqns,inieqns,eqns1;
       array<BackendDAE.MultiDimEquation> arreqns1;
       array<DAE.Algorithm> algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       list<list<DAE.Exp>> crefOrDerCreflst;
@@ -2389,8 +2401,8 @@ algorithm
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
-    case (false,syst,shared,_,_,_,_) then (syst,shared);
-    case (true,BackendDAE.EQSYSTEM(vars,_,m,mT,_),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,_,_,_,eoc,btp),eqns,arreqns,algorithms,einfo)
+    case (false,syst,shared,_,_,_,_,_) then (syst,shared);
+    case (true,BackendDAE.EQSYSTEM(vars,_,m,mT,_),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,_,_,_,_,eoc,btp),eqns,arreqns,algorithms,complEqs,einfo)
       equation
         repl = BackendVarTransform.emptyReplacements();
         // update arrayeqns and algorithms, collect info for wrappers
@@ -2399,14 +2411,14 @@ algorithm
         (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,vars,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
         (eqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
-      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp));
+      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
   end match;
 end removeEqualFunctionCalls2;
 
 protected function removeEqualFunctionCallFinder
 "autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,BackendDAE.EventInfo,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,BackendDAE.EventInfo,list<Integer>>> outTpl;
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.EventInfo,list<Integer>>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.EventInfo,list<Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -2419,6 +2431,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo,einfo1;
       BackendDAE.Var var;
       DAE.ComponentRef cr;
@@ -2426,7 +2439,7 @@ algorithm
       list<BackendDAE.Value> expvars,controleqns,expvars1;
       list<list<BackendDAE.Value>> expvarseqns;
       
-    case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,einfo,changed)))
+    case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,complEqs,einfo,changed)))
       equation
         // check number of vars in eqns
         _::_ = elem;
@@ -2444,13 +2457,13 @@ algorithm
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ")); print("\n");
         controleqns = getControlEqns(expvars1,expvarseqns);
         // print("controleqns "); BackendDump.debuglst((controleqns,intString," ")); print("\n");
-        (eqns1,arreqns1,algorithms1,einfo1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,arreqns,algorithms,einfo,changed);
+        (eqns1,arreqns1,algorithms1,complEqs1,einfo1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,arreqns,algorithms,complEqs,einfo,changed);
         //print("changed1 "); BackendDump.debuglst((changed1,intString," ")); print("\n");
         //print("changed2 "); BackendDump.debuglst((changed2,intString," ")); print("\n");
         // print("Next\n");
-      then (({},m,(mT,vars,eqns1,arreqns1,algorithms1,einfo1,changed)));
-    case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,einfo,changed)))
-      then (({},m,(mT,vars,eqns,arreqns,algorithms,einfo,changed))); 
+      then (({},m,(mT,vars,eqns1,arreqns1,algorithms1,complEqs1,einfo1,changed)));
+    case ((elem,pos,m,(mT,vars,eqns,arreqns,algorithms,complEqs,einfo,changed)))
+      then (({},m,(mT,vars,eqns,arreqns,algorithms,complEqs,einfo,changed))); 
   end matchcontinue;
 end removeEqualFunctionCallFinder;
 
@@ -2546,20 +2559,23 @@ protected function removeEqualFunctionCall
   input BackendDAE.EquationArray inEqns;
   input array<BackendDAE.MultiDimEquation> inArreqns;
   input array<DAE.Algorithm> inAlgs;
+  input array<BackendDAE.ComplexEquation> inComplEqs;
   input  BackendDAE.EventInfo inEinfo;
   input list<Integer> changed;
   output BackendDAE.EquationArray outEqns;
   output array<BackendDAE.MultiDimEquation> outArreqns;
   output array<DAE.Algorithm> outAlgs;
+  output array<BackendDAE.ComplexEquation> outComplEqs;
   output  BackendDAE.EventInfo outEinfo;
   output list<Integer> outEqsLst;
 algorithm
-  (outEqns,outArreqns,outAlgs,outEinfo,outEqsLst):=
-  matchcontinue (inEqsLst,inExp,inECr,inEqns,inArreqns,inAlgs,inEinfo,changed)
+  (outEqns,outArreqns,outAlgs,outComplEqs,outEinfo,outEqsLst):=
+  matchcontinue (inEqsLst,inExp,inECr,inEqns,inArreqns,inAlgs,inComplEqs,inEinfo,changed)
     local
       BackendDAE.EquationArray eqns,eqns1,eqns2;
       array<BackendDAE.MultiDimEquation> ae,ae1,ae2;
       array<DAE.Algorithm> al,al1,al2;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zcl;
       BackendDAE.EventInfo einfo;
@@ -2567,25 +2583,25 @@ algorithm
       Integer pos,pos_1,i;
       list<Integer> rest,changed;
       BackendDAE.EventInfo eifo;
-    case ({},_,_,eqns,inArreqns,inAlgs,inEinfo,changed) then (eqns,inArreqns,inAlgs,inEinfo,changed);
-    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl),changed)
+    case ({},_,_,eqns,inArreqns,inAlgs,complEqs,inEinfo,changed) then (eqns,inArreqns,inAlgs,complEqs,inEinfo,changed);
+    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,complEqs,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl),changed)
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         //BackendDump.dumpEqns({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
-        (eqn1,al1,ae1,wclst1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, inAlgs, inArreqns, wclst, replaceExp, (inECr,inExp,0));
+        (eqn1,al1,ae1,complEqs1,wclst1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, inAlgs, inArreqns, complEqs, wclst, replaceExp, (inECr,inExp,0));
         //BackendDump.dumpEqns({eqn1});
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
         changed = List.consOnTrue(not listMember(pos,changed),pos,changed);
-        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
-      then (eqns2,ae2,al2,einfo,changed);
-    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed)
+        (eqns2,ae2,al2,complEqs,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,complEqs,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
+      then (eqns2,ae2,al2,complEqs,einfo,changed);
+    case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,complEqs,eifo,changed)
       equation
-        (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed);
-      then (eqns2,ae2,al2,einfo,changed);
+        (eqns2,ae2,al2,complEqs1,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,inArreqns,inAlgs,complEqs,eifo,changed);
+      then (eqns2,ae2,al2,complEqs1,einfo,changed);
   end matchcontinue;      
 end removeEqualFunctionCall;
 
@@ -2646,12 +2662,13 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;      
-    case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
+    case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,complEqs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
@@ -2663,7 +2680,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedParameter,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
-        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp));
+        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
       then dae;
   end match;
 end removeUnusedParameter;
@@ -2806,13 +2823,14 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;    
       BackendDAE.BackendDAEType btp;
       
-    case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
+    case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,complEqs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
@@ -2823,7 +2841,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedVariables,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
-        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp));
+        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
       then dae1;
   end match;
 end removeUnusedVariables;
@@ -2939,6 +2957,7 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
@@ -2956,7 +2975,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),inFunctionTree,(shared,b1))
       equation
-        (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),b2,eqnlst,movedVars) = constantLinearSystem1(syst,shared,inFunctionTree,comps,{},BackendDAE.emptyBintree);
+        (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp),b2,eqnlst,movedVars) = constantLinearSystem1(syst,shared,inFunctionTree,comps,{},BackendDAE.emptyBintree);
         b = b1 or b2;
         // move changed variables
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
@@ -2964,7 +2983,7 @@ algorithm
         eqnlst = List.map1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
         syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),matching);
-        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp);
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),matching);
       then
@@ -3268,7 +3287,10 @@ algorithm
         elst;
     case (BackendDAE.SINGLEALGORITHM(eqns=elst))
       then
-        elst;       
+        elst;  
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst))
+      then
+        elst;               
   end matchcontinue;
 end getEqnIndxFromComp;
 
@@ -4344,6 +4366,7 @@ algorithm
       BackendDAE.EquationArray jacInitialEqs; // Initial equations
       array<BackendDAE.MultiDimEquation> jacArrayEqs; // Array equations
       array< .DAE.Algorithm> algorithms, jacAlgorithms; // Algorithms
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo jacEventInfo; // eventInfo
       BackendDAE.ExternalObjectClasses jacExtObjClasses; // classes of external objects, contains constructor & destructor
       // end BackendDAE
@@ -4368,10 +4391,11 @@ algorithm
       jacInitialEqs = BackendDAEUtil.listEquation({});
       jacArrayEqs = listArray({});
       jacAlgorithms = listArray({});
+      complEqs = listArray({});
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN()));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, complEqs, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN()));
     then jacobian;
       
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms)), functions, vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, matrixName) equation
@@ -4413,10 +4437,11 @@ algorithm
       jacInitialEqs = BackendDAEUtil.listEquation({});
       jacArrayEqs = listArray({});
       jacAlgorithms = listArray(derivedAlgorithms);
+      complEqs = listArray({});
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN()));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, complEqs, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN()));
       
       Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
       Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, jacobian);
@@ -4932,7 +4957,7 @@ algorithm
       derivedEqns = List.thread3Map3(derivedIn, derivedOut, vars, createAlgorithmEqn,index,algorithmsLookUp, source);
     then derivedEqns;
 
-    case(currEquation as BackendDAE.COMPLEX_EQUATION(_, _, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
+    case(currEquation as BackendDAE.COMPLEX_EQUATION(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed: COMPLEX_EQUATION-case"});
     then fail();
       

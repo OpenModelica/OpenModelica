@@ -147,8 +147,7 @@ uniontype Equation "- Equation"
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
     Integer index "Index in algorithm clauses";
-    .DAE.Exp lhs "left ; lhs";
-    .DAE.Exp rhs "right ; rhs";
+    list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
     .DAE.ElementSource source "origin of equation";
   end COMPLEX_EQUATION;
   
@@ -251,6 +250,7 @@ uniontype Shared "Data shared for all equation-systems"
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array<ComplexEquation> complEqs "array for complex equations";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType "indicate for what the BackendDAE is used";   
@@ -329,6 +329,16 @@ uniontype MultiDimEquation "- Multi Dimensional Equation"
     .DAE.ElementSource source "the element source";
   end MULTIDIM_EQUATION;
 end MultiDimEquation;
+
+public
+uniontype ComplexEquation "- Complex Equation"
+  record COMPLEXEQUATION
+     Integer size "size of equation" ;
+    .DAE.Exp left "left ; lhs" ;
+    .DAE.Exp right "right ; rhs" ;
+    .DAE.ElementSource source "the element source";
+  end COMPLEXEQUATION;
+end ComplexEquation;
 
 public
 uniontype CrefIndex "- Component Reference Index"
@@ -515,6 +525,11 @@ uniontype StrongComponent
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLEALGORITHM;
 
+  record SINGLECOMPLEXEQUATION
+    Value arrayIndx;
+    list<Value> eqns;
+    list<Value> vars "be carefule with states, this are solved for der(x)";
+  end SINGLECOMPLEXEQUATION;
 
 end StrongComponent;
 

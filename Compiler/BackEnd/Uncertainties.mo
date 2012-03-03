@@ -423,6 +423,7 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array<BackendDAE.ComplexEquation> complEqs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
@@ -440,10 +441,10 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,eventInfo=eventInfo,
+                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=complEqs,eventInfo=eventInfo,
                                    extObjClasses=extObjClasses,backendDAEType=backendDAEType))),eqns,true) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,backendDAEType);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,backendDAEType);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -483,6 +484,7 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array<BackendDAE.ComplexEquation> complEqs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
@@ -490,13 +492,13 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,eventInfo=eventInfo,
+                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=complEqs,eventInfo=eventInfo,
                                    extObjClasses=extObjClasses,backendDAEType=backendDAEType))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
        orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl));
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,backendDAEType);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,backendDAEType);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -910,15 +912,16 @@ algorithm
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array<BackendDAE.ComplexEquation> complEqs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
     
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,eventInfo=eventInfo,
+                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=complEqs,eventInfo=eventInfo,
                                    extObjClasses=extObjClasses,backendDAEType=backendDAEType))),knownVars) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,backendDAEType);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,backendDAEType);                              
     then
        BackendDAE.DAE(systList,shared); 
        

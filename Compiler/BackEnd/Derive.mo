@@ -116,11 +116,11 @@ algorithm
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(index = index,lhs=e1,rhs=e2,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         true = intEq(index,-1);
-        e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
-        e2_1 = differentiateExpTime(e2, (timevars,shared,inFunctions));
+        //e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
+        //e2_1 = differentiateExpTime(e2, (timevars,shared,inFunctions));
         // e1_2 = ExpressionSimplify.simplify(e1_1);
         // e2_2 = ExpressionSimplify.simplify(e2_1);
       then
@@ -172,11 +172,12 @@ algorithm
        then
         (BackendDAE.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     
-    case (BackendDAE.COMPLEX_EQUATION(index = _,lhs=e1,rhs=e2,source = source),_,_,_,_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_,_)
       equation
-        se1 = ExpressionDump.printExpStr(e1);
-        se2 = ExpressionDump.printExpStr(e2);
-        msg = stringAppendList({"- Derive.differentiateEquationTime on complex equations not impl yet. ",se1," = ",se2});
+        se1 = intString(index);
+        //se1 = ExpressionDump.printExpStr(e1);
+        //se2 = ExpressionDump.printExpStr(e2);
+        msg = stringAppendList({"- Derive.differentiateEquationTime on complex equations ",se1," not impl yet. "});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();

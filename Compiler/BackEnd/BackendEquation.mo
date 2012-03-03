@@ -455,12 +455,11 @@ algorithm
         (exps1,ext_arg_2) = traverseBackendDAEExpList(exps,func,ext_arg_1);
       then
         (BackendDAE.ALGORITHM(index,expl1,exps1,source),ext_arg_2);
-    case (BackendDAE.COMPLEX_EQUATION(index = index, lhs = e1, rhs = e2,source=source),func,inTypeA)
+    case (BackendDAE.COMPLEX_EQUATION(index=index,crefOrDerCref = expl,source=source),func,inTypeA)
       equation
-        ((e_1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+        (exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
       then
-        (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),ext_arg_2);
+        (BackendDAE.COMPLEX_EQUATION(index,exps,source),ext_arg_1);
   end match;
 end traverseBackendDAEExpsEqn;
 
@@ -585,13 +584,11 @@ algorithm
         //(exps1,ext_arg_2) = traverseBackendDAEExpList(exps,func,ext_arg_1);
       then
         (BackendDAE.ALGORITHM(index,expl,exps,source),false,inTypeA);
-    case (BackendDAE.COMPLEX_EQUATION(index = index, lhs = e1, rhs = e2,source=source),func,inTypeA)
+    case (BackendDAE.COMPLEX_EQUATION(index = index, crefOrDerCref = expl,source=source),func,inTypeA)
       equation
-        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
+        //(exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
       then
-        (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),bres,ext_arg_2);
+        (BackendDAE.COMPLEX_EQUATION(index,expl,source),false,inTypeA);
   end match;
 end traverseBackendDAEExpsEqnOutEqn;
 
@@ -877,6 +874,40 @@ algorithm
         (alg,ext_arg_1);
   end match;
 end traverseBackendDAEExpsAlgortihmWithUpdate;
+
+public function traverseBackendDAEExpsComplexWithUpdate "function: traverseBackendDAEExpsComplexWithUpdate
+  author: Frenkel TUD
+
+  It is possible to change the equation.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.ComplexEquation inCE;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.ComplexEquation outCE;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outCE,outTypeA):=
+  match (inCE,func,inTypeA)
+    local 
+      BackendDAE.ComplexEquation compleq;
+      Integer size;
+      DAE.Exp e1,e2,e1_1,e2_1;
+      DAE.ElementSource source;
+      Type_a ext_arg_1,ext_arg_2;
+    case (compleq as BackendDAE.COMPLEXEQUATION(size,e1,e2,source),func,inTypeA)
+      equation
+        ((e1_1,ext_arg_1)) = func((e1,inTypeA));
+        ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
+        compleq = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),compleq,BackendDAE.COMPLEXEQUATION(size,e1_1,e2_1,source));
+      then
+        (compleq,ext_arg_2);
+  end match;
+end traverseBackendDAEExpsComplexWithUpdate;
 
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
@@ -1565,10 +1596,10 @@ algorithm
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.WHEN_EQUATION(whenEquation,source);
-    case (BackendDAE.COMPLEX_EQUATION(i1,e1,e2,source),op)
+    case (BackendDAE.COMPLEX_EQUATION(i1,es1,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
-      then BackendDAE.COMPLEX_EQUATION(i1,e1,e2,source);
+      then BackendDAE.COMPLEX_EQUATION(i1,es1,source);
     case (BackendDAE.IF_EQUATION(i1,i2,es,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);

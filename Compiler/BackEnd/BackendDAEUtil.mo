@@ -186,16 +186,6 @@ algorithm
         tstr = stringAppendList({t1str," != ", t2str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
       then ();
-    case (eqn as BackendDAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source=source))
-      equation
-        eqnstr = BackendDump.equationStr(eqn);
-        t1 = Expression.typeof(e1);
-        t2 = Expression.typeof(e2);
-        t1str = ExpressionDump.typeString(t1);
-        t2str = ExpressionDump.typeString(t2);
-        tstr = stringAppendList({t1str," != ", t2str});
-        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
-      then ();
       //
     case eqn then ();
   end matchcontinue;
@@ -383,15 +373,7 @@ algorithm
         b = Expression.equalTypes(t1,t2);
         wrongEqns1 = List.consOnTrue(not b,e,wrongEqns);
       then ((e,wrongEqns1));
-
-    case ((e as BackendDAE.COMPLEX_EQUATION(lhs=e1,rhs=e2),wrongEqns))
-      equation
-        t1 = Expression.typeof(e1);
-        t2 = Expression.typeof(e2);
-        b = Expression.equalTypes(t1,t2);
-        wrongEqns1 = List.consOnTrue(not b,e,wrongEqns);
-      then ((e,wrongEqns1));
-        
+       
       //
     case inTpl then inTpl;
   end matchcontinue;
@@ -461,15 +443,16 @@ algorithm
   BackendDAE.EquationArray eqns,remeqns,inieqns;
   array<BackendDAE.MultiDimEquation> arreqns;
   array<DAE.Algorithm> algorithms;
+  array<BackendDAE.ComplexEquation> complEqs;
   BackendDAE.EventInfo einfo;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.EqSystem eqs;
   BackendDAE.BackendDAEType btp;  
    case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=ordeqns),
-        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
+        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
    equation
      ((algs,_,_)) = BackendEquation.traverseBackendDAEEqns(ordeqns,expandAlgorithmsbyInitStmtsHelper,(algorithms,ordvars,{}));
-   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,einfo,eoc,btp));    
+   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,complEqs,einfo,eoc,btp));    
    end match;
 end expandAlgorithmsbyInitStmts1;
 
@@ -589,6 +572,7 @@ algorithm
       list<BackendDAE.Var> knvarlst,extvarlst;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
+      array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.WhenClause> wc;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.Variables vars, knvars, extVars;
@@ -600,7 +584,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.EqSystems systs;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,complEqs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
         varlst = List.mapMap(systs,BackendVariable.daeVars,varList);
         knvarlst = varList(knvars);
@@ -613,7 +597,7 @@ algorithm
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,complEqs,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
   end match;
 end translateDae;
 
@@ -879,12 +863,13 @@ algorithm
       BackendDAE.EquationArray eqns,seqns,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
     case (cache,env,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars = knvars,externalObjects=extVars,aliasVars = av,
-                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
+                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al,complEqs=complEqs,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
       equation
         knvarlst = varList(knvars);
         (varlst1,varlst2) = List.splitOnTrue(knvarlst,BackendVariable.isParam);
@@ -892,7 +877,7 @@ algorithm
         knvarlst = List.map3(varlst1, calculateValue, cache, env, paramvars);
         knvars = listVar(listAppend(knvarlst,varlst2));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,wc,extObjCls,btp));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,complEqs,wc,extObjCls,btp));
   end match;
 end calculateValues;
 
@@ -1088,14 +1073,15 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
+    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
       equation
         aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp);
   end match;
 end updateAliasVariablesDAE;
 
@@ -1471,9 +1457,10 @@ algorithm
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
     
-    case(BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),vars,knvars) equation
-      b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
-    then b;
+    case(BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl),vars,knvars) equation
+      // fails if all mapped function calls doesn't return true 
+      List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
+    then true;
     
     case(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true 
@@ -2706,15 +2693,16 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
+    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
   end match;
 end whenClauseAddDAE;
 
@@ -3781,10 +3769,9 @@ algorithm
         res;
     
     // COMPLEX_EQUATION
-    case (vars,BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),_,inIndexType)
+    case (vars,BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl),_,inIndexType)
       equation
-        lst1 = incidenceRowExp(e1, vars, {},inIndexType);
-        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+        res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
       then
         res;
     
@@ -6356,6 +6343,11 @@ algorithm
         i = listLength(ilst);
         outInt = countComponents(comps,inInt+i);
       then outInt;
+    case (BackendDAE.SINGLECOMPLEXEQUATION(vars=ilst)::comps,inInt)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;        
   end match;
 end countComponents;
 

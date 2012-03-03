@@ -79,6 +79,7 @@ algorithm
       BackendDAE.EquationArray initialEqs;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       Option<BackendDAE.IncidenceMatrix> m,mT;
@@ -90,7 +91,7 @@ algorithm
         false = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),_,(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae))
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),_,(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,btp),dae))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -100,8 +101,9 @@ algorithm
         (initialEqs,dae) = partEvalEqArr(initialEqs,dae);
         (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
         (algorithms,dae) = partEvalAlgs(algorithms,dae);
+        (complEqs,dae) = partEvalCompEqs(arrayList(complEqs),dae);
       then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae));
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,btp),dae));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"PartFn.partEvalBackendDAE failed"});
@@ -200,6 +202,41 @@ algorithm
         fail();
   end matchcontinue;
 end partEvalArrEqs;
+
+protected function partEvalCompEqs
+"function: partEvalCompEqs
+  elabs calls in complex equations"
+  input list<BackendDAE.ComplexEquation> inComplexList;
+  input list<DAE.Function> inElementList;
+  output array<BackendDAE.ComplexEquation> outComplexArr;
+  output list<DAE.Function> outElementList;
+algorithm
+  (outComplexArr,outElementList) := matchcontinue(inComplexList,inElementList)
+    local
+      list<BackendDAE.ComplexEquation> cdr,mdelst;
+      list<DAE.Function> dae;
+      array<BackendDAE.ComplexEquation> res,cdr_1;
+      Integer ds;
+      DAE.Exp e1,e1_1,e2,e2_1;
+      DAE.ElementSource source "the origin of the element";
+
+    case({},dae) then (listArray({}),dae);
+    case(BackendDAE.COMPLEXEQUATION(ds,e1,e2,source) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = partEvalCompEqs(cdr,dae);
+        mdelst = {BackendDAE.COMPLEXEQUATION(ds,e1_1,e2_1,source)};
+        res = Util.arrayAppend(listArray(mdelst),cdr_1);
+      then
+        (res,dae);
+    case(_,_)
+      equation
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalCompEqs failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalCompEqs;
 
 protected function partEvalVars
 "function: partEvalVars
@@ -350,6 +387,13 @@ algorithm
         (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
         (SOME(BackendDAE.ARRAY_EQUATION(i,elst_1,source)) :: cdr_1,dae);
+
+    case(SOME(BackendDAE.COMPLEX_EQUATION(i,elst,source)) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
+      then
+        (SOME(BackendDAE.COMPLEX_EQUATION(i,elst_1,source)) :: cdr_1,dae);
 
     case(SOME(BackendDAE.SOLVED_EQUATION(cref,e,source)) :: cdr,dae)
       equation
