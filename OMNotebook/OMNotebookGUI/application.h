@@ -67,6 +67,6 @@ namespace IAEX
     virtual vector<DocumentView *> documentViewList() = 0;  // Added 2006-01-27 AF
     virtual void removeDocumentView(DocumentView *view) = 0;  // Added 2006-01-27 AF
    };
-};
+}
 
 #endif

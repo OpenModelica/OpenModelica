@@ -13,11 +13,11 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     rect = new QToolButton();
     hlayout = new QVBoxLayout;
     main_widget = new QWidget;
-    file_dialog = new QFileDialog(this,"Open",QString(),".skh");
+    //file_dialog = new QFileDialog(this,"Open",QString(),".skh");
 
-	color_dialog = new QColorDialog(this);
+    color_dialog = new QColorDialog(this);
 
-	files = new Sketch_Files();
+        files = new Sketch_Files();
 
     //message Box
     msg = new QMessageBox(this);
@@ -25,18 +25,18 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
     msg_dnt_save = new QPushButton;
     msg_cancle = new QPushButton;
 
-	edit=false;
-	isSaved=false;
+        edit=false;
+        isSaved=false;
 	
-	tabWidget = new QTabWidget();
+        tabWidget = new QTabWidget();
     add_components();
 
-	statusBar = new QStatusBar();
+        statusBar = new QStatusBar();
 
-	statusBar->showMessage("OMSketch");
+        statusBar->showMessage("OMSketch");
 
 
-	setStatusBar(statusBar);
+        setStatusBar(statusBar);
 
     hlayout->addWidget(tabWidget);
 
@@ -45,7 +45,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
         scene = new Graph_Scene;
         view = new QGraphicsView(scene);
         scene->setSceneRect(0,0,1200,800);
-		hlayout->addWidget(view);
+                hlayout->addWidget(view);
         main_widget->setLayout(hlayout);
         setCentralWidget(main_widget);
         if(file_name!=NULL)
@@ -54,7 +54,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
         }
     }
 
-	scene->isObjectEdited=false;
+        scene->isObjectEdited=false;
 	
     /*if(application =="Text")
     {
@@ -65,7 +65,7 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 	
     button_action();
     menu();
-	draw_shapes();
+        draw_shapes();
 
     msg->setText("Do you want to save file.");
     msg_save=msg->addButton("Save",QMessageBox::AcceptRole);
@@ -74,21 +74,21 @@ Tools::Tools(Document *document1,DocumentView *doc1):document(document1),doc_vie
 	
 	
     filenames.clear();
-	onbfilenames.clear();
-	imagefilenames.clear();
-	positions.clear();
-	texts.clear();
-	cellIds.clear();
-	this->cells.clear();
+        onbfilenames.clear();
+        imagefilenames.clear();
+        positions.clear();
+        texts.clear();
+        cellIds.clear();
+        this->cells.clear();
 
-	scene->new_Scene();
+        scene->new_Scene();
 
-	drawn_images.clear();
+        drawn_images.clear();
 
-	images_info.clear();
-	documents_info.clear();
-	edit_imgs_info.clear();
-	file_read=false;
+        images_info.clear();
+        documents_info.clear();
+        edit_imgs_info.clear();
+        file_read=false;
 
     itemSelected=false;
 
@@ -389,8 +389,8 @@ void Tools::draw_new()
 
 	   if(msg->clickedButton()==msg_save)
        {
-          QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
-          file_dialog->deleteLater();
+          QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
+          //file_dialog->deleteLater();
 		  if(file_name.contains(".png"))
 			writeImage(file_name);
 		  scene->new_Scene();
@@ -420,7 +420,7 @@ void Tools::draw_save()
 			  break;
 		  else if(opt==QMessageBox::Yes)
 		  {
-			  QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
+                          QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png);;Image(*.jpg);;Images(*.bmp)"));
 			   
 			  QMessageBox::about(this,"file name ",file_name);  
 			  writeImage(file_name);
@@ -534,7 +534,7 @@ void Tools::draw_save()
 
 void Tools::draw_open()
 {
-    QString file_name=file_dialog->getOpenFileName(this,"Open",QString(),"*.png *.jpg *.bmp" );
+    QString file_name=QFileDialog::getOpenFileName(this,"Open",QString(),"*.png *.jpg *.bmp" );
 
 	if(!isSaved)
 		draw_save();
@@ -1078,8 +1078,7 @@ void Tools::draw_shapes()
 void Tools::msg_save_file()
 {
    qDebug()<<"Entered \n";
-   QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),"*.skh");
-   file_dialog->deleteLater();
+   QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),"*.skh");
    scene->save_Scene(file_name);
    scene->new_Scene();
 
@@ -1379,7 +1378,7 @@ void Tools::closeEvent(QCloseEvent* event)
 		{
            if(!isSaved)
 		   {
-	   	      QString file_name=file_dialog->getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
+                      QString file_name=QFileDialog::getSaveFileName(this,"Save",QString(),tr("Image(*.png)"));
 		      if(file_name.contains(".png"))
 			     writeImage(file_name);
 		   }

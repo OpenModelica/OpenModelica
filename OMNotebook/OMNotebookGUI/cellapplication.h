@@ -45,9 +45,6 @@
 
 namespace IAEX
 {
-  // forward declaration
-  class NotebookSocket;
-
 
   class CellApplication : public QObject, public Application
   {
@@ -85,8 +82,6 @@ namespace IAEX
     CommandCenter *cmdCenter_;
     vector<Cell *> pasteboard_;
     QStringList removeList_;    // Added 2006-01-16 AF
-
-    NotebookSocket *notebooksocket_;
   };
 }
 

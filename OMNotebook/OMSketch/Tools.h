@@ -157,12 +157,7 @@ class Tools:public QMainWindow
        //Action for shapes
        QAction *shapes;
 
-	   
-
-       //File dialog box
-       QFileDialog *file_dialog;
-
-	   //Color dialog box
+       //Color dialog box
        QColorDialog *color_dialog;
 
        //Message Box
