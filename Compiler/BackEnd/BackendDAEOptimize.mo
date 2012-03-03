@@ -416,11 +416,11 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1,algorithms2;
-      array<BackendDAE.ComplexEquation> complEqs;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      list<list<DAE.Exp>> crefOrDerCreflst;
-      array<list<DAE.Exp>> crefOrDerCrefarray;
+      list<list<DAE.Exp>> crefOrDerCreflst,c_crefOrDerCreflst;
+      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
@@ -445,12 +445,14 @@ algorithm
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
         (algorithms1,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,ordvars3,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
-        (eqns2,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
-        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
-        (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
+        (complEqs1,(_,_,c_crefOrDerCreflst)) = Util.arrayMapNoCopy_1(complEqs,replaceComplexEquationTraverser,(repl,ordvars3,{}));
+        crefOrDerCrefcomplex = listArray(listReverse(c_crefOrDerCreflst));
+        (eqns2,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns1,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex));
+        (inieqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex));
+        (remeqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex));
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         // update array eqn wrapper
-      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars2,exobj,aliasVars,inieqns1,remeqns1,arreqns1,algorithms1,complEqs,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp));
+      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars2,exobj,aliasVars,inieqns1,remeqns1,arreqns1,algorithms1,complEqs1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp));
   end match;
 end removeSimpleEquations2;
 
@@ -476,33 +478,38 @@ end replaceVarTraverser;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
+  input tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>,array<list<DAE.Exp>>>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>,array<list<DAE.Exp>>>> outTpl;
 algorithm
   outTpl:=  
   matchcontinue (inTpl)
     local 
       BackendDAE.Equation e,e1;
       BackendVarTransform.VariableReplacements repl;
-      array<list<DAE.Exp>> crefOrDerCrefarray;
+      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       Integer index;
       list<DAE.Exp> in_,out,crefOrDerCref;
       DAE.ElementSource source;
-    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray)))
+    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         crefOrDerCref = crefOrDerCrefarray[index+1];
       then
-        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray)));
-    case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray)))
+        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         ((in_,out)) = inouttplarray[index+1];
       then
-        ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray)));
-    case ((e,(repl,crefOrDerCrefarray,inouttplarray)))
+        ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((BackendDAE.COMPLEX_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+      equation
+        crefOrDerCref = crefOrDerCrefcomplex[index];
+      then
+        ((BackendDAE.COMPLEX_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         {e1} = BackendVarTransform.replaceEquations({e},repl);
-      then ((e1,(repl,crefOrDerCrefarray,inouttplarray)));
+      then ((e1,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
   end matchcontinue;
 end replaceEquationTraverser;
 
@@ -539,6 +546,40 @@ algorithm
         ((BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source),(repl,vars,expl::crefOrDerCreflst)));
   end match;
 end replaceArrayEquationTraverser;
+
+protected function replaceComplexEquationTraverser "function: replaceComplexEquationTraverser
+  author: Frenkel TUD 2012-03
+  It is possible to change the equation.
+"
+  input tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> inTpl;
+  output tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> outTpl;
+algorithm
+  outTpl:=
+  match (inTpl)
+    local 
+      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2;
+      Integer size;
+      DAE.ElementSource source;
+      BackendVarTransform.VariableReplacements repl;
+      list<list<DAE.Exp>> crefOrDerCreflst;
+      list<DAE.Exp> expl1,expl2,expl;
+      BackendDAE.Variables vars;
+      Boolean b1,b2;
+    case ((BackendDAE.COMPLEXEQUATION(size,e1,e2,source),(repl,vars,crefOrDerCreflst)))
+      equation
+        (e1_1,_) = BackendVarTransform.replaceExp(e1, repl,NONE());
+        (e2_1,_) = BackendVarTransform.replaceExp(e2, repl,NONE());
+        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_2);        
+        expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
+        expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
+        expl = listAppend(expl1, expl2);
+      then
+        ((BackendDAE.COMPLEXEQUATION(size,e1_2,e2_2,source),(repl,vars,expl::crefOrDerCreflst)));
+  end match;
+end replaceComplexEquationTraverser;
 
 protected function replaceWhenClauseTraverser "function: replaceWhenClauseTraverser
   author: Frenkel TUD 2010-04
@@ -2006,13 +2047,14 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
-      array<BackendDAE.ComplexEquation> complEqs;
+      array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendVarTransform.VariableReplacements repl,repl1,repl2;
       list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
+      list<BackendDAE.ComplexEquation> lstceqns,lstceqns1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
     case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
@@ -2021,17 +2063,20 @@ algorithm
         lsteqns = BackendDAEUtil.equationList(eqns);
         lstarreqns = arrayList(arreqns);
         algs = arrayList(algorithms);
+        lstceqns = arrayList(complEqs);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl2);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl2);
+        lstceqns1 = BackendVarTransform.replaceComplexEquations(lstceqns, repl2);
         eqns1 = BackendDAEUtil.listEquation(eqns_1);
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
+        complEqs1 = listArray(lstceqns1);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs,einfo,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs1,einfo,eoc,btp));
   end match;
 end removeFinalParametersWork;
 
@@ -2395,8 +2440,8 @@ algorithm
       array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo1;
       BackendDAE.ExternalObjectClasses eoc;
-      list<list<DAE.Exp>> crefOrDerCreflst;
-      array<list<DAE.Exp>> crefOrDerCrefarray;
+      list<list<DAE.Exp>> crefOrDerCreflst,c_crefOrDerCreflst;
+      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       Option<BackendDAE.IncidenceMatrix> m,mT;
@@ -2410,7 +2455,9 @@ algorithm
         crefOrDerCrefarray = listArray(listReverse(crefOrDerCreflst));
         (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,vars,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
-        (eqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
+        (_,(_,_,c_crefOrDerCreflst)) = Util.arrayMapNoCopy_1(complEqs,replaceComplexEquationTraverser,(repl,vars,{}));
+        crefOrDerCrefcomplex = listArray(listReverse(c_crefOrDerCreflst));
+        (eqns1,(_,_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex));
       then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
   end match;
 end removeEqualFunctionCalls2;
@@ -2679,6 +2726,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedParameter,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(complEqs,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsComplexEqn,1,arrayLength(complEqs),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
         dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
       then dae;
@@ -2840,6 +2888,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedVariables,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(complEqs,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsComplexEqn,1,arrayLength(complEqs),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
         dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp));
       then dae1;

@@ -1519,6 +1519,39 @@ algorithm
    end matchcontinue;
 end replaceSTMT_IF; 
 
+public function replaceComplexEquations "function: replaceComplexEquations
+  This function takes a list of equations ana a set of variable replacements
+  and applies the replacements on all complex equations.
+  The function returns the updated list of complex equations"
+  input list<BackendDAE.ComplexEquation> inBackendDAEEquationLst;
+  input VariableReplacements inVariableReplacements;
+  output list<BackendDAE.ComplexEquation> outBackendDAEEquationLst;
+algorithm
+  outBackendDAEEquationLst:=
+  match (inBackendDAEEquationLst,inVariableReplacements)
+    local
+      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
+      list<BackendDAE.ComplexEquation> es_1,es;
+      VariableReplacements repl;
+      Integer size;
+      DAE.ElementSource source;
+      Boolean b1,b2;
+
+    case ({},_) then {};
+    case ((BackendDAE.COMPLEXEQUATION(size = size,left = e1,right = e2,source=source) :: es),repl)
+      equation
+        (e1_1,b1) = replaceExp(e1, repl,NONE());
+        (e2_1,b2) = replaceExp(e2, repl,NONE());
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_2);
+        es_1 = replaceComplexEquations(es, repl);
+      then
+        (BackendDAE.COMPLEXEQUATION(size,e1_2,e2_2,source) :: es_1);
+  end match;
+end replaceComplexEquations;
+
 public function dumpReplacements
 "function: dumpReplacements
   Prints the variable replacements on form var1 -> var2"

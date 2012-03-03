@@ -1790,24 +1790,22 @@ algorithm
   outTpl := matchcontinue(inTpl)
   local
     DAE.ComponentRef cr;
-    list<DAE.Exp> expl,res;
+    list<DAE.Exp> expl,res,creexps;
     DAE.Exp e,e1;
-    list<list<DAE.Exp>> lst;
     list<DAE.Var> varLst;
     BackendDAE.Variables vars;
     // Special Case for Records 
     case (((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
       equation
-        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        lst = List.map1(expl, statesAndVarsExp, vars);
-        res = List.unionOnTrueList(lst, Expression.expEqual);
+        creexps = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(_,res))) = Expression.traverseExpListTopDown(creexps, traversingstatesAndVarsExpFinder, (vars,expl));
       then
         ((e,true,(vars,res)));
     // Special Case for unextended arrays
     case (((e as DAE.CREF(componentRef = cr,ty = DAE.T_ARRAY(dims=_))),(vars,expl)))
       equation
         ((e1,(_,true))) = extendArrExp((e,(NONE(),false)));
-        res = statesAndVarsExp(e1, vars);
+        ((_,(_,res))) = Expression.traverseExpTopDown(e1, traversingstatesAndVarsExpFinder, (vars,expl));
       then
         ((e,true,(vars,res)));
     case (((e as DAE.CREF(componentRef = cr)),(vars,expl)))
@@ -5932,6 +5930,68 @@ algorithm
         ext_arg_1;
   end match;
 end traverseAlgorithmExps;
+
+public function traverseBackendDAEExpsComplexEqn "function: traverseBackendDAEExpsComplexEqn
+  author: Frenkel TUD
+
+  Helper function to traverseBackendDAEExpsEqn
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.ComplexEquation inComplexEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  match (inComplexEquation,func,inTypeA)
+    local 
+      DAE.Exp e1,e2;
+      Type_a ext_arg_1,ext_arg_2;
+    case (BackendDAE.COMPLEXEQUATION(left = e1,right = e2),func,inTypeA)
+      equation
+        ((_,ext_arg_1)) = func((e1,inTypeA));
+        ((_,ext_arg_2)) = func((e2,ext_arg_1));
+      then
+        ext_arg_2;
+  end match;
+end traverseBackendDAEExpsComplexEqn;
+
+public function traverseBackendDAEExpsComplexEqnWithUpdate "function: traverseBackendDAEExpsComplexEqnWithUpdate
+  author: Frenkel TUD
+
+  Helper function to traverseBackendDAEExpsEqn
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.ComplexEquation inComplexEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.ComplexEquation outComplexEquation;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outComplexEquation,outTypeA) :=
+  match (inComplexEquation,func,inTypeA)
+    local 
+      Integer size;
+      DAE.Exp e1,e2;
+      Type_a ext_arg_1,ext_arg_2;
+      DAE.ElementSource source;
+    case (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),func,inTypeA)
+      equation
+        ((e1,ext_arg_1)) = func((e1,inTypeA));
+        ((e2,ext_arg_2)) = func((e2,ext_arg_1));
+        print("MD replacement: " +& ExpressionDump.printExpStr(e1) +& "\n");
+      then
+        (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),ext_arg_2);
+  end match;
+end traverseBackendDAEExpsComplexEqnWithUpdate;
 
 /*************************************************
  * Equation System Pipeline 
