@@ -1247,24 +1247,6 @@ algorithm
       DAE.InlineType inlineType;
       DAE.TailCall tailCall;
 
-    // normal first try to force the inline of function calls and extend the equations
-    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
-      equation
-        // no MetaModelica
-        false = Config.acceptMetaModelicaGrammar();
-        (e1_1,b1) = ExpressionSimplify.simplify(e1);
-        (e2_1,b2) = ExpressionSimplify.simplify(e2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
-        ty = Expression.typeof(e1_1);
-        i = Expression.sizeOf(ty);
-        (e1_1,source) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        (e2_1,source) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        // extend      
-        ((eqs,complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEXEQUATION(i,e1_1,e2_1,source),funcs);
-      then
-        (eqs,complexEqs,arreqns);
-
     // normal first try to inline function calls and extend the equations
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
