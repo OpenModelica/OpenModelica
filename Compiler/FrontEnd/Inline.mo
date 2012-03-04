@@ -43,27 +43,31 @@ encapsulated package Inline
   "
 
 public import Absyn;
+public import Algorithm;
 public import BackendDAE;
+public import BaseHashTable;
 public import DAE;
+public import HashTableCG;
 public import SCode;
 public import Util;
 public import Values;
-public import Algorithm;
 
 type Ident = String;
   
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
 protected import ComponentReference;
-protected import Debug;
+protected import Config;
 protected import DAEUtil;
+protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Types;
-protected import Config;
+
 
 public function inlineCalls
 "function: inlineCalls
@@ -1080,6 +1084,7 @@ algorithm
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
       DAE.Type ty1,ty2;
+      HashTableCG.HashTable checkcr;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
@@ -1088,11 +1093,11 @@ algorithm
         crefs = List.map(fn,getInputCrefs);
         crefs = List.select(crefs,removeWilds);
         argmap = List.threadTuple(crefs,args);
-        argmap = extendCrefRecords(argmap);
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         newExp = getRhsExp(fn);
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
-        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
+        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
@@ -1100,6 +1105,16 @@ algorithm
     else inTuple;
   end matchcontinue;
 end inlineCall;
+
+protected function dumpArgmap
+  input tuple<DAE.ComponentRef, DAE.Exp> inTpl;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp exp;
+algorithm
+  (cr,exp) := inTpl;
+  print(ComponentReference.printComponentRefStr(cr) +& " -> " +& ExpressionDump.printExpStr(exp) +& "\n");
+end dumpArgmap;
 
 public function forceInlineCall
 "function: inlineCall
@@ -1120,16 +1135,18 @@ algorithm
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
       DAE.Type ty1,ty2;
+      HashTableCG.HashTable checkcr;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
-        fn = getFunctionBody(p,fns);
+        true = checkInlineType(inlineType,fns);
+        fn = getFunctionBody(p,fns);  
         crefs = List.map(fn,getInputCrefs);
         crefs = List.select(crefs,removeWilds);
         argmap = List.threadTuple(crefs,args);
-        argmap = extendCrefRecords(argmap);
-        newExp = getRhsExp(fn);
-        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+        newExp::{} = getRhsExp1(fn);
+        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
         // for inlinecalls in functions
@@ -1163,48 +1180,93 @@ protected function extendCrefRecords
 "function: extendCrefRecords
   extends crefs from records"
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
+  input HashTableCG.HashTable inCheckCr;
   output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
+  output HashTableCG.HashTable outCheckCr;  
 algorithm
-  outArgmap := matchcontinue(inArgmap)
+  (outArgmap,outCheckCr) := matchcontinue(inArgmap,inCheckCr)
     local
+      HashTableCG.HashTable ht,ht1,ht2,ht3;
       list<tuple<DAE.ComponentRef, DAE.Exp>> res,res1,res2,new,new1;
       DAE.ComponentRef c,cref;
       DAE.Exp e;
       list<DAE.Var> varLst;
       list<DAE.Exp> expl;
       list<DAE.ComponentRef> crlst;
-    case ({}) then {};
-    case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.T_COMPLEX(varLst=varLst))))::res)
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
+    case ({},ht) then ({},ht);
+    case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.T_COMPLEX(varLst=varLst))))::res,ht)
       equation
-        res1 = extendCrefRecords(res);
+        (res1,ht1) = extendCrefRecords(res,ht);
         new = List.map2(varLst,extendCrefRecords1,c,cref);
-        new1 = extendCrefRecords(new);
+        (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);
+      then ((c,e)::res2,ht2);
     /* cause of an error somewhere the type of the expression CREF is not equal to the componentreference type
        this case is needed. */    
-    case((c,e as (DAE.CREF(componentRef = cref)))::res)
+    case((c,e as (DAE.CREF(componentRef = cref)))::res,ht)
       equation
         DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
-        res1 = extendCrefRecords(res);
+        (res1,ht1) = extendCrefRecords(res,ht);
         new = List.map2(varLst,extendCrefRecords1,c,cref);
-        new1 = extendCrefRecords(new);
+        (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);
-    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst)))))::res)
+      then ((c,e)::res2,ht2);
+    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst)))))::res,ht)
       equation
-        res1 = extendCrefRecords(res);
+        (res1,ht1) = extendCrefRecords(res,ht);
         crlst = List.map1(varLst,extendCrefRecords2,c);
         new = List.threadTuple(crlst,expl);
-        new1 = extendCrefRecords(new);
+        (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);
-    case((c,e)::res)
+      then ((c,e)::res2,ht2);
+    case((c,e)::res,ht)
       equation
-        res1 = extendCrefRecords(res);
-      then ((c,e)::res1);
+        DAE.T_COMPLEX(varLst=varLst) = Expression.typeof(e);
+        crlst = List.map1(varLst,extendCrefRecords2,c);
+        creftpllst = List.map1(crlst,Util.makeTuple,c);
+        ht1 = List.fold(creftpllst,BaseHashTable.add,ht);
+        ht2 = getCheckCref(crlst,ht1);        
+        (res1,ht3) = extendCrefRecords(res,ht2);
+      then ((c,e)::res1,ht3);        
+    case((c,e)::res,ht)
+      equation
+        (res1,ht1) = extendCrefRecords(res,ht);
+      then ((c,e)::res1,ht1);
   end matchcontinue;
 end extendCrefRecords;
+
+protected function getCheckCref
+  input list<DAE.ComponentRef> inCrefs;
+  input HashTableCG.HashTable inCheckCr;
+  output HashTableCG.HashTable outCheckCr;
+algorithm
+  outCheckCr := matchcontinue(inCrefs,inCheckCr)
+    local
+      HashTableCG.HashTable ht,ht1,ht2,ht3;
+      list<DAE.ComponentRef> rest,crlst;
+      DAE.ComponentRef cr;
+      list<DAE.Var> varLst;
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
+      case ({},ht) 
+        then ht;
+    case (cr::rest,ht)
+      equation
+        DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
+        crlst = List.map1(varLst,extendCrefRecords2,cr);
+        ht1 = getCheckCref(crlst,ht);
+        creftpllst = List.map1(crlst,Util.makeTuple,cr);
+        ht2 = List.fold(creftpllst,BaseHashTable.add,ht1);
+        ht3 = getCheckCref(rest,ht2);
+      then 
+        ht3;          
+    case (cr::rest,ht)
+      equation
+        ht1 = getCheckCref(rest,ht);
+      then 
+        ht1;
+   end matchcontinue;
+end getCheckCref;
 
 protected function extendCrefRecords1
 "function: extendCrefRecords1
@@ -1310,11 +1372,48 @@ algorithm
   end matchcontinue;
 end getRhsExp;
 
+protected function getRhsExp1
+"function: getRhsExp1
+  returns the right hand side of an assignment from a function"
+  input list<DAE.Element> inElementList;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := matchcontinue(inElementList)
+    local
+      list<DAE.Element> cdr;
+      DAE.Exp exp;
+      list<DAE.Exp> res;
+    case({})
+      then
+        {};
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=exp)})) :: cdr)
+      equation
+        res = getRhsExp1(cdr);
+      then
+        exp::res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=exp)})) :: cdr)
+      equation
+        res = getRhsExp1(cdr);
+      then
+        exp::res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=exp)})) :: cdr)
+      equation
+        res = getRhsExp1(cdr);
+      then
+        exp::res;
+    case(_ :: cdr)
+      equation
+        res = getRhsExp1(cdr);
+      then
+        res;
+  end matchcontinue;
+end getRhsExp1;
+
 protected function replaceArgs
 "function: replaceArgs
   finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
-  input tuple<DAE.Exp, list<tuple<DAE.ComponentRef,DAE.Exp>>> inTuple;
-  output tuple<DAE.Exp, list<tuple<DAE.ComponentRef,DAE.Exp>>> outTuple;
+  input tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> inTuple;
+  output tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -1327,13 +1426,20 @@ algorithm
       DAE.Type ty,ty2;
       DAE.InlineType inlineType;
       DAE.TailCall tc;
-    case ((DAE.CREF(componentRef = cref),argmap))
+      HashTableCG.HashTable checkcr;
+      Boolean replacedfailed;
+    case ((DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
       equation
         e = getExpFromArgMap(argmap,cref);
         (e,_) = ExpressionSimplify.simplify(e);
       then
-        ((e,argmap));
-    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,inlineType,tc)),ty),argmap))
+        ((e,(argmap,checkcr,true)));
+    case ((e as DAE.CREF(componentRef = cref),(argmap,checkcr,true)))
+      equation
+        _ = BaseHashTable.get(cref,checkcr);
+      then
+        ((e,(argmap,checkcr,false)));        
+    case ((DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,inlineType,tc)),ty),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
@@ -1343,9 +1449,15 @@ algorithm
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
       then
-        ((e,argmap));
+        ((e,(argmap,checkcr,true)));
+    case ((e as DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,inlineType,tc)),ty),(argmap,checkcr,true)))
+      equation
+        cref = ComponentReference.pathToCref(path);        
+        _ = BaseHashTable.get(cref,checkcr);
+      then
+        ((e,(argmap,checkcr,false)));        
         /* TODO: Use the inlineType of the function reference! */
-    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),argmap))
+    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),(argmap,checkcr,true)))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -1356,8 +1468,14 @@ algorithm
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,inlineType,tc));
         e = boxIfUnboxedFunRef(e,ty);
         (e,_) = ExpressionSimplify.simplify(e);
-      then ((e,argmap));
-    case((e,argmap)) then ((e,argmap));
+      then ((e,(argmap,checkcr,true)));
+    case((e as DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),(argmap,checkcr,true)))
+      equation
+        cref = ComponentReference.pathToCref(path);
+        _ = BaseHashTable.get(cref,checkcr);        
+      then
+        ((e,(argmap,checkcr,false)));         
+    case((e,(argmap,checkcr,replacedfailed))) then ((e,(argmap,checkcr,replacedfailed)));
   end matchcontinue;
 end replaceArgs;
 
