@@ -626,6 +626,15 @@ algorithm
       then
         e2;
     
+    case (e as DAE.CALL(path = a,expLst = expl),inVariables as (_,_,functions))
+      equation
+        // try to inline
+        (e1,_) = Inline.forceInlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        // get Derivative function
+        e2 = differentiateExpTime(e1,inVariables);
+      then
+        e2;    
+    
     case (e as DAE.CALL(path = a,expLst = expl),inVariables)
       equation
         e_str = ExpressionDump.printExpStr(e);
