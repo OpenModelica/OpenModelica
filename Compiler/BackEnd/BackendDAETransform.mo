@@ -6284,7 +6284,7 @@ algorithm
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        ev = BackendEquation.equationsLstVars({eqn},v,BackendDAEUtil.emptyVars());
+        ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v,BackendDAEUtil.emptyVars());
         false = BackendVariable.hasContinousVar(BackendDAEUtil.varList(ev));
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es, inFunctions,inDerivedAlgs,inDerivedMultiEqn);

@@ -3635,6 +3635,410 @@ algorithm
   end match;
 end traverseExpList;
 
+public function traverseExpWithoutRelations
+"function traverseExpWithOutRelations
+  Traverses all subexpressions of an expression except relations.
+  Takes a function and an extra argument passed through the traversal.
+  The function can potentially change the expression. In such cases,
+  the changes are made bottom-up, i.e. a subexpression is traversed
+  and changed before the complete expression is traversed.
+
+  NOTE: The user-provided function is not allowed to fail! If you want to
+  detect a failure, return NONE() in your user-provided datatype.
+"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Exp inExp;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output tuple<DAE.Exp, Type_a> outTplExpTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTplExpTypeA := match (inExp,func,inTypeA)
+    local
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
+      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
+      Operator op;
+      FuncExpType rel;
+      list<DAE.Exp> expl_1,expl;
+      Absyn.Path fn,path;
+      Boolean t,scalar,built,sc;
+      Type tp;
+      Integer i;
+      list<list<DAE.Exp>> lstexpl_1,lstexpl;
+      Integer dim;
+      Ident id,str;
+      list<DAE.Element> localDecls;
+      tuple<DAE.Exp,Type_a> res;
+      list<String> fieldNames;
+      DAE.CallAttributes attr;
+      list<DAE.MatchCase> cases,cases_1;
+      DAE.MatchType matchTy;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      Option<DAE.Exp> oe1,foldExp;
+      Option<Values.Value> v;
+      DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters,riters_1;
+      DAE.ComponentRef cr,cr_1;
+    
+    case ((e as DAE.EMPTY(scope = _)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case ((e as DAE.ICONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    
+    case ((e as DAE.RCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    
+    case ((e as DAE.SCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    
+    case ((e as DAE.BCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    
+    case ((e as DAE.ENUM_LITERAL(index=_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    
+    case ((e as DAE.CREF(cr,tp)),rel,ext_arg)
+      equation
+        (cr_1,ext_arg_1) = traverseExpCref(cr, rel, ext_arg);
+        e = Util.if_(referenceEq(cr,cr_1),e,DAE.CREF(cr_1,tp));
+        res = rel((e,ext_arg_1));
+      then res;
+
+    // unary
+    case ((e as DAE.UNARY(operator = op,exp = e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.UNARY(op,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    // binary
+    case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.BINARY(e1_1,op,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+    
+    // logical unary
+    case ((e as DAE.LUNARY(operator = op,exp = e1)),rel,ext_arg)
+      then
+        ((e,ext_arg));
+    
+    // logical binary
+    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),rel,ext_arg)
+      then
+        ((e,ext_arg));
+    
+    // relation
+    case ((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB)),rel,ext_arg)
+      then
+        ((e,ext_arg));
+    
+    // if expressions
+    case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),rel,ext_arg)
+      equation
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg);
+        ((e3_1,ext_arg_3)) = traverseExpWithoutRelations(e3, rel, ext_arg_2);
+        e = Util.if_(referenceEq(e2,e2_1) and referenceEq(e3,e3_1),e,DAE.IFEXP(e1,e2_1,e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((e,ext_arg_4));
+    
+    case ((e as DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.CALL(fn,expl_1,attr));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.PARTEVALFUNCTION(fn,expl_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.ARRAY(tp,scalar,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.MATRIX(ty = tp,integer = dim, matrix=lstexpl)),rel,ext_arg)
+      equation
+        (lstexpl_1,ext_arg_1) = traverseExpWithoutRelationsMatrix(lstexpl, rel, ext_arg);
+        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,dim,lstexpl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.RANGE(tp,e1_1,NONE(),e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+    
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
+        ((e3_1,ext_arg_3)) = traverseExpWithoutRelations(e3, rel, ext_arg_2);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1) and referenceEq(e3,e3_1),e,DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1));
+        ((e,ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((e,ext_arg_4));
+    
+    case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.CAST(ty = tp,exp = e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.CAST(tp,e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.ASUB(exp = e1,sub = expl)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((expl_1,ext_arg_2)) = traverseExpWithoutRelationsList(expl, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(expl,expl_1),e,makeASUB(e1_1,expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.TSUB(e1,i,tp)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.TSUB(e1_1,i,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.SIZE(e1_1,NONE()));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
+    case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.SIZE(e1_1,SOME(e2_1)));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+    
+    case ((e as DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        (riters_1,ext_arg) = traverseReductionIterators(riters, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(riters,riters_1),e,DAE.REDUCTION(reductionInfo,e1_1,riters_1));
+        ((e,ext_arg)) = rel((e,ext_arg));
+      then
+        ((e,ext_arg));
+    
+    // MetaModelica list
+    case ((e as DAE.CONS(e1,e2)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
+        e = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),e,DAE.CONS(e1_1,e2_1));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case ((e as DAE.LIST(expl)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.LIST(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.META_TUPLE(expl_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.META_OPTION(NONE())),rel,ext_arg)
+      equation
+        ((e,ext_arg_1)) = rel((e,ext_arg));
+      then
+        ((e,ext_arg_1));
+
+    case ((e as DAE.META_OPTION(SOME(e1))),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.META_OPTION(SOME(e1_1)));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.BOX(e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.BOX(e1_1));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.UNBOX(e1,tp)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.UNBOX(e1_1,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.METARECORDCALL(fn,expl_1,fieldNames,i));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    // ---------------------
+
+    case ((e as DAE.MATCHEXPRESSION(matchTy,expl,localDecls,cases,tp)),rel,ext_arg)
+      equation
+        // Don't traverse the local declarations; we don't store bindings there (yet)
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        (cases_1,ext_arg_2) = Patternm.traverseCases(cases,rel,ext_arg_1);
+        e = Util.if_(referenceEq(expl,expl_1) and referenceEq(cases,cases_1),e,DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases_1,tp));
+        ((e,ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((e,ext_arg_3));
+
+    case (e as DAE.SHARED_LITERAL(index = _),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    case (e as DAE.PATTERN(pattern = _),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
+    // Why don't we call rel() for these expressions?
+    case (e as DAE.CODE(code = _),rel,ext_arg) then ((e,ext_arg));
+      
+    case (e,rel,ext_arg)
+      equation
+        str = ExpressionDump.printExpStr(e);
+        str = "Expression.traverseExpWithoutRelations or one of the user-defined functions using it is not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+  end match;
+end traverseExpWithoutRelations;
+
+protected function traverseExpWithoutRelationsMatrix
+"function: traverseExpWithoutRelationsMatrix
+  author: Frenkel TUD
+   Helper function to traverseExpWithoutRelations, traverses matrix expressions."
+  replaceable type Type_a subtypeof Any;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+algorithm
+  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
+    local
+      FuncExpType rel;
+      Type_a e_arg,e_arg_1,e_arg_2;
+      list<DAE.Exp> row_1,row;
+      list<list<DAE.Exp>> rows_1,rows;
+    
+    case ({},_,e_arg) then ({},e_arg);
+    
+    case ((row :: rows),rel,e_arg)
+      equation
+        ((row_1,e_arg_1)) = traverseExpWithoutRelationsList(row, rel, e_arg);
+        (rows_1,e_arg_2) = traverseExpWithoutRelationsMatrix(rows, rel, e_arg_1);
+      then
+        ((row_1 :: rows_1),e_arg_2);
+  end match;
+end traverseExpWithoutRelationsMatrix;
+
+public function traverseExpWithoutRelationsList
+"function traverseExpWithoutRelationsList
+ author Frenkel TUD:
+ Calls traverseExpWithoutRelations for each element of list."
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> inExpl;
+  input funcType rel;
+  input Type_a iext_arg;
+  output tuple<list<DAE.Exp>, Type_a> outTpl;
+  partial function funcType
+    input tuple<DAE.Exp, Type_a> tpl1;
+    output tuple<DAE.Exp, Type_a> tpl2;
+  end funcType;
+algorithm
+  outTpl := match(inExpl,rel,iext_arg)
+    local 
+      DAE.Exp e,e1;
+      list<DAE.Exp> expl,expl1;
+      Type_a ext_arg;
+    
+    case({},_,ext_arg) then ((inExpl,ext_arg));
+    
+    case(e::expl,rel,ext_arg)
+      equation
+        ((e1,ext_arg)) = traverseExpWithoutRelations(e, rel, ext_arg);
+        ((expl1,ext_arg)) = traverseExpWithoutRelationsList(expl,rel,ext_arg);
+        expl = Util.if_(referenceEq(e,e1) and referenceEq(expl,expl1),inExpl,e1::expl1);
+      then
+        ((expl,ext_arg));
+  end match;
+end traverseExpWithoutRelationsList;
+
 public function traverseExpTopDown
 "function traverseExpTopDown
   Traverses all subexpressions of an expression.

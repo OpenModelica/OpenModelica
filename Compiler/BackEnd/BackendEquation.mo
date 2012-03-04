@@ -143,6 +143,50 @@ algorithm
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause2;
 
+public function equationsLstVarsWithoutRelations
+"function: equationsLstVarsWithoutRelations
+  author: Frenkel TUD 2012-03
+  From the equations and a variable array return all
+  occuring variables form the array."
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inVars1;
+  output BackendDAE.Variables outVars;
+algorithm
+  (_,(_,outVars)) := traverseBackendDAEExpsEqnList(inEquationLst,checkEquationsVarsWithoutRelations,(inVars,inVars1));
+end equationsLstVarsWithoutRelations;
+
+public function equationsVarsWithoutRelations
+"function: equationsVarsWithoutRelations
+  author: Frenkel TUD 2012-03
+  From the equations and a variable array return all
+  occuring variables form the array without relations."
+  input BackendDAE.EquationArray inEquations;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars := BackendDAEUtil.emptyVars();
+  ((_,outVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations,checkEquationsVarsWithoutRelations,(inVars,outVars));
+end equationsVarsWithoutRelations;
+
+protected function checkEquationsVarsWithoutRelations
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables vars,vars1;
+    case ((exp,(vars,vars1)))
+      equation
+         ((_,(_,vars1))) = Expression.traverseExpWithoutRelations(exp,checkEquationsVarsExp,(vars,vars1));
+       then
+        ((exp,(vars,vars1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkEquationsVarsWithoutRelations;
+
 public function equationsLstVars
 "function: equationsLstVars
   author: Frenkel TUD 2011-05

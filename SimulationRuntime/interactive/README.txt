@@ -15,13 +15,13 @@ user: anonymous
 pass: none   <-- write "none" without quotes here
 
 An already build application test executable for Windows is in:
-https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/c_runtime/interactive/SampleClient 
+https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/SimulationRuntime/interactive/SampleClient 
 directory
 
 Code:
 -----
 To get the code for an interactive client look at:
-https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/c_runtime/interactive
+https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/SimulationRuntime/interactive
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
@@ -30,7 +30,7 @@ File
  and all the other dependencies: thread.* socket.*
 
 Another (better) way would be to use Subversion (TortoiseSVN) and checkout:
-https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/c_runtime/interactive
+https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/SimulationRuntime/interactive
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
