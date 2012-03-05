@@ -981,7 +981,7 @@ static int initialize(DATA *data, int optiMethod)
 
   if(optiMethod == IOM_NELDER_MEAD_EX)
     retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals, 0.0);
-  if(optiMethod == IOM_NELDER_MEAD_EX2)
+  else if(optiMethod == IOM_NELDER_MEAD_EX2)
     retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals, 1.0);
   else if(optiMethod == IOM_SIMPLEX)
     retVal = simplex_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals);
