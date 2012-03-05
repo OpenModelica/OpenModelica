@@ -334,7 +334,7 @@ public function differentiateExpTime "function: differentiateExpTime
 algorithm
   outExp := matchcontinue (inExp,inVariables)
     local
-      DAE.Type tp;
+      DAE.Type tp,tp1;
       DAE.ComponentRef cr;
       list<list<DAE.ComponentRef>> crefslstls;
       list<DAE.ComponentRef> crefs;
@@ -696,10 +696,11 @@ algorithm
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
+        tp1 = Expression.typeof(e2);
       then
         DAE.BINARY(
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
-          DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));
+          DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp1),e2));
     
     case ((e as DAE.MATRIX(ty = tp,integer=i,matrix=explstlst)),inVariables)
       equation

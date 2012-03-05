@@ -6073,8 +6073,8 @@ algorithm
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
-  (sode,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,daeHandler);
-  sode1 := BackendDAECreate.findZeroCrossings(sode);
+  (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,daeHandler);
+  sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
   Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
