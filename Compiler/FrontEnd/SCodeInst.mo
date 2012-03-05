@@ -55,6 +55,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Graph;
 protected import List;
 protected import SCodeDump;
 protected import SCodeExpand;
@@ -2995,7 +2996,7 @@ algorithm
 
     case (UNTYPED_BINDING(isProcessing = true), st)
       equation
-        print("Found loop in binding\n");
+        showCyclicDepError(st);
       then
         fail();
 
@@ -3287,6 +3288,146 @@ algorithm
     else NONE();
   end matchcontinue;
 end lookupNameInTable;
+
+protected function showCyclicDepError
+  input SymbolTable inSymbolTable;
+algorithm
+  _ := matchcontinue(inSymbolTable)
+    local
+      list<DAE.Exp> deps;
+      String dep_str;
+
+    case (_)
+      equation
+        deps = findCyclicDependencies(inSymbolTable);
+        dep_str = 
+          stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
+        dep_str = "{" +& dep_str +& "}";
+        Error.addMessage(Error.CIRCULAR_COMPONENTS, {"FIX ME", dep_str});
+      then
+        ();
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Found cyclic dependencies, but failed to show error."});
+      then
+        fail();
+  
+  end matchcontinue;
+end showCyclicDepError;
+
+protected function findCyclicDependencies
+  input SymbolTable inSymbolTable;
+  output list<DAE.Exp> outDeps;
+protected
+  list<tuple<Absyn.Path, Component>> hash_list;
+  list<tuple<DAE.Exp, list<DAE.Exp>>> dep_graph;
+  list<DAE.Exp> deps;
+algorithm
+  hash_list := BaseHashTable.hashTableList(inSymbolTable);
+  dep_graph := buildDependencyGraph(hash_list, {});
+  (_, dep_graph) := Graph.topologicalSort(dep_graph, nodeEqual);
+  {outDeps} := Graph.findCycles(dep_graph, nodeEqual);
+end findCyclicDependencies;
+  
+protected function buildDependencyGraph
+  input list<tuple<Absyn.Path, Component>> inComponents;
+  input list<tuple<DAE.Exp, list<DAE.Exp>>> inAccumGraph;
+  output list<tuple<DAE.Exp, list<DAE.Exp>>> outGraph;
+algorithm
+  outGraph := match(inComponents, inAccumGraph)
+    local
+      list<tuple<Absyn.Path, Component>> rest_comps;
+      list<tuple<DAE.Exp, list<DAE.Exp>>> accum;
+      Binding binding;
+      array<Dimension> dims;
+      list<Dimension> dimsl;
+      Absyn.Path name;
+
+    case ({}, _) then inAccumGraph;
+
+    case ((name, UNTYPED_COMPONENT(binding = binding, dimensions = dims)) ::
+        rest_comps, accum)
+      equation
+        accum = addBindingDependency(binding, name, accum);
+        dimsl = arrayList(dims);
+        //accum = List.fold(dimsl, addDimensionDependency, accum);
+        accum = buildDependencyGraph(rest_comps, accum);
+      then
+        accum;
+
+    case (_ :: rest_comps, accum)
+      then buildDependencyGraph(rest_comps, accum);
+
+  end match;
+end buildDependencyGraph;
+  
+protected function addBindingDependency
+  input Binding inBinding;
+  input Absyn.Path inComponentName;
+  input list<tuple<DAE.Exp, list<DAE.Exp>>> inAccumGraph;
+  output list<tuple<DAE.Exp, list<DAE.Exp>>> outGraph;
+algorithm
+  outGraph := match(inBinding, inComponentName, inAccumGraph)
+    local
+      DAE.Exp bind_exp;
+      list<DAE.Exp> deps;
+      DAE.ComponentRef cref;
+      tuple<DAE.Exp, list<DAE.Exp>> dep;
+
+    case (UNTYPED_BINDING(bindingExp = bind_exp, isProcessing = true), _, _)
+      equation
+        deps = getDependenciesFromExp(bind_exp);
+        cref = ComponentReference.pathToCref(inComponentName);
+        dep = (DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT), deps);
+      then
+        dep :: inAccumGraph;
+
+    else inAccumGraph;
+  end match;
+end addBindingDependency;
+
+protected function getDependenciesFromExp
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outDeps;
+algorithm
+  ((_, outDeps)) := Expression.traverseExp(inExp, expDependencyTraverser, {});
+end getDependenciesFromExp;
+
+protected function expDependencyTraverser
+  input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
+  output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> deps;
+
+    case ((exp as DAE.CREF(componentRef = _), deps))
+      then ((exp, exp :: deps));
+
+    else inTuple;
+
+  end match;
+end expDependencyTraverser;
+
+protected function nodeEqual
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match(inExp1, inExp2)
+    local
+      DAE.ComponentRef cref1, cref2;
+
+    case (DAE.CREF(componentRef = cref1), DAE.CREF(componentRef = cref2))
+      then ComponentReference.crefEqualNoStringCompare(cref1, cref2);
+
+    else false;
+
+  end match;
+end nodeEqual;
 
 protected function removeCrefOuterPrefix
   input Absyn.Path inInnerPath;
