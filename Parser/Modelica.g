@@ -343,8 +343,8 @@ element_list returns [void* ast] @init {
         ast = mk_cons(Absyn__ANNOTATIONITEM(a), es);
       else
         ast = mk_nil();
-      for (;first<last;first++) {
-        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,first);
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
           ast = mk_cons(Absyn__LEXER_5fCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
