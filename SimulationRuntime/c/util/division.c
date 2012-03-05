@@ -33,15 +33,13 @@
 #include <stdlib.h>
 
 #include "division.h"
+#include "error.h"
 
-int encounteredDivisionByZero = 0;
-
-modelica_real division_error(modelica_real b, const char* division_str)
+modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line)
 {
-  if(!encounteredDivisionByZero) {
-    fprintf(stderr, "ERROR: Division by zero in partial equation: %s.\n",division_str); fflush(stderr);
-    encounteredDivisionByZero = 1;
-  }
+  WARNING1("division by zero in partial equation: %s", division_str);
+  WARNING_AL2("[line] %ld | [file] %s", line, file);
+  THROW("division by zero");
+
   return b;
 }
-

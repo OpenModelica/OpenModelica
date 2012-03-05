@@ -503,7 +503,10 @@ static void NelderMeadOptimization(long N,
     else
     {
       /* not possible to be here */
-      INFO("not possible to be here");
+      WARNING1("fxr = %g", fxr);
+      WARNING1("fxk = %g", fxk);
+
+      THROW("undefined error in NelderMeadOptimization");
     }
   }while(1.0);
 
@@ -1014,8 +1017,8 @@ static int none_initialization(DATA *data, int updateStartValues)
   setAllParamsToStart(data);
   if(updateStartValues)
   {
-    updateBoundStartValues(data);
     updateBoundParameters(data);
+    updateBoundStartValues(data);
   }
 
   /* initialize all relations that are ZeroCrossings */
@@ -1073,8 +1076,8 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   setAllParamsToStart(data);
   if(updateStartValues)
   {
-    updateBoundStartValues(data);
     updateBoundParameters(data);
+    updateBoundStartValues(data);
   }
 
   /* initialize all relations that are ZeroCrossings */
