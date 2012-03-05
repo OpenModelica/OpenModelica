@@ -1366,7 +1366,6 @@ algorithm
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
-      DAE.Dimension dim;
 
     case (Absyn.NOSUB(), _, _) then DAE.DIM_UNKNOWN();
 
@@ -1408,6 +1407,50 @@ algorithm
     else DAE.DIM_EXP(inExp);
   end match;
 end makeDimension;
+
+protected function instSubscripts
+  input list<Absyn.Subscript> inSubscripts;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := List.map2(inSubscripts, instSubscript, inEnv, inPrefix);
+end instSubscripts;
+
+protected function instSubscript
+  input Absyn.Subscript inSubscript;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Subscript outSubscript;
+algorithm
+  outSubscript := match(inSubscript, inEnv, inPrefix)
+    local
+      Absyn.Exp aexp;
+      DAE.Exp dexp;
+
+    case (Absyn.NOSUB(), _, _) then DAE.WHOLEDIM();
+
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _)
+      equation
+        dexp = instExp(aexp, inEnv, inPrefix);
+      then
+        makeSubscript(dexp);
+
+  end match;
+end instSubscript;
+
+protected function makeSubscript
+  input DAE.Exp inExp;
+  output DAE.Subscript outSubscript;
+algorithm
+  outSubscript := match(inExp)
+    case DAE.RANGE(ty = _)
+      then DAE.SLICE(inExp);
+
+    else DAE.INDEX(inExp);
+
+  end match;
+end makeSubscript;
 
 protected function liftArrayType
   input Absyn.ArrayDim inDims;
@@ -1459,6 +1502,37 @@ algorithm
   end match;
 end addDimensionsFromType;
 
+protected function instExpList
+  input list<Absyn.Exp> inExp;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<DAE.Exp> outExp;
+algorithm
+  outExp := List.map2(inExp, instExp, inEnv, inPrefix);
+end instExpList;
+
+protected function instExpOpt
+  input Option<Absyn.Exp> inExp;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Option<DAE.Exp> outExp;
+algorithm
+  outExp := match(inExp, inEnv, inPrefix)
+    local
+      Absyn.Exp aexp;
+      DAE.Exp dexp;
+
+    case (SOME(aexp), _, _)
+      equation
+        dexp = instExp(aexp, inEnv, inPrefix);
+      then
+        SOME(dexp);
+
+    else NONE();
+
+  end match;
+end instExpOpt;
+
 protected function instExp
   input Absyn.Exp inExp;
   input Env inEnv;
@@ -1477,9 +1551,13 @@ algorithm
       DAE.Exp dexp1, dexp2;
       Absyn.Operator aop;
       DAE.Operator dop;
-      list<Absyn.Exp> aexpl;
-      list<DAE.Exp> dexpl;
+      list<Absyn.Exp> aexpl, afargs;
+      list<DAE.Exp> dexpl, dfargs;
       list<list<Absyn.Exp>> mat_expl;
+      list<Absyn.NamedArg> named_args;
+      Absyn.Path path;
+      Option<Absyn.Exp> oaexp;
+      Option<DAE.Exp> odexp;
 
     case (Absyn.REAL(value = rval), _, _) then DAE.RCONST(rval);
     case (Absyn.INTEGER(value = ival), _, _) then DAE.ICONST(ival);
@@ -1532,26 +1610,15 @@ algorithm
 
     case (Absyn.ARRAY(arrayExp = aexpl), _, _)
       equation
-        dexpl = List.map2(aexpl, instExp, inEnv, inPrefix);
+        dexp1 = instArray(aexpl, inEnv, inPrefix);
       then
-        DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl);
+        dexp1;
 
     case (Absyn.MATRIX(matrix = mat_expl), _, _)
       equation
         dexpl = List.map2(mat_expl, instArray, inEnv, inPrefix);
       then
         DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl);
-
-    //Absyn.CALL
-    //Absyn.PARTEVALFUNCTION
-    //Absyn.RANGE
-    //Absyn.TUPLE
-    //Absyn.END
-    //Absyn.CODE
-    //Absyn.AS
-    //Absyn.CONS
-    //Absyn.MATCHEXP
-    //Absyn.LIST
 
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
         functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _)
@@ -1560,6 +1627,46 @@ algorithm
         dexp2 = instExp(aexp2, inEnv, inPrefix);
       then
         DAE.SIZE(dexp1, SOME(dexp2));
+
+    case (Absyn.CALL(function_ = acref, 
+        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _)
+      equation
+        dexp1 = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix);
+      then
+        dexp1;
+
+    case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        odexp = instExpOpt(oaexp, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+      then
+        DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2);
+
+    case (Absyn.TUPLE(expressions = aexpl), _, _)
+      equation
+        dexpl = instExpList(aexpl, inEnv, inPrefix);
+      then
+        DAE.TUPLE(dexpl);
+
+    case (Absyn.LIST(exps = aexpl), _, _)
+      equation
+        dexpl = instExpList(aexpl, inEnv, inPrefix);
+      then
+        DAE.LIST(dexpl);
+
+    case (Absyn.CONS(head = aexp1, rest = aexp2), _, _)
+      equation
+        dexp1 = instExp(aexp1, inEnv, inPrefix);
+        dexp2 = instExp(aexp2, inEnv, inPrefix);
+      then
+        DAE.CONS(dexp1, dexp2);
+
+    //Absyn.PARTEVALFUNCTION
+    //Absyn.END
+    //Absyn.CODE
+    //Absyn.AS
+    //Absyn.MATCHEXP
 
     else DAE.SCONST("fixme");
   end match;
@@ -1627,15 +1734,16 @@ protected function instCref
 algorithm
   outCref := matchcontinue(inCref, inEnv, inPrefix)
     local
+      Absyn.ComponentRef acref;
       DAE.ComponentRef cref;
       SCode.Variability var;
       SCodeLookup.Origin origin;
 
     case (Absyn.WILD(), _, _) then DAE.WILD();
     case (Absyn.ALLWILD(), _, _) then DAE.WILD();
-    case (Absyn.CREF_FULLYQUALIFIED(_), _, _)
+    case (Absyn.CREF_FULLYQUALIFIED(acref), _, _)
       equation
-        cref = instCref2(inCref);
+        cref = instCref2(acref, inEnv, inPrefix);
       then
         cref;
 
@@ -1647,7 +1755,7 @@ algorithm
 
     else
       equation
-        cref = instCref2(inCref);
+        cref = instCref2(inCref, inEnv, inPrefix);
         cref = prefixCref(cref, inPrefix);
       then
         cref;
@@ -1671,6 +1779,8 @@ algorithm
       DAE.ComponentRef cref;
       SCodeLookup.Origin origin;
 
+    // Package constants must be in a package, so we only need to check
+    // qualified crefs.
     case (Absyn.CREF_QUAL(name = _), _, _)
       equation
         path = Absyn.crefToPath(inName);
@@ -1688,24 +1798,33 @@ end instGlobalConstantCref;
 
 protected function instCref2
   input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input Prefix inPrefix;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref)
+  outCref := match(inCref, inEnv, inPrefix)
     local
       String name;
       Absyn.ComponentRef cref;
       DAE.ComponentRef dcref;
+      list<Absyn.Subscript> asubs;
+      list<DAE.Subscript> dsubs;
 
-    case Absyn.CREF_IDENT(name = name)
-      then DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
-
-    case Absyn.CREF_QUAL(name = name, componentRef = cref)
+    case (Absyn.CREF_IDENT(name, asubs), _, _)
       equation
-        dcref = instCref2(cref);
+        dsubs = instSubscripts(asubs, inEnv, inPrefix);
       then
-        DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, dcref);
+        DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs);
 
-    case Absyn.CREF_FULLYQUALIFIED(cref) then instCref2(cref);
+    case (Absyn.CREF_QUAL(name, asubs, cref), _, _)
+      equation
+        dsubs = instSubscripts(asubs, inEnv, inPrefix);
+        dcref = instCref2(cref, inEnv, inPrefix);
+      then
+        DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref);
+
+    case (Absyn.CREF_FULLYQUALIFIED(cref), _, _)
+      then instCref2(cref, inEnv, inPrefix);
 
   end match;
 end instCref2;
@@ -1823,6 +1942,92 @@ algorithm
 
   end match;
 end pathPrefix2;
+
+protected function instFunctionCall
+  input Absyn.ComponentRef inName;
+  input list<Absyn.Exp> inPositionalArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output DAE.Exp outCallExp;
+algorithm
+  outCallExp := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix)
+    local
+      Absyn.Path call_path;
+      DAE.ComponentRef cref;
+      list<DAE.Exp> pos_args;
+
+    case (_, _, _, _, _)
+      equation
+        call_path = instFunctionName(inName, inEnv, inPrefix);
+        pos_args = instExpList(inPositionalArgs, inEnv, inPrefix);
+      then
+        DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
+
+  end match;
+end instFunctionCall;
+
+protected function instFunctionName
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Absyn.Path outName;
+algorithm
+  outName := matchcontinue(inCref, inEnv, inPrefix)
+    local
+      Absyn.Path path;
+      Item item;
+      SCodeLookup.Origin origin;
+      Env env;
+
+    case (_, _, _)
+      equation
+        path = Absyn.crefToPath(inCref);
+        (item, _, env, origin) =
+          SCodeLookup.lookupFunctionName(path, inEnv, Absyn.dummyInfo);
+        path = instFunctionName2(item, path, origin, env, inPrefix);
+      then
+        path;
+
+  end matchcontinue;
+end instFunctionName;
+
+protected function instFunctionName2
+  input Item inItem;
+  input Absyn.Path inPath;
+  input SCodeLookup.Origin inOrigin;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inItem, inPath, inOrigin, inEnv, inPrefix)
+    local
+      String name;
+      Absyn.Path path;
+
+    // The name of a builtin function should not be prefixed.
+    case (_, _, SCodeLookup.BUILTIN_ORIGIN(), _, _)
+      then inPath;
+
+    // A qualified name with class origin should be prefixed with the package
+    // name.
+    case (_, Absyn.QUALIFIED(name = _), SCodeLookup.CLASS_ORIGIN(), _, _)
+      equation
+        name = SCodeEnv.getItemName(inItem);
+        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
+      then
+        path;
+
+    // A name with instance origin or a non-qualified name with class origin
+    // (i.e. a local name), should be prefixed with the instance prefix.
+    else
+      equation
+        path = prefixPath(inPath, inPrefix);
+      then
+        path;
+
+  end match;
+end instFunctionName2;
 
 protected function instEquation
   input SCode.Equation inEquation;
@@ -3060,7 +3265,7 @@ protected function lookupCrefInTable
 protected
   Absyn.Path path;
 algorithm
-  path := ComponentReference.crefToPath(inCref);
+  path := ComponentReference.crefToPathIgnoreSubs(inCref);
   outComponent := BaseHashTable.get(path, inSymbolTable);
 end lookupCrefInTable;
 

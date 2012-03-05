@@ -1217,6 +1217,20 @@ algorithm
     SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
+public function lookupFunctionName
+  "Calls lookupName with the 'Function not found' error message."
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Env outEnv;
+  output Origin outOrigin;
+algorithm
+  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv, inInfo,
+    SOME(Error.LOOKUP_FUNCTION_ERROR));
+end lookupFunctionName;
+
 protected function crefStripEnvPrefix
   "Removes the entire environment prefix from the given component reference, or
   returns the unchanged reference. This is done because models might import
@@ -1663,6 +1677,7 @@ protected function itemOrigin
 algorithm
   outOrigin := match(inItem)
     case SCodeEnv.VAR(var = _) then INSTANCE_ORIGIN();
+    case SCodeEnv.CLASS(classType = SCodeEnv.BUILTIN()) then BUILTIN_ORIGIN();
     case SCodeEnv.CLASS(cls = _) then CLASS_ORIGIN();
   end match;
 end itemOrigin;
