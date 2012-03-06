@@ -143,6 +143,8 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.TailCall tc;
+      DAE.Dimensions dims;
+      DAE.Dimension dim;
 
     // noEvent propagated to relations and event triggering functions
     case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),b))
@@ -174,6 +176,17 @@ algorithm
         e2 = simplifyBuiltinCalls(e);
       then 
         ((e2,true));
+    
+    // simplify size operator
+    case ((e as DAE.SIZE(exp=e1,sz=SOME(e2)),_))
+      equation
+        i = Expression.expInt(e2);
+        t = Expression.typeof(e1);
+        dims = Expression.arrayDimension(t);
+        dim = listNth(dims,i-1);
+        n = Expression.dimensionSize(dim);
+      then 
+        ((DAE.ICONST(n),true));
     
     case ((e,_))
       equation
