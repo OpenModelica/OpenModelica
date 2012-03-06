@@ -310,8 +310,7 @@ algorithm
         //print("\nend " +& name +& "\n");
 
         _ = SCodeExpand.expand(name, cls);
-        print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +&
-          " seconds.\n");
+        //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
       then
         ();
 
@@ -362,21 +361,6 @@ protected function instClassItem
   input Prefix inPrefix;
   output Class outClass;
   output DAE.Type outType;
-protected
-  Item item;
-algorithm
-  item := convertDerivedBasicTypeToShortDef(inItem);
-  (outClass, outType) := instClassItem2(item, inMod, inPrefixes, inEnv, inPrefix);
-end instClassItem;
-
-protected function instClassItem2
-  input Item inItem;
-  input Modifier inMod;
-  input Prefixes inPrefixes;
-  input Env inEnv;
-  input Prefix inPrefix;
-  output Class outClass;
-  output DAE.Type outType;
 algorithm
   (outClass, outType) := match(inItem, inMod, inPrefixes, inEnv, inPrefix)
     local
@@ -420,10 +404,8 @@ algorithm
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         (elems, cse) = instElementList(mel, inPrefixes, env, inPrefix);
         (cls, ty) = makeClass(elems, nel, iel, nal, ial, cse);
-        //cls = COMPLEX_CLASS(elems, nel, iel, nal, ial);
       then
         (cls, ty);
-        //(cls, DAE.T_COMPLEX_DEFAULT);
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
@@ -449,12 +431,12 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("SCodeInst.instClassItem2 failed on unknown class.\n");
+        Debug.traceln("SCodeInst.instClassItem failed on unknown class.\n");
       then
         fail();
 
   end match;
-end instClassItem2;
+end instClassItem;
   
 protected function makeClass
   input list<Element> inElements;
@@ -515,6 +497,8 @@ algorithm
       then
         (el, rest_el);
 
+    // TODO: Check for illegal elements here (components, etc.).
+
     case (el :: rest_el, _)
       equation
         (el, rest_el) = getSpecialExtends2(rest_el, el :: inAccumEl);
@@ -530,78 +514,6 @@ algorithm
 
   end matchcontinue;
 end getSpecialExtends2;
-
-protected function convertDerivedBasicTypeToShortDef
-  input Item inItem;
-  output Item outItem;
-algorithm
-  outItem := match(inItem)
-    local
-      String bc;
-      Boolean is_basic;
-
-    case SCodeEnv.CLASS(cls = SCode.CLASS(classDef = SCode.PARTS(
-        {SCode.EXTENDS(baseClassPath = Absyn.IDENT(bc))}, {}, {}, {}, {}, NONE(), _, _)))
-      equation
-        is_basic = isBasicType(bc);
-      then 
-        convertDerivedBasicTypeToShortDef2(inItem, is_basic, bc);
-
-    else inItem;
-  end match;
-end convertDerivedBasicTypeToShortDef;
-
-protected function isBasicType
-  input String inTypeName;
-  output Boolean outIsBasicType;
-algorithm
-  outIsBasicType := match(inTypeName)
-    case "Real" then true;
-    case "Integer" then true;
-    case "String" then true;
-    case "Boolean" then true;
-    case "StateSelect" then true;
-    else false;
-  end match;
-end isBasicType;
-
-protected function convertDerivedBasicTypeToShortDef2
-  input Item inItem;
-  input Boolean inIsBasicType;
-  input String inBaseClass;
-  output Item outItem;
-algorithm
-  outItem := match(inItem, inIsBasicType, inBaseClass)
-    local
-      String name;
-      SCode.Prefixes pf;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      SCode.Restriction res;
-      Absyn.Info info;
-      Env env;
-      SCodeEnv.ClassType ty;
-      SCode.Visibility vis;
-      SCode.Mod mod;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmt;
-
-    case (_, false, _) then inItem;
-
-    case (SCodeEnv.CLASS(SCode.CLASS(name, pf, ep, pp, res, 
-        SCode.PARTS({SCode.EXTENDS(_, vis, mod, _, _)}, {}, {}, {}, {}, 
-          NONE(), annl, cmt), info), env, ty), _, _)
-      equation
-        cmt = makeClassComment(annl, cmt);
-        // TODO: Check restriction
-        // TODO: Check visibility
-      then
-        SCodeEnv.CLASS(SCode.CLASS(name, pf, ep, pp, res,
-          SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(inBaseClass), NONE()), mod,
-            SCode.defaultVarAttr, cmt), info), env, ty);
-
-  end match;
-end convertDerivedBasicTypeToShortDef2;
 
 protected function makeClassComment
   input list<SCode.Annotation> inAnnotations;
