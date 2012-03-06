@@ -630,6 +630,7 @@ algorithm
       equation
         // try to inline
         (e1,_) = Inline.forceInlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        false = referenceEq(e1,e);
         // get Derivative function
         e2 = differentiateExpTime(e1,inVariables);
       then
