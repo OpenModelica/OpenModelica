@@ -1122,6 +1122,67 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   return retVal;
 }
 
+/*! \fn mapToDymolaVars
+ *
+ *  \param [in]  [varname]
+ *
+ *  converts a given variable name into dymola style
+ *  ** der(foo.foo2) -> foo.der(foo2)
+ *  ** foo.foo2[1,2,3] -> foo.foo2[1, 2, 3]
+ *
+ *  \author lochel
+ */
+const char* mapToDymolaVars(const char* varname)
+{
+  unsigned int varnameSize = strlen(varname);
+  unsigned int level = 0;
+  unsigned int i=0, j=0, pos=0;
+  char* newVarname = NULL;
+  unsigned int newVarnameSize = 0;
+
+  newVarnameSize = varnameSize;
+  for(i=0; i<varnameSize; i++)
+  {
+    if(varname[i] == '[')
+      level++;
+    else if(varname[i] == ']')
+      level--;
+
+    if(level > 0 && varname[i] == ',')
+      newVarnameSize++;
+  }
+
+  newVarname = (char*)malloc((newVarnameSize+1) * sizeof(char));
+  for(i=0,j=0; i<newVarnameSize; i++,j++)
+  {
+    if(varname[j] == '[')
+      level++;
+    else if(varname[j] == ']')
+      level--;
+
+    newVarname[i] = varname[j];
+    if(level > 0 && varname[j] == ',')
+    {
+      i++;
+      newVarname[i] = ' ';
+    }
+  }
+  newVarname[newVarnameSize] = '\0';
+
+  if(!memcmp((const void*)newVarname, (const void*)"der(", 4*sizeof(char)))
+  {
+    for(pos=newVarnameSize; pos>=4; pos--)
+      if(varname[pos] == '.')
+        break;
+
+    strcpy(newVarname, varname);
+    memcpy((void*)newVarname, (void*)(varname+4), (pos-3)*sizeof(char));
+    memcpy((void*)(newVarname+pos-3), (void*)(varname), 4*sizeof(char));
+  }
+
+  return newVarname;
+}
+
 /*! \fn importStartValues
  *
  *  \param [ref] [data]
@@ -1135,6 +1196,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
   const char *pError = NULL;
+  const char* newVarname = NULL;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;
@@ -1155,6 +1217,14 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
     for(i=0; i<mData->nVariablesReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
+
+      if(!pVar)
+      {
+        newVarname = mapToDymolaVars(mData->realVarsData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+
       if(pVar)
       {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
@@ -1168,6 +1238,14 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
     for(i=0; i<mData->nParametersReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
+
+      if(!pVar)
+      {
+        newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+
       if(pVar)
       {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
