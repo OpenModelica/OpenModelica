@@ -1009,7 +1009,7 @@ algorithm
       Absyn.Program p,ptot;
       //DAE.Exp fileprefix;
       Env.Cache cache;
-      DAE.FunctionTree funcs;
+      DAE.FunctionTree funcs,funcs1;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
       equation
@@ -1025,11 +1025,11 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt);
+          generateModelCodeFMU(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1227,7 +1227,7 @@ algorithm
       Absyn.Program p,ptot;
       //DAE.Exp fileprefix;
       Env.Cache cache;
-      DAE.FunctionTree funcs;
+      DAE.FunctionTree funcs,funcs1;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend, timeJacobians;
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt,args)
@@ -1243,10 +1243,10 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates, timeJacobians) = 
-          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
+          generateModelCode(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1672,16 +1672,14 @@ algorithm
       equation
         // get all the used functions from the function tree
         funcelems = DAEUtil.getFunctionList(functionTree);
-        
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
         (dlow, part_func_elems) = BackendDAEUtil.mapEqSystemAndFold1(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
-        funcelems = List.union(part_func_elems, part_func_elems);
+        funcelems = part_func_elems; //List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
         (funcelems,literals as (_,_,lits)) = simulationFindLiterals(dlow,funcelems);
-        
         (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, lits, {}); // Do we need metarecords here as well?
       then
         (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
@@ -1762,10 +1760,11 @@ algorithm
       list<RecordDeclaration> decls;
       String name;
       list<String> includeDirs;
+      Absyn.Path path;
       
     case ({}, accfns, rt, decls, includes, includeDirs, libs)
     then (listReverse(accfns), rt, decls, includes, includeDirs, libs);
-    case ((DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs)
+    case ((DAE.FUNCTION(path=path,type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over builtin functions
         (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);

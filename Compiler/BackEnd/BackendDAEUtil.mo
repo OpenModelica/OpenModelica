@@ -6046,6 +6046,7 @@ public function getSolvedSystem
   input Option<String> strdaeHandler;
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
+  output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -6074,6 +6075,8 @@ algorithm
 
   // past optimisation phase
   (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,daeHandler);
+  (_,outFunctionTree) := BackendDAEOptimize.removeUnusedFunctions(optsode, functionTree);
+  Debug.execStat("pastOpt removeUnusedFunctions",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);  
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
@@ -6084,7 +6087,7 @@ algorithm
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
   Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
-  Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);  
+  Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
 end getSolvedSystem;
 
 public function preOptimiseBackendDAE

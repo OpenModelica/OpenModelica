@@ -44,7 +44,6 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashTable;

@@ -2974,6 +2974,180 @@ algorithm
 end checkUnusedVariablesExp;
 
 /* 
+ * remove unused functions
+ */
+
+public function removeUnusedFunctionsPast
+"function removeUnusedFunctionsPast"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    output BackendDAE.BackendDAE outDAE;
+    output DAE.FunctionTree outFunctionTree;
+    output Boolean outRunMatching;
+protected
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
+algorithm
+  (outDAE,outFunctionTree) := removeUnusedFunctions(inDAE,inFunctionTree);
+  outRunMatching := false;   
+end removeUnusedFunctionsPast;
+
+public function removeUnusedFunctions
+"function: removeUnusedFunctions
+  autor: Frenkel TUD 2012-03
+  This function remove unused functions  
+  from DAE.FunctionTree to get speed up for compilation of
+  target code"
+  input BackendDAE.BackendDAE inDlow;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.BackendDAE outDlow;
+  output DAE.FunctionTree outFunctionTree;
+algorithm
+  (outDlow,outFunctionTree) := match (inDlow,inFunctionTree)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs,usedfuncs;
+      BackendDAE.Variables vars,knvars,exobj,avars,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.EqSystems eqs;    
+      BackendDAE.BackendDAEType btp;
+      
+    case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,complEqs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
+      equation
+        usedfuncs = copyRecordConstructor(funcs);
+        ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedFunctions,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedFunctions,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(complEqs,checkUnusedFunctions,BackendDAEUtil.traverseBackendDAEExpsComplexEqn,1,arrayLength(complEqs),(funcs,usedfuncs));
+        (_,(_,usedfuncs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedFunctions,(funcs,usedfuncs));
+      then (dae,usedfuncs);
+  end match;
+end removeUnusedFunctions;
+
+protected function copyRecordConstructor
+  input DAE.FunctionTree inFunctions;
+  output DAE.FunctionTree outFunctions;
+protected
+  list<DAE.Function> funcelems;
+algorithm
+  funcelems := DAEUtil.getFunctionList(inFunctions);
+  outFunctions := List.fold(funcelems,copyRecordConstructorFold,DAEUtil.emptyFuncTree);
+end copyRecordConstructor;
+
+protected function copyRecordConstructorFold
+  input DAE.Function inFunction;
+  input DAE.FunctionTree inFunctions;
+  output DAE.FunctionTree outFunctions;
+algorithm
+  outFunctions :=     
+  matchcontinue (inFunction,inFunctions)
+    local  
+      DAE.Function f;
+      DAE.FunctionTree funcs,funcs1;
+      Absyn.Path path;
+    case (f as DAE.RECORD_CONSTRUCTOR(path=path),funcs)
+      equation
+         funcs1 = DAEUtil.avlTreeAdd(funcs, path, SOME(f));
+       then
+        funcs1;
+    case (f,funcs) then funcs;
+  end matchcontinue;
+end copyRecordConstructorFold;
+
+
+protected function checkUnusedFunctions
+  input tuple<DAE.Exp, tuple<DAE.FunctionTree,DAE.FunctionTree>> inTpl;
+  output tuple<DAE.Exp, tuple<DAE.FunctionTree,DAE.FunctionTree>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      DAE.FunctionTree func,usefuncs,usefuncs1;
+    case ((exp,(func,usefuncs)))
+      equation
+         ((_,(_,usefuncs1))) = Expression.traverseExp(exp,checkUnusedFunctionsExp,(func,usefuncs));
+       then
+        ((exp,(func,usefuncs1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkUnusedFunctions;
+
+protected function checkUnusedFunctionsExp
+  input tuple<DAE.Exp, tuple<DAE.FunctionTree,DAE.FunctionTree>> inTuple;
+  output tuple<DAE.Exp, tuple<DAE.FunctionTree,DAE.FunctionTree>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      DAE.FunctionTree func,usefuncs,usefuncs1,usefuncs2;
+      Absyn.Path path;
+      Option<DAE.Function> f;    
+      list<DAE.Element> body;  
+    
+    // already there
+    case ((e as DAE.CALL(path = path),(func,usefuncs)))
+      equation
+         _ = DAEUtil.avlTreeGet(usefuncs, path);
+      then
+        ((e, (func,usefuncs)));
+
+    // add it
+    case ((e as DAE.CALL(path = path),(func,usefuncs)))
+      equation
+         (f,body) = getFunctionAndBody(path,func);
+         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
+         // print("add function " +& Absyn.pathStringNoQual(path) +& "\n");
+         (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
+      then
+        ((e, (func,usefuncs2)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end checkUnusedFunctionsExp;
+
+protected function getFunctionAndBody
+"function: getFunctionBody
+  returns the body of a function"
+  input Absyn.Path inPath;
+  input DAE.FunctionTree fns;
+  output Option<DAE.Function> outFn;
+  output list<DAE.Element> outFnBody;
+algorithm
+  (outFn,outFnBody) := matchcontinue(inPath,fns)
+    local
+      Absyn.Path p;
+      Option<DAE.Function> fn;
+      list<DAE.Element> body;
+      DAE.FunctionTree ftree;
+      String msg;
+    case(p,ftree)
+      equation
+        (fn as SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
+      then (fn,body);
+    case(p,_)
+      equation
+        msg = "BackendDAEOptimize.getFunctionBody failed for function " +& Absyn.pathStringNoQual(p);
+        // print(msg +& "\n");
+        Debug.fprintln(Flags.FAILTRACE, msg);
+        // Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then
+        fail();
+  end matchcontinue;
+end getFunctionAndBody;
+
+/* 
  * constant jacobians. Linear system of equations (A x = b) where
  * A and b are constants.
  */

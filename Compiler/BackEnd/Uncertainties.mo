@@ -107,7 +107,7 @@ algorithm
       Absyn.Program p,ptot;
       //DAE.Exp fileprefix;
       Env.Cache cache;
-      DAE.FunctionTree funcs;
+      DAE.FunctionTree funcs,funcs1;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       BackendDAE.IncidenceMatrix m,mt;
       array<Integer> ass1,ass2;
@@ -143,7 +143,7 @@ algorithm
         print("* Lower ok\n");
         
         
-        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeFinalParameters", "removeEqualFunctionCalls","partitionIndependentBlocks", "expandDerOperator"}), NONE(), NONE());
+        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeFinalParameters", "removeEqualFunctionCalls","partitionIndependentBlocks", "expandDerOperator"}), NONE(), NONE());
         print("*** Lowered: \n");
         BackendDump.dump(dlow_1);
         print("*** end Lowered: \n");

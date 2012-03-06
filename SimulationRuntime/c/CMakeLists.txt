@@ -245,7 +245,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta  ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -308,7 +308,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta  ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)

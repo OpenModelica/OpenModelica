@@ -3810,7 +3810,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> om,omT;
       list<SCode.Element> p_1,sp;
       list<list<Integer>> comps;
-      DAE.FunctionTree funcs;
+      DAE.FunctionTree funcs,funcs1;
     
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -3878,9 +3878,9 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
+        (indexed_dlow,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(funcs);
+        funcelems = DAEUtil.getFunctionList(funcs1);
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
