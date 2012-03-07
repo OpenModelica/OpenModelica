@@ -35,7 +35,7 @@
 
 #include "openmodelica.h"
 
-#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __LINE__, __FILE__)))
+#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
 
 
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line);
