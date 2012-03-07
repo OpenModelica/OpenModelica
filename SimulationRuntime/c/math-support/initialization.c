@@ -1148,7 +1148,7 @@ const char* mapToDymolaVars(const char* varname)
     else if(varname[i] == ']')
       level--;
 
-    if(level > 0 && varname[i] == ',')
+    if(level > 0 && varname[i] == ',' && varname[i+1] != ' ')
       newVarnameSize++;
   }
 
@@ -1161,7 +1161,7 @@ const char* mapToDymolaVars(const char* varname)
       level--;
 
     newVarname[i] = varname[j];
-    if(level > 0 && varname[j] == ',')
+    if(level > 0 && varname[j] == ',' && varname[j+1] != ' ')
     {
       i++;
       newVarname[i] = ' ';
@@ -1169,15 +1169,14 @@ const char* mapToDymolaVars(const char* varname)
   }
   newVarname[newVarnameSize] = '\0';
 
-  if(!memcmp((const void*)newVarname, (const void*)"der(", 4*sizeof(char)))
+  while(!memcmp((const void*)newVarname, (const void*)"der(", 4*sizeof(char)))
   {
     for(pos=newVarnameSize; pos>=4; pos--)
-      if(varname[pos] == '.')
+      if(newVarname[pos] == '.')
         break;
 
-    strcpy(newVarname, varname);
-    memcpy((void*)newVarname, (void*)(varname+4), (pos-3)*sizeof(char));
-    memcpy((void*)(newVarname+pos-3), (void*)(varname), 4*sizeof(char));
+    memcpy((void*)newVarname, (const void*)(newVarname+4), (pos-3)*sizeof(char));
+    memcpy((void*)(newVarname+pos-3), (const void*)"der(", 4*sizeof(char));
   }
 
   return newVarname;
