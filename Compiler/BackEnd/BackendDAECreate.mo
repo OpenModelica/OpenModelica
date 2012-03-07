@@ -760,6 +760,18 @@ algorithm
         failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
+        
+    case (DAE.VARIABLE(),DAE.T_ENUMERATION(names = _),cr,dir,flowPrefix,_,states,_)
+      equation
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
+      then
+        (BackendDAE.DISCRETE(),states);
+
+    case (DAE.DISCRETE(),DAE.T_ENUMERATION(names = _),cr,dir,flowPrefix,_,states,_)
+      equation
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
+      then
+        (BackendDAE.DISCRETE(),states);        
 
     case (DAE.VARIABLE(),_,cr,dir,flowPrefix,_,states,_)
       equation
