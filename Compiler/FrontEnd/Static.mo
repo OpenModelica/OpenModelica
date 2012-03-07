@@ -10404,9 +10404,9 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef,inAttributes,constSubs,forIteratorConstOpt,inType,inBinding,performVectorization,splicedExpData,inPrefix,info)
     local
       DAE.Type  expTy;
-      DAE.ComponentRef cr,cr_1,cref,cr2;
+      DAE.ComponentRef cr,cr_1,cref,cr2,subCr1,subCr2;
       DAE.Type t,tt,et,tp,idTp;
-      DAE.Exp e,e_1,exp;
+      DAE.Exp e,e_1,exp,index;
       Option<DAE.Exp> sexp;
       Values.Value v;
       list<Env.Frame> env;
@@ -10416,7 +10416,7 @@ algorithm
       String s,str,scope,pre_str,tyStr;
       DAE.Binding binding;
       Env.Cache cache;
-      Boolean doVect,genWarning;
+      Boolean doVect,genWarning,scalar;
       DAE.Type expIdTy;
       Prefix.Prefix pre;
       Integer i;
@@ -10424,6 +10424,8 @@ algorithm
       DAE.Attributes attr, attr1, attr2;
       Absyn.InnerOuter io;
       list<DAE.Subscript> subsc;
+      DAE.Subscript slice;
+      list<DAE.Exp> arr;
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
@@ -10587,6 +10589,20 @@ algorithm
         e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e_1 = ValuesUtil.valueExp(v);
+      then
+        (cache,e_1,DAE.C_CONST(),attr);
+
+    // a constant array indexed by a for iterator -> transform into an array of values. HACK! HACK! UGLY! TODO! FIXME!
+    // handles things like fcall(data[i]) in 1:X where data is a package constant of the form:
+    // data={Common.SingleGasesData.N2,Common.SingleGasesData.H2,Common.SingleGasesData.CO,Common.SingleGasesData.O2,Common.SingleGasesData.H2O, Common.SingleGasesData.CO2}
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(evaluatedExp = SOME(v),constant_ = DAE.C_CONST()),doVect,
+          Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(componentRef = DAE.CREF_IDENT(subscriptLst = {DAE.INDEX(DAE.CREF(componentRef = subCr2)),slice as DAE.SLICE(_)}))),idTp),_,info)
+      equation
+        {DAE.INDEX(index as DAE.CREF(componentRef = subCr1))} = ComponentReference.crefLastSubs(cr);
+        true = ComponentReference.crefEqual(subCr1, subCr2);
+        DAE.SLICE(DAE.ARRAY(_, scalar, arr)) = slice;
+        e_1 = ValuesUtil.valueExp(v);
+        e_1 = DAE.ASUB(e_1, {index});
       then
         (cache,e_1,DAE.C_CONST(),attr);
 

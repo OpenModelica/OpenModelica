@@ -5336,7 +5336,7 @@ algorithm
 end isRecursiveBinding;
   
 
-protected function cevalSubscriptValue "function: cevalSubscriptValue
+public function cevalSubscriptValue "function: cevalSubscriptValue
   Helper function to cevalCrefBinding. It applies
   subscripts to array values to extract array elements."
   input Env.Cache inCache;
