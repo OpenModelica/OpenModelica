@@ -1675,7 +1675,7 @@ algorithm
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
         (dlow, part_func_elems) = BackendDAEUtil.mapEqSystemAndFold1(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
-        funcelems = part_func_elems; //List.union(part_func_elems, part_func_elems);
+        funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;

@@ -3021,9 +3021,10 @@ algorithm
       
     case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,complEqs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
       equation
-        usedfuncs = copyRecordConstructor(funcs);
+        usedfuncs = copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
         ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(exobj,checkUnusedFunctions,(funcs,usedfuncs));        
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedFunctions,(funcs,usedfuncs));
@@ -3035,17 +3036,17 @@ algorithm
   end match;
 end removeUnusedFunctions;
 
-protected function copyRecordConstructor
+protected function copyRecordConstructorAndExternalObjConstructorDestructor
   input DAE.FunctionTree inFunctions;
   output DAE.FunctionTree outFunctions;
 protected
   list<DAE.Function> funcelems;
 algorithm
   funcelems := DAEUtil.getFunctionList(inFunctions);
-  outFunctions := List.fold(funcelems,copyRecordConstructorFold,DAEUtil.emptyFuncTree);
-end copyRecordConstructor;
+  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAEUtil.emptyFuncTree);
+end copyRecordConstructorAndExternalObjConstructorDestructor;
 
-protected function copyRecordConstructorFold
+protected function copyRecordConstructorAndExternalObjConstructorDestructorFold
   input DAE.Function inFunction;
   input DAE.FunctionTree inFunctions;
   output DAE.FunctionTree outFunctions;
@@ -3056,15 +3057,24 @@ algorithm
       DAE.Function f;
       DAE.FunctionTree funcs,funcs1;
       Absyn.Path path;
+    // copy record constructors
     case (f as DAE.RECORD_CONSTRUCTOR(path=path),funcs)
       equation
          funcs1 = DAEUtil.avlTreeAdd(funcs, path, SOME(f));
        then
         funcs1;
+    // copy external objects constructors/destructors
+    case (f as DAE.FUNCTION(path = path),funcs)
+      equation
+         true = boolOr(
+                  stringEq(Absyn.pathLastIdent(path), "constructor"), 
+                  stringEq(Absyn.pathLastIdent(path), "destructor"));
+         funcs1 = DAEUtil.avlTreeAdd(funcs, path, SOME(f));
+       then
+        funcs1;
     case (f,funcs) then funcs;
   end matchcontinue;
-end copyRecordConstructorFold;
-
+end copyRecordConstructorAndExternalObjConstructorDestructorFold;
 
 protected function checkUnusedFunctions
   input tuple<DAE.Exp, tuple<DAE.FunctionTree,DAE.FunctionTree>> inTpl;
@@ -3112,7 +3122,22 @@ algorithm
          (_,(_,usefuncs2)) = DAEUtil.traverseDAE2(body,checkUnusedFunctions,(func,usefuncs1));
       then
         ((e, (func,usefuncs2)));
-    
+        
+    // already there
+    case ((e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs)))
+      equation
+         _ = DAEUtil.avlTreeGet(usefuncs, path);
+      then
+        ((e, (func,usefuncs)));
+        
+    // add it
+    case ((e as DAE.PARTEVALFUNCTION(path = path),(func,usefuncs)))
+      equation
+         (f as SOME(_)) = DAEUtil.avlTreeGet(func, path);
+         usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
+      then
+        ((e, (func,usefuncs1)));
+            
     case inTuple then inTuple;
   end matchcontinue;
 end checkUnusedFunctionsExp;
