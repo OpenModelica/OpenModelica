@@ -2119,6 +2119,74 @@ algorithm
   end match;  
 end dumpComponent;
 
+public function printComponent
+  input BackendDAE.StrongComponent inComp;
+  output String outS;
+algorithm
+  outS:=
+  match (inComp)
+    local
+      BackendDAE.Value i,v;
+      list<BackendDAE.Value> ilst,vlst;
+      list<String> ls,ls1;
+      String s,s1,s2,sl,sj;
+      BackendDAE.JacobianType jacType;
+      BackendDAE.StrongComponent comp;
+    case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
+      equation
+        s = intString(i);
+        s1 = intString(v);
+        s = stringAppendList({"{",s,":",s1,"}"});
+      then s;
+    case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
+      equation
+        ls = List.map(ilst, intString);
+        s = stringDelimitList(ls, ", ");
+        ls1 = List.map(vlst, intString);
+        s1 = stringDelimitList(ls1, ", ");  
+        sl = intString(listLength(ilst));  
+        sj = BackendDAEUtil.jacobianTypeStr(jacType); 
+        s2 = stringAppendList({"{",s,":",s1,"} Size: ",sl," ",sj});
+      then
+        s2;
+    case BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=ilst,disc_vars=vlst)
+      equation
+        ls = List.map(ilst, intString);
+        s = stringDelimitList(ls, ", ");
+        ls1 = List.map(vlst, intString);
+        s1 = stringDelimitList(ls1, ", ");  
+        sl = intString(listLength(ilst));    
+        sj = printComponent(comp);     
+        s2 = stringAppendList({"{{",s,":",s1,"},\n",sj,"} Size: ",sl});
+      then
+        s2;        
+    case BackendDAE.SINGLEARRAY(arrayIndx=i,vars=vlst)
+      equation
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        sl = intString(i); 
+        s2 = stringAppendList({"Array ",sl," {",s,"}"});
+      then
+        s2;        
+    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,vars=vlst)
+      equation
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        sl = intString(i); 
+        s2 = stringAppendList({"Algorithm ",sl," {",s,"}"});
+      then
+        s2;    
+    case BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=i,vars=vlst)
+      equation
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        sl = intString(i); 
+        s2 = stringAppendList({"ComplexEquation ",sl," {",s,"}"});
+      then
+        s2;              
+  end match;  
+end printComponent;
+
 public function dumpCompShort
   input BackendDAE.BackendDAE inDAE;
 protected

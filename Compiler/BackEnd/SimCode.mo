@@ -1674,7 +1674,7 @@ algorithm
         funcelems = DAEUtil.getFunctionList(functionTree);
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
-        (dlow, part_func_elems) = BackendDAEUtil.mapEqSystemAndFold1(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
+        part_func_elems = PartFn.partEvalBackendDAE(dlow,part_func_elems);
         funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
@@ -4730,6 +4730,7 @@ algorithm
       Integer index;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      String msg;
       
       // create always a linear system of equations 
     case (genDiscrete,skipDiscInAlgorithm,true,offset,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars,arrayEqs = ae,algorithms = al, complEqs=complEqs),comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo)
@@ -4875,7 +4876,8 @@ algorithm
         equations_;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem failed"});
+        msg = "createOdeSystem failed for " +& BackendDump.printComponent(inComp);
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
   end matchcontinue;
@@ -6376,7 +6378,7 @@ algorithm
         kn = BackendDAEUtil.listVar(lkn);
         syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,arrayEqs,algs,complEqs,BackendDAE.EVENT_INFO({},{}),extObjClasses,BackendDAE.PARAMETERSYSTEM());
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);

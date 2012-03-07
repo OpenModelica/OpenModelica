@@ -417,6 +417,7 @@ public
 uniontype IndexType
   record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
   record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
+  record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
   record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
 end IndexType;
 

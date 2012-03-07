@@ -134,7 +134,7 @@ algorithm
       
     case (syst,funcs,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1))
       equation
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         // get scalar array eqs list
         arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
         // replace them
@@ -381,7 +381,7 @@ algorithm
       
     case (syst,funcs,(shared,b1))
       equation
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         repl = BackendVarTransform.emptyReplacements();
         // check equations
         (m_1,(syst,shared,_,mT_1,repl_1,movedVars,movedAVars,meqns,b)) = 
@@ -2041,7 +2041,6 @@ algorithm
   (osyst,oshared) := match (syst,funcs,shared)
     local
       DAE.FunctionTree funcs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Variables vars,knvars,exobj,knvars1;
       BackendDAE.AliasVariables av,varsAliases;
       BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
@@ -2057,7 +2056,7 @@ algorithm
       list<BackendDAE.ComplexEquation> lstceqns,lstceqns1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
+    case (BackendDAE.EQSYSTEM(vars,eqns,_,_,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
       equation
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2340,7 +2339,7 @@ protected
 algorithm
   BackendDAE.DAE({syst},shared) := inDAE;
   (syst,shared,b) := removeEqualFunctionCalls1(syst,shared,inFunctionTree);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
   outRunMatching := b; // until does not update assignments and comps  
   outDAE := BackendDAE.DAE({syst},shared);
 end removeEqualFunctionCallsPast;
@@ -2403,7 +2402,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,complEqs=complEqs,eventInfo=einfo),funcs)
       equation
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         // check equations
         (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,complEqs1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,complEqs,einfo,{}));
         b = intGt(listLength(changed),0);
@@ -2686,7 +2685,7 @@ protected
   BackendDAE.Shared shared;
 algorithm
   (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedParameter(inDAE,inFunctionTree);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
   outRunMatching := false;   
 end removeUnusedParameterPast;
 
@@ -2848,7 +2847,7 @@ protected
   BackendDAE.Shared shared;
 algorithm
   (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedVariables(inDAE,inFunctionTree);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
   outRunMatching := false;   
 end removeUnusedVariablesPast;
 
@@ -6426,7 +6425,7 @@ algorithm
     case (syst,shared,ftree,_)
       equation
         // print("partitionIndependentBlocks: TODO: Implement me\n");
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         ixs = arrayCreate(arrayLength(m),0);
         // ixsT = arrayCreate(arrayLength(mT),0);
         i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);

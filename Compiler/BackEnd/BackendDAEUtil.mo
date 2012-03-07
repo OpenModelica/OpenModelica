@@ -208,15 +208,16 @@ algorithm
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
+      array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;      
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs7;
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs6,expcrefs7;
       list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
 
     
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,
-          arrayEqs = ae,algorithms = algs, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))))
+          arrayEqs = ae,algorithms = algs, complEqs= complEqs, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))))
       equation
         varlst1 = varList(vars1);
         varlst2 = varList(vars2);
@@ -229,7 +230,8 @@ algorithm
         ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
         ((_,expcrefs5)) = traverseBackendDAEArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
         //((_,expcrefs6)) = traverseBackendDAEArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
-        (_,(_,expcrefs7)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkBackendDAEExp,(allvars,expcrefs5));
+        ((_,expcrefs6)) = traverseBackendDAEArrayNoCopy(complEqs,checkBackendDAEExp,traverseBackendDAEExpsComplexEqn,1,arrayLength(complEqs),(allvars,expcrefs5));
+        (_,(_,expcrefs7)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkBackendDAEExp,(allvars,expcrefs6));
         wrongEqns = BackendEquation.traverseBackendDAEEqns(eqns,checkEquationSize,{});
         wrongEqns1 = BackendEquation.traverseBackendDAEEqns(reqns,checkEquationSize,wrongEqns);
         wrongEqns2 = BackendEquation.traverseBackendDAEEqns(ieqns,checkEquationSize,wrongEqns1);
@@ -3599,8 +3601,7 @@ algorithm
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
         arr = arrayCreate(numberOfEqs, {});
-        lstT = List.fill({},numberofVars);
-        arrT = listArray(lstT);
+        arrT = arrayCreate(numberofVars, {});
         (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
       then
         (arr,arrT);
@@ -3886,7 +3887,12 @@ algorithm
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables,inIntegerLst));
       then
-        vallst;      
+        vallst;     
+  case(inExp,inVariables,inIntegerLst,BackendDAE.SOLVABLE())      
+    equation
+      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables,inIntegerLst));
+      then
+        vallst;
   case(inExp,inVariables,inIntegerLst,inIndexType)      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
@@ -3894,6 +3900,76 @@ algorithm
         vallst;
   end match;
 end incidenceRowExp;
+
+public function traversingincidenceRowExpSolvableFinder "
+Author: Frenkel TUD 2010-11
+Helper for statesAndVarsExp"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+      list<BackendDAE.Value> p,p_1,pa,res;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      DAE.Exp e,e1,e2;
+      list<BackendDAE.Var> varslst;
+      Boolean b;
+    
+    case ((e as DAE.LUNARY(operator = _),(vars,pa)))
+      then ((e,false,(vars,pa)));
+    case ((e as DAE.LBINARY(exp1 = _),(vars,pa)))
+      then ((e,false,(vars,pa)));        
+    case ((e as DAE.RELATION(exp1 = _),(vars,pa)))
+      then ((e,false,(vars,pa)));        
+    case ((e as DAE.RELATION(exp1 = _),(vars,pa)))
+      then ((e,false,(vars,pa)));        
+    case ((e as DAE.IFEXP(expThen = e1,expElse = e2),(vars,pa)))
+      equation
+        ((_,(vars,pa))) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, (vars,pa));
+        ((_,(vars,pa))) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, (vars,pa));
+      then
+        ((e,false,(vars,pa)));
+    case ((e as DAE.RANGE(ty = _),(vars,pa)))
+      then ((e,false,(vars,pa))); 
+    case ((e as DAE.ASUB(exp = _),(vars,pa)))
+      then ((e,false,(vars,pa)));
+    case ((e as DAE.TSUB(exp = _),(vars,pa)))
+      then ((e,false,(vars,pa)));
+                            
+    case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
+      equation
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1(varslst,p,pa,true);
+      then
+        ((e,false,(vars,res)));
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+      equation
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1(varslst,p,pa,false);
+      then
+        ((e,false,(vars,res)));
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1(varslst,p,pa,false);
+      then
+        ((e,false,(vars,res)));
+    /* pre(v) is considered a known variable */
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));
+    
+    /* delay(e) can be used to break algebraic loops given some solver options */
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
+      equation
+        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+      then ((e,not b,(vars,pa)));
+
+    case ((e,(vars,pa))) then ((e,true,(vars,pa)));
+  end matchcontinue;
+end traversingincidenceRowExpSolvableFinder;
 
 public function traversingincidenceRowExpFinder "
 Author: Frenkel TUD 2010-11
@@ -4450,36 +4526,38 @@ public function getIncidenceMatrixfromOptionForMapEqSystem "function getIncidenc
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,_,_) := getIncidenceMatrixfromOption(syst,shared);
+  (osyst,_,_) := getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
   oshared := shared;
 end getIncidenceMatrixfromOptionForMapEqSystem;
 
 public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
+  input BackendDAE.IndexType inIndxType;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
   (osyst,outM,outMT):=
-  matchcontinue (syst,shared)
+  matchcontinue (syst,shared,inIndxType)
     local  
       BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.Variables v;
       BackendDAE.EquationArray eq,ieq;
       BackendDAE.Matching matching;
-    case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),shared)
+      BackendDAE.IndexType it;
+    case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),shared,it)
       equation
-        (m,mT) = incidenceMatrix(syst, shared, BackendDAE.NORMAL());
+        (m,mT) = incidenceMatrix(syst, shared, it);
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE(),matching),_)
+    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE(),matching),_,_)
       equation  
         mT = transposeMatrix(m);
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-    case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)
+    case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_,_)
       then
         (syst,m,mT);
   end matchcontinue;
@@ -5248,9 +5326,10 @@ algorithm
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
+      array<BackendDAE.ComplexEquation> complEqs;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7,ext_arg_8;
       list<BackendDAE.EqSystem> systs;
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs, complEqs= complEqs)),func,inTypeA)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
@@ -5258,11 +5337,12 @@ algorithm
         ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
         ext_arg_6 = traverseBackendDAEArrayNoCopy(ae,func,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),ext_arg_5);
         ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
+        ext_arg_8 = traverseBackendDAEArrayNoCopy(complEqs,func,traverseBackendDAEExpsComplexEqn,1,arrayLength(complEqs),ext_arg_7);
       then
-        ext_arg_7;
+        ext_arg_8;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAE.traverseBackendDAEExps failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExps failed"});
       then
         fail();
   end matchcontinue;
@@ -5290,9 +5370,10 @@ algorithm
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
+      array<BackendDAE.ComplexEquation> complEqs;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7,ext_arg_8;
       list<BackendDAE.EqSystem> systs;
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs,complEqs = complEqs)),func,inTypeA)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVarsWithUpdate(vars2,func,ext_arg_1);
@@ -5300,11 +5381,12 @@ algorithm
         ext_arg_5 = traverseBackendDAEExpsEqnsWithUpdate(ieqns,func,ext_arg_4);
         (_,ext_arg_6) = traverseBackendDAEArrayNoCopyWithUpdate(ae,func,traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(ae),ext_arg_5);
         ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
+        (_,ext_arg_8) = traverseBackendDAEArrayNoCopyWithUpdate(complEqs,func,traverseBackendDAEExpsComplexEqnWithUpdate,1,arrayLength(complEqs),ext_arg_7);
       then
-        ext_arg_7;
+        ext_arg_8;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAE.traverseBackendDAEExps failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate failed"});
       then
         fail();
   end matchcontinue;
@@ -5898,7 +5980,6 @@ algorithm
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         ((e2,ext_arg_2)) = func((e2,ext_arg_1));
-        print("MD replacement: " +& ExpressionDump.printExpStr(e1) +& "\n");
       then
         (BackendDAE.MULTIDIM_EQUATION(dimSize,e1,e2,source),ext_arg_2);
   end match;
@@ -5987,7 +6068,6 @@ algorithm
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         ((e2,ext_arg_2)) = func((e2,ext_arg_1));
-        print("MD replacement: " +& ExpressionDump.printExpStr(e1) +& "\n");
       then
         (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),ext_arg_2);
   end match;
@@ -6242,7 +6322,7 @@ algorithm
       
     case (syst,shared,funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
-        (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
         (syst,shared) = BackendDAETransform.matchingAlgorithm(syst,shared, match_opts, daeHandlerfunc, funcs);

@@ -45,426 +45,44 @@ public import BackendDAE;
 public import DAE;
 public import Debug;
 public import SCode;
-public import Values;
 
 protected import ComponentReference;
+protected import BackendDAEUtil;
 protected import DAEUtil;
-protected import Error;
 protected import Expression;
 protected import Flags;
 protected import List;
 protected import Types;
-protected import Util;
 
 type Ident = String;
 
 public function partEvalBackendDAE
 "function: partEvalBackendDAE
   handles partially evaluated function in BackendDAE format"
-  input BackendDAE.EqSystem syst;
-  input Boolean dummy;
-  input tuple<BackendDAE.Shared,list<DAE.Function>> sharedAndFuncs;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,list<DAE.Function>> osharedAndFuncs;
+  input BackendDAE.BackendDAE inDAE;
+  input list<DAE.Function> inFuncs;
+  output list<DAE.Function> outFuncs;
 algorithm
-  (osyst,osharedAndFuncs) := matchcontinue(syst,dummy,sharedAndFuncs)
-    local
-      list<DAE.Function> dae;
-      BackendDAE.Variables orderedVars;
-      BackendDAE.Variables knownVars;
-      BackendDAE.Variables externalObjects;
-      BackendDAE.AliasVariables aliasVars "alias-variables' hashtable";
-      BackendDAE.EquationArray orderedEqs;
-      BackendDAE.EquationArray removedEqs;
-      BackendDAE.EquationArray initialEqs;
-      array<BackendDAE.MultiDimEquation> arrayEqs;
-      array<DAE.Algorithm> algorithms;
-      array<BackendDAE.ComplexEquation> complEqs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.ExternalObjectClasses extObjClasses;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.Matching matching;
-      BackendDAE.Shared shared;
-    /*case(dae,dlow)
-      equation
-        false = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
-      then
-        (dae,dlow);*/
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),_,(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,btp),dae))
-      equation
-        (orderedVars,dae) = partEvalVars(orderedVars,dae);
-        (knownVars,dae) = partEvalVars(knownVars,dae);
-        (externalObjects,dae) = partEvalVars(externalObjects,dae);
-        (orderedEqs,dae) = partEvalEqArr(orderedEqs,dae);
-        (removedEqs,dae) = partEvalEqArr(removedEqs,dae);
-        (initialEqs,dae) = partEvalEqArr(initialEqs,dae);
-        (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
-        (algorithms,dae) = partEvalAlgs(algorithms,dae);
-        (complEqs,dae) = partEvalCompEqs(arrayList(complEqs),dae);
-      then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,complEqs,eventInfo,extObjClasses,btp),dae));
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"PartFn.partEvalBackendDAE failed"});
-      then
-        fail();
-  end matchcontinue;
+  outFuncs := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(inDAE,partEvalExp,inFuncs);
 end partEvalBackendDAE;
 
-protected function partEvalAlgs
-"function: partEvalAlgs
-  elabs an algorithm section in BackendDAE"
-  input array<DAE.Algorithm> inAlgorithms;
-  input list<DAE.Function> inElementList;
-  output array<DAE.Algorithm> outAlgorithms;
-  output list<DAE.Function> outElementList;
+protected function partEvalExp
+  input tuple<DAE.Exp, list<DAE.Function>> inTpl;
+  output tuple<DAE.Exp, list<DAE.Function>> outTpl;
 algorithm
-  (outAlgorithms,outElementList) := matchcontinue(inAlgorithms,inElementList)
-    local
-      array<DAE.Algorithm> algarr,algarr_1;
-      list<DAE.Algorithm> alglst,alglst_1;
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp,exp1;
       list<DAE.Function> dae;
-    case(algarr,dae)
+    case ((exp,dae))
       equation
-        alglst = arrayList(algarr);
-        (alglst_1,dae) = partEvalAlgLst(alglst,dae);
-        algarr_1 = listArray(alglst_1);
-      then
-        (algarr_1,dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalAlgs failed");
-      then
-        fail();
+         ((exp1,dae)) = Expression.traverseExp(exp,elabExp,dae);
+       then
+        ((exp1,dae));
+    case inTpl then inTpl;
   end matchcontinue;
-end partEvalAlgs;
-
-protected function partEvalAlgLst
-"function: partEvalAlgLst
-  elabs a list of algorithm sections"
-  input list<DAE.Algorithm> inAlgorithmList;
-  input list<DAE.Function> inElementList;
-  output list<DAE.Algorithm> outAlgorithmList;
-  output list<DAE.Function> outElementList;
-algorithm
-  (outAlgorithmList,outElementList) := matchcontinue(inAlgorithmList,inElementList)
-    local
-      list<DAE.Algorithm> cdr,cdr_1;
-      list<DAE.Function> dae;
-      DAE.Algorithm alg,alg_1;
-    case({},dae) then ({},dae);
-    case(alg :: cdr,dae)
-      equation
-        (alg_1,dae) = elabAlg(alg,dae);
-        (cdr_1,dae) = partEvalAlgLst(cdr,dae);
-      then
-        (alg_1 :: cdr,dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalAlgLst failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalAlgLst;
-
-protected function partEvalArrEqs
-"function: partEvalArrEqs
-  elabs calls in array equations"
-  input list<BackendDAE.MultiDimEquation> inMultiDimList;
-  input list<DAE.Function> inElementList;
-  output array<BackendDAE.MultiDimEquation> outMultiDimArr;
-  output list<DAE.Function> outElementList;
-algorithm
-  (outMultiDimArr,outElementList) := matchcontinue(inMultiDimList,inElementList)
-    local
-      list<BackendDAE.MultiDimEquation> cdr,mdelst;
-      list<DAE.Function> dae;
-      array<BackendDAE.MultiDimEquation> res,cdr_1;
-      list<Integer> ds;
-      DAE.Exp e1,e1_1,e2,e2_1;
-      DAE.ElementSource source "the origin of the element";
-
-    case({},dae) then (listArray({}),dae);
-    case(BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) :: cdr,dae)
-      equation
-        ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
-        ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = partEvalArrEqs(cdr,dae);
-        mdelst = {BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_1,source)};
-        res = Util.arrayAppend(listArray(mdelst),cdr_1);
-      then
-        (res,dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalArrEqs failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalArrEqs;
-
-protected function partEvalCompEqs
-"function: partEvalCompEqs
-  elabs calls in complex equations"
-  input list<BackendDAE.ComplexEquation> inComplexList;
-  input list<DAE.Function> inElementList;
-  output array<BackendDAE.ComplexEquation> outComplexArr;
-  output list<DAE.Function> outElementList;
-algorithm
-  (outComplexArr,outElementList) := matchcontinue(inComplexList,inElementList)
-    local
-      list<BackendDAE.ComplexEquation> cdr,mdelst;
-      list<DAE.Function> dae;
-      array<BackendDAE.ComplexEquation> res,cdr_1;
-      Integer ds;
-      DAE.Exp e1,e1_1,e2,e2_1;
-      DAE.ElementSource source "the origin of the element";
-
-    case({},dae) then (listArray({}),dae);
-    case(BackendDAE.COMPLEXEQUATION(ds,e1,e2,source) :: cdr,dae)
-      equation
-        ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
-        ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = partEvalCompEqs(cdr,dae);
-        mdelst = {BackendDAE.COMPLEXEQUATION(ds,e1_1,e2_1,source)};
-        res = Util.arrayAppend(listArray(mdelst),cdr_1);
-      then
-        (res,dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalCompEqs failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalCompEqs;
-
-protected function partEvalVars
-"function: partEvalVars
-  elab calls in lowered variables"
-  input BackendDAE.Variables inVariables;
-  input list<DAE.Function> inFunctions;
-  output BackendDAE.Variables outVariables;
-  output list<DAE.Function> outFunctions;
-algorithm
-  (outVariables,outFunctions) := matchcontinue(inVariables,inFunctions)
-    local
-      list<DAE.Function> dae;
-      array<list<BackendDAE.CrefIndex>> crind;
-      Integer bsi,nov,noe,asi;
-      array<Option<BackendDAE.Var>> varr,varr_1;
-      list<Option<BackendDAE.Var>> vlst,vlst_1;
-    
-    case(BackendDAE.VARIABLES(crind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr),bsi,nov),dae)
-      equation
-        vlst = arrayList(varr);
-        (vlst_1,dae) = partEvalVarLst(vlst,dae);
-        varr_1 = listArray(vlst_1);
-      then
-        (BackendDAE.VARIABLES(crind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr_1),bsi,nov),dae);
-    
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalVars failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalVars;
-
-protected function partEvalVarLst
-"function: partEvalVarLst
-  evals partevalfuncs in a BackendDAE.var option list"
-  input list<Option<BackendDAE.Var>> inVarList;
-  input list<DAE.Function> inElementList;
-  output list<Option<BackendDAE.Var>> outVarList;
-  output list<DAE.Function> outElementList;
-algorithm
-  (outVarList,outElementList) := matchcontinue(inVarList,inElementList)
-    local
-      list<DAE.Function> dae;
-      list<Option<BackendDAE.Var>> cdr,cdr_1;
-      DAE.ComponentRef varName;
-      BackendDAE.VarKind varKind;
-      DAE.VarDirection varDirection;
-      BackendDAE.Type varType;
-      Option<DAE.Exp> bindExp,bindExp_1;
-      Option<Values.Value> bindValue;
-      DAE.InstDims arryDim;
-      Integer index;
-      Option<DAE.VariableAttributes> values;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      DAE.ElementSource source "the origin of the element";
-
-    case({},dae) then ({},dae);
-    case( NONE():: cdr,dae)
-      equation
-        (cdr_1,dae) = partEvalVarLst(cdr,dae);
-      then
-        ( NONE():: cdr_1,dae);
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,bindExp,bindValue,arryDim,index,
-                         source,values,comment,flowPrefix,streamPrefix)) :: cdr,dae)
-      equation
-        (bindExp_1,dae) = elabExpOption(bindExp,dae);
-        (cdr_1,dae) = partEvalVarLst(cdr,dae);
-      then
-        (SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,bindExp_1,bindValue,arryDim,index,
-                         source,values,comment,flowPrefix,streamPrefix)) :: cdr_1,dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalVarLst failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalVarLst;
-
-protected function partEvalEqArr
-"function: partEvalEqArr
-  elabs calls in equations"
-  input BackendDAE.EquationArray inEquationArray;
-  input list<DAE.Function> inFunctions;
-  output BackendDAE.EquationArray outEquationArray;
-  output list<DAE.Function> outFunctions;
-algorithm
-  (outEquationArray,outFunctions) := matchcontinue(inEquationArray,inFunctions)
-    local
-      list<DAE.Function> dae;
-      list<Option<BackendDAE.Equation>> eqlst;
-      array<Option<BackendDAE.Equation>> eqarr;
-      Integer num,size;
-    case(BackendDAE.EQUATION_ARRAY(num,size,eqarr),dae)
-      equation
-        eqlst = arrayList(eqarr);
-        (eqlst,dae) = partEvalEqs(eqlst,dae);
-        eqarr = listArray(eqlst);
-      then
-        (BackendDAE.EQUATION_ARRAY(num,size,eqarr),dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalEqArr failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalEqArr;
-
-protected function partEvalEqs
-"function: partEvalEqs
-  elabs calls in equations"
-  input list<Option<BackendDAE.Equation>> inEquationList;
-  input list<DAE.Function> inFunctions;
-  output list<Option<BackendDAE.Equation>> outEquationList;
-  output list<DAE.Function> outFunctions;
-algorithm
-  (outEquationList,outFunctions) := matchcontinue(inEquationList,inFunctions)
-    local
-      list<Option<BackendDAE.Equation>> cdr,cdr_1;
-      list<DAE.Function> dae;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      Integer i;
-      list<DAE.Exp> elst,elst_1,elst1,elst1_1,elst2,elst2_1;
-      DAE.ComponentRef cref;
-      BackendDAE.WhenEquation we,we_1;
-      DAE.ElementSource source "the origin of the element";
-
-    case({},dae) then ({},dae);
-    case( NONE():: cdr,dae)
-      equation
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        ( NONE():: cdr_1,dae);
-
-    case(SOME(BackendDAE.EQUATION(e1,e2,source)) :: cdr,dae)
-      equation
-        ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
-        ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.EQUATION(e1_1,e2_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.ARRAY_EQUATION(i,elst,source)) :: cdr,dae)
-      equation
-        (elst_1,dae) = elabExpList(elst,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.ARRAY_EQUATION(i,elst_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.COMPLEX_EQUATION(i,elst,source)) :: cdr,dae)
-      equation
-        (elst_1,dae) = elabExpList(elst,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.COMPLEX_EQUATION(i,elst_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.SOLVED_EQUATION(cref,e,source)) :: cdr,dae)
-      equation
-        ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.SOLVED_EQUATION(cref,e_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.RESIDUAL_EQUATION(e,source)) :: cdr,dae)
-      equation
-        ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.RESIDUAL_EQUATION(e_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.ALGORITHM(i,elst1,elst2,source)) :: cdr,dae)
-      equation
-        (elst1_1,dae) = elabExpList(elst1,dae);
-        (elst2_1,dae) = elabExpList(elst2,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.ALGORITHM(i,elst1_1,elst2_1,source)) :: cdr_1,dae);
-
-    case(SOME(BackendDAE.WHEN_EQUATION(we,source)) :: cdr,dae)
-      equation
-        (we_1,dae) = partEvalWhenEq(we,dae);
-        (cdr_1,dae) = partEvalEqs(cdr,dae);
-      then
-        (SOME(BackendDAE.WHEN_EQUATION(we_1,source)) :: cdr_1,dae);
-
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalEqs failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalEqs;
-
-protected function partEvalWhenEq
-"function: partEvalWhenEq
-  elabs calls in a BackendDAE when equation"
-  input BackendDAE.WhenEquation inWhenEquation;
-  input list<DAE.Function> inElementList;
-  output BackendDAE.WhenEquation outWhenEquation;
-  output list<DAE.Function> outElementList;
-algorithm
-  (outWhenEquation,outElementList) := matchcontinue(inWhenEquation,inElementList)
-    local
-      list<DAE.Function> dae;
-      Integer i;
-      DAE.ComponentRef cref;
-      DAE.Exp e,e_1;
-      BackendDAE.WhenEquation we,we_1;
-    case(BackendDAE.WHEN_EQ(i,cref,e,SOME(we)),dae)
-      equation
-        ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (we_1,dae) = partEvalWhenEq(we,dae);
-      then
-        (BackendDAE.WHEN_EQ(i,cref,e_1,SOME(we_1)),dae);
-    case(BackendDAE.WHEN_EQ(i,cref,e,NONE()),dae)
-      equation
-        ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-      then
-        (BackendDAE.WHEN_EQ(i,cref,e_1,NONE()),dae);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalWhenEq failed");
-      then
-        fail();
-  end matchcontinue;
-end partEvalWhenEq;
+end partEvalExp;
 
 public function partEvalDAE
 "function: partEvalDAE
