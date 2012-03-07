@@ -1033,7 +1033,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE());
-        (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
         ae = BackendEquation.daeArrayEqns(optdae);
