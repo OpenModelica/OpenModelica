@@ -127,6 +127,8 @@ modelica_real stringReal(metamodelica_string s)
 
 modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b)
 {
+  mmc_GC_add_roots(&a, 1, 0, "");
+  mmc_GC_add_roots(&b, 1, 0, "");
   return mmc_mk_bcon(stringEqual(a,b));
 }
 
@@ -185,6 +187,8 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
 
 modelica_metatype boxptr_stringHashDjb2Mod(modelica_metatype v,modelica_metatype mod)
 {
+  mmc_GC_add_roots(&v, 1, 0, "");
+  mmc_GC_add_roots(&mod, 1, 0, "");
   return mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
 }
 
@@ -200,18 +204,21 @@ modelica_integer stringHashSdbm(metamodelica_string_const s)
 /* adrpo: really bad hash :) */
 modelica_metatype boxptr_stringHash(modelica_metatype str)
 {
+  mmc_GC_add_roots(&str, 1, 0, "");
   return mmc_mk_icon(stringHash(str));
 }
 
 /* adrpo: see the comment above about djb2 hash */
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype str)
 {
+  mmc_GC_add_roots(&str, 1, 0, "");
   return mmc_mk_icon(stringHashDjb2(str));
 }
 
 /* adrpo: see the comment above about sdbm hash */
 modelica_metatype boxptr_stringHashSdbm(modelica_metatype str)
 {
+  mmc_GC_add_roots(&str, 1, 0, "");
   return mmc_mk_icon(stringHashSdbm(str));
 }
 
@@ -219,8 +226,12 @@ metamodelica_string stringListStringChar(metamodelica_string s)
 {
   const char *str = MMC_STRINGDATA(s);
   char chr[2] = {'\0', '\0'};
-  modelica_metatype res;
-  int i;
+  modelica_metatype res = NULL;
+  int i = 0;
+
+  mmc_GC_add_roots(&s, 1, 0, "");
+  mmc_GC_add_roots(&res, 1, 0, "");
+
   MMC_CHECK_STRING(s);
   res = mmc_mk_nil();
   for (i=MMC_STRLEN(s)-1; i>=0; i--) {
@@ -233,12 +244,18 @@ metamodelica_string stringListStringChar(metamodelica_string s)
 metamodelica_string stringAppendList(modelica_metatype lst)
 {
   /* fprintf(stderr, "stringAppendList(%s)\n", anyString(lst)); */
-  modelica_integer lstLen, len;
-  unsigned nbytes,header,nwords;
-  modelica_metatype car, lstHead, lstTmp;
-  char *tmp;
-  struct mmc_string *res;
-  void *p;
+  modelica_integer lstLen = 0, len = 0;
+  unsigned nbytes = 0, header = 0, nwords = 0;
+  modelica_metatype car = NULL, lstHead = NULL, lstTmp = NULL;
+  char *tmp = NULL;
+  struct mmc_string *res = NULL;
+  void *p = NULL;
+
+  mmc_GC_add_roots(&lst, 1, 0, "");
+  mmc_GC_add_roots(&lstHead, 1, 0, "");
+  mmc_GC_add_roots(&lstTmp, 1, 0, "");
+  mmc_GC_add_roots(&car, 1, 0, "");
+
   lstLen = 0;
   nbytes = 0;
   lstHead = lst;
@@ -280,12 +297,19 @@ metamodelica_string stringAppendList(modelica_metatype lst)
 metamodelica_string stringDelimitList(modelica_metatype lst, metamodelica_string_const delimiter)
 {
   /* fprintf(stderr, "stringDelimitList(%s)\n", anyString(lst)); */
-  modelica_integer lstLen, len, lenDelimiter;
-  unsigned nbytes,header,nwords;
-  modelica_metatype car, lstHead, lstTmp;
-  char *tmp,*delimiter_cstr;
-  struct mmc_string *res;
-  void *p;
+  modelica_integer lstLen = 0, len = 0, lenDelimiter = 0;
+  unsigned nbytes = 0, header = 0, nwords = 0;
+  modelica_metatype car = NULL, lstHead = NULL, lstTmp = NULL;
+  char *tmp = 0, *delimiter_cstr = 0;
+  struct mmc_string *res = NULL;
+  void *p = NULL;
+
+  mmc_GC_add_roots(&lst, 1, 0, "");
+  mmc_GC_add_roots((void*)&delimiter, 1, 0, "");
+  mmc_GC_add_roots(&lstHead, 1, 0, "");
+  mmc_GC_add_roots(&lstTmp, 1, 0, "");
+  mmc_GC_add_roots(&car, 1, 0, "");
+
   lstLen = 0;
   nbytes = 0;
   lstHead = lst;
@@ -366,11 +390,15 @@ modelica_metatype stringGetStringChar(metamodelica_string str, modelica_integer 
 
 modelica_metatype stringUpdateStringChar(metamodelica_string str, metamodelica_string c, modelica_integer ix)
 {
-  int length;
+  int length = 0;
   unsigned header = MMC_GETHDR(str);
   unsigned nwords = MMC_HDRSLOTS(header) + 1;
-  struct mmc_string *p;
-  void *res;
+  struct mmc_string *p = NULL;
+  void *res = NULL;
+  
+  mmc_GC_add_roots((void*)&str, 1, 0, "");
+  mmc_GC_add_roots((void*)&c, 1, 0, "");
+
   MMC_CHECK_STRING(str);
   MMC_CHECK_STRING(c);
   /* fprintf(stderr, "stringUpdateStringChar(%s,%s,%ld)\n", anyString(str),anyString(c),ix); */
@@ -391,11 +419,15 @@ modelica_metatype stringUpdateStringChar(metamodelica_string str, metamodelica_s
 
 metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelica_string_const s2)
 {
-  unsigned len1,len2,nbytes,header,nwords;
-  void *res;
-  struct mmc_string *p;
+  unsigned len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
+  void *res = NULL;
+  struct mmc_string *p = NULL;
   MMC_CHECK_STRING(s1);
   MMC_CHECK_STRING(s2);
+
+  mmc_GC_add_roots((void*)&s1, 1, 0, "");
+  mmc_GC_add_roots((void*)&s2, 1, 0, "");
+
   /* fprintf(stderr, "stringAppend([%p] %s, [%p] %s)->\n", s1, anyString(s1), s2, anyString(s2)); fflush(NULL); */
   len1 = MMC_STRLEN(s1);
   len2 = MMC_STRLEN(s2);
@@ -418,7 +450,11 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
 
 modelica_metatype listReverse(modelica_metatype lst)
 {
-  modelica_metatype res;
+  modelica_metatype res = NULL;
+  
+  mmc_GC_add_roots(&lst, 1, 0, "");
+  mmc_GC_add_roots(&res, 1, 0, "");
+  
   res = mmc_mk_nil();
   while (!MMC_NILTEST(lst))
   {
@@ -430,15 +466,20 @@ modelica_metatype listReverse(modelica_metatype lst)
 
 modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
-  int length,i;
-  struct mmc_cons_struct *res;
-  struct mmc_cons_struct *p;
+  
+  mmc_GC_add_roots(&lst1, 1, 0, "listAppend");
+  mmc_GC_add_roots(&lst2, 1, 0, "listAppend");
+  
+  {
+  int length = 0, i = 0;
+  struct mmc_cons_struct *res = NULL;
+  struct mmc_cons_struct *p = NULL;
   if (MMC_NILTEST(lst2)) /* If lst2 is empty, simply return lst1; huge performance gain for some uses of listAppend */
     return lst1;
   length = listLength(lst1);
   if (length == 0) /* We need to check for empty lst1 */
     return lst2;
-  res = (struct mmc_cons_struct*) mmc_alloc_bytes(length*sizeof(struct mmc_cons_struct)); /* Do one single big alloc. It's cheaper */
+  res = (struct mmc_cons_struct*) mmc_alloc_words( length * 3 /*(sizeof(struct mmc_cons_struct)/sizeof(void*))*/ ); /* Do one single big alloc. It's cheaper */
   for (i=0; i<length-1; i++) { /* Write all except the last element... */
     struct mmc_cons_struct *p = res+i;
     p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
@@ -452,6 +493,7 @@ modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
   p->data[0] = MMC_CAR(lst1);
   p->data[1] = lst2;
   return MMC_TAGPTR(res);
+  }
 }
 
 modelica_integer listLength(modelica_metatype lst)
@@ -508,8 +550,11 @@ modelica_metatype boxptr_listDelete(modelica_metatype lst, modelica_metatype i)
 
 modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
 {
-  modelica_metatype *tmpArr;
-  int i;
+  modelica_metatype *tmpArr = NULL;
+  int i = 0;
+
+  mmc_GC_add_roots(&lst, 1, 0, "");
+
   if (ix < 0)
     MMC_THROW();
   if (ix == 0) {
@@ -537,6 +582,9 @@ modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
     free(tmpArr);
     MMC_THROW();
   }
+
+  mmc_GC_add_roots(tmpArr, ix, 0, "");
+
   lst = MMC_CDR(lst);
   for (i=ix-1; i>=0; i--)
   {
@@ -569,12 +617,16 @@ modelica_metatype boxptr_arrayGet(modelica_metatype a, modelica_metatype i)
 
 modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
+  mmc_GC_add_roots(&val, 1, 0, "");
+
+  {
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
-  int i;
+  int i = 0;
   for(i=0; i<nelts; i++)
     arrp[i] = val;
   return arr;
+  }
 }
 
 modelica_metatype arrayList(modelica_metatype arr)
@@ -582,6 +634,10 @@ modelica_metatype arrayList(modelica_metatype arr)
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
   void **vecp = MMC_STRUCTDATA(arr);
   void *res = mmc_mk_nil();
+
+  mmc_GC_add_roots(&arr, 1, 0, "");
+  mmc_GC_add_roots(&res, 1, 0, "");
+
   for(; nelts >= 0; --nelts)
     res = mmc_mk_cons(vecp[nelts],res);
   return res;
@@ -589,15 +645,18 @@ modelica_metatype arrayList(modelica_metatype arr)
 
 modelica_metatype listArray(modelica_metatype lst)
 {
+  mmc_GC_add_roots(&lst, 1, 0, "");
+  {
   int nelts = listLength(lst);
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
-  int i;
+  int i = 0;
   for(i=0; i<nelts; i++) {
     arrp[i] = MMC_CAR(lst);
     lst = MMC_CDR(lst);
   }
   return arr;
+  }
 }
 
 modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modelica_metatype val)
@@ -632,29 +691,36 @@ modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modeli
 
 modelica_metatype arrayCopy(modelica_metatype arr)
 {
+  mmc_GC_add_roots(&arr, 1, 0, "");
+  {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
   void **resp = MMC_STRUCTDATA(res);
-  int i;
+  int i = 0;
   for(i=0; i<nelts; i++) {
     resp[i] = arrp[i];
   }
   return res;
+  }
 }
 
 modelica_metatype arrayAdd(modelica_metatype arr, modelica_metatype val)
 {
+  mmc_GC_add_roots(&arr, 1, 0, "");
+  mmc_GC_add_roots(&val, 1, 0, "");
+  {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts+1, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
   void **resp = MMC_STRUCTDATA(res);
-  int i;
+  int i = 0;
   for(i=0; i<nelts; i++) {
     resp[i] = arrp[i];
   }
   resp[nelts] = val;
   return res;
+  }
 }
 
 modelica_metatype boxptr_arrayNth(modelica_metatype arr,modelica_metatype ix)

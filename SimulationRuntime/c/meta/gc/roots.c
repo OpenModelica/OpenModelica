@@ -160,6 +160,8 @@ void mmc_GC_add_roots_fallback(modelica_metatype* p, int n, mmc_GC_local_state_t
   */
 }
 
+#if 0
+
 /* save the current roots mark */
 mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name)
 {
@@ -359,6 +361,8 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
 
   return 0;
 }
+
+#endif
 
 #endif /* _MMC_GC_ */
 

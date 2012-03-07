@@ -472,19 +472,10 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
 {
   size_t sizeFree = 0, sizePages = 0, saved;
 
-  /* init GC if is not already done */
-  if (!mmc_GC_state)
-  {
-    mmc_GC_init(mmc_GC_settings_default);
-  }
-
-  if ((mmc_GC_gen_state_young_next+64) < (mmc_GC_gen_state_young_limit))
-   return 0;
-
-  // fprintf(stderr, "GC from: %s", local_GC_state.functionName); fflush(stderr);
-  mmc_minor_collection();
-
   return 0;
+
+  if (mmc_GC_state->gen.c_heap_region_total_size + 512 >= mmc_GC_state->gen.young_size)
+    mmc_minor_collection();
 
   assert(mmc_GC_state != NULL);
 
@@ -501,8 +492,8 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
 
   if (mmc_GC_state->settings.debug)
   {
-    fprintf(stderr, "GC before: [%s] sizeFree: %ld sizePages: %ld procent: %.3g\n",
-        local_GC_state.functionName,
+    fprintf(stderr, "GC before: [%d] sizeFree: %ld sizePages: %ld procent: %.3g\n",
+        local_GC_state,
         sizeFree, sizePages,
         (double)sizeFree*100/(double)sizePages);
   }
@@ -522,7 +513,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
 
   if ((sizeFree - saved)/* && mmc_GC_state->settings.debug*/)
   {
-    fprintf(stderr, "GC collect: free: %8.2fMb pages: %8.2fMb free: %8.3f%% freed: %8.4fMb  lst: %10lu p: %4ld s: %6lu r:%6lu [%s]\n",
+    fprintf(stderr, "GC collect: free: %8.2fMb pages: %8.2fMb free: %8.3f%% freed: %8.4fMb  lst: %10lu p: %4ld s: %6lu r:%6lu [%d]\n",
         (double)sizeFree/(1024.0*1024.0),
         (double)sizePages/(1024.0*1024.0),
         (double)sizeFree*100.0/(double)sizePages,
@@ -531,7 +522,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
         (long) mmc_GC_state->mas.pages.current,
         mmc_GC_state->roots.rootsStackIndex,
         mmc_GC_state->roots.current,
-        local_GC_state.functionName);
+        local_GC_state);
   }
 
   /* if after the collect we still have less than half a page add a new page to speed things up */
@@ -607,9 +598,10 @@ void *mmc_alloc_bytes(unsigned nbytes)
   /* fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix); */
   if (mmc_cur_malloc_buf == NULL || nbytes>(mmc_cur_malloc_buf_sz-mmc_cur_malloc_buf_ix)) {
     if ( (mmc_cur_malloc_buf = (char*)malloc(mmc_cur_malloc_buf_sz)) == 0 ) {
-      fflush(NULL);
       fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-      assert(p != 0);
+      fflush(NULL);
+      exit(1);
+      /* assert(p != 0); */
     }
     mmc_cur_malloc_buf_ix = 0;
     assert(nbytes <= mmc_cur_malloc_buf_sz);

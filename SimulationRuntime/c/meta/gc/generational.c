@@ -77,11 +77,12 @@
 #include <string.h>  /* strerror() */
 #include <errno.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <time.h>
 
 #include "generational.h"
 
+//#undef NDEBUG
+#include <assert.h>
 
 #define MMC_CLOCKS_PER_SEC	1000	/* milliseconds */
 
@@ -91,24 +92,25 @@ unsigned long mmc_prim_clock(void)
   return (unsigned long)((double)clock() * scale);
 }
 
-
-
 /* the young region */
-unsigned long   mmc_young_size;
-void          **mmc_young_region;
+#define       mmc_young_size      mmc_GC_state->gen.young_size
+#define       mmc_young_region    mmc_GC_state->gen.young_region
+#define       mmc_young_limit     mmc_GC_state->gen.young_limit
+#define       mmc_young_next      mmc_GC_state->gen.young_next
 
 /* the older region */
-unsigned long   mmc_older_size;
-void          **mmc_current_region;
-void          **mmc_current_next;
-void          **mmc_reserve_region;
+#define       mmc_older_size      mmc_GC_state->gen.older_size
+#define       mmc_current_region  mmc_GC_state->gen.current_region
+#define       mmc_current_next    mmc_GC_state->gen.current_next
+#define       mmc_reserve_region  mmc_GC_state->gen.reserve_region
 
+
+static int allocatedInCHeap = 0;
 /* deal with external C heap */
-mmc_c_heap_region_t *mmc_c_heap;
-unsigned long mmc_c_heap_region_total_size;
+#define mmc_c_heap                    mmc_GC_state->gen.c_heap
+#define mmc_c_heap_region_total_size  mmc_GC_state->gen.c_heap_region_total_size
 mmc_uint_t mmc_c_heap_collect_flag = 0;
 unsigned long mmc_c_heap_collect_count;
-char mmc_allocated_in_older = 0;
 
 /*
  * A string cache for implementing string sharing
@@ -137,6 +139,7 @@ static void **mmc_alloc_core(mmc_uint_t nslots, mmc_uint_t do_not_exit) {
     fprintf(stderr, "malloc(%lu) failed!\n", nbytes); fflush(stderr);
     return NULL;
   }
+  /* memset(p, 0, nbytes); */
   return p;
 }
 
@@ -148,21 +151,21 @@ static void mmc_free_core(void **p, size_t nslots_unused) {
 #if  !defined(MMC_ARRAY_TRAIL_SIZE)
 #define MMC_ARRAY_TRAIL_SIZE  (1024*1024)
 #endif
-unsigned long mmc_array_trail_size = 0;
+#define mmc_array_trail_size    mmc_GC_state->gen.array_trail_size
 /* stores the pointers from older to young (write barrier) */
-void *mmc_array_trail[MMC_ARRAY_TRAIL_SIZE];
+#define mmc_array_trail         mmc_GC_state->gen.array_trail
 
 #if  !defined(MMC_SHARE_TRAIL_SIZE)
 #define MMC_SHARE_TRAIL_SIZE  (1024*1024)
 #endif
-unsigned long mmc_share_trail_size = 0;
+#define mmc_share_trail_size    mmc_GC_state->gen.share_trail_size
 /* stores references that can be shared because values they point to are semantically equal */
-void *mmc_share_trail[MMC_SHARE_TRAIL_SIZE][2];
+#define mmc_share_trail         mmc_GC_state->gen.share_trail
 
 
 /* misc */
 char mmc_flag_bench;
-char mmc_flag_gclog = 1;
+char mmc_flag_gclog = 0;
 unsigned long mmc_clock_start;
 unsigned long mmc_gc_start_clock;
 unsigned long mmc_gc_end_clock;
@@ -205,7 +208,7 @@ static INLINE int mmc_is_allocated_on_c_heap(void** p) {
 }
 
 static INLINE int mmc_is_allocated_on_young(void** p) {
-  if (p >= (void**)mmc_young_region && p <= (void**)mmc_GC_gen_state_young_limit)
+  if (p >= (void**)mmc_young_region && p <= (void**)mmc_young_limit)
   {
       /* bingo, we have a hit */
       return 1;
@@ -238,17 +241,19 @@ void mmc_free_c_heap_region(void) {
     return;
   ++mmc_c_heap_collect_count;
   while (current != NULL) {
-    mmc_free_core(current->region, current->size);
-    // set it to start again.
-    //current->next = current->region;
-    tmp = current;
+    // set to zero!
+    //mmc_free_core(current->region, current->size);
+    current->next = current->region;
+    current->limit = current->next;
+    //tmp = current;
     current = current->next_region;
-    free(tmp);
+    //free(tmp);
   }
   /* allocate a new C managed heap for the next round */
-  mmc_c_heap = mmc_alloc_c_heap_region(MMC_C_HEAP_REGION_SIZE);
+  //mmc_c_heap = mmc_alloc_c_heap_region(MMC_C_HEAP_REGION_SIZE);
   mmc_c_heap_region_total_size = 0;
   mmc_string_cache_index = 0;
+  allocatedInCHeap = 0;
 }
 
 /*
@@ -261,19 +266,19 @@ void mmc_gcinit(void) {
   mmc_gc_total_time = 0;
   memset(&mmc_GC_state->gen, 0, sizeof(mmc_GC_gen_state_type));
   mmc_array_trail_size = MMC_ARRAY_TRAIL_SIZE;
+  mmc_share_trail_size = MMC_SHARE_TRAIL_SIZE;
 
-
+  mmc_array_trail = mmc_alloc_core(mmc_array_trail_size, MMC_EXIT_ON_FAILURE);
+  mmc_share_trail = mmc_alloc_core(mmc_array_trail_size, MMC_EXIT_ON_FAILURE);
   mmc_GC_state->gen.ATP = &mmc_array_trail[MMC_ARRAY_TRAIL_SIZE]; /* ATP */
-  mmc_GC_state->gen.STP = &mmc_share_trail[MMC_SHARE_TRAIL_SIZE][2]; /* STP */
-  mmc_GC_state->gen.array_trail = &mmc_array_trail[0];
-  mmc_GC_state->gen.array_trail_size = mmc_array_trail_size;
+  mmc_GC_state->gen.STP = &mmc_share_trail[MMC_SHARE_TRAIL_SIZE*2]; /* STP */
 
   if (mmc_young_size == 0)
     mmc_young_size = MMC_YOUNG_SIZE;
   mmc_young_region = mmc_alloc_core(mmc_young_size, MMC_EXIT_ON_FAILURE);
-  mmc_GC_gen_state_young_next = mmc_young_region;
-  mmc_GC_gen_state_young_limit = mmc_young_region + mmc_young_size;
-  mmc_older_size = 4*mmc_young_size;
+  mmc_young_next = mmc_young_region;
+  mmc_young_limit = mmc_young_region + mmc_young_size;
+  mmc_older_size = 4 * mmc_young_size;
   mmc_current_region = mmc_alloc_core(mmc_older_size, MMC_EXIT_ON_FAILURE);
   mmc_current_next = mmc_current_region;
   mmc_reserve_region = NULL;
@@ -296,7 +301,7 @@ void mmc_exit(int status) {
         stderr,
         "[HEAP:\t%lu minor collections, %lu major collections, %lu words currently in use]\n",
         mmc_minorgc_count, mmc_majorgc_count,
-        (unsigned long)(mmc_GC_gen_state_young_next - mmc_young_region)
+        (unsigned long)(mmc_young_next - mmc_young_region)
             + (unsigned long)(mmc_current_next - mmc_current_region)
             + (unsigned long)mmc_c_heap_region_total_size);
     fprintf(
@@ -317,7 +322,7 @@ void mmc_exit(int status) {
         mmc_gc_total_time);
     fprintf(stderr,
         "[ARRAY:\t%lu words currently in use in the array trail]\n",
-        (unsigned long)(&mmc_array_trail[MMC_ARRAY_TRAIL_SIZE] - mmc_GC_gen_state_ATP));
+        (unsigned long)(&mmc_array_trail[MMC_ARRAY_TRAIL_SIZE] - mmc_GC_state->gen.ATP));
     fprintf(stderr, "[MOTOR:\t%lu tailcalls performed]\n", mmc_call_count);
   }
   if (mmc_flag_bench) {
@@ -336,8 +341,8 @@ void mmc_exit(int status) {
 int mmc_isYoungOrOlder(void *p)
 {
   return
-      (((char*)mmc_young_region <= (char*)p && (char*)mmc_young_region + mmc_young_size >= (char*)p) /* p in young */ ||
-       ((char*)mmc_current_region <= (char*)p && (char*)mmc_current_region + mmc_older_size >= (char*)p) /* p in older */);
+      ((mmc_young_region <= (void**)p && mmc_young_region + mmc_young_size >= (void**)p) /* p in young */ ||
+       (mmc_current_region <= (void**)p && mmc_current_region + mmc_older_size >= (void**)p) /* p in older */);
 }
 
 /* Forward the vector scan[0..nwords-1] of values using next as the allocation
@@ -353,12 +358,12 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
      * Update the allocation pointer `next'.
      */
     void **old;
-    mmc_uint_t hdr, save = 0, ctor = 0, slots = 0;
+    mmc_uint_t hdr;
 
     /* If the value is immediate, do nothing. */
     old = (void**)*scan;
 
-    if (!old || MMC_IS_IMMEDIATE(old))
+    if (MMC_IS_IMMEDIATE(old))
       continue;
 
     /* If not allocated in this region, do nothing. */
@@ -367,24 +372,18 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
       /* If is not allocated in the C heap, do not forward it! */
       if (mmc_c_heap_collect_flag && mmc_is_allocated_on_c_heap((void**)MMC_UNTAGPTR(old)))
       {
-        // collect to next region
-      }
-      else
-      {
+        /* collect to next region */
+      } else {
         continue;
       }
     }
 
     /* If already moved, replace `*scan' with the forwarding address. */
     hdr = MMC_GETHDR(old);
-    if (MMC_HDR_IS_FORWARD(hdr)) {
+    if ( MMC_HDR_IS_FORWARD(hdr) ) {
       *scan = (void*)hdr;
       continue;
     }
-    save = hdr;
-    ctor = MMC_HDRCTOR(save);
-    slots = MMC_HDRSLOTS(hdr);
-    //assert(ctor != 155);
 
     /* Copy node to next region.
      * Update `*scan' with new address.
@@ -394,144 +393,48 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
     old = (void**)MMC_UNTAGPTR(old);
     *old++ = MMC_TAGPTR(next);
     *next++ = (void*)hdr;
+
     for (hdr = MMC_HDRSLOTS(hdr); hdr > 0; --hdr)
-        *next++ = *old++;
+    {
+      assert(mmc_isYoungOrOlder(next));
+      assert(mmc_isYoungOrOlder(old));
+      if (!mmc_isYoungOrOlder(old))
+      {
+        fprintf(stderr, "slots: %lu p: %p nwords: %lu\n", hdr, old, nwords); fflush(stderr);
+      }
+      /* reuse `hdr' as `#slots' */
+      *next++ = *old++;
+    }
   }
   return next;
 }
 
-/* walk all the objects from the given region scan[0..nwords-1]
- * and if they contain pointes pointing in interval [region_low,region_low+region_nbytes]
- * forward the pointers to the address pointed by next.
- */
-static INLINE void **mmc_forward_back_links(void **scan, mmc_uint_t nwords, void **next, char *region_low, mmc_uint_t region_nbytes)
-{
-  mmc_uint_t slots = 0, ctor = 0, i = 0, start = 0;
-  mmc_sint_t n = nwords;
-  for (; n > 0;) {
-    /* forward all pointer from object pointed by `*scan' to the next region.
-     * update the pointer with the new address.
-     * leave forwarding address behind in `**scan'.
-     * update the allocation pointer `next'.
-     */
-    void **old = NULL, **pp = NULL;
-    mmc_uint_t hdr = 0;
-
-    // we have the header DIRECTLY at *scan!
-    old = (void**)MMC_TAGPTR(scan);
-    /* if the value is immediate, do nothing. */
-    if (MMC_IS_IMMEDIATE(old))
-    {
-      scan++;
-      n--;
-      assert(n >= 0);
-      continue;
-    }
-
-    //printAny(old); fprintf(stderr, "\n"); fflush(stderr);
-
-    /* if already moved, replace `*scan' with the forwarding address. */
-    hdr = MMC_GETHDR(old);
-    if (MMC_HDR_IS_FORWARD(hdr))
-    {
-      /* fetch the slots from the forward address */
-      void* p = (*(void**)(*scan));
-      //fprintf(stderr, "already forwarded:"); printAny(p); fprintf(stderr, "\n"); fflush(stderr);
-      if (MMC_IS_IMMEDIATE(p))
-      {
-        slots = 0;
-      }
-      else
-      {
-        slots = MMC_HDRSLOTS(MMC_GETHDR(p));
-      }
-      scan += slots+1;
-      n    -= slots+1;
-      assert(n >= 0);
-      continue;
-    }
-
-    slots = MMC_HDRSLOTS(hdr);
-
-    /* if it doens't have pointers, skip it! */
-    if (!MMC_HDRHASPTRS(hdr)) {
-      //fprintf(stderr, "skipping link:"); printAny(old); fprintf(stderr, "\n"); fflush(stderr);
-      scan += slots+1;
-      n    -= slots+1;
-      assert(n >= 0);
-      continue;
-    }
-
-    //fprintf(stderr, "checking for links:"); printAny(old); fprintf(stderr, "\n"); fflush(stderr);
-    ctor  = MMC_HDRCTOR(hdr);
-    if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1) /* RECORD */
-    {
-      start = 1; /* ignore the fields slot! */
-    }
-    else
-      start = 0; /* do NOT ignore the fields slot! */
-    assert(slots <= MMC_MAX_SLOTS);
-    pp = MMC_STRUCTDATA(old);
-    /*
-     * scan the object for pointers into [region_low,  region_low+region_nbytes].
-     */
-    //for (i = start; i < slots; i++)
-    {
-      next = mmc_forward_vec(pp+start, slots-start, next, region_low, region_nbytes);
-    }
-    scan += slots+1;
-    n    -= slots+1;
-    assert(n >= 0);
-  }
-  return next;
-}
 
 /* Forward all roots. Return updated allocation pointer.
  * Objects located outside of [region_low,region_low+region_nbytes] remain in place.
  */
 static void **mmc_forward_all(void **next, char *region_low, mmc_uint_t region_nbytes)
 {
-  mmc_c_heap_region_t *cr;
   size_t index = 0;
-
-  // forward the back-links first!
-  if (mmc_allocated_in_older)
-  {
-    // search for pointers from older to young and forward those too! 
-    next = mmc_forward_back_links(mmc_current_region, mmc_current_next-mmc_current_region, next, region_low, region_nbytes);
-
-    /* forward heap c, if there is any! */
-    cr = mmc_c_heap;
-    if (cr->region < cr->next && (cr->region != cr->next))
-    {
-      while(cr != NULL)
-      {
-        // search for pointers from external heap to young and forward those too! 
-        next = mmc_forward_back_links(cr->region, cr->next - cr->region, next, region_low, region_nbytes);
-        cr = cr->next_region;
-      }
-    }
-    mmc_allocated_in_older = 0;
-  }
+  mmc_uint_t i = 0;
 
   /* forward roots */
   for(index = 0; index < mmc_GC_state->roots.current; index++)
   {
-    //fprintf(stderr, "forwarding root:"); printAny(mmc_GC_state->roots.start[index]); fprintf(stderr, "\n"); fflush(stderr);
     next = mmc_forward_vec((void**)(mmc_GC_state->roots.start[index].start), mmc_GC_state->roots.start[index].count, next, region_low, region_nbytes);
   }
 
   /* forwarding of array_setnth/array_update elements */
   {
-    void **ATP= mmc_GC_gen_state_ATP;
+    void **ATP= mmc_GC_state->gen.ATP;
     mmc_sint_t cnt = &mmc_array_trail[MMC_ARRAY_TRAIL_SIZE] - ATP;
-    next = mmc_forward_vec(ATP, (mmc_uint_t)cnt, next, region_low, region_nbytes);
+    /* adrpo: is not needed to forward the entire arrays, only the elements pointing into the young generation! */
+    /* next = mmc_forward_vec(ATP, (mmc_uint_t)cnt, next, region_low, region_nbytes); */
     /* take all the arrays present in the trail and scan them for pointers into
      * the younger generation
      */
     for (; --cnt >= 0; ++ATP) {
       void *array_node = *ATP; /* known to be an array node */
-      mmc_uint_t i;
       mmc_uint_t nrelements= MMC_GETHDR(array_node);
       if ( MMC_HDR_IS_FORWARD(nrelements)) {
         continue;
@@ -541,7 +444,7 @@ static void **mmc_forward_all(void **next, char *region_low, mmc_uint_t region_n
         next = mmc_forward_vec(&(MMC_STRUCTDATA(array_node)[i]), 1, next, region_low, region_nbytes);
       }
     }
-    mmc_GC_gen_state_ATP = &mmc_array_trail[MMC_ARRAY_TRAIL_SIZE];
+    mmc_GC_state->gen.ATP = &mmc_array_trail[MMC_ARRAY_TRAIL_SIZE];
   }
 
   /* forward global roots from roots.c */
@@ -564,25 +467,22 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
     mmc_uint_t slots = MMC_HDRSLOTS(hdr);
     mmc_uint_t ctor = MMC_HDRCTOR(hdr);
     mmc_uint_t start = 0;
-    // we should NOT have forward here!
+    
+    /* we should NOT have forward here! */
     assert(!MMC_HDR_IS_FORWARD(hdr));
+
     ++scan; /* since slots doesn't include the header itself */
     if (MMC_HDRHASPTRS(hdr))
     {
-      if (slots == 2 && ctor == 1 && hdr == 2052 && mmc_minorgc_count == 9)
-      {
-        //fprintf(stderr, "transitive forward:"); printAny(*scan); fprintf(stderr, "\n"); fflush(stderr);
-        int i;
-        i = 1;
-      }
-      if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1) /* RECORD */
-      {
-        start = 1; /* ignore the fields slot! */
-      }
-      else
-        start = 0; /* do NOT ignore the fields slot! */
-
-      next = mmc_forward_vec(scan+start, slots-start, next, region_low, region_nbytes);
+      //if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1) /* RECORD */
+      //{
+      //  start = 1; /* ignore the fields slot! */
+      //}
+      //else
+      //  start = 0; /* do NOT ignore the fields slot! */
+      
+      //assert(slots > start);
+      next = mmc_forward_vec(scan, slots, next, region_low, region_nbytes);
     }
     scan += slots;
   }
@@ -855,8 +755,8 @@ void* mmc_minor_collection(void) {
   if (mmc_flag_gclog && !mmc_flag_bench) {
     fprintf(stderr, "\nbefore minor collection #%ld c heap: %p %p",
       (long)mmc_minorgc_count,
-      mmc_c_heap->region,
-      mmc_c_heap->next
+      (void*)mmc_c_heap->region,
+      (void*)mmc_c_heap->next
       );
     fflush(stderr);
   }
@@ -866,14 +766,16 @@ void* mmc_minor_collection(void) {
    * to also forward the mmc_c_heap?
    */
   if (mmc_c_heap_region_total_size &&
-      (mmc_older_size - (mmc_current_next - mmc_current_region) >
-      (mmc_young_size + mmc_c_heap_region_total_size))) {
+      (current_nfree > (mmc_young_size + mmc_c_heap_region_total_size))) {
     /* we have enough space, signal to go on with the forwarding */
     mmc_c_heap_collect_flag = 1;
   }
+
+  assert(current_nfree > mmc_young_size);
+
   /* collect the young region, forwarding to the current region */
-  next = mmc_collect(mmc_current_next, (char*)mmc_young_region,  (mmc_GC_gen_state_young_next-mmc_young_region) * sizeof(void*));
-  assert(next-mmc_current_next < mmc_older_size);
+  next = mmc_collect(mmc_current_next, (char*)mmc_young_region,  mmc_young_size*sizeof(void*));
+  assert(next - mmc_current_next < mmc_older_size);
 
   /* free our mmc_c_heap and set the flag on nothing */
   if (mmc_c_heap_collect_flag) {
@@ -885,8 +787,8 @@ void* mmc_minor_collection(void) {
     fprintf(stderr, "\nminor collection #%ld collected: %ld c heap: %p %p",
       (long)mmc_minorgc_count,
       (long)(current_nfree - (mmc_older_size - (next - mmc_current_region))),
-      mmc_c_heap->region,
-      mmc_c_heap->next
+      (void*)mmc_c_heap->region,
+      (void*)mmc_c_heap->next
       );
     fflush(stderr);
   }
@@ -903,7 +805,7 @@ void* mmc_minor_collection(void) {
       fflush(stderr);
       return NULL;
     }
-  mmc_GC_gen_state_young_next = mmc_young_region;
+  mmc_young_next = mmc_young_region;
   if (mmc_flag_gclog)
   {
     mmc_gc_end_clock = mmc_prim_clock();
@@ -1025,46 +927,38 @@ extern void print_icon(FILE*, void*);
 extern void print_rcon(FILE*, void*);
 extern void print_scon(FILE*, void*);
 
+void *mmc_prim_alloc(mmc_uint_t nwords);
+
 void *mmc_gen_alloc_words(unsigned nwords) {
+
+  return mmc_prim_alloc(nwords);
+
+#if 0
   void* p = NULL;
   mmc_c_heap_region_t* current = mmc_c_heap;
   if (mmc_flag_gclog)
     mmc_gc_start_clock = mmc_prim_clock();
 
-  /* try to allocate in young or in older if possible! */
-  if (!((void**)(mmc_GC_gen_state_young_next)+(nwords) >= (mmc_GC_gen_state_young_limit)))
+  if (!allocatedInCHeap)
   {
-    p = (void*)mmc_GC_gen_state_young_next;
-    mmc_GC_gen_state_young_next = (void**)(p)+(nwords);
+  /* try to allocate in young if possible! */
+  if (!((void**)(mmc_young_next)+(nwords) >= (mmc_GC_gen_state_young_limit)))
+  {
+    p = (void*)mmc_young_next;
+    mmc_young_next = (void**)(p)+(nwords);
     if (mmc_flag_gclog) {
       mmc_gc_end_clock = mmc_prim_clock();
       mmc_gc_total_time += (double)(mmc_gc_end_clock - mmc_gc_start_clock) / (double)MMC_CLOCKS_PER_SEC;
     }
     return p;
   }
-  else
-  {
-    // no place in young, try in older! 
-    void **next = mmc_current_next;
-    mmc_uint_t nfree = mmc_older_size - (next - mmc_current_region);
-    if (nfree >= nwords + mmc_young_size)
-    {
-      mmc_uint_t idx=0;
-      mmc_current_next = next + nwords;
-      p = next;
-      mmc_allocated_in_older = 1;
-      if (mmc_flag_gclog) {
-        mmc_gc_end_clock = mmc_prim_clock();
-        mmc_gc_total_time += (double)(mmc_gc_end_clock - mmc_gc_start_clock) / (double)MMC_CLOCKS_PER_SEC;
-      }
-      return p;
-    }
   }
 
+  allocatedInCHeap = 1;
   /* try to find a big enough place in the existing regions */
   do {
     p = (void*)current->next;
-    if ((current->next_region == NULL) && (void**)(p)+(nwords) < current->limit) {
+    if ((void**)(p)+(nwords) < current->limit) {
       /* found our zone, update the next */
       current->next = (void**)(p)+(nwords);
       assert(current->next < current->limit);
@@ -1106,181 +1000,8 @@ void *mmc_gen_alloc_words(unsigned nwords) {
   }
   /* return the pointer to available region */
   return p;
+#endif /* 0 */
 }
-
-
-//void *mk_rcon(double d) {
-//  struct mmc_real *p = (struct mmc_real*)alloc_words(sizeof(struct mmc_real)/MMC_SIZE_INT);
-//  p->header = MMC_REALHDR;
-//  p->data = d;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_scon_string_sharing(const char *s) {
-//  mmc_uint_t nbytes = strlen(s);
-//  mmc_uint_t header= MMC_STRINGHDR(nbytes);
-//  mmc_uint_t nwords= MMC_HDRSLOTS(header) + 1;
-//  if (!mmc_string_cache_index) /* no string in the cache */
-//  {
-//    struct mmc_string *p = alloc_words(nwords);
-//    p->header = header;
-//    memcpy(p->data, s, nbytes+1); /* including terminating '\0' */
-//    if (mmc_string_cache_index < MMC_STRING_CACHE_MAX &&
-//        nbytes < MMC_SHARED_STRING_MAX) /* add to sharing only if less than MMC_SHARED_STRING_MAX */
-//      mmc_string_cache[mmc_string_cache_index++] = p;
-//    return MMC_TAGPTR(p);
-//  }
-//  /* else, try to find if we already have the same string in the heap */
-//  {
-//    unsigned int i;
-//    struct mmc_string *p;
-//    for (i = 0; i < mmc_string_cache_index; i++)
-//    {
-//      p = mmc_string_cache[i];
-//      if (strcmp(p->data,s) == 0)
-//      {
-//        mmc_total_shared_strings++;
-//        mmc_total_shared_strings_words += nwords;
-//        return MMC_TAGPTR(p);
-//      }
-//    }
-//    /* no string found in cache */
-//    {
-//      struct mmc_string *p = alloc_words(nwords);
-//      p->header = header;
-//      memcpy(p->data, s, nbytes+1); /* including terminating '\0' */
-//      if (mmc_string_cache_index < MMC_STRING_CACHE_MAX &&
-//          nbytes < MMC_SHARED_STRING_MAX) /* add to sharing only if less than MMC_SHARED_STRING_MAX */
-//        mmc_string_cache[mmc_string_cache_index++] = p;
-//      return MMC_TAGPTR(p);
-//    }
-//  }
-//}
-//
-//void *mk_scon_no_string_sharing(const char *s) {
-//  mmc_uint_t nbytes = strlen(s);
-//  mmc_uint_t header= MMC_STRINGHDR(nbytes);
-//  mmc_uint_t nwords= MMC_HDRSLOTS(header) + 1;
-//  struct mmc_string *p = alloc_words(nwords);
-//  p->header = header;
-//  memcpy(p->data, s, nbytes+1); /* including terminating '\0' */
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_scon(const char *s) {
-//  return mmc_GC_state->settings.string_sharing ?
-//       mk_scon_string_sharing(s) : mk_scon_no_string_sharing(s);
-//}
-//
-//void *mk_box0(unsigned ctor) {
-//  struct mmc_struct *p = alloc_words(1);
-//  p->header = MMC_STRUCTHDR(0, ctor);
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box1(unsigned ctor, void *x0) {
-//  struct mmc_struct *p = alloc_words(2);
-//  p->header = MMC_STRUCTHDR(1, ctor);
-//  p->data[0] = x0;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box2(unsigned ctor, void *x0, void *x1) {
-//  struct mmc_struct *p = alloc_words(3);
-//  p->header = MMC_STRUCTHDR(2, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box3(unsigned ctor, void *x0, void *x1, void *x2) {
-//  struct mmc_struct *p = alloc_words(4);
-//  p->header = MMC_STRUCTHDR(3, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3) {
-//  struct mmc_struct *p = alloc_words(5);
-//  p->header = MMC_STRUCTHDR(4, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4) {
-//  struct mmc_struct *p = alloc_words(6);
-//  p->header = MMC_STRUCTHDR(5, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  p->data[4] = x4;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-//    void *x5) {
-//  struct mmc_struct *p = alloc_words(7);
-//  p->header = MMC_STRUCTHDR(6, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  p->data[4] = x4;
-//  p->data[5] = x5;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-//    void *x5, void *x6) {
-//  struct mmc_struct *p = alloc_words(8);
-//  p->header = MMC_STRUCTHDR(7, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  p->data[4] = x4;
-//  p->data[5] = x5;
-//  p->data[6] = x6;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-//    void *x5, void *x6, void *x7) {
-//  struct mmc_struct *p = alloc_words(9);
-//  p->header = MMC_STRUCTHDR(8, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  p->data[4] = x4;
-//  p->data[5] = x5;
-//  p->data[6] = x6;
-//  p->data[7] = x7;
-//  return MMC_TAGPTR(p);
-//}
-//
-//void *mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-//    void *x5, void *x6, void *x7, void *x8) {
-//  struct mmc_struct *p = alloc_words(10);
-//  p->header = MMC_STRUCTHDR(9, ctor);
-//  p->data[0] = x0;
-//  p->data[1] = x1;
-//  p->data[2] = x2;
-//  p->data[3] = x3;
-//  p->data[4] = x4;
-//  p->data[5] = x5;
-//  p->data[6] = x6;
-//  p->data[7] = x7;
-//  p->data[8] = x8;
-//  return MMC_TAGPTR(p);
-//}
-
 
 void *mmc_prim_gcalloc(mmc_uint_t nwords) {
   void **p;
@@ -1294,7 +1015,7 @@ void *mmc_prim_gcalloc(mmc_uint_t nwords) {
   if (nwords > mmc_young_size)
   {
     if ( (p = mmc_older_alloc(nwords)) != 0) {
-      mmc_GC_gen_state_young_next = mmc_young_region;
+      mmc_young_next = mmc_young_region;
     } else {
       fprintf(stderr, "mmc_prim_gcalloc failed to get %lu words\n", (unsigned long)nwords);
       fprintf(stderr, "returning NULL (not enough memory) from mmc_prim_gcalloc!\n");
@@ -1303,16 +1024,16 @@ void *mmc_prim_gcalloc(mmc_uint_t nwords) {
     }
   } else {
     p = mmc_young_region;
-    mmc_GC_gen_state_young_next = p + nwords;
+    mmc_young_next = p + nwords;
   }
   return (void*)p;
 }
 
 void *mmc_prim_alloc(mmc_uint_t nwords)
 {
-  void **p= mmc_GC_gen_state_young_next;
-  if ( (mmc_GC_gen_state_young_next = p + nwords) >= mmc_GC_gen_state_young_limit)
-    p = mmc_prim_gcalloc(nwords);
+  void **p = mmc_young_next;
+  if ( (mmc_young_next = p + nwords) >= mmc_young_limit)
+    p = (void**)mmc_prim_gcalloc(nwords);
   return p;
 }
 

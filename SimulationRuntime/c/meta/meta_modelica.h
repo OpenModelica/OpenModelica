@@ -100,6 +100,32 @@ typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
 #endif
 
+/* adrpo: circumvent MinGW GCC 4.4.0 bugs with optimization */
+#if defined(__MINGW32__)
+#define GCC_VERSION (__GNUC__ * 10000 \
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
+
+/* Test for MinGW GCC = 4.4.0 */
+#if (GCC_VERSION == 40400)
+
+typedef float mmc_switch_type;
+#define MMC_SWITCH_CAST(X) ((int)X)
+
+#else /* not MinGW GCC 4.4.0 */
+
+typedef int mmc_switch_type;
+#define MMC_SWITCH_CAST(X) (X)
+
+#endif
+
+#else /* not MINGW */
+
+typedef int mmc_switch_type;
+#define MMC_SWITCH_CAST(X) (X)
+
+#endif
+
 #define MMC_TAGPTR(p)    ((void*)((char*)(p) + 3))
 #define MMC_UNTAGPTR(x)    ((void*)((char*)(x) - 3))
 #define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
@@ -276,8 +302,10 @@ static inline void *mmc_mk_box0(unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box1(unsigned ctor, const void *x0)
+static inline void *mmc_mk_box1(unsigned ctor, void *x0)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
     p->header = MMC_STRUCTHDR(1, ctor);
     p->data[0] = (void*) x0;
@@ -285,12 +313,17 @@ static inline void *mmc_mk_box1(unsigned ctor, const void *x0)
     fprintf(stderr, "BOX1 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
 void printAny(void* any);
 
-static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
+static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(2, ctor);
@@ -301,10 +334,17 @@ static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
     /* printAny(MMC_TAGPTR(p)); fprintf(stderr, "\n"); fflush(NULL); */
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, const void *x2)
+static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  
+  {
+
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(3, ctor);
@@ -315,10 +355,17 @@ static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX3 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3)
+static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(4, ctor);
@@ -330,10 +377,18 @@ static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX4 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4)
+static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+  mmc_GC_add_roots(&x4, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(5, ctor);
@@ -346,10 +401,19 @@ static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX5 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box6(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4, const void *x5)
+static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+  mmc_GC_add_roots(&x4, 1, 0, "");
+  mmc_GC_add_roots(&x5, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(6, ctor);
@@ -363,11 +427,20 @@ static inline void *mmc_mk_box6(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX6 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box7(unsigned ctor, const void *x0, const void *x1, const void *x2,
-        const void *x3, const void *x4, const void *x5, const void *x6)
+static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+  mmc_GC_add_roots(&x4, 1, 0, "");
+  mmc_GC_add_roots(&x5, 1, 0, "");
+  mmc_GC_add_roots(&x6, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(7, ctor);
@@ -382,11 +455,21 @@ static inline void *mmc_mk_box7(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX7 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box8(unsigned ctor, const void *x0, const void *x1, const void *x2,
-        const void *x3, const void *x4, const void *x5, const void *x6, const void *x7)
+static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+  mmc_GC_add_roots(&x4, 1, 0, "");
+  mmc_GC_add_roots(&x5, 1, 0, "");
+  mmc_GC_add_roots(&x6, 1, 0, "");
+  mmc_GC_add_roots(&x7, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(8, ctor);
@@ -402,11 +485,22 @@ static inline void *mmc_mk_box8(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX8 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
-static inline void *mmc_mk_box9(unsigned ctor, const void *x0, const void *x1, const void *x2,
-        const void *x3, const void *x4, const void *x5, const void *x6, const void *x7, const void *x8)
+static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
 {
+  mmc_GC_add_roots(&x0, 1, 0, "");
+  mmc_GC_add_roots(&x1, 1, 0, "");
+  mmc_GC_add_roots(&x2, 1, 0, "");
+  mmc_GC_add_roots(&x3, 1, 0, "");
+  mmc_GC_add_roots(&x4, 1, 0, "");
+  mmc_GC_add_roots(&x5, 1, 0, "");
+  mmc_GC_add_roots(&x6, 1, 0, "");
+  mmc_GC_add_roots(&x7, 1, 0, "");
+  mmc_GC_add_roots(&x8, 1, 0, "");
+
+  {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
     void **data = p->data;
     p->header = MMC_STRUCTHDR(9, ctor);
@@ -423,12 +517,24 @@ static inline void *mmc_mk_box9(unsigned ctor, const void *x0, const void *x1, c
     fprintf(stderr, "BOX9 %u\n", ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+  }
 }
 
 static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
 {
     int i;
     va_list argp;
+
+    /* adrpo: how do I add the va_list args to the roots??!!  */
+#if defined(_MSC_VER)
+    va_start(argp, ctor);
+    for (i=0; i<slots; i++) {
+      mmc_GC_add_roots(&(va_arg(argp, void*)), 1, 0, "");
+    }
+    va_end(argp);
+#endif
+
+    {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(slots+1);
     p->header = MMC_STRUCTHDR(slots, ctor);
     va_start(argp, ctor);
@@ -440,6 +546,7 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
     fprintf(stderr, "BOXNN slots:%d ctor: %u\n", slots, ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
+    }
 }
 
 static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
@@ -519,8 +626,12 @@ extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
 extern int jmp_buf_index;
 */
 extern jmp_buf *mmc_jumper;
-#define MMC_TRY() {mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("TRY"); jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY() { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#if !defined(_MSC_VER)
 #define MMC_CATCH() } mmc_jumper = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state); mmc_catch_dummy_fn();}
+#else
+#define MMC_CATCH() } mmc_jumper = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state);}
+#endif
 #define MMC_THROW() longjmp(*mmc_jumper,1)
 
 #define MMC_TRY_TOP() MMC_TRY()

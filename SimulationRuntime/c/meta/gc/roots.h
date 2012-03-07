@@ -81,11 +81,16 @@ mmc_GC_roots_type roots_decrease(mmc_GC_roots_type roots, size_t default_roots_s
 void mmc_GC_add_roots_fallback(modelica_metatype*, int, mmc_GC_local_state_type local_GC_state, const char*);
 
 /* save the current roots mark */
-mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
+//mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
 /* remove the current roots mark */
-int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state);
+//int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state);
 /* unwind to current function */
-int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);
+//int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);
+
+#define mmc_GC_save_roots_state(name)                  (mmc_GC_state->roots.current)
+#define mmc_GC_undo_roots_state(local_GC_state)        (mmc_GC_state->roots.current = local_GC_state);
+#define mmc_GC_unwind_roots_state(local_GC_state)
+
 
 #else /* NO GC */
 

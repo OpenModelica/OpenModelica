@@ -2982,10 +2982,7 @@ case FUNCTION(__) then
       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>  
     /* functionBodyRegularFunction: GC: adding inputs as roots! */
     <%if acceptMetaModelicaGrammar() then '<%addRootsInputs%>'%>
-    
-    /* functionBodyRegularFunction: GC: do garbage collection */
-    <%if acceptMetaModelicaGrammar() then 'mmc_GC_collect(mmc_GC_local_state);'%>
-      
+          
     /* functionBodyRegularFunction: arguments */
     <%funArgs%>
     /* functionBodyRegularFunction: locals */
@@ -3009,7 +3006,7 @@ case FUNCTION(__) then
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     /* functionBodyRegularFunction: out var assign */
     <%outVarAssign%>
-    
+
     /* GC: pop the mark! */
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
@@ -4007,18 +4004,17 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   let &preExp = buffer "" /*BUFD*/
   let &afterExp = buffer "" /*BUFD*/
   let prefix = 'tmp<%System.tmpTick()%>'
-  let _ = daeExpMatch2(exp, expExpLst, prefix, context, &preExp, &varDecls)
-  let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 1 =>
-                    let rhsStr = '<%prefix%>_targ<%i1%>'
+  // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
+  let startIndexOutputs = '<%System.tmpTickIndexReserve(1, listLength(expExpLst))%>'  
+  let _ = daeExpMatch2(exp, expExpLst, prefix, startIndexOutputs, context, &preExp, &varDecls)
+  let lhsCrefs = (expExpLst |> cr hasindex i0 =>
+                    let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
                   ;separator="\n")  
   <<
-  <%expExpLst |> cr hasindex i1 fromindex 1 =>
-    let rhsStr = '<%prefix%>_targ<%i1%>'
-    let typ = '<%expTypeFromExpModelica(cr)%>'
-    let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
-    let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%rhsStr%>, mmc_GC_local_state, "<%rhsStr%>");' else ''
-    let &varDecls += '<%typ%> <%rhsStr%><%initVar%>;<%addRoot%><%\n%>'
+  <%expExpLst |> cr hasindex i0 =>
+    let typ = '<%expTypeFromExpModelica(cr)%>' 
+    let decl = tempDeclMatchOutput(typ, prefix, startIndexOutputs, i0, &varDecls /*BUFD*/)    
     ""
   ;separator="\n";empty%>
   <%preExp%>
@@ -5687,6 +5683,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     default:
       assert(NULL == "index out of bounds");
     }
+    <%\n%>
     >>
     res
   
@@ -5902,10 +5899,11 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et case T_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
-  daeExpMatch2(exp,listExpLength1,res,context,&preExp,&varDecls)
+  let startIndexOutputs = "ERROR_INDEX"
+  daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls)
 end daeExpMatch;
 
-template daeExpMatch2(Exp exp, list<Exp> tupleAssignExps, Text res, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template daeExpMatch2(Exp exp, list<Exp> tupleAssignExps, Text res, Text startIndexOutputs, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
 ::=
 match exp
@@ -5921,25 +5919,26 @@ case exp as MATCHEXPRESSION(__) then
   let prefix = 'tmp<%System.tmpTick()%>'
   let &preExpInput = buffer ""
   let &expInput = buffer ""
+  // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
+  let startIndexInputs = '<%System.tmpTickIndexReserve(1, listLength(inputs))%>'
   let ignore3 = (inputs |> exp hasindex i0 =>
-    let decl = '<%prefix%>_in<%i0%>'
-    let typ = '<%expTypeFromExpModelica(exp)%>'
-    let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
-    let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%decl%>, mmc_GC_local_state, "<%decl%>");' else ''
-    let &varDeclsInput += '<%typ%> <%decl%><%initVar%>;<%addRoot%><%\n%>'
+    let typ = '<%expTypeFromExpModelica(exp)%>' 
+    let decl = tempDeclMatchInput(typ, prefix, startIndexInputs, i0, &varDeclsInput /*BUFD*/)
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
     ""; empty)
   let ix = match exp.matchType
-    case MATCH(switch=SOME((switchIndex,T_STRING(__),div))) then
-      'stringHashDjb2Mod(<%prefix%>_in<%switchIndex%>,<%div%>)'
-    case MATCH(switch=SOME((switchIndex,T_METATYPE(__),_))) then
-      'valueConstructor(<%prefix%>_in<%switchIndex%>)'
+    case MATCH(switch=SOME((switchIndex,ty as T_STRING(__),div))) then
+      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex) 
+      'stringHashDjb2Mod(<%matchInputVar%>,<%div%>)'
+    case MATCH(switch=SOME((switchIndex,ty as T_METATYPE(__),_))) then
+      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
+      'valueConstructor(<%matchInputVar%>)'
     case MATCH(switch=SOME((switchIndex,ty as T_INTEGER(__),_))) then
-
-      '<%prefix%>_in<%switchIndex%>'
+      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
+      '<%matchInputVar%>'
     case MATCH(switch=SOME(_)) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>') 
-    else tempDecl('int', &varDeclsInner)
+    else tempDecl('mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
@@ -5948,12 +5947,7 @@ case exp as MATCHEXPRESSION(__) then
       { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */        
         <%varDeclsInput%>
         <%preExpInput%>
-        <%expInput%>
-        
-        /* GC: push the mark! */
-        <%if acceptMetaModelicaGrammar() 
-          then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("match");'%>        
-        
+        <%expInput%>        
         {
           <%varDeclsInner%>
           <%preExpInner%>
@@ -5963,52 +5957,45 @@ case exp as MATCHEXPRESSION(__) then
           %>
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
                         
-            switch (<%ix%>) {
-            <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,prefix,onPatternFail,done,context,&varDecls)%>
+            switch (MMC_SWITCH_CAST(<%ix%>)) {
+            <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
             }
             
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
                     
           if (!<%done%>) MMC_THROW();
-        }
-        
-        /* GC: pop the mark! */
-        <%if acceptMetaModelicaGrammar() 
-          then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
+        }        
       }
       >>
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text onPatternFail, Text done, Context context, Text &varDecls)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let &varDeclsCaseInner = buffer ""
   let &preExpCaseInner = buffer ""
   let &assignments = buffer ""
   let &preRes = buffer ""
-  let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%prefix%>_in<%i0%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+  let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
-      (exps |> e hasindex i1 fromindex 1 => '<%res%>_targ<%i1%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
+      (exps |> e hasindex i1 fromindex 1 => 
+      '<%getTempDeclMatchOutputName(exps, res, startIndexOutputs, intSub(i1,1))%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
     case SOME(exp as CALL(attr=CALL_ATTR(tailCall=TAIL(__)))) then
       daeExp(exp, context, &preRes, &varDeclsCaseInner)
     case SOME(exp as CALL(attr=CALL_ATTR(tuple_=true))) then
       let retStruct = daeExp(exp, context, &preRes, &varDeclsCaseInner)
       (tupleAssignExps |> cr hasindex i1 fromindex 1 =>
-        '<%res%>_targ<%i1%> = <%retStruct%>.targ<%i1%>;<%\n%>')
+        '<%getTempDeclMatchOutputName(tupleAssignExps, res, startIndexOutputs, intSub(i1,1))%> = <%retStruct%>.targ<%i1%>;<%\n%>')
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
   <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
   
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
-    
-     /* GC: push the mark! */
-     <%if acceptMetaModelicaGrammar() 
-       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("case");'%>       
     
     <%patternMatching%> 
     <% match c.jump
@@ -6020,12 +6007,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <%modelicaLine(c.resultInfo)%>
     <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>' %>
     <%endModelicaLine()%>
-    <%done%> = 1;
-    
-    /* GC: pop the mark! */
-    <%if acceptMetaModelicaGrammar()             
-      then 'mmc_GC_undo_roots_state( mmc_GC_local_state);'%>    
-    
+    <%done%> = 1;    
     break;
   }<%\n%>
   >>
@@ -6221,6 +6203,72 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
   newVar
 end tempDecl;
 
+template tempDeclMatchInput(String ty, String prefix, String startIndex, String index, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable in varDecls for variables in match input list and returns the name."
+::=
+  let newVar
+         =
+    match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+        then 'tmpMeta[<%startIndex%>+<%index%>]'
+      else
+        let newVarIx = '<%prefix%>_in<%index%>'
+        let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
+        newVarIx
+  newVar
+end tempDeclMatchInput;
+
+template getTempDeclMatchInputName(list<Exp> inputs, String prefix, String startIndex, Integer index)
+ "Returns the name of the temporary variable from the match input list."
+::=
+  let typ = '<%expTypeFromExpModelica(listNth(inputs, index))%>'
+  let newVar = 
+      match typ /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+        then 'tmpMeta[<%startIndex%>+<%index%>]'
+      else
+        let newVarIx = '<%prefix%>_in<%index%>'
+        newVarIx
+  newVar
+end getTempDeclMatchInputName;
+
+template tempDeclMatchOutput(String ty, String prefix, String startIndex, String index, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable in varDecls for variables in match output list and returns the name."
+::=
+  let newVar
+         =
+    match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+        then 'tmpMeta[<%startIndex%>+<%index%>]'
+      else
+        let newVarIx = '<%prefix%>_targ<%index%>'
+        let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
+        newVarIx
+  newVar
+end tempDeclMatchOutput;
+
+template getTempDeclMatchOutputName(list<Exp> outputs, String prefix, String startIndex, Integer index)
+ "Returns the name of the temporary variable from the match input list."
+::=
+  let typ = '<%expTypeFromExpModelica(listNth(outputs, index))%>'
+  let newVar = 
+      match typ /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+        then 'tmpMeta[<%startIndex%>+<%index%>]'
+      else
+        let newVarIx = '<%prefix%>_targ<%index%>'
+        newVarIx
+  newVar
+end getTempDeclMatchOutputName;
+
 template tempDeclConst(String ty, String val, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
 ::=
@@ -6377,6 +6425,8 @@ template expTypeFlag(DAE.Type ty, Integer flag)
       'modelica_<%expTypeShort(ty)%>'
     else match ty case T_COMPLEX(__) then
       'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
+    else match ty case T_ARRAY(__) then
+      '<%expTypeShort(ty)%>'
     else
       'modelica_<%expTypeShort(ty)%>'
   case 3 then

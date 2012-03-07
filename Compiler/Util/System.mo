@@ -596,6 +596,15 @@ public function tmpTickIndex
   external "C" tickNo = SystemImpl_tmpTickIndex(index) annotation(Library = "omcruntime");
 end tmpTickIndex;
 
+public function tmpTickIndexReserve
+  "returns a tick that can be reset and reserves N values in it. 
+   TODO: remove me when bootstrapped (default argument index=0)"
+  input Integer index;
+  input Integer reserve "current tick + reserve";
+  output Integer tickNo;
+  external "C" tickNo = SystemImpl_tmpTickIndexReserve(index,reserve) annotation(Library = "omcruntime");
+end tmpTickIndexReserve;
+
 public function tmpTickResetIndex
   "resets the tick so it restarts on start. TODO: remove me when bootstrapped (default argument index=0)"
   input Integer start;

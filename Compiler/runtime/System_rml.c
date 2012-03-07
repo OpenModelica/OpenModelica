@@ -749,6 +749,13 @@ RML_BEGIN_LABEL(System__tmpTickIndex)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__tmpTickIndexReserve)
+{
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndexReserve(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__tmpTickResetIndex)
 {
   SystemImpl_tmpTickResetIndex(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));

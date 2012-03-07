@@ -1613,6 +1613,15 @@ extern int SystemImpl_tmpTickIndex(int index)
   return tmp_tick_no[index]++;
 }
 
+extern int SystemImpl_tmpTickIndexReserve(int index, int reserve)
+{
+  int tmp = tmp_tick_no[index];
+  tmp_tick_no[index] += reserve;
+  assert(index < MAX_TMP_TICK && index >= 0);
+  /* fprintf(stderr, "tmpTickIndex %d => %d\n", index, tmp_tick_no[index]); */
+  return tmp;
+}
+
 extern void SystemImpl_tmpTickResetIndex(int start, int index)
 {
   assert(index < MAX_TMP_TICK && index >= 0);

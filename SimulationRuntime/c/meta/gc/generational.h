@@ -81,23 +81,10 @@ struct mmc_GC_gen_state_type {
   void         **array_trail;
   unsigned long array_trail_size;
 
-  void         **share_trail[2];
+  void         **share_trail;
   unsigned long share_trail_size;
 };
 typedef struct mmc_GC_gen_state_type mmc_GC_gen_state_type;
-
-#define mmc_GC_gen_state_ATP           (mmc_GC_state->gen.ATP)
-#define mmc_GC_gen_state_STP           (mmc_GC_state->gen.STP)
-#define mmc_GC_gen_state_young_next    (mmc_GC_state->gen.young_next)
-#define mmc_GC_gen_state_young_limit   (mmc_GC_state->gen.young_limit)
-#define mmc_GC_gen_state_c_heap        (mmc_GC_state->gen.c_heap)
-
-#define MMC_ALLOC(VAR,NWORDS) \
-  do{\
-    (VAR) = (void*)mmc_young_next; \
-    if((mmc_young_next = (void**)(VAR)+(NWORDS)) >= mmc_young_limit) \
-      (VAR) = mmc_prim_gcalloc((NWORDS)); \
-  } while(0)
 
 extern void mmc_gcinit(void);
 extern void* mmc_minor_collection(void);

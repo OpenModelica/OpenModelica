@@ -46,7 +46,6 @@
 
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
-
 /*
 #define _MMC_GC_ 1
 */
@@ -81,7 +80,6 @@ extern mmc_GC_state_type* mmc_GC_state;
 int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 /* primary allocation routines for MetaModelica */
 void *mmc_alloc_words(unsigned nwords);
-void *mmc_alloc_bytes(unsigned nbytes);
 
 #if defined(_MMC_GC_)
 
@@ -94,6 +92,7 @@ int mmc_GC_init_default(void);
 int mmc_GC_clear(void);
 /* do garbage collection */
 int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
+
 
 static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
 {

@@ -67,8 +67,8 @@ extern "C" {
 #define MMC_EXIT_ON_FAILURE     0
 #define MMC_NO_EXIT_ON_FAILURE  1
 
-#define MMC_YOUNG_SIZE          (1024*1024)
-#define MMC_C_HEAP_REGION_SIZE  (1024*1024*4) /* 4 Mbytes */
+#define MMC_YOUNG_SIZE          (1024*1024*16)
+#define MMC_C_HEAP_REGION_SIZE  (1024*1024) /*  4 Mwords */
 
 #define MMC_SHARED_STRING_MAX 100   /* share only strings less than this */
 #define MMC_STRING_CACHE_MAX 1000000 /* the maximum of strings kept in the cache between two garbage collections */
@@ -188,13 +188,15 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 /***********************************************************************/
 
 
-struct mmc_GC_local_state_type /* the structure of local GC state that is saved on stack */
-{
-  const char* functionName; /* the function name */
-  size_t rootsMark;         /* the roots mark */
-  size_t rootsStackIndex;   /* the index in the mark stack (basically the depth) */
-};
-typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;
+//struct mmc_GC_local_state_type /* the structure of local GC state that is saved on stack */
+//{
+//  const char* functionName; /* the function name */
+//  size_t rootsMark;         /* the roots mark */
+//  size_t rootsStackIndex;   /* the index in the mark stack (basically the depth) */
+//};
+//typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;
+
+#define mmc_GC_local_state_type size_t
 
 /* A stack as an array. */
 struct mmc_stack_type

@@ -648,6 +648,12 @@ package System
     output Integer tickNo;
   end tmpTickIndex;
   
+  function tmpTickIndexReserve
+    input Integer index;
+    input Integer reserve;
+    output Integer tickNo;
+  end tmpTickIndexReserve;
+  
   function tmpTickResetIndex
     input Integer start;
     input Integer index;
