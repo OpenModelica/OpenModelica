@@ -6425,8 +6425,8 @@ template expTypeFlag(DAE.Type ty, Integer flag)
       'modelica_<%expTypeShort(ty)%>'
     else match ty case T_COMPLEX(__) then
       'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
-    else match ty case T_ARRAY(__) then
-      '<%expTypeShort(ty)%>'
+    else match ty case T_ARRAY(ty = t as T_COMPLEX(__)) then
+      '<%expTypeShort(t)%>'
     else
       'modelica_<%expTypeShort(ty)%>'
   case 3 then
