@@ -3132,10 +3132,17 @@ algorithm
       list<DAE.Element> body;
       DAE.FunctionTree ftree;
       String msg;
+    // handle normal functions
     case(p,ftree)
       equation
-        (fn as SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
+        (fn as SOME(DAE.FUNCTION(functions = DAE.FUNCTION_DEF(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
       then (fn,body);
+    // adrpo: also the external functions!
+    case(p,ftree)
+      equation
+        (fn as SOME(DAE.FUNCTION(functions = DAE.FUNCTION_EXT(body = body)::_))) = DAEUtil.avlTreeGet(ftree,p);
+      then (fn,body);
+    
     case(p,_)
       equation
         msg = "BackendDAEOptimize.getFunctionBody failed for function " +& Absyn.pathStringNoQual(p);
