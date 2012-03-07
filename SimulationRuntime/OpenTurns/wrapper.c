@@ -85,6 +85,7 @@
 /* The name of the wrapper's functions is defined in WRAPPERNAME macro */
 /* adrpo: the wrapper name is given by a generated .h file */
 #include "wrapper_name.h"
+#include "model_name.h"
 
 /*
  *  This is the declaration of function named 'OpenModelica' into the wrapper.
@@ -189,7 +190,8 @@ extern "C" {
     char systemCommand[5000] = NULL;
     char *variableName = NULL;
     unsigned long variableType = 0;
-    char *modelName = NULL;
+    /* read the model name from the included model_name.h file */
+    char *modelName = MODELNAME;
     char *modelInitFileName = NULL;
     char *newModelInitFileName = "OpenTurns_init.xml";
     char *errorMsg = 0;
@@ -198,8 +200,9 @@ extern "C" {
     struct WrapperVariableList   *varLst = pData->variableList_;
     ModelicaMatReader* matReader = NULL;
 
-    /* read the model name from the generated .xml file, from <Path>...</Path> */
-    modelName = 
+
+    modelInitFileName = (char*)malloc(strlen(modelName)+strlen("_init.xml")+1);
+    sprintf(modelInitFileName, "%s_init.xml", modelName);
 
     if (!openModelicaHome)
     {
