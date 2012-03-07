@@ -611,6 +611,7 @@ algorithm
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
+        dae_var_attr = setMinMaxFromEnumeration(t,dae_var_attr);
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);        
       then
@@ -660,6 +661,7 @@ algorithm
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
+        dae_var_attr = setMinMaxFromEnumeration(t,dae_var_attr);
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
@@ -672,6 +674,70 @@ algorithm
         fail();
   end matchcontinue;
 end lowerKnownVar;
+
+protected function setMinMaxFromEnumeration
+  input DAE.Type inType;
+  input Option<DAE.VariableAttributes> inVarAttr;
+  output Option<DAE.VariableAttributes> outVarAttr;
+algorithm
+  outVarAttr := matchcontinue (inType,inVarAttr)
+    local
+      Option<DAE.VariableAttributes> attr,attr1;
+      Option<DAE.Exp> min,max;
+      list<String> names;
+      Absyn.Path path;
+    case (DAE.T_ENUMERATION(path=path,names = names),attr)
+      equation
+        (min,max) = DAEUtil.getMinMaxValues(attr);
+        attr1 = setMinMaxFromEnumeration1(min,max,attr,path,names);
+      then
+        attr1;
+    else inVarAttr;
+  end matchcontinue;    
+end setMinMaxFromEnumeration;
+
+protected function setMinMaxFromEnumeration1
+  input Option<DAE.Exp> inMin;
+  input Option<DAE.Exp> inMax;
+  input Option<DAE.VariableAttributes> inVarAttr;
+  input Absyn.Path inPath;
+  input list<String> inNames;
+  output Option<DAE.VariableAttributes> outVarAttr;
+algorithm
+  outVarAttr := matchcontinue (inMin,inMax,inVarAttr,inPath,inNames)
+    local
+      Option<DAE.VariableAttributes> attr,attr1;
+      Integer i;
+      Absyn.Path p,namee1,nameen;
+      list<String> names;
+      String s1,sn;
+      DAE.Exp e;
+    case (NONE(),NONE(),attr,p,names)
+      equation
+        i = listLength(names);
+        s1 = listNth(names,0);
+        namee1 = Absyn.joinPaths(p,Absyn.IDENT(s1));
+        sn = listNth(names,i-1);
+        nameen = Absyn.joinPaths(p,Absyn.IDENT(sn));
+        attr1 = DAEUtil.setMinMax(attr,(SOME(DAE.ENUM_LITERAL(namee1,1)),SOME(DAE.ENUM_LITERAL(nameen,i))));
+      then attr1;
+    case (NONE(),SOME(e),attr,p,names)
+      equation
+        i = listLength(names);
+        s1 = listNth(names,0);
+        namee1 = Absyn.joinPaths(p,Absyn.IDENT(s1));
+        attr1 = DAEUtil.setMinMax(attr,(SOME(DAE.ENUM_LITERAL(namee1,1)),SOME(e)));
+      then attr1;   
+    case (SOME(e),NONE(),attr,p,names)
+      equation
+        i = listLength(names);
+        sn = listNth(names,i-1);
+        nameen = Absyn.joinPaths(p,Absyn.IDENT(sn));
+        attr1 = DAEUtil.setMinMax(attr,(SOME(e),SOME(DAE.ENUM_LITERAL(nameen,i))));
+      then attr1;             
+    else inVarAttr;
+  end matchcontinue;    
+end setMinMaxFromEnumeration1;
 
 protected function fixParameterStartBinding
   input Option<DAE.Exp> bind;

@@ -1036,7 +1036,7 @@ algorithm
       Real r,v1,v2;
       Integer i, j;
       Absyn.Path path;
-      DAE.Exp e,e1;
+      DAE.Exp e,e1,e2;
     
     // der(constant) ==> 0
     case (DAE.CALL(path=Absyn.IDENT("der"),expLst ={e}))
@@ -1134,8 +1134,26 @@ algorithm
         v2 = Expression.getRealConst(e1);
         r = realMin(v1, v2);
       then DAE.RCONST(r);
+        
+    // min function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
+      equation
+        e2 = Util.if_(intLt(i,j),e,e1);
+      then e2;      
+        
+    // min function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ICONST(i), e1 as DAE.ENUM_LITERAL(index=j)}))
+      equation
+        e2 = Util.if_(intLt(i,j),e,e1);
+      then e2;            
 
-    // min function on integers
+    // min function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ICONST(j)}))
+      equation
+        e2 = Util.if_(intLt(i,j),e,e1);
+      then e2;  
+
+    // max function on integers
     case(DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
         i = intMax(i, j);
@@ -1148,6 +1166,24 @@ algorithm
         v2 = Expression.getRealConst(e1);
         r = realMax(v1, v2);
       then DAE.RCONST(r);
+        
+    // max function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
+      equation
+        e2 = Util.if_(intGt(i,j),e,e1);
+      then e2; 
+
+    // max function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ICONST(i), e1 as DAE.ENUM_LITERAL(index=j)}))
+      equation
+        e2 = Util.if_(intGt(i,j),e,e1);
+      then e2; 
+        
+    // max function on enumerations
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ICONST(j)}))
+      equation
+        e2 = Util.if_(intGt(i,j),e,e1);
+      then e2;      
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
 
