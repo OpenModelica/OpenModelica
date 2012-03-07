@@ -830,6 +830,9 @@ algorithm
       Boolean res;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_INTEGER(source = _)) :: _)) then false;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_BOOL(source = _)) :: _)) then false;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ENUMERATION(source = _)) :: _)) then false;            
     case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
