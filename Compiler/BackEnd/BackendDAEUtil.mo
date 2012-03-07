@@ -4541,10 +4541,9 @@ algorithm
   (osyst,outM,outMT):=
   matchcontinue (syst,shared,inIndxType)
     local  
-      BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.Variables v;
-      BackendDAE.EquationArray eq,ieq;
+      BackendDAE.EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.IndexType it;
     case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),shared,it)
@@ -4562,6 +4561,30 @@ algorithm
         (syst,m,mT);
   end matchcontinue;
 end getIncidenceMatrixfromOption;
+    
+public function getIncidenceMatrix "function getIncidenceMatrix"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.IndexType inIndxType;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+algorithm
+  (osyst,outM,outMT):=
+  match (syst,shared,inIndxType)
+    local  
+      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.Variables v;
+      BackendDAE.EquationArray eq;
+      BackendDAE.Matching matching;
+      BackendDAE.IndexType it;
+    case(syst as BackendDAE.EQSYSTEM(v,eq,_,_,matching),shared,it)
+      equation
+        (m,mT) = incidenceMatrix(syst, shared, it);
+      then
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
+  end match;
+end getIncidenceMatrix;    
     
 /*************************************
  jacobian stuff
@@ -5380,7 +5403,7 @@ algorithm
         ext_arg_4 = traverseBackendDAEExpsEqnsWithUpdate(reqns,func,ext_arg_2);
         ext_arg_5 = traverseBackendDAEExpsEqnsWithUpdate(ieqns,func,ext_arg_4);
         (_,ext_arg_6) = traverseBackendDAEArrayNoCopyWithUpdate(ae,func,traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(ae),ext_arg_5);
-        ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
+        (_,ext_arg_7) = traverseBackendDAEArrayNoCopyWithUpdate(algs,func,traverseAlgorithmExpsWithUpdate,1,arrayLength(algs),ext_arg_6);
         (_,ext_arg_8) = traverseBackendDAEArrayNoCopyWithUpdate(complEqs,func,traverseBackendDAEExpsComplexEqnWithUpdate,1,arrayLength(complEqs),ext_arg_7);
       then
         ext_arg_8;
@@ -6012,6 +6035,34 @@ algorithm
   end match;
 end traverseAlgorithmExps;
 
+public function traverseAlgorithmExpsWithUpdate "function: traverseAlgorithmExpsWithUpdate 
+
+  This function goes through the Algorithm structure and finds all the
+  expressions and performs the function on them
+"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Algorithm inAlgorithm;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output DAE.Algorithm outAlgorithm;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outAlgorithm,outTypeA) := match (inAlgorithm,func,inTypeA)
+    local
+      list<DAE.Statement> stmts,stmts1;
+      Type_a ext_arg_1;
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
+      equation
+        (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+      then
+        (DAE.ALGORITHM_STMTS(stmts1),ext_arg_1);
+  end match;
+end traverseAlgorithmExpsWithUpdate;
+
 public function traverseBackendDAEExpsComplexEqn "function: traverseBackendDAEExpsComplexEqn
   author: Frenkel TUD
 
@@ -6311,9 +6362,7 @@ algorithm
       BackendDAE.BackendDAE dae,ode,ode2;
       DAE.FunctionTree funcs;
       String str,methodstr;
-      Option<BackendDAE.IncidenceMatrix> om,omT;
-      BackendDAE.IncidenceMatrix m,mT,m1,mT1;
-      array<Integer> v1,v2;
+      array<Integer> v1;
       BackendDAE.StrongComponents comps;
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
@@ -6322,12 +6371,14 @@ algorithm
       
     case (syst,shared,funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
-        (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+        (syst,_,_) = getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
         (syst,shared) = BackendDAETransform.matchingAlgorithm(syst,shared, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
+        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
@@ -6359,7 +6410,9 @@ algorithm
     case (false,syst,shared,_,_,_) then (syst,shared);
     case (true,syst,shared,opts,daeHandler,funcs)
       equation
+        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
         (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, opts, daeHandler, funcs);
+        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst,_) = BackendDAETransform.strongComponents(syst,shared);
       then (syst,shared);
   end match;
