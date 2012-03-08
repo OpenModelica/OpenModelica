@@ -279,11 +279,15 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   pModelicaParser             psr;
   void* lxr = 0;
   void* res = NULL;
+  char* oldfilename;
 
   // Only use the basename of the file when running the testsuite
   ModelicaParser_filename_C = runningTestsuite ?
     SystemImpl__basename(ModelicaParser_filename_C) :
     ModelicaParser_filename_C;
+  oldfilename = (char*) ModelicaParser_filename_C;
+  ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF8","UTF8");
+  if (!*ModelicaParser_filename_C) return NULL;
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
@@ -352,7 +356,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   lxr = NULL;
   input->close(input);
   input = (pANTLR3_INPUT_STREAM) NULL;
-
+  ModelicaParser_filename_C = oldfilename;
   return res;
 }
 

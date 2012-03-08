@@ -69,5 +69,6 @@ modelica_ptr_t lookup_ptr(modelica_integer index);
 
 int SystemImpl__regularFileWritable(const char* str);
 const char* SystemImpl__basename(const char *str);
+char* SystemImpl__iconv(const char * str, const char *from, const char *to);
 
 #endif //__SYSTEMIMPL_H

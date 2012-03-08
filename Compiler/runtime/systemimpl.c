@@ -1673,7 +1673,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   if (ic == (iconv_t) -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
     c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
-    return buf;
+    return (char*) "";
   }
   in_str = (char*) str;
   out_sz = buflen-1;
