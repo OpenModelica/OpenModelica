@@ -3619,7 +3619,7 @@ algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
     local
-      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2,dlow1_3;
       BackendDAE.IncidenceMatrix m,m_1,m_3,m_4;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
@@ -3648,13 +3648,13 @@ algorithm
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         BackendDAE.DAE({syst},shared) = dlow1_1;
-        (m_3,mT_3) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        //mT_3 = BackendDAEUtil.transposeMatrix(m_3);
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        dlow1_2 = BackendDAE.DAE({syst},shared);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
-        (r,t,dlow_2,dlow1_2,m_4,mT_4,v1_3,v2_3,comps_1) = tearingSystem1(dlow_1,dlow1_1,m_3,mT_3,v1_2,v2_2,comps);
+        (r,t,dlow_2,dlow1_3,m_4,mT_4,v1_3,v2_3,comps_1) = tearingSystem1(dlow_1,dlow1_2,m_3,mT_3,v1_2,v2_2,comps);
       then
-        (residualeqns::r,tearingvars::t,dlow_2,dlow1_2,m_4,mT_4,v1_3,v2_3,comp_1::comps_1);
+        (residualeqns::r,tearingvars::t,dlow_2,dlow1_3,m_4,mT_4,v1_3,v2_3,comp_1::comps_1);
     case (dlow,dlow1,m,mT,v1,v2,comp::comps)
       equation
         // block ?
@@ -3803,6 +3803,11 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print, "Select Residual BackendDAE.Equation failed\n");
       then
         fail();
+    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,_)
+      equation
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select Residual BackendDAE.Equation failed!\n");
+      then
+        fail();        
   end matchcontinue;
 end tearingSystem2;
 
