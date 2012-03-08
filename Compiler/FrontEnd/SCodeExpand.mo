@@ -383,8 +383,8 @@ algorithm
 
     case (SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
       equation
-        bind_exp = expandBinding(binding, subs);
         subs = listReverse(subs);
+        bind_exp = expandBinding(binding, subs);
         cref = subscriptPath(name, subs);
         (var_kind, dir, vis, fp, sp) = getPrefixes(prefs);
         elem = DAE.VAR(cref, var_kind, dir, DAE.NON_PARALLEL(), vis, ty,
@@ -419,21 +419,20 @@ algorithm
   outBinding := match(inBinding, inSubscripts)
     local
       DAE.Exp exp;
-      Integer pl;
+      Integer pd;
       list<list<DAE.Subscript>> subs;
       list<DAE.Subscript> flat_subs;
       list<DAE.Exp> sub_exps;
 
     case (SCodeInst.UNBOUND(), _) then NONE();
 
-    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedLevels = -1), _)
+    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedDims = -1), _)
       then SOME(exp);
 
-    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedLevels = pl), _)
+    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _)
       equation
-        subs = List.firstN(inSubscripts, pl);
-        flat_subs = List.flatten(subs);
-        flat_subs = listReverse(flat_subs);
+        flat_subs = List.flatten(inSubscripts);
+        flat_subs = List.lastN(flat_subs, pd);
         sub_exps = List.map(flat_subs, Expression.subscriptExp);
         exp = subscriptBindingExp(exp, sub_exps);
         (exp, _) = ExpressionSimplify.simplify(exp);

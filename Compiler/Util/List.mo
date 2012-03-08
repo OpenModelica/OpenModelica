@@ -654,6 +654,19 @@ algorithm
   end match;
 end last;
 
+public function lastN
+  "Returns the last N elements of a list."
+  input list<ElementType> inList;
+  input Integer inN;
+  output list<ElementType> outList;
+protected
+  Integer len;
+algorithm
+  true := inN >= 0;
+  len := listLength(inList);
+  outList := stripN(inList, len - inN);
+end lastN;
+
 public function rest
   "Returns all elements except for the first in a list."
   input list<ElementType> inList;
@@ -738,6 +751,35 @@ algorithm
     case (e :: rest, _) then stripLast_tail(rest, e :: inAccum);
   end match;
 end stripLast_tail;
+
+public function stripN
+  "Strips the N first elements from a list. Fails if the list contains less than
+   N elements, or if N is negative."
+  input list<ElementType> inList;
+  input Integer inN;
+  output list<ElementType> outList;
+algorithm
+  true := inN >= 0;
+  outList := stripN_impl(inList, inN);
+end stripN;
+
+public function stripN_impl
+  "Implementation function for stripN."
+  input list<ElementType> inList;
+  input Integer inN;
+  output list<ElementType> outList;
+algorithm
+  outList := match(inList, inN)
+    local
+      list<ElementType> rest;
+
+    case (_, 0) then inList;
+
+    case (_ :: rest, _)
+      then stripN_impl(rest, inN - 1);
+
+  end match;
+end stripN_impl;
 
 public function sort
   "Sorts a list given an ordering function with the mergesort algorithm.

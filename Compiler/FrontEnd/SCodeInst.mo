@@ -118,19 +118,22 @@ public uniontype Binding
     Absyn.Exp bindingExp;
     Env env;
     Prefix prefix;
-    Integer propagatedLevels "See SCodeMod.propagateMod.";
+    Integer propagatedDims "See SCodeMod.propagateMod.";
+    Absyn.Info info;
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     DAE.Exp bindingExp;
     Boolean isProcessing;
-    Integer propagatedLevels "See SCodeMod.propagateMod.";
+    Integer propagatedDims "See SCodeMod.propagateMod.";
+    Absyn.Info info;
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
-    Integer propagatedLevels "See SCodeMod.propagateMod.";
+    Integer propagatedDims "See SCodeMod.propagateMod.";
+    Absyn.Info info;
   end TYPED_BINDING;
 end Binding;
 
@@ -389,6 +392,7 @@ algorithm
       SCode.Element scls;
       SCode.ClassDef cdef;
       SCodeEnv.Frame frame;
+      Integer dim_count;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
@@ -418,10 +422,11 @@ algorithm
         SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _, _)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
-        mod = SCodeMod.translateMod(smod, "", true, inPrefix, inEnv);
+        dims = Absyn.typeSpecDimensions(dty);
+        dim_count = listLength(dims);
+        mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
         (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
-        dims = Absyn.typeSpecDimensions(dty);
         ty = liftArrayType(dims, ty, inEnv, inPrefix);
       then
         (cls, ty);
@@ -674,7 +679,7 @@ algorithm
       Prefix prefix;
 
     case (MODIFIER(name = ident, subModifiers = {}, 
-        binding = RAW_BINDING(bind_exp, env, prefix, _)), _)
+        binding = RAW_BINDING(bind_exp, env, prefix, _, _)), _)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
@@ -822,6 +827,7 @@ algorithm
       SCode.Prefixes pf;
       SCode.Attributes attr;
       Prefixes prefs;
+      Integer dim_count;
 
     case (SCode.COMPONENT(name = name, 
         prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _)
@@ -850,20 +856,22 @@ algorithm
         prefix = (name, ad) :: inPrefix;
         path = prefixToPath(prefix);
         prefs = mergePrefixes(path, pf, attr, inPrefixes, info);
-        mod = SCodeMod.translateMod(smod, name, false, inPrefix, inEnv);
-        cmod = SCodeMod.propagateMod(inClassMod);
+        dim_count = listLength(ad);
+        mod = SCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+        cmod = SCodeMod.propagateMod(inClassMod, dim_count);
         mod = SCodeMod.mergeMod(cmod, mod);
         (cls, ty) = instClassItem(item, mod, prefs, env, prefix);
 
         // Instantiate array dimensions.
         dims = instDimensions(ad, inEnv, inPrefix);
-        dims = addDimensionsFromType(dims, ty);
+        (dims, dim_count) = addDimensionsFromType(dims, ty);
         ty = Types.arrayElementType(ty);
         dim_arr = makeDimensionArray(dims);
 
         // Instantiate binding.
+        mod = SCodeMod.propagateMod(mod, dim_count);
         binding = SCodeMod.getModifierBinding(mod);
-        binding = instBinding(binding);
+        binding = instBinding(binding, dim_count);
 
         // Create the component and add it to the program.
         comp = UNTYPED_COMPONENT(path, ty, dim_arr, prefs, binding, info);
@@ -925,7 +933,7 @@ algorithm
           redecls, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
-        mod = SCodeMod.translateMod(smod, "", true, inPrefix, inEnv);
+        mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
         (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
         cse = isSpecialExtends(ty);
@@ -1314,7 +1322,7 @@ algorithm
       equation
         path = Absyn.suffixPath(inEnumPath, name);
         comp = TYPED_COMPONENT(path, inType, DEFAULT_CONST_PREFIXES,
-          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType, 1), Absyn.dummyInfo);
+          TYPED_BINDING(DAE.ENUM_LITERAL(path, inIndex), inType, 0, Absyn.dummyInfo), Absyn.dummyInfo);
       then
         ELEMENT(comp, BASIC_TYPE());
 
@@ -1323,21 +1331,23 @@ end instEnumLiteral;
 
 protected function instBinding
   input Binding inBinding;
+  input Integer inCompDimensions;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding)
+  outBinding := match(inBinding, inCompDimensions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
       Env env;
       Prefix prefix;
-      Integer pl;
+      Integer pl, cd;
+      Absyn.Info info;
 
-    case RAW_BINDING(aexp, env, prefix, pl)
+    case (RAW_BINDING(aexp, env, prefix, pl, info), cd)
       equation
         dexp = instExp(aexp, env, prefix);
       then
-        UNTYPED_BINDING(dexp, false, pl);
+        UNTYPED_BINDING(dexp, false, pl, info);
 
     else inBinding;
 
@@ -1483,18 +1493,21 @@ protected function addDimensionsFromType
   input list<DAE.Dimension> inDimensions;
   input DAE.Type inType;
   output list<DAE.Dimension> outDimensions;
+  output Integer outAddedDims;
 algorithm
-  outDimensions := match(inDimensions, inType)
+  (outDimensions, outAddedDims) := match(inDimensions, inType)
     local
       list<DAE.Dimension> dims;
+      Integer added_dims;
 
     case (_, DAE.T_ARRAY(dims = dims))
       equation
+        added_dims = listLength(dims);
         dims = listAppend(dims, inDimensions);
       then
-        dims;
+        (dims, added_dims);
 
-    else inDimensions;
+    else (inDimensions, 0);
 
   end match;
 end addDimensionsFromType;
@@ -2148,6 +2161,7 @@ algorithm
       Integer enum_count;
       DAE.Exp bind_exp;
       Binding binding;
+      Absyn.Info info;
 
     case (SCodeEnv.VAR(var = el), _, _)
       equation
@@ -2157,7 +2171,7 @@ algorithm
         instElement(el, NOMOD(), NO_PREFIXES(), inEnv, prefix);
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
-        SCode.ENUMERATION(enumLst = enuml))), _, _)
+        SCode.ENUMERATION(enumLst = enuml), info = info)), _, _)
       equation
         // Instantiate the literals.
         ty = makeEnumType(enuml, inPath);
@@ -2168,9 +2182,9 @@ algorithm
         enum_count = listLength(enum_exps);
         arr_ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(enum_count)}, DAE.emptyTypeSource);
         bind_exp = DAE.ARRAY(arr_ty, true, enum_exps);
-        binding = TYPED_BINDING(bind_exp, arr_ty, 1);
+        binding = TYPED_BINDING(bind_exp, arr_ty, 1, info);
       then
-        ELEMENT(TYPED_COMPONENT(inPath, ty, DEFAULT_CONST_PREFIXES, UNBOUND(), Absyn.dummyInfo),
+        ELEMENT(TYPED_COMPONENT(inPath, ty, DEFAULT_CONST_PREFIXES, UNBOUND(), info),
           COMPLEX_CLASS(enum_el, {}, {}, {}, {}));
 
     else
@@ -2785,7 +2799,7 @@ algorithm
       SymbolTable st;
       DAE.Dimension dim;
       DAE.Exp dim_exp;
-      Integer dim_int;
+      Integer dim_int, dim_count;
       Dimension typed_dim;
       Component comp;
 
@@ -2810,7 +2824,8 @@ algorithm
         _ = arrayUpdate(inDimensions, inIndex, UNTYPED_DIMENSION(dim, true));
         comp = BaseHashTable.get(inComponentName, st);
         (comp, st) = typeComponentBinding(comp, NONE(), st);
-        dim = getComponentBindingDimension(comp, inIndex);
+        dim_count = arrayLength(inDimensions);
+        dim = getComponentBindingDimension(comp, inIndex, dim_count);
         typed_dim = TYPED_DIMENSION(dim);
         _ = arrayUpdate(inDimensions, inIndex, typed_dim);
       then
@@ -2850,35 +2865,43 @@ end getComponentBinding;
 protected function getComponentBindingDimension
   input Component inComponent;
   input Integer inDimension;
+  input Integer inCompDimensions;
   output DAE.Dimension outDimension;
 protected
   Binding binding;
 algorithm
   binding := getComponentBinding(inComponent);
-  outDimension := getBindingDimension(binding, inDimension);
+  outDimension := getBindingDimension(binding, inDimension, inCompDimensions);
 end getComponentBindingDimension;
 
 protected function getBindingDimension
   input Binding inBinding;
   input Integer inDimension;
+  input Integer inCompDimensions;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := match(inBinding, inDimension)
+  outDimension := match(inBinding, inDimension, inCompDimensions)
     local
       DAE.Exp exp;
+      Integer pd, index;
+      Absyn.Info info;
 
-    case (TYPED_BINDING(bindingExp = exp), _)
-      then getExpDimension(exp, inDimension);
+    case (TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _, _)
+      equation
+        index = Util.if_(intEq(pd, -1), inDimension,
+          inDimension + pd - inCompDimensions);
+      then
+        getExpDimension(exp, index);
 
   end match;
 end getBindingDimension;
   
 protected function getExpDimension
   input DAE.Exp inExp;
-  input Integer inDimension;
+  input Integer inDimIndex;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := matchcontinue(inExp, inDimension)
+  outDimension := matchcontinue(inExp, inDimIndex)
     local
       DAE.Type ty;
       list<DAE.Dimension> dims;
@@ -2888,7 +2911,7 @@ algorithm
       equation
         ty = Expression.typeof(inExp);
         dims = Types.getDimensions(ty);
-        dim = listGet(dims, inDimension);
+        dim = listGet(dims, inDimIndex);
       then
         dim;
 
@@ -2966,7 +2989,7 @@ algorithm
       DAE.Exp binding_exp;
       Integer pl;
       Prefixes pf;
-      Absyn.Info info;
+      Absyn.Info info1, info2;
 
     case (UNTYPED_COMPONENT(prefixes = PREFIXES(variability = var)), _)
       equation
@@ -2975,10 +2998,10 @@ algorithm
         inSymbolTable;
 
     case (UNTYPED_COMPONENT(name, ty, dims, pf,
-        UNTYPED_BINDING(binding_exp, _, pl), info), _)
+        UNTYPED_BINDING(binding_exp, _, pl, info1), info2), _)
       equation
         comp = UNTYPED_COMPONENT(name, ty, dims, pf,
-          UNTYPED_BINDING(binding_exp, true, pl), info);
+          UNTYPED_BINDING(binding_exp, true, pl, info1), info2);
       then
         BaseHashTable.add((name, comp), inSymbolTable);
 
@@ -3004,7 +3027,8 @@ algorithm
       DAE.Exp binding;
       SymbolTable st;
       DAE.Type ty;
-      Integer pl;
+      Integer pd;
+      Absyn.Info info;
 
     case (UNTYPED_BINDING(isProcessing = true), st)
       equation
@@ -3012,11 +3036,11 @@ algorithm
       then
         fail();
 
-    case (UNTYPED_BINDING(bindingExp = binding, propagatedLevels = pl), st)
+    case (UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd, info = info), st)
       equation
         (binding, ty, st) = typeExp(binding, st);
       then
-        (TYPED_BINDING(binding, ty, pl), st);
+        (TYPED_BINDING(binding, ty, pd, info), st);
 
     case (TYPED_BINDING(bindingExp = _), st)
       then (inBinding, st);

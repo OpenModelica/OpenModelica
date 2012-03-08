@@ -60,12 +60,12 @@ public type Modifier = SCodeInst.Modifier;
 public function translateMod
   input SCode.Mod inMod;
   input String inElementName;
-  input Boolean inFromExtends;
+  input Integer inDimensions;
   input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
 algorithm
-  outMod := match(inMod, inElementName, inFromExtends, inPrefix, inEnv)
+  outMod := match(inMod, inElementName, inDimensions, inPrefix, inEnv)
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -75,13 +75,15 @@ algorithm
       list<Modifier> mods;
       Binding binding;
       SCode.Element el;
+      Integer pd;
 
     case (SCode.NOMOD(), _, _, _, _) then SCodeInst.NOMOD();
 
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
-        mods = List.map3(submods, translateSubMod, inFromExtends, inPrefix, inEnv);
-        binding = translateBinding(binding_exp, ep, inFromExtends, inPrefix, inEnv);
+        pd = Util.if_(SCode.eachBool(ep), 0, inDimensions);
+        mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
       then
         SCodeInst.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
@@ -93,7 +95,7 @@ end translateMod;
 
 protected function translateSubMod
   input SCode.SubMod inSubMod;
-  input Boolean inFromExtends;
+  input Integer inDimensions;
   input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
@@ -102,32 +104,31 @@ protected
   SCode.Mod mod;
 algorithm
   SCode.NAMEMOD(name, mod) := inSubMod;
-  outMod := translateMod(mod, name, inFromExtends, inPrefix, inEnv);
+  outMod := translateMod(mod, name, inDimensions, inPrefix, inEnv);
 end translateSubMod;
 
 protected function translateBinding
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input SCode.Each inEachPrefix;
-  input Boolean inFromExtends;
+  input Integer inDimensions;
   input Prefix inPrefix;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding, inEachPrefix, inFromExtends, inPrefix, inEnv)
+  outBinding := match(inBinding, inEachPrefix, inDimensions, inPrefix, inEnv, inInfo)
     local
       Absyn.Exp bind_exp;
-      Integer def_pl, pl;
+      Integer pd;
 
-    case (NONE(), _, _, _, _) then SCodeInst.UNBOUND();
+    case (NONE(), _, _, _, _, _) then SCodeInst.UNBOUND();
 
     // See propagateMod for how this works.
-    case (SOME((bind_exp, _)), _, _, _, _)
+    case (SOME((bind_exp, _)), _, _, _, _, _)
       equation
-        // Extends doesn't add a level, so start with level 0 instead of 1.
-        def_pl = Util.if_(inFromExtends, 0, 1);
-        pl = Util.if_(SCode.eachBool(inEachPrefix), -1, def_pl);
+        pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
       then 
-        SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix, pl);
+        SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
 
   end match;
 end translateBinding;
@@ -599,22 +600,22 @@ public function propagateMod
 
    This results in a component b[2].a[3].x = {1, 2, 3}. Since x is a scalar we
    need to add dimensions to it (or remove from the binding) when doing type
-   checking, so that it matches the binding. But to do this we need to know how
-   many hierarchies the binding has been propagated through. In this case it's
-   been propagated through only one level, from b.a to b.a.x, so with that
-   information we know that we should take the dimensions of b.a, [3], and add
-   it to either x or remove it from the type of the binding to make the types
-   match. This information is saved as a simple integer in the Binding type,
-   where 1 means a local binding, 2 a binding from one level above, etc. We also
-   have the case of the 'each' prefix, in which case we use -1 to mean that we
-   shouldn't increment the counter since the binding should be applied as is.
+   checking, so that it matches the binding. To do this we need to now how many
+   dimensions the binding has been propagated through. In this case it's been
+   propagated from B.a to A.x, and since B.a has one dimension we should add
+   that dimension to A.x to make it match the binding. The number of dimensions
+   that a binding is propagated through is therefore saved in a binding. A
+   binding can also have the 'each' prefix, meaning that the binding should be
+   applied as it is. In that case we set the dimension counter to -1 and don't
+   increment it when the binding is propagated.
 
    This function simply goes through a modifier recursively and increments the
-   levels counter by one, symbolizing a propagation through one level."
+   dimension counter by the number of dimensions that an element has."
   input Modifier inModifier;
+  input Integer inDimensions;
   output Modifier outModifier;
 algorithm
-  outModifier := match(inModifier)
+  outModifier := match(inModifier, inDimensions)
     local
       String name;
       SCode.Final fp;
@@ -623,10 +624,12 @@ algorithm
       list<Modifier> submods;
       Absyn.Info info;
 
-    case SCodeInst.MODIFIER(name, fp, ep, binding, submods, info)
+    case (_, 0) then inModifier;
+
+    case (SCodeInst.MODIFIER(name, fp, ep, binding, submods, info), _)
       equation
-        binding = propagateBinding(binding);
-        submods = List.map(submods, propagateMod);
+        binding = propagateBinding(binding, inDimensions);
+        submods = List.map1(submods, propagateMod, inDimensions);
       then
         SCodeInst.MODIFIER(name, fp, ep, binding, submods, info);
 
@@ -637,24 +640,26 @@ end propagateMod;
 
 protected function propagateBinding
   input Binding inBinding;
+  input Integer inDimensions;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding)
+  outBinding := match(inBinding, inDimensions)
     local
       Absyn.Exp bind_exp;
       Env env;
       Prefix prefix;
-      Integer pl;
+      Integer pd;
+      Absyn.Info info;
 
     // Special case for the each prefix, don't do anything.
-    case SCodeInst.RAW_BINDING(bind_exp, env, prefix, -1) then inBinding;
+    case (SCodeInst.RAW_BINDING(propagatedDims = -1), _) then inBinding;
 
-    // A normal binding, increment with one.
-    case SCodeInst.RAW_BINDING(bind_exp, env, prefix, pl)
+    // A normal binding, increment with the dimension count.
+    case (SCodeInst.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
       equation
-        pl = pl + 1;
+        pd = pd + inDimensions;
       then 
-        SCodeInst.RAW_BINDING(bind_exp, env, prefix, pl);
+        SCodeInst.RAW_BINDING(bind_exp, env, prefix, pd, info);
 
     else inBinding;
   end match;
