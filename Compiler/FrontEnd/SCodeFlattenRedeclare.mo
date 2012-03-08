@@ -357,13 +357,13 @@ algorithm
       Env env, class_env;
       Item base_item, item;
       SCode.Element redecl;
+      SCodeEnv.ClassType cls_ty;
 
     // redeclare-as-element class
     case (redecl as SCode.CLASS(name = cls_name, info = info), _)
       equation
         (path, base_item) = SCodeLookup.lookupBaseClass(cls_name, inEnv, info);
-        class_env = SCodeEnv.makeClassEnvironment(redecl, true);
-        item = SCodeEnv.newClassItem(inRedeclare, class_env, SCodeEnv.USERDEFINED());
+        (SOME(item), _, _) = SCodeLookup.lookupInLocalScope(cls_name, inEnv, {});
         item = SCodeEnv.linkItemUsage(base_item, item);
         env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
       then

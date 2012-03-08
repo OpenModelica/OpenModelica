@@ -1034,7 +1034,6 @@ algorithm
     // redeclare-as-element class
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
-        false = isClassExtends(inElement);
         env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithClassDef(inElement, env);
       then
@@ -1064,18 +1063,6 @@ algorithm
 
   end matchcontinue;
 end extendEnvWithElement;
-
-protected function isClassExtends
-  input SCode.Element inClass;
-  output Boolean outResult;
-algorithm
-  outResult := match(inClass)
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))) 
-      then true;
-
-    else false;
-  end match;
-end isClassExtends;
 
 protected function checkUniqueQualifiedImport
   "Checks that a qualified import is unique, because it's not allowed to have

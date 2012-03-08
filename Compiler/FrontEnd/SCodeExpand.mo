@@ -281,6 +281,7 @@ algorithm
       list<DAE.Element> el;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
+      String dim_str;
 
     case (_, {}, subs :: rest_subs, _, _)
       equation
@@ -304,7 +305,8 @@ algorithm
 
     else
       equation
-        print("Unknown dimension in SCodeExpand.expandArray\n");
+        dim_str = ExpressionDump.dimensionString(List.first(inDimensions));
+        print("Unknown dimension " +& dim_str +& " in SCodeExpand.expandArray\n");
       then
         fail();
 

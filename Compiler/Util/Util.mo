@@ -1948,6 +1948,17 @@ algorithm
   str := stringAppend(str2, str1);
 end stringAppendReverse;
 
+public function stringAppendNonEmpty
+  input String inString1;
+  input String inString2;
+  output String outString;
+algorithm
+  outString := match(inString1, inString2)
+    case (_, "") then inString2;
+    else stringAppend(inString1, inString2);
+  end match;
+end stringAppendNonEmpty;
+
 // moved from Inst.
 public function selectList
 "function: select

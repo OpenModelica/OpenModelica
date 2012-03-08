@@ -91,8 +91,8 @@ end Element;
 public uniontype Class
   record COMPLEX_CLASS
     list<Element> components;
-    list<SCode.Equation> equations;
-    list<SCode.Equation> initialEquations;
+    list<DAE.Element> equations;
+    list<DAE.Element> initialEquations;
     list<SCode.AlgorithmSection> algorithms;
     list<SCode.AlgorithmSection> initialAlgorithms;
   end COMPLEX_CLASS;
@@ -334,7 +334,7 @@ algorithm
   outClass := match(inElements, inClass)
     local
       list<Element> el;
-      list<SCode.Equation> eq, ieq;
+      list<DAE.Element> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
 
     case (_, COMPLEX_CLASS(el, eq, ieq, al, ial))
@@ -374,7 +374,8 @@ algorithm
       Modifier mod;
       SCodeEnv.AvlTree cls_and_vars;
       String name, err_msg;
-      list<SCode.Equation> nel, iel;
+      list<SCode.Equation> snel, siel;
+      list<DAE.Element> dnel, diel;
       list<SCode.AlgorithmSection> nal, ial;
       DAE.Type ty;
       Absyn.ArrayDim dims;
@@ -385,6 +386,9 @@ algorithm
       list<Element> elems;
       SCode.Element sel;
       Boolean cse;
+      SCode.Element scls;
+      SCode.ClassDef cdef;
+      SCodeEnv.Frame frame;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
@@ -396,14 +400,16 @@ algorithm
 
     // A class with parts, instantiate all elements in it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name,
-          classDef = SCode.PARTS(el, nel, iel, nal, ial, _, _, _), info = info),
+          classDef = SCode.PARTS(el, snel, siel, nal, ial, _, _, _), info = info),
         env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _)
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         (elems, cse) = instElementList(mel, inPrefixes, env, inPrefix);
-        (cls, ty) = makeClass(elems, nel, iel, nal, ial, cse);
+        dnel = instEquations(snel, inEnv, inPrefix);
+        diel = instEquations(siel, inEnv, inPrefix);
+        (cls, ty) = makeClass(elems, dnel, diel, nal, ial, cse);
       then
         (cls, ty);
 
@@ -420,6 +426,12 @@ algorithm
       then
         (cls, ty);
         
+    case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env), _, _, _, _)
+      equation
+        (cls, ty) = instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix);
+      then
+        (cls, ty);
+
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
         SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _)
       equation
@@ -438,10 +450,83 @@ algorithm
   end match;
 end instClassItem;
   
+protected function instClassExtends
+  input SCode.Element inClassExtends;
+  input Modifier inMod;
+  input Prefixes inPrefixes;
+  input Env inClassEnv;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Class outClass;
+  output DAE.Type outType;
+algorithm
+  (outClass, outType) := 
+  matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix)
+    local
+      SCode.ClassDef cdef;
+      Absyn.Path bc_path;
+      SCode.Element ext;
+      SCode.Mod mod;
+      SCode.Element scls;
+      Class cls;
+      DAE.Type ty;
+      Item item;
+      String name;
+      Absyn.Info info;
+
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
+        composition = cdef)), _, _, _, _, _)
+      equation
+        (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
+        ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
+        cdef = SCode.addElementToCompositeClassDef(ext, cdef);
+        scls = SCode.setElementClassDefinition(cdef, inClassExtends);
+        item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.USERDEFINED());
+        (cls, ty) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix);
+      then
+        (cls, ty);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = SCode.elementName(inClassExtends);
+        Debug.traceln("SCodeInst.instClassExtends failed on " +& name);
+      then
+        fail();
+
+  end matchcontinue;
+end instClassExtends;
+
+protected function getClassExtendsBaseClass
+  input Env inClassEnv;
+  output Absyn.Path outPath;
+  output Absyn.Info outInfo;
+algorithm
+  (outPath, outInfo) := matchcontinue(inClassEnv)
+    local
+      Absyn.Path bc;
+      Absyn.Info info;
+      String name;
+
+    case (SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(
+        baseClasses = SCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
+      then (bc, info);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = SCodeEnv.getEnvName(inClassEnv);
+        Debug.traceln("SCodeInst.getClassExtendsBaseClass failed on " +& name);
+      then
+        fail();
+
+  end matchcontinue;
+end getClassExtendsBaseClass;
+
 protected function makeClass
   input list<Element> inElements;
-  input list<SCode.Equation> inEquations;
-  input list<SCode.Equation> inInitialEquations;
+  input list<DAE.Element> inEquations;
+  input list<DAE.Element> inInitialEquations;
   input list<SCode.AlgorithmSection> inAlgorithms;
   input list<SCode.AlgorithmSection> inInitialAlgorithms;
   input Boolean inContainsSpecialExtends;
@@ -452,7 +537,7 @@ algorithm
       inAlgorithms, inInitialAlgorithms, inContainsSpecialExtends)
     local
       list<Element> elems;
-      list<SCode.Equation> eq, ieq;
+      list<DAE.Element> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
       Class cls;
       DAE.Type ty;
@@ -760,7 +845,6 @@ algorithm
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
-
 
         // Instantiate the class.
         prefix = (name, ad) :: inPrefix;
@@ -1942,6 +2026,16 @@ algorithm
   end match;
 end instFunctionName2;
 
+protected function instEquations
+  input list<SCode.Equation> inEquations;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<DAE.Element> outEquations;
+algorithm
+  //outEquations := List.map2(inEquations, instEquation, inEnv, inPrefix);
+  outEquations := {};
+end instEquations;
+
 protected function instEquation
   input SCode.Equation inEquation;
   input Env inEnv;
@@ -1971,6 +2065,12 @@ algorithm
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then
         DAE.EQUATION(dexp1, dexp2, DAE.emptyElementSource);
+
+    else
+      equation
+        print("Unknown equation in SCodeInst.instEEquation.\n");
+      then
+        fail();
 
   end match;
 end instEEquation;
@@ -2167,7 +2267,7 @@ algorithm
   (outClass, outSymbolTable) := match(inClass, inSymbolTable)
     local
       list<Element> comps;
-      list<SCode.Equation> eq, ieq;
+      list<DAE.Element> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
       SymbolTable st;
 
@@ -2426,7 +2526,7 @@ algorithm
   (outClass, outSymbolTable) := match(inClass, inSymbolTable)
     local
       list<Element> comps;
-      list<SCode.Equation> eq, ieq;
+      list<DAE.Element> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
       SymbolTable st;
 
@@ -3445,7 +3545,7 @@ algorithm
     local
       SymbolTable st;
       list<Element> comps;
-      list<SCode.Equation> eq, ieq;
+      list<DAE.Element> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
 
     case (COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
@@ -3882,16 +3982,23 @@ algorithm
   outString := match(inClass)
     local
       list<Element> comps;
-      String comps_str;
+      list<DAE.Element> eq, ieq;
+      String comps_str, eq_str, ieq_str, str;
 
     case BASIC_TYPE() then "";
 
-    case COMPLEX_CLASS(components = comps)
+    case COMPLEX_CLASS(components = comps, equations = eq, 
+        initialEquations = ieq)
       equation
         comps_str = Util.stringDelimitListNonEmptyElts(
           List.map(comps, printElement), "\n");
+        ieq_str = stringAppendList(List.map(ieq, DAEDump.dumpEquationStr));
+        ieq_str = Util.stringAppendNonEmpty("\ninitial equation\n", ieq_str);
+        eq_str = stringAppendList(List.map(eq, DAEDump.dumpEquationStr));
+        eq_str = Util.stringAppendNonEmpty("\nequation\n", eq_str);
+        str = comps_str +& ieq_str +& eq_str;
       then
-        comps_str;
+        str;
 
   end match;
 end printClass;
