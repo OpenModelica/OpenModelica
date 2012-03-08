@@ -286,7 +286,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
     SystemImpl__basename(ModelicaParser_filename_C) :
     ModelicaParser_filename_C;
   oldfilename = (char*) ModelicaParser_filename_C;
-  ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF8","UTF8");
+  ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8");
   if (!*ModelicaParser_filename_C) return NULL;
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
 
