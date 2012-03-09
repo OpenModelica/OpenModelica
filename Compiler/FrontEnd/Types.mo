@@ -4074,15 +4074,6 @@ algorithm
       then 
         (DAE.CAST(DAE.T_REAL_DEFAULT,e),expected);
 
-    // Implicit conversion from Integer to enumeration.
-    case (e,
-          DAE.T_INTEGER(varLst = _),
-          DAE.T_ENUMERATION(index = _),_)
-      equation
-        t = simplifyType(expected);
-      then 
-        (DAE.CAST(t, e), expected);
-      
     // Complex type inheriting primitive type
     case (e, DAE.T_SUBTYPE_BASIC(complexType = t1),t2,printFailtrace) equation
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
