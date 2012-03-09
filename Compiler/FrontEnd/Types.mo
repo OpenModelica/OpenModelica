@@ -4054,6 +4054,7 @@ algorithm
 
     // Convert an integer literal to an enumeration
     // This is widely used in Modelica.Electrical.Digital
+    /* Commented out for when someone complains...
     case (exp as DAE.ICONST(oi),
           DAE.T_INTEGER(varLst = _),
           DAE.T_ENUMERATION(index=_, path=tp, names = l, source = ts2),
@@ -4065,6 +4066,7 @@ algorithm
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
         (DAE.ENUM_LITERAL(tp, oi),expected);
+    */
 
     // Implicit conversion from Integer to Real
     case (e,
