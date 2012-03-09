@@ -938,6 +938,7 @@ algorithm
       BackendDAE.StrongComponent sc;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      String msg;
             
     case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2,false)
       equation
@@ -971,11 +972,11 @@ algorithm
         var_varindx_lst_cond = List.threadTuple(cont_var,indxcont_var);
         sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,m,mt,ass1,ass2,true);
       then
-        BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);        
+        BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);    
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al,complEqs=complEqs),m,mt,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
-        // false = BackendVariable.hasDiscreteVar(var_lst); ToDo: Is this right, than it should be commited in
+        false = BackendVariable.hasDiscreteVar(var_lst);
         varindxs = List.map(var_varindx_lst,Util.tuple22);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
@@ -993,16 +994,25 @@ algorithm
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         subsystem_dae = BackendDAE.DAE({syst},shared);
-        //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         // Jacobian of a Linear System is always linear 
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,_)
+      equation
+        var_lst = List.map(var_varindx_lst,Util.tuple21);
+        true = BackendVariable.hasDiscreteVar(var_lst);
+        false = BackendVariable.hasContinousVar(var_lst);
+        msg = "Sorry - Support for Discrete Equation Systems is not yed implemented";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then
+        fail();            
     else
       equation
-        print("- BackendDAETransform.analyseStrongComponentBlock failed\n");
+        msg = "BackendDAETransform.analyseStrongComponentBlock failed";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();          
   end matchcontinue;  
