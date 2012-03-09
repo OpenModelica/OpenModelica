@@ -419,10 +419,10 @@ algorithm
       array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      list<list<DAE.Exp>> crefOrDerCreflst,c_crefOrDerCreflst;
-      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
-      list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
-      array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst,c_crefOrDerCreflst;
+      array<Option<list<DAE.Exp>>> crefOrDerCrefarray,crefOrDerCrefcomplex;
+      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
+      array<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttplarray;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       Boolean b;
@@ -478,34 +478,49 @@ end replaceVarTraverser;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>,array<list<DAE.Exp>>>> inTpl;
-  output tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>,array<list<DAE.Exp>>>> outTpl;
+  input tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<Option<list<DAE.Exp>>>,array<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>,array<Option<list<DAE.Exp>>>>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<BackendVarTransform.VariableReplacements,array<Option<list<DAE.Exp>>>,array<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>,array<Option<list<DAE.Exp>>>>> outTpl;
 algorithm
   outTpl:=  
   matchcontinue (inTpl)
     local 
       BackendDAE.Equation e,e1;
       BackendVarTransform.VariableReplacements repl;
-      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
-      array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
+      array<Option<list<DAE.Exp>>> crefOrDerCrefarray,crefOrDerCrefcomplex;
+      array<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttplarray;
       Integer index;
       list<DAE.Exp> in_,out,crefOrDerCref;
       DAE.ElementSource source;
     case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
-        crefOrDerCref = crefOrDerCrefarray[index+1];
+        SOME(crefOrDerCref) = crefOrDerCrefarray[index+1];
       then
         ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+      equation
+        NONE() = crefOrDerCrefarray[index+1];
+      then
+        ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
     case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
-        ((in_,out)) = inouttplarray[index+1];
+        SOME((in_,out)) = inouttplarray[index+1];
       then
         ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+      equation
+        NONE() = inouttplarray[index+1];
+      then
+        ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
     case ((BackendDAE.COMPLEX_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
-        crefOrDerCref = crefOrDerCrefcomplex[index];
+        SOME(crefOrDerCref) = crefOrDerCrefcomplex[index];
       then
         ((BackendDAE.COMPLEX_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.COMPLEX_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+      equation
+        NONE() = crefOrDerCrefcomplex[index];
+      then
+        ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
     case ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         {e1} = BackendVarTransform.replaceEquations({e},repl);
@@ -517,42 +532,76 @@ protected function replaceArrayEquationTraverser "function: replaceArrayEquation
   author: Frenkel TUD 2010-04
   It is possible to change the equation.
 "
-  input tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> inTpl;
-  output tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> outTpl;
+  input tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>>> inTpl;
+  output tuple<BackendDAE.MultiDimEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>>> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
     local 
-      DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2;
+      DAE.Exp e1,e2,e1_1,e2_1;
       list<Integer> dims;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
-      list<list<DAE.Exp>> crefOrDerCreflst;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst;
+      BackendDAE.Variables vars;
+      Boolean b1,b2;
+      BackendDAE.MultiDimEquation mde;
+      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> tpl;
+    case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,vars,crefOrDerCreflst)))
+      equation
+        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl,NONE());
+        (e2_1,b2) = BackendVarTransform.replaceExp(e2, repl,NONE());
+        (mde,tpl) = replaceArrayEquationTraverser1(b1 or b2,dims,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
+      then
+        ((mde,tpl));
+  end match;
+end replaceArrayEquationTraverser;
+
+protected function replaceArrayEquationTraverser1 "function: replaceArrayEquationTraverser1
+  author: Frenkel TUD 2012-03
+  It is possible to change the equation."
+  input Boolean inBool;
+  input list<Integer> inDims;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.ElementSource inSource;
+  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> inTpl;
+  output BackendDAE.MultiDimEquation outMDE;
+  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> outTpl;
+algorithm
+  (outMDE,outTpl):=
+  match (inBool,inDims,inExp1,inExp2,inSource,inTpl)
+    local 
+      DAE.Exp e1,e2,e1_1,e2_1;
+      list<Integer> dims;
+      DAE.ElementSource source;
+      BackendVarTransform.VariableReplacements repl;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst;
       list<DAE.Exp> expl1,expl2,expl;
       BackendDAE.Variables vars;
       Boolean b1,b2;
-    case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,vars,crefOrDerCreflst)))
+    case (false,dims,e1,e2,source,(repl,vars,crefOrDerCreflst))
+      then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,vars,NONE()::crefOrDerCreflst));
+    case (true,dims,e1,e2,source,(repl,vars,crefOrDerCreflst))
       equation
-        (e1_1,_) = BackendVarTransform.replaceExp(e1, repl,NONE());
-        (e2_1,_) = BackendVarTransform.replaceExp(e2, repl,NONE());
-        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_2);        
-        expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
-        expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);        
+        expl1 = BackendDAEUtil.statesAndVarsExp(e1_1, vars);
+        expl2 = BackendDAEUtil.statesAndVarsExp(e2_1, vars);
         expl = listAppend(expl1, expl2);
       then
-        ((BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source),(repl,vars,expl::crefOrDerCreflst)));
+        (BackendDAE.MULTIDIM_EQUATION(dims,e1_1,e2_1,source),(repl,vars,SOME(expl)::crefOrDerCreflst));
   end match;
-end replaceArrayEquationTraverser;
+end replaceArrayEquationTraverser1;
 
 protected function replaceComplexEquationTraverser "function: replaceComplexEquationTraverser
   author: Frenkel TUD 2012-03
   It is possible to change the equation.
 "
-  input tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> inTpl;
-  output tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<list<DAE.Exp>>>> outTpl;
+  input tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>>> inTpl;
+  output tuple<BackendDAE.ComplexEquation,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>>> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
@@ -561,25 +610,60 @@ algorithm
       Integer size;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
-      list<list<DAE.Exp>> crefOrDerCreflst;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst;
       list<DAE.Exp> expl1,expl2,expl;
       BackendDAE.Variables vars;
       Boolean b1,b2;
+      BackendDAE.ComplexEquation ce;
+      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> tpl;      
     case ((BackendDAE.COMPLEXEQUATION(size,e1,e2,source),(repl,vars,crefOrDerCreflst)))
       equation
-        (e1_1,_) = BackendVarTransform.replaceExp(e1, repl,NONE());
-        (e2_1,_) = BackendVarTransform.replaceExp(e2, repl,NONE());
-        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_2);        
-        expl1 = BackendDAEUtil.statesAndVarsExp(e1_2, vars);
-        expl2 = BackendDAEUtil.statesAndVarsExp(e2_2, vars);
-        expl = listAppend(expl1, expl2);
+        (e1_1,b2) = BackendVarTransform.replaceExp(e1, repl,NONE());
+        (e2_1,b1) = BackendVarTransform.replaceExp(e2, repl,NONE());
+        (ce,tpl) = replaceComplexEquationTraverser1(b1 or b2,size,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
       then
-        ((BackendDAE.COMPLEXEQUATION(size,e1_2,e2_2,source),(repl,vars,expl::crefOrDerCreflst)));
+        ((ce,tpl));
   end match;
 end replaceComplexEquationTraverser;
+
+protected function replaceComplexEquationTraverser1 "function: replaceComplexEquationTraverser1
+  author: Frenkel TUD 2012-03
+  It is possible to change the equation."
+  input Boolean inBool;
+  input Integer inSize;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.ElementSource inSource;
+  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> inTpl;
+  output BackendDAE.ComplexEquation outCE;
+  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> outTpl;
+algorithm
+  (outCE,outTpl):=
+  match (inBool,inSize,inExp1,inExp2,inSource,inTpl)
+    local 
+      DAE.Exp e1,e2,e1_1,e2_1;
+      Integer size;
+      DAE.ElementSource source;
+      BackendVarTransform.VariableReplacements repl;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst;
+      list<DAE.Exp> expl1,expl2,expl;
+      BackendDAE.Variables vars;
+      Boolean b1,b2;
+    case (false,size,e1,e2,source,(repl,vars,crefOrDerCreflst))
+      then (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),(repl,vars,NONE()::crefOrDerCreflst));
+    case (true,size,e1,e2,source,(repl,vars,crefOrDerCreflst))
+      equation
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);        
+        expl1 = BackendDAEUtil.statesAndVarsExp(e1_1, vars);
+        expl2 = BackendDAEUtil.statesAndVarsExp(e2_1, vars);
+        expl = listAppend(expl1, expl2);
+      then
+        (BackendDAE.COMPLEXEQUATION(size,e1_1,e2_1,source),(repl,vars,SOME(expl)::crefOrDerCreflst));
+  end match;
+end replaceComplexEquationTraverser1;
 
 protected function replaceWhenClauseTraverser "function: replaceWhenClauseTraverser
   author: Frenkel TUD 2010-04
@@ -607,54 +691,57 @@ protected function replaceAlgorithmTraverser "function: replaceAlgorithmTraverse
   author: Frenkel TUD 2010-04
   It is possible to change the algorithm.
 "
-  input tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
+  input tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>>> inTpl;
+  output tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>>> outTpl;
 algorithm
   outTpl:=
   match (inTpl)
     local 
       list<DAE.Statement> statementLst,statementLst_1;
       BackendVarTransform.VariableReplacements repl;
-      list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
-      tuple<list<DAE.Exp>,list<DAE.Exp>> inouttpl;
+      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
       BackendDAE.Variables vars;
       DAE.Algorithm alg;
+      Boolean b;
+      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> tpl;
     case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,vars,inouttpllst)))
       equation
-        (statementLst_1,_) = BackendVarTransform.replaceStatementLst(statementLst,repl);
-        alg = DAE.ALGORITHM_STMTS(statementLst_1);
-        inouttpl = BackendDAECreate.lowerAlgorithmInputsOutputs(vars,alg);
+        (statementLst_1,b) = BackendVarTransform.replaceStatementLst(statementLst,repl);
+        (alg,tpl) =  replaceAlgorithmTraverser1(b,statementLst_1,(repl,vars,inouttpllst));
       then
-        ((alg,(repl,vars,inouttpl::inouttpllst)));
+        ((alg,tpl));
   end match;
 end replaceAlgorithmTraverser;
 
-protected function updateEquationWrapper
-  "Help function to e.g. removeSimpleEquations"
-  input tuple<BackendDAE.Equation,tuple<array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output tuple<BackendDAE.Equation,tuple<array<list<DAE.Exp>>,array<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
+protected function replaceAlgorithmTraverser1 "function: replaceAlgorithmTraverser1
+  author: Frenkel TUD 2010-04
+  It is possible to change the algorithm.
+"
+  input Boolean b;
+  input list<DAE.Statement> inStms;
+  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
+  output DAE.Algorithm outAlg;
+  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
 algorithm
-  outTpl:=  
-  matchcontinue (inTpl)
+  (outAlg,outTpl):=
+  match (b,inStms,inTpl)
     local 
-      array<list<DAE.Exp>> crefOrDerCrefarray;
-      array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
-      Integer index;
-      list<DAE.Exp> in_,out,crefOrDerCref;
-      DAE.ElementSource source;
-    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(crefOrDerCrefarray,inouttplarray)))
+      list<DAE.Statement> statementLst;
+      BackendVarTransform.VariableReplacements repl;
+      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
+      tuple<list<DAE.Exp>,list<DAE.Exp>> inouttpl;
+      BackendDAE.Variables vars;
+      DAE.Algorithm alg;
+      case (false,statementLst,(repl,vars,inouttpllst))
+        then (DAE.ALGORITHM_STMTS(statementLst),(repl,vars,NONE()::inouttpllst));
+    case (true,statementLst,(repl,vars,inouttpllst))
       equation
-        crefOrDerCref = crefOrDerCrefarray[index+1];
+        alg = DAE.ALGORITHM_STMTS(statementLst);
+        inouttpl = BackendDAECreate.lowerAlgorithmInputsOutputs(vars,alg);
       then
-        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(crefOrDerCrefarray,inouttplarray)));
-    case ((BackendDAE.ALGORITHM(index=index,source=source),(crefOrDerCrefarray,inouttplarray)))
-      equation
-        ((in_,out)) = inouttplarray[index+1];
-      then
-        ((BackendDAE.ALGORITHM(index,in_,out,source),(crefOrDerCrefarray,inouttplarray)));
-    case inTpl then inTpl;
-  end matchcontinue;
-end updateEquationWrapper;
+        (alg,(repl,vars,SOME(inouttpl)::inouttpllst));
+  end match;
+end replaceAlgorithmTraverser1;
 
 protected function removeSimpleEquationsFinder
 "autor: Frenkel TUD 2010-12"
@@ -2439,10 +2526,10 @@ algorithm
       array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo1;
       BackendDAE.ExternalObjectClasses eoc;
-      list<list<DAE.Exp>> crefOrDerCreflst,c_crefOrDerCreflst;
-      array<list<DAE.Exp>> crefOrDerCrefarray,crefOrDerCrefcomplex;
-      list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttpllst;
-      array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
+      list<Option<list<DAE.Exp>>> crefOrDerCreflst,c_crefOrDerCreflst;
+      array<Option<list<DAE.Exp>>> crefOrDerCrefarray,crefOrDerCrefcomplex;
+      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
+      array<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttplarray;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
     case (false,syst,shared,_,_,_,_,_) then (syst,shared);

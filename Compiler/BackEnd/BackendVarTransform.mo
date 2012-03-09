@@ -547,6 +547,10 @@ algorithm  outExp := matchcontinue(inExp,inType)
   end matchcontinue;
 end avoidDoubleHashLookup;
 
+/*********************************************************/
+/* replace Expression with condition function */
+/*********************************************************/
+
 public function replaceExp "function: replaceExp
   Takes a set of replacement rules and an expression and a function
   giving a boolean value for an expression.
@@ -1013,6 +1017,15 @@ algorithm
         es_1 = replaceEquations(es,repl);
       then
          (BackendDAE.ARRAY_EQUATION(indx,expl2,source)::es_1);
+
+    case ((BackendDAE.COMPLEX_EQUATION(indx,expl,source)::es),repl)
+      equation
+        (expl1,true) = replaceExpList(expl,repl,NONE(),{},false);
+        /* TODO: Add symbolic operation to source */
+        expl2 = ExpressionSimplify.simplifyList(expl1,{});
+        es_1 = replaceEquations(es,repl);
+      then
+         (BackendDAE.COMPLEX_EQUATION(indx,expl2,source)::es_1);
 
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl)
       equation
