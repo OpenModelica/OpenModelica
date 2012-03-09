@@ -1141,18 +1141,6 @@ algorithm
         e2 = Util.if_(intLt(i,j),e,e1);
       then e2;      
         
-    // min function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ICONST(i), e1 as DAE.ENUM_LITERAL(index=j)}))
-      equation
-        e2 = Util.if_(intLt(i,j),e,e1);
-      then e2;            
-
-    // min function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ICONST(j)}))
-      equation
-        e2 = Util.if_(intLt(i,j),e,e1);
-      then e2;  
-
     // max function on integers
     case(DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
@@ -1172,18 +1160,7 @@ algorithm
       equation
         e2 = Util.if_(intGt(i,j),e,e1);
       then e2; 
-
-    // max function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ICONST(i), e1 as DAE.ENUM_LITERAL(index=j)}))
-      equation
-        e2 = Util.if_(intGt(i,j),e,e1);
-      then e2; 
-        
-    // max function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ICONST(j)}))
-      equation
-        e2 = Util.if_(intGt(i,j),e,e1);
-      then e2;      
+   
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
 
