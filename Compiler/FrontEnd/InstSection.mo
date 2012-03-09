@@ -2998,6 +2998,16 @@ algorithm
       list<Absyn.ComponentRef> crefs1,crefs2;
       String s1,s2;
 
+    // adrpo: check for connect(A, A) as we should give a warning and remove it!
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
+      equation
+        true = Absyn.crefEqual(c1, c2);
+        s1 = Dump.printComponentRefStr(c1);
+        s2 = Dump.printComponentRefStr(c1);
+        Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
+      then
+        (cache, env, ih, sets, DAEUtil.emptyDae, graph);
+
     // Check if either of the components are conditional components with
     // condition = false, in which case we should not instantiate the connection.
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)

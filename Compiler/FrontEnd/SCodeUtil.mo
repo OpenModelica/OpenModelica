@@ -1547,17 +1547,6 @@ algorithm
 
     case {} then {};
 
-    // adrpo: check for connect(A, A) as we should give a warning and remove it!
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(c1, c2),comment = acom,info = info) :: es)
-      equation
-        true = Absyn.crefEqual(c1, c2);
-        s1 = Dump.printComponentRefStr(c1);
-        s2 = Dump.printComponentRefStr(c1);
-        Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
-        es_1 = translateEquations(es);
-      then
-        (es_1);
-
     case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
