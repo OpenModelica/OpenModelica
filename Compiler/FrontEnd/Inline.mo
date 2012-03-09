@@ -1135,7 +1135,6 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
-      DAE.Type ty1,ty2;
       HashTableCG.HashTable checkcr;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
@@ -1147,7 +1146,6 @@ algorithm
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         newExp::{} = getRhsExp1(fn);
-        //print(ExpressionDump.printExpStr(newExp)); print("\n\n");
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
