@@ -1335,8 +1335,8 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
         ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
-        (e1_1,source) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
-        (e2_1,source) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
+        (e1_1,source,_) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
+        (e2_1,source,_) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
         // extend      
         ((eqs,complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEXEQUATION(i,e1_1,e2_1,source),funcs);
       then

@@ -4779,6 +4779,7 @@ algorithm
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
+        // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
         // print("marked equations:");print(stringDelimitList(List.map(eqns,intString),","));
         // print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
@@ -4794,7 +4795,6 @@ algorithm
         (state,stateno) = selectDummyState(states, stateindx, syst, shared);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates: ");print(stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
-        // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,syst) = newDummyVar(state, syst, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
@@ -4809,7 +4809,7 @@ algorithm
         // print("new DAE:");
         // BackendDump.dump(BackendDAE.DAE({syst},shared));
         // print("new IM:");
-        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.SOLVABLE());
         // BackendDump.dumpIncidenceMatrix(m);
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
       then

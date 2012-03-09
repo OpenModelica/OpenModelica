@@ -992,23 +992,24 @@ function: inlineExp
   input DAE.ElementSource inSource;
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
+  output Boolean inlineperformed;
 algorithm
-  (outExp,outSource) := matchcontinue (inExp,inElementList,inSource)
+  (outExp,outSource,inlineperformed) := matchcontinue (inExp,inElementList,inSource)
     local
       Functiontuple fns;
       DAE.Exp e,e_1,e_2;
-      Boolean b;
+      Boolean b,b1;
       DAE.ElementSource source;
       
     case (e,fns,source)
       equation
         ((e_1,(fns,b))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
         source = DAEUtil.condAddSymbolicTransformation(b,source,DAE.OP_INLINE(e,e_1));
-        (e_2,b) = ExpressionSimplify.simplify(e_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
+        (e_2,b1) = ExpressionSimplify.simplify(e_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e_1,e_2);
       then
-        (e_2,source);
-    else (inExp,inSource);
+        (e_2,source,b);
+    else (inExp,inSource,false);
   end matchcontinue;
 end forceInlineExp;
 
@@ -1146,6 +1147,7 @@ algorithm
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         newExp::{} = getRhsExp1(fn);
+        //print(ExpressionDump.printExpStr(newExp)); print("\n\n");
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
