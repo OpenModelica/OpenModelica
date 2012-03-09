@@ -219,8 +219,8 @@ QString ShapeAnnotation::getShapeAnnotation()
 
 QRectF ShapeAnnotation::getBoundingRect() const
 {
-    QPointF p1 = mExtent.at(0);
-    QPointF p2 = mExtent.at(1);
+    QPointF p1 = mExtent.size() > 0 ? mExtent.at(0) : QPointF(-100.0, -100.0);
+    QPointF p2 = mExtent.size() > 1 ? mExtent.at(1) : QPointF(100.0, 100.0);
 
     qreal left = qMin(p1.x(), p2.x());
     qreal top = qMin(p1.y(), p2.y());
