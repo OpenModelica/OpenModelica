@@ -546,14 +546,13 @@ algorithm
       BackendDAE.Variables vars;
       Boolean b1,b2;
       BackendDAE.MultiDimEquation mde;
-      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> tpl;
     case ((BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),(repl,vars,crefOrDerCreflst)))
       equation
         (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl,NONE());
         (e2_1,b2) = BackendVarTransform.replaceExp(e2, repl,NONE());
-        (mde,tpl) = replaceArrayEquationTraverser1(b1 or b2,dims,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
+        (mde,(repl,vars,crefOrDerCreflst)) = replaceArrayEquationTraverser1(b1 or b2,dims,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
       then
-        ((mde,tpl));
+        ((mde,(repl,vars,crefOrDerCreflst)));
   end match;
 end replaceArrayEquationTraverser;
 
@@ -615,14 +614,13 @@ algorithm
       BackendDAE.Variables vars;
       Boolean b1,b2;
       BackendDAE.ComplexEquation ce;
-      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<list<DAE.Exp>>>> tpl;      
     case ((BackendDAE.COMPLEXEQUATION(size,e1,e2,source),(repl,vars,crefOrDerCreflst)))
       equation
         (e1_1,b2) = BackendVarTransform.replaceExp(e1, repl,NONE());
         (e2_1,b1) = BackendVarTransform.replaceExp(e2, repl,NONE());
-        (ce,tpl) = replaceComplexEquationTraverser1(b1 or b2,size,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
+        (ce,(repl,vars,crefOrDerCreflst)) = replaceComplexEquationTraverser1(b1 or b2,size,e1_1,e2_1,source,(repl,vars,crefOrDerCreflst));
       then
-        ((ce,tpl));
+        ((ce,(repl,vars,crefOrDerCreflst)));
   end match;
 end replaceComplexEquationTraverser;
 
@@ -703,13 +701,12 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Algorithm alg;
       Boolean b;
-      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> tpl;
     case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,vars,inouttpllst)))
       equation
         (statementLst_1,b) = BackendVarTransform.replaceStatementLst(statementLst,repl);
-        (alg,tpl) =  replaceAlgorithmTraverser1(b,statementLst_1,(repl,vars,inouttpllst));
+        (alg,(repl,vars,inouttpllst)) =  replaceAlgorithmTraverser1(b,statementLst_1,(repl,vars,inouttpllst));
       then
-        ((alg,tpl));
+        ((alg,(repl,vars,inouttpllst)));
   end match;
 end replaceAlgorithmTraverser;
 
