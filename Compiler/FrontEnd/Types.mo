@@ -307,14 +307,23 @@ public function simpleType "function: simpleType
   Succeeds for all the builtin types, Integer, String, Real, Boolean"
   input Type inType;
 algorithm
-  _ := match (inType)
-    case (DAE.T_REAL(varLst = _)) then ();
-    case (DAE.T_INTEGER(varLst = _)) then ();
-    case (DAE.T_STRING(varLst = _)) then ();
-    case (DAE.T_BOOL(varLst = _)) then ();
-    case (DAE.T_ENUMERATION(path = _)) then ();
-  end match;
+  true := isSimpleType(inType);
 end simpleType;
+
+public function isSimpleType
+  "Returns true for all the builtin types, Integer, String, Real, Boolean"
+  input Type inType;
+  output Boolean b;
+algorithm
+  b := match (inType)
+    case (DAE.T_REAL(varLst = _)) then true;
+    case (DAE.T_INTEGER(varLst = _)) then true;
+    case (DAE.T_STRING(varLst = _)) then true;
+    case (DAE.T_BOOL(varLst = _)) then true;
+    case (DAE.T_ENUMERATION(path = _)) then true;
+    else false;
+  end match;
+end isSimpleType;
 
 public function isComplexConnector ""
   input Type t;

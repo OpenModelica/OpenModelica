@@ -581,6 +581,8 @@ public constant Message CONDITION_TYPE_ERROR = MESSAGE(217, TRANSLATION(), ERROR
   "Type mismatch in condition '%s' of component %s. Expected a Boolean expression, but got an expression of type %s");
 public constant Message SIMPLIFY_CONSTANT_ERROR = MESSAGE(218, TRANSLATION(), NOTIFICATION(),
   "The compiler failed to perform constant folding on expression %s. Please report this bug to the developers and we will fix it as soon as possible (using the +t compiler option if possible).");
+public constant Message SUM_EXPECTED_ARRAY = MESSAGE(219, TRANSLATION(), ERROR(),
+  "In sum(%s), the expression is of type %s, but is required to be of builtin array type (of any number of dimensions).");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

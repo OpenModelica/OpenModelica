@@ -3814,20 +3814,24 @@ algorithm
       DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp arrexp;
-      Boolean impl;
+      Boolean impl,b;
       Env.Cache cache;
       DAE.Type ty,ty2;
       Prefix.Prefix pre;
-      String str_exp,str_pre;
+      String estr,tstr;
       DAE.Type etp;
       list<Absyn.Exp> aexps;
 
-    case (cache,env,aexps,_,impl,pre,info)
+    case (cache,env,{arrexp},_,impl,pre,info)
       equation
-        arrexp = List.first(aexps);
-        (cache,exp_1,DAE.PROP(t,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
+        (cache,exp_1,DAE.PROP(t,c),_) = elabExp(cache,env,arrexp, impl,NONE(),true,pre,info);
         tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
+        b = Types.isArray(t,{});
+        b = b and Types.isSimpleType(tp);
+        estr = Dump.printExpStr(arrexp);
+        tstr = Types.unparseType(t);
+        Error.assertionOrAddSourceMessage(b,Error.SUM_EXPECTED_ARRAY,{estr,tstr},info);
         exp_2 = Expression.makeBuiltinCall("sum", {exp_1}, etp);
       then
         (cache,exp_2,DAE.PROP(tp,c));
