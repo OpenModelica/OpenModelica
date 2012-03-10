@@ -326,6 +326,8 @@ algorithm
   // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
 
+
+
 public function removeSimpleEquations
 "function: removeSimpleEquations
   autor: Frenkel TUD 2011-04
@@ -368,10 +370,8 @@ algorithm
     local
       BackendDAE.BackendDAE dlow,dlow1,dlow2;
       DAE.FunctionTree funcs;
-      BackendDAE.IncidenceMatrix m,m_1;
-      BackendDAE.IncidenceMatrixT mT,mT_1;
-      Option<BackendDAE.IncidenceMatrix> om;
-      Option<BackendDAE.IncidenceMatrixT> omT;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mT;
       BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree movedVars,movedAVars;
       list<Integer> meqns;
@@ -384,7 +384,7 @@ algorithm
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         repl = BackendVarTransform.emptyReplacements();
         // check equations
-        (m_1,(syst,shared,_,mT_1,repl_1,movedVars,movedAVars,meqns,b)) = 
+        (_,(syst,shared,_,_,repl_1,movedVars,movedAVars,meqns,b)) = 
           traverseIncidenceMatrix(
             m,removeSimpleEquationsFinder,
             (syst,shared,funcs,mT,repl,
@@ -1035,8 +1035,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true));
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,true));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -1057,8 +1057,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false));
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -1073,8 +1073,7 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
         // select candidate
-        ((_::_),(k::_)) = BackendVariable.getVar(cr,vars);
-        var = BackendVariable.getVarAt(vars,intAbs(k));
+        ((var::_),(k::_)) = BackendVariable.getVar(cr,vars);
         false = BackendVariable.varHasUncertainValueRefine(var);
       then (cr,k,es,syst,shared,mvars,mavars,2);
     // a = b 
@@ -1086,8 +1085,97 @@ algorithm
         // select candidate
         (cr,es,k,syst,shared,newvars) = selectAlias(cr,cr2,e1,e2,syst,shared,mavars,negate,source);
       then (cr,k,es,syst,shared,mvars,newvars,1);
+    case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        pos_1 = pos-1;
+        (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        var = BackendVariable.getVarAt(vars,intAbs(i));
+        cr = BackendVariable.varCref(var);
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre); 
+        (cr,k,es,syst,shared,newvars,newvars1,eqTy)= simpleEquation1(BackendDAE.EQUATION(cre,es,source),var,i,cr,es,source,syst,shared,mvars,mavars);      
+      then (cr,k,es,syst,shared,newvars,newvars1,eqTy);        
+    case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        pos_1 = pos-1;
+        (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        var = BackendVariable.getVarAt(vars,intAbs(j));
+        cr = BackendVariable.varCref(var);
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre);        
+        (cr,k,es,syst,shared,newvars,newvars1,eqTy)= simpleEquation1(BackendDAE.EQUATION(cre,es,source),var,j,cr,es,source,syst,shared,mvars,mavars);      
+      then (cr,k,es,syst,shared,newvars,newvars1,eqTy);         
   end matchcontinue;
 end simpleEquation;
+
+protected function simpleEquation1
+" function: simpleEquation1
+  autor: Frenkel TUD 2012-03"
+  input BackendDAE.Equation inEqn;
+  input BackendDAE.Var inVar;
+  input Integer inPos;
+  input DAE.ComponentRef inCref;
+  input DAE.Exp inExp;
+  input DAE.ElementSource inSource;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.BinTree mvars;
+  input BackendDAE.BinTree mavars;
+  output DAE.ComponentRef outCr;
+  output Integer outPos;
+  output DAE.Exp outExp;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output BackendDAE.BinTree outMvars;
+  output BackendDAE.BinTree outMavars;
+  output Integer eqnType;
+algorithm
+  (outCr,outPos,outExp,osyst,oshared,outMvars,outMavars,eqnType) := 
+  matchcontinue(inEqn,inVar,inPos,inCref,inExp,inSource,isyst,ishared,mvars,mavars)
+    local 
+      DAE.ComponentRef cr,cr2;
+      Integer i,j,pos_1,k,eqTy;
+      DAE.Exp es,cre,e1,e2;
+      BackendDAE.BinTree newvars,newvars1;
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.Var var,var2,var3;
+      BackendDAE.BackendDAE dae1;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
+      Boolean negate;
+      DAE.ElementSource source;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      
+    // a = const
+    case (eqn,var,i,cr,es,source,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        // no State
+        false = BackendVariable.isStateorStateDerVar(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
+        // variable time not there
+        knvars = BackendVariable.daeKnVars(shared);
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(es, traversingTimeEqnsFinder, (false,vars,knvars,false,true));
+        // constant or alias
+        (syst,shared,newvars,newvars1,eqTy) = constOrAlias(var,cr,es,syst,shared,mvars,mavars,DAEUtil.getSymbolicTransformations(source));
+      then (cr,i,es,syst,shared,newvars,newvars1,eqTy);        
+    // a = der(b) 
+    case (eqn,var,i,cr,es,source,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
+        // select candidate
+        ((var::_),(k::_)) = BackendVariable.getVar(cr,vars);
+        false = BackendVariable.varHasUncertainValueRefine(var);
+      then (cr,k,es,syst,shared,mvars,mavars,2);
+    // a = b 
+    case (eqn,var,i,cr,es,source,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
+        // select candidate
+        (cr,es,k,syst,shared,newvars) = selectAlias(cr,cr2,e1,e2,syst,shared,mavars,negate,source);
+      then (cr,k,es,syst,shared,mvars,newvars,1);
+  end matchcontinue;
+end simpleEquation1;
 
 protected function constOrAlias
 "function constOrAlias
@@ -1901,37 +1989,42 @@ algorithm
   end matchcontinue;
 end traverseIncidenceMatrixList;
 
-public function traversingTimeEqnsFinder "
+protected function traversingTimeEqnsFinder "
 Author: Frenkel 2010-12"
-  input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean> > inExp;
-  output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean> > outExp;
+  input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean> > inExp;
+  output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean> > outExp;
 algorithm 
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e;
-      Boolean b,b1;
+      Boolean b,b1,b2;
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
     
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1)))
-      then ((e,false,(true,vars,knvars,b1)));       
-    case((e as DAE.CREF(cr,_), (_,vars,knvars,b1)))
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2)))
+      then ((e,false,(true,vars,knvars,b1,b2)));       
+    case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2)))
       equation
         (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
         true = BackendVariable.isVarOnTopLevelAndInput(var);
-      then ((e,false,(true,vars,knvars,b1)));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1))) then ((e,false,(true,vars,knvars,b1) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1))) then ((e,false,(true,vars,knvars,b1) ));
+      then ((e,false,(true,vars,knvars,b1,b2)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2) ));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
-    case((e as DAE.CREF(cr,_), (_,vars,knvars,true)))
+    case((e as DAE.CREF(cr,_), (_,vars,knvars,true,b2)))
       equation
         (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
         DAE.INPUT() = BackendVariable.getVarDirection(var);
-      then ((e,false,(true,vars,knvars,true)));   
-    case((e,(b,vars,knvars,b1))) then ((e,not b,(b,vars,knvars,b1)));
+      then ((e,false,(true,vars,knvars,true,b2)));  
+    // unkown var
+    case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,true)))
+      equation
+        (var::_,_::_)= BackendVariable.getVar(cr, vars);
+      then ((e,false,(true,vars,knvars,b1,true)));          
+    case((e,(b,vars,knvars,b1,b2))) then ((e,not b,(b,vars,knvars,b1,b2)));
     
   end matchcontinue;
 end traversingTimeEqnsFinder;
@@ -2051,8 +2144,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true));
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,true));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,true,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -2071,8 +2164,8 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false));
-        ((_,(false,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
