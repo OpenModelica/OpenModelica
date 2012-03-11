@@ -724,7 +724,7 @@ algorithm
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
-        Expression.makeASUB(e,sub);
+        Expression.makeASUB(e_1,sub);
     
     case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),inVariables)
       equation
