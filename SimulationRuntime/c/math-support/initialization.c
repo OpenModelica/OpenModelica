@@ -716,7 +716,7 @@ static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zN
 
   bestFuncValue = funcValue;
   for(i=0; i<nz; i++)
-	  bestZ[i] = z[i];
+    bestZ[i] = z[i];
 
   DEBUG_INFO(LOG_INIT, "starting with...");
   for(i=0; i<nz; i++)

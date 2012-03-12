@@ -101,7 +101,7 @@ void SaveZeroCrossings(DATA* data)
   DEBUG_INFO(LOG_ZEROCROSSINGS, "Save ZeroCrossings!");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
-	  data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
+    data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
   function_onlyZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
 }

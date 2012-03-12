@@ -348,22 +348,22 @@ algorithm
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars,vars_1,kvars,kvars_1,extVars;
-	    BackendDAE.EquationArray eqns,reqns,ieqns;
-	    BackendDAE.EqSystem syst;
-	    BackendDAE.Shared shared;
-	    //EventInfo ei;
-	    //ComplexEquations ce,ice;
-	    //ExternalObjectClasses extObjCls;
-	    HashTable.HashTable s;
-	    //MultiDimEquation arr_md_eqns,iarr_md_eqns;
-	   // DAE.Algorithm algarr,ialgarr;
-	    //list<IfEquation> ifeqns,iifeqns;
-	    HashTable.HashTable crefDouble;
+      BackendDAE.EquationArray eqns,reqns,ieqns;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      //EventInfo ei;
+      //ComplexEquations ce,ice;
+      //ExternalObjectClasses extObjCls;
+      HashTable.HashTable s;
+      //MultiDimEquation arr_md_eqns,iarr_md_eqns;
+     // DAE.Algorithm algarr,ialgarr;
+      //list<IfEquation> ifeqns,iifeqns;
+      HashTable.HashTable crefDouble;
       BackendDAE.IncidenceMatrix m;
-	    //IfEquation arr_ifeqns,arr_iifeqns;
-	    HashTable.HashTable movedvars_1;
-	    list<BackendDAE.Equation> seqns,eqnLst,ieqnLst;
-	    BackendVarTransform.VariableReplacements repl;
+      //IfEquation arr_ifeqns,arr_iifeqns;
+      HashTable.HashTable movedvars_1;
+      list<BackendDAE.Equation> seqns,eqnLst,ieqnLst;
+      BackendVarTransform.VariableReplacements repl;
      // Functions funcs;
      // Real t1,t2;
 
@@ -408,9 +408,9 @@ algorithm
     
     BackendDAE.EqSystem syst;
     list<BackendDAE.EqSystem> systList;
-	  BackendDAE.Shared shared;
-	  
-	  BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+    BackendDAE.Shared shared;
+    
+    BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
@@ -469,9 +469,9 @@ algorithm
     
     BackendDAE.EqSystem syst;
     list<BackendDAE.EqSystem> systList;
-	  BackendDAE.Shared shared;
-	  
-	  BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+    BackendDAE.Shared shared;
+    
+    BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
@@ -735,9 +735,9 @@ protected function eliminateVariablesDAE2
 "
   author: Daniel Hedberg, 2011-01
 
-	Finds the variables in elimVarIndexList that can be eliminated in between
-	the given set of equations. Returns a set of variable replacements that can
-	be used to replace the variables in the equations that are left
+  Finds the variables in elimVarIndexList that can be eliminated in between
+  the given set of equations. Returns a set of variable replacements that can
+  be used to replace the variables in the equations that are left
 "
   input list<BackendDAE.Equation> eqns;
   input Integer eqnIndex;
@@ -897,9 +897,9 @@ algorithm
     
     BackendDAE.EqSystem syst;
     list<BackendDAE.EqSystem> systList;
-	  BackendDAE.Shared shared;
-	  
-	  BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+    BackendDAE.Shared shared;
+    
+    BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
@@ -1114,7 +1114,7 @@ end getVariablesInBlock;
   public function getUncertainRefineVariablesInBlocks
 "
   author: Daniel Hedberg, 2011-01
-	modified by: Leonardo Laguna, 2012-01
+  modified by: Leonardo Laguna, 2012-01
 "
   input BackendDAE.BackendDAE daelow;
   input BackendDAE.IncidenceMatrix m;
@@ -1234,7 +1234,7 @@ end getUncertainRefineVariableIndexes;
 public function getEquationsInBlocks
 "
   author: Daniel Hedberg, 2011-01
-	modified by: Leonardo Laguna, 2012-01
+  modified by: Leonardo Laguna, 2012-01
 
   Returns lists with the indexes of all equations present in the given list of blocks.
 "

@@ -32,44 +32,44 @@
 #include "meta_modelica.h"
 #include "dtoa.c"
 
-#define	to_char(n)	((n) + '0')
+#define to_char(n) ((n) + '0')
 
 #define MAXEXPDIG 6
 
 static int
 exponent(char *p0, int expo)
 {
-	char *p, *t;
-	char expbuf[MAXEXPDIG];
+  char *p, *t;
+  char expbuf[MAXEXPDIG];
 
-	p = p0;
-	*p++ = 'e';
-	if (expo < 0) {
-		expo = -expo;
-		*p++ = '-';
-	}
-	else
-		*p++ = '+';
-	t = expbuf + MAXEXPDIG;
-	if (expo > 9) {
-		do {
-			*--t = to_char(expo % 10);
-		} while ((expo /= 10) > 9);
-		*--t = to_char(expo);
-		for (; t < expbuf + MAXEXPDIG; *p++ = *t++)
-			;
-	}
-	else {
-		/*
-		 * Exponents for decimal floating point conversions
-		 * (%[eEgG]) must be at least two characters long,
-		 * whereas exponents for hexadecimal conversions can
-		 * be only one character long.
-		 */
+  p = p0;
+  *p++ = 'e';
+  if (expo < 0) {
+    expo = -expo;
+    *p++ = '-';
+  }
+  else
+    *p++ = '+';
+  t = expbuf + MAXEXPDIG;
+  if (expo > 9) {
+    do {
+      *--t = to_char(expo % 10);
+    } while ((expo /= 10) > 9);
+    *--t = to_char(expo);
+    for (; t < expbuf + MAXEXPDIG; *p++ = *t++)
+      ;
+  }
+  else {
+    /*
+     * Exponents for decimal floating point conversions
+     * (%[eEgG]) must be at least two characters long,
+     * whereas exponents for hexadecimal conversions can
+     * be only one character long.
+     */
     *p++ = '0';
-		*p++ = to_char(expo);
-	}
-	return (p - p0);
+    *p++ = to_char(expo);
+  }
+  return (p - p0);
 }
 
 /*
@@ -98,7 +98,7 @@ static void* dtostr(double d)
   *expbuf = 0;
   cporig = dtoa(d,1,prec,&expt,&signflag,&dtoaend);
   cp = cporig;
-	ndig = dtoaend - cp;
+  ndig = dtoaend - cp;
   /*
    * Allocate the string on GC'ed heap directly
    * We just need to calculate the exact length of the string first :)

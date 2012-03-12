@@ -303,8 +303,8 @@ public constant Message ERROR_FLATTENING = MESSAGE(89, TRANSLATION(), ERROR(),
   "Error occurred while flattening model %s");
 public constant Message DUPLICATE_ELEMENTS_NOT_IDENTICAL = MESSAGE(90, TRANSLATION(), ERROR(),
   "Duplicate elements (due to inherited elements) not identical:
-	first element is:  %s
-	second element is: %s");
+  first element is:  %s
+  second element is: %s");
 public constant Message PACKAGE_VARIABLE_NOT_CONSTANT = MESSAGE(91, TRANSLATION(), ERROR(),
   "Variable %s in package %s is not constant");
 public constant Message RECURSIVE_DEFINITION = MESSAGE(92, TRANSLATION(), ERROR(),

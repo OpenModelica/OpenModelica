@@ -90,7 +90,8 @@ bom-error:
 
 tab-error:
 	rm -f tab-error.log
-	find Compiler/ SimulationRuntime/ OM* mosh -regextype posix-egrep -regex '.*.(cpp|c|h|mo)' -exec echo -n "{} " ';' -exec grep -c "    " '{}' ';' | grep -v " 0\$$" > tab-error.log
+	find Compiler/ SimulationRuntime/c OM* mosh -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
+          grep -v " 0\$$" | egrep -v 'omc_release|omc_debug|omc_profiling' > tab-error.log
 	@if test -e tab-error.log; then cat tab-error.log; fi
 	@test ! -e tab-error.log
 	rm -f tab-error.log

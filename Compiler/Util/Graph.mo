@@ -717,7 +717,7 @@ algorithm
         indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
         indexes = List.select1(indexes, arrayElemetGtZero, inColored);
         indexesColor = List.map1(indexes, getArrayElem, inColored);
-				List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
+        List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, inNode);
         forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else

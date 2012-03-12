@@ -660,9 +660,9 @@ algorithm
       list<String> ss;
       BackendDAE.Variables vars1;
       BackendDAE.EquationArray eqns;
-		  Option<BackendDAE.IncidenceMatrix> m;
-		  Option<BackendDAE.IncidenceMatrix> mT;
-		  BackendDAE.Matching matching;     
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrix> mT;
+      BackendDAE.Matching matching;     
     case (BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching))
       equation
         print("Variables (");
@@ -857,9 +857,9 @@ public function dumpSparsePattern
  description: function dumps sparse pattern of a Jacobain System."
   input list<list<Integer>> inSparsePatter; 
 algorithm
-	print("Print sparse pattern: " +& intString(listLength(inSparsePatter)) +& "\n");
-	dumpSparsePattern2(inSparsePatter, 1);
-	print("\n");
+  print("Print sparse pattern: " +& intString(listLength(inSparsePatter)) +& "\n");
+  dumpSparsePattern2(inSparsePatter, 1);
+  print("\n");
 end dumpSparsePattern;
 
 public function dumpSparsePattern2
@@ -1564,8 +1564,8 @@ algorithm
       case (BackendDAE.NO_MATCHING()) equation print("NoMatching\n"); then ();
       case (BackendDAE.MATCHING(ass1,_,comps))
         equation
-				  dumpMatching(ass1);
-				  dumpComponents(comps);          
+          dumpMatching(ass1);
+          dumpComponents(comps);          
         then
           ();
     end match;

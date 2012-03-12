@@ -193,7 +193,7 @@ typedef int mmc_switch_type;
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
 /* adrpo: assume RML_DBL_PAD always! */
-struct mmc_real_lit {	/* there must be no padding between `header' and `data' */
+struct mmc_real_lit { /* there must be no padding between `header' and `data' */
     mmc_uint_t filler;
     mmc_uint_t header;
     double data;

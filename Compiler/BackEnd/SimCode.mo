@@ -2201,7 +2201,7 @@ algorithm
       list<String> labels;
 /*      
   //create simCode for labeled DAE  
-		case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
+    case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");

@@ -84,7 +84,7 @@
 //#undef NDEBUG
 #include <assert.h>
 
-#define MMC_CLOCKS_PER_SEC	1000	/* milliseconds */
+#define MMC_CLOCKS_PER_SEC  1000 /* milliseconds */
 
 unsigned long mmc_prim_clock(void)
 {
