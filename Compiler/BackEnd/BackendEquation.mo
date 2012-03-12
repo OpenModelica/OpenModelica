@@ -213,6 +213,19 @@ algorithm
   ((_,outVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(inEquations,checkEquationsVars,(inVars,outVars));
 end equationsVars;
 
+public function equationVars
+"function: equationVars
+  author: Frenkel TUD 2012-03
+  From the equation and a variable array return all
+  variables in the equation."
+  input BackendDAE.Equation inEquation;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars := BackendDAEUtil.emptyVars();
+  (_,(_,outVars)) := traverseBackendDAEExpsEqn(inEquation,checkEquationsVars,(inVars,outVars));
+end equationVars;
+
 protected function checkEquationsVars
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;

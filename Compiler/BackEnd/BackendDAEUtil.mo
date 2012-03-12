@@ -1387,7 +1387,7 @@ algorithm
   end match;
 end listVar;
 
-public function vararrayList
+protected function vararrayList
 "function: vararrayList
   Transforms a BackendDAE.VariableArray to a BackendDAE.Var list"
   input BackendDAE.VariableArray inVariableArray;
@@ -2709,8 +2709,7 @@ end whenClauseAddDAE;
 public function getStrongComponents
 "function: getStrongComponents
   autor: Frenkel TUD 2011-11
-  This function returns the strongComponents of a BackendDAE.
-  in BackendDAE.BackendDAE to get speed up"
+  This function returns the strongComponents of a BackendDAE."
   input BackendDAE.EqSystem syst;
   output BackendDAE.StrongComponents outComps;
 algorithm
@@ -6371,14 +6370,13 @@ algorithm
       
     case (syst,shared,funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
-        (syst,_,_) = getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
-        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
+        (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
         (syst,shared) = BackendDAETransform.matchingAlgorithm(syst,shared, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
@@ -6410,9 +6408,9 @@ algorithm
     case (false,syst,shared,_,_,_) then (syst,shared);
     case (true,syst,shared,opts,daeHandler,funcs)
       equation
-        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
+        (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.SOLVABLE());
         (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, opts, daeHandler, funcs);
-        //(syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst,_) = BackendDAETransform.strongComponents(syst,shared);
       then (syst,shared);
   end match;
@@ -6482,6 +6480,7 @@ algorithm
       Boolean runMatching;
     case (true,dae,funcs,daeHandler)
       equation
+//        sode = transformDAE(dae,funcs,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),daeHandler);
         sode = transformDAE(dae,funcs,NONE(),daeHandler);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
@@ -6513,6 +6512,7 @@ algorithm
       String s;
       Integer i;
       BackendDAE.JacobianType jacType;
+      BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents comps;
     case ({},inInt) then inInt;
     case (BackendDAE.SINGLEEQUATION(var=_)::comps,inInt)
@@ -6524,9 +6524,10 @@ algorithm
         i = listLength(ilst);
         outInt = countComponents(comps,inInt+i);
       then outInt;
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=ilst)::comps,inInt)
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=ilst)::comps,inInt)
       equation
         i = listLength(ilst);
+        i = countComponents({comp},inInt+i);
         outInt = countComponents(comps,inInt+i);
       then outInt;
     case (BackendDAE.SINGLEARRAY(vars=ilst)::comps,inInt)
@@ -6626,6 +6627,7 @@ protected
 algorithm
   allPreOptModules := {
           (BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations",false),
+          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquationsFast",false),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
           (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
           (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
@@ -6660,6 +6662,7 @@ protected
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline",false),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
+  (BackendDAEOptimize.removeSimpleEquationsFastPast,"removeSimpleEquationsFast",false),
   (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls",false),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn",false),
   (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter",false),

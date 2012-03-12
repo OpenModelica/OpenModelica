@@ -2864,7 +2864,25 @@ algorithm
   end match;
 end calculateIndexes2;
 
-
+public function equationSystemsVarsLst
+  input BackendDAE.EqSystems systs;
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  outVars := match (systs,inVars)
+    local
+      BackendDAE.EqSystems rest;
+      list<BackendDAE.Var> vars,systvars,vars1;
+      BackendDAE.Variables v;
+      case ({},_) then inVars;
+      case (BackendDAE.EQSYSTEM(orderedVars = v)::rest,_)
+        equation
+          vars = BackendDAEUtil.varList(v);
+          vars1 = listAppend(inVars,vars);
+        then
+          equationSystemsVarsLst(rest,vars1);
+    end match;
+end equationSystemsVarsLst;
 
 
 public function daeVars

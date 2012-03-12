@@ -60,7 +60,6 @@ protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import List;
 protected import TaskGraphExt;
-protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
@@ -73,12 +72,12 @@ algorithm
     local
       Integer starttask,endtask;
       list<BackendDAE.Var> vars,knvars;
+      BackendDAE.Variables vararr,knvararr;
       BackendDAE.BackendDAE dae;
-      BackendDAE.VariableArray vararr,knvararr;
       BackendDAE.StrongComponents comps;
       DAE.ComponentRef cref_;
 
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},shared=BackendDAE.SHARED(knownVars = BackendDAE.VARIABLES(varArr = knvararr)))),comps)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vararr)::{},shared=BackendDAE.SHARED(knownVars = knvararr))),comps)
       equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
@@ -86,8 +85,8 @@ algorithm
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.registerStartStop(starttask, endtask);
-        vars = BackendDAEUtil.vararrayList(vararr);
-        knvars = BackendDAEUtil.vararrayList(knvararr);
+        vars = BackendDAEUtil.varList(vararr);
+        knvars = BackendDAEUtil.varList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
         cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
@@ -118,11 +117,11 @@ algorithm
   _ := match (inBackendDAE)
     local
       list<BackendDAE.Var> vars,kvars;
-      BackendDAE.VariableArray vararr,kvararr;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},shared=BackendDAE.SHARED(knownVars = BackendDAE.VARIABLES(varArr = kvararr))))
+      BackendDAE.Variables vararr,kvararr;
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vararr)::{},shared=BackendDAE.SHARED(knownVars = kvararr)))
       equation
-        vars = BackendDAEUtil.vararrayList(vararr);
-        kvars = BackendDAEUtil.vararrayList(kvararr);
+        vars = BackendDAEUtil.varList(vararr);
+        kvars = BackendDAEUtil.varList(kvararr);
         buildInits2(vars);
         buildInits2(kvars);
       then
