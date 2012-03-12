@@ -40,7 +40,6 @@ a:={typeNameString(x) for x guard
     and ((not max("Utilities" == s for s in typeNameStrings(x))) or subScript(typeNameStrings(x),2) == "Utilities")
     and (not max("Components" == s for s in typeNameStrings(x)))
     and (not max("BaseClasses" == s for s in typeNameStrings(x)))
-    and (not max("EngineV6" == s for s in typeNameStrings(x))) /* Until it has acceptable performance */
     and isModel(x)
     and (not isPartial(x))
   in getClassNames(recursive=true,sort=true)};
@@ -88,7 +87,7 @@ str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" els
 writeFile(statFile,str);getErrorString();
 ") for s in a);
 getErrorString();
-min(0==system(omc + " " + s + ".mos") for s in a);
+min(0==system("ulimit -t 180 ; " + omc + " " + s + ".mos") for s in a);
 getErrorString();
 
 echo(false);
