@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
   }
   if(!scriptname) {
     cout << "OMShell "
-	       << "Copyright 1997-" << dateStr+7 << ", Linkoping University" << endl
+         << "Copyright 1997-" << dateStr+7 << ", Linkoping University" << endl
          << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
          << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
   }
@@ -259,9 +259,7 @@ void doSocketCommunication(const string * scriptname)
     /* Connect to the server. */
     struct sockaddr_in servername;
     init_sockaddr (&servername, hostname, port);
-    if (0 > connect (sock,
-		     (struct sockaddr *) &servername,
-		     sizeof (servername)))
+    if (0 > connect (sock, (struct sockaddr *) &servername, sizeof (servername)))
     {
       tryconnect++;
       if(connected % 3 == 0) {sleep(1); } // Sleep a second every third try...
