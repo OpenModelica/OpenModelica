@@ -801,7 +801,7 @@ template dumpFunctionRestriction(SCode.FunctionRestriction funcRest)
 match funcRest
   case FR_NORMAL_FUNCTION(__) then 'function'
   case FR_OPERATOR_FUNCTION(__) then 'operator function'
-  case FR_EXTERNAL_FUNCTION(__) then 'external function'
+  case FR_EXTERNAL_FUNCTION(__) then 'function'
   case FR_RECORD_CONSTRUCTOR(__) then 'function'
   else errorMsg("SCodeDimp.dumpFunctionRestriction: Unknown Function restriction.")
 end dumpFunctionRestriction;
