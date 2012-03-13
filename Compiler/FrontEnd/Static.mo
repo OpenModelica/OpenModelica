@@ -4569,6 +4569,7 @@ algorithm
           elabExp(cache, env, arrexp, impl,NONE(), true, pre, info);
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
+        false = Types.isString(tp);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));
@@ -4588,6 +4589,7 @@ algorithm
         arrexp_1 = DAE.TSUB(arrexp_1, 1, tp);
         elt_ty = Types.arrayElementType(ty);
         tp = Types.simplifyType(elt_ty);
+        false = Types.isString(tp);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));
@@ -4605,6 +4607,7 @@ algorithm
         (s2_1,_) = Types.matchType(s2_1, ty2, ty, true);
         c = Types.constAnd(c1, c2);
         tp = Types.simplifyType(ty);
+        false = Types.isString(tp);
         call = Expression.makeBuiltinCall(inFnName, {s1_1, s2_1}, tp);
       then
         (cache, call, DAE.PROP(ty,c));
