@@ -104,7 +104,7 @@ int parseMoFilesInDirectory(char* directory)
       sprintf(fileName, "%s/%s", directory, FileData.cFileName);
       // Start thread that parses a file.
       // parseThreadHandle = CreateThread(NULL, 0, parseFile, (void*)strdup(fileName), 0, &parseThreadId);
-	  parseFile(fileName);
+      parseFile(fileName);
       more = FindNextFile(sh, &FileData);
     }
     if (sh != INVALID_HANDLE_VALUE) FindClose(sh);

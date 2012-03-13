@@ -292,7 +292,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
-	//printf("Parsing MetaModelica.\n\n");
+    //printf("Parsing MetaModelica.\n\n");
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); fflush(stderr); exit(ANTLR3_ERR_NOMEM); }
     pLexer = ((pMetaModelica_Lexer)lxr)->pLexer;
     pLexer->rec->displayRecognitionError = handleLexerError;
@@ -301,7 +301,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   } 
   else if (ModelicaParser_flags & PARSE_PAR_MODELICA) {
     lxr = ParModelica_LexerNew(input);
-	//printf("Parsing ParModelica.\n\n");
+    //printf("Parsing ParModelica.\n\n");
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
     pLexer = ((pParModelica_Lexer)lxr)->pLexer;
     pLexer->rec->displayRecognitionError = handleLexerError;
