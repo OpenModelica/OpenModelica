@@ -1474,6 +1474,13 @@ algorithm
   FRAME(extendsTable = outExtendsTable) :: _ := inEnv;
 end getEnvExtendsTable;
 
+public function getEnvExtendsFromTable
+  input Env inEnv;
+  output list<Extends> outExtends;
+algorithm
+  EXTENDS_TABLE(baseClasses = outExtends) := getEnvExtendsTable(inEnv);
+end getEnvExtendsFromTable;
+
 public function setEnvExtendsTable
   input ExtendsTable inExtendsTable;
   input Env inEnv;

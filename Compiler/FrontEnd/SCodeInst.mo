@@ -393,6 +393,7 @@ algorithm
       SCode.ClassDef cdef;
       SCodeEnv.Frame frame;
       Integer dim_count;
+      list<SCodeEnv.Extends> exts;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
@@ -410,7 +411,8 @@ algorithm
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
-        (elems, cse) = instElementList(mel, inPrefixes, env, inPrefix);
+        exts = SCodeEnv.getEnvExtendsFromTable(env);
+        (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix);
         dnel = instEquations(snel, inEnv, inPrefix);
         diel = instEquations(siel, inEnv, inPrefix);
         (cls, ty) = makeClass(elems, dnel, diel, nal, ial, cse);
@@ -738,18 +740,20 @@ end lookupElement;
 protected function instElementList
   input list<tuple<SCode.Element, Modifier>> inElements;
   input Prefixes inPrefixes;
+  input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
 algorithm
   (outElements, outContainsSpecialExtends) :=
-    instElementList2(inElements, inPrefixes, inEnv, inPrefix, {}, false);
+  instElementList2(inElements, inPrefixes, inExtends, inEnv, inPrefix, {}, false);
 end instElementList;
 
 protected function instElementList2
   input list<tuple<SCode.Element, Modifier>> inElements;
   input Prefixes inPrefixes;
+  input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
   input list<Element> inAccumEl;
@@ -758,7 +762,7 @@ protected function instElementList2
   output Boolean outContainsSpecialExtends;
 algorithm
   (outElements, outContainsSpecialExtends) :=
-  match(inElements, inPrefixes, inEnv, inPrefix, inAccumEl, inContainsSpecialExtends)
+  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inContainsSpecialExtends)
     local
       SCode.Element elem;
       Modifier mod;
@@ -766,32 +770,49 @@ algorithm
       Element res;
       Boolean cse;
       list<Element> accum_el;
+      list<SCodeEnv.Redeclaration> redecls;
+      list<SCodeEnv.Extends> rest_exts;
 
-    case ({}, _, _, _, _, cse) then (inAccumEl, cse);
+    case ({}, _, {}, _, _, _, cse) then (inAccumEl, cse);
 
-    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _, cse)
+    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _, _, cse)
       equation
         res = instElement(elem, mod, inPrefixes, inEnv, inPrefix);
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
-          res :: inAccumEl, cse);
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inExtends,
+          inEnv, inPrefix, res :: inAccumEl, cse);
       then
         (accum_el, cse);
 
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _, _, _, _, _)
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _,
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _)
       equation
-        (res, cse) = instExtends(elem, mod, inPrefixes, inEnv, inPrefix);
+        (res, cse) = instExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix);
         cse = inContainsSpecialExtends or cse;
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
-          res :: inAccumEl, cse);
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, rest_exts,
+          inEnv, inPrefix, res :: inAccumEl, cse);
       then
         (accum_el, cse);
 
-    case (_ :: rest_el, _, _, _, _, cse)
+    case ((SCode.EXTENDS(baseClassPath = _), _) :: _, _, {}, _, _, _, _)
       equation
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inEnv, inPrefix,
-          inAccumEl, cse);
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeInst.instElementList2 ran out of extends!."});
+      then
+        fail();
+
+    case (_ :: rest_el, _, _, _, _, _, cse)
+      equation
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inExtends,
+          inEnv, inPrefix, inAccumEl, cse);
       then
         (accum_el, cse);
+
+    case ({}, _, _ :: _, _, _, _, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeInst.instElementList2 has extends left!."});
+      then
+        fail();
 
   end match;
 end instElementList2;
@@ -900,15 +921,16 @@ protected function instExtends
   input SCode.Element inExtends;
   input Modifier inClassMod;
   input Prefixes inPrefixes;
+  input list<SCodeEnv.Redeclaration> inRedeclares;
   input Env inEnv;
   input Prefix inPrefix;
   output Element outElement;
   output Boolean outContainsSpecialExtends;
 algorithm
   (outElement, outContainsSpecialExtends) :=
-  match(inExtends, inClassMod, inPrefixes, inEnv, inPrefix)
+  match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix)
     local
-      Absyn.Path path;
+      Absyn.Path path, path2;
       SCode.Mod smod;
       Absyn.Info info;
       SCodeEnv.ExtendsTable exts;
@@ -921,16 +943,15 @@ algorithm
       Boolean cse;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, SCodeEnv.FRAME(extendsTable = exts) :: _, _)
+        _, _, _, _, _)
       equation
         // Look up the extended class.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
 
         // Apply the redeclarations.
-        redecls = SCodeFlattenRedeclare.lookupExtendsRedeclaresInTable(path, exts);
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redecls, item, env, inEnv, inPrefix);
+          inRedeclares, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
@@ -2914,6 +2935,8 @@ algorithm
         dim = listGet(dims, inDimIndex);
       then
         dim;
+
+    // TODO: Error on index out of bounds!
 
     else DAE.DIM_UNKNOWN();
 

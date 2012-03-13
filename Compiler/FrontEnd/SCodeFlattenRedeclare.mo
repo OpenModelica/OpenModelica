@@ -1195,43 +1195,4 @@ algorithm
   end match;
 end processRedeclaration;
 
-public function lookupExtendsRedeclaresInTable
-  input Absyn.Path inExtendsName;
-  input SCodeEnv.ExtendsTable inTable;
-  output list<SCodeEnv.Redeclaration> outRedeclares;
-algorithm
-  outRedeclares := matchcontinue(inExtendsName, inTable)
-    local
-      list<SCodeEnv.Extends> bcl;
-      list<SCodeEnv.Redeclaration> redecls;
-      String err_str;
-
-    case (_, SCodeEnv.EXTENDS_TABLE(baseClasses = bcl))
-      equation
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) =
-          List.getMemberOnTrue(inExtendsName, bcl, matchExtendsPath);
-      then
-        redecls;
-
-    else
-      equation
-        err_str = Absyn.pathString(inExtendsName);
-        err_str = "SCodeFlattenRedeclare.lookupExtendsRedeclaresInTable failed on " +& err_str +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
-      then
-        {};
-  end matchcontinue;
-end lookupExtendsRedeclaresInTable;
-
-protected function matchExtendsPath
-  input Absyn.Path inPath;
-  input SCodeEnv.Extends inExtends;
-  output Boolean outMatches;
-protected
-  Absyn.Path path;
-algorithm
-  SCodeEnv.EXTENDS(baseClass = path) := inExtends;
-  outMatches := Absyn.pathEqual(inPath, path);
-end matchExtendsPath;
-
 end SCodeFlattenRedeclare;
