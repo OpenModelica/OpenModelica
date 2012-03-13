@@ -1381,6 +1381,23 @@ algorithm
         b = System.reopenStandardStream(i-1,filename);
       then
         (cache,Values.BOOL(b),st);
+    
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+      equation
+        // get OPENMODELICAHOME
+        omhome = Settings.getInstallationDirectoryPath();
+			  // create the path till fmigenerator
+			  str = omhome +& "/bin/fmigenerator";
+			  workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
+			  // create the list of arguments for fmigenerator
+			  call = str +& " " +& "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
+			  0 = System.systemCall(call);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"importFMU",_,st,msg)
+      then
+        (cache,Values.BOOL(false),st);
         
     case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,msg)
       equation

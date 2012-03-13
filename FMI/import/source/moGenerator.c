@@ -213,38 +213,6 @@ static char* getNameXMLfile(const char * decompPath, const char * modeldes){
 	return xmlfile;
 }
 
-/* function that returns the name of the decompression path */
-static char* getDecompPath(char * omPath, const char* mid){
-	int n;
-	char * decompPath;
-	char * omhome = getenv("OPENMODELICAHOME");
-
-	if (!omhome || strlen(omhome) >= PATHSIZE) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-		if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-			ERRORPRINT; fprintf(errLogFile,"#### Error: Environment variable \"%s\" not defined\n","OPENMODELICAHOME");
-		}
-		else {
-			ERRORPRINT; fprintf(errLogFile,"#### Error: Could not get value of \"%s\"\n","OPENMODELICAHOME");
-		}
-#else
-		ERRORPRINT; fprintf(errLogFile,"#### Error: Could not get value of getenv(OPENMODELICAHOME): %s\n", strerror(errno));
-#endif
-		exit(EXIT_FAILURE); /* error */
-	}
-	strcpy(omPath,omhome);
-#ifdef _DEBUG_
-	printf("#### %s Enviroment: %s\n",QUOTEME(__LINE__),omPath);
-#endif
-	n= strlen(omPath)+strlen(mid)+6;
-	decompPath = (char*)calloc(n, sizeof(char));
-	sprintf(decompPath,"%sfmu\\%s\\",omPath,mid);
-#ifdef _DEBUG_
-	printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
-#endif
-	return decompPath;
-}
-
 /* function that decompresses the given FMU archive either via OMDev
  * inherent unzip command or attached 7z tool
  */
@@ -1439,7 +1407,7 @@ int main(int argc, char *argv[]){
 	printf("\n\n");
 
 
-	if (argc < 2) {
+        if (argc < 3) {
 		printUsage();
 		ERRORPRINT; fprintf(errLogFile,"#### Wrong arguments passed to main entry...%s\n","");
 		exit(EXIT_FAILURE);
@@ -1458,28 +1426,24 @@ int main(int argc, char *argv[]){
 	if (strncmp(argv[1], "--fmufile=", 10) == 0) {
 		fmuname = getFMUname(argv[1] + 10);
 	}
+        else {
+          printUsage();
+          ERRORPRINT; fprintf(errLogFile,"#### Specify the FMU file...%s\n","");
+          exit(EXIT_FAILURE);
+        }
 #ifdef _DEBUG_
 	printf("#### fmuname: %s\n",fmuname);
 #endif
-	if (argc > 2) {
-		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
-			decompPath = (char*) calloc((strlen(argv[2])-10), sizeof(char));
-			strncpy((char*)decompPath, argv[2] + 12,strlen(argv[2])-11);
-			strcat((char*)decompPath, "/");
-			if (access(decompPath, F_OK) == -1) {
-				free((void*) decompPath);
-				decompPath = getDecompPath(omPath, fmuname);
-			}
-		}
-		else{
-			printUsage();
-			ERRORPRINT; fprintf(errLogFile,"#### Wrong argument for decompression path...%s\n","");
-			exit(EXIT_FAILURE);
-		}
-	}
-	else {
-		decompPath = getDecompPath(omPath, fmuname);
-	}
+        if (strncmp(argv[2], "--outputdir=", 12) == 0) {
+                decompPath = (char*) calloc((strlen(argv[2])-10), sizeof(char));
+                strncpy((char*)decompPath, argv[2] + 12,strlen(argv[2])-11);
+                strcat((char*)decompPath, "/");
+        }
+        else {
+                printUsage();
+                ERRORPRINT; fprintf(errLogFile,"#### Invalid output directory. Wrong argument for decompression path...%s\n","");
+                exit(EXIT_FAILURE);
+        }
 	if(decompPath==NULL){
 		printf("#### path for decompression is not available: decompPath = %s\n","NULL");
 		ERRORPRINT; fprintf(errLogFile,"#### path for decompression is not available: decompPath = %s\n","NULL");
@@ -1544,7 +1508,7 @@ int main(int argc, char *argv[]){
 	LOGPRINT("FMU decompression path: %s\n",decompPath);
 	LOGPRINT("FMU name: %s\n",fmuname);
 	LOGPRINT("FMU model identifier: %s\n",fmuMD->mid);
-	LOGPRINT("Modelica model name: %s.mo\n",fmuMD->mid);
+        LOGPRINT("Modelica model name: %sFMUImport.mo\n",fmuMD->mid);
 #endif
 	// Free allocated and close file memory
 	free((void*)xmlFile);
