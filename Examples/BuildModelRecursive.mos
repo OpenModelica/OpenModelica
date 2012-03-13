@@ -3,8 +3,8 @@
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
-ulimitOmc:="180"; // 3 minutes to generate the C-code
-ulimitExe:="10"; // 10 seconds to initialize and run the simulation
+ulimitOmc:="300"; // 5 minutes to generate the C-code
+ulimitExe:="40";  // 40 seconds to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
 
 if MSLVersion == "3.2" then
