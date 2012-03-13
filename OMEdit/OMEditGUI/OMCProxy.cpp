@@ -1865,7 +1865,13 @@ bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
     {
         sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\")");
     }
-    return StringHandler::unparseBool(getResult());
+    if (StringHandler::unparseBool(getResult()))
+        return true;
+    else
+    {
+        printMessagesStringInternal();
+        return false;
+    }
 }
 
 //! @class CustomExpressionBox

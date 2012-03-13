@@ -115,21 +115,15 @@ void ImportFMIWidget::importFMU()
     if (mpParentMainWindow->mpOMCProxy->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text()))
     {
         QFile fmuImportLogfile;
-        if (mpOutputDirectoryTextBox->text().isEmpty())
-        {
-            fmuImportLogfile.setFileName(QString(mpOutputDirectoryTextBox->text()).append(QDir::separator()).append("fmuImport.log"));
-        }
-        else
-        {
-            fmuImportLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImport.log"));
-        }
-
+        fmuImportLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImport.log"));
+        // Open the FMU Import log file
         if (!fmuImportLogfile.open(QIODevice::ReadOnly))
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                                   .arg("Could not open file ").append(fmuImportLogfile.fileName()), tr("OK"));
             return;
         }
+        // Read the FMU Import log file
         QTextStream inStream(&fmuImportLogfile);
         QString importedFileName;
         while (!inStream.atEnd())
@@ -152,11 +146,8 @@ void ImportFMIWidget::importFMU()
     else
     {
         QFile fmuImportErrorLogfile;
-        if (mpOutputDirectoryTextBox->text().isEmpty())
-            fmuImportErrorLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImportError.log"));
-        else
-            fmuImportErrorLogfile.setFileName(QString(mpOutputDirectoryTextBox->text()).append(QDir::separator()).append("fmuImportError.log"));
-        // read the error file
+        fmuImportErrorLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImportError.log"));
+        // Open the FMU Import Error log file
         if (fmuImportErrorLogfile.open(QIODevice::ReadOnly))
         {
             QTextStream inStream(&fmuImportErrorLogfile);
