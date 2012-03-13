@@ -41,26 +41,26 @@ static const unsigned int infoLength = 15;
 
 
 typedef struct DASSL_DATA{
-	unsigned int* dasslStatistics;
-	unsigned int* dasslStatisticsTmp;
+  unsigned int* dasslStatistics;
+  unsigned int* dasslStatisticsTmp;
 
-	fortran_integer* info;
+  fortran_integer* info;
 
-	fortran_integer idid;
-	fortran_integer* ipar;
-	void* rpar;
-	/* size of work arrays for DASSL */
-	fortran_integer liw;
-	fortran_integer lrw;
-	/* work arrays for DASSL */
-	fortran_integer *iwork;
-	double *rwork;
+  fortran_integer idid;
+  fortran_integer* ipar;
+  void* rpar;
+  /* size of work arrays for DASSL */
+  fortran_integer liw;
+  fortran_integer lrw;
+  /* work arrays for DASSL */
+  fortran_integer *iwork;
+  double *rwork;
 
-	fortran_integer NG_var;
-	fortran_integer *jroot;
+  fortran_integer NG_var;
+  fortran_integer *jroot;
 
-	/* Used when calculating residual for its side effects. (alg. var calc) */
-	double *dummy_delta;
+  /* Used when calculating residual for its side effects. (alg. var calc) */
+  double *dummy_delta;
 
 
 } DASSL_DATA;

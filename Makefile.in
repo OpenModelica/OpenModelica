@@ -89,12 +89,8 @@ bom-error:
 	rm -f bom-error.log bom-error.sh
 
 tab-error:
-	rm -f tab-error.log
-	find Compiler/ SimulationRuntime/c OM* mosh -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
-          grep -v " 0\$$" | egrep -v 'omc_release|omc_debug|omc_profiling' > tab-error.log
-	@if test -e tab-error.log; then cat tab-error.log; fi
-	@test ! -e tab-error.log
-	rm -f tab-error.log
+	! find Compiler/ SimulationRuntime/c OM* mosh -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
+          grep -v " 0\$$" | egrep -v 'omc_release|omc_debug|omc_profiling|GenTest'
 
 .PRECIOUS: Makefile
 

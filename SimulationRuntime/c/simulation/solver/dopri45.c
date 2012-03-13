@@ -103,7 +103,7 @@ euklidnorm(double* a) {
 }
 
 
-/***************************************		STEPSIZE	***********************************/
+/***************************************    STEPSIZE  ***********************************/
 int
 init_stepsize(int(*f)(), double tolerence) {
   double p = 4.0, d0norm = 0.0, d1norm = 0.0, d2norm = 0.0, h0 = 0.0, h1 = 0.0,
@@ -121,7 +121,7 @@ init_stepsize(int(*f)(), double tolerence) {
   }
 
   if (tolerence <= 1e-6) {
-	tolerence = 1e-5;
+  tolerence = 1e-5;
     fprintf(stdout, "| warning | DOPRI5: error tolerance too stringent *setting tolerance to 1e-5*\n"); fflush(NULL);
   }
 
@@ -284,7 +284,7 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
 }
 
 
-/***************************************		DOPRI54		***********************************/
+/***************************************    DOPRI54    ***********************************/
 int
 dopri54(int(*f)(), double* x4, double* x5) {
   double** k = work_states;
@@ -369,7 +369,7 @@ interpolation_control(const int dideventstep, double interpolationStep,
 
   if (dideventstep == 1) {
     /* Emit data after an event */
-	  sim_result_emit();
+    sim_result_emit();
   }
 
   if (((interpolationStep > globalData->oldTime) && (interpolationStep < globalData->timeValue)) ||

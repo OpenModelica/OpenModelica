@@ -280,7 +280,7 @@ package SimCode
   end FunctionInfo;
 
   uniontype VarInfo
-	  record VARINFO
+    record VARINFO
       Integer numHelpVars;
       Integer numZeroCrossings;
       Integer numTimeEvents;
@@ -305,35 +305,35 @@ package SimCode
       Integer numJacobianVars;
       Option <Integer> dimODE1stOrder;
       Option <Integer> dimODE2ndOrder; 
-	  end VARINFO;
-	end VarInfo;
-	
-	uniontype SimVars
-	  record SIMVARS
-	    list<SimVar> stateVars;
-	    list<SimVar> derivativeVars;
-	    list<SimVar> algVars;
-	    list<SimVar> intAlgVars;
-	    list<SimVar> boolAlgVars;
-	    list<SimVar> inputVars;
-	    list<SimVar> outputVars;
+    end VARINFO;
+  end VarInfo;
+  
+  uniontype SimVars
+    record SIMVARS
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
       list<SimVar> aliasVars;
       list<SimVar> intAliasVars;
-      list<SimVar> boolAliasVars;	    
-	    list<SimVar> paramVars;
-	    list<SimVar> intParamVars;
-	    list<SimVar> boolParamVars;
-	    list<SimVar> stringAlgVars;
-	    list<SimVar> stringParamVars;
-	    list<SimVar> stringAliasVars;
-	    list<SimVar> extObjVars;
-	    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
-	    list<SimVar> constVars;
-	    list<SimVar> intConstVars;
+      list<SimVar> boolAliasVars;      
+      list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> stringAliasVars;
+      list<SimVar> extObjVars;
+      list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
+      list<SimVar> constVars;
+      list<SimVar> intConstVars;
       list<SimVar> boolConstVars;
       list<SimVar> stringConstVars;
-	  end SIMVARS;
-	end SimVars;
+    end SIMVARS;
+  end SimVars;
   
   uniontype SimVar
     record SIMVAR
@@ -458,7 +458,7 @@ package SimCode
     input DAE.ComponentRef cref;
     output Boolean isScalar;
   end crefSubIsScalar;
-	
+  
   function crefNoSub
     input DAE.ComponentRef cref;
     output Boolean noSub;
@@ -466,7 +466,7 @@ package SimCode
 
   function crefIsScalar
     input DAE.ComponentRef cref;
-		input Context context;
+    input Context context;
     output Boolean isScalar;
   end crefIsScalar;
 
@@ -516,21 +516,21 @@ package SimCode
     output String outFirstLib;
   end hackGetFirstExternalFunctionLib;
 
-	function hackMatrixReverseToCref
-	  input DAE.Exp inExp;
-	  input Context context; 
-	  output DAE.Exp outExp;
-	end hackMatrixReverseToCref;
-	
-	function createArray
-	  input Integer size;
-	  output DAE.Exp outArray;
-	end createArray;
-	
-	function createAssertforSqrt
-	  input DAE.Exp inExp;
-	  output DAE.Exp outExp;
-	end createAssertforSqrt;
+  function hackMatrixReverseToCref
+    input DAE.Exp inExp;
+    input Context context; 
+    output DAE.Exp outExp;
+  end hackMatrixReverseToCref;
+  
+  function createArray
+    input Integer size;
+    output DAE.Exp outArray;
+  end createArray;
+  
+  function createAssertforSqrt
+    input DAE.Exp inExp;
+    output DAE.Exp outExp;
+  end createAssertforSqrt;
 
     function appendAllequations
       input list<JacobianMatrix> inJacobianMatrix;
@@ -578,17 +578,17 @@ end SimCode;
 
 package BackendDAE
 
-	uniontype VarKind "- Variabile kind"
-	  record VARIABLE end VARIABLE;
-	  record STATE end STATE;
-	  record STATE_DER end STATE_DER;
-	  record DUMMY_DER end DUMMY_DER;
-	  record DUMMY_STATE end DUMMY_STATE;
-	  record DISCRETE end DISCRETE;
-	  record PARAM end PARAM;
-	  record CONST end CONST;
-	  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-	end VarKind;
+  uniontype VarKind "- Variabile kind"
+    record VARIABLE end VARIABLE;
+    record STATE end STATE;
+    record STATE_DER end STATE_DER;
+    record DUMMY_DER end DUMMY_DER;
+    record DUMMY_STATE end DUMMY_STATE;
+    record DISCRETE end DISCRETE;
+    record PARAM end PARAM;
+    record CONST end CONST;
+    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  end VarKind;
 
   uniontype ZeroCrossing
     record ZERO_CROSSING
@@ -761,19 +761,19 @@ package DAE
 
   type Ident = String;
     
-	uniontype VarKind
-	  record VARIABLE "variable" end VARIABLE;
-	  record DISCRETE "discrete" end DISCRETE;
-	  record PARAM "parameter"   end PARAM;
-	  record CONST "constant"    end CONST;
-	  
-	  // back-end dae variable kinds  
-	  record STATE end STATE;
-	  record STATE_DER end STATE_DER;
-	  record DUMMY_DER end DUMMY_DER;
-	  record DUMMY_STATE end DUMMY_STATE;
-	  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-	end VarKind;
+  uniontype VarKind
+    record VARIABLE "variable" end VARIABLE;
+    record DISCRETE "discrete" end DISCRETE;
+    record PARAM "parameter"   end PARAM;
+    record CONST "constant"    end CONST;
+    
+    // back-end dae variable kinds  
+    record STATE end STATE;
+    record STATE_DER end STATE_DER;
+    record DUMMY_DER end DUMMY_DER;
+    record DUMMY_STATE end DUMMY_STATE;
+    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  end VarKind;
 
 
   uniontype Exp
@@ -1227,156 +1227,156 @@ package DAE
 
   type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
 
-	uniontype Type "models the different front-end and back-end types"
-	  
-	  record T_INTEGER
-	    list<Var> varLst;
-	    TypeSource source;  
-	  end T_INTEGER;
-	
-	  record T_REAL
-	    list<Var> varLst;
-	    TypeSource source;
-	  end T_REAL;
-	
-	  record T_STRING
-	    list<Var> varLst;
-	    TypeSource source;
-	  end T_STRING;
-	
-	  record T_BOOL
-	    list<Var> varLst;
-	    TypeSource source;
-	  end T_BOOL;
-	
-	  record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
-	    Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
-	    Absyn.Path path "enumeration path" ;
-	    list<String> names "names" ;
-	    list<Var> literalVarLst;
-	    list<Var> attributeLst;
-	    TypeSource source;
-	  end T_ENUMERATION;
-	
-	  record T_ARRAY 
-	    "an array can be represented in two equivalent ways: 
-	       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
-	       2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
-	       In general Inst generates 1 and all the others generates 2"
-	    Type ty "Type";
-	    Dimensions dims "dims";
-	    TypeSource source;
-	  end T_ARRAY;
-	
-	  record T_NORETCALL "For functions not returning any values."
-	    TypeSource source; 
-	  end T_NORETCALL;
-	
-	  record T_UNKNOWN "Used when type is not yet determined"
-	    TypeSource source; 
-	  end T_UNKNOWN;
-	
-	  record T_COMPLEX
-	    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
-	    list<Var> varLst "complexVarLst ; The variables of a complex type" ;
-	    EqualityConstraint equalityConstraint;
-	    TypeSource source;
-	  end T_COMPLEX;
-	  
-	  record T_SUBTYPE_BASIC
-	    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
-	    list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
-	    Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
-	    EqualityConstraint equalityConstraint;
-	    TypeSource source;
-	  end T_SUBTYPE_BASIC;
-	
-	  record T_FUNCTION
-	    list<FuncArg> funcArg "funcArg" ;
-	    Type funcResultType "funcResultType ; Only single-result" ;
-	    FunctionAttributes functionAttributes;
-	    TypeSource source;
-	  end T_FUNCTION;
-	  
-	  record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
-	    Type functionType "the type of the function";
-	    TypeSource source;
-	  end T_FUNCTION_REFERENCE_VAR;
-	  
-	  record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
-	    Boolean builtin;
-	    Type functionType "type of the non-boxptr function";
-	    TypeSource source;
-	  end T_FUNCTION_REFERENCE_FUNC;
-	  
-	  record T_TUPLE
-	    list<Type> tupleType "tupleType ; For functions returning multiple values.";
-	    TypeSource source;
-	  end T_TUPLE;
-	
-	  record T_CODE
-	    CodeType ty;
-	    TypeSource source;
-	  end T_CODE;
-	
-	  record T_ANYTYPE
-	    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
-	    TypeSource source;
-	  end T_ANYTYPE;
-	
-	  // MetaModelica extensions
-	  record T_METALIST "MetaModelica list type"
-	    Type listType "listType";
-	    TypeSource source;
-	  end T_METALIST;
-	
-	  record T_METATUPLE "MetaModelica tuple type"
-	    list<Type> types;
-	    TypeSource source;
-	  end T_METATUPLE;
-	
-	  record T_METAOPTION "MetaModelica option type"
-	    Type optionType;
-	    TypeSource source;
-	  end T_METAOPTION;
-	
-	  record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
-	    list<Absyn.Path> paths;
-	    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-	    TypeSource source;
-	  end T_METAUNIONTYPE;
-	
-	  record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
-	    Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
-	    // If the metarecord constructor was added to the FunctionTree, this would
-	    // not be needed. They are used to create the datatype in the runtime...
-	    Integer index; //The index in the uniontype
-	    list<Var> fields;
-	    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-	    TypeSource source;
-	  end T_METARECORD;
-	
-	  record T_METAARRAY
-	    Type ty;
-	    TypeSource source;
-	  end T_METAARRAY;
-	
-	  record T_METABOXED "Used for MetaModelica generic types"
-	    Type ty;
-	    TypeSource source;
-	  end T_METABOXED;
-	
-	  record T_METAPOLYMORPHIC
-	    String name;
-	    TypeSource source;
-	  end T_METAPOLYMORPHIC;
-	  
-	  record T_METATYPE "this type contains all the meta types"
-	    Type ty;
-	    TypeSource source;
-	  end T_METATYPE;
-	  
-	end Type;
+  uniontype Type "models the different front-end and back-end types"
+    
+    record T_INTEGER
+      list<Var> varLst;
+      TypeSource source;  
+    end T_INTEGER;
+  
+    record T_REAL
+      list<Var> varLst;
+      TypeSource source;
+    end T_REAL;
+  
+    record T_STRING
+      list<Var> varLst;
+      TypeSource source;
+    end T_STRING;
+  
+    record T_BOOL
+      list<Var> varLst;
+      TypeSource source;
+    end T_BOOL;
+  
+    record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
+      Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
+      Absyn.Path path "enumeration path" ;
+      list<String> names "names" ;
+      list<Var> literalVarLst;
+      list<Var> attributeLst;
+      TypeSource source;
+    end T_ENUMERATION;
+  
+    record T_ARRAY 
+      "an array can be represented in two equivalent ways: 
+         1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+         2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+         In general Inst generates 1 and all the others generates 2"
+      Type ty "Type";
+      Dimensions dims "dims";
+      TypeSource source;
+    end T_ARRAY;
+  
+    record T_NORETCALL "For functions not returning any values."
+      TypeSource source; 
+    end T_NORETCALL;
+  
+    record T_UNKNOWN "Used when type is not yet determined"
+      TypeSource source; 
+    end T_UNKNOWN;
+  
+    record T_COMPLEX
+      ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+      list<Var> varLst "complexVarLst ; The variables of a complex type" ;
+      EqualityConstraint equalityConstraint;
+      TypeSource source;
+    end T_COMPLEX;
+    
+    record T_SUBTYPE_BASIC
+      ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+      list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
+      Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
+      EqualityConstraint equalityConstraint;
+      TypeSource source;
+    end T_SUBTYPE_BASIC;
+  
+    record T_FUNCTION
+      list<FuncArg> funcArg "funcArg" ;
+      Type funcResultType "funcResultType ; Only single-result" ;
+      FunctionAttributes functionAttributes;
+      TypeSource source;
+    end T_FUNCTION;
+    
+    record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+      Type functionType "the type of the function";
+      TypeSource source;
+    end T_FUNCTION_REFERENCE_VAR;
+    
+    record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+      Boolean builtin;
+      Type functionType "type of the non-boxptr function";
+      TypeSource source;
+    end T_FUNCTION_REFERENCE_FUNC;
+    
+    record T_TUPLE
+      list<Type> tupleType "tupleType ; For functions returning multiple values.";
+      TypeSource source;
+    end T_TUPLE;
+  
+    record T_CODE
+      CodeType ty;
+      TypeSource source;
+    end T_CODE;
+  
+    record T_ANYTYPE
+      Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
+      TypeSource source;
+    end T_ANYTYPE;
+  
+    // MetaModelica extensions
+    record T_METALIST "MetaModelica list type"
+      Type listType "listType";
+      TypeSource source;
+    end T_METALIST;
+  
+    record T_METATUPLE "MetaModelica tuple type"
+      list<Type> types;
+      TypeSource source;
+    end T_METATUPLE;
+  
+    record T_METAOPTION "MetaModelica option type"
+      Type optionType;
+      TypeSource source;
+    end T_METAOPTION;
+  
+    record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
+      list<Absyn.Path> paths;
+      Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+      TypeSource source;
+    end T_METAUNIONTYPE;
+  
+    record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+      Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
+      // If the metarecord constructor was added to the FunctionTree, this would
+      // not be needed. They are used to create the datatype in the runtime...
+      Integer index; //The index in the uniontype
+      list<Var> fields;
+      Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+      TypeSource source;
+    end T_METARECORD;
+  
+    record T_METAARRAY
+      Type ty;
+      TypeSource source;
+    end T_METAARRAY;
+  
+    record T_METABOXED "Used for MetaModelica generic types"
+      Type ty;
+      TypeSource source;
+    end T_METABOXED;
+  
+    record T_METAPOLYMORPHIC
+      String name;
+      TypeSource source;
+    end T_METAPOLYMORPHIC;
+    
+    record T_METATYPE "this type contains all the meta types"
+      Type ty;
+      TypeSource source;
+    end T_METATYPE;
+    
+  end Type;
 
   type Dimensions = list<Dimension> "a list of dimensions";
 
@@ -2024,16 +2024,16 @@ end SCode;
 
 package Util
   
-	uniontype DateTime
-	  record DATETIME
-	    Integer sec;
-	    Integer min;
-	    Integer hour;
-	    Integer mday;
-	    Integer mon;
-	    Integer year;
-	  end DATETIME;
-	end DateTime;  
+  uniontype DateTime
+    record DATETIME
+      Integer sec;
+      Integer min;
+      Integer hour;
+      Integer mday;
+      Integer mon;
+      Integer year;
+    end DATETIME;
+  end DateTime;  
   
   function escapeModelicaStringToCString
     input String modelicaString;
@@ -2045,9 +2045,9 @@ package Util
     output String xmlString;
   end escapeModelicaStringToXmlString;
 
-	function getCurrentDateTime
-	  output DateTime dt;
-	end getCurrentDateTime;
+  function getCurrentDateTime
+    output DateTime dt;
+  end getCurrentDateTime;
 
   function intProduct
     input list<Integer> lst;
@@ -2056,26 +2056,26 @@ package Util
 end Util;
 
 package List
-	function fill 
-  	input Type_a inTypeA;
-	  input Integer inInteger;
-  	output list<Type_a> outTypeALst;
-	  replaceable type Type_a subtypeof Any;
-	end fill;
+  function fill 
+    input Type_a inTypeA;
+    input Integer inInteger;
+    output list<Type_a> outTypeALst;
+    replaceable type Type_a subtypeof Any;
+  end fill;
 
-	function flatten
+  function flatten
     input list<list<ElementType>> inList;
     output list<ElementType> outList;
-    replaceable type ElementType subtypeof Any;	  
-	end flatten;
-	  
-	function lengthListElements
+    replaceable type ElementType subtypeof Any;    
+  end flatten;
+    
+  function lengthListElements
     input list<list<Type_a>> inListList;
     output Integer outLength;
     replaceable type Type_a subtypeof Any;
   end lengthListElements;
 
-	function union 
+  function union 
     input list<Type_a> inTypeALst1;
     input list<Type_a> inTypeALst2;
     output list<Type_a> outTypeALst;
@@ -2094,10 +2094,10 @@ end List;
 
 package ComponentReference
 
-	function crefStripLastSubs
-		input DAE.ComponentRef inComponentRef;
-		output DAE.ComponentRef outComponentRef;
-	end crefStripLastSubs;
+  function crefStripLastSubs
+    input DAE.ComponentRef inComponentRef;
+    output DAE.ComponentRef outComponentRef;
+  end crefStripLastSubs;
 
   function crefSubs
     input DAE.ComponentRef cref;
@@ -2118,10 +2118,10 @@ end ComponentReference;
 
 package Expression
 
-	function crefHasScalarSubscripts
-		input DAE.ComponentRef cr;
-		output Boolean hasScalarSubs;
-	end crefHasScalarSubscripts;
+  function crefHasScalarSubscripts
+    input DAE.ComponentRef cr;
+    output Boolean hasScalarSubs;
+  end crefHasScalarSubscripts;
 
   function typeof
     input DAE.Exp inExp;
@@ -2218,67 +2218,67 @@ package ValuesUtil
 end ValuesUtil;
 
 package BackendQSS
-	function replaceCondWhens
-  	input list<SimCode.SimWhenClause> whenClauses;
-	  input list<SimCode.HelpVarInfo> helpVars;
-		input list<BackendDAE.ZeroCrossing> zeroCrossings;
-		output list<SimCode.SimWhenClause> replacedWhenClauses;
-	end replaceCondWhens;
+  function replaceCondWhens
+    input list<SimCode.SimWhenClause> whenClauses;
+    input list<SimCode.HelpVarInfo> helpVars;
+    input list<BackendDAE.ZeroCrossing> zeroCrossings;
+    output list<SimCode.SimWhenClause> replacedWhenClauses;
+  end replaceCondWhens;
 
-	function replaceZC
-		input SimCode.SimEqSystem i;
-		input list<BackendDAE.ZeroCrossing> zc;
-		output SimCode.SimEqSystem o;
-	end replaceZC;
+  function replaceZC
+    input SimCode.SimEqSystem i;
+    input list<BackendDAE.ZeroCrossing> zc;
+    output SimCode.SimEqSystem o;
+  end replaceZC;
 
-	uniontype DevsStruct "DEVS structure"
-  	record DEVS_STRUCT  
-    	list<list<Integer>>[:] outLinks "output connections for each DEVS block";
-    	list<list<Integer>>[:] outVars "output variables for each DEVS block";
-    	list<list<Integer>>[:] inLinks "input connections for each DEVS block";
-    	list<list<Integer>>[:] inVars "input variables for each DEVS block";
-  	end DEVS_STRUCT;
-	end DevsStruct;
+  uniontype DevsStruct "DEVS structure"
+    record DEVS_STRUCT  
+      list<list<Integer>>[:] outLinks "output connections for each DEVS block";
+      list<list<Integer>>[:] outVars "output variables for each DEVS block";
+      list<list<Integer>>[:] inLinks "input connections for each DEVS block";
+      list<list<Integer>>[:] inVars "input variables for each DEVS block";
+    end DEVS_STRUCT;
+  end DevsStruct;
 
-	uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
-  	record QSSINFO
-    	list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
-	    DevsStruct DEVSstructure "DEVS structure of the model";
-			list<list<SimCode.SimEqSystem>> eqs;
-  		list<BackendDAE.Var> outVarLst;
-  		list<Integer> zcSamplesInd;
-  	end QSSINFO;
-	end QSSinfo;
+  uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
+    record QSSINFO
+      list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
+      DevsStruct DEVSstructure "DEVS structure of the model";
+      list<list<SimCode.SimEqSystem>> eqs;
+      list<BackendDAE.Var> outVarLst;
+      list<Integer> zcSamplesInd;
+    end QSSINFO;
+  end QSSinfo;
 
-	function getInputs
-		input DevsStruct st;
-		input Integer index;
-		output list<Integer> vars;
-	end getInputs;
+  function getInputs
+    input DevsStruct st;
+    input Integer index;
+    output list<Integer> vars;
+  end getInputs;
 
-	function getOutputs
-		input DevsStruct st;
-		input Integer index;
-		output list<Integer> vars;
-	end getOutputs;
+  function getOutputs
+    input DevsStruct st;
+    input Integer index;
+    output list<Integer> vars;
+  end getOutputs;
 
 
-	function derPrefix
- 		input BackendDAE.Var var;
-		output String prefix;
-	end derPrefix;
+  function derPrefix
+     input BackendDAE.Var var;
+    output String prefix;
+  end derPrefix;
 
-	function numInputs
-		input QSSinfo qssInfo;
-		input Integer numBlock;
-		output Integer inputs;
-	end numInputs;
+  function numInputs
+    input QSSinfo qssInfo;
+    input Integer numBlock;
+    output Integer inputs;
+  end numInputs;
 
-	function numOutputs
-		input QSSinfo qssInfo;
-		input Integer numBlock;
-		output Integer outputs;
-	end numOutputs;
+  function numOutputs
+    input QSSinfo qssInfo;
+    input Integer numBlock;
+    output Integer outputs;
+  end numOutputs;
 
   function generateConnections
     input QSSinfo qssInfo;
@@ -2303,10 +2303,10 @@ package BackendQSS
 end BackendQSS;
 
 package BackendVariable
-	function varCref
-  	input BackendDAE.Var inVar;
-	  output DAE.ComponentRef outComponentRef;
-	end varCref;
+  function varCref
+    input BackendDAE.Var inVar;
+    output DAE.ComponentRef outComponentRef;
+  end varCref;
 
   function isStateVar
     input BackendDAE.Var inVar;

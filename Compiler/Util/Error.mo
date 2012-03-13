@@ -404,29 +404,29 @@ public constant Message VARIABLE_BINDING_TYPE_MISMATCH = MESSAGE(135, TRANSLATIO
   "Type mismatch in binding %s = %s, expected subtype of %s, got type %s.");
 public constant Message COMPONENT_NAME_SAME_AS_TYPE_NAME = MESSAGE(136, TRANSLATION(), WARNING(),
   "Component %s has the same name as its type %s.
-	This is forbidden by Modelica specification and may lead to lookup errors.");
+\tThis is forbidden by Modelica specification and may lead to lookup errors.");
 public constant Message MODIFICATION_INDEX_OVERLAP = MESSAGE(137, TRANSLATION(), WARNING(),
   "Index modifications: %s for array component: %s are overlapping. 
-	The final bindings will be set by the last modifications given for the same index.");
+\tThe final bindings will be set by the last modifications given for the same index.");
 public constant Message MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP = MESSAGE(138, TRANSLATION(), WARNING(),
   "Index modifications: %s are overlapping with array binding modification %s for array component: %s. 
-	The final bindings will be set by the last index modification given for the same index.");
+\tThe final bindings will be set by the last index modification given for the same index.");
 public constant Message MODIFICATION_OVERLAP = MESSAGE(139, TRANSLATION(), WARNING(),
   "Modifications: %s for component: %s are overlapping. 
-	The final bindings will be set by the first modification.");
+\tThe final bindings will be set by the first modification.");
 public constant Message MODIFICATION_INDEX_NOT_FOUND = MESSAGE(140, TRANSLATION(), ERROR(),
   "Instantiation of array component: %s failed because index modification: %s is invalid. 
-	Array component: %s has more dimensions than binding %s.");
+\tArray component: %s has more dimensions than binding %s.");
 public constant Message DUPLICATE_MODIFICATIONS_WARNING = MESSAGE(141, TRANSLATION(), WARNING(),
   "Duplicate modifications for attribute: %s in modifier: %s. 
-	Considering only the first modification: %s and ignoring the rest %s.");
+\tConsidering only the first modification: %s and ignoring the rest %s.");
 public constant Message GENERATECODE_INVARS_HAS_FUNCTION_PTR = MESSAGE(142, SYMBOLIC(), ERROR(),
   "%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead.");
 public constant Message LOOKUP_COMP_FOUND_TYPE = MESSAGE(143, TRANSLATION(), WARNING(),
   "Found a type with same name when looking for component %s");
 public constant Message DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL = MESSAGE(144, TRANSLATION(), WARNING(),
   "Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:
-	first element is:  %s	second element is: %s	Modelica specification requires that elements are exactly identical.");
+\tfirst element is:  %s\tsecond element is: %s\tModelica specification requires that elements are exactly identical.");
 public constant Message GENERIC_INST_FUNCTION = MESSAGE(145, TRANSLATION(), ERROR(),
   "Failed to instantiate function %s in scope %s");
 public constant Message WRONG_NO_OF_ARGS = MESSAGE(146, TRANSLATION(), ERROR(),

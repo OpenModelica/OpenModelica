@@ -35,10 +35,10 @@
 
 
 typedef struct DOPRI_DATA{
-	double interpolationStep;
-	modelica_boolean useInterpolation;
-	modelica_boolean reinit_step;
-	modelica_boolean reject;
+  double interpolationStep;
+  modelica_boolean useInterpolation;
+  modelica_boolean reinit_step;
+  modelica_boolean reject;
 } DOPRI_DATA;
 
 int

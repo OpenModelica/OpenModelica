@@ -31,7 +31,7 @@
 #include "events.h"
 #include "error.h"
 #include "simulation_data.h"
-#include "openmodelica.h"		/* for modelica types */
+#include "openmodelica.h"    /* for modelica types */
 #include "openmodelica_func.h"   /* for modelica fucntion */
 #include "simulation_runtime.h"
 #include "solver_main.h"
@@ -145,7 +145,7 @@ static int unique(void *base, size_t nmemb, size_t size,
   {
     b = ((char*) base) + i * size;
     if(0 == compar(a, b))
-	  nuniq++;
+    nuniq++;
     else
     {
       a = b;
@@ -183,7 +183,7 @@ void initSample(DATA* data, double start, double stop)
 
   for(i = 0; i < num_samples; i++){
     if(stop >= data->simulationInfo.rawSampleExps[i].start)
-	  max_events += (int)(((stop - data->simulationInfo.rawSampleExps[i].start) / data->simulationInfo.rawSampleExps[i].interval) + 1);
+    max_events += (int)(((stop - data->simulationInfo.rawSampleExps[i].start) / data->simulationInfo.rawSampleExps[i].interval) + 1);
   }
 
   Samples = (SAMPLE_TIME*)calloc(max_events+1, sizeof(SAMPLE_TIME));
@@ -508,7 +508,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
         double value = fabs(simData->simulationInfo.zeroCrossings[*((long*)listFirstData(eventList))]);
         for(it=listFirstNode(eventList); it; it=listNextNode(it))
         {
-	    double fvalue = fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]);
+      double fvalue = fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]);
             if(value > fvalue)
             {
                 value = fvalue;

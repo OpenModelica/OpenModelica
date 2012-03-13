@@ -466,7 +466,7 @@ int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
   DATA* data = (DATA*)(void*)rpar;
   int i,j;
   if (jacA_num(data, t, y, pd)) {
-	  THROW("Error, can not get Matrix A ");
+    THROW("Error, can not get Matrix A ");
     return 1;
   }
 
