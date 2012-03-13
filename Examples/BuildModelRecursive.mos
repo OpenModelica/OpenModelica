@@ -42,6 +42,7 @@ a:={typeNameString(x) for x guard
     and ((not max("Utilities" == s for s in typeNameStrings(x))) or subScript(typeNameStrings(x),2) == "Utilities")
     and (not max("Components" == s for s in typeNameStrings(x)))
     and (not max("BaseClasses" == s for s in typeNameStrings(x)))
+    and (not max("PointGravityWithPointMasses2" == s for s in typeNameStrings(x)))
     and isModel(x)
     and (not isPartial(x))
   in getClassNames(recursive=true,sort=true)};
@@ -92,7 +93,7 @@ algorithm
     OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\");
 end cell;
 \");getErrorString();
-str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + cell(timeSim,greenOnOk=true) + \"</tr>\\n\";getErrorString();
+str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\")+\"</td><td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" + cell(timeSim,greenOnOk=true) + sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
 ") for s in a);
 getErrorString();
@@ -109,6 +110,6 @@ str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModeli
 <p>Simulation time limit: "+ulimitExe+"s</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Linearize</th><th>Templates</th><th>Compile</th><th>Run</th></tr>",append=true);getErrorString();
+writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total time</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Linearize</th><th>Templates</th><th>Compile</th></tr>",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table></body></html>",append=true);getErrorString();
