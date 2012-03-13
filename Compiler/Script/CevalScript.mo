@@ -1386,12 +1386,12 @@ algorithm
       equation
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
-			  // create the path till fmigenerator
-			  str = omhome +& "/bin/fmigenerator";
-			  workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
-			  // create the list of arguments for fmigenerator
-			  call = str +& " " +& "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
-			  0 = System.systemCall(call);
+        // create the path till fmigenerator
+        str = omhome +& "/bin/fmigenerator";
+        workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
+        // create the list of arguments for fmigenerator
+        call = str +& " " +& "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
+        0 = System.systemCall(call);
       then
         (cache,Values.BOOL(true),st);
         
