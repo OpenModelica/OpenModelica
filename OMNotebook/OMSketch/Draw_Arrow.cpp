@@ -17,9 +17,9 @@ Draw_Arrow::Draw_Arrow()
     click=0;
     angle=0.0;
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 
-	handles.clear();
+  handles.clear();
 
     arrow_pnts.clear();
     arrow_pnts.resize(8);
@@ -70,70 +70,70 @@ void Draw_Arrow::setEdgeRects()
     rectbrush.setStyle(Qt::SolidPattern);
     qDebug()<<"strt pnt "<<StrtPnt<<" "<<"end pnt "<<EndPnt<<"\n";
     
-	QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-	//arrow pnts 					 
-	//pnt1-------pnt2---------pnt3
-	//pnt8                    pnt4
-	//pnt7------pnt6----------pnt5
+  //arrow pnts            
+  //pnt1-------pnt2---------pnt3
+  //pnt8                    pnt4
+  //pnt7------pnt6----------pnt5
 
-	pnt=item->boundingRect().topLeft();
+  pnt=item->boundingRect().topLeft();
 
-	QGraphicsRectItem *rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
+  QGraphicsRectItem *rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
     rect->setBrush(rectbrush);
-	//pnt1
-	handles.push_back(rect);
+  //pnt1
+  handles.push_back(rect);
 
-	pnt1=item->boundingRect().topRight();
+  pnt1=item->boundingRect().topRight();
 
-	rect = new QGraphicsRectItem(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt.y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt.y()+5.0)));
     rect->setBrush(rectbrush);
-	//pnt2
-	handles.push_back(rect);
+  //pnt2
+  handles.push_back(rect);
 
-	
-	rect = new QGraphicsRectItem(QRectF(QPointF((pnt1.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt1.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
+  
+  rect = new QGraphicsRectItem(QRectF(QPointF((pnt1.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt1.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
     rect->setBrush(rectbrush);
-	
-	//pnt3
-	handles.push_back(rect);
+  
+  //pnt3
+  handles.push_back(rect);
 
-	pnt=item->boundingRect().topRight();
-	pnt1=item->boundingRect().bottomRight();
+  pnt=item->boundingRect().topRight();
+  pnt1=item->boundingRect().bottomRight();
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
     rect->setBrush(rectbrush);
-	
-	//pnt4
-	handles.push_back(rect);
+  
+  //pnt4
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(pnt1.x()-5.0,pnt1.y()-5.0),QPointF(pnt1.x()+5.0,pnt1.y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(pnt1.x()-5.0,pnt1.y()-5.0),QPointF(pnt1.x()+5.0,pnt1.y()+5.0)));
     rect->setBrush(rectbrush);
-	
-	//pnt5
-	handles.push_back(rect);
+  
+  //pnt5
+  handles.push_back(rect);
 
-	pnt=item->boundingRect().bottomLeft();
+  pnt=item->boundingRect().bottomLeft();
 
-	rect = new QGraphicsRectItem(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
     rect->setBrush(rectbrush);
-	
-	//pnt6
-	handles.push_back(rect);
+  
+  //pnt6
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
     rect->setBrush(rectbrush);
-	//pnt7
-	handles.push_back(rect);
+  //pnt7
+  handles.push_back(rect);
 
-	pnt=item->boundingRect().topLeft();
-	pnt1=item->boundingRect().bottomLeft();
+  pnt=item->boundingRect().topLeft();
+  pnt1=item->boundingRect().bottomLeft();
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
     rect->setBrush(rectbrush);
-	
-	//pnt8
-	handles.push_back(rect);
+  
+  //pnt8
+  handles.push_back(rect);
 
     
     QPen bound_rect;
@@ -156,36 +156,36 @@ void Draw_Arrow::setEdgeRects()
 void Draw_Arrow::updateEdgeRects()
 {
     
-	QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-	pnt=item->boundingRect().topLeft();
+  pnt=item->boundingRect().topLeft();
 
-	handles[0]->setRect(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
+  handles[0]->setRect(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
     
-	pnt1=item->boundingRect().topRight();
+  pnt1=item->boundingRect().topRight();
 
-	handles[1]->setRect(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt.y()+5.0)));
+  handles[1]->setRect(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt.y()+5.0)));
     
-	
-	handles[2]->setRect(QRectF(QPointF((pnt1.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt1.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
+  
+  handles[2]->setRect(QRectF(QPointF((pnt1.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt1.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
     
-	pnt=item->boundingRect().topRight();
-	pnt1=item->boundingRect().bottomRight();
+  pnt=item->boundingRect().topRight();
+  pnt1=item->boundingRect().bottomRight();
 
-	handles[3]->setRect(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
+  handles[3]->setRect(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
     
-	handles[4]->setRect(QRectF(QPointF(pnt1.x()-5.0,pnt1.y()-5.0),QPointF(pnt1.x()+5.0,pnt1.y()+5.0)));
+  handles[4]->setRect(QRectF(QPointF(pnt1.x()-5.0,pnt1.y()-5.0),QPointF(pnt1.x()+5.0,pnt1.y()+5.0)));
     
-	pnt=item->boundingRect().bottomLeft();
+  pnt=item->boundingRect().bottomLeft();
 
-	handles[5]->setRect(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
+  handles[5]->setRect(QRectF(QPointF((pnt.x()+pnt1.x())/2-5.0,pnt1.y()-5.0),QPointF((pnt.x()+pnt1.x())/2+5.0,pnt1.y()+5.0)));
    
-	handles[6]->setRect(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
+  handles[6]->setRect(QRectF(QPointF(pnt.x()-5.0,pnt.y()-5.0),QPointF(pnt.x()+5.0,pnt.y()+5.0)));
     
-	pnt=item->boundingRect().topLeft();
-	pnt1=item->boundingRect().bottomLeft();
+  pnt=item->boundingRect().topLeft();
+  pnt1=item->boundingRect().bottomLeft();
 
-	handles[7]->setRect(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
+  handles[7]->setRect(QRectF(QPointF(pnt.x()-5.0,(pnt.y()+pnt1.y())/2-5.0),QPointF(pnt1.x()+5.0,(pnt.y()+pnt1.y())/2+5.0)));
     
 
 
@@ -200,9 +200,9 @@ void Draw_Arrow::updateEdgeRects()
     pnt2.setY(item->boundingRect().topLeft().y()-10);
 
     Rot_Rect->setRect(QRectF(pnt1,pnt2));
-	//Strt_Rect->update();
-	//End_Rect->update();
-	Rot_Rect->update();
+  //Strt_Rect->update();
+  //End_Rect->update();
+  Rot_Rect->update();
 
 }
 
@@ -239,26 +239,26 @@ bool Draw_Arrow::getMode()
 
 bool Draw_Arrow::isMouseClickedOnHandle(QPointF pnt)
 {
-	bool found;
+  bool found;
 
-	for(int i=0;i<handles.size();i++)
-	{
-	    if(handles[i]->isUnderMouse())
+  for(int i=0;i<handles.size();i++)
+  {
+      if(handles[i]->isUnderMouse())
         {
             draw_state=1;
-			handle_index=i;
-			qDebug()<<"handle index "<<handle_index<<"\n";
-			handles[i]->setCursor(Qt::CrossCursor);
-			found=true;
-			break;
+      handle_index=i;
+      qDebug()<<"handle index "<<handle_index<<"\n";
+      handles[i]->setCursor(Qt::CrossCursor);
+      found=true;
+      break;
             
-		}
-		else
-			found=false;
+    }
+    else
+      found=false;
     
-	}
+  }
 
-	return found;
+  return found;
     
 
 }
@@ -325,42 +325,42 @@ QColor Draw_Arrow::getPenColor()
 
 void Draw_Arrow::setTranslate(QPointF pnt,QPointF pnt1)
 {
-	if(getState()==1)
-	{
+  if(getState()==1)
+  {
        if(handle_index==0)
-	   {
-		   qDebug()<<"diiff y "<<pnt1<<"\n";
-		   arrow_pnts[0]=pnt1;
-		   arrow_pnts[1]=QPointF(arrow_pnts[1].x(),pnt1.y());
-		   arrow_pnts[2]=QPointF(arrow_pnts[2].x(),pnt1.y()-25);
-		   arrow_pnts[3]=QPointF(arrow_pnts[3].x(),(arrow_pnts[0].y()+arrow_pnts[6].y())/2);
-		   //arrow_pnts[4]=QPointF(arrow_pnts[4].x(),(arrow_pnts[4].y()-pnt1.y())+25);
-		   //arrow_pnts[5]=QPointF(pnt1.x()+75,arrow_pnts[5].y()+25);
-		   arrow_pnts[6]=QPointF(pnt1.x(),(arrow_pnts[6].y()));
-		   arrow_pnts[7]=pnt1;
-	   }
+     {
+       qDebug()<<"diiff y "<<pnt1<<"\n";
+       arrow_pnts[0]=pnt1;
+       arrow_pnts[1]=QPointF(arrow_pnts[1].x(),pnt1.y());
+       arrow_pnts[2]=QPointF(arrow_pnts[2].x(),pnt1.y()-25);
+       arrow_pnts[3]=QPointF(arrow_pnts[3].x(),(arrow_pnts[0].y()+arrow_pnts[6].y())/2);
+       //arrow_pnts[4]=QPointF(arrow_pnts[4].x(),(arrow_pnts[4].y()-pnt1.y())+25);
+       //arrow_pnts[5]=QPointF(pnt1.x()+75,arrow_pnts[5].y()+25);
+       arrow_pnts[6]=QPointF(pnt1.x(),(arrow_pnts[6].y()));
+       arrow_pnts[7]=pnt1;
+     }
        if(handle_index==7)
        {
           arrow_pnts[0]=QPointF(pnt1.x(),arrow_pnts[0].y());
-		  arrow_pnts[6]=QPointF(pnt1.x(),arrow_pnts[6].y());
-		  arrow_pnts[7]=QPointF(pnt1.x(),arrow_pnts[7].y());
+      arrow_pnts[6]=QPointF(pnt1.x(),arrow_pnts[6].y());
+      arrow_pnts[7]=QPointF(pnt1.x(),arrow_pnts[7].y());
        }
 
-	   if(handle_index==3)
+     if(handle_index==3)
        {
           arrow_pnts[1]=QPointF(pnt1.x()-25,arrow_pnts[1].y());
-		  arrow_pnts[2]=QPointF(pnt1.x()-25,arrow_pnts[2].y());
-		  arrow_pnts[3]=QPointF(pnt1.x(),arrow_pnts[3].y());
-		  arrow_pnts[4]=QPointF(pnt1.x()-25,arrow_pnts[4].y());
-		  arrow_pnts[5]=QPointF(pnt1.x()-25,arrow_pnts[5].y());
-	   } 
-	}
+      arrow_pnts[2]=QPointF(pnt1.x()-25,arrow_pnts[2].y());
+      arrow_pnts[3]=QPointF(pnt1.x(),arrow_pnts[3].y());
+      arrow_pnts[4]=QPointF(pnt1.x()-25,arrow_pnts[4].y());
+      arrow_pnts[5]=QPointF(pnt1.x()-25,arrow_pnts[5].y());
+     } 
+  }
 
-	   
+     
 
     if(draw_state==3)
     {
-		
+    
        item->setPos(item->pos()-(pnt-pnt1));
        Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
        End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
@@ -369,10 +369,10 @@ void Draw_Arrow::setTranslate(QPointF pnt,QPointF pnt1)
        item->update();
        Strt_Rect->update();
        End_Rect->update();
-	   Rot_Rect->update();
-	   Bounding_Rect->update();
+     Rot_Rect->update();
+     Bounding_Rect->update();
 
-	   
+     
     }
 
 
@@ -482,7 +482,7 @@ QPainterPath Draw_Arrow::getArrow()
     if(draw_mode)
     {
         arrow.addPolygon(QPolygonF(arrow_pnts));
-		return arrow;
+    return arrow;
     }
 
     return arrow;
@@ -490,24 +490,24 @@ QPainterPath Draw_Arrow::getArrow()
 
 QPainterPath Draw_Arrow::drawArrow()
 {
-	QPainterPath arrow;
+  QPainterPath arrow;
 
-	if(!arrow_pnts.isEmpty())
-	{
-		arrow.addPolygon(arrow_pnts);
-		return arrow;
-	}
+  if(!arrow_pnts.isEmpty())
+  {
+    arrow.addPolygon(arrow_pnts);
+    return arrow;
+  }
 
-	return arrow;
+  return arrow;
 }
 
 
 void Draw_Arrow::updateArrowPoints(QPointF updatePoint)
 {
-	  
-	   QPointF pnt,pnt1;
+    
+     QPointF pnt,pnt1;
 
-	   pnt1=updatePoint;
+     pnt1=updatePoint;
 
        arrow_pnts[0]=pnt1;
 
@@ -552,9 +552,9 @@ void Draw_Arrow::updateArrowPoints(QPointF updatePoint)
        pnt.setX(pnt1.x());
        pnt.setY(pnt1.y()-25);
        StrtPnt=pnt;
-	   //updateEdgeRects();
+     //updateEdgeRects();
 
-	   //Strt_Rect->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
+     //Strt_Rect->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
 
        //End_Rect->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
 }
@@ -566,14 +566,14 @@ void Draw_Arrow::drawImage(QPainter *painter,QString &text,QPointF point)
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
 
-	QPointF pnt;
+  QPointF pnt;
 
-	QVector<QPointF> pnts(arrow_pnts.size());
-	  
-	/*if(item->pos()!=QPointF(0,0))
-	{
-	  StrtPnt=item->sceneBoundingRect().topLeft();
-	  arrow_pnts[0]=StrtPnt;
+  QVector<QPointF> pnts(arrow_pnts.size());
+    
+  /*if(item->pos()!=QPointF(0,0))
+  {
+    StrtPnt=item->sceneBoundingRect().topLeft();
+    arrow_pnts[0]=StrtPnt;
 
       pnt.setX(StrtPnt.x()+25);
       pnt.setY(StrtPnt.y());
@@ -608,16 +608,16 @@ void Draw_Arrow::drawImage(QPainter *painter,QString &text,QPointF point)
 
      arrow_pnts[7]=StrtPnt;
 
-	 EndPnt=item->sceneBoundingRect().bottomRight();
+   EndPnt=item->sceneBoundingRect().bottomRight();
   }*/
      
 
-	for(int i=0;i<pnts.size();i++)
-	{
-		qDebug()<<"arrow pnts "<<arrow_pnts[i]<<"\n";
-		pnts[i]=arrow_pnts[i];
-		pnts[i]+=point;
-	}
+  for(int i=0;i<pnts.size();i++)
+  {
+    qDebug()<<"arrow pnts "<<arrow_pnts[i]<<"\n";
+    pnts[i]=arrow_pnts[i];
+    pnts[i]+=point;
+  }
 
         painter->setPen(this->pen);
         painter->setBrush(this->brush);
@@ -628,7 +628,7 @@ void Draw_Arrow::drawImage(QPainter *painter,QString &text,QPointF point)
 
         text+=" "+str_x.setNum(arrow_pnts.size()*2);
 
-		qDebug()<<"number of points "<<arrow_pnts.size()*2<<"\n";
+    qDebug()<<"number of points "<<arrow_pnts.size()*2<<"\n";
 
         for(int j=0;j<this->arrow_pnts.size();j++)
         {
@@ -647,8 +647,8 @@ void Draw_Arrow::drawImage(QPainter *painter,QString &text,QPointF point)
         text+="BrushStyle";
         text+=" "+color_r.setNum(this->brush.style())+"\n";
 
-		text+="Rotation";
-	    text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+    text+="Rotation";
+      text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 
 
@@ -814,24 +814,24 @@ QBrush Draw_Arrow::getBrush()
 
 void Draw_Arrow::showHandles()
 {
-	
-	for(int i=0;i<handles.size();i++)
-	{
-		if(!handles[i]->isVisible()) 
-			handles[i]->show();
-	}
+  
+  for(int i=0;i<handles.size();i++)
+  {
+    if(!handles[i]->isVisible()) 
+      handles[i]->show();
+  }
 
-	if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
+  if(!Rot_Rect->isVisible())
+    Rot_Rect->show();
 }
 
 void Draw_Arrow::hideHandles()
 {
-	for(int i=0;i<handles.size();i++)
-	{
-		if(handles[i]->isVisible()) 
-			handles[i]->hide();
-	}
+  for(int i=0;i<handles.size();i++)
+  {
+    if(handles[i]->isVisible()) 
+      handles[i]->hide();
+  }
     if(Rot_Rect->isVisible())
         Rot_Rect->hide();
 }
@@ -839,7 +839,7 @@ void Draw_Arrow::hideHandles()
 
 bool Draw_Arrow::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnHandle(point))
             return true;
@@ -855,19 +855,19 @@ bool Draw_Arrow::isClickedOnHandleOrShape(QPointF point)
 void Draw_Arrow::rotateShape(float angle)
 {
 
-	 item->setRotation(angle);
+   item->setRotation(angle);
      Strt_Rect->setRotation(angle);
      End_Rect->setRotation(angle);
      Rot_Rect->setRotation(angle);
      Bounding_Rect->setRotation(angle);
 
-	 item->update();
+   item->update();
      Strt_Rect->update();
      End_Rect->update();
-	 Rot_Rect->update();
-	 Bounding_Rect->update();
+   Rot_Rect->update();
+   Bounding_Rect->update();
 
-	QPointF pnt1;
+  QPointF pnt1;
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     item->setTransformOriginPoint(pnt1);

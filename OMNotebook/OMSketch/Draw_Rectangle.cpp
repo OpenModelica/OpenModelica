@@ -16,7 +16,7 @@ Draw_Rectangle::Draw_Rectangle()
     brush.setColor(QColor(255,255,255));
     brush.setStyle(Qt::NoBrush);
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 
 }
 
@@ -37,8 +37,8 @@ QPainterPath Draw_Rectangle::getRect(QPointF pnt,QPointF pnt1)
         StrtPnt=pnt;
         EndPnt=pnt1;
         QPainterPath path;
-		path.addRect(QRectF(StrtPnt,EndPnt));
-		
+    path.addRect(QRectF(StrtPnt,EndPnt));
+    
         return path;
 }
 
@@ -47,10 +47,10 @@ QPainterPath Draw_Rectangle::getRotRect(QPointF pnt,QPointF pnt1)
         StrtPnt=pnt;
         EndPnt=pnt1;
         QPainterPath path;
-		qDebug()<<"roated point "<<pnt<<"\n";
-		path.addRect(QRectF(pnt,EndPnt));
-		qDebug()<<"rectangle points "<<path.boundingRect().left()<<"  "<<path.boundingRect().bottom()<<"  "<<path.boundingRect().right()<<"\n";
-		return path;
+    qDebug()<<"roated point "<<pnt<<"\n";
+    path.addRect(QRectF(pnt,EndPnt));
+    qDebug()<<"rectangle points "<<path.boundingRect().left()<<"  "<<path.boundingRect().bottom()<<"  "<<path.boundingRect().right()<<"\n";
+    return path;
 }
 
 
@@ -59,66 +59,66 @@ void Draw_Rectangle::drawImage(QPainter *painter,QString &text,QPointF point)
 
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
-	QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-	if(item->rotation()==0)
-	{
-	   //this->StrtPnt=item->sceneBoundingRect().topLeft();
-	   //this->EndPnt = item->sceneBoundingRect().bottomRight();
-	   pnt=this->StrtPnt;
-	   pnt1=this->EndPnt;
+  if(item->rotation()==0)
+  {
+     //this->StrtPnt=item->sceneBoundingRect().topLeft();
+     //this->EndPnt = item->sceneBoundingRect().bottomRight();
+     pnt=this->StrtPnt;
+     pnt1=this->EndPnt;
 
-	   pnt+=point;
+     pnt+=point;
        pnt1+=point;
-	}
+  }
 
-	if(!item->rotation()==0)
-	{
-	   pnt=item->boundingRect().topLeft();
-	   pnt1=item->boundingRect().bottomRight();
+  if(!item->rotation()==0)
+  {
+     pnt=item->boundingRect().topLeft();
+     pnt1=item->boundingRect().bottomRight();
 
-		//pnt = rotationStartPoint;
-		//pnt1 = rotationEndPoint;
+    //pnt = rotationStartPoint;
+    //pnt1 = rotationEndPoint;
 
-	  /* pnt+=point;
+    /* pnt+=point;
        pnt1+=point;*/
 
-	   pnt+=point;
-	   pnt1+=point;
-	   qDebug()<<"rotation points "<<pnt<<"  "<<pnt1<<"\n";
-	}
-	
-	//qDebug()<<"item points "<<item->boundingRect().topLeft()<<"  "<<item->boundingRect().bottomRight()<<"\n";
-	//this->print();
+     pnt+=point;
+     pnt1+=point;
+     qDebug()<<"rotation points "<<pnt<<"  "<<pnt1<<"\n";
+  }
+  
+  //qDebug()<<"item points "<<item->boundingRect().topLeft()<<"  "<<item->boundingRect().bottomRight()<<"\n";
+  //this->print();
     painter->setPen(this->pen);
     painter->setBrush(this->brush);
 
-	painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
+  painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
 
-	/*if(item->rotation() < 0 )
-	{
-		qDebug()<<"rot lesser \n";
-		painter->translate(pnt1.x(),pnt1.y());
+  /*if(item->rotation() < 0 )
+  {
+    qDebug()<<"rot lesser \n";
+    painter->translate(pnt1.x(),pnt1.y());
         painter->rotate(item->rotation());
-		painter->translate(-pnt1.x()/2,-pnt1.y()/2);
-		painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
-		
-	}
+    painter->translate(-pnt1.x()/2,-pnt1.y()/2);
+    painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
+    
+  }
 
 
-	if(item->rotation()>0)
-	{
-		qDebug()<<"rot greater \n";
-		painter->translate(pnt1.x(),pnt1.y());
+  if(item->rotation()>0)
+  {
+    qDebug()<<"rot greater \n";
+    painter->translate(pnt1.x(),pnt1.y());
         painter->rotate(item->rotation());
-		painter->translate(-pnt1.x()/2,-pnt1.y()/2);
-		painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
-		
-	}*/
+    painter->translate(-pnt1.x()/2,-pnt1.y()/2);
+    painter->drawRect(pnt.x(),pnt.y(),pnt1.x()-pnt.x(),pnt1.y()-pnt.y());
+    
+  }*/
 
-	print();
+  print();
 
-	text+="Rectangle\n";
+  text+="Rectangle\n";
     text+="Coords";
     text+=" "+str_x.setNum(4);
     text+=" "+str_x.setNum(this->StrtPnt.x())+" "+str_y.setNum(this->StrtPnt.y())+" "+str_x1.setNum(this->EndPnt.x())+" "+str_y1.setNum(this->EndPnt.y())+"\n";
@@ -133,10 +133,10 @@ void Draw_Rectangle::drawImage(QPainter *painter,QString &text,QPointF point)
     text+="BrushStyle";
     text+=" "+color_r.setNum(this->brush.style())+"\n";
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
-	qDebug()<<"saved text "<<text<<"\n";
+  qDebug()<<"saved text "<<text<<"\n";
 
 }
 
@@ -197,8 +197,8 @@ void Draw_Rectangle::setEdgeRects()
 void Draw_Rectangle::updateEdgeRects()
 {
     //print();
-	//if(item->rotation()==0)
-	{
+  //if(item->rotation()==0)
+  {
        Strt_Rect->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
 
        End_Rect->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
@@ -218,10 +218,10 @@ void Draw_Rectangle::updateEdgeRects()
       Strt_Rect->update();
       End_Rect->update();
       Rot_Rect->update();
-	}
+  }
 
-	if(item->rotation()!=0)
-	{
+  if(item->rotation()!=0)
+  {
        /*Strt_Rect->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
 
        End_Rect->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
@@ -239,12 +239,12 @@ void Draw_Rectangle::updateEdgeRects()
 
       //Rot_Rect->setRect(QRectF(pnt1,pnt2));
 
-		//Strt_Rect->setPos(Strt_Rect->pos()
+    //Strt_Rect->setPos(Strt_Rect->pos()
 
       Strt_Rect->update();
       End_Rect->update();
       Rot_Rect->update();
-	}
+  }
 
 }
 
@@ -285,12 +285,12 @@ bool Draw_Rectangle::getMode()
 bool Draw_Rectangle::isMouseClickedOnStartHandle(QPointF pnt)
 {
 
-	
+  
     if(Strt_Rect->isUnderMouse())
     {
         draw_state=1;
         Strt_Rect->setCursor(Qt::CrossCursor);
-		return true;
+    return true;
     }
     else
         return false;
@@ -311,7 +311,7 @@ bool Draw_Rectangle::isMouseClickedOnEndHandle(QPointF pnt)
 
 bool Draw_Rectangle::isMouseClickedOnRotateHandle(const QPointF pnt)
 {
-	
+  
     if(Rot_Rect->isUnderMouse())
     {
         draw_state=4;
@@ -327,7 +327,7 @@ bool Draw_Rectangle::isMouseClickedOnRotateHandle(const QPointF pnt)
     else
         return false;
 
-	
+  
 }
 
 bool Draw_Rectangle::isMouseClickedOnShape(const QPointF pnt)
@@ -362,7 +362,7 @@ void Draw_Rectangle::setTranslate(QPointF pnt,QPointF pnt1)
        item->update();
        Strt_Rect->update();
        End_Rect->update();
-	  
+    
     }
 
     if(draw_state==1)
@@ -417,11 +417,11 @@ void Draw_Rectangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
     End_Rect->update();
     Rot_Rect->update();
 
-	qDebug()<<"scene coords "<<item->sceneBoundingRect().topLeft()<<"  "<<item->sceneBoundingRect().bottomRight()<<"\n";
+  qDebug()<<"scene coords "<<item->sceneBoundingRect().topLeft()<<"  "<<item->sceneBoundingRect().bottomRight()<<"\n";
 
     QPointF rot_pnt(item->boundingRect().topLeft()-item->sceneBoundingRect().topLeft());
     QPointF rot_pnt1(item->boundingRect().bottomRight()-item->sceneBoundingRect().bottomRight());
-	
+  
 }
 
 void Draw_Rectangle::setScale(float x,float y)
@@ -603,18 +603,18 @@ QBrush Draw_Rectangle::getBrush()
 
 void Draw_Rectangle::showHandles()
 {
-	if(!Strt_Rect->isVisible())
+  if(!Strt_Rect->isVisible())
         Strt_Rect->show();
     if(!End_Rect->isVisible())
-		End_Rect->show();
+    End_Rect->show();
     if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
+    Rot_Rect->show();
 }
 
 void Draw_Rectangle::hideHandles()
 {
-	
-	if(Strt_Rect->isVisible())
+  
+  if(Strt_Rect->isVisible())
         Strt_Rect->hide();
     if(End_Rect->isVisible())
         End_Rect->hide();
@@ -625,7 +625,7 @@ void Draw_Rectangle::hideHandles()
 
 bool Draw_Rectangle::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnStartHandle(point))
             return true;
@@ -643,17 +643,17 @@ bool Draw_Rectangle::isClickedOnHandleOrShape(QPointF point)
 void Draw_Rectangle::rotateShape(float angle)
 {
 
-	item->setRotation(angle);
+  item->setRotation(angle);
     Strt_Rect->setRotation(angle);
     End_Rect->setRotation(angle);
     Rot_Rect->setRotation(angle);
 
-	item->update();
-	Strt_Rect->update();
+  item->update();
+  Strt_Rect->update();
     End_Rect->update();
     Rot_Rect->update();
 
-	QPointF pnt1;
+  QPointF pnt1;
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     item->setTransformOriginPoint(pnt1);

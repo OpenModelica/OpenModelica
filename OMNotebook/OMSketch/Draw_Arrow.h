@@ -38,10 +38,10 @@ class Draw_Arrow:public QGraphicsPathItem
     void setPenWidth(const int width);
     QPen getPen();
 
-	//sets the brush and style
-	void setBrush(const QBrush brush);
+  //sets the brush and style
+  void setBrush(const QBrush brush);
     void setBrushStyle(const int style);
-	//returns the current brush
+  //returns the current brush
     QBrush getBrush();
 
 
@@ -67,16 +67,16 @@ class Draw_Arrow:public QGraphicsPathItem
     void print();
 
     QPainterPath getArrow();
-	QPainterPath drawArrow();
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  QPainterPath drawArrow();
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
-	//show handles
-	void showHandles();
-	//hide handles
-	void hideHandles();
+  //show handles
+  void showHandles();
+  //hide handles
+  void hideHandles();
 
-	//rotate the shapes
+  //rotate the shapes
     void rotateShape(float angle);
 
     QGraphicsPathItem *item;
@@ -87,9 +87,9 @@ class Draw_Arrow:public QGraphicsPathItem
     float angle;
     QVector<QPointF> arrow_pnts;
 
-	QVector<QGraphicsRectItem*> handles;
+  QVector<QGraphicsRectItem*> handles;
 
-	bool isObjectSelected;
+  bool isObjectSelected;
 
  private:
    QPointF StrtPnt,EndPnt;

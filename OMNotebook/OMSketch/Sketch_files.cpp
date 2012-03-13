@@ -280,7 +280,7 @@ void Sketch_Files::parseText(QString text,QVector<int> &values,QVector<float> &v
 {
     QTextStream readline;
     QString subText;
-	int state;
+  int state;
     bool ok;
 
     if(text.contains("Sketch:"))
@@ -295,61 +295,61 @@ void Sketch_Files::parseText(QString text,QVector<int> &values,QVector<float> &v
 
         if(subText.contains("Line"))
         {
-			state=0;
-			values.push_back(1);
+      state=0;
+      values.push_back(1);
         }
 
         if(subText.contains("Rectangle"))
         {
-			state=0;
+      state=0;
             values.push_back(2);
         }
 
         if(subText.contains("Ellipse"))
         {
-			state=0;
+      state=0;
             values.push_back(3);
         }
 
         if(subText.contains("Polygon"))
         {
-			state=0;
+      state=0;
             values.push_back(4);
         }
 
         if(subText.contains("RoundRect"))
         {
-			state=0;
+      state=0;
             values.push_back(5);
         }
 
         if(subText.contains("Arc"))
         {
-			state=0;
+      state=0;
             values.push_back(6);
         }
 
-		if(subText.contains("linearrow"))
+    if(subText.contains("linearrow"))
         {
-			state=0;
-			values.push_back(7);
+      state=0;
+      values.push_back(7);
         }
 
-		if(subText.contains("Triangle"))
+    if(subText.contains("Triangle"))
         {
-			state=0;
+      state=0;
             values.push_back(8);
         }
 
-		if(subText.contains("Arrow"))
+    if(subText.contains("Arrow"))
         {
-			state=0;
+      state=0;
             values.push_back(9);
         }
 
-		if(subText.contains("Text"))
+    if(subText.contains("Text"))
         {
-			state=0;
+      state=0;
             values.push_back(10);
         }
 
@@ -357,26 +357,26 @@ void Sketch_Files::parseText(QString text,QVector<int> &values,QVector<float> &v
         {
             if((!subText.contains("Coords"))&&(!subText.contains("Line"))&&(!subText.contains("Rectangle"))&&(!subText.contains("Ellipse"))&&(!subText.contains("Polygon"))&&(!subText.contains("RoundRect"))&&(!subText.contains("Arc"))&&(!subText.contains("linearrow"))&&(!subText.contains("Triangle"))&&(!subText.contains("Arrow"))&&(!subText.contains("Text"))&&(!subText.contains("PenColor"))&&(!subText.contains("PenStyle")&&(!subText.contains("PenWidth"))&&(!subText.contains("BrushColor"))&&(!subText.contains("BrushStyle"))))
             {
-				if(subText.contains("Rotation"))
-					state=1;
-				if(state!=1)       
-				{   
+        if(subText.contains("Rotation"))
+          state=1;
+        if(state!=1)       
+        {   
                     qDebug()<<"values "<<subText<<"\n";
                     values.push_back(subText.toInt(&ok,10));
-					
-				}
-
-				if(state==1)
-				{
-					if(!subText.contains("Rotation"))
-						value.push_back(subText.toFloat(&ok));
-				} 
-            }
-
-			
+          
         }
 
-		
+        if(state==1)
+        {
+          if(!subText.contains("Rotation"))
+            value.push_back(subText.toFloat(&ok));
+        } 
+            }
+
+      
+        }
+
+    
     }
 }
 

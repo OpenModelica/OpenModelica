@@ -21,8 +21,8 @@ class Draw_RoundRect:public QGraphicsPathItem
     QPointF getBoundMaxPnt();
 
     QPainterPath getRoundRect(const QPointF pnt,const QPointF pnt1);
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
     void setStartPoint(QPointF strt_pnt);
     void setEndPoint(QPointF lst_pnt);
@@ -56,8 +56,8 @@ class Draw_RoundRect:public QGraphicsPathItem
 
      //checking the mouse position to resize and move rectangle
      bool isMouseClickedOnStartHandle(const QPointF pnt);
-	 bool isMouseClickedOnEndHandle(const QPointF pnt);
-	 bool isMouseClickedOnRotateHandle(const QPointF pnt);
+   bool isMouseClickedOnEndHandle(const QPointF pnt);
+   bool isMouseClickedOnRotateHandle(const QPointF pnt);
      bool isMouseClickedOnShape(const QPointF pnt);
      bool isClickedOnHandleOrShape(QPointF point);
 
@@ -70,12 +70,12 @@ class Draw_RoundRect:public QGraphicsPathItem
 
      void translate_items(QPointF pnt,QPointF pnt1);
 
-	//show handles
-	void showHandles();
-	//hide handles
-	void hideHandles();
+  //show handles
+  void showHandles();
+  //hide handles
+  void hideHandles();
 
-	//rotate the shapes
+  //rotate the shapes
     void rotateShape(float angle);
 
      virtual QPointF getTranslate(){return QPointF(0,0);}
@@ -86,7 +86,7 @@ class Draw_RoundRect:public QGraphicsPathItem
 
      void print();
 
-	 ~Draw_RoundRect();
+   ~Draw_RoundRect();
 
      QGraphicsPathItem *item;
      QGraphicsRectItem *Strt_Rect,*End_Rect;
@@ -97,7 +97,7 @@ class Draw_RoundRect:public QGraphicsPathItem
 
      float angle;
      int radius;
-	 bool isObjectSelected;
+   bool isObjectSelected;
      QRectF rect;
      QPointF prev_pos;
  private:

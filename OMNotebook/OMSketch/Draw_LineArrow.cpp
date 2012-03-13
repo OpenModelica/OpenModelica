@@ -14,7 +14,7 @@ Draw_LineArrow::Draw_LineArrow()
 
     angle=0.0;
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 }
 
 void Draw_LineArrow::setDefaults()
@@ -221,235 +221,235 @@ void Draw_LineArrow::setTranslate(QPointF pnt,QPointF pnt1)
     if(getState()==1)
     {
         arrow_pnts[0]=(arrow_pnts[0]-(pnt-pnt1));
-		QPointF pnt1,pnt2;
+    QPointF pnt1,pnt2;
 
-		pnt1.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)-5);
+    pnt1.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)-5);
         pnt1.setY(arrow_pnts[0].y()-20);
 
         pnt2.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)+5);
         pnt2.setY(arrow_pnts[0].y()-10);
 
-	    Rot_Rect->setRect(QRectF(pnt1,pnt2));
+      Rot_Rect->setRect(QRectF(pnt1,pnt2));
 
     }
 
     if(getState()==2)
     {
        if(getStartPnt().x()<pnt1.x() && getStartPnt().y()==pnt1.y())
-	   {
+     {
           arrow_pnts[1]=pnt1;
-		  //arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,0.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(0.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,0.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(0.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      //arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,0.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(0.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,0.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(0.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()+5.0,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()+5.0,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+5)));
 
-		  QPointF pnt1,pnt2;
+      QPointF pnt1,pnt2;
 
-	      pnt1.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)-5);
+        pnt1.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)-5);
           pnt1.setY(arrow_pnts[0].y()-20);
 
           pnt2.setX(((arrow_pnts[0].x()+arrow_pnts[3].x())/2)+5);
           pnt2.setY(arrow_pnts[0].y()-10);
 
-	      Rot_Rect->setRect(QRectF(pnt1,pnt2));
-	   }
+        Rot_Rect->setRect(QRectF(pnt1,pnt2));
+     }
 
-	   if(getStartPnt().x()<pnt1.x() && getStartPnt().y()<pnt1.y())
-	   {
+     if(getStartPnt().x()<pnt1.x() && getStartPnt().y()<pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+10)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+10)));
 
-		  QPointF pnt1,pnt2,pnt3;
+      QPointF pnt1,pnt2,pnt3;
 
-	      
+        
           pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-20);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-20);
 
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()==pnt1.x() && getStartPnt().y()<pnt1.y())
-	   {
+     if(getStartPnt().x()==pnt1.x() && getStartPnt().y()<pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]-QPointF(0.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,0.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(0.0,5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,0.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]-QPointF(0.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,0.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(0.0,5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,0.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-5,arrow_pnts[3].y()),QPointF(arrow_pnts[3].x()+5,arrow_pnts[3].y()+10)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-5,arrow_pnts[3].y()),QPointF(arrow_pnts[3].x()+5,arrow_pnts[3].y()+10)));
 
-		  QPointF pnt1,pnt2,pnt3;
+      QPointF pnt1,pnt2,pnt3;
 
-	      
+        
           pnt1.setX(arrow_pnts[0].x());
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2);
 
-		  pnt2.setX(arrow_pnts[0].x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()>pnt1.x() && getStartPnt().y()<pnt1.y())
-	   {
+     if(getStartPnt().x()>pnt1.x() && getStartPnt().y()<pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(-10.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(10.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(-10.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(10.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
 
-		  QPointF pnt1,pnt2,pnt3;
+      QPointF pnt1,pnt2,pnt3;
 
-	      
+        
           pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2+25);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2+15);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2+15);
 
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()>pnt1.x() && getStartPnt().y()==pnt1.y())
-	   {
+     if(getStartPnt().x()>pnt1.x() && getStartPnt().y()==pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,0.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(0.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,0.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(0.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]-QPointF(5.0,0.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(0.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,0.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(0.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
 
-		  QPointF pnt1,pnt2,pnt3;
-	      
+      QPointF pnt1,pnt2,pnt3;
+        
           pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2-5);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2+15);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2+15);
 
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()>pnt1.x() && getStartPnt().y()>pnt1.y())
-	   {
+     if(getStartPnt().x()>pnt1.x() && getStartPnt().y()>pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]+QPointF(5.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,-5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]+QPointF(5.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(-5.0,-5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
           
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
 
-		  QPointF pnt1,pnt2,pnt3;
-	      
+      QPointF pnt1,pnt2,pnt3;
+        
           pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2-20);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-5);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-5);
 
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()==pnt1.x() && getStartPnt().y()>pnt1.y())
-	   {
+     if(getStartPnt().x()==pnt1.x() && getStartPnt().y()>pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]+QPointF(0.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,0.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(0.0,-5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,0.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]+QPointF(0.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(10.0,0.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(0.0,-5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(-10.0,0.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x()-10,arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()+5)));
          
-		  QPointF pnt1,pnt2,pnt3;
-	      
+      QPointF pnt1,pnt2,pnt3;
+        
           pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-5);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-5);
 
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
          
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
 
 
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
         
-	   }
+     }
 
-	   if(getStartPnt().x()<pnt1.x() && getStartPnt().y()>pnt1.y())
-	   {
+     if(getStartPnt().x()<pnt1.x() && getStartPnt().y()>pnt1.y())
+     {
           arrow_pnts[1]=pnt1;
-		  arrow_pnts[1]=(arrow_pnts[1]+QPointF(5.0,5.0));
-		  arrow_pnts[2]=(arrow_pnts[1]+QPointF(-10.0,-10.0));
-		  arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,-5.0));
-		  arrow_pnts[4]=(arrow_pnts[1]+QPointF(10.0,10.0));
-		  arrow_pnts[5]=arrow_pnts[1];
+      arrow_pnts[1]=(arrow_pnts[1]+QPointF(5.0,5.0));
+      arrow_pnts[2]=(arrow_pnts[1]+QPointF(-10.0,-10.0));
+      arrow_pnts[3]=(arrow_pnts[1]+QPointF(5.0,-5.0));
+      arrow_pnts[4]=(arrow_pnts[1]+QPointF(10.0,10.0));
+      arrow_pnts[5]=arrow_pnts[1];
 
-		  End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+5)));
+      End_Rect->setRect(QRectF(QPointF(arrow_pnts[3].x(),arrow_pnts[3].y()-5),QPointF(arrow_pnts[3].x()+10,arrow_pnts[3].y()+5)));
          
-		  QPointF pnt1,pnt2,pnt3;
-	      
-          pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2-25);
-		  pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-20);
-
-		  pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
-		  pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
-         
-		  pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
-		  pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
-
-
-	      Rot_Rect->setRect(QRectF(pnt2,pnt3));
+      QPointF pnt1,pnt2,pnt3;
         
-	   }
+          pnt1.setX((arrow_pnts[3].x()-arrow_pnts[0].x())/2-25);
+      pnt1.setY((arrow_pnts[3].y()-arrow_pnts[0].y())/2-20);
+
+      pnt2.setX(arrow_pnts[0].x()+pnt1.x()+5); 
+      pnt2.setY(arrow_pnts[0].y()+pnt1.y()+5);
+         
+      pnt3.setX(arrow_pnts[0].x()+pnt1.x()+15); 
+      pnt3.setY(arrow_pnts[0].y()+pnt1.y()+15);
+
+
+        Rot_Rect->setRect(QRectF(pnt2,pnt3));
+        
+     }
 
     }
 
@@ -460,14 +460,14 @@ void Draw_LineArrow::setTranslate(QPointF pnt,QPointF pnt1)
            arrow_pnts[i]=(arrow_pnts[i]-(pnt-pnt1));
        }
 
-	   item->setPos(item->pos()-(pnt-pnt1));
-	   item->update();
-	   Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
-	   Strt_Rect->update();
-	   End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
-	   End_Rect->update();
-	   Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
-	   Rot_Rect->update();
+     item->setPos(item->pos()-(pnt-pnt1));
+     item->update();
+     Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
+     Strt_Rect->update();
+     End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
+     End_Rect->update();
+     Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
+     Rot_Rect->update();
 
     }
 
@@ -555,10 +555,10 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
 
     if(!getMode() && (getStartPnt().y()==pnt.y())&& (getStartPnt().x()<pnt.x()))
     {
-	  arrow_pnts[0]=getStartPnt();
+    arrow_pnts[0]=getStartPnt();
       arrow_pnts[1]=pnt;
 
-	  pnt1.setX(pnt.x());
+    pnt1.setX(pnt.x());
       pnt1.setY(pnt.y()-10.0);
       arrow_pnts[2]=pnt1;
 
@@ -580,7 +580,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setY(arrow_pnts[3].y());
       setEndPoint(pnt2);
 
-	  
+    
 
    }
 
@@ -605,7 +605,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
 
       arrow_pnts[5]=pnt;
 
-	 
+   
 
       linearrow.moveTo(getStartPnt());
       linearrow.addPolygon(QPolygonF(arrow_pnts));
@@ -614,8 +614,8 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setX(arrow_pnts[3].x());
       pnt2.setY(arrow_pnts[3].y());
       setEndPoint(pnt2);
-	 
-	  
+   
+    
    }
 
     if(!getMode() && (getStartPnt().y()> pnt.y())&& (getStartPnt().x()< pnt.x()))
@@ -646,7 +646,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setY(arrow_pnts[4].y());
       setEndPoint(pnt2);
 
-	  
+    
    }
 
     if(!getMode() && (getStartPnt().x()==pnt.x())&&(getStartPnt().y()<pnt.y()))
@@ -677,7 +677,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setY(arrow_pnts[3].y());
       setEndPoint(pnt2);
 
-	 
+   
    }
 
     if(!getMode() && (getStartPnt().x()>pnt.x())&&(getStartPnt().y()<pnt.y()))
@@ -708,7 +708,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setY(arrow_pnts[3].y());
       setEndPoint(pnt2);
 
-	  
+    
    }
 
 
@@ -740,13 +740,13 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
       pnt2.setY(arrow_pnts[3].y());
       setEndPoint(pnt2);
 
-	  
+    
    }
 
 
     if(!getMode() &&(getStartPnt().y()>pnt.y())&& (getStartPnt().x()>pnt.x()))
     {
-		
+    
         arrow_pnts[0]=getStartPnt();
         arrow_pnts[1]=pnt;
 
@@ -772,12 +772,12 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
         pnt2.setY(arrow_pnts[3].y());
         setEndPoint(pnt2);
 
-		
+    
    }
 
     if(!getMode() && (getStartPnt().y()>pnt.y())&& (getStartPnt().x()==pnt.x()))
     {
-		
+    
         arrow_pnts[0]=getStartPnt();
         arrow_pnts[1]=pnt;
 
@@ -803,7 +803,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
         pnt2.setY(arrow_pnts[3].y());
         setEndPoint(pnt2);
 
-		
+    
    }
 
    if(getMode()) 
@@ -812,7 +812,7 @@ QPainterPath Draw_LineArrow::getLineArrow(QPointF pnt)
      linearrow.addPolygon(QPolygonF(arrow_pnts));
    }
 
-	linearrow.moveTo(getStartPnt());
+  linearrow.moveTo(getStartPnt());
     linearrow.addPolygon(QPolygonF(arrow_pnts));
     //qDebug()<<"line arrow "<<linearrow.boundingRect().topLeft()<<"  "<<linearrow.boundingRect().bottomRight()<<"\n";
    
@@ -825,13 +825,13 @@ void Draw_LineArrow::drawImage(QPainter *painter, QString &text,QPointF point)
     QString str_x,str_y;
     QString color_r,color_g,color_b;
 
-	QVector<QPointF> pnts(arrow_pnts.size());
+  QVector<QPointF> pnts(arrow_pnts.size());
 
-	for(int i=0;i<pnts.size();i++)
-	{
-		pnts[i]=arrow_pnts[i];
-		pnts[i]+=point;
-	} 
+  for(int i=0;i<pnts.size();i++)
+  {
+    pnts[i]=arrow_pnts[i];
+    pnts[i]+=point;
+  } 
 
     QPainterPath linearrow;
     linearrow.addPolygon(QPolygonF(pnts));
@@ -839,15 +839,15 @@ void Draw_LineArrow::drawImage(QPainter *painter, QString &text,QPointF point)
     painter->setPen(this->pen);
     painter->drawPath(linearrow);
 
-	
+  
     text+="linearrow\n";
     text+="Coords";
-	text+=" "+str_x.setNum(arrow_pnts.size()*2);
+  text+=" "+str_x.setNum(arrow_pnts.size()*2);
 
     for(int j=0;j<this->arrow_pnts.size();j++)
     {
          text+=" "+str_x.setNum((this->arrow_pnts[j].x()))+" "+str_y.setNum((this->arrow_pnts[j].y()))+" ";
-		 //text+=" "+str_x.setNum((this->StrtPnt.x()))+" "+str_y.setNum((this->StrtPnt.y()))+" ";
+     //text+=" "+str_x.setNum((this->StrtPnt.x()))+" "+str_y.setNum((this->StrtPnt.y()))+" ";
     }
 
     text+="PenColor";
@@ -858,8 +858,8 @@ void Draw_LineArrow::drawImage(QPainter *painter, QString &text,QPointF point)
     text+=" "+color_r.setNum(this->pen.width())+"\n";
         
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 
 }
@@ -905,9 +905,9 @@ void Draw_LineArrow::updateEdgeRects()
     pnt2.setY(StrtPnt.y()-10);
 
     //print();
-	//Rot_Rect->setRect(QRectF(pnt1,pnt2));
+  //Rot_Rect->setRect(QRectF(pnt1,pnt2));
 
-	//if(item->rotation()!=0)
+  //if(item->rotation()!=0)
        //Rot_Rect->setRect(QRectF(-pnt1,-pnt2));
 
     Strt_Rect->update();
@@ -978,17 +978,17 @@ QPen Draw_LineArrow::getPen()
 
 void Draw_LineArrow::showHandles()
 {
-	if(!Strt_Rect->isVisible())
+  if(!Strt_Rect->isVisible())
         Strt_Rect->show();
     if(!End_Rect->isVisible())
-		End_Rect->show();
+    End_Rect->show();
     if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
+    Rot_Rect->show();
 }
 
 void Draw_LineArrow::hideHandles()
 {
-	if(Strt_Rect->isVisible())
+  if(Strt_Rect->isVisible())
         Strt_Rect->hide();
     if(End_Rect->isVisible())
         End_Rect->hide();
@@ -999,7 +999,7 @@ void Draw_LineArrow::hideHandles()
 
 bool Draw_LineArrow::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnStartHandle(point))
             return true;
@@ -1017,17 +1017,17 @@ bool Draw_LineArrow::isClickedOnHandleOrShape(QPointF point)
 void Draw_LineArrow::rotateShape(float angle)
 {
 
-	 item->setRotation(angle);
+   item->setRotation(angle);
      Strt_Rect->setRotation(angle);
      End_Rect->setRotation(angle);
      Rot_Rect->setRotation(angle);
 
-	 item->update();
+   item->update();
      Strt_Rect->update();
      End_Rect->update();
      Rot_Rect->update();
 
-	 QPointF pnt1;
+   QPointF pnt1;
      pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
      pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
      item->setTransformOriginPoint(pnt1);
@@ -1038,46 +1038,46 @@ void Draw_LineArrow::rotateShape(float angle)
 
 QPointF Draw_LineArrow::getMinPoint()
 {
-	int minPntx,minPnty;
-	QPointF pnt;
+  int minPntx,minPnty;
+  QPointF pnt;
 
-	minPntx=arrow_pnts[0].x();
-	minPnty=arrow_pnts[0].y();
+  minPntx=arrow_pnts[0].x();
+  minPnty=arrow_pnts[0].y();
 
-	for(int i=0;i<arrow_pnts.size();i++)
-	{
-		if(arrow_pnts[i].x()<minPntx)
-			minPntx=arrow_pnts[i].x();
-		if(arrow_pnts[i].y()<minPnty)
-			minPnty=arrow_pnts[i].y();
-	}
+  for(int i=0;i<arrow_pnts.size();i++)
+  {
+    if(arrow_pnts[i].x()<minPntx)
+      minPntx=arrow_pnts[i].x();
+    if(arrow_pnts[i].y()<minPnty)
+      minPnty=arrow_pnts[i].y();
+  }
 
-	pnt.setX(minPntx);
-	pnt.setY(minPnty);
+  pnt.setX(minPntx);
+  pnt.setY(minPnty);
 
-	return pnt;
+  return pnt;
 }
 
 QPointF Draw_LineArrow::getMaxPoint()
 {
-	int maxPntx,maxPnty;
-	QPointF pnt;
+  int maxPntx,maxPnty;
+  QPointF pnt;
 
-	maxPntx=arrow_pnts[0].x();
-	maxPnty=arrow_pnts[0].y();
+  maxPntx=arrow_pnts[0].x();
+  maxPnty=arrow_pnts[0].y();
 
-	for(int i=0;i<arrow_pnts.size();i++)
-	{
-		if(arrow_pnts[i].x()>maxPntx)
-			maxPntx=arrow_pnts[i].x();
-		if(arrow_pnts[i].y()>maxPnty)
-			maxPnty=arrow_pnts[i].y();
-	}
+  for(int i=0;i<arrow_pnts.size();i++)
+  {
+    if(arrow_pnts[i].x()>maxPntx)
+      maxPntx=arrow_pnts[i].x();
+    if(arrow_pnts[i].y()>maxPnty)
+      maxPnty=arrow_pnts[i].y();
+  }
 
-	pnt.setX(maxPntx);
-	pnt.setY(maxPnty);
+  pnt.setX(maxPntx);
+  pnt.setY(maxPnty);
 
-	return pnt;
+  return pnt;
 }
 
 

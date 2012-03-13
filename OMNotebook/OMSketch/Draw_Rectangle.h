@@ -23,10 +23,10 @@ class Draw_Rectangle:public QGraphicsPathItem
     QPointF getBoundMaxPnt();
 
     QPainterPath getRect(QPointF pnt,QPointF pnt1);
-	QPainterPath getRotRect(QPointF pnt,QPointF pnt1);
+  QPainterPath getRotRect(QPointF pnt,QPointF pnt1);
 
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
     void setStartPoint(QPointF strt_pnt);
     void setEndPoint(QPointF lst_pnt);
@@ -59,10 +59,10 @@ class Draw_Rectangle:public QGraphicsPathItem
 
      //checking the mouse position to resize and move rectangle
      bool isMouseClickedOnStartHandle(const QPointF pnt);
-	 bool isMouseClickedOnEndHandle(const QPointF pnt);
-	 bool isMouseClickedOnRotateHandle(const QPointF pnt);
+   bool isMouseClickedOnEndHandle(const QPointF pnt);
+   bool isMouseClickedOnRotateHandle(const QPointF pnt);
      bool isMouseClickedOnShape(const QPointF pnt);
-	 bool isClickedOnHandleOrShape(QPointF point);
+   bool isClickedOnHandleOrShape(QPointF point);
 
      //setting the pen color
      QColor getPenColor();
@@ -73,14 +73,14 @@ class Draw_Rectangle:public QGraphicsPathItem
 
      void translate_items(QPointF pnt,QPointF pnt1);
 
-	 QPointF rotationStartPoint,rotationEndPoint;
+   QPointF rotationStartPoint,rotationEndPoint;
 
-	//show handles
-	void showHandles();
-	//hide handles
-	void hideHandles();
+  //show handles
+  void showHandles();
+  //hide handles
+  void hideHandles();
 
-	//rotate the shapes
+  //rotate the shapes
     void rotateShape(float angle);
 
      virtual QPointF getTranslate(){return QPointF(0,0);}
@@ -97,7 +97,7 @@ class Draw_Rectangle:public QGraphicsPathItem
      QVector<Draw_Rectangle*> rects;
 
      float angle;
-	 bool isObjectSelected;
+   bool isObjectSelected;
 
   private:
      void print();

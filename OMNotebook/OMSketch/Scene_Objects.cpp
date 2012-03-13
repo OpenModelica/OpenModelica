@@ -13,12 +13,12 @@ Scene_Objects::Scene_Objects()
     ObjectStrtBoundPnt=pnt1;
     ObjectEndBoundPnt=pnt1;
  
-	rotation=0;
+  rotation=0;
 }
 
 void Scene_Objects::setObjectPos(QPointF pnt,QPointF pnt1)
 {
-	qDebug()<<"objects pnts "<<pnt<<"  "<<pnt1<<"\n";
+  qDebug()<<"objects pnts "<<pnt<<"  "<<pnt1<<"\n";
     ObjectStrtPnt=pnt;
     ObjectEndPnt=pnt1;
     /*QPainterPath path;
@@ -79,7 +79,7 @@ int Scene_Objects::getObject(int &position)
     {
        if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=pnt.y())&&(ObjectEndPnt.y()>=pnt.y()))
        {
-		   if(ObjectId==1)
+       if(ObjectId==1)
            {
               position=ObjectPos;
               return ObjectId;
@@ -123,27 +123,27 @@ int Scene_Objects::getObject(int &position)
            }
        }
 
-	   if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=ObjectEndPnt.y())&&(ObjectEndPnt.y()>=pnt.y()))
+     if((ObjectStrtPnt.x()<=pnt.x())&&(ObjectEndPnt.x()>=pnt.x())&&(ObjectStrtPnt.y()<=ObjectEndPnt.y())&&(ObjectEndPnt.y()>=pnt.y()))
        {
-		   qDebug()<<"Entered the arc condition\n";
+       qDebug()<<"Entered the arc condition\n";
 
-		   if(ObjectId==6)
+       if(ObjectId==6)
            {
               position=ObjectPos;
               return ObjectId;
            }
 
-		   if(ObjectId==8)
+       if(ObjectId==8)
            {
-			  position=ObjectPos;
+        position=ObjectPos;
               return ObjectId;
            }
 
-	   }
+     }
 
-	}
+  }
 
-	return 0;
+  return 0;
 }
 
 void Scene_Objects::setSelected(bool selected)

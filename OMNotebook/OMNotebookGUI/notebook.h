@@ -82,25 +82,25 @@ public:
   CellApplication *application();
 
 public slots:
-  void updateMenus();						// Added 2005-11-07 AF
+  void updateMenus();            // Added 2005-11-07 AF
   void updateStyleMenu();
-  void updateEditMenu();					// Added 2005-11-02 AF
-  void updateCellMenu();					// Added 2006-02-03 AF
-  void updateFontMenu();					// Added 2005-11-03 AF
-  void updateFontFaceMenu();				// Added 2005-11-03 AF
-  void updateFontSizeMenu();				// Added 2005-11-04 AF
-  void updateFontStretchMenu();			// Added 2005-11-04 AF
-  void updateFontColorMenu();				// Added 2005-11-07 AF
-  void updateTextAlignmentMenu();			// Added 2005-11-07 AF
-  void updateVerticalAlignmentMenu();		// Added 2005-11-07 AF
-  void updateBorderMenu();				// Added 2005-11-07 AF
-  void updateMarginMenu();				// Added 2005-11-07 AF
-  void updatePaddingMenu();				// Added 2005-11-07 AF
-  void updateWindowMenu();				// Added 2006-01-27 AF
-  void updateWindowTitle();				// Added 2006-01-17 AF
-  void updateChapterCounters();			// Added 2006-03-02 AF
-  void setStatusMessage( QString msg );	// Added 2006-02-10 AF
-  void forwardedAction( int action );		// Added 2006-04-27 AF
+  void updateEditMenu();          // Added 2005-11-02 AF
+  void updateCellMenu();          // Added 2006-02-03 AF
+  void updateFontMenu();          // Added 2005-11-03 AF
+  void updateFontFaceMenu();        // Added 2005-11-03 AF
+  void updateFontSizeMenu();        // Added 2005-11-04 AF
+  void updateFontStretchMenu();      // Added 2005-11-04 AF
+  void updateFontColorMenu();        // Added 2005-11-07 AF
+  void updateTextAlignmentMenu();      // Added 2005-11-07 AF
+  void updateVerticalAlignmentMenu();    // Added 2005-11-07 AF
+  void updateBorderMenu();        // Added 2005-11-07 AF
+  void updateMarginMenu();        // Added 2005-11-07 AF
+  void updatePaddingMenu();        // Added 2005-11-07 AF
+  void updateWindowMenu();        // Added 2006-01-27 AF
+  void updateWindowTitle();        // Added 2006-01-17 AF
+  void updateChapterCounters();      // Added 2006-03-02 AF
+  void setStatusMessage( QString msg );  // Added 2006-02-10 AF
+  void forwardedAction( int action );    // Added 2006-04-27 AF
   void setPosition(int r, int c);
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
@@ -113,41 +113,41 @@ private slots:
   void newFile();
   void openFile(const QString filename="");
   void closeFile();
-  void closeEvent( QCloseEvent *event );			// Added 2006-01-19 AF
+  void closeEvent( QCloseEvent *event );      // Added 2006-01-19 AF
   void aboutQTNotebook();
-  void aboutQT();									// Added 2006-02-21 AF
-  void helpText();								// Added 2006-02-03 AF
+  void aboutQT();                  // Added 2006-02-21 AF
+  void helpText();                // Added 2006-02-03 AF
   void saveas();
   void save();
-  void quitOMNotebook();							// Added 2006-01-18 AF
-  void print();									// Added 2005-12-19 AF
-  void selectFont();								// Added 2005-11-07 AF
+  void quitOMNotebook();              // Added 2006-01-18 AF
+  void print();                  // Added 2005-12-19 AF
+  void selectFont();                // Added 2005-11-07 AF
   void changeStyle(QAction *action);
   void changeStyle();
-  void changeFont(QAction *action);				// Added 2005-11-03 AF
-  void changeFontFace(QAction *action);			// Added 2005-11-03 AF
-  void changeFontSize(QAction *action);			// Added 2005-11-04 AF
-  void changeFontStretch(QAction *action);		// Added 2005-11-04 AF
-  void changeFontColor(QAction *action);			// Added 2005-11-07 AF
-  void changeTextAlignment(QAction *action);		// Added 2005-11-07 AF
-  void changeVerticalAlignment(QAction *action);	// Added 2005-11-07 AF
-  void changeBorder(QAction *action);				// Added 2005-11-07 AF
-  void changeMargin(QAction *action);				// Added 2005-11-07 AF
-  void changePadding(QAction *action);			// Added 2005-11-07 AF
-  void changeWindow(QAction *action);				// Added 2006-01-27 AF
+  void changeFont(QAction *action);        // Added 2005-11-03 AF
+  void changeFontFace(QAction *action);      // Added 2005-11-03 AF
+  void changeFontSize(QAction *action);      // Added 2005-11-04 AF
+  void changeFontStretch(QAction *action);    // Added 2005-11-04 AF
+  void changeFontColor(QAction *action);      // Added 2005-11-07 AF
+  void changeTextAlignment(QAction *action);    // Added 2005-11-07 AF
+  void changeVerticalAlignment(QAction *action);  // Added 2005-11-07 AF
+  void changeBorder(QAction *action);        // Added 2005-11-07 AF
+  void changeMargin(QAction *action);        // Added 2005-11-07 AF
+  void changePadding(QAction *action);      // Added 2005-11-07 AF
+  void changeWindow(QAction *action);        // Added 2006-01-27 AF
 
-  void undoEdit();				// Added 2006-02-03 AF
-  void redoEdit();				// Added 2006-02-03 AF
-  void cutEdit();					// Added 2006-02-03 AF
-  void copyEdit();				// Added 2006-02-03 AF
-  void pasteEdit();				// Added 2006-02-03 AF
-  void findEdit();				// Added 2006-08-24 AF
-  void replaceEdit();				// Added 2006-08-24 AF
+  void undoEdit();        // Added 2006-02-03 AF
+  void redoEdit();        // Added 2006-02-03 AF
+  void cutEdit();          // Added 2006-02-03 AF
+  void copyEdit();        // Added 2006-02-03 AF
+  void pasteEdit();        // Added 2006-02-03 AF
+  void findEdit();        // Added 2006-08-24 AF
+  void replaceEdit();        // Added 2006-08-24 AF
 
-  void insertImage();				// Added 2005-11-18 AF
-  void insertLink();				// Added 2005-12-05 AF
-  void openOldFile();				// Added 2005-12-01 AF
-  void pureText();				// Added 2005-11-21 AF
+  void insertImage();        // Added 2005-11-18 AF
+  void insertLink();        // Added 2005-12-05 AF
+  void openOldFile();        // Added 2005-12-01 AF
+  void pureText();        // Added 2005-11-21 AF
 
   void Sketch(); //Added by jhansi
   void sketchImageEdit();//Added by jhansi
@@ -158,8 +158,8 @@ private slots:
   void cutCell();
   void copyCell();
   void pasteCell();
-  void ungroupCell();				// Added 2006-04-26 AF
-  void splitCell();				// Added 2006-04-26 AF
+  void ungroupCell();        // Added 2006-04-26 AF
+  void splitCell();        // Added 2006-04-26 AF
   void moveCursorUp();
   void moveCursorDown();
   void groupCellsAction();
@@ -176,11 +176,11 @@ private:
   void createCellMenu();
   void createFormatMenu();
   void createInsertMenu();
-  void createWindowMenu();		//Added 2006-01-27 AF
+  void createWindowMenu();    //Added 2006-01-27 AF
   void createAboutMenu();
 
-  bool cellEditable();			//Added 2005-11-11 AF
-  void evalCells();				//Added 2006-02-14 AF
+  bool cellEditable();      //Added 2005-11-11 AF
+  void evalCells();        //Added 2006-02-14 AF
   //void createSavingTimer();
 
   QVector<Cell*> cells,temp_cells; //Added by jhansi
@@ -193,8 +193,8 @@ private:
   QMenu *editMenu;
   QMenu *cellMenu;
   QMenu *formatMenu;
-  QMenu *insertMenu;					// Added 2005-11-18 AF
-  QMenu *windowMenu;					// Added 2006-01-27 AF
+  QMenu *insertMenu;          // Added 2005-11-18 AF
+  QMenu *windowMenu;          // Added 2006-01-27 AF
   QMenu *aboutMenu;
 
   // 2005-11-03/04/07 AF, Added some more for text setting changes
@@ -232,7 +232,7 @@ private:
   QAction *openFileAction;
   QAction *saveAsAction;
   QAction *saveAction;
-  QAction *printAction;				// Added 2005-12-19 AF
+  QAction *printAction;        // Added 2005-12-19 AF
   QAction *closeFileAction;
   QAction *quitWindowAction;
   QAction *indentAction;
@@ -245,16 +245,16 @@ public:
   QAction *copyAction;
 private:
   QAction *pasteAction;
-  QAction *findAction;				// Changed 2006-08-24 AF
-  QAction *replaceAction;				// Added 2006-08-24 AF
+  QAction *findAction;        // Changed 2006-08-24 AF
+  QAction *replaceAction;        // Added 2006-08-24 AF
   QAction *showExprAction;
 
   //QAction *cutCellAction;
   //QAction *copyCellAction;
   //QAction *pasteCellAction;
   QAction *addCellAction;
-  QAction *ungroupCellAction;			// Added 2006-04-26 AF
-  QAction *splitCellAction;			// Added 2006-04-26 AF
+  QAction *ungroupCellAction;      // Added 2006-04-26 AF
+  QAction *splitCellAction;      // Added 2006-04-26 AF
   QAction *deleteCellAction;
   QAction *nextCellAction;
   QAction *previousCellAction;
@@ -264,8 +264,8 @@ private:
   QAction *textAction;
 
   QAction *aboutAction;
-  QAction *helpAction;				// Added 2006-02-03 AF
-  QAction *aboutQtAction;				// Added 2006-02-21 AF
+  QAction *helpAction;        // Added 2006-02-03 AF
+  QAction *aboutQtAction;        // Added 2006-02-21 AF
 
   QAction *facePlain;
   QAction *faceBold;
@@ -326,10 +326,10 @@ private:
   QAction *marginOther;
   QAction *paddingOther;
 
-  QAction *insertImageAction;		// Added 2005-11-18 AF
-  QAction *insertLinkAction;		// Added 2005-12-05 AF
-  QAction *importOldFile;			// Added 2005-12-01 AF
-  QAction *exportPureText;		// Added 2005-11-21 AF
+  QAction *insertImageAction;    // Added 2005-11-18 AF
+  QAction *insertLinkAction;    // Added 2005-12-05 AF
+  QAction *importOldFile;      // Added 2005-12-01 AF
+  QAction *exportPureText;    // Added 2005-11-21 AF
 
   QAction *insertSketch;//Added by jhansi
   QAction *insertSketchImage;//Added by jhansi
@@ -371,13 +371,13 @@ private:
   // QTimer *savingTimer_;
   map<QString, QAction*> styles_;
 
-  SearchForm* findForm_;		// added 2006-08-24 AF
-  bool closing_;				// Added 2006-02-09 AF
+  SearchForm* findForm_;    // added 2006-08-24 AF
+  bool closing_;        // Added 2006-02-09 AF
 
-  static QString openDir_;	// Added 2006-03-01 AF
-  static QString saveDir_;	// Added 2006-03-01 AF
-  static QString imageDir_;	// Added 2006-03-01 AF
-  static QString linkDir_;	// Added 2006-03-01 AF
+  static QString openDir_;  // Added 2006-03-01 AF
+  static QString saveDir_;  // Added 2006-03-01 AF
+  static QString imageDir_;  // Added 2006-03-01 AF
+  static QString linkDir_;  // Added 2006-03-01 AF
 
   QLabel* posIndicator, *stateIndicator;
 };

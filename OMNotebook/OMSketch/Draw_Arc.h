@@ -65,28 +65,28 @@ public:
     virtual void BoundingBox();
     void print();
 
-	//show handles
-	void showHandles();
-	//hide handles
-	void hideHandles();
+  //show handles
+  void showHandles();
+  //hide handles
+  void hideHandles();
 
     QPainterPath getArc();
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
-	//rotate the shapes
+  //rotate the shapes
     void rotateShape(float angle);
 
 
     QGraphicsPathItem *item;
     QGraphicsRectItem *Strt_Rect,*End_Rect,*Curve_Rect,*Bounding_Rect;
-	QGraphicsEllipseItem *Rot_Rect;
+  QGraphicsEllipseItem *Rot_Rect;
     QPointF bounding_strt_pnt,bounding_end_pnt;
     int click;
 
 
 
-	bool isObjectSelected;
+  bool isObjectSelected;
 
  private:
    QPointF StrtPnt,EndPnt,CurvePnt;

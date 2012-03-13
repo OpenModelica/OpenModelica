@@ -6,7 +6,7 @@ Draw_Ellipse::Draw_Ellipse()
     draw_mode=false;
     angle=0;
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 
     pen =  QPen();
     pen.setColor(QColor(0,0,0));
@@ -50,15 +50,15 @@ void Draw_Ellipse::drawImage(QPainter *painter,QString &text,QPointF point)
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
 
-	QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-	//this->StrtPnt=item->sceneBoundingRect().topLeft();
+  //this->StrtPnt=item->sceneBoundingRect().topLeft();
     //this->EndPnt = item->sceneBoundingRect().bottomRight();
-	pnt=this->StrtPnt;
-	pnt1=this->EndPnt;
+  pnt=this->StrtPnt;
+  pnt1=this->EndPnt;
 
-	pnt+=point;
-	pnt1+=point;
+  pnt+=point;
+  pnt1+=point;
 
     painter->setPen(this->pen);
     painter->setBrush(this->brush);
@@ -78,8 +78,8 @@ void Draw_Ellipse::drawImage(QPainter *painter,QString &text,QPointF point)
     text+="BrushStyle";
     text+=" "+color_r.setNum(this->brush.style())+"\n";
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 }
 
@@ -199,7 +199,7 @@ bool Draw_Ellipse::isMouseClickedOnStartHandle(QPointF pnt)
 
 bool Draw_Ellipse::isMouseClickedOnEndHandle(QPointF pnt)
 {
-	    
+      
     if(this->End_Rect->isUnderMouse())
     {
         draw_state=2;
@@ -260,7 +260,7 @@ QColor Draw_Ellipse::getPenColor()
 
 void Draw_Ellipse::setTranslate(QPointF pnt,QPointF pnt1)
 {
-	//setStartPoint(getStartPnt()-(pnt-pnt1));
+  //setStartPoint(getStartPnt()-(pnt-pnt1));
     //setEndPoint(getEndPnt()-(pnt-pnt1));
 
     if(draw_state==3)
@@ -504,17 +504,17 @@ QBrush Draw_Ellipse::getBrush()
 
 void Draw_Ellipse::showHandles()
 {
-	if(!Strt_Rect->isVisible())
+  if(!Strt_Rect->isVisible())
         Strt_Rect->show();
     if(!End_Rect->isVisible())
-		End_Rect->show();
+    End_Rect->show();
     if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
+    Rot_Rect->show();
 }
 
 void Draw_Ellipse::hideHandles()
 {
-	if(Strt_Rect->isVisible())
+  if(Strt_Rect->isVisible())
         Strt_Rect->hide();
     if(End_Rect->isVisible())
         End_Rect->hide();
@@ -524,7 +524,7 @@ void Draw_Ellipse::hideHandles()
 
 bool Draw_Ellipse::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnStartHandle(point))
             return true;
@@ -542,17 +542,17 @@ bool Draw_Ellipse::isClickedOnHandleOrShape(QPointF point)
 void Draw_Ellipse::rotateShape(float angle)
 {
 
-	 item->setRotation(angle);
+   item->setRotation(angle);
      Strt_Rect->setRotation(angle);
      End_Rect->setRotation(angle);
      Rot_Rect->setRotation(angle);
 
-	 item->update();
+   item->update();
      Strt_Rect->update();
      End_Rect->update();
      Rot_Rect->update();
 
-	 QPointF pnt1;
+   QPointF pnt1;
      pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
      pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
      item->setTransformOriginPoint(pnt1);

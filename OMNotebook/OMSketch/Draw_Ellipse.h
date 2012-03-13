@@ -12,8 +12,8 @@ class Draw_Ellipse:public QGraphicsEllipseItem
     void setDefaults(){}
 
     QPainterPath getEllep(QPointF pnt,QPointF pnt1);
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
     //QGraphicsItem getGraphicsItem(){}
 

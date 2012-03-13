@@ -14,13 +14,13 @@ Draw_Arc::Draw_Arc()
     brush.setColor(QColor(255,255,255));
     brush.setStyle(Qt::NoBrush);
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 
-	
+  
 
     click=-1;
 
-	angle=0.0;
+  angle=0.0;
 }
 
 void Draw_Arc::setStartPoint(QPointF strt_pnt)
@@ -91,7 +91,7 @@ void Draw_Arc::setEdgeRects()
     Bounding_Rect = new QGraphicsRectItem(QRectF(item->boundingRect().topLeft(),item->boundingRect().bottomRight()));
     Bounding_Rect->setPen(bound_rect);
 
-	QPointF pnt1,pnt2;
+  QPointF pnt1,pnt2;
 
     pnt1.setX(((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2)-5);
     pnt1.setY(item->boundingRect().topLeft().y()-20);
@@ -251,25 +251,25 @@ void Draw_Arc::setTranslate(QPointF pnt,QPointF pnt1)
     setEndPoint(getEndPnt()-(pnt-pnt1));
     setCurvePoint(getCurvePnt()-(pnt-pnt1));*/
 
-	
-	item->setPos(item->pos()-(pnt-pnt1));
-	item->update();
+  
+  item->setPos(item->pos()-(pnt-pnt1));
+  item->update();
 
-	Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
-	Strt_Rect->update();
+  Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
+  Strt_Rect->update();
 
-	End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
-	End_Rect->update();
+  End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
+  End_Rect->update();
 
-	Curve_Rect->setPos(Curve_Rect->pos()-(pnt-pnt1));
-	Curve_Rect->update();
+  Curve_Rect->setPos(Curve_Rect->pos()-(pnt-pnt1));
+  Curve_Rect->update();
 
-	Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
-	Rot_Rect->update();
+  Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
+  Rot_Rect->update();
 
 
-	Bounding_Rect->setPos(Bounding_Rect->pos()-(pnt-pnt1));
-	Bounding_Rect->update();
+  Bounding_Rect->setPos(Bounding_Rect->pos()-(pnt-pnt1));
+  Bounding_Rect->update();
 
     //BoundingBox();
 }
@@ -345,17 +345,17 @@ void Draw_Arc::drawImage(QPainter *painter, QString &text,QPointF point)
 
     QVector<QPointF> pnts;
 
-	QPointF pnt,pnt1,pnt2;
+  QPointF pnt,pnt1,pnt2;
 
-	pnt=this->StrtPnt;
-	pnt1=this->EndPnt;
-	pnt2=this->CurvePnt;
+  pnt=this->StrtPnt;
+  pnt1=this->EndPnt;
+  pnt2=this->CurvePnt;
 
-	qDebug()<<"curve pnts "<<StrtPnt<<"  "<<EndPnt<<"  "<<CurvePnt<<"\n";
+  qDebug()<<"curve pnts "<<StrtPnt<<"  "<<EndPnt<<"  "<<CurvePnt<<"\n";
 
-	pnt+=point;
-	pnt1+=point;
-	pnt2+=point;
+  pnt+=point;
+  pnt1+=point;
+  pnt2+=point;
 
     QPainterPath arc;
     arc.moveTo(pnt.x(),pnt.y());
@@ -367,10 +367,10 @@ void Draw_Arc::drawImage(QPainter *painter, QString &text,QPointF point)
 
     pnts.push_back(this->StrtPnt);
     pnts.push_back(this->EndPnt);
-	pnts.push_back(this->CurvePnt);
+  pnts.push_back(this->CurvePnt);
 
-	for(int i=0;i<pnts.size();i++)
-	   qDebug()<<"curve pnts in pnts "<<pnts[i]<<"\n";
+  for(int i=0;i<pnts.size();i++)
+     qDebug()<<"curve pnts in pnts "<<pnts[i]<<"\n";
 
     text+="Arc\n";
     text+="Coords";
@@ -389,8 +389,8 @@ void Draw_Arc::drawImage(QPainter *painter, QString &text,QPointF point)
     text+="PenWidth";
     text+=" "+color_r.setNum(this->pen.width())+"\n";
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 
 }
@@ -448,31 +448,31 @@ QPen Draw_Arc::getPen()
 
 void Draw_Arc::showHandles()
 {
-	 if(!Strt_Rect->isVisible())
+   if(!Strt_Rect->isVisible())
          Strt_Rect->show();
      if(!End_Rect->isVisible())
          End_Rect->show();
      if(!Curve_Rect->isVisible())
          Curve_Rect->show();
-	 if(!Rot_Rect->isVisible())
-		 Rot_Rect->show();
+   if(!Rot_Rect->isVisible())
+     Rot_Rect->show();
 }
 
 void Draw_Arc::hideHandles()
 {
-	 if(Strt_Rect->isVisible())
+   if(Strt_Rect->isVisible())
          Strt_Rect->hide();
      if(End_Rect->isVisible())
          End_Rect->hide();
      if(Curve_Rect->isVisible())
          Curve_Rect->hide();
      if(Rot_Rect->isVisible())
-		 Rot_Rect->hide();
+     Rot_Rect->hide();
 }
 
 bool Draw_Arc::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnStartHandle(point))
             return true;
@@ -493,21 +493,21 @@ bool Draw_Arc::isClickedOnHandleOrShape(QPointF point)
 void Draw_Arc::rotateShape(float angle)
 {
 
-	 item->setRotation(angle);
+   item->setRotation(angle);
      Strt_Rect->setRotation(angle);
      End_Rect->setRotation(angle);
      Rot_Rect->setRotation(angle);
      Curve_Rect->setRotation(angle);
      Bounding_Rect->setRotation(angle);
 
-	 item->update();
-	 Strt_Rect->update();
-	 End_Rect->update();
-	 Rot_Rect->update();
-	 Curve_Rect->update();
-	 Bounding_Rect->update();
+   item->update();
+   Strt_Rect->update();
+   End_Rect->update();
+   Rot_Rect->update();
+   Curve_Rect->update();
+   Bounding_Rect->update();
 
-	QPointF pnt1;
+  QPointF pnt1;
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     item->setTransformOriginPoint(pnt1);

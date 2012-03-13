@@ -72,9 +72,9 @@ class Graph_Scene:public QGraphicsScene
 
     Draw_Rectangle *rect;
 
-	bool isObjectEdited;
+  bool isObjectEdited;
 
-	bool isShapeImported;
+  bool isShapeImported;
 
    signals:
       void item_selected(Graph_Scene* scene_item);
@@ -95,7 +95,7 @@ class Graph_Scene:public QGraphicsScene
      void updateObjects();
      void selectedObjects();
 
-	 void deleteShapes();
+   void deleteShapes();
 
      //object_indx stores the index of the object in objects vector.
      //index stores the index of slected object that is line,rectangle,ellipse.
@@ -137,7 +137,7 @@ class Graph_Scene:public QGraphicsScene
      void draw_arc_move(QPointF pnt,QPointF pnt1);
      void draw_arc_state(QPointF pnt,QPointF pnt1);
      
-	 
+   
      void draw_arrow();
      void draw_arrow_move(QPointF pnt,QPointF pnt1);
      void draw_arrow_state(QPointF pnt,QPointF pnt1);
@@ -159,7 +159,7 @@ class Graph_Scene:public QGraphicsScene
      void draw_text_state(QPointF pnt,QPointF pnt1);
      bool check_object(QPointF pnt,Draw_Text* text1);
 
-	 void select_objects(Scene_Objects objects1);
+   void select_objects(Scene_Objects objects1);
 
      void getDist(QPointF &vertex,float &dist);
 
@@ -208,9 +208,9 @@ class Graph_Scene:public QGraphicsScene
      Scene_Objects *object1,*object2,*object3,*object4,*object5,*object6,*object7,*object8,*object9,*object10,*copy_object1,*multi_copy_object;
      QVector<Scene_Objects*> objects,copy_objects,temp_copy_objects,paste_selected_objects;
 
-	 QVector<QPointF> pnts;
+   QVector<QPointF> pnts;
 
-	 
+   
 
      QGraphicsLineItem *line_item;
 

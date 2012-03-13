@@ -22,7 +22,7 @@ Draw_Line::Draw_Line():line_draw_state(false)
 
     angle=0;
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 }
 
 void Draw_Line::setStartPoint(QPointF pnt)
@@ -120,7 +120,7 @@ bool Draw_Line::isMouseClickedOnRotateHandle(const QPointF pnt)
     {
         draw_state=3;
 
-		QPointF pnt1;
+    QPointF pnt1;
         pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
         pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
         for(int i=0;i<edge_items.size();i++)
@@ -149,25 +149,25 @@ bool Draw_Line::isMouseClickedOnShape(const QPointF pnt)
 void Draw_Line::setTranslate(QPointF pnt,QPointF pnt1)
 {
 
-	if(item->rotation()==0)
-	{		 
+  if(item->rotation()==0)
+  {     
         for(int i=0;i<poly_pnts.size();i++)
             poly_pnts[i]-=(pnt-pnt1);
 
        for(int i=0;i<poly_pnts.size();i++)
-	       edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
+         edge_items[i]->setRect((QRectF(QPointF(poly_pnts[i].x()-5.0,poly_pnts[i].y()-5.0),QPointF(poly_pnts[i].x()+5.0,poly_pnts[i].y()+5.0))));
 
-	
+  
        QPainterPath polygon;
 
        if(!poly_pnts.isEmpty())
        {
           QPolygonF polygon_pnts(poly_pnts);
           polygon.addPolygon(polygon_pnts);
-	   }
+     }
 
-	   item->setPath(polygon);
-	
+     item->setPath(polygon);
+  
        pnt.setX(((polygon.boundingRect().topLeft().x()+polygon.boundingRect().bottomRight().x())/2)-5);
        pnt.setY(polygon.boundingRect().topLeft().y()-20);
 
@@ -175,24 +175,24 @@ void Draw_Line::setTranslate(QPointF pnt,QPointF pnt1)
        pnt1.setY(polygon.boundingRect().topLeft().y()-10);
 
        Rot_Rect->setRect(QRectF(pnt,pnt1));
-	   Rot_Rect->update();
-	}
+     Rot_Rect->update();
+  }
 
-	if(item->rotation()!=0)
-	{
-		item->setPos(item->pos()-(pnt-pnt1));
-		item->update();
-		for(int i=0;i<edge_items.size();i++)
-		{
+  if(item->rotation()!=0)
+  {
+    item->setPos(item->pos()-(pnt-pnt1));
+    item->update();
+    for(int i=0;i<edge_items.size();i++)
+    {
 
-			edge_items[i]->setPos(edge_items[i]->pos()-(pnt-pnt1));
-			edge_items[i]->update();
+      edge_items[i]->setPos(edge_items[i]->pos()-(pnt-pnt1));
+      edge_items[i]->update();
 
-		}
+    }
 
-		Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
-		Rot_Rect->update();
-	}
+    Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
+    Rot_Rect->update();
+  }
 
 }
 
@@ -202,7 +202,7 @@ void Draw_Line::setRotate(const QPointF &pnt,const QPointF &pnt1)
     {
        angle+=0.5;
        item->setRotation(angle);
-	   Rot_Rect->setRotation(angle);
+     Rot_Rect->setRotation(angle);
        for(int i=0;i<edge_items.size();i++)
        {
            edge_items[i]->setRotation(angle);
@@ -214,7 +214,7 @@ void Draw_Line::setRotate(const QPointF &pnt,const QPointF &pnt1)
     {
        angle-=0.5;
        item->setRotation(angle);
-	   Rot_Rect->setRotation(angle);
+     Rot_Rect->setRotation(angle);
        for(int i=0;i<edge_items.size();i++)
        {
            edge_items[i]->setRotation(angle);
@@ -253,7 +253,7 @@ QGraphicsLineItem* Draw_Line::getLine(int indx)
     {
         return lines[indx];
     }
-	return NULL;
+  return NULL;
 }
 
 void Draw_Line::clear_lines()
@@ -287,7 +287,7 @@ void Draw_Line::drawEdges()
 
 QPainterPath Draw_Line::getPolyLine()
 {
-	QPainterPath polygon;
+  QPainterPath polygon;
     if(!poly_pnts.isEmpty())
     {
         
@@ -312,7 +312,7 @@ QPainterPath Draw_Line::getPolyLine()
         return polygon;
     }
 
-	return polygon;
+  return polygon;
 }
 
 void Draw_Line::drawImage(QPainter *painter, QString &text,QPointF point)
@@ -321,13 +321,13 @@ void Draw_Line::drawImage(QPainter *painter, QString &text,QPointF point)
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
 
-	QVector<QPointF> pnts(poly_pnts.size());
+  QVector<QPointF> pnts(poly_pnts.size());
 
-	for(int i=0;i<pnts.size();i++)
-	{
-		pnts[i]=poly_pnts[i];
-		pnts[i]+=point;
-	}
+  for(int i=0;i<pnts.size();i++)
+  {
+    pnts[i]=poly_pnts[i];
+    pnts[i]+=point;
+  }
 
     if(!poly_pnts.isEmpty())
     {
@@ -355,8 +355,8 @@ void Draw_Line::drawImage(QPainter *painter, QString &text,QPointF point)
         text+=" "+color_r.setNum(this->pen.width())+"\n";
         
 
-		text+="Rotation";
-	    text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+    text+="Rotation";
+      text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
     }
 }
@@ -469,36 +469,36 @@ QPen Draw_Line::getPen()
 
 void Draw_Line::showHandles()
 {
-	 for(int i=0;i<edge_items.size();i++)
+   for(int i=0;i<edge_items.size();i++)
      {
           if(!edge_items[i]->isVisible())
           {
                 edge_items[i]->show();
           }
-	 }
+   }
 
-	 if(!Rot_Rect->isVisible())
-		 Rot_Rect->show();
+   if(!Rot_Rect->isVisible())
+     Rot_Rect->show();
 }  
 
 void Draw_Line::hideHandles()
 {
-	 for(int i=0;i<edge_items.size();i++)
+   for(int i=0;i<edge_items.size();i++)
      {
           if(edge_items[i]->isVisible())
           {
                 edge_items[i]->hide();
           }
-	 }
+   }
 
-	 if(Rot_Rect->isVisible())
-		 Rot_Rect->hide();
+   if(Rot_Rect->isVisible())
+     Rot_Rect->hide();
 
 }
 
 bool Draw_Line::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getPolyLineDrawn())
+  if(getPolyLineDrawn())
     {
         if(isMouseClickedOnHandle(point))
            return true;
@@ -508,31 +508,31 @@ bool Draw_Line::isClickedOnHandleOrShape(QPointF point)
             return true;
     }
     
-	return false;
+  return false;
 }
 
 int Draw_Line::getHandelIndex()
 {
-	return handle_index;
+  return handle_index;
 }
 
 void Draw_Line::rotateShape(float angle)
 {
 
-	item->setRotation(angle);
-	Rot_Rect->setRotation(angle);
+  item->setRotation(angle);
+  Rot_Rect->setRotation(angle);
     for(int i=0;i<edge_items.size();i++)
     {
          edge_items[i]->setRotation(angle);
          edge_items[i]->update();
     }
 
-	item->update();
+  item->update();
     Rot_Rect->update();
 
-	QPointF pnt1;
-	
-	pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
+  QPointF pnt1;
+  
+  pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     for(int i=0;i<edge_items.size();i++)
           edge_items[i]->setTransformOriginPoint(pnt1);

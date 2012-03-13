@@ -35,9 +35,9 @@ class Scene_Objects
     void print();
     QPointF ObjectStrtPnt,ObjectEndPnt,pnt,ObjectStrtBoundPnt,ObjectEndBoundPnt;
     bool selected;
-	QVector<QPointF> pnts;
+  QVector<QPointF> pnts;
     int ObjectId,ObjectPos,ObjectState,ObjectIndx;
-	int rotation;
+  int rotation;
     QGraphicsPathItem *item;
     QGraphicsRectItem *Strt_Rect,*End_Rect;
     QGraphicsEllipseItem *Rot_Rect;

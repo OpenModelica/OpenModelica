@@ -132,13 +132,13 @@ NotebookWindow::NotebookWindow(Document *subject,
     filename_(filename),
     closing_(false),
     app_( subject->application() ), //AF
-    findForm_( 0 )					//AF
+    findForm_( 0 )          //AF
 {
   if( filename_ != QString::null )
     qDebug( filename_.toStdString().c_str() );
 
-  //		subject_->attach(this);
-  //		setMinimumSize( 150, 220 );		//AF
+  //    subject_->attach(this);
+  //    setMinimumSize( 150, 220 );    //AF
 
   toolBar = new QToolBar("Show toolbar", this);
 
@@ -163,11 +163,11 @@ NotebookWindow::NotebookWindow(Document *subject,
   addToolBar(toolBar); //Add icons, update the edit menu etc.
 
   subject_->attach(this);
-  setMinimumSize( 150, 220 );		//AF
+  setMinimumSize( 150, 220 );    //AF
 
 
   // 2006-01-16 AF, Added an icon to the window
-  //		setWindowIcon( QIcon("./omnotebook_png.png") );
+  //    setWindowIcon( QIcon("./omnotebook_png.png") );
   setWindowIcon( QIcon(":/Resources/omnotebook_png.png"));
 
   statusBar()->showMessage("Ready");
@@ -461,14 +461,14 @@ NotebookWindow::~NotebookWindow()
 //class Frame: public QFrame
 //{
 //protected:
-//	void paintEvent(QPaintEvent *event)
-//	{
-//		QPainter p(this);
-//		p.save();
-//		p.setMatrix(QMatrix(.5, 1, .3, .7,1,1));
-//		QFrame::paintEvent(event);
-//		p.restore();
-//	}
+//  void paintEvent(QPaintEvent *event)
+//  {
+//    QPainter p(this);
+//    p.save();
+//    p.setMatrix(QMatrix(.5, 1, .3, .7,1,1));
+//    QFrame::paintEvent(event);
+//    p.restore();
+//  }
 //};
 void NotebookWindow::update()
 {
@@ -479,7 +479,7 @@ void NotebookWindow::update()
 
 
   setCentralWidget(mainWidget);
-  //		mainWidget->setMaximumHeight(250);
+  //    mainWidget->setMaximumHeight(250);
   mainWidget->show();
 }
 
@@ -537,7 +537,7 @@ void NotebookWindow::createFileMenu()
   b->setDefaultAction(openFileAction);
   b->setMenu(recentMenu);
   b->setPopupMode(QToolButton::MenuButtonPopup);
-  //		toolBar->addAction(openFileAction);
+  //    toolBar->addAction(openFileAction);
   toolBar->addWidget(b);
 
   // SAVE AS
@@ -594,7 +594,7 @@ void NotebookWindow::createFileMenu()
   fileMenu->addSeparator();
 
   // RECENT FILES
-  //		recentMenu = fileMenu->addMenu("Recent &Files");
+  //    recentMenu = fileMenu->addMenu("Recent &Files");
   fileMenu->addMenu(recentMenu);
 
   QSettings s("PELAB", "OMNotebook");
@@ -786,8 +786,8 @@ void NotebookWindow::createEditMenu()
   */
 
 
-  //		QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
-  //			this, SLOT(updateEditMenu()));		           // -''-
+  //    QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
+  //      this, SLOT(updateEditMenu()));               // -''-
 }
 
 /*!
@@ -1560,9 +1560,9 @@ void NotebookWindow::createFormatMenu()
   formatMenu->addAction(toolBar->toggleViewAction());
 
 
-  //		showToolBarAction = new QAction(formatMenu, "Show toolbar", true);
-  //		connect(showToolBarAction, SIGNAL(toggled(bool)), toolBar, SLOT(setVisible(bool)));
-  //		connect(toolBar->toggleViewAction(), SIGNAL(toggled(bool)), showToolBarAction
+  //    showToolBarAction = new QAction(formatMenu, "Show toolbar", true);
+  //    connect(showToolBarAction, SIGNAL(toggled(bool)), toolBar, SLOT(setVisible(bool)));
+  //    connect(toolBar->toggleViewAction(), SIGNAL(toggled(bool)), showToolBarAction
 
 }
 
@@ -1619,7 +1619,7 @@ void NotebookWindow::createInsertMenu()
   autoIndentAction = new QAction("Autoindent", this);
   autoIndentAction->setStatusTip(tr("Tries to move the cursor to the right position when return is pressed"));
   autoIndentAction->setCheckable(true);
-  //		autoIndentAction->setChecked(true);
+  //    autoIndentAction->setChecked(true);
 
   b->hide(); //Disable indentation button
 
@@ -1794,7 +1794,7 @@ void NotebookWindow::updateMenus()
   chooseFont->setEnabled( editable );
   insertImageAction->setEnabled( editable );
   insertLinkAction->setEnabled( editable );
-  //		editSketchAttributes->setEnabled( editable );
+  //    editSketchAttributes->setEnabled( editable );
 }
 
 /*!
@@ -2535,7 +2535,7 @@ void NotebookWindow::newFile()
   {
     if(subject_->hasChanged())
     {
-      int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),	QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+      int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),  QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
       if(res == QMessageBox::Yes)
       {
 
@@ -2653,8 +2653,8 @@ void NotebookWindow::closeFile()
 
   // if(savingTimer_)
   //       {
-  // 	 savingTimer_->stop();
-  // 	 delete savingTimer_;
+  //    savingTimer_->stop();
+  //    delete savingTimer_;
   //       }
   //delete subject_;
 }
@@ -2831,7 +2831,7 @@ void NotebookWindow::saveas()
 {
   // if a filename exists, use that filename as default
   QString filename;
-  /*		don't work correctly.
+  /*    don't work correctly.
   if( !subject_->getFilename().isEmpty() )
   {
    // open save as dialog
@@ -2940,7 +2940,7 @@ void NotebookWindow::print()
   QPrinter printer( QPrinter::HighResolution );
   //printer.setFullPage( true );
 
-  //		printer.setColorMode( QPrinter::GrayScale );
+  //    printer.setColorMode( QPrinter::GrayScale );
 
 
   QPrintDialog *dlg = new QPrintDialog(&printer, this);
@@ -3966,7 +3966,7 @@ void NotebookWindow::recentTriggered() //Should only be called from the submenu 
 
 void NotebookWindow::setAutoIndent(bool b)
 {
-  //		if(CellDocument* d = dynamic_cast<CellDocument*>(subject_))
+  //    if(CellDocument* d = dynamic_cast<CellDocument*>(subject_))
   subject_->setAutoIndent2(b);
 
   QSettings s("PELAB", "OMNotebook");

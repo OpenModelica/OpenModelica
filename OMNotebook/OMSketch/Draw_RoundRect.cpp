@@ -19,7 +19,7 @@ Draw_RoundRect::Draw_RoundRect()
     prev_pos.setX(0);
     prev_pos.setY(0);
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 }
 
 Draw_RoundRect::Draw_RoundRect(QPointF pnt,QPointF pnt1):StrtPnt(pnt),EndPnt(pnt1)
@@ -256,7 +256,7 @@ QColor Draw_RoundRect::getPenColor()
 void Draw_RoundRect::setTranslate(QPointF pnt,QPointF pnt1)
 {
 
-	//setStartPoint(getStartPnt()-(pnt-pnt1));
+  //setStartPoint(getStartPnt()-(pnt-pnt1));
     //setEndPoint(getEndPnt()-(pnt-pnt1));
 
     if(draw_state==3)
@@ -324,7 +324,7 @@ void Draw_RoundRect::setRotate(const QPointF &pnt,const QPointF &pnt1)
 
     QPointF rot_pnt(item->boundingRect().topLeft()-item->sceneBoundingRect().topLeft());
     QPointF rot_pnt1(item->boundingRect().bottomRight()-item->sceneBoundingRect().bottomRight());
-	qDebug()<<"item scene bounding rect "<<rot_pnt<<" "<<rot_pnt1<<"\n";
+  qDebug()<<"item scene bounding rect "<<rot_pnt<<" "<<rot_pnt1<<"\n";
     setStartPoint(item->sceneBoundingRect().topLeft());
     setEndPoint(item->sceneBoundingRect().bottomRight());
 
@@ -378,19 +378,19 @@ void Draw_RoundRect::drawImage(QPainter *painter,QString &text,QPointF point)
     QString str_x,str_y,str_x1,str_y1;
     QString color_r,color_g,color_b;
 
-	QPointF pnt,pnt1;
+  QPointF pnt,pnt1;
 
-	//this->StrtPnt=item->sceneBoundingRect().topLeft();
-	//this->EndPnt = item->sceneBoundingRect().bottomRight();
+  //this->StrtPnt=item->sceneBoundingRect().topLeft();
+  //this->EndPnt = item->sceneBoundingRect().bottomRight();
 
-	pnt = this->StrtPnt;
-	pnt1 = this->EndPnt;
+  pnt = this->StrtPnt;
+  pnt1 = this->EndPnt;
 
-	pnt+=point;
-	pnt1+=point;
+  pnt+=point;
+  pnt1+=point;
 
 
-	QPainterPath round_rect;
+  QPainterPath round_rect;
 
     rect = QRectF(pnt,pnt1);
     //print();
@@ -414,8 +414,8 @@ void Draw_RoundRect::drawImage(QPainter *painter,QString &text,QPointF point)
     text+="BrushStyle";
     text+=" "+color_r.setNum(this->brush.style())+"\n";
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 }
 
@@ -561,17 +561,17 @@ QBrush Draw_RoundRect::getBrush()
 
 void Draw_RoundRect::showHandles()
 {
-	if(!Strt_Rect->isVisible())
+  if(!Strt_Rect->isVisible())
         Strt_Rect->show();
     if(!End_Rect->isVisible())
-		End_Rect->show();
+    End_Rect->show();
     if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
+    Rot_Rect->show();
 }
 
 void Draw_RoundRect::hideHandles()
 {
-	if(Strt_Rect->isVisible())
+  if(Strt_Rect->isVisible())
         Strt_Rect->hide();
     if(End_Rect->isVisible())
         End_Rect->hide();
@@ -581,7 +581,7 @@ void Draw_RoundRect::hideHandles()
 
 bool Draw_RoundRect::isClickedOnHandleOrShape(QPointF point)
 {
-	if(getMode())
+  if(getMode())
     {
         if(isMouseClickedOnStartHandle(point))
             return true;
@@ -598,19 +598,19 @@ bool Draw_RoundRect::isClickedOnHandleOrShape(QPointF point)
 
 void Draw_RoundRect::rotateShape(float angle)
 {
-	
-	
-	item->setRotation(angle);
+  
+  
+  item->setRotation(angle);
     Strt_Rect->setRotation(angle);
     End_Rect->setRotation(angle);
     Rot_Rect->setRotation(angle);
 
-	item->update();
+  item->update();
     Strt_Rect->update();
     End_Rect->update();
     Rot_Rect->update();
 
-	QPointF pnt1;
+  QPointF pnt1;
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     item->setTransformOriginPoint(pnt1);
@@ -621,5 +621,5 @@ void Draw_RoundRect::rotateShape(float angle)
 
 Draw_RoundRect::~Draw_RoundRect() 
 {
-	
+  
 }

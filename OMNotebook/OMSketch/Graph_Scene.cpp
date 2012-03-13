@@ -36,43 +36,43 @@ Graph_Scene::Graph_Scene(QObject* parent):QGraphicsScene(parent)
     copy_objects.clear();
 
     pnts.clear();
-	linemode=false;
+  linemode=false;
     mode=false;
 
-	polygon=new Draw_Polygon();
+  polygon=new Draw_Polygon();
     polygon->set_draw_mode(false);
-	
-	line = new Draw_Line();
-	line->set_draw_mode(false);
-	 
+  
+  line = new Draw_Line();
+  line->set_draw_mode(false);
+   
 
-	rect = new Draw_Rectangle();
-	rect->setMode(false);
+  rect = new Draw_Rectangle();
+  rect->setMode(false);
 
-	round_rect = new Draw_RoundRect();
-	round_rect->setMode(false);
+  round_rect = new Draw_RoundRect();
+  round_rect->setMode(false);
 
-	ellep = new Draw_Ellipse();
-	ellep->setMode(false);
+  ellep = new Draw_Ellipse();
+  ellep->setMode(false);
 
-	arc  = new Draw_Arc();
-	arc->setMode(false);
-	arc->click=-1;
+  arc  = new Draw_Arc();
+  arc->setMode(false);
+  arc->click=-1;
 
-	if(objectToDraw==6)
-		arc->click=0;
+  if(objectToDraw==6)
+    arc->click=0;
 
-	arrow  = new Draw_Arrow();
-	arrow->setMode(false);
-
-
-	triangle = new Draw_Triangle();
-	triangle->setMode(false);
+  arrow  = new Draw_Arrow();
+  arrow->setMode(false);
 
 
-	linearrow = new Draw_LineArrow();
-	linearrow->setMode(false);
-	
+  triangle = new Draw_Triangle();
+  triangle->setMode(false);
+
+
+  linearrow = new Draw_LineArrow();
+  linearrow->setMode(false);
+  
 
     pen = QPen();
     brush = QBrush();
@@ -81,7 +81,7 @@ Graph_Scene::Graph_Scene(QObject* parent):QGraphicsScene(parent)
 
     isMultipleSelected=false;
     isCopySelected=false;
-	line_drawn=false;
+  line_drawn=false;
 
  }
 
@@ -93,32 +93,32 @@ void Graph_Scene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if((event->button()==Qt::LeftButton)||(isMultipleSelected))
     {
         //Mouse position is stored in strt_pnt and strt1_pnt;
-		qDebug()<<"mouse clicked \n";
+    qDebug()<<"mouse clicked \n";
         strt_pnt=event->scenePos();
         //Function to select the object to be drawn
-		//if(objectToEdit==0 && objectToDraw==0)
+    //if(objectToEdit==0 && objectToDraw==0)
             draw_objects();
 
-		if(objectToDraw==1)
-			draw_line();
-		if(objectToDraw==2)
-			draw_rect();
-		if(objectToDraw==3)
-			draw_ellep();
-		if(objectToDraw==4)
-			draw_polygon();
-		if(objectToDraw==5)
-			draw_round_rect();
-		if(objectToDraw==6)
-			draw_arc();
-		if(objectToDraw==7)
-			draw_linearrow();
-		if(objectToDraw==8)
-			draw_triangle();
-		if(objectToDraw==9)
-			draw_arrow();
-		if(objectToDraw==10)
-			draw_text();
+    if(objectToDraw==1)
+      draw_line();
+    if(objectToDraw==2)
+      draw_rect();
+    if(objectToDraw==3)
+      draw_ellep();
+    if(objectToDraw==4)
+      draw_polygon();
+    if(objectToDraw==5)
+      draw_round_rect();
+    if(objectToDraw==6)
+      draw_arc();
+    if(objectToDraw==7)
+      draw_linearrow();
+    if(objectToDraw==8)
+      draw_triangle();
+    if(objectToDraw==9)
+      draw_arrow();
+    if(objectToDraw==10)
+      draw_text();
 
     }
 
@@ -167,65 +167,65 @@ void Graph_Scene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
          if(objectToDraw==1 || objectToEdit==1 )
          {
              draw_line_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==2 || objectToEdit==2)
          {
              draw_rect_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==3 || objectToEdit==3)
          {
              draw_ellep_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==4 || objectToEdit==4)
          {
              draw_polygon_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==5 || objectToEdit==5)
          {
              draw_round_rect_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==6 || objectToEdit==6)
          {
              draw_arc_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==7 || objectToEdit==7)
          {
              draw_linearrow_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==8 || objectToEdit==8)
          {
              draw_triangle_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==9 || objectToEdit==9)
          {
              draw_arrow_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
 
          if(objectToDraw==10 || objectToEdit==10)
          {
              draw_text_state(event->lastScenePos(),event->scenePos());
-			 
+       
          }
      }
 
-	 
+   
      QGraphicsScene::mouseReleaseEvent(event);
 }
 
@@ -246,14 +246,14 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
                 for(int i=0;i<poly2->getLines().size();i++)
                 {
                    removeItem(poly2->getLine(i));
-				   
+           
                 }
             }
             poly2->item = new QGraphicsPathItem(poly2->getPolygon());
             addItem(poly2->item);
             addItem(poly2->Rot_Rect);
 
-		
+    
             if(!poly2->edge_items.isEmpty())
             {
                 for(int i=0;i<poly2->edge_items.size();i++)
@@ -264,10 +264,10 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             poly2->setPolygonDrawn(true);
             mode=true;
             poly2->lines.clear();
-			poly2->isObjectSelected=true;
-			for(int i=0;i<polygons.size();i++)
-				polygons[i]->isObjectSelected=false;
-			polygons.push_back(poly2);
+      poly2->isObjectSelected=true;
+      for(int i=0;i<polygons.size();i++)
+        polygons[i]->isObjectSelected=false;
+      polygons.push_back(poly2);
             QRectF poly_rect=poly2->item->boundingRect();
             object1->ObjectStrtPnt=poly_rect.topLeft();
             object1->ObjectEndPnt=poly_rect.bottomRight();
@@ -275,14 +275,14 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             object1->setObjects(4,polygons.size()-1);
             object1->ObjectIndx=polygons.size()-1;
             objects.push_back(object1);
-			objectToDraw=0;
-			objectToEdit=4;
+      objectToDraw=0;
+      objectToEdit=4;
          }
 
-		 Draw_Line *line2 = new Draw_Line();
-		 line2=line;
+     Draw_Line *line2 = new Draw_Line();
+     line2=line;
 
-		 if((objectToDraw==1)&&(line2->get_draw_mode()==false))
+     if((objectToDraw==1)&&(line2->get_draw_mode()==false))
          {
             if(!line2->getLines().isEmpty())
             {
@@ -295,8 +295,8 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             addItem(line2->item);
             addItem(line2->Rot_Rect);
 
-			line2->isObjectSelected=true;
-		    
+      line2->isObjectSelected=true;
+        
             if(!line2->edge_items.isEmpty())
             {
                 for(int i=0;i<line2->edge_items.size();i++)
@@ -308,8 +308,8 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             linemode=true;
             line2->lines.clear();
 
-			for(int i=0;i<lines.size();i++)
-				lines[i]->isObjectSelected=false;
+      for(int i=0;i<lines.size();i++)
+        lines[i]->isObjectSelected=false;
 
             lines.push_back(line2);
             QRectF poly_line=line2->item->boundingRect();
@@ -319,15 +319,15 @@ void Graph_Scene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
             object1->setObjects(1,lines.size()-1);
             object1->ObjectIndx=lines.size()-1;
             objects.push_back(object1);
-			objectToDraw=0;
-			objectToEdit=1;
+      objectToDraw=0;
+      objectToEdit=1;
          }
 
          if(objectToEdit==10 && text->getMode())
          {
              text->item->setTextInteractionFlags(Qt::TextEditorInteraction);
-			 objectToDraw=0;
-			 objectToEdit=10;
+       objectToDraw=0;
+       objectToEdit=10;
          }
     }
 }
@@ -339,7 +339,7 @@ void Graph_Scene::keyPressEvent(QKeyEvent *event)
     if(event->key()==0x01000007)
     {
        deleteShapes();
-	}
+  }
     QGraphicsScene::keyPressEvent(event);
 
 }
@@ -359,21 +359,21 @@ void Graph_Scene::draw_object(QPointF pnt, QPointF pnt1, Draw_Line *line1,QPen p
 void Graph_Scene::draw_objects()
 {
     int k=0,position;
-	qDebug()<<"entered the condition "<<objects.size()<<" "<<objects.isEmpty()<<"\n"; 
-	if(!objects.isEmpty())
-	{ 
+  qDebug()<<"entered the condition "<<objects.size()<<" "<<objects.isEmpty()<<"\n"; 
+  if(!objects.isEmpty())
+  { 
        qDebug()<<"entered the condition \n"; 
        for(int i=0;i<objects.size();i++)
        {
-		objects[i]->CheckPnt(strt_pnt);
+    objects[i]->CheckPnt(strt_pnt);
         k=objects[i]->getObject(position);
-		qDebug()<<"k value "<<k<<"\n";
+    qDebug()<<"k value "<<k<<"\n";
         if(k==1)
         {
             object1=objects[i];
             object1->ObjectPos=i;
             object_indx=i;
-			objects[i]->ObjectPos=i;
+      objects[i]->ObjectPos=i;
             if(isMultipleSelected)
             {
                select_objects(*objects[i]);
@@ -618,7 +618,7 @@ void Graph_Scene::draw_arc()
     if(!isMultipleSelected)
         hide_object_edges();
 
-	for(int i=0;i<arcs.size();i++)
+  for(int i=0;i<arcs.size();i++)
     {
         if(arcs[i]->isClickedOnHandleOrShape(strt_pnt)&&(arcs[i]->getMode()==true))
         {
@@ -632,7 +632,7 @@ void Graph_Scene::draw_arc()
 
     if(!arcs.isEmpty() && objectToDraw==6)
     {
-		if(!k && arcs[arcs.size()-1]->getMode()==true && arc)
+    if(!k && arcs[arcs.size()-1]->getMode()==true && arc)
        {
           if(arc->click==0)
           {
@@ -673,14 +673,14 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
 
     if(arc && arc->getMode())
     {
-		
+    
         if(arc->getState()==1)
         {
-		  arc->isObjectSelected=true;
-		  arc->showHandles();
+      arc->isObjectSelected=true;
+      arc->showHandles();
           if(pnt1!=pnt)
           {
-			 
+       
              if(arc->item->rotation()==0)
              {
                 arc->item->setPath(arc->getArc());
@@ -692,24 +692,24 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
              if(arc->item->rotation()!=0)
              {
                 pnt1=arc->Strt_Rect->mapFromScene(pnt1);
-				arc->setEndPoint(arc->item->boundingRect().bottomRight());
-				arc->item->setPath(arc->getArc());
+        arc->setEndPoint(arc->item->boundingRect().bottomRight());
+        arc->item->setPath(arc->getArc());
                 arc->updateEdgeRects();
                 arc->setStartPoint(pnt1);
                 arc->bounding_strt_pnt=pnt1;
                 arc->bounding_end_pnt=arc->getEndPnt();
              }
-			 isObjectEdited=true;
+       isObjectEdited=true;
           }
         }
 
          if(arc && arc->getState()==2)
          {
-			arc->isObjectSelected=true;
+      arc->isObjectSelected=true;
             arc->showHandles();
             if(pnt1!=pnt)
             {
-				
+        
                 if(arc->item->rotation()==0)
                 {
                    arc->item->setPath(arc->getArc());
@@ -722,7 +722,7 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
                 if(arc->item->rotation()!=0)
                 {
                    pnt1=arc->End_Rect->mapFromScene(pnt1);
-				   arc->setStartPoint(arc->item->boundingRect().bottomLeft());
+           arc->setStartPoint(arc->item->boundingRect().bottomLeft());
                    arc->item->setPath(arc->getArc());
                    arc->updateEdgeRects();
                    arc->setEndPoint(pnt1);
@@ -730,7 +730,7 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
                    arc->bounding_end_pnt=arc->getEndPnt();
                 }
 
-				isObjectEdited=true;
+        isObjectEdited=true;
             }
           }
 
@@ -740,7 +740,7 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
             arc->showHandles();
             if(pnt1!=pnt)
             {
-				if(arc->item->rotation()==0)
+        if(arc->item->rotation()==0)
                 {
                    arc->item->setPath(arc->getArc());
                    arc->updateEdgeRects();
@@ -758,33 +758,33 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
                    arc->bounding_strt_pnt=arc->getStartPnt();
                    arc->bounding_end_pnt=pnt1;
                 }
-				 isObjectEdited=true;
+         isObjectEdited=true;
               }
           }
 
           if(arc && arc->getState()==4)
           {
               arc->Bounding_Rect->show();
-			  arc->isObjectSelected=true;
+        arc->isObjectSelected=true;
               arc->showHandles();
               if(pnt1!=pnt)
               {
-				 arc->setTranslate(pnt,pnt1);
+         arc->setTranslate(pnt,pnt1);
                   
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
            }
 
           if(arc && arc->getState()==5)
           {
               arc->isObjectSelected=true;
-			  arc->Bounding_Rect->show();
+        arc->Bounding_Rect->show();
 
               if(pnt1!=pnt)
               {
                  arc->setRotate(pnt,pnt1);
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
           }
       }
 }
@@ -792,9 +792,9 @@ void Graph_Scene::draw_arc_move(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
 {
     Scene_Objects *object = new Scene_Objects();
-	Draw_Arc *arc2 = new Draw_Arc();
-	arc2=arc;
-	if(arc && (arc->getMode()==false)&& objectToDraw==6)
+  Draw_Arc *arc2 = new Draw_Arc();
+  arc2=arc;
+  if(arc && (arc->getMode()==false)&& objectToDraw==6)
     {
        if(arc2->click==0)
        {
@@ -807,9 +807,9 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
        {
           arc2->setMode(true);
           arc2->click=0;
-		  removeItem(arc2->item);
-		  arc2->item = new QGraphicsPathItem(arc2->getArc());
-		  addItem(arc2->item);
+      removeItem(arc2->item);
+      arc2->item = new QGraphicsPathItem(arc2->getArc());
+      addItem(arc2->item);
           arc2->setEdgeRects();
           addItem(arc2->Strt_Rect);
           addItem(arc2->End_Rect);
@@ -817,18 +817,18 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
           addItem(arc2->Bounding_Rect);
           addItem(arc2->Rot_Rect);
           arc2->Bounding_Rect->hide();
-		  arc2->isObjectSelected=true;
-		  for(int i=0;i<arcs.size();i++)
-			  arcs[i]->isObjectSelected=false;
+      arc2->isObjectSelected=true;
+      for(int i=0;i<arcs.size();i++)
+        arcs[i]->isObjectSelected=false;
           arcs.push_back(arc2);
-		  object->setObjectPos(arc2->item->boundingRect().topLeft(),arc2->item->boundingRect().bottomRight());
+      object->setObjectPos(arc2->item->boundingRect().topLeft(),arc2->item->boundingRect().bottomRight());
           object->setBoundPos(arc2->item->boundingRect().topLeft(),arc2->item->boundingRect().bottomRight());
           object->pnts.push_back(QPointF(arc2->getCurvePnt()));
           object->setObjects(6,arcs.size()-1);
           object->ObjectIndx=arcs.size()-1;
           objects.push_back(object);
-		  objectToDraw=0;
-		  objectToEdit=6;
+      objectToDraw=0;
+      objectToEdit=6;
        }
 
     }
@@ -842,7 +842,7 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
            object6->pnts.empty();
            object6->pnts.push_back(QPointF(arc->getCurvePnt()));
            arc->setState(0);
-		   objectToEdit=6;
+       objectToEdit=6;
         }
 
         if(arc->getState()==2)
@@ -852,7 +852,7 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
             object6->pnts.empty();
             object6->pnts.push_back(QPointF(arc->getCurvePnt()));
             arc->setState(0);
-			objectToEdit=6;
+      objectToEdit=6;
         }
 
         if(arc->getState()==3)
@@ -862,7 +862,7 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
             object6->pnts.empty();
             object6->pnts.push_back(QPointF(arc->getCurvePnt()));
             arc->setState(0);
-			objectToEdit=6;
+      objectToEdit=6;
         }
 
         if(arc->getState()==4)
@@ -873,7 +873,7 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
             object6->pnts.push_back(QPointF(arc->getCurvePnt()));
             arc->setState(0);
             arc->Bounding_Rect->hide();
-			objectToEdit=6;
+      objectToEdit=6;
         }
 
         if(arc->getState()==5)
@@ -884,7 +884,7 @@ void Graph_Scene::draw_arc_state(QPointF pnt,QPointF pnt1)
             object6->pnts.push_back(QPointF(arc->getCurvePnt()));
             arc->setState(0);
             arc->Bounding_Rect->hide();
-			objectToEdit=6;
+      objectToEdit=6;
         }
 
 
@@ -914,7 +914,7 @@ void Graph_Scene::draw_arrow()
 
     for(int i=0;i<arrows.size();i++)
     {
-		if((arrows[i]->isClickedOnHandleOrShape(strt_pnt))&&(arrows[i]->getMode()==true))
+    if((arrows[i]->isClickedOnHandleOrShape(strt_pnt))&&(arrows[i]->getMode()==true))
         {
             arrow=arrows[i];
             indx=i;
@@ -931,7 +931,7 @@ void Graph_Scene::draw_arrow()
           Draw_Arrow *arrow2 = new Draw_Arrow();
           arrow2->setStartPoint(strt_pnt);
           arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
-		  //addItem(arrow2->item);
+      //addItem(arrow2->item);
           arrow=arrow2;
        }
 
@@ -946,12 +946,12 @@ void Graph_Scene::draw_arrow_move(QPointF pnt,QPointF pnt1)
 
     if(arrow && arrow->getMode())
     {
-		qDebug()<<"State of arrow "<<arrow->getState()<<"\n";
-		if(arrow->getState()==1)
+    qDebug()<<"State of arrow "<<arrow->getState()<<"\n";
+    if(arrow->getState()==1)
         {
-		  arrow->isObjectSelected=true;
-		  arrow->showHandles();
-		  qDebug()<<"State of arrow "<<arrow->getState()<<" "<<arrow->handle_index<<"\n";
+      arrow->isObjectSelected=true;
+      arrow->showHandles();
+      qDebug()<<"State of arrow "<<arrow->getState()<<" "<<arrow->handle_index<<"\n";
           if(pnt1!=pnt)
           {
 
@@ -959,9 +959,9 @@ void Graph_Scene::draw_arrow_move(QPointF pnt,QPointF pnt1)
              {
                 pnt1=arrow->handles[0]->mapFromScene(pnt1);
                 arrow->setTranslate(pnt-arrow->item->pos(),pnt1-arrow->item->pos());
-				arrow->item->setPath(arrow->getArrow());
+        arrow->item->setPath(arrow->getArrow());
                 arrow->updateEdgeRects();
-				arrow->setStartPoint(QPointF(pnt1.x(),pnt1.y()-25));
+        arrow->setStartPoint(QPointF(pnt1.x(),pnt1.y()-25));
                 arrow->bounding_strt_pnt=pnt1;
                 arrow->bounding_end_pnt=arrow->getEndPnt();
              }
@@ -970,42 +970,42 @@ void Graph_Scene::draw_arrow_move(QPointF pnt,QPointF pnt1)
              {
                 pnt1=arrow->handles[7]->mapFromScene(pnt1);
                 arrow->setTranslate(pnt-arrow->item->pos(),pnt1-arrow->item->pos());
-				qDebug()<<"entered condition1 "<<arrow->handle_index<<"\n";
+        qDebug()<<"entered condition1 "<<arrow->handle_index<<"\n";
                 arrow->item->setPath(arrow->getArrow());
                 arrow->updateEdgeRects();
-				arrow->setStartPoint(QPointF(pnt1.x(),pnt1.y()-25));
+        arrow->setStartPoint(QPointF(pnt1.x(),pnt1.y()-25));
                 arrow->bounding_strt_pnt=pnt1;
                 arrow->bounding_end_pnt=arrow->getEndPnt();
              }
 
-			 if(arrow->handle_index==3)
+       if(arrow->handle_index==3)
              {
                 pnt1=arrow->handles[3]->mapFromScene(pnt1);
                 arrow->setTranslate(pnt-arrow->item->pos(),pnt1-arrow->item->pos());
-				arrow->item->setPath(arrow->getArrow());
+        arrow->item->setPath(arrow->getArrow());
                 arrow->updateEdgeRects();
-				arrow->bounding_strt_pnt=pnt1;
+        arrow->bounding_strt_pnt=pnt1;
                 arrow->bounding_end_pnt=arrow->getEndPnt();
              }
 
              
-			 isObjectEdited=true;
+       isObjectEdited=true;
           }
         }
 
          if(arrow->getState()==2)
          {
             arrow->isObjectSelected=true;
-		    arrow->showHandles();
+        arrow->showHandles();
             if(pnt1!=pnt)
             {
                 if(arrow->item->rotation()==0)
                 {
-				   arrow->setTranslate(pnt,pnt1);
+           arrow->setTranslate(pnt,pnt1);
                    arrow->item->setPath(arrow->getArrow());
                    arrow->updateEdgeRects();
-				   arrow->Strt_Rect->setPos(arrow->Strt_Rect->pos()+(pnt-pnt1));
-				   arrow->End_Rect->setPos(arrow->End_Rect->pos()-(pnt-pnt1));
+           arrow->Strt_Rect->setPos(arrow->Strt_Rect->pos()+(pnt-pnt1));
+           arrow->End_Rect->setPos(arrow->End_Rect->pos()-(pnt-pnt1));
                    arrow->setEndPoint(pnt1-arrow->item->pos());
                    arrow->bounding_strt_pnt=arrow->getStartPnt();
                    arrow->bounding_end_pnt=pnt1;
@@ -1021,32 +1021,32 @@ void Graph_Scene::draw_arrow_move(QPointF pnt,QPointF pnt1)
                    arrow->bounding_strt_pnt=pnt1;
                    arrow->bounding_end_pnt=arrow->getEndPnt();
                 }
-				 isObjectEdited=true;
+         isObjectEdited=true;
             }
           }
 
           if(arrow->getState()==3)
           {
-			  arrow->isObjectSelected=true;
-		      arrow->showHandles();
+        arrow->isObjectSelected=true;
+          arrow->showHandles();
               arrow->Bounding_Rect->show();
               if(pnt1!=pnt)
               {
                   arrow->setTranslate(pnt,pnt1);
-	          }
-			  isObjectEdited=true;
+            }
+        isObjectEdited=true;
            }
 
           if(arrow->getState()==4)
           {
-			  arrow->isObjectSelected=true;
-		      arrow->showHandles();
+        arrow->isObjectSelected=true;
+          arrow->showHandles();
               arrow->Bounding_Rect->show();
               if(pnt1!=pnt)
               {
                  arrow->setRotate(pnt,pnt1);
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
           }
       }
 }
@@ -1054,34 +1054,34 @@ void Graph_Scene::draw_arrow_move(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_arrow_state(QPointF pnt,QPointF pnt1)
 {
     Scene_Objects *object = new Scene_Objects();
-	Draw_Arrow *arrow2 = new Draw_Arrow();
-	arrow2=arrow;
+  Draw_Arrow *arrow2 = new Draw_Arrow();
+  arrow2=arrow;
     if(arrow && (arrow->getMode()==false) && objectToDraw==9)
     {
        removeItem(arrow2->item);
        arrow2->setMode(true);
-	   arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
-	   addItem(arrow2->item);
+     arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
+     addItem(arrow2->item);
        arrow2->setEdgeRects();
        addItem(arrow2->Bounding_Rect);
        addItem(arrow2->Rot_Rect);
-	   for(int i=0;i<arrow2->handles.size();i++)
-		   addItem(arrow2->handles[i]);
-	   
+     for(int i=0;i<arrow2->handles.size();i++)
+       addItem(arrow2->handles[i]);
+     
        arrow2->Bounding_Rect->hide();
-	   arrow2->isObjectSelected=true;
-	   for(int i=0;i<arrows.size();i++)
-		   arrows[i]->isObjectSelected=false;
+     arrow2->isObjectSelected=true;
+     for(int i=0;i<arrows.size();i++)
+       arrows[i]->isObjectSelected=false;
        arrows.push_back(arrow2);
        object->setObjectPos(arrow2->getStartPnt(),arrow2->getEndPnt());
        object->setBoundPos(arrow2->item->boundingRect().topLeft(),arrow2->item->boundingRect().bottomRight());
        object->setObjects(9,arrows.size()-1);
        object->ObjectIndx=arrows.size()-1;
        objects.push_back(object);
-	   objectToDraw=0;
-	   objectToEdit=9;
+     objectToDraw=0;
+     objectToEdit=9;
 
-	   qDebug()<<"arrow count "<<arrows.size()<<"\n";
+     qDebug()<<"arrow count "<<arrows.size()<<"\n";
     }
 
     if(arrow && arrow->getMode()==true)
@@ -1089,58 +1089,58 @@ void Graph_Scene::draw_arrow_state(QPointF pnt,QPointF pnt1)
         if(arrow->getState()==1)
         {
            for(int i=0;i<pnts.size();i++)
-	  	        qDebug()<<"arrow pnts in graph scene "<<arrow->arrow_pnts[i]<<"\n";
+              qDebug()<<"arrow pnts in graph scene "<<arrow->arrow_pnts[i]<<"\n";
 
            object9->setObjectPos(arrow->getStartPnt(),arrow->getEndPnt());
-		   //object9->setObjectPos(arrow->Bounding_Rect->sceneBoundingRect().topLeft(),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
+       //object9->setObjectPos(arrow->Bounding_Rect->sceneBoundingRect().topLeft(),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
            object9->setBoundPos(arrow->item->boundingRect().topLeft(),arrow->item->boundingRect().bottomRight());
            //object9->pnts.push_back(QPointF(arrow->getArrowPnt()));
            arrow->setState(0);
-		   objectToEdit=9;
+       objectToEdit=9;
 
         }
 
         if(arrow->getState()==2)
         {
 
-			for(int i=0;i<pnts.size();i++)
-	  	        qDebug()<<"arrow pnts in graph scene "<<arrow->arrow_pnts[i]<<"\n";
+      for(int i=0;i<pnts.size();i++)
+              qDebug()<<"arrow pnts in graph scene "<<arrow->arrow_pnts[i]<<"\n";
 
             object9->setObjectPos(arrow->getStartPnt(),arrow->getEndPnt());
-			//object9->setObjectPos(arrow->Bounding_Rect->sceneBoundingRect().topLeft(),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
+      //object9->setObjectPos(arrow->Bounding_Rect->sceneBoundingRect().topLeft(),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
             object9->setBoundPos(arrow->item->boundingRect().topLeft(),arrow->item->boundingRect().bottomRight());
             //object9->pnts.push_back(QPointF(arrow->getArrowPnt()));
             arrow->setState(0);
-			objectToEdit=9;
+      objectToEdit=9;
         }
 
         if(arrow->getState()==3)
         {
-			for(int i=0;i<arrow->arrow_pnts.size();i++)
-			{ 
-				 QPointF pnt(arrow->arrow_pnts[i].x()+arrow->item->pos().x(),arrow->arrow_pnts[i].y()+arrow->item->pos().y());
-				 arrow->arrow_pnts[i]=pnt; 
-			}
-			arrow->item->setPath(arrow->getArrow());
-			arrow->item->setPos(0,0);
-			qDebug()<<"arrow pnts in translate"<<arrow->arrow_pnts[0]<<"  "<<arrow->item->sceneBoundingRect().topLeft()<<" "<<arrow->item->pos()<<"\n";
-			//arrow->updateArrowPoints(arrow->item->sceneBoundingRect().topLeft());
-			object9->setObjectPos(QPointF(arrow->Bounding_Rect->sceneBoundingRect().topLeft().x(),arrow->Bounding_Rect->sceneBoundingRect().topLeft().y()-25),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
-			//object9->setObjectPos(arrow->getStartPnt(),arrow->getEndPnt());
-			/*QPointF pnt(arrow->item->sceneBoundingRect().topLeft().x(),arrow->item->sceneBoundingRect().topLeft().y()-25);
-			QPointF pnt1(arrow->item->sceneBoundingRect().bottomRight().x(),arrow->item->sceneBoundingRect().bottomRight().y()-25);
-			object9->setObjectPos(pnt,pnt1);*/
+      for(int i=0;i<arrow->arrow_pnts.size();i++)
+      { 
+         QPointF pnt(arrow->arrow_pnts[i].x()+arrow->item->pos().x(),arrow->arrow_pnts[i].y()+arrow->item->pos().y());
+         arrow->arrow_pnts[i]=pnt; 
+      }
+      arrow->item->setPath(arrow->getArrow());
+      arrow->item->setPos(0,0);
+      qDebug()<<"arrow pnts in translate"<<arrow->arrow_pnts[0]<<"  "<<arrow->item->sceneBoundingRect().topLeft()<<" "<<arrow->item->pos()<<"\n";
+      //arrow->updateArrowPoints(arrow->item->sceneBoundingRect().topLeft());
+      object9->setObjectPos(QPointF(arrow->Bounding_Rect->sceneBoundingRect().topLeft().x(),arrow->Bounding_Rect->sceneBoundingRect().topLeft().y()-25),arrow->Bounding_Rect->sceneBoundingRect().bottomRight());
+      //object9->setObjectPos(arrow->getStartPnt(),arrow->getEndPnt());
+      /*QPointF pnt(arrow->item->sceneBoundingRect().topLeft().x(),arrow->item->sceneBoundingRect().topLeft().y()-25);
+      QPointF pnt1(arrow->item->sceneBoundingRect().bottomRight().x(),arrow->item->sceneBoundingRect().bottomRight().y()-25);
+      object9->setObjectPos(pnt,pnt1);*/
             object9->setBoundPos(arrow->item->boundingRect().topLeft(),arrow->item->boundingRect().bottomRight());
             arrow->setState(0);
             arrow->Bounding_Rect->hide();
-			objectToEdit=9;
+      objectToEdit=9;
         }
 
         if(arrow->getState()==4)
         {
             arrow->setState(0);
             arrow->Bounding_Rect->hide();
-			objectToEdit=9;
+      objectToEdit=9;
         }
 
 
@@ -1150,7 +1150,7 @@ void Graph_Scene::draw_arrow_state(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_line()
 {
     bool k=false;
-	
+  
     if(lines.isEmpty() && objectToDraw==1)
     {
        line->poly_pnts.push_back(strt_pnt);
@@ -1183,9 +1183,9 @@ void Graph_Scene::draw_line()
        //qDebug()<<"polygon region "<<polygons[i]->item->boundingRect().topLeft()<<" "<< polygons[i]->item->boundingRect().bottomRight()<<"\n";
        if(lines[i]->isClickedOnHandleOrShape(strt_pnt))
        {
-		    line=lines[i];
+        line=lines[i];
             indx=i;
-			polyline_indx=lines[i]->getHandelIndex();
+      polyline_indx=lines[i]->getHandelIndex();
             k=true;
             break;
        }
@@ -1195,20 +1195,20 @@ void Graph_Scene::draw_line()
 
     if(lines.size()>=1 && (!k) && objectToDraw==1)
     {
-		qDebug()<<"lines size "<<lines.size()<<"\n";
+    qDebug()<<"lines size "<<lines.size()<<"\n";
 
         if(line && line->getLines().isEmpty()&&(lines[lines.size()-1]->getPolyLineDrawn()))
         {
             Draw_Line* line2 = new Draw_Line();
 
-			qDebug()<<"strt pnt before "<<strt_pnt<<"\n";
+      qDebug()<<"strt pnt before "<<strt_pnt<<"\n";
 
             line2->setPolyLineDrawn(false);
             line=line2;
             line->poly_pnts.push_back(strt_pnt);
             line->setStartPoint(strt_pnt);
 
-			qDebug()<<"strt pnt after "<<strt_pnt<<"\n";
+      qDebug()<<"strt pnt after "<<strt_pnt<<"\n";
         }
         else
         {
@@ -1250,15 +1250,15 @@ void Graph_Scene::draw_line_move(QPointF pnt,QPointF pnt1)
 
      if((!lines.isEmpty()) && line && (line->getPolyLineDrawn()))
      {
-		
+    
          /*if(polyline_indx<line->poly_pnts.size())
          {
-			 line->showHandles();
+       line->showHandles();
          }*/
           if(line->getState()==1)
           {
              line->isObjectSelected=true;
-			 line->showHandles();
+       line->showHandles();
              if(pnt1!=pnt)
              {
                  if(polyline_indx<line->poly_pnts.size())
@@ -1274,7 +1274,7 @@ void Graph_Scene::draw_line_move(QPointF pnt,QPointF pnt1)
                        pnt3+=QPointF(5.0,5.0);
                        QRectF newRect(pnt2,pnt3);
                        line->edge_items[polyline_indx]->setRect(newRect);
-					   qDebug()<<"entered line when clicked on edge rect \n"; 
+             qDebug()<<"entered line when clicked on edge rect \n"; 
                     }
 
                     if(line->item->rotation()!=0)
@@ -1296,15 +1296,15 @@ void Graph_Scene::draw_line_move(QPointF pnt,QPointF pnt1)
                     object1->setObjectPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
                     object1->setBoundPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
                     object1->pnts=line->poly_pnts;
-					isObjectEdited=true;
+          isObjectEdited=true;
                   }
                 }
            }
 
          if(line && line->getState()==2)
          {
-			 line->isObjectSelected=true;
-			 line->showHandles();
+       line->isObjectSelected=true;
+       line->showHandles();
              /*if(polygon->item->isSelected())
              {
                 for(int i=0;i<polygon->edge_items.size();i++)
@@ -1320,20 +1320,20 @@ void Graph_Scene::draw_line_move(QPointF pnt,QPointF pnt1)
              object1->setObjectPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
              object1->setBoundPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
              object1->pnts=line->poly_pnts;
-			 isObjectEdited=true;
+       isObjectEdited=true;
          }
 
          if(line && line->getState()==3)
          {
-			 line->isObjectSelected=true;
-			 line->showHandles();
+       line->isObjectSelected=true;
+       line->showHandles();
              line->setRotate(pnt,pnt1);
 
             //polygon->item->setPath(polygon->getPolygon());
             //object4->setObjectPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             //object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             //object4->pnts=polygon->poly_pnts;
-			isObjectEdited=true;
+      isObjectEdited=true;
          }
      }
  }
@@ -1360,7 +1360,7 @@ void Graph_Scene::draw_line_state(QPointF pnt, QPointF pnt1)
             object1->setBoundPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
             object1->pnts=line->poly_pnts;
             line->setState(0);
-			objectToEdit=1;
+      objectToEdit=1;
         }
 
         if(line->getState()==2)
@@ -1369,14 +1369,14 @@ void Graph_Scene::draw_line_state(QPointF pnt, QPointF pnt1)
             object1->setBoundPos(line->item->boundingRect().topLeft(),line->item->boundingRect().bottomRight());
             object1->pnts=line->poly_pnts;
             line->setState(0);
-			objectToEdit=1;
+      objectToEdit=1;
         }
 
-		if(line->getState()==3)
-		{
-			line->setState(0);
-			objectToEdit=1;
-		}
+    if(line->getState()==3)
+    {
+      line->setState(0);
+      objectToEdit=1;
+    }
 
     }
 }
@@ -1411,12 +1411,12 @@ void Graph_Scene::draw_linearrow()
     }
     if(k!=true)
     {
-	  if(linearrow && linearrows[linearrows.size()-1]->getMode()==true  && objectToDraw==7)
+    if(linearrow && linearrows[linearrows.size()-1]->getMode()==true  && objectToDraw==7)
       {
         Draw_LineArrow* linearrow2 = new Draw_LineArrow();
         linearrow2->setStartPoint(strt_pnt);
-		for(int i=0;i<linearrows.size();i++)
-			linearrows[i]->isObjectSelected=false;
+    for(int i=0;i<linearrows.size();i++)
+      linearrows[i]->isObjectSelected=false;
         linearrows.push_back(linearrow2);
         linearrow=linearrow2;
         linearrow->item=new QGraphicsPathItem(linearrow->getLineArrow(strt_pnt));
@@ -1439,10 +1439,10 @@ void Graph_Scene::draw_linearrow_move(QPointF pnt,QPointF pnt1)
 
      if(linearrow && linearrow->getMode())
      {
-		 if(linearrow->getState()==1)
+     if(linearrow->getState()==1)
          {
-		   linearrow->isObjectSelected=true;
-		   linearrow->showHandles();
+       linearrow->isObjectSelected=true;
+       linearrow->showHandles();
            if(pnt1!=pnt)
            {
 
@@ -1467,15 +1467,15 @@ void Graph_Scene::draw_linearrow_move(QPointF pnt,QPointF pnt1)
                  linearrow->bounding_strt_pnt=pnt1;
                  linearrow->bounding_end_pnt=linearrow->getEndPnt();
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
            }
           }
 
           if(linearrow->getState()==2)
           {
 
-			linearrow->isObjectSelected=true;
-		    linearrow->showHandles();
+      linearrow->isObjectSelected=true;
+        linearrow->showHandles();
  
             if(pnt1!=pnt)
             {
@@ -1494,41 +1494,41 @@ void Graph_Scene::draw_linearrow_move(QPointF pnt,QPointF pnt1)
               {
                  QPointF pnt2=pnt1;
                  pnt=linearrow->End_Rect->mapFromScene(pnt);
-				 pnt1=linearrow->End_Rect->mapFromScene(pnt1);
+         pnt1=linearrow->End_Rect->mapFromScene(pnt1);
                  linearrow->setTranslate(pnt,pnt1);
-				 linearrow->item->setPath(linearrow->getLineArrow(linearrow->getStartPnt()));
+         linearrow->item->setPath(linearrow->getLineArrow(linearrow->getStartPnt()));
                  linearrow->updateEdgeRects();
                  //linearrow->setEndPoint(pnt1);
                  linearrow->bounding_strt_pnt=linearrow->getStartPnt();
                  linearrow->bounding_end_pnt=pnt1;
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
             }
           }
 
           if(linearrow->getState()==3)
           {
-			  linearrow->isObjectSelected=true;
-		      linearrow->showHandles();
+        linearrow->isObjectSelected=true;
+          linearrow->showHandles();
 
                if(pnt1!=pnt)
                {
                  linearrow->setTranslate(pnt,pnt1);
                  
                }
-			   isObjectEdited=true;
+         isObjectEdited=true;
           }
 
           if(linearrow->getState()==4)
           {
-			  linearrow->isObjectSelected=true;
-		      linearrow->showHandles();
+        linearrow->isObjectSelected=true;
+          linearrow->showHandles();
 
                if(pnt1!=pnt)
                {
                  linearrow->setRotate(pnt,pnt1);
                }
-			   isObjectEdited=true;
+         isObjectEdited=true;
           }
 
      }
@@ -1538,49 +1538,49 @@ void Graph_Scene::draw_linearrow_state(QPointF pnt, QPointF pnt1)
 {
 
     Scene_Objects* object = new Scene_Objects();
-	
+  
     if(linearrow && linearrow->getMode()==false && objectToDraw==7)
     {
 
-		Draw_LineArrow *linearrow2 = new Draw_LineArrow();
-	    linearrow2=linearrow;
-		
-		removeItem(linearrow2->item);
-		removeItem(linearrow->item);
+    Draw_LineArrow *linearrow2 = new Draw_LineArrow();
+      linearrow2=linearrow;
+    
+    removeItem(linearrow2->item);
+    removeItem(linearrow->item);
         last_pnt=pnt1;
       
-				       
-		//qDebug()<<"line strt point "<<linearrow2->getStartPnt()<<"\n";
+               
+    //qDebug()<<"line strt point "<<linearrow2->getStartPnt()<<"\n";
         linearrow2->bounding_strt_pnt = linearrow2->getStartPnt();
         linearrow2->bounding_end_pnt = linearrow2->getEndPnt();
-		//qDebug()<<"return items coords "<<linearrow2->getLineArrow(linearrow2->getStartPnt()).boundingRect().bottomRight()<<"\n";
-		linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
-		addItem(linearrow2->item);
-		linearrow2->setEdgeRects();
-		//qDebug()<<"line arrow item "<<linearrow2->item->boundingRect().topLeft()<<"  "<<linearrow2->item->boundingRect().bottomRight()<<"\n";
-		
+    //qDebug()<<"return items coords "<<linearrow2->getLineArrow(linearrow2->getStartPnt()).boundingRect().bottomRight()<<"\n";
+    linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
+    addItem(linearrow2->item);
+    linearrow2->setEdgeRects();
+    //qDebug()<<"line arrow item "<<linearrow2->item->boundingRect().topLeft()<<"  "<<linearrow2->item->boundingRect().bottomRight()<<"\n";
+    
         addItem(linearrow2->Strt_Rect);
         addItem(linearrow2->End_Rect);
         addItem(linearrow2->Rot_Rect);
-		
-		linearrow->setMode(true);
+    
+    linearrow->setMode(true);
 
-		linearrow2->setMode(true);
-		linearrow2->isObjectSelected=true;
+    linearrow2->setMode(true);
+    linearrow2->isObjectSelected=true;
 
-		//qDebug()<<"line length "<<linearrow2->arrow_pnts[0]<<" "<<linearrow2->arrow_pnts[1]<<" "<<linearrow2->arrow_pnts[3]<<"\n";
+    //qDebug()<<"line length "<<linearrow2->arrow_pnts[0]<<" "<<linearrow2->arrow_pnts[1]<<" "<<linearrow2->arrow_pnts[3]<<"\n";
 
-		qDebug()<<"line ptns "<<linearrow2->getMinPoint()<<"  "<<linearrow2->getMaxPoint()<<"\n";
+    qDebug()<<"line ptns "<<linearrow2->getMinPoint()<<"  "<<linearrow2->getMaxPoint()<<"\n";
         
-		linearrows[linearrows.size()-1] = linearrow2;
-		object->setObjectPos(linearrow2->getMinPoint(),linearrow2->getMaxPoint());
-		object->pnts=linearrow->arrow_pnts;
+    linearrows[linearrows.size()-1] = linearrow2;
+    object->setObjectPos(linearrow2->getMinPoint(),linearrow2->getMaxPoint());
+    object->pnts=linearrow->arrow_pnts;
         object->setObjects(7,linearrows.size()-1);
         object->ObjectIndx=linearrows.size()-1;
         object->pen=pen;
         objects.push_back(object);
-		objectToDraw=0;
-		objectToEdit=7;
+    objectToDraw=0;
+    objectToEdit=7;
       }
 
     if(linearrow && linearrow->getMode()==true)
@@ -1588,24 +1588,24 @@ void Graph_Scene::draw_linearrow_state(QPointF pnt, QPointF pnt1)
 
         if(linearrow->getState()==1)
         {
-		   object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
-		   object7->pnts=linearrow->arrow_pnts;
+       object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
+       object7->pnts=linearrow->arrow_pnts;
            linearrow->setState(0);
-		   objectToEdit=7;
+       objectToEdit=7;
         }
 
         if(linearrow->getState()==2)
         {
             object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
             linearrow->setState(0);
-			objectToEdit=7;
+      objectToEdit=7;
         }
 
         if(linearrow->getState()==3)
         {
             object7->setObjectPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
             linearrow->setState(0);
-			objectToEdit=7;
+      objectToEdit=7;
         }
 
         if(linearrow->getState()==4)
@@ -1622,8 +1622,8 @@ void Graph_Scene::draw_linearrow_state(QPointF pnt, QPointF pnt1)
             line->Rot_Rect->setRect(rect3);
             object1->setObjectPos(line->getStartPnt(),line->getEndPnt());
             line->setState(0);*/
-			linearrow->setState(0);
-			objectToEdit=7;
+      linearrow->setState(0);
+      objectToEdit=7;
 
         }
 
@@ -1635,17 +1635,17 @@ void Graph_Scene::draw_rect()
 {
     bool k=false;
 
-	qDebug()<<"entered the rectangle "<<rects.size()<<"\n";
+  qDebug()<<"entered the rectangle "<<rects.size()<<"\n";
 
     if(rects.size()==0 && objectToDraw==2)
     {
-		//Draw_Rectangle* rect2 = new Draw_Rectangle();
+    //Draw_Rectangle* rect2 = new Draw_Rectangle();
         rect->setStartPoint(strt_pnt);
         //rect=rect2;
         rects.push_back(rect);
         rect->item= new QGraphicsPathItem(rect->getRect(strt_pnt,strt_pnt));
         addItem(rect->item);
-		
+    
     }
 
     if(!isMultipleSelected)
@@ -1661,15 +1661,15 @@ void Graph_Scene::draw_rect()
              break;
         }
     }
-	
+  
 
-	if(!k && rect  && rects[rects.size()-1]->getMode() &&  objectToDraw==2)
+  if(!k && rect  && rects[rects.size()-1]->getMode() &&  objectToDraw==2)
     {
-		Draw_Rectangle* rect2 = new Draw_Rectangle();
+    Draw_Rectangle* rect2 = new Draw_Rectangle();
         rect2->setStartPoint(strt_pnt);
         rect=rect2;
-		for(int i=0;i<rects.size();i++)
-			rects[i]->isObjectSelected=false;
+    for(int i=0;i<rects.size();i++)
+      rects[i]->isObjectSelected=false;
         rects.push_back(rect);
         rect->item= new QGraphicsPathItem(rect->getRect(strt_pnt,strt_pnt));
         addItem(rect->item);
@@ -1684,48 +1684,48 @@ void Graph_Scene::draw_rect_move(QPointF pnt,QPointF pnt1)
     {
         if((pnt1!=pnt)&&(rects[i]->getMode()==false))
         {
-			rect->item->setPath(rect->getRect(rect->getStartPnt(),pnt1));
+      rect->item->setPath(rect->getRect(rect->getStartPnt(),pnt1));
         }
     }
 
      if(rect && rect->getMode())
      {
-		 if(rect->getState()==1)
+     if(rect->getState()==1)
          {
-			rect->isObjectSelected=true;
-			rect->showHandles();
+      rect->isObjectSelected=true;
+      rect->showHandles();
 
             if(pnt1!=pnt)
             {
                 if(rect->item->rotation()==0)
                 {
-				   rect->item->setPath(rect->getRect(pnt1-rect->item->pos(),rect->getEndPnt()));
+           rect->item->setPath(rect->getRect(pnt1-rect->item->pos(),rect->getEndPnt()));
                    rect->setStartPoint(pnt1-rect->item->pos());
                    rect->updateEdgeRects();
                 }
 
                 if(rect->item->rotation()!=0)
                 {
-					pnt1=rect->Strt_Rect->mapFromScene(pnt1);
+          pnt1=rect->Strt_Rect->mapFromScene(pnt1);
                     QPointF boundPnt,boundPnt1;
-					//boundPnt=rect->Strt_Rect->sceneBoundingRect().bottomRight()+(pnt1-rect->Strt_Rect->sceneBoundingRect().bottomRight());
-					//boundPnt1=rect->getEndPnt();
-					//qDebug()<<"rectangle "<<pnt.x()<<" "<<rect->item->sceneBoundingRect().right()<<" "<<rect->item->sceneBoundingRect().bottomLeft()<<" "<<rect->item->sceneBoundingRect().bottomRight()<<"\n";
-					//rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
-					rect->item->setPath(rect->getRotRect(pnt1,rect->item->boundingRect().bottomRight()));
+          //boundPnt=rect->Strt_Rect->sceneBoundingRect().bottomRight()+(pnt1-rect->Strt_Rect->sceneBoundingRect().bottomRight());
+          //boundPnt1=rect->getEndPnt();
+          //qDebug()<<"rectangle "<<pnt.x()<<" "<<rect->item->sceneBoundingRect().right()<<" "<<rect->item->sceneBoundingRect().bottomLeft()<<" "<<rect->item->sceneBoundingRect().bottomRight()<<"\n";
+          //rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
+          rect->item->setPath(rect->getRotRect(pnt1,rect->item->boundingRect().bottomRight()));
 
                     //rect->setStartPoint(rect->Strt_Rect->sceneBoundingRect().bottomRight()+(pnt1-rect->Strt_Rect->sceneBoundingRect().bottomRight()));
-					rect->setStartPoint(pnt1);
+          rect->setStartPoint(pnt1);
                     rect->updateEdgeRects();
                 }
-				isObjectEdited=true;
+        isObjectEdited=true;
              }
           }
 
           if(rect->getState()==2)
           {
-			 rect->isObjectSelected=true;
-			 rect->showHandles();
+       rect->isObjectSelected=true;
+       rect->showHandles();
 
              if(pnt1!=pnt)
              {
@@ -1740,38 +1740,38 @@ void Graph_Scene::draw_rect_move(QPointF pnt,QPointF pnt1)
                  {
                      pnt1=rect->End_Rect->mapFromScene(pnt1);
                      qDebug()<<"mouse press point1 "<<pnt1<<"\n";
-					 rect->item->setPath(rect->getRect(rect->item->boundingRect().topLeft(),pnt1));
+           rect->item->setPath(rect->getRect(rect->item->boundingRect().topLeft(),pnt1));
                      rect->setEndPoint(pnt1);
                      rect->updateEdgeRects();
                  }
 
-				 isObjectEdited=true;
+         isObjectEdited=true;
                }
            }
 
            if(rect->getState()==3)
            {
-			   rect->isObjectSelected=true;	
-			   rect->showHandles();
+         rect->isObjectSelected=true;  
+         rect->showHandles();
                if(pnt1!=pnt)
                {
-				   rect->setTranslate(pnt,pnt1);
+           rect->setTranslate(pnt,pnt1);
                    
                }
-			   
-			   isObjectEdited=true;
+         
+         isObjectEdited=true;
             }
 
             if(rect->getState()==4)
             {
-				 rect->isObjectSelected=true;
-				 rect->showHandles();
-				 if(pnt1!=pnt)
+         rect->isObjectSelected=true;
+         rect->showHandles();
+         if(pnt1!=pnt)
                  {
                    rect->setRotate(pnt,pnt1);
                    
                  }
-				 isObjectEdited=true;
+         isObjectEdited=true;
             }
         }
 }
@@ -1779,14 +1779,14 @@ void Graph_Scene::draw_rect_move(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
 {
     Scene_Objects* object = new Scene_Objects();
-	
+  
     if(rect && rect->getMode()==false && objectToDraw==2)
     {
-		Draw_Rectangle *rect2 = new Draw_Rectangle();
-	    rect2=rect;
-		removeItem(rect2->item);
+    Draw_Rectangle *rect2 = new Draw_Rectangle();
+      rect2=rect;
+    removeItem(rect2->item);
         last_pnt=pnt1;
-		rect->setMode(true);
+    rect->setMode(true);
         rect2->setMode(true);
         rect2->setEndPoint(pnt1);
         rect2->setPos(0,0);
@@ -1794,27 +1794,27 @@ void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
         rect2->bounding_end_pnt = rect2->getEndPnt();
         object->setObjectPos(rect2->getStartPnt(),rect->getEndPnt());
         object->setBoundPos(rect2->item->boundingRect().topLeft(),rect->item->boundingRect().bottomLeft());
-		rect2->item = new QGraphicsPathItem(rect2->getRect(rect2->getStartPnt(),rect2->getEndPnt()));
-		addItem(rect2->item);
+    rect2->item = new QGraphicsPathItem(rect2->getRect(rect2->getStartPnt(),rect2->getEndPnt()));
+    addItem(rect2->item);
         rect2->setEdgeRects();
         addItem(rect2->Strt_Rect);
         addItem(rect2->End_Rect);
         addItem(rect2->Rot_Rect);
-		
-		rect2->Strt_Rect->update();
-		rect2->End_Rect->update();
-		rect2->Rot_Rect->update();
-		rect2->isObjectSelected=true;
-		rects[rects.size()-1]=rect2;
+    
+    rect2->Strt_Rect->update();
+    rect2->End_Rect->update();
+    rect2->Rot_Rect->update();
+    rect2->isObjectSelected=true;
+    rects[rects.size()-1]=rect2;
         object->setObjects(2,rects.size()-1);
         object->ObjectIndx=rects.size()-1;
 
         object->pen=rect2->getPen();
         object->setbrush(rect2->getBrush());
-	    objects.push_back(object);
-		objectToDraw=0;
-		objectToEdit=2;
-		
+      objects.push_back(object);
+    objectToDraw=0;
+    objectToEdit=2;
+    
     }
 
     if(rect && rect->getMode()==true)
@@ -1829,11 +1829,11 @@ void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
              rect->updateEdgeRects();
            }*/
            rect->Strt_Rect->unsetCursor();
-		   rect->setState(0);
-		   this->objectToEdit=2;
-		   object2->setObjectPos(rect->item->sceneBoundingRect().topLeft(),rect->item->sceneBoundingRect().bottomRight());
-		   object2->setBoundPos(rect->item->boundingRect().topLeft(),rect->item->boundingRect().bottomLeft());
-		  
+       rect->setState(0);
+       this->objectToEdit=2;
+       object2->setObjectPos(rect->item->sceneBoundingRect().topLeft(),rect->item->sceneBoundingRect().bottomRight());
+       object2->setBoundPos(rect->item->boundingRect().topLeft(),rect->item->boundingRect().bottomLeft());
+      
         }
 
         if(rect->getState()==2)
@@ -1851,7 +1851,7 @@ void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
 
             object2->setObjectPos(rect->item->sceneBoundingRect().topLeft(),rect->item->sceneBoundingRect().bottomRight());
             object2->setBoundPos(rect->item->boundingRect().topLeft(),rect->item->boundingRect().bottomLeft());
-			
+      
         }
 
         if(rect->getState()==3)
@@ -1862,16 +1862,16 @@ void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
                rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight()-rect->item->pos());
                rect->item->setPath(rect->getRect(rect->getStartPnt(),rect->getEndPnt()));
                rect->updateEdgeRects();
-			}*/
-			rect->item->unsetCursor();
+      }*/
+      rect->item->unsetCursor();
             rect->setState(0);
-			//rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
-			//rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
-			object2->setObjectPos(rect->item->sceneBoundingRect().topLeft(),rect->item->sceneBoundingRect().bottomRight());
+      //rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
+      //rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
+      object2->setObjectPos(rect->item->sceneBoundingRect().topLeft(),rect->item->sceneBoundingRect().bottomRight());
             object2->setBoundPos(rect->item->boundingRect().topLeft(),rect->item->boundingRect().bottomRight());
-			//qDebug()<<"rectangle points"<<rect->getStartPnt()<<"  "<<rect->getEndPnt()<<"\n";
-			//qDebug()<<"object points"<<object2->ObjectStrtPnt  <<"  "<<object2->ObjectEndPnt<<"\n";
-			//objects[object_indx]=object2;
+      //qDebug()<<"rectangle points"<<rect->getStartPnt()<<"  "<<rect->getEndPnt()<<"\n";
+      //qDebug()<<"object points"<<object2->ObjectStrtPnt  <<"  "<<object2->ObjectEndPnt<<"\n";
+      //objects[object_indx]=object2;
             objectToEdit=0;
         }
 
@@ -1880,43 +1880,43 @@ void Graph_Scene::draw_rect_state(QPointF pnt,QPointF pnt1)
 
             //rect->item->setPath(rect->getRect(rect->getStartPnt(),rect->getEndPnt()));
             //rect->updateEdgeRects();
-			if(rect->item->pos()==QPointF(0,0))
-			{ 
-			   QPointF rot_pnt(rect->item->boundingRect().topLeft()-rect->item->sceneBoundingRect().topLeft());
+      if(rect->item->pos()==QPointF(0,0))
+      { 
+         QPointF rot_pnt(rect->item->boundingRect().topLeft()-rect->item->sceneBoundingRect().topLeft());
                QPointF rot_pnt1(rect->item->boundingRect().bottomRight()-rect->item->sceneBoundingRect().bottomRight());
 
-			   rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
-			   rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
-			}
+         rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
+         rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
+      }
 
-			if(rect->item->pos()!=QPointF(0,0))
-			{ 
-			   QPointF rot_pnt(rect->item->boundingRect().topLeft()-rect->item->sceneBoundingRect().topLeft()-rect->item->pos());
+      if(rect->item->pos()!=QPointF(0,0))
+      { 
+         QPointF rot_pnt(rect->item->boundingRect().topLeft()-rect->item->sceneBoundingRect().topLeft()-rect->item->pos());
                QPointF rot_pnt1(rect->item->boundingRect().bottomRight()-rect->item->sceneBoundingRect().bottomRight()-rect->item->pos());
 
-			   rect->setStartPoint(rect->item->sceneBoundingRect().topLeft()-rect->item->pos());
-			   rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight()-rect->item->pos());
-			}
+         rect->setStartPoint(rect->item->sceneBoundingRect().topLeft()-rect->item->pos());
+         rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight()-rect->item->pos());
+      }
 
-			 rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
-			 rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
+       rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
+       rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
 
-			 //rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
-			 //rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
+       //rect->setStartPoint(rect->item->sceneBoundingRect().topLeft());
+       //rect->setEndPoint(rect->item->sceneBoundingRect().bottomRight());
 
-			 rect->rotationStartPoint=rect->getStartPnt();
-			 rect->rotationEndPoint=rect->getEndPnt();
+       rect->rotationStartPoint=rect->getStartPnt();
+       rect->rotationEndPoint=rect->getEndPnt();
 
-			qDebug()<<"rotated  coords "<<rect->getStartPnt()<<" "<<rect->getEndPnt()<<"\n";
+      qDebug()<<"rotated  coords "<<rect->getStartPnt()<<" "<<rect->getEndPnt()<<"\n";
             object2->setObjectPos(rect->getStartPnt(),rect->getEndPnt());
             object2->setBoundPos(rect->item->boundingRect().topLeft(),rect->item->boundingRect().bottomLeft());
             rect->setState(0);
-			//objects[indx]=object2;
+      //objects[indx]=object2;
         }
 
      }
-	
-	objectToEdit=2;
+  
+  objectToEdit=2;
 }
 
 void Graph_Scene::draw_round_rect()
@@ -1942,7 +1942,7 @@ void Graph_Scene::draw_round_rect()
 
         if((round_rects[i]->isClickedOnHandleOrShape(strt_pnt))&&(round_rects[i]->getMode()==true))
         {
-			round_rect=round_rects[i];
+      round_rect=round_rects[i];
             indx=i;
             k=true;
             break;
@@ -1954,8 +1954,8 @@ void Graph_Scene::draw_round_rect()
 
         Draw_RoundRect* round_rect2 = new Draw_RoundRect();
         round_rect=round_rect2;
-		for(int i=0;i<round_rects.size();i++)
-			round_rects[i]->isObjectSelected=false;
+    for(int i=0;i<round_rects.size();i++)
+      round_rects[i]->isObjectSelected=false;
         round_rects.push_back(round_rect2);
         round_rect2->setStartPoint(strt_pnt);
         round_rect->item=new QGraphicsPathItem(round_rect->getRoundRect(strt_pnt,strt_pnt));
@@ -1980,10 +1980,10 @@ void Graph_Scene::draw_round_rect_move(QPointF pnt,QPointF pnt1)
 
      if(round_rect && round_rect->getMode())
      {
-		 if(round_rect->getState()==1)
+     if(round_rect->getState()==1)
          {
            round_rect->isObjectSelected=true;
-		   round_rect->showHandles();
+       round_rect->showHandles();
            if(pnt1!=pnt)
            {
               if(round_rect->item->rotation()==0)
@@ -1997,20 +1997,20 @@ void Graph_Scene::draw_round_rect_move(QPointF pnt,QPointF pnt1)
               {
                   pnt1=round_rect->End_Rect->mapFromScene(pnt1);
                   qDebug()<<"mouse press point1 "<<pnt1<<"\n";
-				  round_rect->item->setPath(round_rect->getRoundRect(pnt1,round_rect->item->boundingRect().bottomRight()));
+          round_rect->item->setPath(round_rect->getRoundRect(pnt1,round_rect->item->boundingRect().bottomRight()));
                   round_rect->setStartPoint(pnt1);
                   round_rect->updateEdgeRects();
               }
            }
-		   isObjectEdited=true;
+       isObjectEdited=true;
          }
 
           if(round_rect->getState()==2)
           {
              if(pnt1!=pnt)
              {
-				 round_rect->isObjectSelected=true;
-				 round_rect->showHandles();
+         round_rect->isObjectSelected=true;
+         round_rect->showHandles();
                  if(round_rect->item->rotation()==0)
                  {
                      round_rect->item->setPath(round_rect->getRoundRect(round_rect->getStartPnt(),pnt1-round_rect->item->pos()));
@@ -2022,35 +2022,35 @@ void Graph_Scene::draw_round_rect_move(QPointF pnt,QPointF pnt1)
                  {
                      pnt1=round_rect->End_Rect->mapFromScene(pnt1);
                      qDebug()<<"mouse press point1 "<<pnt1<<"\n";
-					 round_rect->item->setPath(round_rect->getRoundRect(round_rect->item->boundingRect().topLeft(),pnt1));
+           round_rect->item->setPath(round_rect->getRoundRect(round_rect->item->boundingRect().topLeft(),pnt1));
                      round_rect->setEndPoint(pnt1);
                      round_rect->updateEdgeRects();
                  }
 
                }
-			   isObjectEdited=true;
+         isObjectEdited=true;
            }
 
            if(round_rect->getState()==3)
            {
-			   round_rect->isObjectSelected=true;
-			   round_rect->showHandles();
+         round_rect->isObjectSelected=true;
+         round_rect->showHandles();
                if(pnt1!=pnt)
                {
-				
+        
                    round_rect->setTranslate(pnt,pnt1);
                    //round_rect->item->setPath(round_rect->getRoundRect(round_rect->getStartPnt(),round_rect->getEndPnt()));
                    //round_rect->updateEdgeRects();
                    //object5->setObjectPos(round_rect->getStartPnt(),round_rect->getEndPnt());
                    //object5->setBoundPos(round_rect->item->boundingRect().topLeft(),round_rect->item->boundingRect().bottomLeft());
                 }
-			   isObjectEdited=true;
+         isObjectEdited=true;
             }
 
            if(round_rect->getState()==4)
            {
-			   round_rect->isObjectSelected=true;
-			   round_rect->showHandles();
+         round_rect->isObjectSelected=true;
+         round_rect->showHandles();
                if(pnt1!=pnt)
                {
                     
@@ -2060,7 +2060,7 @@ void Graph_Scene::draw_round_rect_move(QPointF pnt,QPointF pnt1)
                   object5->setObjectPos(round_rect->getStartPnt(),round_rect->getEndPnt());
                   object5->setBoundPos(round_rect->item->boundingRect().topLeft(),round_rect->item->boundingRect().bottomLeft());
                }
-			   isObjectEdited=true;
+         isObjectEdited=true;
            }
        }
 }
@@ -2069,15 +2069,15 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
 {
 
     Scene_Objects* object = new Scene_Objects();
-	Draw_RoundRect *round_rect2 = new Draw_RoundRect();
-	round_rect2 = round_rect;
+  Draw_RoundRect *round_rect2 = new Draw_RoundRect();
+  round_rect2 = round_rect;
 
     if(round_rect && round_rect->getMode()==false  && objectToDraw==5)
     {
         last_pnt=pnt1;
 
-		removeItem(round_rect2->item);
-		round_rect->setMode(true);
+    removeItem(round_rect2->item);
+    round_rect->setMode(true);
         round_rect2->setMode(true);
         round_rect2->setEndPoint(pnt1);
         round_rect2->item->setPos(0,0);
@@ -2085,9 +2085,9 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
         round_rect2->bounding_end_pnt = round_rect2->getEndPnt();
         object->setObjectPos(round_rect2->getStartPnt(),round_rect2->getEndPnt());
         object->setBoundPos(round_rect2->item->boundingRect().topLeft(),round_rect2->item->boundingRect().bottomLeft());
-		round_rect2->item = new QGraphicsPathItem(round_rect2->getRoundRect(round_rect->getStartPnt(),round_rect->getEndPnt()));
-		addItem(round_rect2->item);
-		round_rect2->setEdgeRects();
+    round_rect2->item = new QGraphicsPathItem(round_rect2->getRoundRect(round_rect->getStartPnt(),round_rect->getEndPnt()));
+    addItem(round_rect2->item);
+    round_rect2->setEdgeRects();
         addItem(round_rect2->Strt_Rect);
         addItem(round_rect2->End_Rect);
         addItem(round_rect2->Rot_Rect);
@@ -2095,17 +2095,17 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
         round_rect2->Strt_Rect->setPos(0,0);
         round_rect2->End_Rect->setPos(0,0);
         round_rect2->Rot_Rect->setPos(0,0);
-		round_rect2->isObjectSelected=true;
-		round_rects[round_rects.size()-1]=round_rect2;
+    round_rect2->isObjectSelected=true;
+    round_rects[round_rects.size()-1]=round_rect2;
 
         object->setObjects(5,round_rects.size()-1);
         object->pen=pen;
         object->setbrush(brush);
         object->ObjectIndx=round_rects.size()-1;
         objects.push_back(object);
-		objectToDraw=0;
+    objectToDraw=0;
 
-		
+    
     }
 
     if(round_rect && round_rect->getMode()==true)
@@ -2121,8 +2121,8 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
            }*/
            round_rect->Strt_Rect->unsetCursor();
            round_rect->setState(0);
-		   object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
-		  
+       object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
+      
         }
 
         if(round_rect->getState()==2)
@@ -2138,7 +2138,7 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
             }*/
             round_rect->End_Rect->unsetCursor();
             round_rect->setState(0);
-			object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
+      object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
         }
 
         if(round_rect->getState()==3)
@@ -2157,10 +2157,10 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
             }*/
             round_rect->item->unsetCursor();
             round_rect->setState(0);
-			object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
-			object5->setBoundPos(round_rect->item->boundingRect().topLeft(),round_rect->item->boundingRect().bottomLeft());
-			//objects[object_indx]=object5;
-			this->objectToEdit=0;
+      object5->setObjectPos(round_rect->item->sceneBoundingRect().topLeft(),round_rect->item->sceneBoundingRect().bottomRight());
+      object5->setBoundPos(round_rect->item->boundingRect().topLeft(),round_rect->item->boundingRect().bottomLeft());
+      //objects[object_indx]=object5;
+      this->objectToEdit=0;
         }
 
         if(round_rect->getState()==4)
@@ -2178,7 +2178,7 @@ void Graph_Scene::draw_round_rect_state(QPointF pnt,QPointF pnt1)
 
      }
 
-	objectToEdit=5;
+  objectToEdit=5;
 }
 
 
@@ -2209,12 +2209,12 @@ void Graph_Scene::draw_ellep()
              break;
         }
     }
-	if(!k && ellep && elleps[elleps.size()-1]->getMode()==true && objectToDraw==3)
+  if(!k && ellep && elleps[elleps.size()-1]->getMode()==true && objectToDraw==3)
     {
         Draw_Ellipse* ellep2 = new Draw_Ellipse();
         ellep=ellep2;
-		for(int i=0;i<elleps.size();i++)
-			elleps[i]->isObjectSelected=false;
+    for(int i=0;i<elleps.size();i++)
+      elleps[i]->isObjectSelected=false;
         elleps.push_back(ellep2);
         ellep2->setStartPoint(strt_pnt);
         ellep->item = new QGraphicsPathItem(ellep->getEllep(strt_pnt,strt_pnt));
@@ -2236,10 +2236,10 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
 
      if(ellep && ellep->getMode())
      {
-		 if(ellep->getState()==1)
+     if(ellep->getState()==1)
          {
-			 ellep->isObjectSelected=true;
-			 ellep->showHandles();
+       ellep->isObjectSelected=true;
+       ellep->showHandles();
              if(ellep->item->rotation()==0)
              {
                 ellep->item->setPath(ellep->getEllep(pnt1-ellep->item->pos(),ellep->getEndPnt()));
@@ -2251,19 +2251,19 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
              {
                  pnt1=ellep->End_Rect->mapFromScene(pnt1);
                  qDebug()<<"mouse press point1 "<<pnt1<<"\n";
-				 ellep->item->setPath(ellep->getEllep(pnt1,ellep->item->boundingRect().bottomRight()));
+         ellep->item->setPath(ellep->getEllep(pnt1,ellep->item->boundingRect().bottomRight()));
                  ellep->setStartPoint(pnt1);
                  ellep->updateEdgeRects();
              }
              object3->setObjectPos(ellep->getStartPnt(),ellep->getEndPnt());
              object3->setBoundPos(ellep->item->boundingRect().topLeft(),ellep->item->boundingRect().bottomLeft());
-			 isObjectEdited=true;
+       isObjectEdited=true;
           }
 
           if(ellep->getState()==2)
           {
-			  ellep->isObjectSelected=true;
-			  ellep->showHandles();
+        ellep->isObjectSelected=true;
+        ellep->showHandles();
               if(ellep->item->rotation()==0)
               {
                   ellep->item->setPath(ellep->getEllep(ellep->getStartPnt(),pnt1-ellep->item->pos()));
@@ -2275,14 +2275,14 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
               {
                   pnt1=ellep->End_Rect->mapFromScene(pnt1);
                   qDebug()<<"mouse press point1 "<<pnt1<<"\n";
-				  ellep->item->setPath(ellep->getEllep(ellep->item->boundingRect().topLeft(),pnt1));
+          ellep->item->setPath(ellep->getEllep(ellep->item->boundingRect().topLeft(),pnt1));
                   ellep->setEndPoint(pnt1);
                   ellep->updateEdgeRects();
               }
 
               object3->setObjectPos(ellep->getStartPnt(),ellep->getEndPnt());
               object3->setBoundPos(ellep->item->boundingRect().topLeft(),ellep->item->boundingRect().bottomLeft());
-			  isObjectEdited=true;
+        isObjectEdited=true;
 
            }
 
@@ -2290,8 +2290,8 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
            {
                if(pnt1!=pnt)
                {
-				   ellep->isObjectSelected=true;
-				   ellep->showHandles();
+           ellep->isObjectSelected=true;
+           ellep->showHandles();
                    ellep->setTranslate(pnt,pnt1);
 
                    //ellep->item->setPath(ellep->getEllep(ellep->getStartPnt(),ellep->getEndPnt()));
@@ -2299,19 +2299,19 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
                    //object3->setObjectPos(ellep->getStartPnt(),ellep->getEndPnt());
                    //object3->setBoundPos(ellep->item->boundingRect().topLeft(),ellep->item->boundingRect().bottomLeft());
                }
-			   isObjectEdited=true;
+         isObjectEdited=true;
             }
 
             if(ellep->getState()==4)
             {
-				 ellep->isObjectSelected=true;
-				 ellep->showHandles();
+         ellep->isObjectSelected=true;
+         ellep->showHandles();
                  if(pnt1!=pnt)
                  {
                    ellep->setRotate(pnt,pnt1);
                    
                  }
-				 isObjectEdited=true;
+         isObjectEdited=true;
             }
         }
 }
@@ -2319,35 +2319,35 @@ void Graph_Scene::draw_ellep_move(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_ellep_state(QPointF pnt,QPointF pnt1)
 {
     Scene_Objects* object = new Scene_Objects();
-	Draw_Ellipse *ellep2  = new Draw_Ellipse();
-	ellep2=ellep;
+  Draw_Ellipse *ellep2  = new Draw_Ellipse();
+  ellep2=ellep;
 
     if(ellep && ellep->getMode()==false && objectToDraw==3)
     {
         last_pnt=pnt1;
        
-		removeItem(ellep2->item);
-		ellep->setMode(true);
+    removeItem(ellep2->item);
+    ellep->setMode(true);
         ellep2->setMode(true);
         ellep2->setEndPoint(pnt1);
         ellep2->bounding_strt_pnt = ellep2->getStartPnt();
         ellep2->bounding_end_pnt = ellep2->getEndPnt();
         object->setObjectPos(ellep2->getStartPnt(),ellep2->getEndPnt());
         object->setBoundPos(ellep2->item->boundingRect().topLeft(),ellep2->item->boundingRect().bottomLeft());
-		ellep2->item = new QGraphicsPathItem(ellep2->getEllep(ellep2->getStartPnt(),ellep2->getEndPnt()));
-		addItem(ellep2->item);
+    ellep2->item = new QGraphicsPathItem(ellep2->getEllep(ellep2->getStartPnt(),ellep2->getEndPnt()));
+    addItem(ellep2->item);
         ellep2->setEdgeRects();
         addItem(ellep2->Strt_Rect);
         addItem(ellep2->End_Rect);
         addItem(ellep2->Rot_Rect);
-		ellep2->isObjectSelected=true;
-		elleps[elleps.size()-1]=ellep2;
+    ellep2->isObjectSelected=true;
+    elleps[elleps.size()-1]=ellep2;
         object->setObjects(3,elleps.size()-1);
         object->pen=pen;
         object->setbrush(brush);
         object->ObjectIndx=elleps.size()-1;
         objects.push_back(object);
-		objectToDraw=0;
+    objectToDraw=0;
     }
 
     if(ellep && ellep->getMode()==true)
@@ -2415,7 +2415,7 @@ void Graph_Scene::draw_ellep_state(QPointF pnt,QPointF pnt1)
 
      }
 
-	objectToEdit=3;
+  objectToEdit=3;
 }
 
 void Graph_Scene::draw_polygon()
@@ -2455,7 +2455,7 @@ void Graph_Scene::draw_polygon()
        {
             polygon=polygons[i];
             indx=i;
-			poly_indx=polygons[i]->getHandelIndex();
+      poly_indx=polygons[i]->getHandelIndex();
             k=true;
             break;
        }
@@ -2465,7 +2465,7 @@ void Graph_Scene::draw_polygon()
 
     if(polygons.size()>=1 && (!k) && objectToDraw==4)
     {
-		qDebug()<<"polygon line size "<<polygon->getLines().size()<<"\n";
+    qDebug()<<"polygon line size "<<polygon->getLines().size()<<"\n";
         if(polygon && polygon->getLines().isEmpty()&&(polygons[polygons.size()-1]->getPolygonDrawn()))
         {
             Draw_Polygon* poly2 = new Draw_Polygon();
@@ -2473,7 +2473,7 @@ void Graph_Scene::draw_polygon()
             polygon=poly2;
             polygon->poly_pnts.push_back(strt_pnt);
             polygon->setStartPoint(strt_pnt);
-			qDebug()<<"entered second polygon "<<polygon->poly_pnts[0]<<"  "<<polygon->lines.size()<<"\n";
+      qDebug()<<"entered second polygon "<<polygon->poly_pnts[0]<<"  "<<polygon->lines.size()<<"\n";
         }
         else
         {
@@ -2514,12 +2514,12 @@ void Graph_Scene::draw_polygon_move(QPointF pnt,QPointF pnt1)
      {
          /*if(poly_indx<polygon->poly_pnts.size())
          {
-			 polygon->showHandles();
+       polygon->showHandles();
          }*/
           if(polygon->getState()==1)
           {
-			 polygon->isObjectSelected=true;  
-			 polygon->showHandles();
+       polygon->isObjectSelected=true;  
+       polygon->showHandles();
              if(pnt1!=pnt)
              {
                  if(poly_indx<polygon->poly_pnts.size())
@@ -2556,7 +2556,7 @@ void Graph_Scene::draw_polygon_move(QPointF pnt,QPointF pnt1)
                     object4->setObjectPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
                     object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
                     object4->pnts=polygon->poly_pnts;
-					isObjectEdited=true;
+          isObjectEdited=true;
 
                   }
                 }
@@ -2564,8 +2564,8 @@ void Graph_Scene::draw_polygon_move(QPointF pnt,QPointF pnt1)
 
          if(polygon && polygon->getState()==2)
          {
-			 polygon->isObjectSelected=true;  
-			 polygon->showHandles();
+       polygon->isObjectSelected=true;  
+       polygon->showHandles();
              /*if(polygon->item->isSelected())
              {
                 for(int i=0;i<polygon->edge_items.size();i++)
@@ -2581,13 +2581,13 @@ void Graph_Scene::draw_polygon_move(QPointF pnt,QPointF pnt1)
              object4->setObjectPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
              object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
              object4->pnts=polygon->poly_pnts;
-			 isObjectEdited=true;
+       isObjectEdited=true;
          }
 
          if(polygon && polygon->getState()==3)
          {
-			 polygon->isObjectSelected=true;  
-			 polygon->showHandles();
+       polygon->isObjectSelected=true;  
+       polygon->showHandles();
 
              polygon->setRotate(pnt,pnt1);
 
@@ -2623,7 +2623,7 @@ void Graph_Scene::draw_polygon_state(QPointF pnt,QPointF pnt1)
             object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             object4->pnts=polygon->poly_pnts;
             polygon->setState(0);
-			objectToEdit=4;
+      objectToEdit=4;
         }
 
         if(polygon->getState()==2)
@@ -2632,14 +2632,14 @@ void Graph_Scene::draw_polygon_state(QPointF pnt,QPointF pnt1)
             object4->setBoundPos(polygon->item->boundingRect().topLeft(),polygon->item->boundingRect().bottomRight());
             object4->pnts=polygon->poly_pnts;
             polygon->setState(0);
-			objectToEdit=4;
+      objectToEdit=4;
         }
 
-		if(polygon->getState()==3)
-		{
-			polygon->setState(0);
-			objectToEdit=4;
-		}
+    if(polygon->getState()==3)
+    {
+      polygon->setState(0);
+      objectToEdit=4;
+    }
 
     }
 
@@ -2681,7 +2681,7 @@ void Graph_Scene::draw_triangle()
 
     if(!triangles.isEmpty() && objectToDraw==8)
     {
-		if(!k && triangle && triangles[triangles.size()-1]->getMode()==true)
+    if(!k && triangle && triangles[triangles.size()-1]->getMode()==true)
        {
           Draw_Triangle *triangle2 = new Draw_Triangle();
           triangle2->setStartPoint(strt_pnt);
@@ -2696,175 +2696,175 @@ void Graph_Scene::draw_triangle()
 
 void Graph_Scene::draw_triangle_move(QPointF pnt,QPointF pnt1)
 {
-	QPointF move_pnt;
+  QPointF move_pnt;
 
     if(triangle && triangle->getMode())
     {
-		if(triangle->getState()==1)
+    if(triangle->getState()==1)
         {
-		  triangle->isObjectSelected=true;
-		  triangle->showHandles();
+      triangle->isObjectSelected=true;
+      triangle->showHandles();
           if(pnt1!=pnt)
           {
-			  if(triangle->item->rotation()==0 || triangle->item->rotation()!=0)
+        if(triangle->item->rotation()==0 || triangle->item->rotation()!=0)
              {
 
-				 qDebug()<<"handle index "<<triangle->handle_index<<"\n";
+         qDebug()<<"handle index "<<triangle->handle_index<<"\n";
 
 
-				 if(triangle->handle_index==0)
-				 {
-					 if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
-					 {
-						 if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
-						 { 
-						    triangle->item->setPath(triangle->getTriangle());
-				            triangle->updateEdgeRects();
-							//if(triangle->item->rotation()!=0)
-								pnt1=triangle->handles[0]->mapFromScene(pnt1);
-						    triangle->setStartPoint(QPointF(pnt1.x(),triangle->getStartPnt().y()));
-							triangle->setEndPoint(triangle->getEndPnt());
+         if(triangle->handle_index==0)
+         {
+           if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
+           {
+             if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
+             { 
+                triangle->item->setPath(triangle->getTriangle());
+                    triangle->updateEdgeRects();
+              //if(triangle->item->rotation()!=0)
+                pnt1=triangle->handles[0]->mapFromScene(pnt1);
+                triangle->setStartPoint(QPointF(pnt1.x(),triangle->getStartPnt().y()));
+              triangle->setEndPoint(triangle->getEndPnt());
                             move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					        move_pnt.setY(pnt1.y());
+                  move_pnt.setY(pnt1.y());
                             triangle->setHeightPoint(move_pnt);
                          }
-					 }
+           }
               
                  }
 
-				 if(triangle->handle_index==1)
-				 {
-					triangle->item->setPath(triangle->getTriangle());
-				    triangle->updateEdgeRects();
-					//if(triangle->item->rotation()!=0)
-						pnt1=triangle->handles[1]->mapFromScene(pnt1);
-					triangle->setStartPoint(QPointF(pnt1.x(),triangle->getStartPnt().y()));
+         if(triangle->handle_index==1)
+         {
+          triangle->item->setPath(triangle->getTriangle());
+            triangle->updateEdgeRects();
+          //if(triangle->item->rotation()!=0)
+            pnt1=triangle->handles[1]->mapFromScene(pnt1);
+          triangle->setStartPoint(QPointF(pnt1.x(),triangle->getStartPnt().y()));
                     triangle->setEndPoint(triangle->getEndPnt());
                     move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					move_pnt.setY(triangle->getHeightPnt().y());
+          move_pnt.setY(triangle->getHeightPnt().y());
                     triangle->setHeightPoint(move_pnt);
-				 }
+         }
 
 
-				 if(triangle->handle_index==2)
-				 {
-					triangle->item->setPath(triangle->getTriangle());
-				    triangle->updateEdgeRects();
-					//if(triangle->item->rotation()!=0)
-						pnt1=triangle->handles[2]->mapFromScene(pnt1);
-					triangle->setStartPoint(triangle->getStartPnt());
+         if(triangle->handle_index==2)
+         {
+          triangle->item->setPath(triangle->getTriangle());
+            triangle->updateEdgeRects();
+          //if(triangle->item->rotation()!=0)
+            pnt1=triangle->handles[2]->mapFromScene(pnt1);
+          triangle->setStartPoint(triangle->getStartPnt());
                     triangle->setEndPoint(QPointF(pnt1.x(),triangle->getEndPnt().y()));
                     move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					move_pnt.setY(pnt1.y());
+          move_pnt.setY(pnt1.y());
                     triangle->setHeightPoint(move_pnt);
-				 }
+         }
 
-				 if(triangle->handle_index==3)
-				 {
-					triangle->item->setPath(triangle->getTriangle());
-				    triangle->updateEdgeRects();
-					//if(triangle->item->rotation()!=0)
-						pnt1=triangle->handles[3]->mapFromScene(pnt1);
-					triangle->setStartPoint(triangle->getStartPnt());
+         if(triangle->handle_index==3)
+         {
+          triangle->item->setPath(triangle->getTriangle());
+            triangle->updateEdgeRects();
+          //if(triangle->item->rotation()!=0)
+            pnt1=triangle->handles[3]->mapFromScene(pnt1);
+          triangle->setStartPoint(triangle->getStartPnt());
                     triangle->setEndPoint(QPointF(pnt1.x(),triangle->getEndPnt().y()));
                     move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					move_pnt.setY(triangle->getHeightPnt().y());
+          move_pnt.setY(triangle->getHeightPnt().y());
                     triangle->setHeightPoint(move_pnt);
-				 }
+         }
 
-				 if(triangle->handle_index==4)
-				 {
-					 if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
-					 {
-						 if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
-						 { 
-						    triangle->item->setPath(triangle->getTriangle());
-				            triangle->updateEdgeRects();
-							//if(triangle->item->rotation()!=0)
-								pnt1=triangle->handles[4]->mapFromScene(pnt1);
-						    triangle->setStartPoint(pnt1);
-							triangle->setEndPoint(QPointF(triangle->getEndPnt().x(),pnt1.y()));
+         if(triangle->handle_index==4)
+         {
+           if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
+           {
+             if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
+             { 
+                triangle->item->setPath(triangle->getTriangle());
+                    triangle->updateEdgeRects();
+              //if(triangle->item->rotation()!=0)
+                pnt1=triangle->handles[4]->mapFromScene(pnt1);
+                triangle->setStartPoint(pnt1);
+              triangle->setEndPoint(QPointF(triangle->getEndPnt().x(),pnt1.y()));
                             move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					        move_pnt.setY(triangle->getHeightPnt().y());
+                  move_pnt.setY(triangle->getHeightPnt().y());
                             triangle->setHeightPoint(move_pnt);
                          }
-					 }
+           }
               
                  }
 
-				 if(triangle->handle_index==6)
-				 {
-					 if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
-					 {
-						 if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
-						 { 
-						    triangle->item->setPath(triangle->getTriangle());
-				            triangle->updateEdgeRects();
-							//if(triangle->item->rotation()!=0)
-								pnt1=triangle->handles[6]->mapFromScene(pnt1);
-						    triangle->setStartPoint(QPointF(triangle->getStartPnt().x(),pnt1.y()));
-							triangle->setEndPoint(pnt1);
+         if(triangle->handle_index==6)
+         {
+           if((pnt.x()!=pnt1.x())&&(pnt.y()!=pnt1.y()))
+           {
+             if(pnt1.y()>pnt.y()||pnt1.y()<pnt.y())
+             { 
+                triangle->item->setPath(triangle->getTriangle());
+                    triangle->updateEdgeRects();
+              //if(triangle->item->rotation()!=0)
+                pnt1=triangle->handles[6]->mapFromScene(pnt1);
+                triangle->setStartPoint(QPointF(triangle->getStartPnt().x(),pnt1.y()));
+              triangle->setEndPoint(pnt1);
                             move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					        move_pnt.setY(triangle->getHeightPnt().y());
+                  move_pnt.setY(triangle->getHeightPnt().y());
                             triangle->setHeightPoint(move_pnt);
                          }
-					 }
+           }
               
                  }
-				
+        
 
 
-				 if(triangle->handle_index==5)
-				 {
-					triangle->item->setPath(triangle->getTriangle());
-				    triangle->updateEdgeRects();
-					//if(triangle->item->rotation()!=0)
-						pnt1=triangle->handles[5]->mapFromScene(pnt1);
-					triangle->setStartPoint(QPointF(triangle->getStartPnt().x(),pnt1.y()));
+         if(triangle->handle_index==5)
+         {
+          triangle->item->setPath(triangle->getTriangle());
+            triangle->updateEdgeRects();
+          //if(triangle->item->rotation()!=0)
+            pnt1=triangle->handles[5]->mapFromScene(pnt1);
+          triangle->setStartPoint(QPointF(triangle->getStartPnt().x(),pnt1.y()));
                     triangle->setEndPoint(QPointF(triangle->getEndPnt().x(),pnt1.y()));
                     move_pnt.setX((triangle->getEndPnt().x()+triangle->getStartPnt().x())/2.0);
-					move_pnt.setY(triangle->getHeightPnt().y());
+          move_pnt.setY(triangle->getHeightPnt().y());
                     triangle->setHeightPoint(move_pnt);
-				 }
+         }
 
-				 if(triangle->handle_index==7)
-				 {
-					triangle->item->setPath(triangle->getTriangle());
+         if(triangle->handle_index==7)
+         {
+          triangle->item->setPath(triangle->getTriangle());
                     triangle->updateEdgeRects();
-					//if(triangle->item->rotation()!=0)
-						pnt1=triangle->handles[7]->mapFromScene(pnt1);
+          //if(triangle->item->rotation()!=0)
+            pnt1=triangle->handles[7]->mapFromScene(pnt1);
                     triangle->setHeightPoint(QPointF(triangle->getHeightPnt().x(),pnt1.y()));
                     triangle->bounding_strt_pnt=triangle->getStartPnt();
                     triangle->bounding_end_pnt=triangle->getEndPnt();
-				 }
-				
-		 
+         }
+        
+     
              }
-			 isObjectEdited=true;
+       isObjectEdited=true;
           }
         }
 
          
           if(triangle->getState()==4)
           {
-			  triangle->isObjectSelected=true;
-		      triangle->showHandles();
+        triangle->isObjectSelected=true;
+          triangle->showHandles();
               if(pnt1!=pnt)
               {
                  triangle->setTranslate(pnt,pnt1);
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
            }
 
           if(triangle->getState()==5)
           {
-			  triangle->isObjectSelected=true;
-		      triangle->showHandles();
+        triangle->isObjectSelected=true;
+          triangle->showHandles();
               if(pnt1!=pnt)
               {
                  triangle->setRotate(pnt,pnt1);
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
           }
       }
 }
@@ -2872,39 +2872,39 @@ void Graph_Scene::draw_triangle_move(QPointF pnt,QPointF pnt1)
 void Graph_Scene::draw_triangle_state(QPointF pnt,QPointF pnt1)
 {
     Scene_Objects *object = new Scene_Objects();
-	Draw_Triangle *triangle2 = new Draw_Triangle();
-	triangle2 = triangle;
+  Draw_Triangle *triangle2 = new Draw_Triangle();
+  triangle2 = triangle;
     if(triangle && (triangle->getMode()==false) && objectToDraw==8)
     {
-	   removeItem(triangle2->item);
+     removeItem(triangle2->item);
        triangle->setMode(true);
-	   triangle2->setMode(true);
-	   triangle2->item = new QGraphicsPathItem(triangle2->getTriangle());
-	   addItem(triangle2->item);
+     triangle2->setMode(true);
+     triangle2->item = new QGraphicsPathItem(triangle2->getTriangle());
+     addItem(triangle2->item);
        triangle2->setEdgeRects();
       
-	   for(int i=0;i<triangle2->handles.size();i++)
-		   addItem(triangle2->handles[i]);
+     for(int i=0;i<triangle2->handles.size();i++)
+       addItem(triangle2->handles[i]);
 
-	   addItem(triangle2->Bounding_Rect);
+     addItem(triangle2->Bounding_Rect);
        addItem(triangle2->Rot_Rect);
        triangle2->Bounding_Rect->hide();
-	   triangle2->isObjectSelected=true;
-	   for(int i=0;i<triangles.size();i++)
-		   triangles[i]->isObjectSelected=false;
+     triangle2->isObjectSelected=true;
+     for(int i=0;i<triangles.size();i++)
+       triangles[i]->isObjectSelected=false;
        triangles.push_back(triangle2);
        object->setObjectPos(triangle2->item->boundingRect().topLeft(),triangle2->item->boundingRect().bottomRight());
        object->setBoundPos(triangle2->item->boundingRect().topLeft(),triangle2->item->boundingRect().bottomRight());
-	   object->pnts.push_back(QPointF(triangle2->getStartPnt()));
+     object->pnts.push_back(QPointF(triangle2->getStartPnt()));
        object->pnts.push_back(QPointF(triangle2->getEndPnt()));
        object->pnts.push_back(QPointF(triangle2->getHeightPnt()));
        object->setObjects(8,triangles.size()-1);
        object->ObjectIndx=triangles.size()-1;
        objects.push_back(object);
-	   objectToDraw=0;
+     objectToDraw=0;
 
-	   qDebug()<<"triangle points "<<triangle->getStartPnt()<<"  "<<triangle->getEndPnt()<<" "<<triangle->getHeightPnt()<<"\n"; 
-	   qDebug()<<"enter data when  drawn "<<triangle->item->transform()<<"  "<<triangle->item->sceneTransform().map(QPointF(0,0))<<"\n";
+     qDebug()<<"triangle points "<<triangle->getStartPnt()<<"  "<<triangle->getEndPnt()<<" "<<triangle->getHeightPnt()<<"\n"; 
+     qDebug()<<"enter data when  drawn "<<triangle->item->transform()<<"  "<<triangle->item->sceneTransform().map(QPointF(0,0))<<"\n";
     }
 
     if(triangle && triangle->getMode()==true)
@@ -2929,7 +2929,7 @@ void Graph_Scene::draw_triangle_state(QPointF pnt,QPointF pnt1)
 
         if(triangle->getState()==3)
         {
-			
+      
             object8->setObjectPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
             object8->setBoundPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
             object8->pnts.empty();
@@ -2939,42 +2939,42 @@ void Graph_Scene::draw_triangle_state(QPointF pnt,QPointF pnt1)
 
         if(triangle->getState()==4)
         {
-			//reset and the reset the positin attribute of triangle and its handles
-			if(triangle->item->rotation()==0)
-			{
-			   triangle->item->setPath(triangle->getTriangle());
-			   triangle->updateEdgeRects();
-			   triangle->item->setPos(0,0);
-			   /*triangle->Strt_Rect->setPos(0,0);
-			   triangle->End_Rect->setPos(0,0);
-			   triangle->Height_Rect->setPos(0,0);*/
-			   for(int i=0;i<triangle->handles.size();i++)
-				   triangle->handles[i]->setPos(0,0);
-			   triangle->Rot_Rect->setPos(0,0);
-			   triangle->Bounding_Rect->setPos(0,0);
+      //reset and the reset the positin attribute of triangle and its handles
+      if(triangle->item->rotation()==0)
+      {
+         triangle->item->setPath(triangle->getTriangle());
+         triangle->updateEdgeRects();
+         triangle->item->setPos(0,0);
+         /*triangle->Strt_Rect->setPos(0,0);
+         triangle->End_Rect->setPos(0,0);
+         triangle->Height_Rect->setPos(0,0);*/
+         for(int i=0;i<triangle->handles.size();i++)
+           triangle->handles[i]->setPos(0,0);
+         triangle->Rot_Rect->setPos(0,0);
+         triangle->Bounding_Rect->setPos(0,0);
 
-			   
-			}
+         
+      }
             
            /* if(triangle->item->rotation()!=0)
-			{
-			   triangle->item->setPath(triangle->getTriangle());
-			   triangle->updateEdgeRects();
-			   triangle->item->setRotation(0.0);
-			   triangle->item->setPos(0,0);
-			   triangle->Strt_Rect->setRotation(0.0);
-			   triangle->Strt_Rect->setPos(0,0);
-			   triangle->End_Rect->setRotation(0.0);
-			   triangle->End_Rect->setPos(0,0);
-			   triangle->Height_Rect->setRotation(0.0);
-			   triangle->Height_Rect->setPos(0,0);
-			   triangle->Rot_Rect->setRotation(0.0);
-			   triangle->Rot_Rect->setPos(0,0);
-			   triangle->Bounding_Rect->setRotation(0.0);
-			   triangle->Bounding_Rect->setPos(0,0);
-			} */
-			
-			object8->setObjectPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
+      {
+         triangle->item->setPath(triangle->getTriangle());
+         triangle->updateEdgeRects();
+         triangle->item->setRotation(0.0);
+         triangle->item->setPos(0,0);
+         triangle->Strt_Rect->setRotation(0.0);
+         triangle->Strt_Rect->setPos(0,0);
+         triangle->End_Rect->setRotation(0.0);
+         triangle->End_Rect->setPos(0,0);
+         triangle->Height_Rect->setRotation(0.0);
+         triangle->Height_Rect->setPos(0,0);
+         triangle->Rot_Rect->setRotation(0.0);
+         triangle->Rot_Rect->setPos(0,0);
+         triangle->Bounding_Rect->setRotation(0.0);
+         triangle->Bounding_Rect->setPos(0,0);
+      } */
+      
+      object8->setObjectPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
             object8->setBoundPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
             object8->pnts.empty();
             object8->pnts.push_back(QPointF(triangle->getHeightPnt()));
@@ -2988,12 +2988,12 @@ void Graph_Scene::draw_triangle_state(QPointF pnt,QPointF pnt1)
             object6->setBoundPos(arc->item->boundingRect().topLeft(),arc->item->boundingRect().bottomRight());
             object6->pnts.empty();
             object6->pnts.push_back(QPointF(arc->getCurvePnt()));*/
-			/*QPointF map_pnt(0,0);
-			triangle->item->mapToItem(triangle->Strt_Rect,map_pnt);
-			qDebug()<<"item rotation angle "<<triangle->item->rotation()<<"  "<<triangle->mapToScene(QPointF(0,0))<<"\n";
-			qDebug()<<"enter data "<<triangle->item->transform()<<"  "<<triangle->item->sceneTransform().map(QPointF(0,0))<<"\n";
-			qDebug()<<"enter data top map "<<triangle->item->sceneBoundingRect().topLeft()<<"  "<<triangle->item->sceneBoundingRect().topRight()<<"\n";
-			qDebug()<<"enter data map "<<triangle->item->sceneBoundingRect().bottomLeft()<<"  "<<triangle->item->sceneBoundingRect().bottomRight()<<"\n";
+      /*QPointF map_pnt(0,0);
+      triangle->item->mapToItem(triangle->Strt_Rect,map_pnt);
+      qDebug()<<"item rotation angle "<<triangle->item->rotation()<<"  "<<triangle->mapToScene(QPointF(0,0))<<"\n";
+      qDebug()<<"enter data "<<triangle->item->transform()<<"  "<<triangle->item->sceneTransform().map(QPointF(0,0))<<"\n";
+      qDebug()<<"enter data top map "<<triangle->item->sceneBoundingRect().topLeft()<<"  "<<triangle->item->sceneBoundingRect().topRight()<<"\n";
+      qDebug()<<"enter data map "<<triangle->item->sceneBoundingRect().bottomLeft()<<"  "<<triangle->item->sceneBoundingRect().bottomRight()<<"\n";
             triangle->setState(0);
             triangle->Bounding_Rect->hide();*/
         }
@@ -3001,7 +3001,7 @@ void Graph_Scene::draw_triangle_state(QPointF pnt,QPointF pnt1)
 
      }
 
-	objectToEdit=8;
+  objectToEdit=8;
 }
 
 void Graph_Scene::draw_text()
@@ -3107,7 +3107,7 @@ void Graph_Scene::draw_text_move(QPointF pnt,QPointF pnt1)
                 //text->bounding_strt_pnt=pnt1;
                 //text->bounding_end_pnt=triangle->getEndPnt();
              }
-			 isObjectEdited=true;
+       isObjectEdited=true;
           }
         }
 
@@ -3133,7 +3133,7 @@ void Graph_Scene::draw_text_move(QPointF pnt,QPointF pnt1)
                    //text->bounding_strt_pnt=pnt1;
                    //text->bounding_end_pnt=text->getEndPnt();
                 }
-				isObjectEdited=true;
+        isObjectEdited=true;
             }
           }
 
@@ -3147,7 +3147,7 @@ void Graph_Scene::draw_text_move(QPointF pnt,QPointF pnt1)
                   //text->item->setPath(triangle->getTriangle());
                   text->updateEdgeRects();
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
            }
 
           if(text->getState()==4)
@@ -3157,7 +3157,7 @@ void Graph_Scene::draw_text_move(QPointF pnt,QPointF pnt1)
               {
                  text->setRotate(pnt,pnt1);
               }
-			  isObjectEdited=true;
+        isObjectEdited=true;
           }
       }
 }
@@ -3181,7 +3181,7 @@ void Graph_Scene::draw_text_state(QPointF pnt,QPointF pnt1)
        object->setObjects(10,texts.size()-1);
        object->ObjectIndx=texts.size()-1;
        objects.push_back(object);
-	   objectToDraw=10;
+     objectToDraw=10;
     }
 
     if(text->getMode()==true)
@@ -3217,7 +3217,7 @@ void Graph_Scene::draw_text_state(QPointF pnt,QPointF pnt1)
         }
      }
 
-	
+  
 }
 
 
@@ -3226,95 +3226,95 @@ void Graph_Scene::setObject(int object_id)
     objectToDraw=object_id;
     qDebug()<<"object to draw "<<objectToDraw<<"\n";
 
-	polygon=new Draw_Polygon();
+  polygon=new Draw_Polygon();
     polygon->set_draw_mode(false);
-	
-	line = new Draw_Line();
-	line->set_draw_mode(false);
-	 
+  
+  line = new Draw_Line();
+  line->set_draw_mode(false);
+   
 
-	rect = new Draw_Rectangle();
-	rect->setMode(false);
+  rect = new Draw_Rectangle();
+  rect->setMode(false);
 
-	round_rect = new Draw_RoundRect();
-	round_rect->setMode(false);
+  round_rect = new Draw_RoundRect();
+  round_rect->setMode(false);
 
-	ellep = new Draw_Ellipse();
-	ellep->setMode(false);
+  ellep = new Draw_Ellipse();
+  ellep->setMode(false);
 
-	arc  = new Draw_Arc();
-	arc->setMode(false);
-	arc->click=-1;
+  arc  = new Draw_Arc();
+  arc->setMode(false);
+  arc->click=-1;
 
-	if(objectToDraw==6)
-		arc->click=0;
+  if(objectToDraw==6)
+    arc->click=0;
 
-	arrow  = new Draw_Arrow();
-	arrow->setMode(false);
-
-
-	triangle = new Draw_Triangle();
-	triangle->setMode(false);
+  arrow  = new Draw_Arrow();
+  arrow->setMode(false);
 
 
-	linearrow = new Draw_LineArrow();
-	linearrow->setMode(false);
-
-	if(!lines.isEmpty())
-	{
-		for(int i=0;i<lines.size();i++)
-			lines[i]->isObjectSelected=false;
-	}
-
-	if(!rects.isEmpty())
-	{
-		for(int i=0;i<rects.size();i++)
-			rects[i]->isObjectSelected=false;
-	}
-
-	if(!round_rects.isEmpty())
-	{
-		for(int i=0;i<round_rects.size();i++)
-			round_rects[i]->isObjectSelected=false;
-	}
-
-	if(!elleps.isEmpty())
-	{
-		for(int i=0;i<elleps.size();i++)
-			elleps[i]->isObjectSelected=false;
-	}
-
-	if(!polygons.isEmpty())
-	{
-		for(int i=0;i<polygons.size();i++)
-			polygons[i]->isObjectSelected=false;
-	}
+  triangle = new Draw_Triangle();
+  triangle->setMode(false);
 
 
-	if(!arcs.isEmpty())
-	{
-		for(int i=0;i<arcs.size();i++)
-			arcs[i]->isObjectSelected=false;
-	}
+  linearrow = new Draw_LineArrow();
+  linearrow->setMode(false);
 
-	if(!linearrows.isEmpty())
-	{
-		for(int i=0;i<linearrows.size();i++)
-			linearrows[i]->isObjectSelected=false;
-	}
+  if(!lines.isEmpty())
+  {
+    for(int i=0;i<lines.size();i++)
+      lines[i]->isObjectSelected=false;
+  }
 
-	if(!triangles.isEmpty())
-	{
-		for(int i=0;i<triangles.size();i++)
-			triangles[i]->isObjectSelected=false;
-	}
+  if(!rects.isEmpty())
+  {
+    for(int i=0;i<rects.size();i++)
+      rects[i]->isObjectSelected=false;
+  }
 
-	if(!arrows.isEmpty())
-	{
-		for(int i=0;i<arrows.size();i++)
-			arrows[i]->isObjectSelected=false;
-	}
-	
+  if(!round_rects.isEmpty())
+  {
+    for(int i=0;i<round_rects.size();i++)
+      round_rects[i]->isObjectSelected=false;
+  }
+
+  if(!elleps.isEmpty())
+  {
+    for(int i=0;i<elleps.size();i++)
+      elleps[i]->isObjectSelected=false;
+  }
+
+  if(!polygons.isEmpty())
+  {
+    for(int i=0;i<polygons.size();i++)
+      polygons[i]->isObjectSelected=false;
+  }
+
+
+  if(!arcs.isEmpty())
+  {
+    for(int i=0;i<arcs.size();i++)
+      arcs[i]->isObjectSelected=false;
+  }
+
+  if(!linearrows.isEmpty())
+  {
+    for(int i=0;i<linearrows.size();i++)
+      linearrows[i]->isObjectSelected=false;
+  }
+
+  if(!triangles.isEmpty())
+  {
+    for(int i=0;i<triangles.size();i++)
+      triangles[i]->isObjectSelected=false;
+  }
+
+  if(!arrows.isEmpty())
+  {
+    for(int i=0;i<arrows.size();i++)
+      arrows[i]->isObjectSelected=false;
+  }
+  
 } 
 
 
@@ -3361,12 +3361,12 @@ void Graph_Scene::hide_object_edges()
     {
         if(objects[i]->ObjectId==2 && !rects.isEmpty())
         {
-			for(int i=0;i<rects.size();i++)
-			{
-			    if(rects[i]->getMode())
+      for(int i=0;i<rects.size();i++)
+      {
+          if(rects[i]->getMode())
                 {
-				   rects[i]->hideHandles();
-				} 
+           rects[i]->hideHandles();
+        } 
             }
         }
 
@@ -3374,7 +3374,7 @@ void Graph_Scene::hide_object_edges()
         {
             if(ellep && ellep->getMode() &&  ellep->Strt_Rect->isVisible())
             {
-				ellep->hideHandles();
+        ellep->hideHandles();
             }
         }
 
@@ -3383,7 +3383,7 @@ void Graph_Scene::hide_object_edges()
         {
             if(round_rect && round_rect->getMode() &&  round_rect->Strt_Rect->isVisible())
             {
-				round_rect->hideHandles();
+        round_rect->hideHandles();
             }
         }
 
@@ -3391,57 +3391,57 @@ void Graph_Scene::hide_object_edges()
         {
             if(linearrow && linearrow->getMode() && linearrow->Strt_Rect->isVisible())
             {
-				linearrow->hideHandles();
+        linearrow->hideHandles();
             }
         }
 
         if((objects[i]->ObjectId==8))
         {
-			if(triangle && triangle->getMode() && triangle->handles[0]->isVisible())
+      if(triangle && triangle->getMode() && triangle->handles[0]->isVisible())
             {
-				triangle->hideHandles();
+        triangle->hideHandles();
             }
         }
 
         if((objects[i]->ObjectId==9))
         {
-			if(arrow && arrow->getMode() && arrow->handles[0]->isVisible())
+      if(arrow && arrow->getMode() && arrow->handles[0]->isVisible())
             {
-				arrow->hideHandles();
+        arrow->hideHandles();
             }
         }
     }
 
 
-	if(!lines.isEmpty())
+  if(!lines.isEmpty())
     {
-		for(int i=0;i<lines.size();i++)
-		{  
-			if(lines[i]->getPolyLineDrawn())
-		        lines[i]->hideHandles();
-		}
+    for(int i=0;i<lines.size();i++)
+    {  
+      if(lines[i]->getPolyLineDrawn())
+            lines[i]->hideHandles();
+    }
 
     }
 
     if(!polygons.isEmpty())
     {
-		for(int i=0;i<polygons.size();i++)
-		{  
-			if(polygons[i]->getPolygonDrawn())
-		        polygons[i]->hideHandles();
-		}
+    for(int i=0;i<polygons.size();i++)
+    {  
+      if(polygons[i]->getPolygonDrawn())
+            polygons[i]->hideHandles();
+    }
 
     }
 
-	if(!arcs.isEmpty())
+  if(!arcs.isEmpty())
     {
         for(int i=0;i<arcs.size();i++)
         {
-			arcs[i]->hideHandles();
+      arcs[i]->hideHandles();
         }
     }
 
-	
+  
     if(!temp_copy_objects.isEmpty())
     {
         for(int i=0;i<temp_copy_objects.size();i++)
@@ -3450,7 +3450,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(temp_copy_objects[i]->ObjectStrtPnt==lines[j]->getStartPnt())
                 {
-					lines[j]->hideHandles();
+          lines[j]->hideHandles();
                 }
              }
 
@@ -3458,7 +3458,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(temp_copy_objects[i]->ObjectStrtPnt==rects[j]->getStartPnt())
                 {
-					rects[j]->hideHandles();
+          rects[j]->hideHandles();
                 }
              }
 
@@ -3476,7 +3476,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(temp_copy_objects[i]->ObjectStrtPnt==elleps[j]->getStartPnt())
                 {
-					elleps[j]->hideHandles();
+          elleps[j]->hideHandles();
                 }
              }
          }
@@ -3490,7 +3490,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(temp_copy_objects[i]->ObjectStrtPnt==lines[j]->getStartPnt())
                 {
-					lines[j]->hideHandles();
+          lines[j]->hideHandles();
                    
                 }
              }
@@ -3499,7 +3499,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(copy_objects[i]->ObjectStrtPnt==rects[j]->getStartPnt())
                 {
-					rects[j]->hideHandles();
+          rects[j]->hideHandles();
                 }
              }
 
@@ -3507,7 +3507,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(copy_objects[i]->ObjectStrtPnt==round_rects[j]->getStartPnt())
                 {
-					round_rects[j]->hideHandles();
+          round_rects[j]->hideHandles();
                 }
              }
 
@@ -3515,7 +3515,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(temp_copy_objects[i]->ObjectStrtPnt==polygons[j]->getStartPnt())
                 {
-					polygons[j]->hideHandles();
+          polygons[j]->hideHandles();
                 }
             }
 
@@ -3523,7 +3523,7 @@ void Graph_Scene::hide_object_edges()
             {
                 if(copy_objects[i]->ObjectStrtPnt==elleps[j]->getStartPnt())
                 {
-					elleps[j]->hideHandles();
+          elleps[j]->hideHandles();
                 }
              }
          }
@@ -3534,97 +3534,97 @@ void Graph_Scene::new_Scene()
 {
     if(objects.size()!=0)
     {
-		objects.clear();
-		copy_objects.clear();
-		if(!arcs.isEmpty())
+    objects.clear();
+    copy_objects.clear();
+    if(!arcs.isEmpty())
             arcs.clear();
-		if(arc!=NULL)
-		{
-			delete arc;
-			arc=NULL;
-			objectToEdit=0;
-		}
-
-		if(!arrows.isEmpty())
-			arrows.clear();
-		if(arrow)
-		{
-			delete arrow;
-			arrow=NULL;
-			objectToEdit=0;
-		}
-
-		if(!lines.isEmpty())
-            lines.clear();
-		if(line)
-		{
-			delete line;
-			line=NULL;
-			objectToEdit=0;
-		}
-		if(!linearrows.isEmpty())
-            linearrows.clear();
-		if(linearrow)
-		{
-			delete linearrow;
-			linearrow=NULL;
-			objectToEdit=0;
-		}
-		if(!rects.isEmpty())
-            rects.clear();
-		if(rect)
-		{
-			delete rect;
-			rect=NULL;
-			objectToEdit=0;
-			
-		}
-		if(!elleps.isEmpty())
-            elleps.clear();
-		if(ellep)
-		{
-			delete ellep;
-			ellep=NULL;
-			objectToEdit=0;
-		}
-		if(!round_rects.isEmpty())
-            round_rects.clear();
-		if(round_rect)
-		{
-			//if(round_rect->Strt_Rect->isVisible())
-				//round_rect->hideHandles();
-			delete round_rect;
-			round_rect=NULL;
-			objectToEdit=0;
-		}
-		if(!polygons.isEmpty())
-            polygons.clear();
-		if(polygon)
-		{
-			delete polygon;
-			polygon=NULL;
-			objectToEdit=0;
-		}
-		if(!triangles.isEmpty())
-			triangles.clear();
-		if(triangle)
-		{
-			delete triangle;
-			triangle=NULL;
-			objectToEdit=0;
-		}
-		//if(!texts.isEmpty())
-			//texts.clear();
-		clear();
-		
-		/*if(text)
-		{
-			delete text;
-			text=NULL;
-			objectToEdit=0;
-		}*/
+    if(arc!=NULL)
+    {
+      delete arc;
+      arc=NULL;
+      objectToEdit=0;
     }
-	
+
+    if(!arrows.isEmpty())
+      arrows.clear();
+    if(arrow)
+    {
+      delete arrow;
+      arrow=NULL;
+      objectToEdit=0;
+    }
+
+    if(!lines.isEmpty())
+            lines.clear();
+    if(line)
+    {
+      delete line;
+      line=NULL;
+      objectToEdit=0;
+    }
+    if(!linearrows.isEmpty())
+            linearrows.clear();
+    if(linearrow)
+    {
+      delete linearrow;
+      linearrow=NULL;
+      objectToEdit=0;
+    }
+    if(!rects.isEmpty())
+            rects.clear();
+    if(rect)
+    {
+      delete rect;
+      rect=NULL;
+      objectToEdit=0;
+      
+    }
+    if(!elleps.isEmpty())
+            elleps.clear();
+    if(ellep)
+    {
+      delete ellep;
+      ellep=NULL;
+      objectToEdit=0;
+    }
+    if(!round_rects.isEmpty())
+            round_rects.clear();
+    if(round_rect)
+    {
+      //if(round_rect->Strt_Rect->isVisible())
+        //round_rect->hideHandles();
+      delete round_rect;
+      round_rect=NULL;
+      objectToEdit=0;
+    }
+    if(!polygons.isEmpty())
+            polygons.clear();
+    if(polygon)
+    {
+      delete polygon;
+      polygon=NULL;
+      objectToEdit=0;
+    }
+    if(!triangles.isEmpty())
+      triangles.clear();
+    if(triangle)
+    {
+      delete triangle;
+      triangle=NULL;
+      objectToEdit=0;
+    }
+    //if(!texts.isEmpty())
+      //texts.clear();
+    clear();
+    
+    /*if(text)
+    {
+      delete text;
+      text=NULL;
+      objectToEdit=0;
+    }*/
+    }
+  
 }
 
 
@@ -3764,19 +3764,19 @@ void Graph_Scene::open_Scene(QString file_name)
 void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
 {
      arcs.clear();
-	 arrows.clear();
+   arrows.clear();
      lines.clear();
-	 linearrows.clear();
+   linearrows.clear();
      rects.clear();
      elleps.clear();
      objects.clear();
      round_rects.clear();
      polygons.clear();
-	 triangles.clear();
-	 //texts.clear();
+   triangles.clear();
+   //texts.clear();
 
-	//arrow = new Draw_Arrow();
-	//arrow->setMode(0);
+  //arrow = new Draw_Arrow();
+  //arrow->setMode(0);
 
     for(int i=0,rotValue=0;i<values.size(); )
     {
@@ -3794,10 +3794,10 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            object->setPenWidth(values[i+10]);
            object->setBrushColor(values[i+11],values[i+12],values[i+13]);
            object->setBrushStyle(values[i+14]);
-		   object->rotation=value[rotValue];
+       object->rotation=value[rotValue];
            objects.push_back(object);
-		   i+=15;
-		   rotValue++;
+       i+=15;
+       rotValue++;
         }
 
         if(i==values.size())
@@ -3806,7 +3806,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
         }
 
 
-		if(values[i]==1)
+    if(values[i]==1)
         {
            qDebug()<<"value of i "<<i<<"\n";
            Scene_Objects* object = new Scene_Objects();
@@ -3829,17 +3829,17 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            }
            j=i;
            qDebug()<<"value of j and rotValue"<<j<<" "<<value[rotValue]<<"\n";
-		   object->setPenColor(values[j],values[j+1],values[j+2]);
+       object->setPenColor(values[j],values[j+1],values[j+2]);
            object->setPenStyle(values[j+3]);
            object->setPenWidth(values[j+4]);
            object->rotation=value[rotValue];
            objects.push_back(object);
            i=j+5;
-		   rotValue++;
-		   
+       rotValue++;
+       
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
@@ -3867,19 +3867,19 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            }
            j=i;
            qDebug()<<"value of j and rotValue"<<j<<" "<<value[rotValue]<<"\n";
-		   object->setPenColor(values[j],values[j+1],values[j+2]);
+       object->setPenColor(values[j],values[j+1],values[j+2]);
            object->setPenStyle(values[j+3]);
            object->setPenWidth(values[j+4]);
            object->setBrushColor(values[j+5],values[j+6],values[j+7]);
            object->setBrushStyle(values[j+8]);
-		   object->rotation=value[rotValue];
+       object->rotation=value[rotValue];
            objects.push_back(object);
            i=j+9;
-		   rotValue++;
-		   
+       rotValue++;
+       
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
@@ -3904,17 +3904,17 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            objects.push_back(object);
 
            i+=13;
-		   rotValue++;
+       rotValue++;
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
 
-		if(values[i]==7)
+    if(values[i]==7)
         {
-		   Scene_Objects* object = new Scene_Objects();
+       Scene_Objects* object = new Scene_Objects();
            qDebug()<<"entered "<<"\n";
            object->ObjectId=values[i];
            int j;
@@ -3927,7 +3927,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
               j=values[i+1];
               j=j+i;
            }
-		   
+       
            for(i=i+2;i<j+2;i+=2)
            {
                QPointF pnt(values[i],values[i+1]);
@@ -3935,22 +3935,22 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            }
            j=i;
            qDebug()<<"value of j and rotValue"<<j<<" "<<value[rotValue]<<"\n";
-		   object->setPenColor(values[j],values[j+1],values[j+2]);
+       object->setPenColor(values[j],values[j+1],values[j+2]);
            object->setPenStyle(values[j+3]);
            object->setPenWidth(values[j+4]);
            object->rotation=value[rotValue];
            objects.push_back(object);
            i=j+5;
-		   rotValue++;
-		   
+       rotValue++;
+       
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
 
-		if(values[i]==8 && values[i+1]==8)
+    if(values[i]==8 && values[i+1]==8)
         {
            Scene_Objects* object = new Scene_Objects();
            qDebug()<<"entered "<<"\n";
@@ -3968,24 +3968,24 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            object->setPenWidth(values[i+12]);
            object->setBrushColor(values[i+13],values[i+14],values[i+15]);
            object->setBrushStyle(values[i+16]);
-		   object->rotation=value[rotValue];
+       object->rotation=value[rotValue];
            objects.push_back(object);
 
            i+=17;
-		   rotValue++;
+       rotValue++;
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
 
-		if(values[i]==9)
+    if(values[i]==9)
         {
            Scene_Objects* object = new Scene_Objects();
            //qDebug()<<"entered "<<"\n";
            object->ObjectId=values[i];
-		   int j;
+       int j;
            if(i==0)
            {
               j=values[i+1];
@@ -4003,18 +4003,18 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
            }
            j=i;
            //qDebug()<<"value of j and rotValue"<<j<<" "<<value[rotValue]<<"\n";
-		   object->setPenColor(values[j],values[j+1],values[j+2]);
+       object->setPenColor(values[j],values[j+1],values[j+2]);
            object->setPenStyle(values[j+3]);
            object->setPenWidth(values[j+4]);
            object->setBrushColor(values[j+5],values[j+6],values[j+7]);
            object->setBrushStyle(values[j+8]);
-		   object->rotation=value[rotValue];
+       object->rotation=value[rotValue];
            objects.push_back(object);
            i=j+9;
-		   rotValue++;
+       rotValue++;
         }
 
-		if(i==values.size())
+    if(i==values.size())
         {
             break;
         }
@@ -4026,17 +4026,17 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
         {
             Draw_Arc* arc2 = new Draw_Arc();
             Draw_Line* line2= new Draw_Line();
-			Draw_LineArrow* linearrow2= new Draw_LineArrow();
+      Draw_LineArrow* linearrow2= new Draw_LineArrow();
             Draw_Rectangle *rect2 = new Draw_Rectangle();
             Draw_Ellipse *ellep2 = new Draw_Ellipse();
             Draw_RoundRect *roundrect2 = new Draw_RoundRect();
             Draw_Polygon *polygon2 = new Draw_Polygon();
-			Draw_Triangle *triangle2 = new Draw_Triangle();
-			Draw_Arrow *arrow2 = new Draw_Arrow();
+      Draw_Triangle *triangle2 = new Draw_Triangle();
+      Draw_Arrow *arrow2 = new Draw_Arrow();
 
             if(objects[i]->ObjectId==1)
             {
-				 line2->poly_pnts=objects[i]->pnts;
+         line2->poly_pnts=objects[i]->pnts;
                  line=line2;
 
                  lines.push_back(line2);
@@ -4056,12 +4056,12 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                      {
                           addItem(line->edge_items[i]);
                      }
-				 }
+         }
 
-				 addItem(line->Rot_Rect);
-					
-				 line->hideHandles();
-				 objectToEdit=1;
+         addItem(line->Rot_Rect);
+          
+         line->hideHandles();
+         objectToEdit=1;
                  line->setPolyLineDrawn(true);
                  linemode=true;
                  line->lines.clear();
@@ -4075,7 +4075,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
 
               if(objects[i]->ObjectId==2)
               {
-				  rect2->setStartPoint(objects[i]->ObjectStrtPnt);
+          rect2->setStartPoint(objects[i]->ObjectStrtPnt);
                   rect2->setEndPoint(objects[i]->ObjectEndPnt);
                   rect2->setState(0);
                   rect2->setMode(true);
@@ -4083,7 +4083,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                   rects.push_back(rect2);
                   objectToEdit=2;
                 
-				  objects[i]->ObjectIndx=rects.size()-1;
+          objects[i]->ObjectIndx=rects.size()-1;
 
                   rect->item = new QGraphicsPathItem(rect->getRect(rect->getStartPnt(),rect->getEndPnt()));
                   rect->setPen(objects[i]->getpen().color());
@@ -4091,15 +4091,15 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                   rect->setPenWidth(objects[i]->getpen().width());
                   rect->setBrush(objects[i]->getbrush());
                   rect->setBrushStyle(objects[i]->getbrush().style());
-				  qDebug()<<"object rotation "<<objects[i]->rotation<<"\n";
-				  if(objects[i]->rotation!=0)
-					  rect->item->rotate(objects[i]->rotation);
+          qDebug()<<"object rotation "<<objects[i]->rotation<<"\n";
+          if(objects[i]->rotation!=0)
+            rect->item->rotate(objects[i]->rotation);
                   addItem(rect->item);
                   rect->setEdgeRects();
                   addItem(rect->Strt_Rect);
                   addItem(rect->End_Rect);
                   addItem(rect->Rot_Rect);
-				  rect->hideHandles();
+          rect->hideHandles();
 
 
                 }
@@ -4129,14 +4129,14 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                    addItem(ellep->Strt_Rect);
                    addItem(ellep->End_Rect);
                    addItem(ellep->Rot_Rect);
-				   ellep->hideHandles();
+           ellep->hideHandles();
 
                 }
 
 
                 if(objects[i]->ObjectId==4)
                 {
-					polygon2->poly_pnts=objects[i]->pnts;
+          polygon2->poly_pnts=objects[i]->pnts;
                     polygon=polygon2;
 
                     polygons.push_back(polygon2);
@@ -4160,10 +4160,10 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                             
                         }
                     }
-					addItem(polygon->Rot_Rect);
-					
-					polygon->hideHandles();
-					objectToEdit=4;
+          addItem(polygon->Rot_Rect);
+          
+          polygon->hideHandles();
+          objectToEdit=4;
                     polygon->setPolygonDrawn(true);
                     mode=true;
                     polygon->lines.clear();
@@ -4200,7 +4200,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                    addItem(round_rect->Strt_Rect);
                    addItem(round_rect->End_Rect);
                    addItem(round_rect->Rot_Rect);
-				   round_rect->hideHandles();
+           round_rect->hideHandles();
 
                }
 
@@ -4215,9 +4215,9 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                     arcs.push_back(arc2);
                     objectToEdit=6;
 
-					qDebug()<<"curve pnts  in open"<<arc2->getStartPnt()<<"  "<<arc2->getEndPnt()<<"  "<<arc2->getCurvePnt()<<"\n";
+          qDebug()<<"curve pnts  in open"<<arc2->getStartPnt()<<"  "<<arc2->getEndPnt()<<"  "<<arc2->getCurvePnt()<<"\n";
                     
-					objects[i]->ObjectIndx=arcs.size()-1;
+          objects[i]->ObjectIndx=arcs.size()-1;
 
                     arc->item = new QGraphicsPathItem(arc2->getArc());
                     arc->setPen(objects[i]->getpen().color());
@@ -4228,7 +4228,7 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                     addItem(arc->Strt_Rect);
                     addItem(arc->End_Rect);
                     addItem(arc->Curve_Rect);
-					arc->hideHandles();
+          arc->hideHandles();
                     objects[i]->setBoundPos(arc->item->boundingRect().topLeft(),arc->item->boundingRect().bottomRight());
 
                     //rect->Rot_Rect= new QGraphicsRectItem(QRectF((rect->getStartPnt().x()+rect->getEndPnt().x())/2,rect->getStartPnt().y()-10,5.0,5.0));
@@ -4238,20 +4238,20 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
 
                   }
 
-				  if(objects[i]->ObjectId==7)
+          if(objects[i]->ObjectId==7)
                   {
                     linearrow2->setStartPoint(objects[i]->ObjectStrtPnt);
                     linearrow2->setEndPoint(objects[i]->ObjectEndPnt);
-					linearrow2->arrow_pnts=objects[i]->pnts;
+          linearrow2->arrow_pnts=objects[i]->pnts;
                     linearrow2->setState(0);
                     linearrow2->setMode(true);
                     linearrow=linearrow2;
                     linearrows.push_back(linearrow2);
                     objectToEdit=7;
                     
-					objects[i]->ObjectIndx=linearrows.size()-1;
+          objects[i]->ObjectIndx=linearrows.size()-1;
 
-					linearrow->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
+          linearrow->item = new QGraphicsPathItem(linearrow2->getLineArrow(linearrow2->getStartPnt()));
                     linearrow->setPen(objects[i]->getpen().color());
                     linearrow->setPenStyle(objects[i]->getpen().style());
                     linearrow->setPenWidth(objects[i]->getpen().width());
@@ -4260,13 +4260,13 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                     addItem(linearrow->Strt_Rect);
                     addItem(linearrow->End_Rect);
                     addItem(linearrow->Rot_Rect);
-					linearrow->hideHandles();
+          linearrow->hideHandles();
                     objects[i]->setBoundPos(linearrow->item->boundingRect().topLeft(),linearrow->item->boundingRect().bottomRight());
 
                     
                   }
 
-				 if(objects[i]->ObjectId==8)
+         if(objects[i]->ObjectId==8)
                  {
                     triangle2->setStartPoint(objects[i]->ObjectStrtPnt);
                     triangle2->setEndPoint(objects[i]->ObjectEndPnt);
@@ -4287,26 +4287,26 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                     triangle->setEdgeRects();
                     addItem(triangle->Strt_Rect);
                     addItem(triangle->End_Rect);
-					addItem(triangle->Height_Rect);
-					addItem(triangle->Rot_Rect);
-					triangle->hideHandles();
+          addItem(triangle->Height_Rect);
+          addItem(triangle->Rot_Rect);
+          triangle->hideHandles();
                     objects[i]->setBoundPos(triangle->item->boundingRect().topLeft(),triangle->item->boundingRect().bottomRight());
 
 
                   }
 
-				 if(objects[i]->ObjectId==9)
+         if(objects[i]->ObjectId==9)
                  {
                     QPointF pnt(objects[i]->pnts[0].x(),objects[i]->pnts[0].y()-25);
                     arrow->setStartPoint(pnt);
-					pnt=QPointF(objects[i]->pnts[3].x(),objects[i]->pnts[4].y());
-					arrow->arrow_pnts=objects[i]->pnts;
-					arrow->setEndPoint(pnt);
-					qDebug()<<"values "<<arrow->getStartPnt()<<" "<<arrow->arrow_pnts[0]<<"\n";
-					arrow->setState(0);
+          pnt=QPointF(objects[i]->pnts[3].x(),objects[i]->pnts[4].y());
+          arrow->arrow_pnts=objects[i]->pnts;
+          arrow->setEndPoint(pnt);
+          qDebug()<<"values "<<arrow->getStartPnt()<<" "<<arrow->arrow_pnts[0]<<"\n";
+          arrow->setState(0);
                     objectToEdit=9;
                                      
-					arrow->item = new QGraphicsPathItem(arrow->drawArrow());
+          arrow->item = new QGraphicsPathItem(arrow->drawArrow());
                     arrow->setPen(objects[i]->getpen().color());
                     arrow->setPenStyle(objects[i]->getpen().style());
                     arrow->setPenWidth(objects[i]->getpen().width());
@@ -4314,11 +4314,11 @@ void Graph_Scene::open_Scene(const QVector<int> &values,QVector<float> &value)
                     arrow->setEdgeRects();
                     addItem(arrow->Strt_Rect);
                     addItem(arrow->End_Rect);
-					addItem(arrow->Rot_Rect);
-					arrow->hideHandles();
-					arrow->setMode(true);
-					arrows.push_back(arrow);
-					objects[i]->ObjectIndx=arrows.size()-1;
+          addItem(arrow->Rot_Rect);
+          arrow->hideHandles();
+          arrow->setMode(true);
+          arrows.push_back(arrow);
+          objects[i]->ObjectIndx=arrows.size()-1;
                     objects[i]->setBoundPos(arrow->item->boundingRect().topLeft(),arrow->item->boundingRect().bottomRight());
                   }
 
@@ -4396,10 +4396,10 @@ void Graph_Scene::cut_object()
         for(int i=0;i<temp_copy_objects.size();i++)
         {
             if(temp_copy_objects[i]->ObjectId==1)
-			{
+      {
                 for(int j=0;j<lines1.size();j++)
                 {
-					  if(lines1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt)
+            if(lines1[j]->item->boundingRect().topLeft()==temp_copy_objects[i]->ObjectStrtPnt)
                       {
                            removeItem(lines[j]->item);
                            for(int k=0;k<lines[j]->edge_items.size();k++)
@@ -4489,7 +4489,7 @@ void Graph_Scene::cut_object()
                   }
                }
 
-			   if(temp_copy_objects[i]->ObjectId==7)
+         if(temp_copy_objects[i]->ObjectId==7)
                {
 
                   for(int j=0;j<linearrows.size();j++)
@@ -4499,12 +4499,12 @@ void Graph_Scene::cut_object()
                            removeItem(linearrows[j]->item);
                            removeItem(linearrows[j]->Strt_Rect);
                            removeItem(linearrows[j]->End_Rect);
-						   removeItem(linearrows[j]->Rot_Rect);
+               removeItem(linearrows[j]->Rot_Rect);
                       }
                   }
                }
 
-			   if(temp_copy_objects[i]->ObjectId==8)
+         if(temp_copy_objects[i]->ObjectId==8)
                {
 
                   for(int j=0;j<triangles.size();j++)
@@ -4514,14 +4514,14 @@ void Graph_Scene::cut_object()
                            removeItem(triangles[j]->item);
                            removeItem(triangles[j]->Strt_Rect);
                            removeItem(triangles[j]->End_Rect);
-						   removeItem(triangles[j]->Height_Rect);
-						   removeItem(triangles[j]->Rot_Rect);
+               removeItem(triangles[j]->Height_Rect);
+               removeItem(triangles[j]->Rot_Rect);
                       }
                   }
                }
 
 
-			   if(temp_copy_objects[i]->ObjectId==9)
+         if(temp_copy_objects[i]->ObjectId==9)
                {
 
                   for(int j=0;j<arrows.size();j++)
@@ -4531,7 +4531,7 @@ void Graph_Scene::cut_object()
                            removeItem(arrows[j]->item);
                            removeItem(arrows[j]->Strt_Rect);
                            removeItem(arrows[j]->End_Rect);
-						   removeItem(arrows[j]->Rot_Rect);
+               removeItem(arrows[j]->Rot_Rect);
                       }
                   }
                }
@@ -4582,22 +4582,22 @@ void Graph_Scene::cut_object()
             arcs.remove(temp_copy_objects[i]->ObjectIndx);
         }
 
-		if(temp_copy_objects[i]->ObjectId==7)
+    if(temp_copy_objects[i]->ObjectId==7)
         {
             linearrows.remove(temp_copy_objects[i]->ObjectIndx);
         }
 
-		if(temp_copy_objects[i]->ObjectId==7)
+    if(temp_copy_objects[i]->ObjectId==7)
         {
             linearrows.remove(temp_copy_objects[i]->ObjectIndx);
         }
 
-		if(temp_copy_objects[i]->ObjectId==8)
+    if(temp_copy_objects[i]->ObjectId==8)
         {
             triangles.remove(temp_copy_objects[i]->ObjectIndx);
         }
 
-		if(temp_copy_objects[i]->ObjectId==9)
+    if(temp_copy_objects[i]->ObjectId==9)
         {
             arrows.remove(temp_copy_objects[i]->ObjectIndx);
         }
@@ -4619,14 +4619,14 @@ void Graph_Scene::paste_object()
        {
            Scene_Objects *object =  new Scene_Objects();
            Draw_Arc *arc2 = new Draw_Arc();
-		   Draw_Arrow *arrow2 = new Draw_Arrow();
-		   Draw_LineArrow *linearrow2 = new Draw_LineArrow();
+       Draw_Arrow *arrow2 = new Draw_Arrow();
+       Draw_LineArrow *linearrow2 = new Draw_LineArrow();
            Draw_Line *line2 = new Draw_Line();
            Draw_Rectangle *rect2 = new Draw_Rectangle();
            Draw_Ellipse *ellep2 = new Draw_Ellipse();
            Draw_RoundRect *round_rect2 = new Draw_RoundRect();
            Draw_Polygon *polygon2 = new Draw_Polygon();
-		   Draw_Triangle *triangle2 = new Draw_Triangle();
+       Draw_Triangle *triangle2 = new Draw_Triangle();
 
            if(temp_copy_objects[i]->ObjectId==1)
            {
@@ -4634,30 +4634,30 @@ void Graph_Scene::paste_object()
              
               lines.push_back(line2);
 
-			  line2->item = new QGraphicsPathItem(line2->getPolyLine());
+        line2->item = new QGraphicsPathItem(line2->getPolyLine());
               line2->setPen(objects[i]->getpen().color());
               line2->setPenStyle(objects[i]->getpen().style());
               line2->setPenWidth(objects[i]->getpen().width());
               addItem(line2->item);
 
-			  
+        
 
               if(!line2->edge_items.isEmpty())
               {
-				  for(int i=0;i<line2->edge_items.size();i++)
+          for(int i=0;i<line2->edge_items.size();i++)
                   {
                        addItem(line2->edge_items[i]);
                   }
-			 }
+       }
 
-			 addItem(line2->Rot_Rect);
-			 if(temp_copy_objects[i]->rotation!=0)
-			 {
-				line2->rotateShape(temp_copy_objects[i]->rotation); 
-			 } 
-					
-			 line2->hideHandles();
-			 objectToEdit=1;
+       addItem(line2->Rot_Rect);
+       if(temp_copy_objects[i]->rotation!=0)
+       {
+        line2->rotateShape(temp_copy_objects[i]->rotation); 
+       } 
+          
+       line2->hideHandles();
+       objectToEdit=1;
              line2->setPolyLineDrawn(true);
              linemode=true;
              line2->lines.clear();
@@ -4670,9 +4670,9 @@ void Graph_Scene::paste_object()
              object->setObjects(1,lines.size()-1);
              object->ObjectIndx=lines.size()-1;
              objects.push_back(object);
-			 objectToDraw=0;
-			 objectToEdit=1;
-			 paste_selected_objects.push_back(object);
+       objectToDraw=0;
+       objectToEdit=1;
+       paste_selected_objects.push_back(object);
 
            }
 
@@ -4700,13 +4700,13 @@ void Graph_Scene::paste_object()
               addItem(rect2->End_Rect);
               addItem(rect2->Rot_Rect);
 
-			  if(temp_copy_objects[i]->rotation!=0)
-			      rect2->rotateShape(temp_copy_objects[i]->rotation);
+        if(temp_copy_objects[i]->rotation!=0)
+            rect2->rotateShape(temp_copy_objects[i]->rotation);
 
               rect2->Rot_Rect->hide();
               rects.push_back(rect2);
 
-			  
+        
               object->ObjectId=2;
               object->setObjectPos(rect2->getStartPnt(),rect2->getEndPnt());
               object->setpen(rect2->getPen());
@@ -4741,13 +4741,13 @@ void Graph_Scene::paste_object()
                ellep2->setEdgeRects();
                addItem(ellep2->Strt_Rect);
                addItem(ellep2->End_Rect);
-			   addItem(ellep2->Rot_Rect);
+         addItem(ellep2->Rot_Rect);
                elleps.push_back(ellep2);
 
-			   if(temp_copy_objects[i]->rotation!=0)
-			       ellep2->rotateShape(temp_copy_objects[i]->rotation);
+         if(temp_copy_objects[i]->rotation!=0)
+             ellep2->rotateShape(temp_copy_objects[i]->rotation);
 
-			  
+        
                object->ObjectId=3;
                object->setObjectPos(ellep2->getStartPnt(),ellep2->getEndPnt());
                object->setpen(ellep2->getPen());
@@ -4774,7 +4774,7 @@ void Graph_Scene::paste_object()
               polygon2->setPenStyle(temp_copy_objects[i]->getpen().style());
               polygon2->setPenWidth(temp_copy_objects[i]->getpen().width());
               polygon2->setBrush(temp_copy_objects[i]->getbrush());
-			  polygon2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
+        polygon2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
 
               if(!polygon2->edge_items.isEmpty())
               {
@@ -4784,13 +4784,13 @@ void Graph_Scene::paste_object()
                   }
               }
 
-			  addItem(polygon2->Rot_Rect);
+        addItem(polygon2->Rot_Rect);
               polygon2->setPolygonDrawn(true);
               mode=true;
               polygons.push_back(polygon2);
 
-			  if(temp_copy_objects[i]->rotation!=0)
-			     polygon2->rotateShape(temp_copy_objects[i]->rotation);
+        if(temp_copy_objects[i]->rotation!=0)
+           polygon2->rotateShape(temp_copy_objects[i]->rotation);
 
               object->ObjectId=4;
               object->setObjectPos(polygon2->item->boundingRect().topLeft(),polygon2->item->boundingRect().bottomRight());
@@ -4806,7 +4806,7 @@ void Graph_Scene::paste_object()
 
            if(temp_copy_objects[i]->ObjectId==5)
            {
-			   qDebug()<<"round copy selected "<<isCopySelected<<"\n";
+         qDebug()<<"round copy selected "<<isCopySelected<<"\n";
                round_rect2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
                round_rect2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
                round_rect2->setState(0);
@@ -4830,8 +4830,8 @@ void Graph_Scene::paste_object()
                addItem(round_rect2->Rot_Rect);
                round_rect2->Rot_Rect->hide();
 
-			   if(temp_copy_objects[i]->rotation!=0)
-			      round_rect2->rotateShape(temp_copy_objects[i]->rotation);
+         if(temp_copy_objects[i]->rotation!=0)
+            round_rect2->rotateShape(temp_copy_objects[i]->rotation);
 
                round_rects.push_back(round_rect2);
 
@@ -4868,10 +4868,10 @@ void Graph_Scene::paste_object()
                addItem(arc2->Strt_Rect);
                addItem(arc2->End_Rect);
                addItem(arc2->Curve_Rect);
-			   addItem(arc2->Rot_Rect);
+         addItem(arc2->Rot_Rect);
 
-			   if(temp_copy_objects[i]->rotation!=0)
-			      arc2->rotateShape(temp_copy_objects[i]->rotation);
+         if(temp_copy_objects[i]->rotation!=0)
+            arc2->rotateShape(temp_copy_objects[i]->rotation);
 
                arcs.push_back(arc2);
 
@@ -4887,27 +4887,27 @@ void Graph_Scene::paste_object()
            }
 
 
-		   if(temp_copy_objects[i]->ObjectId==7)
+       if(temp_copy_objects[i]->ObjectId==7)
            {
                linearrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
                linearrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
               
                
-			   QPointF pnt;
+         QPointF pnt;
 
-			   pnt.setX(linearrow2->getEndPnt().x()-5.0);
-			   pnt.setY(linearrow2->getEndPnt().y());
+         pnt.setX(linearrow2->getEndPnt().x()-5.0);
+         pnt.setY(linearrow2->getEndPnt().y());
 
-			   
-			   linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(pnt));
+         
+         linearrow2->item = new QGraphicsPathItem(linearrow2->getLineArrow(pnt));
 
-			   pnt.setX(linearrow2->getEndPnt().x()-5.0);
-			   pnt.setY(linearrow2->getEndPnt().y());
+         pnt.setX(linearrow2->getEndPnt().x()-5.0);
+         pnt.setY(linearrow2->getEndPnt().y());
 
                if(isCopySelected)
                {
                   linearrow2->setTranslate(QPointF(5,5),QPointF(20,20));
-				  linearrow2->item->setPath(linearrow2->getLineArrow(pnt));
+          linearrow2->item->setPath(linearrow2->getLineArrow(pnt));
                }
                linearrow2->setPen(temp_copy_objects[i]->getpen().color());
                linearrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
@@ -4916,12 +4916,12 @@ void Graph_Scene::paste_object()
                linearrow2->setEdgeRects();
                addItem(linearrow2->Strt_Rect);
                addItem(linearrow2->End_Rect);
-			   addItem(linearrow2->Rot_Rect);
+         addItem(linearrow2->Rot_Rect);
 
-			   if(temp_copy_objects[i]->rotation!=0)
-			      linearrow2->rotateShape(temp_copy_objects[i]->rotation);
+         if(temp_copy_objects[i]->rotation!=0)
+            linearrow2->rotateShape(temp_copy_objects[i]->rotation);
 
-			   linearrow2->setState(0);
+         linearrow2->setState(0);
                linearrow2->setMode(true);
                linearrows.push_back(linearrow2);
 
@@ -4935,61 +4935,61 @@ void Graph_Scene::paste_object()
                paste_selected_objects.push_back(object);
            }
 
-		   if(temp_copy_objects[i]->ObjectId==8)
-		   {
+       if(temp_copy_objects[i]->ObjectId==8)
+       {
               triangle2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-			  triangle2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
-			  triangle2->setState(0);
-			  triangle2->setMode(false);
+        triangle2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+        triangle2->setState(0);
+        triangle2->setMode(false);
               triangle2->item = new QGraphicsPathItem(triangle2->getTriangle());
-			  triangle2->setEdgeRects();
-			  
-			  addItem(triangle2->item);
-			  addItem(triangle2->Strt_Rect);
-		      addItem(triangle2->End_Rect);
-			  addItem(triangle2->Height_Rect);
-			  addItem(triangle2->Bounding_Rect);
-			  addItem(triangle2->Rot_Rect);
+        triangle2->setEdgeRects();
+        
+        addItem(triangle2->item);
+        addItem(triangle2->Strt_Rect);
+          addItem(triangle2->End_Rect);
+        addItem(triangle2->Height_Rect);
+        addItem(triangle2->Bounding_Rect);
+        addItem(triangle2->Rot_Rect);
 
-			  if(isCopySelected)
-			  {
+        if(isCopySelected)
+        {
                   triangle2->setTranslate(QPointF(5,5),QPointF(20,20));
-				  triangle2->item->setPath(triangle2->getTriangle());
-				 
+          triangle2->item->setPath(triangle2->getTriangle());
+         
               }
 
-		      triangle2->setPen(temp_copy_objects[i]->getpen().color());
+          triangle2->setPen(temp_copy_objects[i]->getpen().color());
               triangle2->setPenStyle(temp_copy_objects[i]->getpen().style());
               triangle2->setPenWidth(temp_copy_objects[i]->getpen().width());
-			  triangle2->setBrush(temp_copy_objects[i]->getbrush().color());
-			  triangle2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
+        triangle2->setBrush(temp_copy_objects[i]->getbrush().color());
+        triangle2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
               triangle2->setMode(true);
-			  triangle2->Bounding_Rect->hide();
+        triangle2->Bounding_Rect->hide();
 
-			  if(temp_copy_objects[i]->rotation!=0)
-			     triangle2->rotateShape(temp_copy_objects[i]->rotation);
+        if(temp_copy_objects[i]->rotation!=0)
+           triangle2->rotateShape(temp_copy_objects[i]->rotation);
 
-			  triangles.push_back(triangle2);
-			  object->setObjectPos(triangle2->getStartPnt(),triangle2->getEndPnt());
-			  object->setBoundPos(triangle2->item->boundingRect().topLeft(),triangle2->item->boundingRect().bottomRight());
-			  object->pnts.push_back(QPointF(triangle2->getStartPnt()));
-			  object->pnts.push_back(QPointF(triangle2->getEndPnt()));
-			  object->pnts.push_back(QPointF(triangle2->getHeightPnt()));
-			  object->setObjects(8,triangles.size()-1);
-			  object->ObjectIndx=triangles.size()-1;
-			  object->setpen(triangle2->getPen());
-			  object->setbrush(triangle2->getBrush());
-			  objects.push_back(object);
-		   }
+        triangles.push_back(triangle2);
+        object->setObjectPos(triangle2->getStartPnt(),triangle2->getEndPnt());
+        object->setBoundPos(triangle2->item->boundingRect().topLeft(),triangle2->item->boundingRect().bottomRight());
+        object->pnts.push_back(QPointF(triangle2->getStartPnt()));
+        object->pnts.push_back(QPointF(triangle2->getEndPnt()));
+        object->pnts.push_back(QPointF(triangle2->getHeightPnt()));
+        object->setObjects(8,triangles.size()-1);
+        object->ObjectIndx=triangles.size()-1;
+        object->setpen(triangle2->getPen());
+        object->setbrush(triangle2->getBrush());
+        objects.push_back(object);
+       }
 
-		   if(temp_copy_objects[i]->ObjectId==9)
+       if(temp_copy_objects[i]->ObjectId==9)
            {
                arrow2->setStartPoint(temp_copy_objects[i]->ObjectStrtPnt);
-			   arrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
+         arrow2->setEndPoint(temp_copy_objects[i]->ObjectEndPnt);
                arrow2->setState(0);
                arrow2->setMode(false);
 
-			   arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
+         arrow2->item = new QGraphicsPathItem(arrow2->getArrow());
                if(isCopySelected)
                {
                   arrow2->setTranslate(QPointF(5,5),QPointF(20,20));
@@ -4998,27 +4998,27 @@ void Graph_Scene::paste_object()
                arrow2->setPen(temp_copy_objects[i]->getpen().color());
                arrow2->setPenStyle(temp_copy_objects[i]->getpen().style());
                arrow2->setPenWidth(temp_copy_objects[i]->getpen().width());
-			   arrow2->setBrush(temp_copy_objects[i]->getbrush().color());
-			   arrow2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
+         arrow2->setBrush(temp_copy_objects[i]->getbrush().color());
+         arrow2->setBrushStyle(temp_copy_objects[i]->getbrush().style());
                addItem(arrow2->item);
                arrow2->setEdgeRects();
                addItem(arrow2->Strt_Rect);
                addItem(arrow2->End_Rect);
-			   addItem(arrow2->Bounding_Rect);
+         addItem(arrow2->Bounding_Rect);
                addItem(arrow2->Rot_Rect);
-			   arrow2->Bounding_Rect->hide();
-			   arrow2->setMode(true);
+         arrow2->Bounding_Rect->hide();
+         arrow2->setMode(true);
 
-			   if(temp_copy_objects[i]->rotation!=0)
-			      arrow2->rotateShape(temp_copy_objects[i]->rotation);
+         if(temp_copy_objects[i]->rotation!=0)
+            arrow2->rotateShape(temp_copy_objects[i]->rotation);
 
                arrows.push_back(arrow2);
-			   			     
+                    
                object->ObjectId=9;
                object->setObjectPos(arrow2->getStartPnt(),arrow2->getEndPnt());
                object->setBoundPos(arrow2->item->boundingRect().topLeft(),arrow2->item->boundingRect().bottomRight());
                object->setpen(arrow2->getPen());
-			   object->setbrush(arrow2->getBrush());
+         object->setbrush(arrow2->getBrush());
                object->setObjects(9,arrows.size()-1);
                object->ObjectIndx=arrows.size()-1;
                objects.push_back(object);
@@ -5054,10 +5054,10 @@ QPointF Graph_Scene::getDim()
 
     QPointF dim;
 
-	selectedObjects();
+  selectedObjects();
 
-	if(copy_objects.size()==0)
-	{
+  if(copy_objects.size()==0)
+  {
        minPos.setX(objects[0]->ObjectStrtPnt.x());
        minPos.setY(objects[0]->ObjectStrtPnt.y());
 
@@ -5095,19 +5095,19 @@ QPointF Graph_Scene::getDim()
           }
       }
 
-	  /*for(int i=0;i<objects.size();i++)
-	  {
-		  if(!objects[i]->pnts.isEmpty())
-		  {
-			 for(int j=0;j<objects[i]->pnts.size();j++)
-			{
+    /*for(int i=0;i<objects.size();i++)
+    {
+      if(!objects[i]->pnts.isEmpty())
+      {
+       for(int j=0;j<objects[i]->pnts.size();j++)
+      {
 
-			}
-		} 
-	 }*/
+      }
+    } 
+   }*/
 
 
-	 maxPos.setX(objects[0]->ObjectEndPnt.x());
+   maxPos.setX(objects[0]->ObjectEndPnt.x());
      maxPos.setY(objects[0]->ObjectEndPnt.y());
 
      for(int i=1;i<objects.size();i++)
@@ -5137,18 +5137,18 @@ QPointF Graph_Scene::getDim()
         }
      }
 
-	 qDebug()<<"min Point "<<minPos.x()<<" "<<minPos.y()<<"\n";
+   qDebug()<<"min Point "<<minPos.x()<<" "<<minPos.y()<<"\n";
      qDebug()<<"max Point "<<maxPos.x()<<"  "<<maxPos.y()<<"\n";
      //dim=maxPos-minPos;
-	 dim.setX(maxPos.x()-minPos.x());
-	 dim.setY(maxPos.y()-minPos.y());
+   dim.setX(maxPos.x()-minPos.x());
+   dim.setY(maxPos.y()-minPos.y());
     
-	 qDebug()<<"dim "<<dim<<"\n";
-	 return dim;
+   qDebug()<<"dim "<<dim<<"\n";
+   return dim;
    }
 
    if(copy_objects.size()!=0)
-	{
+  {
        minPos.setX(copy_objects[0]->ObjectStrtPnt.x());
        minPos.setY(copy_objects[0]->ObjectStrtPnt.y());
 
@@ -5186,19 +5186,19 @@ QPointF Graph_Scene::getDim()
           }
       }
 
-	  /*for(int i=0;i<objects.size();i++)
-	  {
-		  if(!objects[i]->pnts.isEmpty())
-		  {
-			 for(int j=0;j<objects[i]->pnts.size();j++)
-			{
+    /*for(int i=0;i<objects.size();i++)
+    {
+      if(!objects[i]->pnts.isEmpty())
+      {
+       for(int j=0;j<objects[i]->pnts.size();j++)
+      {
 
-			}
-		} 
-	 }*/
+      }
+    } 
+   }*/
 
 
-	 maxPos.setX(copy_objects[0]->ObjectEndPnt.x());
+   maxPos.setX(copy_objects[0]->ObjectEndPnt.x());
      maxPos.setY(copy_objects[0]->ObjectEndPnt.y());
 
      for(int i=1;i<copy_objects.size();i++)
@@ -5228,14 +5228,14 @@ QPointF Graph_Scene::getDim()
         }
      }
 
-	 qDebug()<<"min Point "<<ceil(minPos.x())<<" "<<ceil(minPos.y())<<"\n";
+   qDebug()<<"min Point "<<ceil(minPos.x())<<" "<<ceil(minPos.y())<<"\n";
      qDebug()<<"max Point "<<ceil(maxPos.x())<<"  "<<ceil(maxPos.y())<<"\n";
      //dim=maxPos-minPos;
-	 dim.setX(ceil(maxPos.x())-ceil(minPos.x()));
-	 dim.setY(ceil(maxPos.y())-ceil(minPos.y()));
+   dim.setX(ceil(maxPos.x())-ceil(minPos.x()));
+   dim.setY(ceil(maxPos.y())-ceil(minPos.y()));
     
-	 qDebug()<<"dim "<<dim<<"\n";
-	 return dim;
+   qDebug()<<"dim "<<dim<<"\n";
+   return dim;
    }
 
 }
@@ -5248,33 +5248,33 @@ void Graph_Scene::getDist(QPointF &vertex, float &dist)
 void Graph_Scene::getObjectsPos(QVector<QPointF> &objectsPos)
 {
     objectsPos.clear();
-	selectedObjects();
-	if(copy_objects.size()==0)
-	{
+  selectedObjects();
+  if(copy_objects.size()==0)
+  {
       qDebug()<<"entered data \n";
       for(int i=0;i<objects.size();i++)
       {
           objectsPos.push_back(objects[i]->ObjectStrtPnt);
           objectsPos.push_back(objects[i]->ObjectEndPnt);
       }
-	}
-	else
-	{
-	   for(int i=0;i<copy_objects.size();i++)
+  }
+  else
+  {
+     for(int i=0;i<copy_objects.size();i++)
        {
           objectsPos.push_back(copy_objects[i]->ObjectStrtPnt);
           objectsPos.push_back(copy_objects[i]->ObjectEndPnt);
        }
-	}
+  }
 }
 
 
 QVector<Scene_Objects*> Graph_Scene::getObjects()
 {
-	if(copy_objects.size()==0)
+  if(copy_objects.size()==0)
         return objects;
-	else
-	    return copy_objects;
+  else
+      return copy_objects;
 }
 
 void Graph_Scene::getMinPosition(QPointF &pnt)
@@ -5383,7 +5383,7 @@ void Graph_Scene::setPen(const QPen Pen)
        }
     }
 
-	if(rect && rect->getMode()&&(rect->Strt_Rect->isVisible()))
+  if(rect && rect->getMode()&&(rect->Strt_Rect->isVisible()))
     {
        rect->setPen(Pen.color());
        if(!rects.isEmpty())
@@ -5413,7 +5413,7 @@ void Graph_Scene::setPen(const QPen Pen)
        }
     }
 
-	if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
+  if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
     {
        polygon->setPen(Pen.color());
        if(!polygons.isEmpty())
@@ -5428,7 +5428,7 @@ void Graph_Scene::setPen(const QPen Pen)
        }
     }
 
-	if(round_rect && round_rect->getMode()&&(round_rect->Strt_Rect->isVisible()))
+  if(round_rect && round_rect->getMode()&&(round_rect->Strt_Rect->isVisible()))
     {
        round_rect->setPen(Pen.color());
        if(!round_rects.isEmpty())
@@ -5458,7 +5458,7 @@ void Graph_Scene::setPen(const QPen Pen)
        }
     }
 
-	if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
+  if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
     {
        linearrow->setPen(Pen.color());
        if(!linearrows.isEmpty())
@@ -5474,7 +5474,7 @@ void Graph_Scene::setPen(const QPen Pen)
     }
 
 
-	if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
+  if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
     {
        triangle->setPen(Pen.color());
        if(!triangles.isEmpty())
@@ -5489,7 +5489,7 @@ void Graph_Scene::setPen(const QPen Pen)
        }
     }
 
-	if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
+  if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
     {
        arrow->setPen(Pen.color());
        if(!arrows.isEmpty())
@@ -5569,7 +5569,7 @@ void Graph_Scene::setPenStyle(const int style)
        }
     }
 
-	if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
+  if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
     {
        polygon->setPenStyle(style);
        if(!polygons.isEmpty())
@@ -5599,7 +5599,7 @@ void Graph_Scene::setPenStyle(const int style)
        }
     }
 
-	if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
+  if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
     {
        linearrow->setPenStyle(style);
        if(!linearrows.isEmpty())
@@ -5614,7 +5614,7 @@ void Graph_Scene::setPenStyle(const int style)
        }
     }
 
-	if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
+  if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
     {
        triangle->setPenStyle(style);
        if(!triangles.isEmpty())
@@ -5629,7 +5629,7 @@ void Graph_Scene::setPenStyle(const int style)
        }
     }
 
-	if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
+  if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
     {
        arrow->setPenStyle(style);
        if(!arrows.isEmpty())
@@ -5649,7 +5649,7 @@ void Graph_Scene::setPenStyle(const int style)
 
 void Graph_Scene::setPenWidth(const int width)
 {
-	if(line && line->getPolyLineDrawn()&&(line->edge_items[0]->isVisible()))
+  if(line && line->getPolyLineDrawn()&&(line->edge_items[0]->isVisible()))
     {
        line->setPenWidth(width);
        if(!lines.isEmpty())
@@ -5709,7 +5709,7 @@ void Graph_Scene::setPenWidth(const int width)
        }
     }
 
-	if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
+  if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
     {
        polygon->setPenWidth(width);
        if(!polygons.isEmpty())
@@ -5739,7 +5739,7 @@ void Graph_Scene::setPenWidth(const int width)
        }
     }
 
-	if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
+  if(linearrow && linearrow->getMode()&&(linearrow->Strt_Rect->isVisible()))
     {
        linearrow->setPenWidth(width);
        if(!linearrows.isEmpty())
@@ -5754,7 +5754,7 @@ void Graph_Scene::setPenWidth(const int width)
        }
     }
 
-	if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
+  if(triangle && triangle->getMode()&&(triangle->Strt_Rect->isVisible()))
     {
        triangle->setPenWidth(width);
        if(!triangles.isEmpty())
@@ -5769,7 +5769,7 @@ void Graph_Scene::setPenWidth(const int width)
        }
     }
 
-	if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
+  if(arrow && arrow->getMode()&&(arrow->Strt_Rect->isVisible()))
     {
        arrow->setPenWidth(width);
        if(!arrows.isEmpty())
@@ -5844,7 +5844,7 @@ void Graph_Scene::setBrush(const QBrush brush)
          }
        }
 
-	   if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
+     if(polygon && polygon->getPolygonDrawn()&&(polygon->edge_items[0]->isVisible()))
        {
           polygon->setBrush(brush);
           if(!polygons.isEmpty())
@@ -5982,7 +5982,7 @@ void Graph_Scene::setBrushStyle(const int style)
             {
                if((round_rect->getStartPnt()==triangles[i]->getStartPnt()))
                {
-				   triangles[i]->setBrushStyle(triangle->getBrush().style());
+           triangles[i]->setBrushStyle(triangle->getBrush().style());
                }
             }
          }
@@ -5997,7 +5997,7 @@ void Graph_Scene::setBrushStyle(const int style)
             {
                if((arrow->getStartPnt()==arrows[i]->getStartPnt()))
                {
-				   arrows[i]->setBrushStyle(arrow->getBrush().style());
+           arrows[i]->setBrushStyle(arrow->getBrush().style());
                }
             }
          }
@@ -6043,19 +6043,19 @@ void Graph_Scene::updateObjects()
             objects[i]->pen=arcs[objects[i]->ObjectIndx]->getPen();
         }
 
-		if(objects[i]->ObjectId==8)
-		{
-			objects[i]->pen = triangles[objects[i]->ObjectIndx]->getPen();
-			objects[i]->brush = triangles[objects[i]->ObjectIndx]->getBrush();
-		}
+    if(objects[i]->ObjectId==8)
+    {
+      objects[i]->pen = triangles[objects[i]->ObjectIndx]->getPen();
+      objects[i]->brush = triangles[objects[i]->ObjectIndx]->getBrush();
+    }
 
-		if(objects[i]->ObjectId==9)
-		{
-			objects[i]->pen = arrows[objects[i]->ObjectIndx]->getPen();
-			objects[i]->brush = arrows[objects[i]->ObjectIndx]->getBrush();
-		}
+    if(objects[i]->ObjectId==9)
+    {
+      objects[i]->pen = arrows[objects[i]->ObjectIndx]->getPen();
+      objects[i]->brush = arrows[objects[i]->ObjectIndx]->getBrush();
+    }
 
-	}
+  }
 }
 
 void Graph_Scene::select_objects(Scene_Objects objects1)
@@ -6067,59 +6067,59 @@ void Graph_Scene::select_objects(Scene_Objects objects1)
        {
           //if(lines[j]->getStartPnt()==objects1.ObjectStrtPnt)
           {
-			  lines[objects1.ObjectIndx]->isObjectSelected=!lines[objects1.ObjectIndx]->isObjectSelected;
+        lines[objects1.ObjectIndx]->isObjectSelected=!lines[objects1.ObjectIndx]->isObjectSelected;
 
-			  if(lines[objects1.ObjectIndx]->isObjectSelected)
+        if(lines[objects1.ObjectIndx]->isObjectSelected)
               {
-				  lines[objects1.ObjectIndx]->showHandles();
+          lines[objects1.ObjectIndx]->showHandles();
               }
-			  else
-				  lines[objects1.ObjectIndx]->hideHandles();
-			                
+        else
+          lines[objects1.ObjectIndx]->hideHandles();
+                      
           }
        }
     }
 
     if(!rects.isEmpty()&&(objects1.ObjectId==2))
     {
-      	rects[objects1.ObjectIndx]->isObjectSelected=!rects[objects1.ObjectIndx]->isObjectSelected;
-		if(rects[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+        rects[objects1.ObjectIndx]->isObjectSelected=!rects[objects1.ObjectIndx]->isObjectSelected;
+    if(rects[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 rects[objects1.ObjectIndx]->showHandles();
+           rects[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  rects[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         rects[objects1.ObjectIndx]->hideHandles();
     }
 
     if(!round_rects.isEmpty()&&(objects1.ObjectId==5))
     {
         round_rects[objects1.ObjectIndx]->isObjectSelected=!round_rects[objects1.ObjectIndx]->isObjectSelected;
-		if(round_rects[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(round_rects[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 round_rects[objects1.ObjectIndx]->showHandles();
+           round_rects[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  round_rects[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         round_rects[objects1.ObjectIndx]->hideHandles();
     }
 
     if(!elleps.isEmpty()&&(objects1.ObjectId==3))
     {
         elleps[objects1.ObjectIndx]->isObjectSelected=!elleps[objects1.ObjectIndx]->isObjectSelected;
-		if(elleps[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(elleps[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 elleps[objects1.ObjectIndx]->showHandles();
+           elleps[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  elleps[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         elleps[objects1.ObjectIndx]->hideHandles();
     }
 
     if(!polygons.isEmpty()&&(objects1.ObjectId==4))
@@ -6134,10 +6134,10 @@ void Graph_Scene::select_objects(Scene_Objects objects1)
                   {
                       if(!polygons[objects1.ObjectIndx]->edge_items[k]->isVisible())
                       {
-						  polygons[objects1.ObjectIndx]->showHandles();
+              polygons[objects1.ObjectIndx]->showHandles();
                       }
-					  else
-						  polygons[objects1.ObjectIndx]->hideHandles();
+            else
+              polygons[objects1.ObjectIndx]->hideHandles();
                   }
               }
           }
@@ -6147,59 +6147,59 @@ void Graph_Scene::select_objects(Scene_Objects objects1)
     if(!arcs.isEmpty()&&(objects1.ObjectId==6))
     {
         arcs[objects1.ObjectIndx]->isObjectSelected=!arcs[objects1.ObjectIndx]->isObjectSelected;
-		if(arcs[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(arcs[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 arcs[objects1.ObjectIndx]->showHandles();
+           arcs[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  arcs[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         arcs[objects1.ObjectIndx]->hideHandles();
      
     }
 
     if(!arrows.isEmpty()&&(objects1.ObjectId==9))
     {
         arrows[objects1.ObjectIndx]->isObjectSelected=!arrows[objects1.ObjectIndx]->isObjectSelected;
-		if(arrows[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(arrows[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 arrows[objects1.ObjectIndx]->showHandles();
+           arrows[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  arrows[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         arrows[objects1.ObjectIndx]->hideHandles();
     }
 
 
     if(!linearrows.isEmpty()&&(objects1.ObjectId==7))
     {
         linearrows[objects1.ObjectIndx]->isObjectSelected=!linearrows[objects1.ObjectIndx]->isObjectSelected;
-		if(linearrows[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(linearrows[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 linearrows[objects1.ObjectIndx]->showHandles();
+           linearrows[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  linearrows[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         linearrows[objects1.ObjectIndx]->hideHandles();
     }
 
     if(!triangles.isEmpty()&&(objects1.ObjectId==8))
     {
         triangles[objects1.ObjectIndx]->isObjectSelected=!triangles[objects1.ObjectIndx]->isObjectSelected;
-		if(triangles[objects1.ObjectIndx]->isObjectSelected)
-		{ 
+    if(triangles[objects1.ObjectIndx]->isObjectSelected)
+    { 
                  //if(!rects[j]->Strt_Rect->isVisible())
                  {
-					 triangles[objects1.ObjectIndx]->showHandles();
+           triangles[objects1.ObjectIndx]->showHandles();
                  }
-	   }      
-	   else
-     	  triangles[objects1.ObjectIndx]->hideHandles();
+     }      
+     else
+         triangles[objects1.ObjectIndx]->hideHandles();
     }
 
 
@@ -6217,19 +6217,19 @@ void Graph_Scene::selectedObjects()
            for(int j=0;j<lines.size();j++)
            {
 
-			  //if(objects[i]->ObjectStrtPnt==lines[j]->item->boundingRect().topLeft())
+        //if(objects[i]->ObjectStrtPnt==lines[j]->item->boundingRect().topLeft())
                {
-				  if(lines[j]->edge_items[0]->isVisible())
+          if(lines[j]->edge_items[0]->isVisible())
                   {
-					 Scene_Objects* object = new Scene_Objects();
-					 //object=objects[i];
+           Scene_Objects* object = new Scene_Objects();
+           //object=objects[i];
                      QRectF poly_line=lines[j]->item->boundingRect();
                      object->ObjectStrtPnt=poly_line.topLeft();
                      object->ObjectEndPnt=poly_line.bottomRight();
                      object->pnts=lines[j]->poly_pnts;
-					 if(lines[j]->item->rotation()!=0)
-						 object->rotation=lines[j]->item->rotation();
-					 qDebug()<<"lines "<<lines[j]->poly_pnts.size()<<" "<<object->pnts.size()<<"\n";
+           if(lines[j]->item->rotation()!=0)
+             object->rotation=lines[j]->item->rotation();
+           qDebug()<<"lines "<<lines[j]->poly_pnts.size()<<" "<<object->pnts.size()<<"\n";
                      object->setpen(lines[j]->getPen());
                      copy_objects.push_back(object);
                   }
@@ -6251,13 +6251,13 @@ void Graph_Scene::selectedObjects()
                      //object=objects[i];
                      object->ObjectId=2;
                      object->ObjectIndx=j;
-					 object->ObjectStrtPnt=rects[j]->getStartPnt();
-					 object->ObjectEndPnt=rects[j]->getEndPnt();
-					 if(rects[j]->item->rotation()!=0)
-					 {  
-						 qDebug()<<"rects "<<rects[j]->item->rotation()<<"\n";
-						 object->rotation=rects[j]->item->rotation();
-					 }
+           object->ObjectStrtPnt=rects[j]->getStartPnt();
+           object->ObjectEndPnt=rects[j]->getEndPnt();
+           if(rects[j]->item->rotation()!=0)
+           {  
+             qDebug()<<"rects "<<rects[j]->item->rotation()<<"\n";
+             object->rotation=rects[j]->item->rotation();
+           }
                      object->setpen(rects[j]->getPen());
                      object->setbrush(rects[j]->getBrush());
                      copy_objects.push_back(object);
@@ -6280,10 +6280,10 @@ void Graph_Scene::selectedObjects()
                      //object=objects[i];
                      object->ObjectIndx=j;
                      object->ObjectId=3;
-					 object->ObjectStrtPnt=elleps[j]->getStartPnt();
-					 object->ObjectEndPnt=elleps[j]->getEndPnt();
-					 if(elleps[j]->item->rotation()!=0)
-						 object->rotation=elleps[j]->item->rotation();
+           object->ObjectStrtPnt=elleps[j]->getStartPnt();
+           object->ObjectEndPnt=elleps[j]->getEndPnt();
+           if(elleps[j]->item->rotation()!=0)
+             object->rotation=elleps[j]->item->rotation();
                      object->setpen(elleps[j]->getPen());
                      object->setbrush(elleps[j]->getBrush());
                      copy_objects.push_back(object);
@@ -6305,9 +6305,9 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=4;
-					  object->pnts=polygon->poly_pnts;
-					  if(polygons[j]->item->rotation()!=0)
-						 object->rotation=polygons[j]->item->rotation();
+            object->pnts=polygon->poly_pnts;
+            if(polygons[j]->item->rotation()!=0)
+             object->rotation=polygons[j]->item->rotation();
                       object->setpen(polygons[j]->getPen());
                       object->setbrush(polygons[j]->getBrush());
                       copy_objects.push_back(object);
@@ -6328,10 +6328,10 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=5;
-					  object->ObjectStrtPnt=round_rects[j]->getStartPnt();
-					  object->ObjectEndPnt=round_rects[j]->getEndPnt();
-					  if(round_rects[j]->item->rotation()!=0)
-						 object->rotation=round_rects[j]->item->rotation();
+            object->ObjectStrtPnt=round_rects[j]->getStartPnt();
+            object->ObjectEndPnt=round_rects[j]->getEndPnt();
+            if(round_rects[j]->item->rotation()!=0)
+             object->rotation=round_rects[j]->item->rotation();
                       object->setpen(round_rects[j]->getPen());
                       object->setbrush(round_rects[j]->getBrush());
                       copy_objects.push_back(object);
@@ -6352,11 +6352,11 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=6;
-					  object->ObjectStrtPnt=arcs[j]->getStartPnt();
-					  object->ObjectEndPnt = arcs[j]->getEndPnt();
-					  object->pnts.push_back(arcs[j]->getCurvePnt());
-					  if(arcs[j]->item->rotation()!=0)
-						 object->rotation=arcs[j]->item->rotation();
+            object->ObjectStrtPnt=arcs[j]->getStartPnt();
+            object->ObjectEndPnt = arcs[j]->getEndPnt();
+            object->pnts.push_back(arcs[j]->getCurvePnt());
+            if(arcs[j]->item->rotation()!=0)
+             object->rotation=arcs[j]->item->rotation();
                       object->setpen(arcs[j]->getPen());
                       copy_objects.push_back(object);
                    }
@@ -6364,7 +6364,7 @@ void Graph_Scene::selectedObjects()
            }
         }
 
-		//if(objects[i]->ObjectId==7)
+    //if(objects[i]->ObjectId==7)
         {
            for(int j=0;j<linearrows.size();j++)
            {
@@ -6376,10 +6376,10 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=7;
-					  object->ObjectStrtPnt=linearrows[j]->getMinPoint();
-					  object->ObjectEndPnt = linearrows[j]->getMaxPoint();
-					  if(linearrows[j]->item->rotation()!=0)
-						 object->rotation=linearrows[j]->item->rotation();
+            object->ObjectStrtPnt=linearrows[j]->getMinPoint();
+            object->ObjectEndPnt = linearrows[j]->getMaxPoint();
+            if(linearrows[j]->item->rotation()!=0)
+             object->rotation=linearrows[j]->item->rotation();
                       object->setpen(linearrows[j]->getPen());
                       copy_objects.push_back(object);
                    }
@@ -6387,7 +6387,7 @@ void Graph_Scene::selectedObjects()
            }
         }
 
-		//if(objects[i]->ObjectId==8)
+    //if(objects[i]->ObjectId==8)
         {
            for(int j=0;j<triangles.size();j++)
            {
@@ -6399,22 +6399,22 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=8;
-					  object->ObjectStrtPnt = triangles[j]->getStartPnt();
-					  object->ObjectEndPnt = triangles[j]->getEndPnt();
+            object->ObjectStrtPnt = triangles[j]->getStartPnt();
+            object->ObjectEndPnt = triangles[j]->getEndPnt();
                       object->pnts.push_back(QPointF(triangles[j]->getStartPnt()));
                       object->pnts.push_back(QPointF(triangles[j]->getEndPnt()));
                       object->pnts.push_back(QPointF(triangles[j]->getHeightPnt()));
-					  if(triangles[j]->item->rotation()!=0)
-						 object->rotation=triangles[j]->item->rotation();
+            if(triangles[j]->item->rotation()!=0)
+             object->rotation=triangles[j]->item->rotation();
                       object->setpen(triangles[j]->getPen());
-					  object->setbrush(triangles[j]->getBrush());
+            object->setbrush(triangles[j]->getBrush());
                       copy_objects.push_back(object);
                    }
                }
            }
         }
 
-		//if(objects[i]->ObjectId==9)
+    //if(objects[i]->ObjectId==9)
         {
            for(int j=0;j<arrows.size();j++)
            {
@@ -6426,13 +6426,13 @@ void Graph_Scene::selectedObjects()
                       //object=objects[i];
                       object->ObjectIndx=j;
                       object->ObjectId=9;
-					  object->ObjectStrtPnt=arrows[j]->getStartPnt();
-					  object->ObjectStrtPnt=arrows[j]->getEndPnt();
-					  object->pnts=arrows[j]->arrow_pnts;
-					  if(arrows[j]->item->rotation()!=0)
-						 object->rotation=arrows[j]->item->rotation();
+            object->ObjectStrtPnt=arrows[j]->getStartPnt();
+            object->ObjectStrtPnt=arrows[j]->getEndPnt();
+            object->pnts=arrows[j]->arrow_pnts;
+            if(arrows[j]->item->rotation()!=0)
+             object->rotation=arrows[j]->item->rotation();
                       object->setpen(arrows[j]->getPen());
-					  object->setbrush(arrows[j]->getBrush());
+            object->setbrush(arrows[j]->getBrush());
                       copy_objects.push_back(object);
                    }
                }
@@ -6445,18 +6445,18 @@ void Graph_Scene::selectedObjects()
 
 void Graph_Scene::writeToImage(QPainter *painter,QString &text,QPointF point)
 {
-	selectedObjects();
+  selectedObjects();
 
     for(int i=0;i<getObjects().size();i++)
     {
        if(getObjects().at(i)->ObjectId==1)
        {
-		   this->lines[getObjects().at(i)->ObjectIndx]->drawImage(painter,text,point);
+       this->lines[getObjects().at(i)->ObjectIndx]->drawImage(painter,text,point);
        }
 
        if(getObjects().at(i)->ObjectId==2)
        {
-		   this->rects[getObjects().at(i)->ObjectIndx]->drawImage(painter,text,point);
+       this->rects[getObjects().at(i)->ObjectIndx]->drawImage(painter,text,point);
        }
 
        if(getObjects().at(i)->ObjectId==3)
@@ -6496,464 +6496,464 @@ void Graph_Scene::writeToImage(QPainter *painter,QString &text,QPointF point)
 
     }
 
-	qDebug()<<"text "<<text<<"\n";
+  qDebug()<<"text "<<text<<"\n";
 }
 
 void Graph_Scene::getSelectedShapeProperties(QPen &shapePen,QBrush &shapeBrush)
 {
-	
-	if(arc && arc->getMode() && arc->getState()==3)
-	{
-		shapePen = arc->getPen();
-	}
+  
+  if(arc && arc->getMode() && arc->getState()==3)
+  {
+    shapePen = arc->getPen();
+  }
 
-	if(arrow && arrow->getMode() && arrow->getState()==3)
-	{
-		shapePen = arrow->getPen();
-		shapeBrush = arrow->getBrush();
-	}
+  if(arrow && arrow->getMode() && arrow->getState()==3)
+  {
+    shapePen = arrow->getPen();
+    shapeBrush = arrow->getBrush();
+  }
 
-	if(linearrow && linearrow->getMode() && linearrow->getState()==3)
-	{
-		shapePen = linearrow->getPen();
-		
-	}
+  if(linearrow && linearrow->getMode() && linearrow->getState()==3)
+  {
+    shapePen = linearrow->getPen();
+    
+  }
 
-	if(line && line->getPolyLineDrawn() && line->getState()==2)
-	{
-		shapePen = line->getPen();
+  if(line && line->getPolyLineDrawn() && line->getState()==2)
+  {
+    shapePen = line->getPen();
     }
 
-	if(rect && rect->getMode() && rect->getState()==3)
-	{
-		shapePen = rect->getPen();
-		shapeBrush = rect->getBrush();
-	}
+  if(rect && rect->getMode() && rect->getState()==3)
+  {
+    shapePen = rect->getPen();
+    shapeBrush = rect->getBrush();
+  }
 
-	if(round_rect && round_rect->getMode() && round_rect->getState()==3)
-	{
-		shapePen = round_rect->getPen();
-		shapeBrush = round_rect->getBrush();
-	}
+  if(round_rect && round_rect->getMode() && round_rect->getState()==3)
+  {
+    shapePen = round_rect->getPen();
+    shapeBrush = round_rect->getBrush();
+  }
 
-	if(round_rect && round_rect->getMode() && round_rect->getState()==3)
-	{
-		shapePen = round_rect->getPen();
-		shapeBrush = round_rect->getBrush();
-	}
-	
-	if(ellep && ellep->getMode() && ellep->getState()==3)
-	{
-		shapePen = ellep->getPen();
-		shapeBrush = ellep->getBrush();
-	}
+  if(round_rect && round_rect->getMode() && round_rect->getState()==3)
+  {
+    shapePen = round_rect->getPen();
+    shapeBrush = round_rect->getBrush();
+  }
+  
+  if(ellep && ellep->getMode() && ellep->getState()==3)
+  {
+    shapePen = ellep->getPen();
+    shapeBrush = ellep->getBrush();
+  }
 
-	if(polygon && polygon->getPolygonDrawn() && polygon->getState()==2)
-	{
-		shapePen = polygon->getPen();
-		shapeBrush = polygon->getBrush();
-	}
-	
-	if(triangle && triangle->getMode() && triangle->getState()==3)
-	{
-		shapePen = triangle->getPen();
-		shapeBrush = triangle->getBrush();
-	}
-	
+  if(polygon && polygon->getPolygonDrawn() && polygon->getState()==2)
+  {
+    shapePen = polygon->getPen();
+    shapeBrush = polygon->getBrush();
+  }
+  
+  if(triangle && triangle->getMode() && triangle->getState()==3)
+  {
+    shapePen = triangle->getPen();
+    shapeBrush = triangle->getBrush();
+  }
+  
 }
 
 void Graph_Scene::deleteShapes()
 {
-	if(objectToEdit!=0)
+  if(objectToEdit!=0)
     {
-		if(line && (objectToEdit==1)&&(line->getPolyLineDrawn()))
-		{
-			removeItem(line->item);
-			for(int i=0;i<line->edge_items.size();i++)
-				removeItem(line->edge_items[i]);
-			removeItem(line->Rot_Rect);
-			objectToEdit=0;
-			int toRemove;
+    if(line && (objectToEdit==1)&&(line->getPolyLineDrawn()))
+    {
+      removeItem(line->item);
+      for(int i=0;i<line->edge_items.size();i++)
+        removeItem(line->edge_items[i]);
+      removeItem(line->Rot_Rect);
+      objectToEdit=0;
+      int toRemove;
 
-			 if(!lines.isEmpty())
-			  {
-				  for(int i=0;i<lines.size();i++)
-				  {
-					  if(lines[i]->item==line->item)
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+       if(!lines.isEmpty())
+        {
+          for(int i=0;i<lines.size();i++)
+          {
+            if(lines[i]->item==line->item)
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  lines.remove(toRemove);
-     		  }
+          lines.remove(toRemove);
+           }
 
-			 toRemove=-1;
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==line->item->boundingRect().topLeft())
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
-				  if(toRemove!=-1)
-				     objects.remove(toRemove);
-     		  }
+       toRemove=-1;
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==line->item->boundingRect().topLeft())
+            {     
+              toRemove=i; 
+            }
+          }
+          if(toRemove!=-1)
+             objects.remove(toRemove);
+           }
 
-			  line=NULL;
-		}
+        line=NULL;
+    }
                        
         if(rect && (objectToEdit==2)&&(rect->getMode()))
         {
-			
-			  removeItem(rect->item);
-			  removeItem(rect->Strt_Rect);
-			  removeItem(rect->End_Rect);
-			  removeItem(rect->Rot_Rect);
-			  objectToEdit=0;
-			  
-			  int toRemove;
+      
+        removeItem(rect->item);
+        removeItem(rect->Strt_Rect);
+        removeItem(rect->End_Rect);
+        removeItem(rect->Rot_Rect);
+        objectToEdit=0;
+        
+        int toRemove;
 
-			  if(!rects.isEmpty())
-			  {
-				  for(int i=0;i<rects.size();i++)
-				  {
-					  if(rects[i]->getStartPnt()==rect->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+        if(!rects.isEmpty())
+        {
+          for(int i=0;i<rects.size();i++)
+          {
+            if(rects[i]->getStartPnt()==rect->getStartPnt())
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  rects.remove(toRemove);
-     		  }
+          rects.remove(toRemove);
+           }
 
-			  toRemove=-1;
+        toRemove=-1;
 
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==rect->getStartPnt())
-					  {	   
-						  toRemove=i; 
-				      }
-				  }
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==rect->getStartPnt())
+            {     
+              toRemove=i; 
+              }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
 
-			  rect=NULL;
+        rect=NULL;
           }
 
           if(ellep && (objectToEdit==3)&&(ellep->getMode()))
           {
               removeItem(ellep->item);
-			  removeItem(ellep->Strt_Rect);
-			  removeItem(ellep->End_Rect);
-			  removeItem(ellep->Rot_Rect);
-			  objectToEdit=0;		  
-			  
-			  int toRemove;
+        removeItem(ellep->Strt_Rect);
+        removeItem(ellep->End_Rect);
+        removeItem(ellep->Rot_Rect);
+        objectToEdit=0;      
+        
+        int toRemove;
 
-			  if(!elleps.isEmpty())
-			  {
-				  for(int i=0;i<elleps.size();i++)
-				  {
-					  if(elleps[i]->getStartPnt()==ellep->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+        if(!elleps.isEmpty())
+        {
+          for(int i=0;i<elleps.size();i++)
+          {
+            if(elleps[i]->getStartPnt()==ellep->getStartPnt())
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  elleps.remove(toRemove);
-     		  }
+          elleps.remove(toRemove);
+           }
 
-			  toRemove=-1;
-			 
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==ellep->getStartPnt())
-					  {	   
-						  toRemove=i; 
-				      }
-				  }
+        toRemove=-1;
+       
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==ellep->getStartPnt())
+            {     
+              toRemove=i; 
+              }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			  
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+        
               ellep=NULL;
           }
 
 
-		if(polygon && (objectToEdit==4)&&(polygon->getPolygonDrawn()))
-		{
-			removeItem(polygon->item);
-			for(int i=0;i<polygon->edge_items.size();i++)
-				removeItem(polygon->edge_items[i]);
-			removeItem(polygon->Rot_Rect);
-			objectToEdit=0;
-			int toRemove;
+    if(polygon && (objectToEdit==4)&&(polygon->getPolygonDrawn()))
+    {
+      removeItem(polygon->item);
+      for(int i=0;i<polygon->edge_items.size();i++)
+        removeItem(polygon->edge_items[i]);
+      removeItem(polygon->Rot_Rect);
+      objectToEdit=0;
+      int toRemove;
 
-			 if(!polygons.isEmpty())
-			 {
-				  for(int i=0;i<polygons.size();i++)
-				  {
-					  if(polygons[i]->item==polygon->item)
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+       if(!polygons.isEmpty())
+       {
+          for(int i=0;i<polygons.size();i++)
+          {
+            if(polygons[i]->item==polygon->item)
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  polygons.remove(toRemove);
-     	     }
+          polygons.remove(toRemove);
+            }
 
-			 toRemove=-1;
+       toRemove=-1;
 
-			 if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==polygon->item->boundingRect().topLeft())
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+       if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==polygon->item->boundingRect().topLeft())
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			  polygon=NULL;
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+        polygon=NULL;
 
-		}
+    }
 
         if(round_rect && (objectToEdit==5)&&(round_rect->getMode()))
         {
               removeItem(round_rect->item);
-			  removeItem(round_rect->Strt_Rect);
-			  removeItem(round_rect->End_Rect);
-			  removeItem(round_rect->Rot_Rect);
-			  objectToEdit=0;		  
-		
-			  int toRemove;
+        removeItem(round_rect->Strt_Rect);
+        removeItem(round_rect->End_Rect);
+        removeItem(round_rect->Rot_Rect);
+        objectToEdit=0;      
+    
+        int toRemove;
 
-			  if(!round_rects.isEmpty())
-			  {
-				  for(int i=0;i<round_rects.size();i++)
-				  {
-					  if(round_rects[i]->getStartPnt()==round_rect->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					  }
-				  }
+        if(!round_rects.isEmpty())
+        {
+          for(int i=0;i<round_rects.size();i++)
+          {
+            if(round_rects[i]->getStartPnt()==round_rect->getStartPnt())
+            {     
+              toRemove=i; 
+            }
+          }
 
-				  round_rects.remove(toRemove);
-     		  }
+          round_rects.remove(toRemove);
+           }
 
-			  toRemove=-1;
-			 
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==round_rect->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        toRemove=-1;
+       
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==round_rect->getStartPnt())
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			 
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+       
               round_rect=NULL;
           }
 
-		  if(arc && (objectToEdit==6)&&(arc->getMode()))
+      if(arc && (objectToEdit==6)&&(arc->getMode()))
           {
               removeItem(arc->item);
-			  removeItem(arc->Strt_Rect);
-			  removeItem(arc->End_Rect);
-			  removeItem(arc->Curve_Rect);
-			  removeItem(arc->Rot_Rect);
-			  removeItem(arc->Bounding_Rect);
-			  objectToEdit=0;		  
-			  int toRemove;
+        removeItem(arc->Strt_Rect);
+        removeItem(arc->End_Rect);
+        removeItem(arc->Curve_Rect);
+        removeItem(arc->Rot_Rect);
+        removeItem(arc->Bounding_Rect);
+        objectToEdit=0;      
+        int toRemove;
 
-			  if(!arcs.isEmpty())
-			  {
-				  for(int i=0;i<arcs.size();i++)
-				  {
-					  if(arcs[i]->item==arc->item)
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        if(!arcs.isEmpty())
+        {
+          for(int i=0;i<arcs.size();i++)
+          {
+            if(arcs[i]->item==arc->item)
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  arcs.remove(toRemove);
-     		  }
+          arcs.remove(toRemove);
+           }
 
-			  toRemove=-1;
-			 
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==arc->item->boundingRect().bottomLeft())
-					  {	   
-						  toRemove=i; 
-					      qDebug()<<"removed arc \n"; 
-					  }
-				  }
+        toRemove=-1;
+       
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==arc->item->boundingRect().bottomLeft())
+            {     
+              toRemove=i; 
+                qDebug()<<"removed arc \n"; 
+            }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			 
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+       
               arc=NULL;
           }
   
          if(linearrow && (objectToEdit==7)&&(linearrow->getMode()))
          {
               removeItem(linearrow->item);
-			  removeItem(linearrow->Strt_Rect);
-			  removeItem(linearrow->End_Rect);
-			  removeItem(linearrow->Rot_Rect);
-			  objectToEdit=0;		  
-			  int toRemove;
+        removeItem(linearrow->Strt_Rect);
+        removeItem(linearrow->End_Rect);
+        removeItem(linearrow->Rot_Rect);
+        objectToEdit=0;      
+        int toRemove;
 
-			  if(!linearrows.isEmpty())
-			  {
-				  for(int i=0;i<linearrows.size();i++)
-				  {
-					  if(linearrows[i]->item==linearrow->item)
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        if(!linearrows.isEmpty())
+        {
+          for(int i=0;i<linearrows.size();i++)
+          {
+            if(linearrows[i]->item==linearrow->item)
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  linearrows.remove(toRemove);
-     		  }
+          linearrows.remove(toRemove);
+           }
 
-			  toRemove=-1;
+        toRemove=-1;
 
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==linearrow->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==linearrow->getStartPnt())
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			 
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+       
               linearrow=NULL;
           }
 
-		  if(triangle && (objectToEdit==8)&&(triangle->getMode()))
+      if(triangle && (objectToEdit==8)&&(triangle->getMode()))
           {
               removeItem(triangle->item);
-			  removeItem(triangle->Strt_Rect);
-			  removeItem(triangle->End_Rect);
-			  removeItem(triangle->Height_Rect);
-			  removeItem(triangle->Rot_Rect);
-			  removeItem(triangle->Bounding_Rect);
-			  objectToEdit=0;		  
-			  int toRemove;
+        removeItem(triangle->Strt_Rect);
+        removeItem(triangle->End_Rect);
+        removeItem(triangle->Height_Rect);
+        removeItem(triangle->Rot_Rect);
+        removeItem(triangle->Bounding_Rect);
+        objectToEdit=0;      
+        int toRemove;
 
-			  if(!triangles.isEmpty())
-			  {
-				  for(int i=0;i<triangles.size();i++)
-				  {
-					  if(triangles[i]->item==triangle->item)
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        if(!triangles.isEmpty())
+        {
+          for(int i=0;i<triangles.size();i++)
+          {
+            if(triangles[i]->item==triangle->item)
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  triangles.remove(toRemove);
-     		  }
+          triangles.remove(toRemove);
+           }
 
-			  toRemove=-1;
-			  
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(!objects[i]->pnts.isEmpty())
-					  {
-						 qDebug()<<"coords "<<objects[i]->pnts[0]<<"  "<<triangle->getStartPnt()<<"\n";
-					     if(objects[i]->pnts[0]==triangle->getStartPnt())
-					     {	   
-						     toRemove=i; 
-						     qDebug()<<"removed the triangle "<<toRemove;
-					     }
-					  } 
-				  }
+        toRemove=-1;
+        
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(!objects[i]->pnts.isEmpty())
+            {
+             qDebug()<<"coords "<<objects[i]->pnts[0]<<"  "<<triangle->getStartPnt()<<"\n";
+               if(objects[i]->pnts[0]==triangle->getStartPnt())
+               {     
+                 toRemove=i; 
+                 qDebug()<<"removed the triangle "<<toRemove;
+               }
+            } 
+          }
 
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			 
-			  qDebug()<<"triangle size "<<objects.size()<<"\n";
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+       
+        qDebug()<<"triangle size "<<objects.size()<<"\n";
               triangle=NULL;
           } 
 
-		 if(arrow && (objectToEdit==9)&&(arrow->getMode()))
+     if(arrow && (objectToEdit==9)&&(arrow->getMode()))
          {
               removeItem(arrow->item);
-			  removeItem(arrow->Strt_Rect);
-			  removeItem(arrow->End_Rect);
-			  removeItem(arrow->Rot_Rect);
-			  removeItem(arrow->Bounding_Rect);
-			  objectToEdit=0;		  
-			  int toRemove;
+        removeItem(arrow->Strt_Rect);
+        removeItem(arrow->End_Rect);
+        removeItem(arrow->Rot_Rect);
+        removeItem(arrow->Bounding_Rect);
+        objectToEdit=0;      
+        int toRemove;
 
-			  if(!arrows.isEmpty())
-			  {
-				  for(int i=0;i<arrows.size();i++)
-				  {
-					  if(arrows[i]->item==arrow->item)
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        if(!arrows.isEmpty())
+        {
+          for(int i=0;i<arrows.size();i++)
+          {
+            if(arrows[i]->item==arrow->item)
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  arrows.remove(toRemove);
-     		  }
+          arrows.remove(toRemove);
+           }
 
-			  toRemove=-1;
-			  if(!objects.isEmpty())
-			  {
-				  for(int i=0;i<objects.size();i++)
-				  {
-					  if(objects[i]->ObjectStrtPnt==arrow->getStartPnt())
-					  {	   
-						  toRemove=i; 
-					
-					  }
-				  }
+        toRemove=-1;
+        if(!objects.isEmpty())
+        {
+          for(int i=0;i<objects.size();i++)
+          {
+            if(objects[i]->ObjectStrtPnt==arrow->getStartPnt())
+            {     
+              toRemove=i; 
+          
+            }
+          }
 
-				  if(toRemove!=-1)
-				    objects.remove(toRemove);
-     		  }
-			 
+          if(toRemove!=-1)
+            objects.remove(toRemove);
+           }
+       
               arrow=NULL;
           }
 

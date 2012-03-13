@@ -17,12 +17,12 @@ Draw_Triangle::Draw_Triangle()
     click=0;
     angle=0.0;
 
-	isObjectSelected=false;
+  isObjectSelected=false;
 
     triangle_pnts.clear();
     triangle_pnts.resize(4);
 
-	handles.clear();
+  handles.clear();
 
 }
 
@@ -81,45 +81,45 @@ void Draw_Triangle::setEdgeRects()
     rectbrush.setStyle(Qt::SolidPattern);
     qDebug()<<"strt pnt "<<StrtPnt<<" "<<"end pnt "<<EndPnt<<"\n";
 
-	QGraphicsRectItem *rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,item->boundingRect().topLeft().y()-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,item->boundingRect().topLeft().y()+5.0)));
+  QGraphicsRectItem *rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,item->boundingRect().topLeft().y()-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,item->boundingRect().topLeft().y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,(item->boundingRect().topLeft().y()+25)-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,(item->boundingRect().topLeft().y()+25)+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,(item->boundingRect().topLeft().y()+25)-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,(item->boundingRect().topLeft().y()+25)+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,item->boundingRect().topRight().y()-5.0),QPointF(item->boundingRect().topRight().x()+5.0,item->boundingRect().topRight().y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,item->boundingRect().topRight().y()-5.0),QPointF(item->boundingRect().topRight().x()+5.0,item->boundingRect().topRight().y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,(item->boundingRect().topRight().y()+25)-5.0),QPointF(item->boundingRect().topRight().x()+5.0,(item->boundingRect().topRight().y()+25)+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,(item->boundingRect().topRight().y()+25)-5.0),QPointF(item->boundingRect().topRight().x()+5.0,(item->boundingRect().topRight().y()+25)+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
     rect = new QGraphicsRectItem(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
-	rect = new QGraphicsRectItem(QRectF(QPointF((StrtPnt.x()+50)-5.0,StrtPnt.y()-5.0),QPointF((StrtPnt.x()+50)+5.0,StrtPnt.y()+5.0)));
+  rect = new QGraphicsRectItem(QRectF(QPointF((StrtPnt.x()+50)-5.0,StrtPnt.y()-5.0),QPointF((StrtPnt.x()+50)+5.0,StrtPnt.y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
     rect = new QGraphicsRectItem(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
     rect = new QGraphicsRectItem(QRectF(QPointF(HeightPnt.x()-5.0,HeightPnt.y()-5.0),QPointF(HeightPnt.x()+5.0,HeightPnt.y()+5.0)));
     rect->setBrush(rectbrush);
 
-	handles.push_back(rect);
+  handles.push_back(rect);
 
     QPen bound_rect;
     bound_rect.setStyle(Qt::DashLine);
@@ -137,25 +137,25 @@ void Draw_Triangle::setEdgeRects()
     Rot_Rect = new QGraphicsEllipseItem(QRectF(pnt1,pnt2));
     Rot_Rect->setBrush(rectbrush);
 
-	
+  
 }
 
 void Draw_Triangle::updateEdgeRects()
 {
-	
-   	
-	handles[0]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,item->boundingRect().topLeft().y()-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,item->boundingRect().topLeft().y()+5.0)));
-	handles[1]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)+5.0)));
-	handles[2]->setRect(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,item->boundingRect().topRight().y()-5.0),QPointF(item->boundingRect().topRight().x()+5.0,item->boundingRect().topRight().y()+5.0)));
-	handles[3]->setRect(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,((item->boundingRect().topRight().y()+EndPnt.y())/2)-5.0),QPointF(item->boundingRect().topRight().x()+5.0,((item->boundingRect().topRight().y()+EndPnt.y())/2)+5.0)));
-	handles[4]->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
-	handles[6]->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
-	handles[5]->setRect(QRectF(QPointF(((StrtPnt.x()+EndPnt.x())/2)-5.0,StrtPnt.y()-5.0),QPointF((StrtPnt.x()+EndPnt.x())/2+5.0,StrtPnt.y()+5.0)));
-	handles[7]->setRect(QRectF(QPointF(HeightPnt.x()-5.0,HeightPnt.y()-5.0),QPointF(HeightPnt.x()+5.0,HeightPnt.y()+5.0)));
-	
+  
+     
+  handles[0]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,item->boundingRect().topLeft().y()-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,item->boundingRect().topLeft().y()+5.0)));
+  handles[1]->setRect(QRectF(QPointF(item->boundingRect().topLeft().x()-5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)-5.0),QPointF(item->boundingRect().topLeft().x()+5.0,((item->boundingRect().topLeft().y()+StrtPnt.y())/2)+5.0)));
+  handles[2]->setRect(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,item->boundingRect().topRight().y()-5.0),QPointF(item->boundingRect().topRight().x()+5.0,item->boundingRect().topRight().y()+5.0)));
+  handles[3]->setRect(QRectF(QPointF(item->boundingRect().topRight().x()-5.0,((item->boundingRect().topRight().y()+EndPnt.y())/2)-5.0),QPointF(item->boundingRect().topRight().x()+5.0,((item->boundingRect().topRight().y()+EndPnt.y())/2)+5.0)));
+  handles[4]->setRect(QRectF(QPointF(StrtPnt.x()-5.0,StrtPnt.y()-5.0),QPointF(StrtPnt.x()+5.0,StrtPnt.y()+5.0)));
+  handles[6]->setRect(QRectF(QPointF(EndPnt.x()-5.0,EndPnt.y()-5.0),QPointF(EndPnt.x()+5.0,EndPnt.y()+5.0)));
+  handles[5]->setRect(QRectF(QPointF(((StrtPnt.x()+EndPnt.x())/2)-5.0,StrtPnt.y()-5.0),QPointF((StrtPnt.x()+EndPnt.x())/2+5.0,StrtPnt.y()+5.0)));
+  handles[7]->setRect(QRectF(QPointF(HeightPnt.x()-5.0,HeightPnt.y()-5.0),QPointF(HeightPnt.x()+5.0,HeightPnt.y()+5.0)));
+  
 
-	
-	Bounding_Rect->setRect(QRectF(item->boundingRect().topLeft(),item->boundingRect().bottomRight()));
+  
+  Bounding_Rect->setRect(QRectF(item->boundingRect().topLeft(),item->boundingRect().bottomRight()));
 
     QPointF pnt1,pnt2;
 
@@ -202,7 +202,7 @@ bool Draw_Triangle::getMode()
 
 bool Draw_Triangle::isMouseClickedOnHandle(QPointF pnt)
 {
-	qDebug()<<"entered mouse clciked on handle function \n";
+  qDebug()<<"entered mouse clciked on handle function \n";
 
     bool found;
 
@@ -210,7 +210,7 @@ bool Draw_Triangle::isMouseClickedOnHandle(QPointF pnt)
         {
             if(handles[i]->isUnderMouse())
             {
-				 qDebug()<<"entered the state condition \n";
+         qDebug()<<"entered the state condition \n";
                  draw_state=1;
                  found=true;
                  handle_index=i;
@@ -237,8 +237,8 @@ bool Draw_Triangle::isMouseClickedOnRotateHandle(const QPointF pnt)
         pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
         pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
         item->setTransformOriginPoint(pnt1);
-		for(int i=0;i<handles.size();i++)
-			handles[i]->setTransformOriginPoint(pnt1);
+    for(int i=0;i<handles.size();i++)
+      handles[i]->setTransformOriginPoint(pnt1);
 
         //Strt_Rect->setTransformOriginPoint(pnt1);
         //End_Rect->setTransformOriginPoint(pnt1);
@@ -253,10 +253,10 @@ bool Draw_Triangle::isMouseClickedOnRotateHandle(const QPointF pnt)
 
 bool Draw_Triangle::isMouseClickedOnShape(const QPointF pnt)
 {
-	qDebug()<<"enter state"<<"\n";
+  qDebug()<<"enter state"<<"\n";
     if(item->isUnderMouse())
     {
-		qDebug()<<"enter state"<<"\n";
+    qDebug()<<"enter state"<<"\n";
         draw_state=4;
         //item->setCursor(Qt::SizeAllCursor);
         return true;
@@ -281,27 +281,27 @@ QColor Draw_Triangle::getPenColor()
 
 void Draw_Triangle::setTranslate(QPointF pnt,QPointF pnt1)
 {
-	if(item->rotation()==0)
-	{
-	   setStartPoint(getStartPnt()-(pnt-pnt1));
+  if(item->rotation()==0)
+  {
+     setStartPoint(getStartPnt()-(pnt-pnt1));
        setEndPoint(getEndPnt()-(pnt-pnt1));
        setHeightPoint(getHeightPnt()-(pnt-pnt1));
-	}
+  }
 
     item->setPos(item->pos()-(pnt-pnt1));
-	item->update();
+  item->update();
 
-	for(int i=0;i<handles.size();i++)
-	{
-		handles[i]->setPos(handles[i]->pos()-(pnt-pnt1));
-		handles[i]->update();
-	}
+  for(int i=0;i<handles.size();i++)
+  {
+    handles[i]->setPos(handles[i]->pos()-(pnt-pnt1));
+    handles[i]->update();
+  }
 
     /*Strt_Rect->setPos(Strt_Rect->pos()-(pnt-pnt1));
     End_Rect->setPos(End_Rect->pos()-(pnt-pnt1));
     Height_Rect->setPos(Height_Rect->pos()-(pnt-pnt1));*/
     Rot_Rect->setPos(Rot_Rect->pos()-(pnt-pnt1));
-	Rot_Rect->update();
+  Rot_Rect->update();
     Bounding_Rect->setPos(Bounding_Rect->pos()-(pnt-pnt1));
     
 }
@@ -324,11 +324,11 @@ void Draw_Triangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
     {
        angle+=0.5;
        item->setRotation(angle);
-	   for(int i=0;i<handles.size();i++)
-	   {
-		   handles[i]->setRotation(angle);
-		   handles[i]->update();
-	   }
+     for(int i=0;i<handles.size();i++)
+     {
+       handles[i]->setRotation(angle);
+       handles[i]->update();
+     }
        Rot_Rect->setRotation(angle);
        Bounding_Rect->setRotation(angle);
     }
@@ -337,11 +337,11 @@ void Draw_Triangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
     {
        angle-=0.5;
        item->setRotation(angle);
-	   for(int i=0;i<handles.size();i++)
-	   {
-		  handles[i]->setRotation(angle);
-		  handles[i]->update();
-	   }  
+     for(int i=0;i<handles.size();i++)
+     {
+      handles[i]->setRotation(angle);
+      handles[i]->update();
+     }  
        Rot_Rect->setRotation(angle);
        Bounding_Rect->setRotation(angle);
     }
@@ -354,16 +354,16 @@ void Draw_Triangle::setRotate(const QPointF &pnt,const QPointF &pnt1)
     QPointF rot_pnt(item->boundingRect().topLeft()-item->sceneBoundingRect().topLeft());
     QPointF rot_pnt1(item->boundingRect().bottomRight()-item->sceneBoundingRect().bottomRight());
 
-	
+  
 
     //setStartPoint(item->sceneBoundingRect().topLeft());
     //setEndPoint(item->sceneBoundingRect().bottomRight());
 
 
 
-	//qDebug()<<"rot triangle pnts "<<Strt_Rect->mapFromScene(item->sceneBoundingRect().bottomLeft())<<"  "<<End_Rect->mapFromScene(item->sceneBoundingRect().bottomRight())<<"\n";
+  //qDebug()<<"rot triangle pnts "<<Strt_Rect->mapFromScene(item->sceneBoundingRect().bottomLeft())<<"  "<<End_Rect->mapFromScene(item->sceneBoundingRect().bottomRight())<<"\n";
 
-	print();
+  print();
 
 
 }
@@ -396,7 +396,7 @@ QPainterPath Draw_Triangle::getTriangle()
        triangle_pnts[2]=HeightPnt;
        triangle_pnts[3]=StrtPnt;
 
-	   qDebug()<<"triangle pnts "<<triangle_pnts[0]<<"  "<<triangle_pnts[1]<<"  "<<triangle_pnts[2]<<" "<<triangle_pnts[3]<<"\n";
+     qDebug()<<"triangle pnts "<<triangle_pnts[0]<<"  "<<triangle_pnts[1]<<"  "<<triangle_pnts[2]<<" "<<triangle_pnts[3]<<"\n";
 
        triangle.moveTo(StrtPnt.x(),StrtPnt.y());
        triangle.addPolygon(QPolygonF(triangle_pnts));
@@ -412,9 +412,9 @@ QPainterPath Draw_Triangle::getTriangle()
         triangle.moveTo(StrtPnt.x(),StrtPnt.y());
         triangle.addPolygon(QPolygonF(triangle_pnts));
 
-		qDebug()<<"entered draw mode\n";
+    qDebug()<<"entered draw mode\n";
 
-		return triangle;
+    return triangle;
     }
 
     return triangle;
@@ -432,16 +432,16 @@ void Draw_Triangle::drawImage(QPainter *painter, QString &text,QPointF point)
     triangle_pnts[2]=HeightPnt;
     triangle_pnts[3]=StrtPnt;
 
-	QVector<QPointF> pnts(triangle_pnts.size());
+  QVector<QPointF> pnts(triangle_pnts.size());
 
-	for(int i=0;i<pnts.size();i++)
-	{
-		pnts[i]=triangle_pnts[i];
-		pnts[i]+=point;
-		//qDebug()<<"triangle pnts "<<pnts[i]<<"\n";
-	}
+  for(int i=0;i<pnts.size();i++)
+  {
+    pnts[i]=triangle_pnts[i];
+    pnts[i]+=point;
+    //qDebug()<<"triangle pnts "<<pnts[i]<<"\n";
+  }
 
-	//qDebug()<<"triangles "<<this->triangle_pnts.size()<<"\n";
+  //qDebug()<<"triangles "<<this->triangle_pnts.size()<<"\n";
 
     triangle.moveTo(pnts[0].x(),pnts[0].y());
     triangle.addPolygon(QPolygonF(pnts));
@@ -450,7 +450,7 @@ void Draw_Triangle::drawImage(QPainter *painter, QString &text,QPointF point)
     painter->setBrush(this->brush);
     painter->drawPath(triangle);
 
-	
+  
     text+="Triangle\n";
     text+="Coords";
     text+=" "+str_x.setNum(this->triangle_pnts.size()*2.0);
@@ -471,8 +471,8 @@ void Draw_Triangle::drawImage(QPainter *painter, QString &text,QPointF point)
     text+="BrushStyle";
     text+=" "+color_r.setNum(this->brush.style())+"\n";
 
-	text+="Rotation";
-	text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
+  text+="Rotation";
+  text+=" "+color_r.setNum(this->item->rotation(),'g',6)+"\n";
 
 }
 
@@ -635,35 +635,35 @@ QBrush Draw_Triangle::getBrush()
 
 void Draw_Triangle::showHandles()
 {
-	
-	for(int i=0;i<handles.size();i++)
-	{
-		if(!handles[i]->isVisible())
-			handles[i]->show();
-	}
+  
+  for(int i=0;i<handles.size();i++)
+  {
+    if(!handles[i]->isVisible())
+      handles[i]->show();
+  }
 
-	if(!Rot_Rect->isVisible())
-		Rot_Rect->show();
-	if(!Bounding_Rect->isVisible())
-		Bounding_Rect->show();
+  if(!Rot_Rect->isVisible())
+    Rot_Rect->show();
+  if(!Bounding_Rect->isVisible())
+    Bounding_Rect->show();
 }
 
 void Draw_Triangle::hideHandles()
 {
-	/*if(Strt_Rect->isVisible())
+  /*if(Strt_Rect->isVisible())
          Strt_Rect->hide();
     if(End_Rect->isVisible())
         End_Rect->hide();
     if(Height_Rect->isVisible())
          Height_Rect->hide();*/
-	for(int i=0;i<handles.size();i++)
-	{
-		if(handles[i]->isVisible())
-		   handles[i]->hide();
-	}
+  for(int i=0;i<handles.size();i++)
+  {
+    if(handles[i]->isVisible())
+       handles[i]->hide();
+  }
 
-	if(Rot_Rect->isVisible())
-		Rot_Rect->hide();
+  if(Rot_Rect->isVisible())
+    Rot_Rect->hide();
 }
 
 bool Draw_Triangle::isClickedOnHandleOrShape(QPointF point)
@@ -671,7 +671,7 @@ bool Draw_Triangle::isClickedOnHandleOrShape(QPointF point)
     int k=0;
     if(getMode())
     {
-		qDebug()<<"entered the condition \n";
+    qDebug()<<"entered the condition \n";
         if(isMouseClickedOnHandle(point))
             return true;
         else if(isMouseClickedOnShape(point))
@@ -680,27 +680,27 @@ bool Draw_Triangle::isClickedOnHandleOrShape(QPointF point)
             return true;
     }
     
-	return false;
+  return false;
 }
 
 void Draw_Triangle::rotateShape(float angle)
 {
 
-	item->setRotation(angle);
+  item->setRotation(angle);
     Strt_Rect->setRotation(angle);
     End_Rect->setRotation(angle);
     Rot_Rect->setRotation(angle);
     Height_Rect->setRotation(angle);
     Bounding_Rect->setRotation(angle);
 
-	item->update();
+  item->update();
     Strt_Rect->update();
     End_Rect->update();
     Rot_Rect->update();
     Height_Rect->update();
-	Bounding_Rect->update();
+  Bounding_Rect->update();
 
-	QPointF pnt1;
+  QPointF pnt1;
     pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
     pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
     item->setTransformOriginPoint(pnt1);

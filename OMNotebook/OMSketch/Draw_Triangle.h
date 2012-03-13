@@ -40,19 +40,19 @@ class Draw_Triangle:public QGraphicsPathItem
     void setPenWidth(const int width);
     QPen getPen();
 
-	//sets the brush and style
-	void setBrush(const QBrush brush);
+  //sets the brush and style
+  void setBrush(const QBrush brush);
     void setBrushStyle(const int style);
-	//returns the current brush
+  //returns the current brush
     QBrush getBrush();
 
 
     //checking the mouse position to resize and move rectangle
     bool isMouseClickedOnHandle(const QPointF pnt);
-	bool isMouseClickedOnRotateHandle(const QPointF pnt);
+  bool isMouseClickedOnRotateHandle(const QPointF pnt);
     bool isMouseClickedOnShape(const QPointF pnt);  
     bool get_line(QPointF pnt);
-	bool isClickedOnHandleOrShape(QPointF point);
+  bool isClickedOnHandleOrShape(QPointF point);
 
     //setting the pen color
     QColor getPenColor();
@@ -71,13 +71,13 @@ class Draw_Triangle:public QGraphicsPathItem
     void print();
 
     QPainterPath getTriangle();
-	//writes the shapes and shapes attributes to an image
-	void drawImage(QPainter *painter,QString &text,QPointF point);
+  //writes the shapes and shapes attributes to an image
+  void drawImage(QPainter *painter,QString &text,QPointF point);
 
-	//show handles
-	void showHandles();
-	//hide handles
-	void hideHandles();
+  //show handles
+  void showHandles();
+  //hide handles
+  void hideHandles();
 
     //rotate the shapes
     void rotateShape(float angle);
@@ -88,10 +88,10 @@ class Draw_Triangle:public QGraphicsPathItem
     QPointF bounding_strt_pnt,bounding_end_pnt;
     int click,handle_index;
     float angle;
-	bool isObjectSelected;
+  bool isObjectSelected;
     QVector<QPointF> triangle_pnts;
 
-	QVector<QGraphicsRectItem*> handles;
+  QVector<QGraphicsRectItem*> handles;
 
  private:
    QPointF StrtPnt,EndPnt,HeightPnt;
