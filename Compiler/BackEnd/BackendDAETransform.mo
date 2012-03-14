@@ -995,7 +995,7 @@ algorithm
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         subsystem_dae = BackendDAE.DAE({syst},shared);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, complEqs, m, mt,true);
         // Jacobian of a Linear System is always linear 
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
       then

@@ -762,6 +762,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
       array<BackendDAE.MultiDimEquation> ae;
+      array<BackendDAE.ComplexEquation> ce;
       list<DAE.Exp> expVars,options;
       array<list<Integer>> m,mt;
       Option<array<list<Integer>>> om,omt;
@@ -1037,7 +1038,8 @@ algorithm
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
         ae = BackendEquation.daeArrayEqns(optdae);
-        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, m, mt,false);
+        ce = BackendEquation.daeComplexEqns(optdae);
+        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, ce, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));

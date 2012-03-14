@@ -1215,6 +1215,8 @@ algorithm
     case (backendEq as BackendDAE.ALGORITHM(index = _)) then backendEq;
     
     case (backendEq as BackendDAE.ARRAY_EQUATION(index = _)) then backendEq;
+
+    case (backendEq as BackendDAE.COMPLEX_EQUATION(index = _)) then backendEq;
     
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation = _)) then backendEq;
     
@@ -1227,8 +1229,8 @@ algorithm
 end equationToResidualForm;
 
 public function equationToExp
-  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> outTpl;  
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,array<BackendDAE.ComplexEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,array<BackendDAE.ComplexEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> outTpl;  
 algorithm
   outTpl := matchcontinue inTpl
     local
@@ -1241,27 +1243,28 @@ algorithm
       BackendDAE.Equation eqn;
       BackendDAE.Variables v;
       array<BackendDAE.MultiDimEquation> arrayEqs;
+      array<BackendDAE.ComplexEquation> complEqs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst,entrylst1;
       list<DAE.Exp> explst;
       list<DAE.ElementSource> sources;
       DAE.ElementSource source;
       String str;
       
-    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,entrylst,explst,sources)))
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
         (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
-      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_1::explst,source::sources)));
+      then ((eqn,(v, arrayEqs,complEqs,entrylst,rhs_exp_1::explst,source::sources)));
         
-    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v, arrayEqs,entrylst,explst,sources)))
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
         new_exp = Expression.expSub(e1,e2);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_2::explst,source::sources)));
+      then ((eqn,(v, arrayEqs,complEqs,entrylst,rhs_exp_2::explst,source::sources)));
         
-    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index,source=source),(v, arrayEqs,entrylst,explst,sources)))
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         new_exp = Expression.expSub(e1,e2);
@@ -1271,7 +1274,14 @@ algorithm
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then ((eqn,(v, arrayEqs,entrylst1,rhs_exp_2::explst,source::sources)));
+      then ((eqn,(v, arrayEqs,complEqs,entrylst1,rhs_exp_2::explst,source::sources)));
+       
+    case ((eqn as BackendDAE.COMPLEX_EQUATION(index=index,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
+      equation
+        str = BackendDump.equationStr(eqn);
+        str = "BackendEquation.equationToExp failed: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
+      then fail();       
         
     case ((eqn,_))
       equation
@@ -1418,6 +1428,17 @@ algorithm
       then eqnarr;
   end match;
 end daeArrayEqns;
+
+public function daeComplexEqns
+  input BackendDAE.BackendDAE inBackendDAE;
+  output array<BackendDAE.ComplexEquation> outEqns;
+algorithm
+  outEqns := match (inBackendDAE)
+    local array<BackendDAE.ComplexEquation> ce;
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(complEqs = ce)))
+      then ce;
+  end match;
+end daeComplexEqns;
 
 public function aliasEquation
 "function aliasEquation

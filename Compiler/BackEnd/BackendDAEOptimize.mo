@@ -4384,6 +4384,7 @@ algorithm
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<BackendDAE.MultiDimEquation> arreqns;
+      array<BackendDAE.ComplexEquation> ce;
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
@@ -4396,10 +4397,10 @@ algorithm
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared as BackendDAE.SHARED(arrayEqs=arreqns),eqn_lst,var_lst,jac,inMovedVars)
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared as BackendDAE.SHARED(arrayEqs=arreqns,complEqs=ce),eqn_lst,var_lst,jac,inMovedVars)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
-        ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
+        ((_,_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,ce,{},{},{}));
         //beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);

@@ -38,6 +38,9 @@ extern "C" {
 
 #include "blaswrap.h"
 #include "f2c.h"
+#ifdef VOID
+#undef VOID
+#endif
 
 extern
 int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer

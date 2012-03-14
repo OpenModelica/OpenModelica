@@ -4595,25 +4595,27 @@ public function calculateJacobian "function: calculateJacobian
   input BackendDAE.Variables inVariables;
   input BackendDAE.EquationArray inEquationArray;
   input array<BackendDAE.MultiDimEquation> inMultiDimEquationArray;
+  input array<BackendDAE.ComplexEquation> inComplexEquationArray;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,differentiateIfExp)
+  matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inComplexEquationArray,inIncidenceMatrix,inIncidenceMatrixT,differentiateIfExp)
     local
       list<BackendDAE.Equation> eqn_lst;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       array<BackendDAE.MultiDimEquation> ae;
+      array<BackendDAE.ComplexEquation> ce;
       array<list<BackendDAE.Value>> m,mt;
-    case (vars,eqns,ae,m,mt,differentiateIfExp)
+    case (vars,eqns,ae,ce,m,mt,differentiateIfExp)
       equation
         eqn_lst = BackendEquation.traverseBackendDAEEqns(eqns,traverseequationToResidualForm,{});
         eqn_lst = listReverse(eqn_lst);
-        SOME(jac) = calculateJacobianRows(eqn_lst, vars, ae, m, mt,differentiateIfExp);
+        SOME(jac) = calculateJacobianRows(eqn_lst, vars, ae, ce, m, mt,differentiateIfExp);
       then
         SOME(jac);
     else then NONE();  /* no analythic jacobian available */
@@ -4650,12 +4652,13 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   input list<BackendDAE.Equation> eqns;
   input BackendDAE.Variables vars;
   input array<BackendDAE.MultiDimEquation> ae;
+  input array<BackendDAE.ComplexEquation> ce;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> res;
 algorithm
-  (res,_) := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, {});
+  (res,_) := calculateJacobianRows2(eqns, vars, ae, ce, m, mt, 1,differentiateIfExp, {});
 end calculateJacobianRows;
 
 protected function calculateJacobianRows2 "function: calculateJacobianRows2
@@ -4664,6 +4667,7 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   input list<BackendDAE.Equation> inEquationLst;
   input BackendDAE.Variables inVariables;
   input array<BackendDAE.MultiDimEquation> inMultiDimEquationArray;
+  input array<BackendDAE.ComplexEquation> inComplexEquationArray;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
@@ -4673,7 +4677,7 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
   (outTplIntegerIntegerEquationLstOption,outEntrylst):=
-  match (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
+  match (inEquationLst,inVariables,inMultiDimEquationArray,inComplexEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
     local
       BackendDAE.Value eqn_indx_1,eqn_indx;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> l1,l2,res;
@@ -4681,14 +4685,15 @@ algorithm
       list<BackendDAE.Equation> eqns;
       BackendDAE.Variables vars;
       array<BackendDAE.MultiDimEquation> ae;
+      array<BackendDAE.ComplexEquation> ce;
       array<list<BackendDAE.Value>> m,mt;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;
-    case ({},_,_,_,_,_,_,inEntrylst) then (SOME({}),inEntrylst);
-    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
+    case ({},_,_,_,_,_,_,_,_) then (SOME({}),inEntrylst);
+    case ((eqn :: eqns),vars,ae,ce,m,mt,eqn_indx,_,_)
       equation
         eqn_indx_1 = eqn_indx + 1;
-        (SOME(l1),entrylst1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp,inEntrylst);
-        (SOME(l2),entrylst2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp,entrylst1);
+        (SOME(l1),entrylst1) = calculateJacobianRows2(eqns, vars, ae, ce, m, mt, eqn_indx_1,differentiateIfExp,inEntrylst);
+        (SOME(l2),entrylst2) = calculateJacobianRow(eqn, vars, ae, ce, m, mt, eqn_indx,differentiateIfExp,entrylst1);
         res = listAppend(l1, l2);
       then
         (SOME(res),entrylst2);
@@ -4708,6 +4713,7 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input array<BackendDAE.MultiDimEquation> inMultiDimEquationArray;
+  input array<BackendDAE.ComplexEquation> inComplexEquationArray;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
@@ -4717,7 +4723,7 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
   (outTplIntegerIntegerEquationLstOption,outEntrylst):=
-  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
+  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inComplexEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
     local
       list<BackendDAE.Value> var_indxs,var_indxs_1,ds;
       list<Option<Integer>> ad;
@@ -4725,6 +4731,7 @@ algorithm
       DAE.Exp e,e1,e2,new_exp;
       BackendDAE.Variables vars;
       array<BackendDAE.MultiDimEquation> ae;
+      array<BackendDAE.ComplexEquation> ce;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value eqn_indx,indx;
       list<DAE.Exp> in_,out,expl;
@@ -4732,7 +4739,7 @@ algorithm
       list<DAE.Subscript> subs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;
     // residual equations
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
@@ -4740,9 +4747,9 @@ algorithm
       then
         (SOME(eqns),inEntrylst);
     // algorithms give no jacobian
-    case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE(),inEntrylst);
+    case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE(),inEntrylst);
     // array equations
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
+    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
         t = Expression.typeof(e1);
@@ -4755,7 +4762,7 @@ algorithm
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),entrylst1);
-    case (_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.calculateJacobianRow failed");
       then

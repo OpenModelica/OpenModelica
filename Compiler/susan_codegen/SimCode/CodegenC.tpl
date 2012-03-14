@@ -721,7 +721,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
          equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")      
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/, &tmp)
+         equation_(eq2, contextInlineSolver, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")   
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -740,8 +740,8 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,1);
        #endif
        mem_state = get_memory_state();
-       <%algs%>
        <%prebody%>
+       <%algs%>
        <%body%>
        restore_memory_state(mem_state);
      }
@@ -3882,6 +3882,18 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
         '<%varPart%> = <%rec%>.<%var.name%>;'
     ; separator="\n"
     %>
+    >>
+  case STMT_ASSIGN(exp1=CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))))) then
+    let &preExp = buffer ""
+    let rec = daeExp(exp, context, &preExp, &varDecls)
+    <<
+    <%preExp%>
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+      let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
+        '<%re%> = <%rec%>.<%var.name%>;'
+    ; separator="\n"    
+    %>
+    Record = func;
     >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
