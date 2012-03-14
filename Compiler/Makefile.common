@@ -63,6 +63,9 @@ Inst.mo \
 InstExtends.mo \
 InstInfo.mo \
 InstSection.mo \
+InstSymbolTable.mo \
+InstTypes.mo \
+InstUtil.mo \
 InstanceHierarchy.mo \
 Lookup.mo \
 MMath.mo \
@@ -92,6 +95,7 @@ SCodeFlatDump.mo \
 SCodeUtil.mo \
 Static.mo \
 Types.mo \
+Typing.mo \
 UnitAbsyn.mo \
 UnitAbsynBuilder.mo \
 UnitChecker.mo \

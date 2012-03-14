@@ -33,29 +33,30 @@
 encapsulated package SCodeMod 
 " file:        SCodeMod.mo
   package:     SCodeMod
-  description: SCodeMod deals with hashing the modifications in SCode
+  description: Modification handling for SCodeInst.
 
   RCS: $Id: SCodeMod.mo 7705 2011-01-17 09:53:52Z sjoelund.se $
 
-  SCodeMod deals with hashing the modifications in SCode
-  Absyn.ComponentRef -> SCode.Mod
+  Functions for handling modifications, used by SCodeInst.
   "
   
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
-public import SCodeInst;
+public import InstTypes;
 
 protected import Error;
+protected import InstUtil;
 protected import List;
 protected import SCodeDump;
+protected import SCodeInst;
 protected import SCodeLookup;
 protected import Util;
 
-public type Binding = SCodeInst.Binding;
+public type Binding = InstTypes.Binding;
 public type Env = SCodeEnv.Env;
-public type Prefix = SCodeInst.Prefix;
-public type Modifier = SCodeInst.Modifier;
+public type Prefix = InstTypes.Prefix;
+public type Modifier = InstTypes.Modifier;
 
 public function translateMod
   input SCode.Mod inMod;
@@ -77,7 +78,7 @@ algorithm
       SCode.Element el;
       Integer pd;
 
-    case (SCode.NOMOD(), _, _, _, _) then SCodeInst.NOMOD();
+    case (SCode.NOMOD(), _, _, _, _) then InstTypes.NOMOD();
 
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
@@ -85,10 +86,10 @@ algorithm
         mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
         binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
       then
-        SCodeInst.MODIFIER(inElementName, fp, ep, binding, mods, info);
+        InstTypes.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
     case (SCode.REDECL(fp, ep, el), _, _, _, _)
-      then SCodeInst.REDECLARE(fp, ep, el);
+      then InstTypes.REDECLARE(fp, ep, el);
 
   end match;
 end translateMod;
@@ -121,14 +122,14 @@ algorithm
       Absyn.Exp bind_exp;
       Integer pd;
 
-    case (NONE(), _, _, _, _, _) then SCodeInst.UNBOUND();
+    case (NONE(), _, _, _, _, _) then InstTypes.UNBOUND();
 
     // See propagateMod for how this works.
     case (SOME((bind_exp, _)), _, _, _, _, _)
       equation
         pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
       then 
-        SCodeInst.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
+        InstTypes.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
 
   end match;
 end translateBinding;
@@ -155,7 +156,7 @@ protected function addNoMod
   input SCode.Element inElement;
   output tuple<SCode.Element, Modifier> outElement;
 algorithm
-  outElement := (inElement, SCodeInst.NOMOD());
+  outElement := (inElement, InstTypes.NOMOD());
 end addNoMod;
 
 protected function updateModElement
@@ -196,7 +197,7 @@ algorithm
 
     case ((name, mod), _, _)
       equation
-        pre_str = SCodeInst.printPrefix(inPrefix);
+        pre_str = InstUtil.printPrefix(inPrefix);
         info = getModifierInfo(mod);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {name, pre_str}, info);
@@ -214,7 +215,7 @@ algorithm
     local
       Absyn.Info info;
 
-    case SCodeInst.MODIFIER(info = info) then info;
+    case InstTypes.MODIFIER(info = info) then info;
     else Absyn.dummyInfo;
 
   end match;
@@ -255,8 +256,8 @@ algorithm
         // Element name matches. Create a new modifier with the given modifier
         // as a named sub modifier, since the modifier is meant for an element
         // in the extended class, and merge the modifiers.
-        outer_mod = SCodeInst.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
-          SCodeInst.UNBOUND(), {outer_mod}, Absyn.dummyInfo);
+        outer_mod = InstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+          InstTypes.UNBOUND(), {outer_mod}, Absyn.dummyInfo);
         inner_mod = mergeMod(outer_mod, inner_mod);
       then
         (el, inner_mod) :: rest_el;
@@ -288,48 +289,48 @@ algorithm
       String name;
 
     // One of the modifiers is NOMOD, return the other.
-    case (SCodeInst.NOMOD(), _) then inInnerMod;
-    case (_, SCodeInst.NOMOD()) then inOuterMod;
+    case (InstTypes.NOMOD(), _) then inInnerMod;
+    case (_, InstTypes.NOMOD()) then inOuterMod;
 
     // Neither of the modifiers have a binding, just merge the submods.
-    case (SCodeInst.MODIFIER(subModifiers = submods1, binding = SCodeInst.UNBOUND(), info = info),
-          SCodeInst.MODIFIER(name = name, subModifiers = submods2, binding = SCodeInst.UNBOUND()))
+    case (InstTypes.MODIFIER(subModifiers = submods1, binding = InstTypes.UNBOUND(), info = info),
+          InstTypes.MODIFIER(name = name, subModifiers = submods2, binding = InstTypes.UNBOUND()))
       equation
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCodeInst.MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(),
-          SCodeInst.UNBOUND(), submods1, info);
+        InstTypes.MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(),
+          InstTypes.UNBOUND(), submods1, info);
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
-    case (SCodeInst.MODIFIER(name, fp, ep, binding as SCodeInst.RAW_BINDING(bindingExp = _),
+    case (InstTypes.MODIFIER(name, fp, ep, binding as InstTypes.RAW_BINDING(bindingExp = _),
             submods1, info),
-        SCodeInst.MODIFIER(subModifiers = submods2))
+        InstTypes.MODIFIER(subModifiers = submods2))
       equation
         checkModifierFinalOverride(inOuterMod, inInnerMod);
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCodeInst.MODIFIER(name, fp, ep, binding, submods1, info);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods1, info);
 
     // The inner modifier has a binding, but not the outer, so keep it.
-    case (SCodeInst.MODIFIER(subModifiers = submods1),
-          SCodeInst.MODIFIER(name, fp, ep, binding as SCodeInst.RAW_BINDING(bindingExp = _),
+    case (InstTypes.MODIFIER(subModifiers = submods1),
+          InstTypes.MODIFIER(name, fp, ep, binding as InstTypes.RAW_BINDING(bindingExp = _),
             submods2, info))
       equation
         checkModifierFinalOverride(inOuterMod, inInnerMod);
         submods2 = List.fold(submods1, mergeSubMod, submods2);
       then
-        SCodeInst.MODIFIER(name, fp, ep, binding, submods2, info);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods2, info);
 
-    case (SCodeInst.MODIFIER(name = _), SCodeInst.REDECLARE(element = _))
+    case (InstTypes.MODIFIER(name = _), InstTypes.REDECLARE(element = _))
       then inOuterMod;
 
-    case (SCodeInst.REDECLARE(element = _), _) then inInnerMod;
+    case (InstTypes.REDECLARE(element = _), _) then inInnerMod;
 
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeInst.mergeMod failed on unknown mod."});
+          {"InstTypes.mergeMod failed on unknown mod."});
       then
         fail();
   end match;
@@ -340,7 +341,7 @@ protected function checkModifierFinalOverride
   input Modifier inInnerMod;
 algorithm
   _ := match(inOuterMod, inInnerMod)
-    case (_, SCodeInst.MODIFIER(finalPrefix = SCode.FINAL()))
+    case (_, InstTypes.MODIFIER(finalPrefix = SCode.FINAL()))
       equation
         print("Trying to override final modifier " +& printMod(inInnerMod) +& 
           " with modifier " +& printMod(inOuterMod) +& "\n");
@@ -367,8 +368,8 @@ algorithm
     case (_, {}) then {inSubMod};
 
     // Check if the sub modifier matches the first in the list.
-    case (SCodeInst.MODIFIER(name = id1), 
-        (mod as SCodeInst.MODIFIER(name = id2)) :: rest_mods)
+    case (InstTypes.MODIFIER(name = id1), 
+        (mod as InstTypes.MODIFIER(name = id2)) :: rest_mods)
       equation
         true = stringEq(id1, id2);
         // Match found, merge the sub modifiers.
@@ -404,7 +405,7 @@ algorithm
       Absyn.Info info;
 
     // TOOD: print an error if this modifier has a binding?
-    case (SCodeInst.MODIFIER(subModifiers = submods), _)
+    case (InstTypes.MODIFIER(subModifiers = submods), _)
       equation
         mods = List.fold1(submods, splitSubMod, inPrefix, {});
       then
@@ -428,16 +429,16 @@ algorithm
       list<tuple<String, Modifier>> mods;
 
     // Filter out redeclarations, they have already been applied.
-    case (SCodeInst.REDECLARE(element = _), _, _)
+    case (InstTypes.REDECLARE(element = _), _, _)
       then inMods;
 
-    case (SCodeInst.MODIFIER(name = id), _, _)
+    case (InstTypes.MODIFIER(name = id), _, _)
       equation
         mods = splitMod2(id, inSubMod, inPrefix, inMods);
       then
         mods;
 
-    case (SCodeInst.NOMOD(), _, _)
+    case (InstTypes.NOMOD(), _, _)
       equation
         print("Got nomod in splitSubMod!\n");
       then
@@ -502,28 +503,28 @@ algorithm
       Absyn.Info info1, info2;
 
     // The second modifier has no binding, use the binding from the first.
-    case (SCodeInst.MODIFIER(name, fp, ep, binding, submods1, info1),
-          SCodeInst.MODIFIER(subModifiers = submods2, binding = SCodeInst.UNBOUND()), _, _)
+    case (InstTypes.MODIFIER(name, fp, ep, binding, submods1, info1),
+          InstTypes.MODIFIER(subModifiers = submods2, binding = InstTypes.UNBOUND()), _, _)
       equation
         submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
           inElementName, submods2);
       then
-        SCodeInst.MODIFIER(name, fp, ep, binding, submods1, info1);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
 
     // The first modifier has no binding, use the binding from the second.
-    case (SCodeInst.MODIFIER(subModifiers = submods1, binding = SCodeInst.UNBOUND()),
-          SCodeInst.MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
+    case (InstTypes.MODIFIER(subModifiers = submods1, binding = InstTypes.UNBOUND()),
+          InstTypes.MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
       equation
         submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
           inElementName, submods2);
       then
-        SCodeInst.MODIFIER(name, fp, ep, binding, submods1, info2);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-    case (SCodeInst.MODIFIER(binding = SCodeInst.RAW_BINDING(bindingExp = _), info = info1),
-          SCodeInst.MODIFIER(binding = SCodeInst.RAW_BINDING(bindingExp = _), info = info2), _, _)
+    case (InstTypes.MODIFIER(binding = InstTypes.RAW_BINDING(bindingExp = _), info = info1),
+          InstTypes.MODIFIER(binding = InstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
-        comp_str = SCodeInst.printPrefix(inPrefix);
+        comp_str = InstUtil.printPrefix(inPrefix);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
         Error.addSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
           {inElementName, comp_str}, info1);
@@ -549,8 +550,8 @@ algorithm
 
     case (_, _, _, {}) then inSubMods;
 
-    case (SCodeInst.MODIFIER(name = id1), _, _, 
-        (mod as SCodeInst.MODIFIER(name = id2)) :: rest_mods)
+    case (InstTypes.MODIFIER(name = id1), _, _, 
+        (mod as InstTypes.MODIFIER(name = id2)) :: rest_mods)
       equation
         true = stringEq(id1, id2);
         id1 = inElementName +& "." +& id1;
@@ -575,8 +576,8 @@ algorithm
     local
       Binding binding;
 
-    case SCodeInst.MODIFIER(binding = binding) then binding;
-    else SCodeInst.UNBOUND();
+    case InstTypes.MODIFIER(binding = binding) then binding;
+    else InstTypes.UNBOUND();
 
   end match;
 end getModifierBinding;
@@ -620,18 +621,18 @@ algorithm
       String name;
       SCode.Final fp;
       SCode.Each ep;
-      SCodeInst.Binding binding;
+      InstTypes.Binding binding;
       list<Modifier> submods;
       Absyn.Info info;
 
     case (_, 0) then inModifier;
 
-    case (SCodeInst.MODIFIER(name, fp, ep, binding, submods, info), _)
+    case (InstTypes.MODIFIER(name, fp, ep, binding, submods, info), _)
       equation
         binding = propagateBinding(binding, inDimensions);
         submods = List.map1(submods, propagateMod, inDimensions);
       then
-        SCodeInst.MODIFIER(name, fp, ep, binding, submods, info);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods, info);
 
     else inModifier;
 
@@ -652,14 +653,14 @@ algorithm
       Absyn.Info info;
 
     // Special case for the each prefix, don't do anything.
-    case (SCodeInst.RAW_BINDING(propagatedDims = -1), _) then inBinding;
+    case (InstTypes.RAW_BINDING(propagatedDims = -1), _) then inBinding;
 
     // A normal binding, increment with the dimension count.
-    case (SCodeInst.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
+    case (InstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
       equation
         pd = pd + inDimensions;
       then 
-        SCodeInst.RAW_BINDING(bind_exp, env, prefix, pd, info);
+        InstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info);
 
     else inBinding;
   end match;
@@ -678,16 +679,16 @@ algorithm
       SCode.Element el;
       String fstr, estr, submod_str, bind_str, el_str;
 
-    case SCodeInst.MODIFIER(_, fp, ep, binding, submods, _)
+    case InstTypes.MODIFIER(_, fp, ep, binding, submods, _)
       equation
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);
         submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
-        bind_str = SCodeInst.printBinding(binding);
+        bind_str = InstUtil.printBinding(binding);
       then
         "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
 
-    case SCodeInst.REDECLARE(fp, ep, el)
+    case InstTypes.REDECLARE(fp, ep, el)
       equation
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);
@@ -695,7 +696,7 @@ algorithm
       then
         "REDECL(" +& fstr +& estr +& el_str +& ")";
 
-    case SCodeInst.NOMOD() then "NOMOD()";
+    case InstTypes.NOMOD() then "NOMOD()";
   end match;
 end printMod;
 
@@ -708,284 +709,11 @@ algorithm
       list<SCode.Subscript> subs;
       String id, mod_str, subs_str;
 
-    case SCodeInst.MODIFIER(name = id)
+    case InstTypes.MODIFIER(name = id)
       then id +& " = " +& printMod(inSubMod);
 
     else "";
   end match;
 end printSubMod;
-
-/* Below is the instance specific code. For each hashtable the user must define:
-
-Key       - The key used to uniquely define elements in a hashtable
-Value     - The data to associate with each key
-hashFunc   - A function that maps a key to a positive integer.
-keyEqual   - A comparison function between two keys, returns true if equal.
-*/
-
-/* HashTable instance specific code */
-
-//public import Absyn;
-//public import SCode;
-//public import SCodeEnv;
-//
-//protected import Dump;
-//protected import Util;
-//protected import List;
-//protected import System;
-//protected import BaseHashTable;
-//protected import SCodeLookup;
-//protected import SCodeDump;
-//
-//public
-//uniontype ModType
-//  record INNER_MOD end INNER_MOD;
-//  record OUTER_MOD end OUTER_MOD; 
-//end ModType;
-//
-//public 
-//uniontype Mod
-//  record MOD
-//    Absyn.ComponentRef fullCref "the component reference of this modifier";
-//    SCode.Mod          mod "the modifier";
-//    Absyn.Path         scope "the scope of the modifier, i.e. the fully qualified class where it originates";
-//    SCode.Element      origin "the element where the modification appeared (extends, derived, component, constraint class)";
-//    ModType            modType "the type of modifer, local vs. outside"; 
-//  end MOD;
-//end Mod; 
-//
-//type Modifications = list<Mod> "a list of modifications with the same name";
-//
-//public type Key = Absyn.ComponentRef;
-//public type Value = Modifications;
-//
-//public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
-//public type HashTable = tuple<
-//  array<list<tuple<Key,Integer>>>,
-//  tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
-//  Integer,
-//  Integer,
-//  HashTableCrefFunctionsType
-//>;
-//
-//partial function FuncHashCref
-//  input Key cr;
-//  input Integer mod;
-//  output Integer res;
-//end FuncHashCref;
-//
-//partial function FuncCrefEqual
-//  input Key cr1;
-//  input Key cr2;
-//  output Boolean res;
-//end FuncCrefEqual;
-//
-//partial function FuncCrefStr
-//  input Key cr;
-//  output String res;
-//end FuncCrefStr;
-//
-//partial function FuncExpStr
-//  input Value exp;
-//  output String res;
-//end FuncExpStr;
-//
-//protected function hashFunc
-//"Calculates a hash value for Key"
-//  input Key cr;
-//  input Integer mod;
-//  output Integer res;
-//protected
-//  String crstr;
-//algorithm
-//  crstr := Dump.printComponentRefStr(cr);
-//  res := System.stringHashDjb2Mod(crstr,mod);
-//end hashFunc;
-//
-//protected function hashValueString
-//  input Value inHashValue;
-//  output String outString;
-//algorithm
-//  outString := matchcontinue(inHashValue)
-//    local
-//      String str;
-//    
-//    case (inHashValue)
-//      equation
-//        str = "(" +& stringDelimitList(
-//                List.map(inHashValue, modString),
-//                ", ") +& ")";
-//      then
-//        str;    
-//  end matchcontinue;
-//end hashValueString;
-//
-//public function modString
-//  input Mod inMod;
-//  output String str;
-//algorithm
-//  str := matchcontinue(inMod)
-//    local
-//      Absyn.ComponentRef fullCref "the component reference of this modifier";
-//      SCode.Mod mod "the modifier";
-//      Absyn.Path scope "the scope of the modifier, i.e. the fully qualified class where it originates";
-//      SCode.Element origin "the element where the modification appeared (extends, derived, component, constraint class)";
-//      ModType modType "the type of modifer, local vs. outside";      
-//    
-//    case (MOD(fullCref, mod, scope, origin, modType))
-//      equation
-//        str = Dump.printComponentRefStr(fullCref) +& "[" +& 
-//          "mod: " +& SCodeDump.printModStr(mod) +& ", " +&
-//          "scope: " +& Absyn.pathString(scope) +& ", " +&
-//          "origin:" +& SCodeDump.shortElementStr(origin) +& ", " +&
-//          "type:" +& modTypeString(modType) +& "]";
-//      then
-//        str;
-//  end matchcontinue;
-//end modString;
-//
-//public function modTypeString
-//  input ModType inModType;
-//  output String str;
-//algorithm
-//  str := matchcontinue(inModType)    
-//    case (INNER_MOD()) then "inner";
-//    case (OUTER_MOD()) then "outer";      
-//  end matchcontinue;
-//end modTypeString;
-//
-//public function hashItemString
-//  input tuple<Key,Value> tpl;
-//  output String str;
-//protected
-//  Key k;
-//  Value v;
-//algorithm
-//  (k, v) := tpl;
-//  str := "{" +& Dump.printComponentRefStr(k) +& ",{" +& hashValueString(v) +& "}}";  
-//end hashItemString;
-//
-//public function emptyHashTable
-//"Returns an empty HashTable.
-// Using the default bucketsize.."
-//  output HashTable hashTable;
-//algorithm
-//  hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
-//end emptyHashTable;
-//
-//public function emptyHashTableSized
-//"Returns an empty HashTable.
-// Using the bucketsize size."
-//  input Integer size;
-//  output HashTable hashTable;
-//algorithm
-//  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,Absyn.crefEqual,Dump.printComponentRefStr,hashValueString));
-//end emptyHashTableSized;
-//
-//public function add
-//  input tuple<Key,Value> inKeyValue;
-//  input HashTable inHashTable;
-//  output HashTable outHashTable;
-//algorithm
-//  outHashTable := matchcontinue(inKeyValue, inHashTable)
-//    local
-//      HashTable hashTable;
-//      Value hashValue;
-//      Key key;
-//    
-//    // not there, add it
-//    case (inKeyValue as (key, _), hashTable)
-//      equation
-//        failure((_) = BaseHashTable.get(key, hashTable));
-//        hashTable = BaseHashTable.addNoUpdCheck(inKeyValue, hashTable);
-//      then
-//        hashTable;
-//
-//    // failed, we have a duplicate
-//    case (inKeyValue as (key, _), hashTable)
-//      equation
-//        hashValue = BaseHashTable.get(key, hashTable);
-//        print("Duplicate modifier found: " +& hashValueString(hashValue) +& "\n");
-//      then
-//        fail();
-//  end matchcontinue;
-//end add;
-//
-//public function hashTableFromMod
-//  "Creates a hashtable from a modifier"
-//  input Absyn.ComponentRef inName;
-//  input SCode.Mod inMod;
-//  input SCodeEnv.Env inEnv;
-//  input Absyn.Path inPathScope;
-//  input SCode.Element inElementOrigin;
-//  input ModType inModType;
-//  output HashTable outHashTable;
-//algorithm
-//  outHashTable := matchcontinue(inName, inMod, inEnv, inPathScope, inElementOrigin, inModType)
-//    local
-//      SCodeEnv.Env env;
-//      HashTable hashTable;
-//      SCode.Final finalPrefix "final prefix";
-//      SCode.Each eachPrefix "each prefix";
-//      list<SCode.SubMod> subModLst;
-//      Option<tuple<Absyn.Exp, Boolean>> binding;      
-//      
-//    case (inName, SCode.MOD(finalPrefix, eachPrefix, subModLst, binding, _), inEnv, inPathScope, inElementOrigin, inModType)
-//      equation
-//        // TODO! add mod to hashtable
-//        hashTable = emptyHashTable();
-//      then 
-//        hashTable;
-//  end matchcontinue; 
-//end hashTableFromMod;
-//
-//protected function joinCrefs
-//  "do not join if ident is empty"
-//  input Absyn.ComponentRef inCrefPrefix;
-//  input Absyn.ComponentRef inCrefSuffix;
-//  output Absyn.ComponentRef outCref;
-//algorithm
-//  outCref := matchcontinue(inCrefPrefix, inCrefSuffix)
-//    local
-//      Absyn.ComponentRef cref;
-//
-//    // handle "", return the suffix
-//    case (Absyn.CREF_IDENT(name = ""), inCrefSuffix) 
-//      then inCrefSuffix;
-//
-//    // handle != "", return the joined prefix.suffix
-//    case (inCrefPrefix, inCrefSuffix)
-//      equation
-//        cref = Absyn.joinCrefs(inCrefPrefix, inCrefSuffix);
-//      then 
-//        cref;
-//  end matchcontinue;
-//end joinCrefs;
-//
-//public function lookup
-//  input HashTable inHashTable;
-//  input Key key;
-//  output Value outValue;
-//algorithm  
-//  outValue := matchcontinue(inHashTable, key)
-//    local
-//      HashTable hashTable;
-//      Value hashValue;
-//    
-//    // found something  
-//    case (hashTable, key)
-//      equation
-//        hashValue = BaseHashTable.get(key, hashTable);
-//      then
-//        hashValue;
-//    
-//    // found nothing!
-//    case (_, key)
-//      equation
-//        print("Lookup failed for: " +&  Dump.printComponentRefStr(key) +& "\n");
-//      then
-//        fail();
-//  end matchcontinue;
-//end lookup;
 
 end SCodeMod;

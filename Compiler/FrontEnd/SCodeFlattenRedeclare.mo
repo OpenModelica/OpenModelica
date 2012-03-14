@@ -961,7 +961,6 @@ algorithm
     case (_, _, SCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
         old_item = SCodeEnv.avlTreeGet(tree, inElementName);
-        //print("Replacing " +& inElementName +& " in " +& SCodeEnv.getEnvName(inEnv) +& "\n");
         new_item = propagateItemPrefixes(old_item, inElement);
         new_item = SCodeEnv.linkItemUsage(old_item, new_item);
         tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);

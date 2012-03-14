@@ -39,7 +39,7 @@ encapsulated package SCodeExpand
 "
 
 public import DAE;
-public import SCodeInst;
+public import InstTypes;
 
 protected import Absyn;
 protected import DAEDump;
@@ -49,6 +49,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import InstUtil;
 protected import List;
 protected import SCode;
   
@@ -63,7 +64,7 @@ end ExpandScalarFunc;
 
 public function expand
   input String inName;
-  input SCodeInst.Class inClass;
+  input InstTypes.Class inClass;
   output DAE.DAElist outDAE;
 protected
   list<DAE.Element> el;
@@ -142,19 +143,19 @@ algorithm
 end countElements;
 
 protected function expandClass
-  input SCodeInst.Class inClass;
+  input InstTypes.Class inClass;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
 algorithm
   outElements := match(inClass, inSubscripts, inAccumEl)
     local
-      list<SCodeInst.Element> comps;
+      list<InstTypes.Element> comps;
       list<DAE.Element> el;
 
-    case (SCodeInst.BASIC_TYPE(), _, _) then inAccumEl;
+    case (InstTypes.BASIC_TYPE(), _, _) then inAccumEl;
     
-    case (SCodeInst.COMPLEX_CLASS(components = comps), _, _)
+    case (InstTypes.COMPLEX_CLASS(components = comps), _, _)
       equation
         el = List.fold1(comps, expandElement, inSubscripts, inAccumEl);
       then
@@ -164,49 +165,49 @@ algorithm
 end expandClass;
 
 protected function expandElement
-  input SCodeInst.Element inElement;
+  input InstTypes.Element inElement;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
 algorithm
   outElements := match(inElement, inSubscripts, inAccumEl)
     local
-      SCodeInst.Component comp;
+      InstTypes.Component comp;
       list<DAE.Element> el;
-      SCodeInst.Class cls;
+      InstTypes.Class cls;
       Absyn.Path path;
       String err_msg;
       DAE.Type ty;
       DAE.Dimensions dims;
 
-    case (SCodeInst.ELEMENT(component = comp, cls = SCodeInst.BASIC_TYPE()), _, _)
+    case (InstTypes.ELEMENT(component = comp, cls = InstTypes.BASIC_TYPE()), _, _)
       equation
         el = expandComponent(comp, inSubscripts, inAccumEl);
       then
         el;
 
-    case (SCodeInst.ELEMENT(component = SCodeInst.TYPED_COMPONENT(ty =
+    case (InstTypes.ELEMENT(component = InstTypes.TYPED_COMPONENT(ty =
         DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _)
       equation
         el = expandArray(cls, dims, {} :: inSubscripts, inAccumEl, expandClass);
       then
         el;
 
-    case (SCodeInst.ELEMENT(component = comp, cls = cls), _, _)
+    case (InstTypes.ELEMENT(component = comp, cls = cls), _, _)
       equation
         el = expandClass(cls, {} :: inSubscripts, inAccumEl);
       then
         el;
 
-    case (SCodeInst.EXTENDED_ELEMENTS(cls = cls), _, _)
+    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _, _)
       equation
         el = expandClass(cls, inSubscripts, inAccumEl);
       then
         el;
 
-    case (SCodeInst.CONDITIONAL_ELEMENT(component = comp), _, _)
+    case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, _)
       equation
-        path = SCodeInst.getComponentName(comp);
+        path = InstUtil.getComponentName(comp);
         err_msg = "SCodeExpand.expandElement got unresolved conditional component " +& 
           Absyn.pathString(path) +& "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
@@ -217,7 +218,7 @@ algorithm
 end expandElement;
 
 protected function expandComponent
-  input SCodeInst.Component inComponent;
+  input InstTypes.Component inComponent;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
@@ -227,23 +228,23 @@ algorithm
       Absyn.Path name;
       DAE.Dimensions dims;
       list<DAE.Element> el;
-      SCodeInst.Component comp;
+      InstTypes.Component comp;
       String err_msg;
 
-    case (SCodeInst.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _)
+    case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _)
       equation
         comp = unliftComponentType(inComponent);
         el = expandArray(comp, dims, {} :: inSubscripts, inAccumEl, expandScalar);
       then
         el;
 
-    case (SCodeInst.TYPED_COMPONENT(ty = _), _, _)
+    case (InstTypes.TYPED_COMPONENT(ty = _), _, _)
       equation
         el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
       then
         el;
         
-    case (SCodeInst.UNTYPED_COMPONENT(name = name), _, _)
+    case (InstTypes.UNTYPED_COMPONENT(name = name), _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got untyped component " +&
           Absyn.pathString(name) +& "\n";
@@ -251,7 +252,7 @@ algorithm
       then
         fail();
 
-    case (SCodeInst.CONDITIONAL_COMPONENT(name = name), _, _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got unresolved conditional component " +&
           Absyn.pathString(name) +& "\n";
@@ -259,7 +260,7 @@ algorithm
       then
         inAccumEl;
 
-    case (SCodeInst.OUTER_COMPONENT(name = _), _, _)
+    case (InstTypes.OUTER_COMPONENT(name = _), _, _)
       then inAccumEl;
 
   end match;
@@ -355,7 +356,7 @@ algorithm
 end expandArrayIntDim;      
 
 protected function expandScalar
-  input SCodeInst.Component inComponent;
+  input InstTypes.Component inComponent;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
@@ -373,15 +374,15 @@ algorithm
       DAE.VarVisibility vis;
       DAE.Flow fp;
       DAE.Stream sp;
-      SCodeInst.Binding binding;
+      InstTypes.Binding binding;
       Option<DAE.Exp> bind_exp;
-      SCodeInst.Prefixes prefs;
+      InstTypes.Prefixes prefs;
 
-    case (SCodeInst.TYPED_COMPONENT(prefixes = 
-        SCodeInst.PREFIXES(variability = DAE.CONST())), _, _)
+    case (InstTypes.TYPED_COMPONENT(prefixes = 
+        InstTypes.PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
-    case (SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
+    case (InstTypes.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
       equation
         subs = listReverse(subs);
         bind_exp = expandBinding(binding, subs);
@@ -393,26 +394,26 @@ algorithm
       then
         elem :: inAccumEl;
 
-    case (SCodeInst.UNTYPED_COMPONENT(name = name), _, _)
+    case (InstTypes.UNTYPED_COMPONENT(name = name), _, _)
       equation
         print("Got untyped component " +& Absyn.pathString(name) +& "\n");
       then
         fail();
 
-    case (SCodeInst.CONDITIONAL_COMPONENT(name = name), _, _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
       equation
         print("Got conditional component " +& Absyn.pathString(name) +& "\n");
       then
         fail();
 
-    case (SCodeInst.OUTER_COMPONENT(name = _), _, _)
+    case (InstTypes.OUTER_COMPONENT(name = _), _, _)
       then inAccumEl;
 
   end match;
 end expandScalar;
 
 protected function expandBinding
-  input SCodeInst.Binding inBinding;
+  input InstTypes.Binding inBinding;
   input list<list<DAE.Subscript>> inSubscripts;
   output Option<DAE.Exp> outBinding;
 algorithm
@@ -424,12 +425,12 @@ algorithm
       list<DAE.Subscript> flat_subs;
       list<DAE.Exp> sub_exps;
 
-    case (SCodeInst.UNBOUND(), _) then NONE();
+    case (InstTypes.UNBOUND(), _) then NONE();
 
-    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedDims = -1), _)
+    case (InstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = -1), _)
       then SOME(exp);
 
-    case (SCodeInst.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _)
+    case (InstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _)
       equation
         flat_subs = List.flatten(inSubscripts);
         flat_subs = List.lastN(flat_subs, pd);
@@ -512,21 +513,21 @@ algorithm
 end subscriptPath;
 
 protected function unliftComponentType
-  input SCodeInst.Component inComponent;
-  output SCodeInst.Component outComponent;
+  input InstTypes.Component inComponent;
+  output InstTypes.Component outComponent;
 protected
   Absyn.Path name;
   DAE.Type ty;
-  SCodeInst.Prefixes prefs;
-  SCodeInst.Binding binding;
+  InstTypes.Prefixes prefs;
+  InstTypes.Binding binding;
   Absyn.Info info;
 algorithm
-  SCodeInst.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), prefs, binding, info) := inComponent;
-  outComponent := SCodeInst.TYPED_COMPONENT(name, ty, prefs, binding, info);
+  InstTypes.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), prefs, binding, info) := inComponent;
+  outComponent := InstTypes.TYPED_COMPONENT(name, ty, prefs, binding, info);
 end unliftComponentType;
 
 protected function getPrefixes
-  input SCodeInst.Prefixes inPrefixes;
+  input InstTypes.Prefixes inPrefixes;
   output DAE.VarKind outVarKind;
   output DAE.VarDirection outDirection;
   output DAE.VarVisibility outVisibility;
@@ -542,10 +543,10 @@ algorithm
       DAE.Flow fp;
       DAE.Stream sp;
 
-    case SCodeInst.PREFIXES(vis, kind, _, _, (dir, _), (fp, _), (sp, _))
+    case InstTypes.PREFIXES(vis, kind, _, _, (dir, _), (fp, _), (sp, _))
       then (kind, dir, vis, fp, sp);
     
-    case SCodeInst.NO_PREFIXES()
+    case InstTypes.NO_PREFIXES()
       then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR(),
           DAE.NON_STREAM_CONNECTOR());
 
