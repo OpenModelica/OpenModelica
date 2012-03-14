@@ -7,6 +7,10 @@ ulimitOmc:="300"; // 5 minutes to generate the C-code
 ulimitExe:="40";  // 40 seconds to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
 
+system("date +'%Y-%m-%d %H:%M:%S' > tmp.date);
+dateAndTime:=readFile("tmp.date");
+system("rm -f tmp.date");
+
 if MSLVersion == "3.2" then
   loadModel(ModelicaTest,{"1.1"});
   loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});";
@@ -108,6 +112,7 @@ system("rm -f " + log);
 str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+getVersion()+"</p>
+<p>Test started: "+dateAndTime+"</p>
 <p>Tested Library: Modelica "+getVersion(Modelica)+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
