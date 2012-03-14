@@ -599,8 +599,8 @@ int simplex_initialization(DATA* data, long nz, double *z, char** zName, double 
 {
   int ind = 0;
   double funcValue = 0;
-  double *STEP = (double*)calloc(nz, sizeof(double));
-  double *VAR = (double*)calloc(nz, sizeof(double));
+  double *STEP = (double*)malloc(nz * sizeof(double));
+  double *VAR = (double*)malloc(nz * sizeof(double));
   double STOPCR = 0, SIMP = 0;
   long IPRINT = 0, NLOOP = 0, IQUAD = 0, IFAULT = 0, MAXF = 0;
   ASSERT(STEP, "out of memory");
@@ -916,7 +916,7 @@ static int initialize(DATA *data, int optiMethod)
   {
     DEBUG_INFO_AL(LOG_INIT, "   [under-determined]");
 
-    z_f = (double*)calloc(initData->nz, sizeof(double));
+    z_f = (double*)malloc(initData->nz * sizeof(double));
     f = leastSquareWithLambda(data, initData->nz, initData->z, NULL, NULL, 1.0, initialResiduals);
     for(i=0; i<initData->nz; ++i)
     {
