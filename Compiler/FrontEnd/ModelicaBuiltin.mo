@@ -2669,7 +2669,7 @@ annotation(Documentation(info="<html>
 end trunk;
 annotation(Documentation(info="<html>
 This section summarizes the major releases of OpenModelica and what changed between the major versions.
-However, OpenModelica is developed rapidly and updated on a continous basis. There are probably changes
+However, OpenModelica is developed rapidly and updated on a continuous basis. There are probably changes
 in the <a href=\"modelica://OpenModelica.UsersGuide.ReleaseNotes.trunk\">current version</a>.
 </html>"));
 end ReleaseNotes;
