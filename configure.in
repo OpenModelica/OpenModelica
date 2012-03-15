@@ -22,6 +22,7 @@ AC_SUBST(CORBA_QMAKE_INCLUDES)
 AC_SUBST(CORBACFLAGS)
 AC_SUBST(CORBALIBS)
 AC_SUBST(IDLCMD)
+AC_SUBST(IDLPYTHONCMD)
 AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
@@ -349,6 +350,7 @@ elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
     WANT_OMNIORB="/usr";
     IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
+	IDLPYTHONCMD="omniidl -bpython";
   else
     CORBA_QMAKE_INCLUDES="$WANT_OMNIORB/include";
     CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
@@ -359,6 +361,7 @@ elif test ! "$WANT_OMNIORB" = "no"; then
     AC_MSG_ERROR([not found])
     fi
     IDLCMD="$WANT_OMNIORB/bin/omniidl -bcxx -Wbh=.h -Wbs=.cc";
+	IDLPYTHONCMD="$WANT_OMNIORB/bin/omniidl -bpython";
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
