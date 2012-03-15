@@ -2116,8 +2116,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
-  MAINFILE=$(FILEPREFIX)<% if acceptMetaModelicaGrammar() then ".conv"%>.c
-  MAINOBJ=$(FILEPREFIX)<% if acceptMetaModelicaGrammar() then ".conv"%>.o 
+  MAINFILE=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
+  MAINOBJ=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.o 
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
   
   .PHONY: omc_main_target clean bundle 
@@ -2343,7 +2343,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
-  MAINFILE=<%name%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
+  MAINFILE=<%name%><% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
   
   .PHONY: <%name%>
   <%name%>: $(MAINFILE) <%name%>.h <%name%>_records.c

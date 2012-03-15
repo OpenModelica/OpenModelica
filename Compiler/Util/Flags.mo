@@ -343,6 +343,8 @@ constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(90, "writeToBuffer",
   "Enables writing simulation results to buffer.");
 constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(91, "backenddaeinfo",
   "Enables dumping of backend information about system (Number of equations before backend,...).");
+constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(92, "gendebugsymbols",
+  "Generate code with debugging symbols.");
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -439,7 +441,8 @@ constant list<DebugFlag> allDebugFlags = {
   SCODE_INST,
   DELAY_BREAK_LOOP,
   WRITE_TO_BUFFER,
-  DUMP_BACKENDDAE_INFO
+  DUMP_BACKENDDAE_INFO,
+  GEN_DEBUG_SYMBOLS
 };
 
 // CONFIGURATION FLAGS

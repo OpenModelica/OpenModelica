@@ -27,6 +27,12 @@ package builtin
     output Integer c;
   end intAdd;
   
+  function boolOr
+    input Boolean a;
+    input Boolean b;
+    output Boolean c;
+  end boolOr;
+  
   function intSub
     input Integer a;
     input Integer b;
@@ -2179,6 +2185,7 @@ package Flags
   uniontype DebugFlag end DebugFlag;
 
   constant DebugFlag OPENMP;
+  constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
 
   function isSet
