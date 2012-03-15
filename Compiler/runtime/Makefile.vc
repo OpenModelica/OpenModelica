@@ -16,6 +16,7 @@ CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
 SHELL	= /bin/sh
 CC	= cl
 IDL	= $(OMDEV)\bin\mico\idl
+IDLPYTHON = $(OMDEV)\lib\omniORB-4.1.6-msvc-10\bin\x86_win32\omniidl
 
 OBJ = socketimpl.obj printimpl.obj systemimpl.obj systemimplmisc.obj dynload.obj dynload_try.obj settingsimpl.obj \
 ptolemyio.obj BackendDAEEXT.obj ErrorMessage.obj errorext.obj \

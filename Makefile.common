@@ -27,9 +27,12 @@ mkbuilddirs:
 	mkdir -p $(builddir_bin)
 	mkdir -p $(builddir_lib)/omc
 	mkdir -p $(builddir_lib)/omc/libexec
+	mkdir -p $(builddir_lib)/python
+	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts
+	mkdir -p $(builddir_share)/omc/scripts/ompython
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
@@ -163,7 +166,6 @@ install-dirs:
 	test ! -d ${builddir_share}/omshell/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
-
 install: install-dirs
 	echo Installing OpenModelica...
 	# Application directory (OSX)
@@ -186,6 +188,6 @@ install: install-dirs
 	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
 	test ! -d ${builddir_share}/omshell/nls/ || cp -p ${builddir_share}/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
 	# Scripts
-	cp -p ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
+	cp -rp ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
 	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}

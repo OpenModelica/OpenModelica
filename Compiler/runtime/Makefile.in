@@ -23,6 +23,7 @@ SHELL	= /bin/sh
 CC	= @CC@
 CXX	= @CXX@
 IDL	= @IDLCMD@
+IDLPYTHON = @IDLCMD@
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I$(srcdir) -I. $(CORBAINCL)  
 
