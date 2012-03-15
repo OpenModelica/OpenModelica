@@ -1,4 +1,32 @@
 getErrorString();
+/*
+M := getEnvironmentVar("MY_MODELICA_MODELS");
+
+MP := getModelicaPath() + ";"; 
+  
+  
+MP := MP + M + "/HeartSystem";
+setModelicaPath(MP);
+
+loadModel(HeartSystem);
+
+getErrorString();
+simulate(HeartSystem.Models.BeatHeart);
+getErrorString();
+*/
+
+/*
+M := getEnvironmentVar("MY_MODELICA_MODELS");
+MP := getModelicaPath() + ";" 
+  + M + "/Physiolibrary;" 
+  + M + "/Guyton";
+setModelicaPath(MP);
+
+loadModel(Physiolibrary);
+loadModel(Guyton);
+simulate(Guyton.Guyton92.CardioVascular.Test.testCirculationDynamicsStarling);
+getErrorString();
+*/
 
 /*
 loadModel(Modelica);

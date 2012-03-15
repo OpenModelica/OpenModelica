@@ -6,10 +6,13 @@ OMC = ../../../../build/bin/omc.exe
 
 #OMC = /d/Modelica/_modely/MM_for_debug/omc.exe
 #OMC = /c/OpenModelica1.4.5/bin/omc.exe
-HumModDir = "/d/Modelica/_modely/HumModOMC/OMC"
-ModelsNET = "/d/Modelica/Bodylight/Solvers/Compiled Solvers/Simulation/ModelsDotNet/"
+MyModelicaModels = $(MY_MODELICA_MODELS)
+MyDotNetDev = $(MY_DOT_NET_DEV)
+HumModDir = ${MyModelicaModels}/HumModOMC/OMC
+ModelsNET = "${MyDotNetDev}/Solvers/Compiled Solvers/Simulation/ModelsDotNet/"
 #all :  tplmode  csharp  cppOrig
-all :  HMCurve QHP csCopy
+#all :  HMCurve QHP csCopy
+all :  QHP csCopy
 #all : csharp csCopy
 #all :  tst
 #all :  cppOrig
@@ -53,6 +56,7 @@ QHP:
 
 HMCurve:
 	@echo " ** HumMod OMC Curve.c external library compilation ** "
+	@echo MyModelicaModels = ${MyModelicaModels}
 	(cd $(HumModDir)/numericalSolutions/CubicCurve/CubicCurve && $(MAKE) -f Makefile.omdev.mingw)
 
 HumMod:

@@ -812,7 +812,9 @@ let()= System.tmpTickReset(1)
 public override void FunODE()
 {
   <% localRepresentationArrayDefines %>
-  <%stateContEquations |> eqs => (eqs |> it => equation_(it, contextOther, simCode)) ;separator="\n"%>
+  <%stateContEquations |> eqs => 
+     (eqs |> it => equation_(it, contextOther, simCode) ;separator="\n") 
+     ;separator="\n"%>
 }
 >>
 end functionODE;
@@ -842,8 +844,10 @@ let()= System.tmpTickReset(1)
 public override void InitialResidual()
 {
   <% localRepresentationArrayDefines %>
+  var startX = startStates; var startYB = startAlgebraicsBool; var startYI = startAlgebraicsInt;
   int _i = 0;
-
+  const double _lambda = 1.0;
+  
   <%residualEquations |> SES_RESIDUAL(__)  =>
     match exp case DAE.SCONST(__) then
       'initialResiduals[_i++] = 0;'
@@ -1154,6 +1158,7 @@ template cref(ComponentRef cr, SimCode simCode) ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
   case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "$_lambda") then "_lambda"
   else '/*<% crefStr(cr, simCode) %>*/<% representationCref(cr, simCode) %>'
   // not needed ... //the space at the start is important to avoid ambiguity with "/" operator to become "//" line comment
 /*
@@ -1192,6 +1197,15 @@ template representationArrayNameTypePostfix(Type type_) ::=
 end representationArrayNameTypePostfix;
 
 //TODO: a HACK ?
+template daeExpRealConversionPostfix(Exp exp, SimCode simCode) ::=
+  match exp
+  case CREF(__) then
+     match cref2simvar(componentRef, simCode) 
+     case SIMVAR(type_ = T_BOOL(__)) then "?1.0:0.0"
+  //TODO: make conversion also for other expressions
+end daeExpRealConversionPostfix;
+
+//TODO: a HACK ?
 template crefToReal(ComponentRef cr, SimCode simCode) ::=
 <</*(double)<% crefStr(cr, simCode) 
             %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
@@ -1228,6 +1242,9 @@ template old2Cref(ComponentRef cr, SimCode simCode) ::=
 '/*old2(<%crefStr(cr, simCode)%>)*/old2<%representationCref(cr, simCode)%>'
 end old2Cref;
 
+template startCref(ComponentRef cr, SimCode simCode) ::=
+'/*start(<%crefStr(cr, simCode)%>)*/start<%representationCref(cr, simCode)%>'
+end startCref;
 
 template contextCref(ComponentRef cr, Context context, SimCode simCode)
   "Generates code for a component reference depending on which context we're in."
@@ -1777,6 +1794,13 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
     else
       arrName
      */      
+  case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
+  	"ASUB_FAST_ONE"
+  case ASUB(exp=e, sub=indexes) then
+    <<
+    <%daeExp(e, context, &preExp, simCode)
+    %>[<%indexes |> index => '<%daeExp(index, context, &preExp, simCode)%>' ;separator=", "%>]
+    >>
   else
     'OTHER_ASUB__ERROR'   
 end daeExpAsub;
@@ -1827,7 +1851,14 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   let e2 = daeExp(exp2, context, &preExp, simCode)
   match it
   case ADD(__) then '(<%e1%> + <%e2%>)'
-  case SUB(__) then '(<%e1%> - <%e2%>)'
+  //TODO FIX: bad type of SUB operator when on bools; the following does not work
+  //case SUB(ty = T_BOOL(__)) then '((<%e1%>?1.0:0.0) - (<%e2%>?1.0:0.0))' //in InitialResidual() ...
+  case SUB(__) then 
+  	//match expTypeFromExp(exp1) //TODO FIX: bool typed CREF returns "double"; the following is not working, too 
+  	//case "bool" then '((<%e1%>?1.0:0.0) - (<%e2%>?1.0:0.0))' //in InitialResidual() ...
+  	//HACK!!
+  	let boolConv = daeExpRealConversionPostfix(exp1, simCode)  		 
+  	'((<%e1%><%boolConv%>) - (<%e2%><%boolConv%>))'
   case MUL(__) then '(<%e1%> * <%e2%>)'
   case DIV(__) then '(<%e1%> / <%e2%>)'
   case POW(__) then 'Math.Pow(<%e1%>, <%e2%>)'
@@ -1903,14 +1934,14 @@ case sim as SIMULATION(__) then
 	 let &preExp +=
 	   match index
 	   case -1 then
-	     '<%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;'
+	     '<%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;<%\n%>'
 	   else if sim.genDiscrete then
 	           <<
 	           <%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;
-	           backuprelations[<%index%>] = <%res%>;
+	           backuprelations[<%index%>] = <%res%>;<%\n%>
 	           >>
 	        else
-	           '<%tempDecl("bool", res)%> = backuprelations[<%index%>];'
+	           '<%tempDecl("bool", res)%> = backuprelations[<%index%>];<%\n%>'
 	 res
 	   /*
 	   match operator
@@ -1977,8 +2008,14 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   match it
   // special builtins
   case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2, DAE.SCONST(string=string)}) then
+            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
     let var1 = daeExp(e1, context, &preExp, simCode)
+    let string = //TODO: a local hack here to retrieve the shared litral ... make more like it was designed to
+       match simCode
+       case SIMCODE(__) then
+       	   match listNth(literals, e3.index)
+       	   case DAE.SCONST(__) then string
+       	   else "TemplErr:division msg string not recognized"        
     let msg = Util.escapeModelicaStringToCString(string)
     match e2 
     case RCONST(__) then 
@@ -2001,6 +2038,14 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     %><% preCref(arg.componentRef, simCode) %>
     >>
   
+  case CALL(path=IDENT(name="integer"), expLst={toBeCasted}) 
+  case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
+    let castedVar = daeExp(toBeCasted, context, &preExp, simCode)
+    '((int)<%castedVar%>)'
+    
+  case CALL(path=IDENT(name="$_start"), expLst={arg as CREF(__)}) then
+    startCref(arg.componentRef, simCode)
+    
   //'(/*edge(h[<%idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     <<
@@ -2039,6 +2084,9 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   
   case CALL(path=IDENT(name="sqrt"), expLst={s1}) then
     'Math.Sqrt(<%daeExp(s1, context, &preExp, simCode)%>)'
+  
+  case CALL(path=IDENT(name="tanh"), expLst={s1}) then
+    'Math.Tanh(<%daeExp(s1, context, &preExp, simCode)%>)'
   
   case CALL(path=IDENT(name="noEvent"), expLst={s1}) then
     '(/*noEvent*/<%daeExp(s1, context, &preExp, simCode)%>)'

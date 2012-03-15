@@ -1,14 +1,102 @@
 
+
+getErrorString();
+
+M := getEnvironmentVar("MY_MODELICA_MODELS");
+
+MP := getModelicaPath() + ";"; 
+  
+  
+MP := MP + M + "/HeartSystem";
+setModelicaPath(MP);
+
+loadModel(HeartSystem);
+//loadModel(VenousPrinciple);
+
+//loadFile("D:/Modelica/_modely/HeartSystem/HeartSystem.mo");
+//loadFile("D:/Modelica/_modely/HeartSystem/VenousPrinciple.mo");
+getErrorString();
+//translateModel(VenousPrinciples.TwoElasticities);
+//translateModel(VenousPrinciples.VenousReturnCircuit);
+translateModel(HeartSystem.Models.BeatHeart);
 getErrorString();
 
 
+/*
+getErrorString();
+M := getEnvironmentVar("MY_MODELICA_MODELS");
+
+MP := getModelicaPath() + ";" 
+  + M + "/Physiolibrary;";
+*/
+
+/*   
+MP := MP + M + "/Guyton";
+setModelicaPath(MP);
+
+//loadModel(Modelica);
+loadModel(Physiolibrary);
+getErrorString();
+loadModel(Guyton);
+getErrorString();
+//translateModel(Guyton.Guyton92.CardioVascular.Test.testCirculationDynamicsStarling);
+translateModel(Guyton.Guyton92.CardioVascular.Test.testVenousReturn1StarlingwithoutAtria);
+
+//instantiateModel(Guyton.Guyton92.CardioVascular.Test.testVenousReturn1StarlingwithoutAtria);
+//checkModel(Guyton.Guyton92.CardioVascular.Test.testVenousReturn1StarlingwithoutAtriaOM);
+//checkModel(Guyton.Guyton92.CardioVascular.VenousReturnCardioVascularSystemWithoutAtria);
+//checkModel(Guyton.Guyton92.CardioVascular.VenousReturnCardioVascularSystemWithoutAtriaOM);
+//instantiateModel(Guyton.Guyton92.CardioVascular.VascularCompartments.GuytonPumpHeartWithoutAtria);
+//checkModel(Guyton.Guyton92.CardioVascular.VascularCompartments.heart.PressurePump);
+//checkModel(Guyton.Guyton92.CardioVascular.VascularCompartments.PulmonaryCirculation);
+//instantiateModel(Guyton.Guyton92.CardioVascular.VascularCompartments.SystemicCirculationOld);
+//instantiateModel(Guyton.Guyton92.CardioVascular.VascularCompartments.VascularElasticBloodCompartment);
+getErrorString();
+*/
+
+/*
+MP := MP + M + "/HumMod";
+setModelicaPath(MP);
+
+//loadModel(Modelica);
+loadModel(Physiolibrary);
+getErrorString();
+loadModel(HumMod.HumMod_GolemEdition);
+checkModel(HumMod.HumMod_GolemEdition);
+//translateModel(HumMod.HumMod_GolemEdition);
+getErrorString();
+
+*/
+
+/*
+loadModel(Modelica);
+loadFile(M+"/HumMod/BloodPropertiesEducation/Blood_Siggaard.mo");
+translateModel(HumMod.Gases.test.calc_sO2);
+getErrorString();
+*/
+
+/*
+F := M + "/HumMod/for testing/CVS/LeftHeartStarling.mo";
+loadFile(F);
+getErrorString();
+translateModel(LeftHeartStarling);
+getErrorString();
+*/
+/*
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/RightHeartStarling.mo");
+getErrorString();
+translateModel(RightHeartStarling);
+getErrorString();
+*/
+
+/*
 loadModel(Modelica);
 //cd("d:/Modelica/_modely/HumModOMC/OMC");
 setModelicaPath("d:/Modelica/_modely/HumModOMC/OMC");
 loadModel(HumMod);
 
 translateModel(HumMod.Library.Curves.TestCurve);
-
+*/
 
 /*
 loadModel(Modelica);
@@ -42,15 +130,7 @@ translateModel(CESNET_Indentification_Hoffman);
 getErrorString();
 */
 
-/*
-loadFile("D:/Modelica/_modely/HeartSystem/HeartSystem.mo");
-loadFile("D:/Modelica/_modely/HeartSystem/VenousPrinciple.mo");
-getErrorString();
-translateModel(VenousPrinciples.TwoElasticities);
-//translateModel(VenousPrinciples.VenousReturnCircuit);
-getErrorString();
 
-*/
 
 /*
 loadModel(Modelica);
@@ -102,17 +182,7 @@ getErrorString();
 */
 
 
-/*
-loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/LeftHeartStarling.mo");
-getErrorString();
-translateModel(LeftHeartStarling);
-getErrorString();
 
-loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/RightHeartStarling.mo");
-getErrorString();
-translateModel(RightHeartStarling);
-getErrorString();
-*/
 /*
 getErrorString();
 loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/TSystemicCirculationTotal.mo");
