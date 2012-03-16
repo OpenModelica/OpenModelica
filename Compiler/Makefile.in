@@ -68,7 +68,7 @@ install_scripts:
 	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
 	cd scripts; cp -p ompython/OMPython.py ../$(builddir_scripts)/ompython/
 	cd scripts; cp -p ompython/README.txt ../$(builddir_scripts)/ompython/
-	cd scripts; cp -p ompython/Parser/__init__.py ../$(builddir_scripts)/ompython/Parser/
+	cd scripts; cp -p ompython/OMParser/__init__.py ../$(builddir_scripts)/ompython/OMParser/
 
 install: install_scripts $(PROG)
 	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
