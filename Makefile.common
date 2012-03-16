@@ -30,7 +30,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_lib)/python
 	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_inc)
-	mkdir -p $(builddir_java)z
+	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/stubs
 	mkdir -p $(builddir_share)/omnotebook
