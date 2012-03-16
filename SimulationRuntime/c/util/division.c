@@ -39,7 +39,8 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
 {
   WARNING1("division by zero in partial equation: %s", division_str);
   WARNING_AL2("[line] %ld | [file] %s", line, file);
+#ifndef __APPLE_CC__
   THROW("division by zero");
-
+#endif
   return b;
 }
