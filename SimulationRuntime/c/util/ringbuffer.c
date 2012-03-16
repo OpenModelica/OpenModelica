@@ -34,7 +34,7 @@
  */
 
 #include "ringbuffer.h"
-#include "error.h"
+#include "omc_error.h"
 
 #include <assert.h>
 #include <stdlib.h>

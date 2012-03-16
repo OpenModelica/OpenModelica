@@ -30,8 +30,8 @@
  */
 
 
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef OMC_ERROR_H
+#define OMC_ERROR_H
 
 #include <setjmp.h>
 #include <stdio.h>

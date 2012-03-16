@@ -209,7 +209,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "openmodelica_func.h"
   #include "simulation_data.h"  
   #include "simulation_runtime.h"
-  #include "error.h"
+  #include "omc_error.h"
   
   #include <assert.h>
   #include <string.h>

@@ -33,7 +33,7 @@
 #include <stdlib.h>
 
 #include "division.h"
-#include "error.h"
+#include "omc_error.h"
 
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line)
 {

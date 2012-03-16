@@ -33,7 +33,7 @@
 
 #include "initialization.h"
 #include "simulation_data.h"
-#include "error.h"
+#include "omc_error.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "model_help.h"

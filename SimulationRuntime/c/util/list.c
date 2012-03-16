@@ -36,7 +36,7 @@
  */
 
 #include "list.h"
-#include "error.h"
+#include "omc_error.h"
 
 #include <memory.h>
 #include <stdlib.h>

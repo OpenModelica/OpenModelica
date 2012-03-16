@@ -36,7 +36,7 @@
 #include "simulation_data.h"
 #include "model_help.h"
 #include "openmodelica_func.h"
-#include "error.h"
+#include "omc_error.h"
 #include "delay.h"
 #include "varinfo.h"
 

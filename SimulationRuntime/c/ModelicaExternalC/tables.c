@@ -28,7 +28,7 @@
  *
  */
 
-#include "error.h"
+#include "omc_error.h"
 #include "tables.h"
 
 #include <stdio.h>

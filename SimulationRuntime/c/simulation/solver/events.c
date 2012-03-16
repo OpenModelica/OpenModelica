@@ -29,7 +29,7 @@
  */
 
 #include "events.h"
-#include "error.h"
+#include "omc_error.h"
 #include "simulation_data.h"
 #include "openmodelica.h"    /* for modelica types */
 #include "openmodelica_func.h"   /* for modelica fucntion */

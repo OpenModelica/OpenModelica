@@ -29,7 +29,7 @@
  *
  */
 
-#include "error.h"
+#include "omc_error.h"
 
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;

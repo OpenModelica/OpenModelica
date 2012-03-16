@@ -381,7 +381,7 @@ case SIMCODE(__) then
   #include "openmodelica.h"
   #include "openmodelica_func.h"
   #include "simulation_data.h"  
-  #include "error.h"
+  #include "omc_error.h"
   #include "fmiModelTypes.h"
   #include "fmiModelFunctions.h"
   #include "<%fileNamePrefix%>_functions.h"

@@ -38,7 +38,7 @@
  *
  */
 
-#include "error.h"
+#include "omc_error.h"
 #include "simulation_result_plt.h"
 #include "rtclock.h"
 

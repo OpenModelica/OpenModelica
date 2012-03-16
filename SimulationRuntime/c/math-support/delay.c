@@ -32,7 +32,7 @@
  */
 
 #include "delay.h"
-#include "error.h"
+#include "omc_error.h"
 #include "simulation_data.h"
 #include "ringbuffer.h"
 #include "openmodelica.h"

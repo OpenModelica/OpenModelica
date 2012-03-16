@@ -40,7 +40,7 @@
  * #include "dopri45.h"
  */
 #include "rtclock.h"
-#include "error.h"
+#include "omc_error.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
