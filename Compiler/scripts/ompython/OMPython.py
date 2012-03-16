@@ -43,7 +43,7 @@ from omniORB import CORBA
 import _GlobalIDL
 
 # import the parse module
-import Parser
+import OMParser
 
 # Randomize the IOR file name
 random_string = str(datetime.now())
@@ -69,10 +69,10 @@ omc_corba_uri= "file:///" + ior_file
 
 # See if the omc server is running
 if os.path.isfile(ior_file):
-	print "OMC Server is up and running at " + omc_corba_uri + "\n"
+  print "OMC Server is up and running at " + omc_corba_uri + "\n"
 else:
-	print "OMC Server is down. Please start it! Exiting...\n"
-	sys.exit(2)
+  print "OMC Server is down. Please start it! Exiting...\n"
+  sys.exit(2)
 
 # Read the IOR file
 objid_file=open(ior_file)
