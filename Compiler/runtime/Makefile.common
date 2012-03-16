@@ -49,7 +49,8 @@ libomcruntime.a : $(OMC_OBJ)
 omc_communication.cc omc_communication.h : omc_communication.idl
 	$(IDL) omc_communication.idl
 $(builddir_share)/omc/scripts/ompython/omc_communication_idl.py : omc_communication.idl
-	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/ompython omc_communication.idl
+	# Cannot force macports to install omniORB +python2X as a dependency. We don't know what python is the default, and we cannot force variant dependencies, so let's just let this one slide if it fails, eh?
+	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/ompython omc_communication.idl || test "`uname`" = "Darwin"
 
 omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 

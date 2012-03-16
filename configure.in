@@ -350,7 +350,7 @@ elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
     WANT_OMNIORB="/usr";
     IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
-	IDLPYTHONCMD="omniidl -bpython";
+    IDLPYTHONCMD="omniidl -bpython";
   else
     CORBA_QMAKE_INCLUDES="$WANT_OMNIORB/include";
     CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
@@ -361,7 +361,7 @@ elif test ! "$WANT_OMNIORB" = "no"; then
     AC_MSG_ERROR([not found])
     fi
     IDLCMD="$WANT_OMNIORB/bin/omniidl -bcxx -Wbh=.h -Wbs=.cc";
-	IDLPYTHONCMD="$WANT_OMNIORB/bin/omniidl -bpython";
+    IDLPYTHONCMD="$WANT_OMNIORB/bin/omniidl -bpython";
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
