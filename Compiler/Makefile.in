@@ -69,6 +69,7 @@ install_scripts:
 	cd scripts; cp -p PythonInterface/README.txt ../$(builddir_scripts)/PythonInterface/
 	cd scripts; cp -p PythonInterface/setup.py ../$(builddir_scripts)/PythonInterface/
 	cd scripts; cp -p PythonInterface/OMPython/__init__.py ../$(builddir_scripts)/PythonInterface/OMPython/
+	cd scripts; cp -p PythonInterface/OMPython/OMConfig.py ../$(builddir_scripts)/PythonInterface/OMPython/
 	cd scripts; cp -p PythonInterface/OMPython/OMParser/__init__.py ../$(builddir_scripts)/PythonInterface/OMPython/OMParser/
 
 install: install_scripts $(PROG)
