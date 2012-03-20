@@ -46,22 +46,22 @@ static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-
 int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
 {
   int sz = 1; /* start with one for the timeValue */
-  for (int i = 0; i < modelData->nVariablesReal; i++) 
+  for (int i = 0; i < modelData->nVariablesReal; i++)
     if (!modelData->realVarsData[i].filterOutput)
     {
-       r_indx_map[i] = sz; 
+       r_indx_map[i] = sz;
        sz++;
     }
-  for (int i = 0; i < modelData->nVariablesInteger; i++) 
+  for (int i = 0; i < modelData->nVariablesInteger; i++)
     if (!modelData->integerVarsData[i].filterOutput)
     {
-       i_indx_map[i] = sz; 
+       i_indx_map[i] = sz;
        sz++;
     }
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) 
+  for (int i = 0; i < modelData->nVariablesBoolean; i++)
     if (!modelData->booleanVarsData[i].filterOutput)
     {
-       b_indx_map[i] = sz; 
+       b_indx_map[i] = sz;
        sz++;
     }
   for (int i = 0; i < modelData->nAliasReal; i++)
@@ -95,17 +95,17 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
 
   for (int i = 0; i < modelData->nParametersReal; i++) {
     names[curVar++] = &(modelData->realParameterData[i].info);
-    r_indx_parammap[i]=sz; 
+    r_indx_parammap[i]=sz;
     sz++;
   }
   for (int i = 0; i < modelData->nParametersInteger; i++) {
     names[curVar++] = &(modelData->integerParameterData[i].info);
-    i_indx_parammap[i]=sz; 
+    i_indx_parammap[i]=sz;
     sz++;
   }
   for (int i = 0; i < modelData->nParametersBoolean; i++) {
     names[curVar++] = &(modelData->booleanParameterData[i].info);
-    b_indx_parammap[i]=sz;  
+    b_indx_parammap[i]=sz;
     sz++;
   }
   return names;
@@ -155,7 +155,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   try {
     /* open file */
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
-    if (!fp) 
+    if (!fp)
       THROW1("Cannot open File %s for writing",filename);
 
     /* write `AClass' matrix */
@@ -233,7 +233,7 @@ void simulation_result_mat::emit(DATA *data)
   rt_tick(SIM_TIMER_OUTPUT);
 
   /* this is done wrong -- a buffering should be used
-     although ofstream does have some buffering, but it is not enough and 
+     although ofstream does have some buffering, but it is not enough and
      not for this purpose */
   fp.write((char*)&(data->localData[0]->timeValue),sizeof(double));
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realVarsData[i].filterOutput)
@@ -254,7 +254,7 @@ void simulation_result_mat::emit(DATA *data)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-/* from an array of string creates flatten 'char*'-array suitable to be 
+/* from an array of string creates flatten 'char*'-array suitable to be
    stored as MAT-file matrix */
 static inline void fixDerInName(char *str, size_t len)
 {
@@ -264,7 +264,7 @@ static inline void fixDerInName(char *str, size_t len)
   /* check if name start with "der(" and includes at least one dot */
   while (strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
     size_t pos = (size_t)(dot-str)+1;
-    /* move prefix to the begining of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)" */
+    /* move prefix to the beginning of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)" */
     for(size_t i = 4; i < pos; ++i)
       str[i-4] = str[i];
     /* move "der(" to the end of prefix
@@ -385,19 +385,19 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
   }
   /* alias variables */
   for (int i = 0; i < mdl_data->nAliasReal; i++) {
-    if (!mdl_data->realAlias[i].filterOutput) 
+    if (!mdl_data->realAlias[i].filterOutput)
     {
       int table = 0;
       if (mdl_data->realAlias[i].aliasType == 0) /* variable */
       {
         it = r_indx_map.find(mdl_data->realAlias[i].nameID);
-        if (it != r_indx_map.end()) 
+        if (it != r_indx_map.end())
           table = 2;
       }
       else if (mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
         it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
-        if (it != r_indx_map.end()) 
+        if (it != r_indx_map.end())
           table = 1;
       } else if (mdl_data->realAlias[i].aliasType == 2) /* time */
       {
@@ -421,21 +421,21 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     }
   }
   for (int i = 0; i < mdl_data->nAliasInteger; i++) {
-    if (!mdl_data->integerAlias[i].filterOutput) 
+    if (!mdl_data->integerAlias[i].filterOutput)
     {
       int table = 0;
       if (mdl_data->integerAlias[i].aliasType == 0) /* variable */
       {
         it = i_indx_map.find(mdl_data->integerAlias[i].nameID);
-        if (it != i_indx_map.end()) 
+        if (it != i_indx_map.end())
           table = 2;
       }
       else if (mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
         it = i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if (it != i_indx_map.end()) 
+        if (it != i_indx_map.end())
           table = 1;
-      } 
+      }
       if(table)
       {
         /* row 1 - which table */
@@ -454,21 +454,21 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     }
   }
   for (int i = 0; i < mdl_data->nAliasBoolean; i++) {
-    if (!mdl_data->booleanAlias[i].filterOutput) 
+    if (!mdl_data->booleanAlias[i].filterOutput)
     {
       int table = 0;
       if (mdl_data->booleanAlias[i].aliasType == 0) /* variable */
       {
         it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-        if (it != b_indx_map.end()) 
+        if (it != b_indx_map.end())
           table = 2;
       }
       else if (mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
       {
         it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-        if (it != b_indx_map.end()) 
+        if (it != b_indx_map.end())
           table = 1;
-      } 
+      }
       if(table)
       {
         /* row 1 - which table */

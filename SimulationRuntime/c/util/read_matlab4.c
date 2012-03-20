@@ -8,7 +8,6 @@
 const char *binTrans_char = "binTrans";
 const char *binNormal_char = "binNormal";
 
-
 int omc_matlab4_comp_var(const void *a, const void *b)
 {
   char *as = ((ModelicaMatVariable_t*)a)->name;
