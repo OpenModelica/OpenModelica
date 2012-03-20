@@ -438,6 +438,13 @@ algorithm
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
+        
+    case ((stmt as SCode.ALG_PARFOR(iterators = iters, info = info), env))
+      equation
+        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+      then
+        ((stmt, env));
 
     case ((stmt as SCode.ALG_NORETCALL(functionCall = cref, 
         functionArgs = fargs, comment = cmt, info = info), env))

@@ -1820,6 +1820,21 @@ extern struct record_description Absyn_Algorithm_ALG__FOR__desc;
 #define Absyn__ALG_5fFOR_3dBOX2 5
 #define Absyn__ALG_5fFOR(iterators,forBody) (mmc_mk_box3(5,&Absyn_Algorithm_ALG__FOR__desc,iterators,forBody))
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Algorithm_ALG__PARFOR__desc_added
+#define Absyn_Algorithm_ALG__PARFOR__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__PARFOR__desc__fields[2] = {"iterators","parforBody"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__PARFOR__desc = {
+  "Absyn_Algorithm_ALG__PARFOR",
+  "Absyn.Algorithm.ALG_PARFOR",
+  Absyn_Algorithm_ALG__PARFOR__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Algorithm_ALG__PARFOR__desc;
+#endif
+#define Absyn__ALG_5fPARFOR_3dBOX2 6
+#define Absyn__ALG_5fPARFOR(iterators,parforBody) (mmc_mk_box3(6,&Absyn_Algorithm_ALG__PARFOR__desc,iterators,parforBody))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__WHILE__desc_added
 #define Absyn_Algorithm_ALG__WHILE__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__WHILE__desc__fields[2] = {"boolExpr","whileBody"};
@@ -1832,8 +1847,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__WHILE__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__WHILE__desc;
 #endif
-#define Absyn__ALG_5fWHILE_3dBOX2 6
-#define Absyn__ALG_5fWHILE(boolExpr,whileBody) (mmc_mk_box3(6,&Absyn_Algorithm_ALG__WHILE__desc,boolExpr,whileBody))
+#define Absyn__ALG_5fWHILE_3dBOX2 7
+#define Absyn__ALG_5fWHILE(boolExpr,whileBody) (mmc_mk_box3(7,&Absyn_Algorithm_ALG__WHILE__desc,boolExpr,whileBody))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__WHEN__A__desc_added
 #define Absyn_Algorithm_ALG__WHEN__A__desc_added
@@ -1847,8 +1862,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__WHEN__A
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__WHEN__A__desc;
 #endif
-#define Absyn__ALG_5fWHEN_5fA_3dBOX3 7
-#define Absyn__ALG_5fWHEN_5fA(boolExpr,whenBody,elseWhenAlgorithmBranch) (mmc_mk_box4(7,&Absyn_Algorithm_ALG__WHEN__A__desc,boolExpr,whenBody,elseWhenAlgorithmBranch))
+#define Absyn__ALG_5fWHEN_5fA_3dBOX3 8
+#define Absyn__ALG_5fWHEN_5fA(boolExpr,whenBody,elseWhenAlgorithmBranch) (mmc_mk_box4(8,&Absyn_Algorithm_ALG__WHEN__A__desc,boolExpr,whenBody,elseWhenAlgorithmBranch))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__NORETCALL__desc_added
 #define Absyn_Algorithm_ALG__NORETCALL__desc_added
@@ -1862,8 +1877,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__NORETCA
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__NORETCALL__desc;
 #endif
-#define Absyn__ALG_5fNORETCALL_3dBOX2 8
-#define Absyn__ALG_5fNORETCALL(functionCall,functionArgs) (mmc_mk_box3(8,&Absyn_Algorithm_ALG__NORETCALL__desc,functionCall,functionArgs))
+#define Absyn__ALG_5fNORETCALL_3dBOX2 9
+#define Absyn__ALG_5fNORETCALL(functionCall,functionArgs) (mmc_mk_box3(9,&Absyn_Algorithm_ALG__NORETCALL__desc,functionCall,functionArgs))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__RETURN__desc_added
 #define Absyn_Algorithm_ALG__RETURN__desc_added
@@ -1877,8 +1892,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__RETURN_
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__RETURN__desc;
 #endif
-#define Absyn__ALG_5fRETURN_3dBOX0 9
-static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fRETURN__struct,1,9) {&Absyn_Algorithm_ALG__RETURN__desc}};
+#define Absyn__ALG_5fRETURN_3dBOX0 10
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fRETURN__struct,1,10) {&Absyn_Algorithm_ALG__RETURN__desc}};
 static void *Absyn__ALG_5fRETURN = MMC_REFSTRUCTLIT(Absyn__ALG_5fRETURN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__BREAK__desc_added
@@ -1893,8 +1908,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__BREAK__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__BREAK__desc;
 #endif
-#define Absyn__ALG_5fBREAK_3dBOX0 10
-static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fBREAK__struct,1,10) {&Absyn_Algorithm_ALG__BREAK__desc}};
+#define Absyn__ALG_5fBREAK_3dBOX0 11
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fBREAK__struct,1,11) {&Absyn_Algorithm_ALG__BREAK__desc}};
 static void *Absyn__ALG_5fBREAK = MMC_REFSTRUCTLIT(Absyn__ALG_5fBREAK__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__TRY__desc_added
@@ -1909,8 +1924,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__TRY__de
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
 #endif
-#define Absyn__ALG_5fTRY_3dBOX1 12
-#define Absyn__ALG_5fTRY(tryBody) (mmc_mk_box2(12,&Absyn_Algorithm_ALG__TRY__desc,tryBody))
+#define Absyn__ALG_5fTRY_3dBOX1 13
+#define Absyn__ALG_5fTRY(tryBody) (mmc_mk_box2(13,&Absyn_Algorithm_ALG__TRY__desc,tryBody))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__CATCH__desc_added
 #define Absyn_Algorithm_ALG__CATCH__desc_added
@@ -1924,8 +1939,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__CATCH__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__CATCH__desc;
 #endif
-#define Absyn__ALG_5fCATCH_3dBOX1 13
-#define Absyn__ALG_5fCATCH(catchBody) (mmc_mk_box2(13,&Absyn_Algorithm_ALG__CATCH__desc,catchBody))
+#define Absyn__ALG_5fCATCH_3dBOX1 14
+#define Absyn__ALG_5fCATCH(catchBody) (mmc_mk_box2(14,&Absyn_Algorithm_ALG__CATCH__desc,catchBody))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__THROW__desc_added
 #define Absyn_Algorithm_ALG__THROW__desc_added
@@ -1939,8 +1954,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__THROW__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__THROW__desc;
 #endif
-#define Absyn__ALG_5fTHROW_3dBOX0 14
-static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fTHROW__struct,1,14) {&Absyn_Algorithm_ALG__THROW__desc}};
+#define Absyn__ALG_5fTHROW_3dBOX0 15
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fTHROW__struct,1,15) {&Absyn_Algorithm_ALG__THROW__desc}};
 static void *Absyn__ALG_5fTHROW = MMC_REFSTRUCTLIT(Absyn__ALG_5fTHROW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FAILURE__desc_added
@@ -1955,8 +1970,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__FAILURE
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #endif
-#define Absyn__ALG_5fFAILURE_3dBOX1 15
-#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(15,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
+#define Absyn__ALG_5fFAILURE_3dBOX1 16
+#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(16,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added

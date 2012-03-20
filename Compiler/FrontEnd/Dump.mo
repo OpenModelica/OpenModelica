@@ -3074,6 +3074,16 @@ algorithm
       then
         ();
     
+    case Absyn.ALG_PARFOR(iterators=iterators,parforBody = el)
+      equation
+        Print.printBuf("PARFOR ");
+        printListDebug("print_iterators", iterators, printIterator, ", ");
+        Print.printBuf(" {");
+        printListDebug("print_algorithm", el, printAlgorithmitem, ";");
+        Print.printBuf("}");
+      then
+        ();
+    
     case Absyn.ALG_WHILE(boolExpr = e,whileBody = al)
       equation
         Print.printBuf("WHILE ");
@@ -3237,6 +3247,17 @@ algorithm
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         str = stringAppendList({is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,";"});
+      then
+        str;
+        
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_PARFOR(iterators=iterators,parforBody = el),comment = optcmt)) /* ALG_PARFOR */
+      equation
+        i_1 = i + 1;
+        s1 = printIteratorsStr(iterators);
+        s2 = unparseAlgorithmStrLst(i_1, el, "\n");
+        s3 = unparseCommentOption(optcmt);
+        is = indentStr(i);
+        str = stringAppendList({is,"parfor ",s1," loop\n",is,s2,"\n",is,"end parfor",s3,";"});
       then
         str;
     
@@ -6328,6 +6349,14 @@ algorithm
         Print.printBuf(", forBody = ");
         printListAsCorbaString(forBody, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_FOR;");
+      then ();
+    case Absyn.ALG_PARFOR(iterators,forBody)
+      equation
+        Print.printBuf("record Absyn.ALG_PARFOR iterators = ");
+        printListAsCorbaString(iterators,printForIteratorAsCorbaString,",");
+        Print.printBuf(", parforBody = ");
+        printListAsCorbaString(forBody, printAlgorithmItemAsCorbaString, ",");
+        Print.printBuf(" end Absyn.ALG_PARFOR;");
       then ();
     case Absyn.ALG_WHILE(boolExpr,whileBody)
       equation

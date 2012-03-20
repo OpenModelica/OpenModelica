@@ -7772,7 +7772,7 @@ algorithm
    slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
   //check the env to see if a call to a parallel or kernle function is a valid one.
-  true := isValidWRTParallelScope(fn,funcParal,inEnv,info);
+  // true := isValidWRTParallelScope(fn,funcParal,inEnv,info);
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);

@@ -538,6 +538,11 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
     ForIterators iterators;
     list<AlgorithmItem> forBody "forBody" ;
   end ALG_FOR;
+  
+  record ALG_PARFOR
+    ForIterators iterators;
+    list<AlgorithmItem> parforBody "parallel for loop Body" ;
+  end ALG_PARFOR;
 
   record ALG_WHILE
     Exp boolExpr "boolExpr" ;
@@ -1332,6 +1337,12 @@ algorithm
         ((ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
       then
         ((ALG_FOR(fis_1,ailst_1),arg_1));
+    case(alg as ALG_PARFOR(fis,ailst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((ALG_PARFOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
+      then
+        ((ALG_PARFOR(fis_1,ailst_1),arg_1));
     case(alg as ALG_WHILE(e,ailst),rel,arg)
       equation
         ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);

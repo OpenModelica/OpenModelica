@@ -2467,6 +2467,13 @@ algorithm
       then
         (cache,stmts);
         
+    /* ParFor loop */
+    case (cache,env,ih,pre,ci_state,SCode.ALG_PARFOR(iterators = forIterators,parforBody = sl,info = info),source,initial_,impl,unrollForLoops,_)
+      equation 
+        (cache,stmts) = instParForStatement(cache,env,ih,pre,ci_state,forIterators,sl,info,source,initial_,impl,unrollForLoops);
+      then
+        (cache,stmts);
+        
     /* While loop */
     case (cache,env,ih,pre,ci_state,SCode.ALG_WHILE(boolExpr = e,whileBody = sl, info = info),source,initial_,impl,unrollForLoops,_)
       equation 
@@ -2713,6 +2720,14 @@ algorithm
 
     // search deeper inside for
     case (SCode.ALG_FOR(forBody = lst)::rest)
+      equation
+         b1 = containsWhenStatements(lst);
+         b2 = containsWhenStatements(rest);
+         b = boolOr(b1, b2);
+      then b;
+    
+    // search deeper inside parfor
+    case (SCode.ALG_PARFOR(parforBody = lst)::rest)
       equation
          b1 = containsWhenStatements(lst);
          b2 = containsWhenStatements(rest);
@@ -4725,5 +4740,518 @@ algorithm
       then fail();
   end match;
 end getIteratorType;
+
+
+
+protected function instParForStatement 
+"Helper function for instStatement"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State ci_state;
+  input Absyn.ForIterators inIterators;
+  input list<SCode.Statement> inForBody;
+  input Absyn.Info info;
+  input DAE.ElementSource source;
+  input SCode.Initial inInitial;
+  input Boolean inBool;
+  input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  output Env.Cache outCache;
+  output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
+algorithm
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+    local
+      Env.Cache cache;
+      list<Env.Frame> env;
+      Prefix.Prefix pre;
+      list<SCode.Statement> sl;
+      SCode.Initial initial_;
+      Boolean impl;
+      list<DAE.Statement> stmts;
+      InstanceHierarchy ih;
+
+    // adrpo: unroll ALL for loops containing ALG_WHEN... done
+    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+      equation
+        // check here that we have a when loop in the for statement.
+        true = containsWhenStatements(sl);
+        (cache,stmts) = unrollForLoop(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+      then
+        (cache,stmts);
+        
+    // for loops not containing ALG_WHEN
+    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+      equation
+        // do not unroll if it doesn't contain a when statement!
+        false = containsWhenStatements(sl);
+        (cache,stmts) = instParForStatement_dispatch(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+        stmts = replaceLoopDependentCrefs(stmts, inIterators);
+      then
+        (cache,stmts);
+
+  end matchcontinue;
+end instParForStatement;
+
+protected function instParForStatement_dispatch 
+"function for instantiating a for statement"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State ci_state;
+  input Absyn.ForIterators inIterators;
+  input list<SCode.Statement> inForBody;
+  input Absyn.Info info;
+  input DAE.ElementSource inSource;
+  input SCode.Initial inInitial;
+  input Boolean inBool;
+  input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  output Env.Cache outCache;
+  output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
+algorithm
+  (outCache,outStatements) := 
+  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
+    local
+      Env.Cache cache;
+      list<Env.Frame> env,env_1;
+      Prefix.Prefix pre;
+      list<Absyn.ForIterator> restIterators;
+      list<SCode.Statement> sl;
+      SCode.Initial initial_;
+      Boolean impl;
+      DAE.Type t;
+      DAE.Exp e_1,e_2;
+      list<DAE.Statement> sl_1,stmts;
+      String i;
+      Absyn.Exp e;
+      DAE.Statement stmt;
+      DAE.Properties prop;
+      list<tuple<Absyn.ComponentRef,Integer>> lst;
+      tuple<Absyn.ComponentRef, Integer> tpl;
+      DAE.Const cnst;
+      InstanceHierarchy ih;
+      DAE.ElementSource source;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars;
+
+    // one iterator
+    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+      equation
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        t = getIteratorType(t,i,info);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
+        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
+        
+        // this is where we check the parfor loop for data parallel specific
+        // situations. Start with empty list and collect all variables cref'ed 
+        // in the loop body.
+        loopPrlVars = collectParallelVariables({},sl_1);
+        // Check the cref's in the list one by one to make 
+        // sure that they are parallel variables.
+        // checkParallelVariables(cache,env_1,loopPrlVars);
+        List.map2_0(loopPrlVars, isCrefParGlobalOrForIterator, cache, env_1);
+        
+        source = DAEUtil.addElementSourceFileInfo(source,info);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
+      then
+        (cache,{stmt});
+
+    // multiple iterators
+    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
+      equation        
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        t = getIteratorType(t,i,info);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        (cache,stmts) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
+        source = DAEUtil.addElementSourceFileInfo(source,info);
+        stmt = Algorithm.makeFor(i, e_2, prop, stmts, source);
+      then
+        (cache,{stmt});
+    
+    case (cache,env,ih,pre,_,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops)
+      equation
+        // false = containsWhenStatements(sl);
+        {} = SCode.findIteratorInStatements(i,sl);
+        Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
+      then
+        fail();
+        
+    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),NONE())},sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+      equation
+        // false = containsWhenStatements(sl);
+        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
+        tpl=List.first(lst);
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=rangeExpression(tpl);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        t = getIteratorType(t,i,info);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
+        source = DAEUtil.addElementSourceFileInfo(source,info);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
+      then
+        (cache,{stmt});
+    
+    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+      equation
+        // false = containsWhenStatements(sl);
+        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
+        tpl=List.first(lst);
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=rangeExpression(tpl);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
+        t = getIteratorType(t,i,info);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        (cache,sl_1) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
+        source = DAEUtil.addElementSourceFileInfo(source,info);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
+      then
+        (cache,{stmt});
+
+    case (_,_,_,_,_,Absyn.ITERATOR(guardExp=SOME(_))::_,_,info,_,_,_,_)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
+      then fail();
+        
+    case (_,_,_,_,_,_,_,info,_,_,_,_)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"instParForStatement_dispatch failed."}, info);
+      then fail();
+
+  end matchcontinue;
+end instParForStatement_dispatch;
+
+
+protected function isCrefParGlobalOrForIterator
+"Checks if a component reference is referencing a parglobal
+variable or the loop iterator(implicitly declared is OK).
+All other references are errors."
+  input tuple<DAE.ComponentRef,Absyn.Info> inCrefInfo;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+algorithm
+  _ := matchcontinue(inCrefInfo,inCache,inEnv)
+    local
+      String errorString;
+      DAE.ComponentRef cref;
+      Absyn.Info info;
+      SCode.Parallelism prl;
+      Boolean isParglobal,isForiterator;
+      Option<DAE.Const> cnstForRange;
+      
+    case((cref,_),_,_)
+      equation
+        // Look up the variable
+        (_, DAE.ATTR(_,_,prl,_,_,_),_,_,cnstForRange,_,_,_,_) = Lookup.lookupVar(inCache, inEnv, cref);
+        
+        // is it parglobal var?
+        isParglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
+        // is it the iterator of the parfor loop(implicitly declared)?
+        isForiterator = Util.isSome(cnstForRange);
+        
+        //is it either a parglobal var or for iterator
+        true = isParglobal or isForiterator;
+        
+      then ();
+        
+    case((cref,info),_,_)
+      equation 
+        errorString = "\n" +& 
+        "- Component '" +& Absyn.pathString(ComponentReference.crefToPath(cref)) +& 
+        "' is used in a parallel for loop." +& "\n" +&
+        "- Parallel for loops can only contain references to parglobal variables."
+        ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, info);  
+      then fail();
+        
+  end matchcontinue;
+end isCrefParGlobalOrForIterator;
+
+
+protected function crefInfoListCrefsEqual
+"Compares if two <DAE.ComponentRef,Absyn.Info> tuples have
+are the same in the sense that they have the same cref (which
+means they are references to the same component).
+The info is 
+just for error messages."
+  input DAE.ComponentRef inFoundCref;
+  input tuple<DAE.ComponentRef,Absyn.Info> inCrefInfos;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inFoundCref,inCrefInfos)
+  local
+    DAE.ComponentRef cref1;
+    
+    case(_,(cref1,_)) then ComponentReference.crefEqualWithoutSubs(cref1,inFoundCref);
+  end match;
+end crefInfoListCrefsEqual;
+
+
+protected function collectParallelVariables
+"Traverses the body of a parallel for loop and collects 
+all variable references. the list should not include implictly
+declared variables like loop iterators. Only references to 
+components declared to outside of the parfor loop need to be 
+collected.
+We need the list of referenced variables for Code generation in the backend. 
+EXPENSIVE operation but needs to be done."
+  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<DAE.Statement> inStatments;
+  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  
+algorithm
+  outCrefInfos := matchcontinue(inCrefInfos,inStatments)
+    local
+      list<DAE.Statement> restStmts, stmtList;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList,crefInfoList_tmp;
+      DAE.ComponentRef foundCref;
+      DAE.Exp exp1,exp2;
+      Absyn.Info info;
+      DAE.Ident iter;
+      DAE.Type iterType;
+      DAE.Statement debugStmt;
+   
+    case(_,{}) then inCrefInfos;
+      
+    case(crefInfoList,DAE.STMT_ASSIGN(_, exp1, exp2, DAE.SOURCE(info = info))::restStmts) 
+      equation
+        //check the lhs and rhs.
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1,exp2},info);
+        
+        //check the rest
+        crefInfoList = collectParallelVariables(crefInfoList,restStmts);
+      then crefInfoList;
+        
+    // for statment
+    case(crefInfoList, DAE.STMT_FOR(iterType, _, iter, exp1, stmtList, DAE.SOURCE(info = info))::restStmts) 
+      equation
+        //check the range exp.
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},info);
+        
+        // check the body of the loop. 
+//        crefInfoList_tmp = collectParallelVariables(crefInfoList,stmtList);
+        crefInfoList = collectParallelVariables(crefInfoList,stmtList);
+        // We need to remove the iterator from 
+        // the list generated for the loop bofy. For iterators are implicitly declared.
+        // This should be done here since the iterator is in scope only as long as we 
+        // are in the loop body. 
+        foundCref = DAE.CREF_IDENT(iter, iterType,{});
+        // (crefInfoList_tmp,_) = List.deleteMemberOnTrue(foundCref,crefInfoList_tmp,crefInfoListCrefsEqual);
+        (crefInfoList,_) = List.deleteMemberOnTrue(foundCref,crefInfoList,crefInfoListCrefsEqual);
+        
+        // Now that the iterator is removed cocatenate the two lists
+        // crefInfoList = List.appendNoCopy(crefInfoList_tmp,crefInfoList);
+        
+        //check the rest
+        crefInfoList = collectParallelVariables(crefInfoList,restStmts);
+      then crefInfoList;
+        
+    // If statment    
+    // mahge TODO: Fix else Exps.
+    case(crefInfoList, DAE.STMT_IF(exp1, stmtList, _, DAE.SOURCE(info = info))::restStmts) 
+      equation
+        //check the condition exp.
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},info);
+        //check the body of the if statment
+        crefInfoList = collectParallelVariables(crefInfoList,stmtList);
+        
+        //check the rest
+        crefInfoList = collectParallelVariables(crefInfoList,restStmts);
+      then crefInfoList;
+        
+    case(crefInfoList, DAE.STMT_WHILE(exp1, stmtList, DAE.SOURCE(info = info))::restStmts) 
+      equation
+        //check the condition exp.
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},info);
+        //check the body of the while loop
+        crefInfoList = collectParallelVariables(crefInfoList,stmtList);
+        
+        //check the rest
+        crefInfoList = collectParallelVariables(crefInfoList,restStmts);
+      then crefInfoList;
+    
+    case(crefInfoList,debugStmt::restStmts) 
+      then collectParallelVariables(crefInfoList,restStmts);
+        
+  end matchcontinue;  
+end collectParallelVariables;
+
+
+
+protected function collectParallelVariablesinExps
+  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<DAE.Exp> inExps;
+  input Absyn.Info inInfo;
+  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  
+algorithm
+  outCrefInfos := matchcontinue(inCrefInfos,inExps,inInfo)
+    local
+      list<DAE.Exp> restExps;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
+      DAE.ComponentRef foundCref;
+      DAE.Exp exp1,exp2,exp3;
+      list<DAE.Exp> expLst1;
+      list<DAE.Subscript> subscriptLst;
+      Boolean alreadyInList;
+      DAE.Exp debugExp;
+      
+      
+    case(_,{},_) then inCrefInfos;
+      
+    case(crefInfoList,DAE.CREF(foundCref, _)::restExps,inInfo) 
+      equation
+        // Check if the cref is already added to the list
+        // avoid repeated lookup.
+        // and we don't care about subscript differences.
+        
+        alreadyInList = List.isMemberOnTrue(foundCref,crefInfoList,crefInfoListCrefsEqual);
+        
+        // add it to the list if it is not in there
+        crefInfoList = Util.if_(alreadyInList, crefInfoList, (foundCref,inInfo)::crefInfoList);
+                
+        //check the subscripts (that is: if they are crefs)
+        DAE.CREF_IDENT(_,_,subscriptLst) = foundCref;
+        crefInfoList = collectParallelVariablesInSubscriptList(crefInfoList,subscriptLst,inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // Array subscripting    
+    case(crefInfoList, DAE.ASUB(exp1,expLst1)::restExps,inInfo)
+      equation
+        //check the ASUB specific expressions
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,exp1::expLst1,inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // Binary Operations   
+    case(crefInfoList, DAE.BINARY(exp1,_, exp2)::restExps,inInfo)
+      equation
+        //check the lhs and rhs
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1,exp2},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // Unary Operations   
+    case(crefInfoList, DAE.UNARY(_, exp1)::restExps,inInfo)
+      equation
+        //check the exp
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // Logical Binary Operations   
+    case(crefInfoList, DAE.LBINARY(exp1,_, exp2)::restExps,inInfo)
+      equation
+        //check the lhs and rhs
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1,exp2},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // Logical Unary Operations   
+    case(crefInfoList, DAE.LUNARY(_, exp1)::restExps,inInfo)
+      equation
+        //check the exp
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // range with step value.    
+    case(crefInfoList, DAE.RANGE(_, exp1, SOME(exp2), exp3)::restExps,inInfo)
+      equation
+        //check the range specific expressions
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1,exp2,exp3},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+    
+    // range withOUT step value.    
+    case(crefInfoList, DAE.RANGE(_, exp1, NONE(), exp3)::restExps,inInfo)
+      equation
+        //check the range specific expressions
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1,exp3},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    // cast stmt
+    case(crefInfoList, DAE.CAST(_, exp1)::restExps,inInfo)
+      equation
+        //check the range specific expressions
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},inInfo);
+        
+        // check the rest
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+      then crefInfoList;
+        
+    
+        
+    // ICONST, RCONST, SCONST, BCONST, ENUM_LITERAL
+    //     
+    case(crefInfoList,debugExp::restExps,inInfo)
+      then collectParallelVariablesinExps(crefInfoList,restExps,inInfo);
+        
+  end matchcontinue;  
+end collectParallelVariablesinExps;
+
+
+protected function collectParallelVariablesInSubscriptList
+  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<DAE.Subscript> inSubscriptLst;
+  input Absyn.Info inInfo;
+  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  
+algorithm
+  outCrefInfos := matchcontinue(inCrefInfos,inSubscriptLst,inInfo)
+    local
+      list<DAE.Subscript> restSubs, subsList;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
+      DAE.ComponentRef foundCref;
+      DAE.Exp exp1,exp2;
+      
+   
+    case(_,{},_) then inCrefInfos;
+      
+    case(crefInfoList, DAE.INDEX(exp1)::restSubs,inInfo) 
+      equation
+        //check the sub exp.
+        crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},inInfo);
+        
+        //check the rest
+        crefInfoList = collectParallelVariablesInSubscriptList(crefInfoList,restSubs,inInfo);
+      then crefInfoList;
+    
+    case(crefInfoList,_::restSubs,inInfo) 
+      then collectParallelVariablesInSubscriptList(crefInfoList,restSubs,inInfo);
+        
+  end matchcontinue;  
+end collectParallelVariablesInSubscriptList;
+
+
+
+
 
 end InstSection;

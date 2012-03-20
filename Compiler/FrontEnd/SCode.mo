@@ -370,6 +370,13 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Option<Comment> comment;
     Absyn.Info info;
   end ALG_FOR;
+  
+  record ALG_PARFOR
+    Absyn.ForIterators iterators;
+    list<Statement> parforBody "parallel for loop body" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_PARFOR;
 
   record ALG_WHILE
     Absyn.Exp boolExpr "boolExpr" ;
@@ -2051,6 +2058,11 @@ algorithm
       equation
         algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FOR(iterators,algs1),NONE(),info);
+        
+    case ALG_PARFOR(iterators,body,comment,info)
+      equation
+        algs1 = List.map(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR(iterators,algs1),NONE(),info);
   
     case ALG_WHILE(boolExpr,body,comment,info)
       equation
@@ -2138,6 +2150,13 @@ algorithm
           lst=listAppend(lst_1,lst_2);
         then lst; */
       case (id, ALG_FOR(iterators = forIterators, forBody = algLst_1))
+        equation
+          lst_1=findIteratorInStatements(id,algLst_1);
+          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
+          lst_1=Util.if_(bool, {}, lst_1);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id, ALG_PARFOR(iterators = forIterators, parforBody = algLst_1))
         equation
           lst_1=findIteratorInStatements(id,algLst_1);
           (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
@@ -2798,6 +2817,12 @@ algorithm
         (stmts1, tup) = traverseStatementsList(stmts1, tup);
       then
         (ALG_FOR(iters, stmts1, comment, info), tup);
+    
+    case (ALG_PARFOR(iters, stmts1, comment, info), tup)
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+      then
+        (ALG_PARFOR(iters, stmts1, comment, info), tup);
 
     case (ALG_WHILE(e, stmts1, comment, info), (traverser, arg))
       equation
@@ -2928,6 +2953,12 @@ algorithm
         (iters, tup) = List.mapFold(iters, traverseForIteratorExps, tup);
       then
         (ALG_FOR(iters, stmts1, comment, info), tup);
+        
+    case (ALG_PARFOR(iters, stmts1, comment, info), tup)
+      equation
+        (iters, tup) = List.mapFold(iters, traverseForIteratorExps, tup);
+      then
+        (ALG_PARFOR(iters, stmts1, comment, info), tup);
 
     case (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg))
       equation
@@ -3076,6 +3107,7 @@ algorithm
     case ALG_ASSIGN(info = info) then info;
     case ALG_IF(info = info) then info;
     case ALG_FOR(info = info) then info;
+    case ALG_PARFOR(info = info) then info;
     case ALG_WHILE(info = info) then info;
     case ALG_WHEN_A(info = info) then info;
     case ALG_NORETCALL(info = info) then info;

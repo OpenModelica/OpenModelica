@@ -1204,6 +1204,12 @@ algorithm
         (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
         (cache,forbody) = fixList(cache,env,forbody,ht,fixStatement);
       then (cache,SCode.ALG_FOR(iterators,forbody,comment,info));
+        
+    case (cache,env,SCode.ALG_PARFOR(iterators,forbody,comment,info),ht)
+      equation
+        (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
+        (cache,forbody) = fixList(cache,env,forbody,ht,fixStatement);
+      then (cache,SCode.ALG_PARFOR(iterators,forbody,comment,info));
 
     case (cache,env,SCode.ALG_WHILE(exp,whilebody,comment,info),ht)
       equation

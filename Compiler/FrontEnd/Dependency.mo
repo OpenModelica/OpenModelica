@@ -658,6 +658,17 @@ algorithm
      /* d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht)); */
      d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
     then d;
+   
+    case(Absyn.ALG_PARFOR({Absyn.ITERATOR(range=SOME(e1))},body),optPath,cname,(d,p,env,ht)) equation
+     d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));
+     d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
+    then d;
+
+   /* adrpo: TODO! add full support for ForIterators*/
+   case(Absyn.ALG_PARFOR({Absyn.ITERATOR(range=NONE())},body),optPath,cname,(d,p,env,ht)) equation
+     /* d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht)); */
+     d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
+    then d;
 
    case(Absyn.ALG_WHILE(e1,body),optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));

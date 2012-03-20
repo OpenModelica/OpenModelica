@@ -891,6 +891,11 @@ algorithm
       equation
         stmts = translateClassdefAlgorithmitems(body);
       then SCode.ALG_FOR(iterators,stmts,comment,info);
+        
+    case (Absyn.ALG_PARFOR(iterators,body),comment,info)
+      equation
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_PARFOR(iterators,stmts,comment,info);
   
     case (Absyn.ALG_WHILE(boolExpr,body),comment,info)
       equation

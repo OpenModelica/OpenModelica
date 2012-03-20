@@ -791,7 +791,7 @@ parfor_clause_e returns [void* ast] :
   ;
 
 parfor_clause_a returns [void* ast] :
-  PARFOR is=for_indices LOOP as=algorithm_list END_PARFOR {ast = Absyn__ALG_5fFOR(is,as);}
+  PARFOR is=for_indices LOOP as=algorithm_list END_PARFOR {ast = Absyn__ALG_5fPARFOR(is,as);}
   ;
 
 while_clause returns [void* ast] :

@@ -1540,8 +1540,16 @@ algorithm
       SCode.Statement stmt;
       Absyn.Info info;
       Absyn.ComponentRef cref;
+      list<SCode.Statement> parforBody;
 
     case ((stmt as SCode.ALG_FOR(iterators = iters, info = info), env))
+      equation
+        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
+      then
+        ((stmt, env));
+    
+     case ((stmt as SCode.ALG_PARFOR(iterators = iters, parforBody = parforBody, info = info), env))
       equation
         env = SCodeEnv.extendEnvWithIterators(iters, env);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
