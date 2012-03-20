@@ -566,7 +566,7 @@ constant ConfigFlag INST_CLASS = CONFIG_FLAG(26, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Instantiate the class given by the fully qualified path.");
 constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(27, "vectorizationLimit",
-  SOME("v"), EXTERNAL(), INT_FLAG(20), NONE(),
+  SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized.");
 constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(28, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),

@@ -10465,7 +10465,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy, true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy);
       then
         (cache,e,DAE.C_VAR(),attr);
 
@@ -10475,7 +10475,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         expIdTy = Types.simplifyType(idTp);
-        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, NONE(), expIdTy, true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, NONE(), expIdTy);
       then
         (cache,e,DAE.C_VAR(),attr);
 
@@ -10549,7 +10549,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
       then
@@ -10567,7 +10567,7 @@ algorithm
                                     This must be caught later on.";
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
       then
@@ -10579,7 +10579,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
 
@@ -10592,7 +10592,7 @@ algorithm
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e = Expression.makeCrefExp(cr_1,expTy);
-        e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e_1 = ValuesUtil.valueExp(v);
       then
@@ -10618,7 +10618,7 @@ algorithm
         expTy = Types.simplifyType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,sexp,expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,sexp,expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
 
@@ -10628,7 +10628,7 @@ algorithm
         expTy = Types.simplifyType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
         const = Types.variabilityToConst(DAEUtil.getAttrVariability(attr));
       then
         (cache,e_1,const,attr);
@@ -10682,7 +10682,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp,expIdTy,true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp,expIdTy);
       then
         (cache,e,DAE.C_PARAM(),attr);
 
@@ -10707,7 +10707,7 @@ algorithm
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy, true);
+        e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
       
@@ -10737,10 +10737,9 @@ public function crefVectorize
   input DAE.Type inType;
   input Option<DAE.Exp> splicedExp;
   input DAE.Type crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp";
-  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize < vectorization limit (default 20))";
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType,applyLimits)
+  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType)
     local
       Boolean b1,b2;
       DAE.Type exptp;
@@ -10751,31 +10750,31 @@ algorithm
       Integer ds, ds2;
 
     // no vectorization
-    case(false, e, _, _,_,_) then e;
+    case(false, e, _, _,_) then e;
 
     // types extending basictype
-    case (_,e,DAE.T_SUBTYPE_BASIC(complexType = t),_,crefIdType,applyLimits)
+    case (_,e,DAE.T_SUBTYPE_BASIC(complexType = t),_,crefIdType)
       equation
-        e = crefVectorize(true,e,t,NONE(),crefIdType,applyLimits);
+        e = crefVectorize(true,e,t,NONE(),crefIdType);
       then e;
 
     // component reference and an array type with dimensions less than vectorization limit
     case (_, _, DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2})),
-        SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
+        SOME(DAE.CREF(componentRef = cr)), crefIdType)
       equation
         b1 = (Expression.dimensionSize(d1) < Config.vectorizationLimit());
         b2 = (Expression.dimensionSize(d2) < Config.vectorizationLimit());
-        true = boolAnd(b1, b2) or not applyLimits;
+        true = boolAnd(b1, b2) or Config.vectorizationLimit() == 0;
         e = elabCrefSlice(cr,crefIdType);
         e = elabMatrixToMatrixExp(e);
       then
         e;
 
     case (_, _, DAE.T_ARRAY(dims = {d1}, ty = t), 
-        SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
+        SOME(DAE.CREF(componentRef = cr)), crefIdType)
       equation
         false = Types.isArray(t,{});
-        true = (Expression.dimensionSize(d1) < Config.vectorizationLimit()) or not applyLimits;
+        true = (Expression.dimensionSize(d1) < Config.vectorizationLimit()) or Config.vectorizationLimit() == 0;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
@@ -10783,13 +10782,13 @@ algorithm
     // matrix sizes > vectorization limit is not vectorized
     case (_, DAE.CREF(componentRef = cr, ty = exptp), 
          DAE.T_ARRAY(dims = {d1}, ty = t as DAE.T_ARRAY(dims = {d2})),
-         _, crefIdType, applyLimits)
+         _, crefIdType)
       equation 
         ds = Expression.dimensionSize(d1);
         ds2 = Expression.dimensionSize(d2);
         b1 = (ds < Config.vectorizationLimit());
         b2 = (ds2 < Config.vectorizationLimit());
-        true = boolAnd(b1, b2) or not applyLimits;
+        true = boolAnd(b1, b2) or Config.vectorizationLimit() == 0;
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
         e;
@@ -10797,15 +10796,15 @@ algorithm
     // vectorsizes > vectorization limit is not vectorized 
     case (_,DAE.CREF(componentRef = cr,ty = exptp),
          DAE.T_ARRAY(dims = {d1},ty = t),
-         _,crefIdType,applyLimits) 
+         _,crefIdType) 
       equation 
         false = Types.isArray(t,{});
         ds = Expression.dimensionSize(d1);
-        true = (ds < Config.vectorizationLimit()) or not applyLimits;
+        true = ds < Config.vectorizationLimit() or Config.vectorizationLimit() == 0;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
-    case (_,e,_,_,_,_) then e;
+    case (_,e,_,_,_) then e;
   end matchcontinue;
 end crefVectorize;
 
@@ -11299,7 +11298,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = ComponentReference.replaceWholeDimSubscript(cr,indx);
         elt_tp = Expression.unliftArray(et);
-        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // no subscript
@@ -11310,7 +11309,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         e_1 = Expression.makeASUB(Expression.makeCrefExp(cr,et),{DAE.ICONST(indx)});
         (e_1,_) = ExpressionSimplify.simplify(e_1);
-        e_1 = crefVectorize(true,e_1, t,NONE(),crefIdType,true);
+        e_1 = crefVectorize(true,e_1, t,NONE(),crefIdType);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // failure
@@ -11358,7 +11357,7 @@ algorithm
         DAE.MATRIX(matrix = ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Expression.unliftArray(et);
-        DAE.ARRAY(tp,true,expl) = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        DAE.ARRAY(tp,true,expl) = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType);
       then
         DAE.MATRIX(et,ds,(expl :: ms));
     //
