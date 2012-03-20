@@ -31,6 +31,7 @@ typedef struct {
   uint32_t nvar,nrows;
   size_t var_offset; /* This is the offset in the file */
   double **vars;
+  char doublepresision; /* data_1 and data_2 in double ore single precision */
 } ModelicaMatReader;
 
 /* Returns 0 on success; the error message on error.

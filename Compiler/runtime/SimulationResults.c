@@ -49,7 +49,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) return simresglob->curFormat; // Super cache :)
   // Start by closing the old file...
   SimulationResultsImpl__close(simresglob);
-  
+
   if (len < 5) format = UNKNOWN_PLOT;
   else if (0 == strcmp(filename+len-4, ".mat")) format = MATLAB4;
   else if (0 == strcmp(filename+len-4, ".plt")) format = PLT;
@@ -254,7 +254,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
   case MATLAB4: {
     ModelicaMatVariable_t *mat_var;
     if (dimsize == 0) {
-      dimsize = simresglob->matReader.nrows; 
+      dimsize = simresglob->matReader.nrows;
     } else if (simresglob->matReader.nrows != dimsize) {
       fprintf(stderr, "dimsize: %d, rows %d\n", dimsize, simresglob->matReader.nrows);
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "readDataset(...): Expected and actual dimension sizes do not match.", NULL, 0);

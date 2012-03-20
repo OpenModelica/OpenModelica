@@ -1586,50 +1586,39 @@ algorithm
   len_str := intString(len);
   print(len_str);
   print(" variables and equations\n");
-  dumpMatching2(v, 0);
+  dumpMatching2(v, 1);
 end dumpMatching;
 
 protected function dumpMatching2
 "function: dumpMatching2
   author: PA
   Helper function to dumpMatching."
-  input array<Integer> inIntegerArray;
-  input Integer inInteger;
+  input array<Integer> v;
+  input Integer i;
 algorithm
-  _ := matchcontinue (inIntegerArray,inInteger)
+  _ := matchcontinue (v,i)
     local
-      BackendDAE.Value len,i_1,eqn,i;
+      BackendDAE.Value len,eqn;
       String s,s2;
-      array<BackendDAE.Value> v;
-    case (v,i)
+    case (_,_)
       equation
         len = arrayLength(v);
-        i_1 = i + 1;
-        (len == i_1) = true;
-        s = intString(i_1);
-        eqn = v[i_1];
+        (len == i) = true;
+        s = intString(i);
+        eqn = v[i];
         s2 = intString(eqn);
-        print("var ");
-        print(s);
-        print(" is solved in eqn ");
-        print(s2);
-        print("\n");
+        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
       then
         ();
-    case (v,i)
+    case (_,_)
       equation
         len = arrayLength(v);
-        i_1 = i + 1;
-        (len == i_1) = false;
-        s = intString(i_1);
-        eqn = v[i_1];
+        (len == i) = false;
+        s = intString(i);
+        eqn = v[i];
         s2 = intString(eqn);
-        print("var ");
-        print(s);
-        print(" is solved in eqn ");
-        print(s2);
-        print("\n");
-        dumpMatching2(v, i_1);
+        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
+        dumpMatching2(v, i+1);
       then
         ();
   end matchcontinue;
@@ -2193,12 +2182,14 @@ protected
   Integer sys,inp,st,seq,salg,sarr,sce; 
   list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
   list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj;  
+  list<DAE.ComponentRef> states;
 algorithm
-  ((sys,inp,st,seq,salg,sarr,sce,(e_jc,e_jt,e_jn,e_nj),(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj))) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{},{})));
+  ((sys,inp,st,states,seq,salg,sarr,sce,(e_jc,e_jt,e_jn,e_nj),(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj))) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,{},0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{},{})));
   print("##########################################################\n");
   print("Statistics\n");
   print("##########################################################\n");
   print("Number of independent Subsystems: " +& intString(sys) +& "\n");
+  Debug.fcall(Flags.DUMP_STATESELECTION_INFO, debugStrCrefLstStr, ("selected States: ",states,", ","\n"));
   print("Number of States:                 " +& intString(st) +& "\n");
   print("Toplevel Inputs:                  " +& intString(inp) +& "\n\n");
   print("Single Equations:  " +& intString(seq) +& "\n");
@@ -2257,8 +2248,8 @@ end intTplString;
 protected function dumpCompShort1
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
-  output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
+  input tuple<Integer,Integer,Integer,list<DAE.ComponentRef>,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> inTpl;
+  output tuple<Integer,Integer,Integer,list<DAE.ComponentRef>,Integer,Integer,Integer,Integer,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>,tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>>> outTpl;
 algorithm
   outTpl:=
   match (inSyst,inShared,inTpl)
@@ -2269,34 +2260,38 @@ algorithm
       Integer sys,inp,st,seq,salg,sarr,sce,inp1,st1,seq1,salg1,sarr1,sce1;
       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> eqsys,eqsys1;
       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys,meqsys1;
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars),_,(sys,inp,st,seq,salg,sarr,sce,eqsys,meqsys))
+      list<DAE.ComponentRef> states,states1;
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars),_,(sys,inp,st,states,seq,salg,sarr,sce,eqsys,meqsys))
       equation
-        ((inp1,st1)) = BackendVariable.traverseBackendDAEVars(vars,traversingisStateTopInputVarFinder,(inp,st));
+        ((inp1,st1,states1)) = BackendVariable.traverseBackendDAEVars(vars,traversingisStateTopInputVarFinder,(inp,st,states));
         comps = BackendDAEUtil.getStrongComponents(syst);
         ((seq1,salg1,sarr1,sce1,eqsys1,meqsys1)) = List.fold(comps,dumpCompShort2,(seq,salg,sarr,sce,eqsys,meqsys));
       then
-        ((sys+1,inp1,st1,seq1,salg1,sarr1,sce1,eqsys1,meqsys1));
+        ((sys+1,inp1,st1,states1,seq1,salg1,sarr1,sce1,eqsys1,meqsys1));
   end match;
 end dumpCompShort1;
 
 protected function traversingisStateTopInputVarFinder
 "autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<Integer,Integer> > inTpl;
- output tuple<BackendDAE.Var, tuple<Integer,Integer> > outTpl;
+ input tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>> > inTpl;
+ output tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>> > outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
       Integer inp,st;
-    case ((v,(inp,st)))
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> states;
+    case ((v,(inp,st,states)))
       equation
         true = BackendVariable.isStateVar(v);
-      then ((v,(inp,st+1)));
-    case ((v,(inp,st)))
+        cr = BackendVariable.varCref(v);
+      then ((v,(inp,st+1,cr::states)));
+    case ((v,(inp,st,states)))
       equation
         true = BackendVariable.isVarOnTopLevelAndInput(v);
-      then ((v,(inp+1,st)));
+      then ((v,(inp+1,st,states)));
     case inTpl then inTpl;
   end matchcontinue;
 end traversingisStateTopInputVarFinder;
@@ -2393,6 +2388,18 @@ end dumpCompShort2;
 /*******************************************/
 /* Debug dump functions */
 /*******************************************/
+
+public function debugStrCrefLstStr
+  input tuple<String,list<DAE.ComponentRef>,String,String> inTpl;
+protected
+  list<DAE.ComponentRef> b;
+  String a,c,d;
+algorithm
+  (a,b,c,d) := inTpl;
+  print(a);
+  debuglst((b,ComponentReference.printComponentRefStr,c));
+  print(d);
+end debugStrCrefLstStr;
 
 public function debugCrefStr
   input tuple<DAE.ComponentRef,String> inTpl;

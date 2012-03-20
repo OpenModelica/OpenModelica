@@ -58,22 +58,22 @@ typedef struct {
 static SimulationResult_Globals simresglob_c = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
 static SimulationResult_Globals simresglob_ref = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
 
-// from an array of string creates flatten 'char*'-array suitable to be 
-// stored as MAT-file matrix
+/* from an array of string creates flatten 'char*'-array suitable to be */
+/* stored as MAT-file matrix */
 static inline void fixDerInName(char *str, size_t len)
 {
   size_t i;
   char* dot;
   if (len < 6) return;
 
-  // check if name start with "der(" and includes at least one dot
+  /* check if name start with "der(" and includes at least one dot */
   while (strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
     size_t pos = (size_t)(dot-str)+1;
-    // move prefix to the begining of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)"
+    /* move prefix to the begining of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)" */
     for(i = 4; i < pos; ++i)
       str[i-4] = str[i];
-    // move "der(" to the end of prefix
-    // "a.b.c.b.c.d)" -> "a.b.c.der(d)"
+    /* move "der(" to the end of prefix
+      "a.b.c.b.c.d)" -> "a.b.c.der(d)" */
     strncpy(&str[pos-4],"der(",4);
   }
 }
@@ -86,8 +86,8 @@ static inline void fixCommaInName(char **str, size_t len)
   if (len < 2) return;
 
   nc = 0;
-  for (j=0;j<len;j++) 
-      if ((*str)[j] ==',' ) 
+  for (j=0;j<len;j++)
+      if ((*str)[j] ==',' )
         nc +=1;
 
   if (nc > 0) {
@@ -108,7 +108,7 @@ static inline void fixCommaInName(char **str, size_t len)
   }
 }
 
-double absdouble(double d) 
+double absdouble(double d)
 {
   if (d > 0.0)
     return d;
@@ -125,11 +125,11 @@ char ** getVars(void *vars, unsigned int* nvars)
   char **newvars=NULL;
   *nvars=0;
 
-  //fprintf(stderr, "getVars\n");
+  /* fprintf(stderr, "getVars\n"); */
   while (RML_NILHDR != RML_GETHDR(vars)) {
     var = RML_STRINGDATA(RML_CAR(vars));
 
-    //fprintf(stderr, "Var: %s\n", var);
+    /* fprintf(stderr, "Var: %s\n", var); */
     newvars = (char**)malloc(sizeof(char*)*(ncmpvars+1));
 
     for (i=0;i<ncmpvars;i++)
@@ -138,7 +138,7 @@ char ** getVars(void *vars, unsigned int* nvars)
     ncmpvars += 1;
       if(cmpvars) free(cmpvars);
     cmpvars = newvars;
-    //fprintf(stderr, "NVar: %d\n", ncmpvars);
+    /* fprintf(stderr, "NVar: %d\n", ncmpvars); */
 
     vars = RML_CDR(vars);
   }
@@ -150,24 +150,24 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
 {
   DataField res;
   void *cmpvar,*dataset,*lst,*datasetBackup;
-  double *newvars; 
+  double *newvars;
   double d;
   unsigned int i;
   unsigned int ncmpvars = 0;
   res.n = 0;
   res.data = NULL;
 
-  // fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);
+  /* fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename); */
   cmpvar = mk_nil();
-  cmpvar =  mk_cons(mk_scon(varname),cmpvar); 
+  cmpvar =  mk_cons(mk_scon(varname),cmpvar);
   dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,srg);
   if (dataset==NULL) {
-    //fprintf(stderr, "getData of Var: failed\n");
+    /* fprintf(stderr, "getData of Var: %s failed!\n",varname); */
     return res;
   }
 
-  //fprintf(stderr, "Data of Var: %s\n", varname);
-  // First calculate the length of the matrix
+  /* fprintf(stderr, "Data of Var: %s\n", varname);
+     First calculate the length of the matrix */
   datasetBackup = dataset;
   while (RML_NILHDR != RML_GETHDR(dataset)) {
     lst = RML_CAR(dataset);
@@ -179,7 +179,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   }
   if (res.n == 0) return res;
 
-  // The allocate and read the values
+  /* The allocate and read the values */
   dataset = datasetBackup;
   i = res.n;
   res.data = (double*) malloc(sizeof(double)*res.n);
@@ -193,8 +193,8 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   }
   assert(i == 0);
 
-  //for (i=0;i<res.n;i++)
-  // fprintf(stderr, "%d: %.6g\n",  i, res.data[i]);
+  /* for (i=0;i<res.n;i++)
+     fprintf(stderr, "%d: %.6g\n",  i, res.data[i]); */
 
   return res;
 }
@@ -203,19 +203,19 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
 {
   unsigned int i,j,k;
   double t,tr,d,dr,err;
-  DiffData *diffdatafild; 
+  DiffData *diffdatafild;
   char increased = 0;
   char interpolate = 0;
   j = 0;
   tr = reftime->data[j];
   dr = refdata->data[j];
 
-  // fprintf(stderr, "compare: %s\n",varname);
+  /* fprintf(stderr, "compare: %s\n",varname); */
   for (i=0;i<data->n;i++){
     t = time->data[i];
     d = data->data[i];
     increased = 0;
-    // fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d);
+    /* fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d); */
     while(tr <= t){
       if (j +1< reftime->n) {
         j += 1;
@@ -224,7 +224,7 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         if (tr == t) {
           break;
         }
-        // fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
+        /* fprintf(stderr, "j: %d tr:%.6g\n",j,tr); */
       }
       else
         break;
@@ -235,13 +235,13 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         tr = reftime->data[j];
       }
     }
-    // fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr);
-    // events
+    /* fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr); */
+    /* events */
     if(i>0) {
-      // an event
+      /* an event */
       if (t == time->data[i-1]) {
-        // fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
-        // goto the last 
+        /* fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
+          goto the last */
         char te = 0;
         if (i+1<data->n) {
           if (time->data[i+1] < t+0.00000065) {
@@ -259,8 +259,8 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
         }
         t = time->data[i];
         d = data->data[i];
-        // fprintf(stderr, "movet to: %.6g  %d  %.6g\n",t,i,d);
-        // fprintf(stderr, "1event: %.6g  %d\n",tr,j);
+        /* fprintf(stderr, "movet to: %.6g  %d  %.6g\n",t,i,d);
+           fprintf(stderr, "1event: %.6g  %d\n",tr,j); */
         te == 0;
         if (j+1<reftime->n) {
           if (reftime->data[j+1] < tr+0.00000065) {
@@ -277,20 +277,20 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
           }
         }
         tr = reftime->data[j];
-        // fprintf(stderr, "1movet to: %.6g  %d\n",tr,j);
+        /* fprintf(stderr, "1movet to: %.6g  %d\n",tr,j); */
       }
     }
     interpolate = 0;
-    // fprintf(stderr, "interpolate? %d %.6g:%.6g  %.6g:%.6g\n",i,t,tr,absdouble((t-tr)/tr),abstol);
+    /* fprintf(stderr, "interpolate? %d %.6g:%.6g  %.6g:%.6g\n",i,t,tr,absdouble((t-tr)/tr),abstol); */
     if (absdouble(t-tr) > abstol) {
       interpolate = 1;
     }
 
-    dr = refdata->data[j]; 
+    dr = refdata->data[j];
     if (interpolate==1){
-      // fprintf(stderr, "interpolate %.6g:%.6g  %.6g:%.6g %d",t,d,tr,dr,j);
+      /* fprintf(stderr, "interpolate %.6g:%.6g  %.6g:%.6g %d",t,d,tr,dr,j); */
       unsigned int jj = j;
-      // look for interpolation partner
+      /* look for interpolation partner */
       if (tr > t) {
         if (j-1>0) {
           char te=0;
@@ -310,11 +310,11 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
             }
           }
         }
-        // fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+        /* fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr); */
         if (reftime->data[jj] != tr){
          dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
         }
-      // fprintf(stderr, "-> dr:%.6g\n",dr);
+      /* fprintf(stderr, "-> dr:%.6g\n",dr); */
       }
       else {
         if (j+1<reftime->n) {
@@ -335,18 +335,18 @@ void cmpData(char* varname, DataField *time, DataField *reftime, DataField *data
             }
           }
         }
-        // fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+        /* fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr); */
         if (reftime->data[jj] != tr){
           dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*(t-tr);
         }
-        // fprintf(stderr, "-> dr:%.6g\n",dr);
+        /* fprintf(stderr, "-> dr:%.6g\n",dr); */
       }
     }
-    // fprintf(stderr, "j: %d tr: %.6g  dr:%.6g  t:%.6g  d:%.6g\n",j,tr,dr,t,d);
+    /* fprintf(stderr, "j: %d tr: %.6g  dr:%.6g  t:%.6g  d:%.6g\n",j,tr,dr,t,d); */
 
     err = absdouble(d-dr);
 
-    // fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol);
+    /* fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol); */
 
     if ( err > reltol*fabs(dr)+abstol){
 
@@ -382,7 +382,7 @@ int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const cha
 {
   FILE* fout;
   unsigned int i;
-  //fprintf(stderr, "writeLogFile: %s\n",filename);
+  /* fprintf(stderr, "writeLogFile: %s\n",filename); */
   fout = fopen(filename, "w");
   if (!fout)
     return -1;
@@ -395,7 +395,7 @@ int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const cha
         fabs(ddf->data[i].data-ddf->data[i].dataref),fabs((ddf->data[i].data-ddf->data[i].dataref)/ddf->data[i].dataref));
   }
   fclose(fout);
-  //fprintf(stderr, "writeLogFile: %s finished\n",filename);
+  /* fprintf(stderr, "writeLogFile: %s finished\n",filename); */
   return 0;
 }
 
@@ -414,55 +414,55 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   oldlen = 0;
   len = 1;
 
-  // open files
-  // fprintf(stderr, "Open File %s\n", filename);
+  /* open files */
+  /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) return mk_cons(mk_scon("Error Open File!"),mk_nil());
-  // fprintf(stderr, "Open File %s\n", reffilename);
+  /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) return mk_cons(mk_scon("Error Open RefFile!"),mk_nil());
 
   size = SimulationResultsImpl__readSimulationResultSize(filename,&simresglob_c);
-  // fprintf(stderr, "Read size of File %s size= %d\n", filename,size);
+  /* fprintf(stderr, "Read size of File %s size= %d\n", filename,size); */
   size_ref = SimulationResultsImpl__readSimulationResultSize(reffilename,&simresglob_ref);
-  // fprintf(stderr, "Read size of File %s size= %d\n", reffilename,size_ref);
+  /* fprintf(stderr, "Read size of File %s size= %d\n", reffilename,size_ref); */
 
-  // get vars to compare
+  /* get vars to compare */
   cmpvars = getVars(vars,&ncmpvars);
-  // if no var compare all vars 
+  /* if no var compare all vars */
   if (ncmpvars==0){
     allvars = SimulationResultsImpl__readVars(filename,&simresglob_c);
     cmpvars = getVars(vars,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
-  // fprintf(stderr, "Compare Vars:\n");
-  // for(i=0;i<ncmpvars;i++)
-  //  fprintf(stderr, "Var: %s\n", cmpvars[i]);
+  /* fprintf(stderr, "Compare Vars:\n"); /*
+  /* for(i=0;i<ncmpvars;i++)
+     fprintf(stderr, "Var: %s\n", cmpvars[i]); */
 
-  // get time
-  //fprintf(stderr, "get time\n");
+  /*  get time */
+  /* fprintf(stderr, "get time\n"); */
   time = getData("time",filename,size,&simresglob_c);
   if (time.n==0)
   {
     time = getData("Time",filename,size,&simresglob_c);
     if (time.n==0){
-      //fprintf(stderr, "Cannot get var time\n");
-      return mk_cons(mk_scon("Error get time!"),mk_nil());  
+      /* fprintf(stderr, "Cannot get var time\n"); */
+      return mk_cons(mk_scon("Error get time!"),mk_nil());
     }
   }
-  //fprintf(stderr, "get reftime\n");
+  /* fprintf(stderr, "get reftime\n"); */
   timeref = getData("time",reffilename,size_ref,&simresglob_ref);
   if (timeref.n==0)
   {
     timeref = getData("Time",reffilename,size_ref,&simresglob_ref);
     if (timeref.n==0){
-      //fprintf(stderr, "Cannot get var reftime\n");
-      return mk_cons(mk_scon("Error get ref time!"),mk_nil());  
+      /* fprintf(stderr, "Cannot get var reftime\n"); */
+      return mk_cons(mk_scon("Error get ref time!"),mk_nil());
     }
   }
 
   var1=NULL;
   var2=NULL;
-  // compare vars
-  //fprintf(stderr, "compare vars\n");
+  /* compare vars */
+  /* fprintf(stderr, "compare vars\n"); */
   for (i=0;i<ncmpvars;i++) {
     var = cmpvars[i];
     len = strlen(var);
@@ -479,8 +479,8 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
         k +=1;
       }
     }
-    // fprintf(stderr, "compare var: %s\n",var);
-    // check if in ref_file
+    /* fprintf(stderr, "compare var: %s\n",var); */
+    /* check if in ref_file */
     dataref = getData(var1,reffilename,size_ref,&simresglob_ref);
     if (dataref.n==0) {
       if (var2) free(var2);
@@ -495,7 +495,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
         continue;
       }
     }
-    // check if in file
+    /*  check if in file */
     data = getData(var1,filename,size,&simresglob_c);
     if (data.n==0)  {
       fixDerInName(var1,len);
@@ -508,9 +508,9 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
         continue;
       }
     }
-    // compare
+    /* compare */
     cmpData(var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf);
-    // free 
+    /* free */
     if (dataref.data) free(dataref.data);
     if (data.data) free(data.data);
   }
@@ -521,7 +521,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   }
 
   if (ddf.n > 0){
-    //fprintf(stderr, "diff: %d\n",ddf.n);
+    /* fprintf(stderr, "diff: %d\n",ddf.n); */
     res = mk_cons(mk_scon("Files not Equal!"),mk_nil());
     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Files not Equal\n", msg, 0);
   }
@@ -534,7 +534,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   if(cmpvars) free(cmpvars);
   if (time.data) free(time.data);
   if (timeref.data) free(timeref.data);
-  // close files
+  /* close files */
   SimulationResultsImpl__close(&simresglob_c);
   SimulationResultsImpl__close(&simresglob_ref);
 
