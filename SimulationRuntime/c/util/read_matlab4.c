@@ -88,7 +88,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     if (hdr.type != matrixTypes[i])
     {
       if ((i > 3) && (hdr.type == 10))
-    	  reader->doublepresision = 0;
+        reader->doublepresision = 0;
       else
         return "Matrix type mismatch";
     }
@@ -115,7 +115,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       for (k=0; k<hdr.mrows; k++) {
         char row[12];
         for(j=0; j<hdr.ncols; j++) {
-        	row[j] = tmp[j*hdr.mrows+k];
+            row[j] = tmp[j*hdr.mrows+k];
         }
         row[hdr.ncols] = '\0';
         /* fprintf(stderr, "Row %s\n", row); */
@@ -405,14 +405,14 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
       }
       if (varIndex < 0)
       {
-	    for (i=0; i<reader->nrows; i++) {
-	      tmp[i] = -buffer[i];
+        for (i=0; i<reader->nrows; i++) {
+          tmp[i] = -buffer[i];
         }
       }
       else
       {
-  	    for (i=0; i<reader->nrows; i++) {
-  	      tmp[i] = buffer[i];
+          for (i=0; i<reader->nrows; i++) {
+            tmp[i] = buffer[i];
           }
       }
       free(buffer);
