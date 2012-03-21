@@ -1289,7 +1289,7 @@ algorithm
       equation
         (_, _, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
         is_global = SCodeLookup.originIsGlobal(origin);
-        cref = instLocalCref(inCref, inPrefix, inEnv, env, is_global);
+        cref = prefixLocalCref(inCref, inPrefix, inEnv, env, is_global);
       then
         cref;
 
@@ -1297,7 +1297,7 @@ algorithm
     case (_, _, _, _ :: env)
       equation
         (_, _, env, _) = SCodeLookup.lookupName(inCrefPath, env, Absyn.dummyInfo, NONE());
-        cref = instGlobalCref(inCref, inPrefix, inEnv, env);
+        cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
 
