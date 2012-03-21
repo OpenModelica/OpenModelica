@@ -1415,6 +1415,42 @@ algorithm
   end match;
 end envScopeNames2;
 
+public function envEqualPrefix
+  input Env inEnv1;
+  input Env inEnv2;
+  output Env outPrefix;
+algorithm
+  outPrefix := envEqualPrefix2(listReverse(inEnv1), listReverse(inEnv2), {});
+end envEqualPrefix;
+
+public function envEqualPrefix2
+  input Env inEnv1;
+  input Env inEnv2;
+  input Env inAccumEnv;
+  output Env outPrefix;
+algorithm
+  outPrefix := matchcontinue(inEnv1, inEnv2, inAccumEnv)
+    local
+      String name1, name2;
+      Env env, rest_env1, rest_env2;
+      Frame frame;
+
+    case ((frame as FRAME(name = SOME(name1))) :: rest_env1,
+          FRAME(name = SOME(name2)) :: rest_env2, _)
+      equation
+        true = stringEq(name1, name2);
+        env = envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
+      then
+        env;
+
+    case (FRAME(name = NONE()) :: rest_env1, FRAME(name = NONE()) :: rest_env2, _)
+      then envEqualPrefix2(rest_env1, rest_env2, inAccumEnv);
+
+    else inAccumEnv;
+
+  end matchcontinue;
+end envEqualPrefix2;
+
 public function getItemInfo
   "Returns the Absyn.Info of an environment item."
   input Item inItem;

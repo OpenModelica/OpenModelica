@@ -1542,6 +1542,41 @@ algorithm
   outCref := makeCrefQual(DAE.derivativeNamePrefix,DAE.T_REAL_DEFAULT,{},inCref);
 end crefPrefixDer;
 
+public function crefPrefixString
+  "Prefixes a cref with a string identifier, e.g.:
+    crefPrefixString(a, b.c) => a.b.c"
+  input String inString;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := makeCrefQual(inString, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+end crefPrefixString;
+
+public function crefPrefixStringList
+  "Prefixes a cref with a list of strings, e.g.:
+    crefPrefixStringList({a, b, c}, d.e.f) => a.b.c.d.e.f"
+  input list<String> inStrings;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inStrings, inCref)
+    local
+      String str;
+      list<String> rest_str;
+      DAE.ComponentRef cref;
+
+    case (str :: rest_str, cref)
+      equation
+        cref = crefPrefixStringList(rest_str, cref);
+        cref = crefPrefixString(str, cref);
+      then
+        cref;
+
+    else inCref;
+
+  end match;
+end crefPrefixStringList;
+
 public function prependStringCref
 "function: prependStringCref
   Prepend a string to a component reference.

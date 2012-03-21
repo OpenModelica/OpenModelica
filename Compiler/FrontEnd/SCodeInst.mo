@@ -1221,7 +1221,7 @@ algorithm
       equation
         cref = instCref2(inCref, inEnv, inPrefix);
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        cref = instCref3(cref, path, inPrefix, inEnv);
+        cref = prefixCref(cref, path, inPrefix, inEnv);
       then
         cref;
 
@@ -1235,6 +1235,8 @@ algorithm
 end instCref;
         
 protected function instCref2
+  "Helper function to instCref, converts an Absyn.ComponentRef to a
+   DAE.ComponentRef."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Prefix inPrefix;
@@ -1267,7 +1269,8 @@ algorithm
   end match;
 end instCref2;
 
-protected function instCref3
+protected function prefixCref
+  "Prefixes a cref so that it can be uniquely identified in the symbol table."
   input DAE.ComponentRef inCref;
   input Absyn.Path inCrefPath;
   input Prefix inPrefix;
@@ -1281,17 +1284,16 @@ algorithm
       SCodeLookup.Origin origin;
       Boolean is_global;
 
-    // If the name can be found in the local scope, just prefix it.
+    // If the name can be found in the local scope, call instLocalCref.
     case (_, _, _, _)
       equation
         (_, _, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
-        //cref = InstUtil.prefixCref(inCref, inPrefix);
         is_global = SCodeLookup.originIsGlobal(origin);
-        cref = instLocalCref(inCref, inPrefix, env, is_global);
+        cref = instLocalCref(inCref, inPrefix, inEnv, env, is_global);
       then
         cref;
 
-    // Otherwise, try to find the name in any of the scopes above.
+    // Otherwise, look it up in the scopes above, and call instGlobalCref.
     case (_, _, _, _ :: env)
       equation
         (_, _, env, _) = SCodeLookup.lookupName(inCrefPath, env, Absyn.dummyInfo, NONE());
@@ -1300,34 +1302,45 @@ algorithm
         cref;
 
   end matchcontinue;
-end instCref3;
+end prefixCref;
 
-protected function instLocalCref
+protected function prefixLocalCref
+  "Prefixes a local cref, i.e. a cref that was found in the local scope."
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
-  input Env inEnv;
+  input Env inOriginEnv "The environment where we looked for the cref.";
+  input Env inFoundEnv "The environment where we found the cref.";
   input Boolean inOriginGlobal;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inPrefix, inEnv, inOriginGlobal)
+  outCref := match(inCref, inPrefix, inOriginEnv, inFoundEnv, inOriginGlobal)
     local
       String id;
       Absyn.Path path;
+      Env prefix_env;
 
-    case (_, _, _, false)
+    // This case is for a non-global local cref, i.e. the first identifier in the
+    // cref is pointing at a local instance and not a local class. In this case
+    // we just prefix the cref with the given prefix.
+    case (_, _, _, _, false)
       then InstUtil.prefixCref(inCref, inPrefix);
 
+    // Otherwise it's a global local cref, i.e. the first identifier in the cref
+    // is pointing at a local class and not a local instance. In this case we
+    // prefix the cref with the equal prefix of the environment where we looked
+    // for the cref and where we found it. So if we where looking for a cref a.b
+    // in A.B.C and found it in A.B, the result becomes A.B.a.b.
     else
       equation
-        id = ComponentReference.crefLastIdent(inCref);
-        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(id), inEnv);
+        prefix_env = SCodeEnv.envEqualPrefix(inOriginEnv, inFoundEnv);
       then
-        ComponentReference.pathToCref(path);
+        prefixCrefWithEnv(prefix_env, inCref);
 
   end match;
-end instLocalCref;
+end prefixLocalCref;
 
-protected function instGlobalCref
+protected function prefixGlobalCref
+  "Prefixes a global cref, i.e. a cref that was found outside the local scope."
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
   input Env inOriginEnv "The environment where we looked for the cref.";
@@ -1341,7 +1354,14 @@ algorithm
       DAE.ComponentRef cref;
       String id;
       Absyn.Path path;
+      Env prefix_env;
 
+    // This case is for a global cref that was found in one of the scopes above
+    // where it was used, e.g. it was used in A.B.C but was found in A.B. In
+    // this case we remove the equal prefixes, i.e. removing A.B and leaving C.
+    // We then apply as much of the given prefix as the number of scopes we have
+    // left. So if we have a cref a.b with a prefix c.d and one scope left, we
+    // get c.a.b.
     case (_, _, _, _)
       equation
         oenv = SCodeEnv.envScopeNames(inOriginEnv);
@@ -1351,17 +1371,32 @@ algorithm
       then
         cref;
 
-    // TODO: Fix this case, need to handle subscripts!
+    // If the previous case failed it means that the cref wasn't found in any of
+    // the scopes above where the cref was used, i.e. the instance hierarchy. In
+    // this case we prefix the cref with the equal prefix of the environment
+    // where we looked for the cref and where we found it. So if we where
+    // looking for a cref a.b in A.B.C and found it in A.B, the result becomes
+    // A.B.a.b.
     case (_, _, _, _)
       equation
-        id = ComponentReference.crefLastIdent(inCref);
-        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(id), inFoundEnv);
+        prefix_env = SCodeEnv.envEqualPrefix(inOriginEnv, inFoundEnv);
       then
-        ComponentReference.pathToCref(path);
+        prefixCrefWithEnv(prefix_env, inCref);
         
   end matchcontinue;
-end instGlobalCref;
+end prefixGlobalCref;
 
+protected function prefixCrefWithEnv
+  input Env inEnv;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+protected
+  list<String> env_strl;
+algorithm
+  env_strl := SCodeEnv.envScopeNames(inEnv);
+  outCref := ComponentReference.crefPrefixStringList(env_strl, inCref);
+end prefixCrefWithEnv;
+  
 protected function reducePrefix
   input Prefix inPrefix;
   input list<String> inOriginEnv;
