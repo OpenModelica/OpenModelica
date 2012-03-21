@@ -42,6 +42,7 @@ public import DAE;
 public import InstTypes;
 
 protected import Absyn;
+protected import ComponentReference;
 protected import DAEDump;
 protected import Debug;
 protected import Error;
@@ -476,6 +477,17 @@ protected function subscriptPath
   output DAE.ComponentRef outCref;
 algorithm
   outCref := match(inPath, inSubscripts)
+    case (_, {{}}) then ComponentReference.pathToCref(inPath);
+    else subscriptPath2(inPath, inSubscripts);
+  end match;
+end subscriptPath;
+
+protected function subscriptPath2
+  input Absyn.Path inPath;
+  input list<list<DAE.Subscript>> inSubscripts;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inPath, inSubscripts)
     local
       String name;
       Absyn.Path path;
@@ -488,12 +500,12 @@ algorithm
 
     case (Absyn.QUALIFIED(name = name, path = path), subs :: rest_subs)
       equation
-        cref = subscriptPath(path, rest_subs);
+        cref = subscriptPath2(path, rest_subs);
       then
         DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, subs, cref);
 
     case (Absyn.FULLYQUALIFIED(path = path), _)
-      then subscriptPath(path, inSubscripts);
+      then subscriptPath2(path, inSubscripts);
 
     case (_, {})
       equation
@@ -510,7 +522,7 @@ algorithm
         fail();
 
   end match;
-end subscriptPath;
+end subscriptPath2;
 
 protected function unliftComponentType
   input InstTypes.Component inComponent;

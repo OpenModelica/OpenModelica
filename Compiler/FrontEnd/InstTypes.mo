@@ -44,7 +44,8 @@ public import DAE;
 public import SCode;
 public import SCodeEnv;
 
-public type Prefix = list<tuple<String, Absyn.ArrayDim>>;
+public type Prefix = list<tuple<String, DAE.Dimensions>>;
+public constant Prefix emptyPrefix = {};
 
 public uniontype Element
   record ELEMENT
@@ -66,8 +67,8 @@ end Element;
 public uniontype Class
   record COMPLEX_CLASS
     list<Element> components;
-    list<DAE.Element> equations;
-    list<DAE.Element> initialEquations;
+    list<Equation> equations;
+    list<Equation> initialEquations;
     list<SCode.AlgorithmSection> algorithms;
     list<SCode.AlgorithmSection> initialAlgorithms;
   end COMPLEX_CLASS;
@@ -143,6 +144,10 @@ public uniontype Component
     Absyn.Path name;
     Option<Absyn.Path> innerName;
   end OUTER_COMPONENT;
+
+  record PACKAGE
+    Absyn.Path name;
+  end PACKAGE;
 end Component;
 
 public uniontype Modifier
@@ -182,5 +187,12 @@ public constant Prefixes DEFAULT_CONST_PREFIXES = PREFIXES(
   DAE.PUBLIC(), DAE.CONST(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
   (DAE.BIDIR(), Absyn.dummyInfo), (DAE.NON_CONNECTOR(), Absyn.dummyInfo),
   (DAE.NON_STREAM_CONNECTOR(), Absyn.dummyInfo));
+
+public uniontype Equation
+  record EQUALITY_EQUATION
+    DAE.Exp rhs;
+    DAE.Exp lhs;
+  end EQUALITY_EQUATION;
+end Equation;
 
 end InstTypes;

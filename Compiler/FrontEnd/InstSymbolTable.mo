@@ -58,6 +58,7 @@ protected import System;
 protected import Util;
 
 public type Element = InstTypes.Element;
+public type Equation = InstTypes.Equation;
 public type Class = InstTypes.Class;
 public type Dimension = InstTypes.Dimension;
 public type Binding = InstTypes.Binding;
@@ -160,7 +161,7 @@ algorithm
   (outClass, outSymbolTable) := match(inClass, inSymbolTable)
     local
       list<Element> comps;
-      list<DAE.Element> eq, ieq;
+      list<Equation> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
       SymbolTable st;
 
@@ -284,6 +285,9 @@ algorithm
       Option<Component> comp;
       SymbolTable st;
       Boolean added;
+
+    case (InstTypes.PACKAGE(name = _), st)
+      then (st, true);
 
     case (_, st)
       equation
@@ -704,4 +708,13 @@ algorithm
   end match;
 end nodeEqual;
 
+public function dumpSymbolTableKeys
+  input SymbolTable inSymbolTable;
+protected
+  list<Absyn.Path> keys;
+algorithm
+  keys := BaseHashTable.hashTableKeyList(inSymbolTable);
+  print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
+end dumpSymbolTableKeys;
+  
 end InstSymbolTable;

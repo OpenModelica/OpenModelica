@@ -94,12 +94,13 @@ encapsulated package SCodeFlattenRedeclare
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
-public import SCodeInst;
+public import InstTypes;
 public import SCodeLookup;
 
 public type Env = SCodeEnv.Env;
 public type Item = SCodeEnv.Item;
 public type Extends = SCodeEnv.Extends;
+public type Prefix = InstTypes.Prefix;
 
 protected import Debug;
 protected import Error;
@@ -459,7 +460,7 @@ public function qualifyRedeclare
   where P1 is not reachable from A."
   input SCodeEnv.Redeclaration inRedeclare;
   input Env inEnv;
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output SCodeEnv.Redeclaration outRedeclare;
 algorithm
   outRedeclare := match(inRedeclare, inEnv, inPrefix)
@@ -527,7 +528,7 @@ end qualifyRedeclare;
 protected function prefixMod
   input SCode.Mod inMod;
   input Env inEnv;
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output SCode.Mod outMod;
 algorithm
   outMod := match(inMod, inEnv, inPrefix)
@@ -552,7 +553,7 @@ end prefixMod;
 protected function prefixSubMod
   input SCode.SubMod inSubMod;
   input Env inEnv;
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output SCode.SubMod outSubMod;
 protected
   SCode.Ident ident;
@@ -566,7 +567,7 @@ end prefixSubMod;
 protected function prefixBinding
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input Env inEnv;
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output Option<tuple<Absyn.Exp, Boolean>> outBinding;
 algorithm
   outBinding := match(inBinding, inEnv, inPrefix)
@@ -586,14 +587,14 @@ algorithm
 end prefixBinding;
 
 protected function prefixCrefTraverser
-  input tuple<Absyn.Exp, tuple<Env, SCodeInst.Prefix>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, SCodeInst.Prefix>> outTuple;
+  input tuple<Absyn.Exp, tuple<Env, InstTypes.Prefix>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env, InstTypes.Prefix>> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
       Absyn.ComponentRef cref;
       Env env;
-      SCodeInst.Prefix prefix;
+      InstTypes.Prefix prefix;
 
     case ((Absyn.CREF(cref), (env, prefix)))
       equation
@@ -609,7 +610,7 @@ end prefixCrefTraverser;
 protected function prefixCref
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := matchcontinue(inCref, inEnv, inPrefix)
@@ -643,23 +644,22 @@ end prefixCref;
 
 protected function prefixCref2
   input Absyn.ComponentRef inCref;
-  input SCodeInst.Prefix inPrefix;
+  input Prefix inPrefix;
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := match(inCref, inPrefix)
     local
       String name;
-      list<Absyn.Subscript> subs;
-      SCodeInst.Prefix rest_prefix;
+      Prefix rest_prefix;
       Absyn.ComponentRef cref;
 
     case (_, {}) then inCref;
-    case (_, {(name, subs)})
-      then Absyn.CREF_QUAL(name, subs, inCref);
+    case (_, {(name, _)})
+      then Absyn.CREF_QUAL(name, {}, inCref);
 
-    case (_, (name, subs) :: rest_prefix)
+    case (_, (name, _) :: rest_prefix)
       equation
-        cref = Absyn.CREF_QUAL(name, subs, inCref);
+        cref = Absyn.CREF_QUAL(name, {}, inCref);
       then
         prefixCref2(cref, rest_prefix);
 
@@ -693,7 +693,7 @@ algorithm
     case (_, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
         (item, env) = replaceRedeclaredElementsInEnv(inRedeclares,
-          inClassItem, inClassEnv, inElementEnv, {});
+          inClassItem, inClassEnv, inElementEnv, InstTypes.emptyPrefix);
       then
         (SOME(item), SOME(env));
 
@@ -711,7 +711,7 @@ public function replaceRedeclaredElementsInEnv
   input Item inItem "The type of the element.";
   input Env inTypeEnv "The enclosing scopes of the type.";
   input Env inElementEnv "The environment in which the element was declared.";
-  input SCodeInst.Prefix inPrefix;
+  input InstTypes.Prefix inPrefix;
   output Item outItem;
   output Env outEnv;
 algorithm

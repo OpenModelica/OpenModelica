@@ -60,12 +60,13 @@ protected import SCodeDump;
 protected import Types;
 protected import Util;
 
-public type Env = SCodeEnv.Env;
-public type Element = InstTypes.Element;
-public type Class = InstTypes.Class;
-public type Dimension = InstTypes.Dimension;
 public type Binding = InstTypes.Binding;
+public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
+public type Dimension = InstTypes.Dimension;
+public type Element = InstTypes.Element;
+public type Env = SCodeEnv.Env;
+public type Equation = InstTypes.Equation;
 public type Modifier = InstTypes.Modifier;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
@@ -73,8 +74,8 @@ public type SymbolTable = InstSymbolTable.SymbolTable;
 
 public function makeClass
   input list<Element> inElements;
-  input list<DAE.Element> inEquations;
-  input list<DAE.Element> inInitialEquations;
+  input list<Equation> inEquations;
+  input list<Equation> inInitialEquations;
   input list<SCode.AlgorithmSection> inAlgorithms;
   input list<SCode.AlgorithmSection> inInitialAlgorithms;
   input Boolean inContainsSpecialExtends;
@@ -85,7 +86,7 @@ algorithm
       inAlgorithms, inInitialAlgorithms, inContainsSpecialExtends)
     local
       list<Element> elems;
-      list<DAE.Element> eq, ieq;
+      list<Equation> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
       Class cls;
       DAE.Type ty;
@@ -111,7 +112,7 @@ algorithm
   outClass := match(inElements, inClass)
     local
       list<Element> el;
-      list<DAE.Element> eq, ieq;
+      list<Equation> eq, ieq;
       list<SCode.AlgorithmSection> al, ial;
 
     case (_, InstTypes.COMPLEX_CLASS(el, eq, ieq, al, ial))
@@ -142,10 +143,47 @@ algorithm
     case InstTypes.TYPED_COMPONENT(name = name) then name;
     case InstTypes.CONDITIONAL_COMPONENT(name = name) then name;
     case InstTypes.OUTER_COMPONENT(name = name) then name;
+    case InstTypes.PACKAGE(name = name) then name;
 
   end match;
 end getComponentName;
 
+public function setComponentName
+  input Component inComponent;
+  input Absyn.Path inName;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inName)
+    local
+      DAE.Type ty;
+      array<Dimension> dims;
+      Prefixes prefs;
+      Binding binding;
+      Absyn.Info info;
+      SCode.Element elem;
+      Modifier mod;
+      Env env;
+      Prefix prefix;
+      Option<Absyn.Path> inner_name;
+
+    case (InstTypes.UNTYPED_COMPONENT(_, ty, dims, prefs, binding, info), _)
+      then InstTypes.UNTYPED_COMPONENT(inName, ty, dims, prefs, binding, info);
+
+    case (InstTypes.TYPED_COMPONENT(_, ty, prefs, binding, info), _)
+      then InstTypes.TYPED_COMPONENT(inName, ty, prefs, binding, info);
+
+    case (InstTypes.CONDITIONAL_COMPONENT(_, elem, mod, prefs, env, prefix), _)
+      then InstTypes.CONDITIONAL_COMPONENT(inName, elem, mod, prefs, env, prefix);
+
+    case (InstTypes.OUTER_COMPONENT(_, inner_name), _)
+      then InstTypes.OUTER_COMPONENT(inName, inner_name);
+
+    case (InstTypes.PACKAGE(_), _)
+      then InstTypes.PACKAGE(inName);
+
+  end match;
+end setComponentName;
+    
 public function getComponentBinding
   input Component inComponent;
   output Binding outBinding;
@@ -665,6 +703,15 @@ algorithm
   end match;
 end varDirectionString;
 
+public function addPrefix
+  input String inName;
+  input list<DAE.Dimension> inDimensions;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := (inName, inDimensions) :: inPrefix;
+end addPrefix;
+
 public function prefixCref
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
@@ -778,6 +825,74 @@ algorithm
 
   end match;
 end pathPrefix2;
+
+public function prefixElement
+  input Element inElement;
+  input Prefix inPrefix;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inPrefix)
+    local
+      Component comp;
+      Class cls;
+      Absyn.Path bc;
+      DAE.Type ty;
+
+    case (InstTypes.ELEMENT(comp, cls), _)
+      equation
+        comp = prefixComponent(comp, inPrefix);
+        cls = prefixClass(cls, inPrefix);
+      then
+        InstTypes.ELEMENT(comp, cls);
+
+    case (InstTypes.CONDITIONAL_ELEMENT(comp), _)
+      equation
+        comp = prefixComponent(comp, inPrefix);
+      then
+        InstTypes.CONDITIONAL_ELEMENT(comp);
+
+    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), _)
+      equation
+        cls = prefixClass(cls, inPrefix);
+      then
+        InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
+
+  end match;
+end prefixElement;
+
+public function prefixComponent
+  input Component inComponent;
+  input Prefix inPrefix;
+  output Component outComponent;
+protected
+  Absyn.Path name;
+algorithm
+  name := getComponentName(inComponent);
+  name := prefixPath(name, inPrefix);
+  outComponent := setComponentName(inComponent, name);
+end prefixComponent;
+        
+public function prefixClass
+  input Class inClass;
+  input Prefix inPrefix;
+  output Class outClass;
+algorithm
+  outClass := match(inClass, inPrefix)
+    local
+      list<Element> comps;
+      list<Equation> eq, ieq;
+      list<SCode.AlgorithmSection> al, ial;
+
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _)
+      equation
+        comps = List.map1(comps, prefixElement, inPrefix);
+      then
+        InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
+
+    else inClass;
+
+  end match;
+end prefixClass;
 
 public function countElementsInClass
   input Class inClass;
@@ -986,6 +1101,9 @@ algorithm
     case InstTypes.OUTER_COMPONENT(name = path)
       then "  outer " +& Absyn.pathString(path);
 
+    case InstTypes.PACKAGE(name = path)
+      then "  package " +& Absyn.pathString(path);
+
     else "#UNKNOWN COMPONENT#";
   end match;
 end printComponent;
@@ -997,13 +1115,14 @@ algorithm
   outString := match(inPrefix)
     local
       String id;
-      Absyn.ArrayDim dims;
+      DAE.Dimensions dims;
       Prefix rest_pre;
 
     case {} then "";
-    case {(id, dims)} then id +& Dump.printArraydimStr(dims);
-    case ((id, dims) :: rest_pre)
-      then printPrefix(rest_pre) +& "." +& id +& Dump.printArraydimStr(dims);
+    case {(id, dims)} then id +& 
+        List.toString(dims, ExpressionDump.dimensionString, "", "[", ", ", "]", false);
+    case ((id, dims) :: rest_pre) then printPrefix(rest_pre) +& "." +& id +&
+        List.toString(dims, ExpressionDump.dimensionString, "", "[", ", ", "]", false);
 
   end match;
 end printPrefix;
@@ -1042,7 +1161,7 @@ algorithm
   outString := match(inClass)
     local
       list<Element> comps;
-      list<DAE.Element> eq, ieq;
+      list<Equation> eq, ieq;
       String comps_str, eq_str, ieq_str, str;
 
     case InstTypes.BASIC_TYPE() then "";
@@ -1052,15 +1171,35 @@ algorithm
       equation
         comps_str = Util.stringDelimitListNonEmptyElts(
           List.map(comps, printElement), "\n");
-        ieq_str = stringAppendList(List.map(ieq, DAEDump.dumpEquationStr));
-        ieq_str = Util.stringAppendNonEmpty("\ninitial equation\n", ieq_str);
-        eq_str = stringAppendList(List.map(eq, DAEDump.dumpEquationStr));
-        eq_str = Util.stringAppendNonEmpty("\nequation\n", eq_str);
+        ieq_str = stringDelimitList(List.map(ieq, printEquation), "\n  ");
+        ieq_str = Util.stringAppendNonEmpty("\ninitial equation\n  ", ieq_str);
+        eq_str = stringDelimitList(List.map(eq, printEquation), "\n  ");
+        eq_str = Util.stringAppendNonEmpty("\nequation\n  ", eq_str);
         str = comps_str +& ieq_str +& eq_str;
       then
         str;
 
   end match;
 end printClass;
+
+public function printEquation
+  input Equation inEquation;
+  output String outString;
+algorithm
+  outString := match(inEquation)
+    local
+      DAE.Exp exp1, exp2;
+      String str1, str2;
+
+    case (InstTypes.EQUALITY_EQUATION(rhs = exp1, lhs = exp2))
+      equation
+        str1 = ExpressionDump.printExpStr(exp1);
+        str2 = ExpressionDump.printExpStr(exp2);
+      then
+        str1 +& " = " +& str2 +& ";";
+
+    else "UNKNOWN EQUATION";
+  end match;
+end printEquation;
 
 end InstUtil;

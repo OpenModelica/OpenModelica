@@ -42,6 +42,7 @@ encapsulated package SCodeLookup
 
 public import Absyn;
 public import Error;
+public import InstTypes;
 public import SCode;
 public import SCodeEnv;
 
@@ -525,6 +526,17 @@ algorithm
   end matchcontinue;
 end lookupInLocalScope;
 
+public function lookupInClass
+  input Absyn.Ident inName;
+  input Env inEnv;
+  output Item outItem;
+protected
+  AvlTree tree;
+algorithm
+  SCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
+  outItem := lookupInTree(inName, tree);
+end lookupInClass;
+
 public function lookupInTree
   "Looks up an identifier in an AvlTree."
   input Absyn.Ident inName;
@@ -775,7 +787,7 @@ protected
   Env env;
 algorithm
   env := SCodeEnv.getEnvTopScope(inEnv);
-  (outItem, outPath, outEnv) := lookupNameInPackage(inName, env);
+  (outItem, outPath, outEnv, _) := lookupNameInPackage(inName, env);
   outPath := Absyn.makeFullyQualified(outPath);
 end lookupFullyQualified;
 
@@ -787,8 +799,9 @@ public function lookupNameInPackage
   output Item outItem;
   output Absyn.Path outPath;
   output Env outEnv;
+  output Origin outOrigin;
 algorithm
-  (outItem, outPath, outEnv) := match(inName, inEnv)
+  (outItem, outPath, outEnv, outOrigin) := match(inName, inEnv)
     local
       Absyn.Ident name;
       Absyn.Path path, new_path;
@@ -796,14 +809,16 @@ algorithm
       Frame top_scope;
       Env rest_env, env;
       Item item;
+      Origin origin;
 
     // Simple name, look in the local scope.
     case (Absyn.IDENT(name = name), _)
       equation
         (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv, {});
         env = SCodeEnv.setImportTableHidden(env, false);
+        origin = itemOrigin(item);
       then
-        (item, path, env);
+        (item, path, env, origin);
 
     // Qualified name.
     case (Absyn.QUALIFIED(name = name, path = path), top_scope :: _)
@@ -811,12 +826,13 @@ algorithm
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
           lookupInLocalScope(name, inEnv, {});
+        origin = itemOrigin(item);
         env = SCodeEnv.setImportTableHidden(env, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
         path = SCodeEnv.joinPaths(new_path, path);
       then
-        (item, path, env);
+        (item, path, env, origin);
 
   end match;
 end lookupNameInPackage;
@@ -896,7 +912,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv, {});
+          redeclares, item, type_env, inEnv, InstTypes.emptyPrefix);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
@@ -906,7 +922,7 @@ algorithm
       equation
         // Look in the class's environment.
         env = SCodeEnv.enterFrame(class_env, inEnv);
-        (item, path, env) = lookupNameInPackage(inName, env);
+        (item, path, env, _) = lookupNameInPackage(inName, env);
       then
         (item, path, env);
 
@@ -942,7 +958,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv, {});
+          redeclares, item, type_env, inEnv, InstTypes.emptyPrefix);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);

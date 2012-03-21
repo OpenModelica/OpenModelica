@@ -44,9 +44,10 @@ public import Absyn;
 public import SCode;
 public import Util;
 
-protected import SCodeDump;
 protected import Error;
+protected import InstTypes;
 protected import List;
+protected import SCodeDump;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeCheck;
@@ -921,7 +922,7 @@ algorithm
       equation
         SCodeCheck.checkExtendsReplaceability(item, obc, inEnv, info);
         bc = Absyn.makeFullyQualified(bc);
-        rl = List.map2(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv, {});
+        rl = List.map2(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv, InstTypes.emptyPrefix);
         List.map2_0(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
       then
         EXTENDS(bc, rl, info);
@@ -1381,6 +1382,38 @@ algorithm
     else false;
   end matchcontinue;
 end envPrefixOf2;
+
+public function envScopeNames
+  input Env inEnv;
+  output list<String> outNames;
+algorithm
+  outNames := envScopeNames2(inEnv, {});
+end envScopeNames;
+
+public function envScopeNames2
+  input Env inEnv;
+  input list<String> inAccumNames;
+  output list<String> outNames;
+algorithm
+  outNames := match(inEnv, inAccumNames)
+    local
+      String name;
+      Env rest_env;
+      list<String> names;
+
+    case (FRAME(name = SOME(name)) :: rest_env, _)
+      equation
+        names = envScopeNames2(rest_env, name :: inAccumNames);
+      then
+        names;
+
+    case (FRAME(name = NONE()) :: rest_env, _)
+      then envScopeNames2(rest_env, inAccumNames);
+
+    case ({}, _) then inAccumNames;
+
+  end match;
+end envScopeNames2;
 
 public function getItemInfo
   "Returns the Absyn.Info of an environment item."
