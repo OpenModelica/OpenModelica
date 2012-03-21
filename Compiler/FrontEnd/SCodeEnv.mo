@@ -886,7 +886,7 @@ algorithm
     case (_, _, _)
       equation
         false = Absyn.pathIsFullyQualified(inBaseClass);
-        (item, bc, env) = SCodeLookup.lookupNameInPackage(inBaseClass, inEnv);
+        (item, bc, env, _) = SCodeLookup.lookupNameInPackage(inBaseClass, inEnv);
         bc = mergePathWithEnvPath(bc, env);
       then
         (SOME(bc), SOME(item));
