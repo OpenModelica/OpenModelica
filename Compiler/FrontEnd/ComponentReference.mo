@@ -2246,5 +2246,35 @@ algorithm
   end match;
 end splitCrefLast;
 
+public function toStringList
+  "Converts a component reference to a list of strings."
+  input DAE.ComponentRef inCref;
+  output list<String> outStringList;
+algorithm
+  outStringList := toStringList_tail(inCref, {});
+end toStringList;
+
+protected function toStringList_tail
+  "Tail-recursive implementation of toStringList."
+  input DAE.ComponentRef inCref;
+  input list<String> inAccumStrings;
+  output list<String> outStringList;
+algorithm
+  outStringList := match(inCref, inAccumStrings)
+    local
+      String id;
+      DAE.ComponentRef cref;
+
+    case (DAE.CREF_QUAL(ident = id, componentRef = cref), _)
+      then toStringList_tail(cref, id :: inAccumStrings);
+
+    case (DAE.CREF_IDENT(ident = id), _)
+      then listReverse(id :: inAccumStrings);
+
+    else {};
+
+  end match;
+end toStringList_tail;
+
 end ComponentReference;
 

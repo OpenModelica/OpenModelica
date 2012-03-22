@@ -1194,6 +1194,9 @@ algorithm
 end instOperator;
 
 protected function instCref
+  "This function instantiates a cref, which means translating if from Absyn to
+   DAE representation and prefixing it with the correct prefix so that it can
+   be uniquely identified in the symbol table."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Prefix inPrefix;
@@ -1227,7 +1230,8 @@ algorithm
 
     else
       equation
-        print("instCref failed on " +& Dump.printComponentRefStr(inCref) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeInst.instCref failed on " +& Dump.printComponentRefStr(inCref));
       then
         fail();
       
@@ -1236,7 +1240,9 @@ end instCref;
         
 protected function instCref2
   "Helper function to instCref, converts an Absyn.ComponentRef to a
-   DAE.ComponentRef."
+   DAE.ComponentRef. This is done by instantiating the cref's subscripts, and
+   constructing a DAE.ComponentRef with unknown type (which is filled in during
+   typing later on)."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Prefix inPrefix;
@@ -1327,14 +1333,8 @@ algorithm
 
     // Otherwise it's a global local cref, i.e. the first identifier in the cref
     // is pointing at a local class and not a local instance. In this case we
-    // prefix the cref with the equal prefix of the environment where we looked
-    // for the cref and where we found it. So if we where looking for a cref a.b
-    // in A.B.C and found it in A.B, the result becomes A.B.a.b.
-    else
-      equation
-        prefix_env = SCodeEnv.envEqualPrefix(inOriginEnv, inFoundEnv);
-      then
-        prefixCrefWithEnv(prefix_env, inCref);
+    // prefix the cref with the environment where it was found.
+    else prefixCrefWithEnv(inCref, inFoundEnv);
 
   end match;
 end prefixLocalCref;
@@ -1373,31 +1373,15 @@ algorithm
 
     // If the previous case failed it means that the cref wasn't found in any of
     // the scopes above where the cref was used, i.e. the instance hierarchy. In
-    // this case we prefix the cref with the equal prefix of the environment
-    // where we looked for the cref and where we found it. So if we where
-    // looking for a cref a.b in A.B.C and found it in A.B, the result becomes
-    // A.B.a.b.
-    case (_, _, _, _)
-      equation
-        prefix_env = SCodeEnv.envEqualPrefix(inOriginEnv, inFoundEnv);
-      then
-        prefixCrefWithEnv(prefix_env, inCref);
+    // this case we prefix the cref with the environment where it was found.
+    else prefixCrefWithEnv(inCref, inFoundEnv);
         
   end matchcontinue;
 end prefixGlobalCref;
 
-protected function prefixCrefWithEnv
-  input Env inEnv;
-  input DAE.ComponentRef inCref;
-  output DAE.ComponentRef outCref;
-protected
-  list<String> env_strl;
-algorithm
-  env_strl := SCodeEnv.envScopeNames(inEnv);
-  outCref := ComponentReference.crefPrefixStringList(env_strl, inCref);
-end prefixCrefWithEnv;
-  
 protected function reducePrefix
+  "This function reduces a prefix given the environment where we first looked
+   for a cref and the environment where it was actually found."
   input Prefix inPrefix;
   input list<String> inOriginEnv;
   input list<String> inFoundEnv;
@@ -1409,19 +1393,143 @@ algorithm
       list<String> rest_oenv, rest_fenv;
       String oname, fname;
 
+    // This is the second phase, when inFoundEnv is empty, where we remove the
+    // first part of the prefix until inOriginEnv is empty.
+    case (_ :: rest_prefix, _ :: rest_oenv, {})
+      then reducePrefix(rest_prefix, rest_oenv, {});
+
+    // This is the first phase, where we remove the most global scopes of both
+    // environments as long as those scopes are equal.
     case (_, oname :: rest_oenv, fname :: rest_fenv)
       equation
         true = stringEq(oname, fname);
       then
         reducePrefix(inPrefix, rest_oenv, rest_fenv);
 
-    case (_ :: rest_prefix, _ :: rest_oenv, {})
-      then reducePrefix(rest_prefix, rest_oenv, {});
-
+    // Finally, return the remaining prefix if both environment are empty and
+    // the prefix is not empty.
     case (_ :: _, {}, {}) then inPrefix;
 
   end match;
 end reducePrefix;
+
+protected function prefixCrefWithEnv
+  "Prefixes a cref with an environment."
+  input DAE.ComponentRef inCref;
+  input Env inEnv;
+  output DAE.ComponentRef outCref;
+protected
+  String id;
+  Env env;
+  list<String> env_strl;
+algorithm
+  outCref := matchcontinue(inCref, inEnv)
+    local
+      String id;
+      Env env;
+      list<String> env_strl;
+      DAE.ComponentRef cref;
+
+    // This case is when the cref already contains parts of the environment.
+    // E.g. the cref A.B.c is found in P.A.B, and result should be P.A.B.c.
+    case (_, _)
+      equation
+        // First we remove the most local scopes until the remaining most local
+        // scope has the same name as the first identifier of the cref.
+        id = ComponentReference.crefFirstIdent(inCref);
+        env = removeNeqEnvTail(id, inEnv);
+        // Then we remove the most global scopes until the remaining environment
+        // is a prefix of the cref.
+        env_strl = removeEnvCrefPrefix(inCref, env);
+        // Finally we prefix the cref with the remaining environment.
+        cref = ComponentReference.crefPrefixStringList(env_strl, inCref);
+      then
+        cref;
+
+    // If the previous case failed, i.e. if no scope in the environment has the
+    // same name as the first identifier of the cref, then we prefix the cref
+    // with the whole environment.
+    else
+      equation
+        env_strl = SCodeEnv.envScopeNames(inEnv);
+        cref = ComponentReference.crefPrefixStringList(env_strl, inCref);
+      then
+        cref;
+  
+  end matchcontinue;
+        
+end prefixCrefWithEnv;
+
+protected function removeNeqEnvTail
+  "This function removes the most local scopes from the environment until the
+   remaining most local scope has the same name as the given identifier. E.g.
+   for an environment A.B.C.D and a given identifier B we remove D and C, which
+   gives the result A.B"
+  input String inId;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inId, inEnv)
+    local
+      String name;
+      Env rest_env;
+
+    // Check if the frame name matches the given identifier. Return the
+    // remaining environment in that case.
+    case (_, SCodeEnv.FRAME(name = SOME(name)) :: _)
+      equation
+        true = stringEq(name, inId);
+      then
+        inEnv;
+
+    // Otherwise, discard the most local scope and try again.
+    case (_, _ :: rest_env) then removeNeqEnvTail(inId, rest_env);
+
+  end matchcontinue;
+end removeNeqEnvTail;
+
+protected function removeEnvCrefPrefix
+  "This function removes the most global scopes of the environment until the
+   remaining environment is a prefix of the cref, and returns a list of the
+   remaining environment's scope names."
+  input DAE.ComponentRef inCref;
+  input Env inEnv;
+  output list<String> outScopeNames;
+protected
+  list<String> env_strl, cref_strl;
+algorithm
+  env_strl := SCodeEnv.envScopeNames(inEnv);
+  cref_strl := ComponentReference.toStringList(inCref);
+  outScopeNames := removeEnvCrefPrefix2(cref_strl, env_strl, {});
+end removeEnvCrefPrefix;
+
+protected function removeEnvCrefPrefix2
+  "Helper function to removeEnvCrefPrefix, does the real work."
+  input list<String> inCref;
+  input list<String> inEnv;
+  input list<String> inAccumPrefix;
+  output list<String> outPrefix;
+algorithm
+  outPrefix := matchcontinue(inCref, inEnv, inAccumPrefix)
+    local
+      String env_head;
+      list<String> rest_env;
+
+    // If the environment is a prefix of the cref, return the accumulated
+    // prefix.
+    case (_, _, _)
+      equation
+        true = List.isPrefixOnTrue(inEnv, inCref, stringEq);
+      then
+        listReverse(inAccumPrefix);
+
+    // Otherwise, remove the most global scope, add it to the accumulated prefix
+    // and try again. 
+    case (_, env_head :: rest_env, _)
+      then removeEnvCrefPrefix2(inCref, rest_env, env_head :: inAccumPrefix);
+
+  end matchcontinue;
+end removeEnvCrefPrefix2;
 
 protected function instFunctionCall
   input Absyn.ComponentRef inName;
