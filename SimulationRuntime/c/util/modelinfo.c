@@ -339,10 +339,10 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     char *omhome;
     char *buf;
     int genHtmlRes;
-#if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     omhome = getenv("OPENMODELICAHOME");
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     if (omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
