@@ -129,7 +129,7 @@ algorithm
       Type t,tp;
       Boolean b,b1,remove_if,tpl,builtin,b2;
       String idn,str;
-      list<DAE.Exp> exps,exps_1,expl,matrix;
+      list<DAE.Exp> exps,exps_1,expl,matrix,subs;
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
@@ -215,16 +215,12 @@ algorithm
       then ((simplifyMetaModelica(e),true));
     
     // other subscripting/asub simplifications where e is not simplified first.
-    case ((DAE.ASUB(exp = e,sub = sub::{}),_))
+    case ((DAE.ASUB(exp = e,sub = subs),_))
       equation
-        _ = Expression.expInt(sub);
-        e = simplifyAsub(e, sub) "For arbitrary vector operations, e.g (a+b-c)[1] => a[1]+b[1]-c[1]" ;
+        _ = List.map(subs,Expression.expInt);
+        e = List.foldr(subs,simplifyAsub,e);
       then
         ((e,true));
-
-    // Subscripting without subscripting is the identity function
-    case ((DAE.ASUB(exp = e,sub = {}),_))
-      then ((e,true));
 
     // unary operations
     case (((exp as DAE.UNARY(operator = op,exp = e1)),_)) 
@@ -295,15 +291,14 @@ algorithm
       then ((simplifyReduction(exp1,b2),true));
 
       // Look for things we really *should* have simplified, but only if we did not modify anything!
-      /*
     case ((e,false))
       equation
+        true = Flags.isSet(Flags.CHECK_SIMPLIFY); 
         true = Expression.isConst(e);
         false = Expression.isConstValue(e);
         str = ExpressionDump.printExpStr(e);
         Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, Absyn.dummyInfo);
       then fail();
-      */
 
     // anything else
     else inTpl;
