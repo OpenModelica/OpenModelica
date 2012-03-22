@@ -12118,7 +12118,7 @@ end matchcontinue;
 end replaceindex1;
 
 
-protected function varName
+public function varName
   input SimVar var;
   output DAE.ComponentRef name;
 algorithm

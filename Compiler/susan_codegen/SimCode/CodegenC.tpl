@@ -6801,11 +6801,14 @@ template equationInfo(list<SimEqSystem> eqs)
             '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
           case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>", 0, NULL'
           case SES_WHEN(__) then '"SES_WHEN <%i0%>", 0, NULL'
-          case SES_LINEAR(__) then '"LINEAR<%index%>", 0, NULL'
+          case SES_LINEAR(__) then
+           let &preBuf += 'const VAR_INFO** linearSystem<%index%>_crefs = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
+           let &preBuf += '<%vars|>var hasindex i0 => 'linearSystem<%index%>_crefs[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+            '"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, linearSystem<%index%>_crefs'
           case SES_NONLINEAR(__) then
            let &preBuf += 'const VAR_INFO** residualFunc<%index%>_crefs = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
            let &preBuf += '<%crefs|>cr hasindex i0 => 'residualFunc<%index%>_crefs[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-            '"residualFunc<%index%>", <%listLength(crefs)%>, residualFunc<%index%>_crefs'
+            '"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, residualFunc<%index%>_crefs'
           case SES_MIXED(__) then '"MIXED<%index%>", 0, NULL'
           else '"unknown equation <%i0%>",0,NULL'%>}
         >> ; separator=",\n"%>

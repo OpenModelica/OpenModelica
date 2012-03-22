@@ -579,6 +579,11 @@ package SimCode
     output Absyn.Info info;
   end eqInfo;
 
+  function varName
+    input SimVar var;
+    output DAE.ComponentRef cr;
+  end varName;
+
 end SimCode;
 
 
