@@ -6787,30 +6787,30 @@ template equationInfo(list<SimEqSystem> eqs)
     let res =
     <<
     const struct EQUATION_INFO equationInfo[<%listLength(eqs)%>] = {
-      <% eqs |> eq hasindex i0 =>
+      <% eqs |> eq hasindex eqIndex =>
         <<{<%System.tmpTick()%>,<%match eq
-          case SES_RESIDUAL(__) then '"SES_RESIDUAL <%i0%>",0,NULL'
+          case SES_RESIDUAL(__) then '"SES_RESIDUAL <%eqIndex%>",0,NULL'
           case SES_SIMPLE_ASSIGN(__) then
             let var = '<%cref(cref)%>__varInfo'
-            let &preBuf += 'const VAR_INFO** equationInfo_cref<%i0%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
-            let &preBuf += 'equationInfo_cref<%i0%>[0] = &<%var%>;<%\n%>'
-            '"SES_SIMPLE_ASSIGN <%i0%>",1,equationInfo_cref<%i0%>'
+            let &preBuf += 'const VAR_INFO** equationInfo_cref<%eqIndex%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
+            let &preBuf += 'equationInfo_cref<%eqIndex%>[0] = &<%var%>;<%\n%>'
+            '"SES_SIMPLE_ASSIGN <%eqIndex%>",1,equationInfo_cref<%eqIndex%>'
           case SES_ARRAY_CALL_ASSIGN(__) then
             //let var = '<%cref(componentRef)%>__varInfo'
-            //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%i0%> = &<%var%>;'
-            '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
-          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>", 0, NULL'
-          case SES_WHEN(__) then '"SES_WHEN <%i0%>", 0, NULL'
+            //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%eqIndex%> = &<%var%>;'
+            '"SES_ARRAY_CALL_ASSIGN <%eqIndex%>",0,NULL'
+          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%eqIndex%>", 0, NULL'
+          case SES_WHEN(__) then '"SES_WHEN <%eqIndex%>", 0, NULL'
           case SES_LINEAR(__) then
-           let &preBuf += 'const VAR_INFO** linearSystem<%index%>_crefs = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
-           let &preBuf += '<%vars|>var hasindex i0 => 'linearSystem<%index%>_crefs[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-            '"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, linearSystem<%index%>_crefs'
+           let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
+           let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+            '"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%eqIndex%>'
           case SES_NONLINEAR(__) then
-           let &preBuf += 'const VAR_INFO** residualFunc<%index%>_crefs = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-           let &preBuf += '<%crefs|>cr hasindex i0 => 'residualFunc<%index%>_crefs[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-            '"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, residualFunc<%index%>_crefs'
+           let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
+           let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
+            '"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%eqIndex%>'
           case SES_MIXED(__) then '"MIXED<%index%>", 0, NULL'
-          else '"unknown equation <%i0%>",0,NULL'%>}
+          else '"unknown equation <%eqIndex%>",0,NULL'%>}
         >> ; separator=",\n"%>
     };
     >>
