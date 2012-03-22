@@ -1,22 +1,31 @@
+/*
+ * RCS: $Id$
+ */
+ 
 2011-02-16 [adeel.asghar@liu.se]
 ------------------------------
 
 Windows
 ------------------------------
 
-OMEdit uses Qt 4.7.0	
+OMEdit uses Qt 4.8.0
 ------------------------------
-- Download the Qt SDK for windows from http://qt.nokia.com/downloads. The SDK also contains the Qt Creator.
+- Download the Qt SDK for windows from http://qt.nokia.com/downloads.
+- Qt 4.8.0 comes with MSVC tool chain by-default. Make sure you install the MINGW tool chain also. Use the MINGW tool chain while compiling OMEdit.
+- If you don't have OMDev then download it from the svn repository here https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev.
+- Download OMDev in c:\OMDev. Set the environment variable OMDEV which points to c:\OMDev.
 
-OmniORB
+Generate the Stub files
 ------------------------------
-- OMEdit uses the OmniORB 4.1.4.
-- If you have OMDev downloaded then make sure its environment variable (OMDEV) is also set. OmniORB is included in OMDev package.
-- If you don't have OMDev then download OmniORB from 
-https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/lib/omniORB-4.1.4-mingw and set the path in 
-OMEditGUI.pro file accordingly.
-- Load the project in Qt Creator, build and run.
-- Copy omniORB414_rt.dll and omnithread34_rt.dll from /omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+- Goto /trunk/Compiler/runtime and execute command "c:\OMDev\lib\omniORB-4.1.4-mingw\bin\x86_win32\omniidl -bcxx -Wbh=.h -Wbs=.cc omc_communication.idl"
+- It will generate files omc_communication.cc and omc_communication.h. Copy these files to /trunk/OMEdit/OMEditGUI.
+
+Build & Run
+------------------------------
+- Load the file OMEditGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
+- Build and run the project.
+- Copy omniORB414_rt.dll, omniORB414_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+- Copy qwt5.dll and qwtd5.dll from c:/OMDev/qwt-5.2.1-mingw/lib to /location-where-OMEdit.exe-is-created.
 
 ------------------------------
 Adeel.
