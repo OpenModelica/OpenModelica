@@ -39,6 +39,10 @@
 #include <time.h>
 #include <assert.h>
 
+/* UNDEF to debug the gnuplot file
+#define NO_PIPE
+*/
+
 /* Returns -1 if the file was not found */
 static size_t fileSize(const char *filename) {
   size_t sz = -1;
@@ -55,26 +59,26 @@ static void indent(FILE *fout, int n) {
   while (n--) fputc(' ', fout);
 }
 
-static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id) {
-  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:%d w l lw 1\n";
+static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
+  const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw 1\n";
   const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
   if (!plt) return;
   /* PNG */
   fputs("set terminal png size 32,32\n", plt);
-  fprintf(plt, "set output \"%s_prof.%d.thumb.png\"\n", prefix, id);
+  fprintf(plt, "set output \"%s_prof.%s%d.thumb.png\"\n", prefix, idPrefix, id);
   fprintf(plt, "set title\n");
   fprintf(plt, "set xlabel\n");
   fprintf(plt, "set ylabel\n");
   fprintf(plt, "set log y\n");
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
   if (i >= 0) {
     nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
     nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
-    ymin = nmin*0.99;
-    ymax = nmax*1.01;
+    ymin = nmin==0 ? -0.01 : nmin*0.99;
+    ymax = nmax==0 ?  0.01 : nmax*1.01;
 
     /*
      * Note: We set the yrange here because otherwise we get warnings if the
@@ -82,7 +86,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
      * the range is [3:3])
      */
     fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
-    fprintf(plt, "set output \"%s_prof.%d_count.thumb.png\"\n", prefix, id);
+    fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.png\"\n", prefix, idPrefix, id);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
     fprintf(plt, "set yrange [*:*]\n");
   }
@@ -92,15 +96,15 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set title \"%s\"\n", title);
   fprintf(plt, "set xlabel \"Global step at time\"\n");
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
-  fprintf(plt, "set output \"%s_prof.%d.%s\"\n", prefix, id, plotFormat);
+  fprintf(plt, "set output \"%s_prof.%s%d.%s\"\n", prefix, idPrefix, id, plotFormat);
   fprintf(plt, "set log y\n");
-  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
+  fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
   if (i >= 0) {
     fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
-    fprintf(plt, "set output \"%s_prof.%d_count.%s\"\n", prefix, id, plotFormat);
+    fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
     fprintf(plt, formatCount, prefix, numFnsAndBlocks, numFnsAndBlocks, i+1);
     fprintf(plt, "set yrange [*:*]\n");
   }
@@ -145,7 +149,7 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct FUNCTION_INFO *funcs) {
   int i;
   for (i=0; i<data->modelData.nFunctions; i++) {
-    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id);
+    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id, "fun");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"fun%d\">\n", funcs[i].id);
@@ -163,7 +167,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
   int i;
   for (i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
     const struct EQUATION_INFO *eq = &(data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i-data->modelData.nFunctions]]);
-    printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id);
+    printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq->id);
@@ -226,7 +230,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   FILE *plotCommands;
   time_t t;
   int i;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
   plotCommands = fopen(plotfile, "w");
 #else
   plotCommands = popen("gnuplot", "w");
@@ -241,7 +245,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, -1, 999);
+    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, -1, 999, "");
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -335,12 +339,16 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     char *omhome;
     char *buf;
     int genHtmlRes;
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     omhome = getenv("OPENMODELICAHOME");
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
-#if defined(__MINGW32__) || defined(_MSC_VER)
     if (omhome) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
       sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
+#else
+      sprintf(buf, "gnuplot %s", plotfile);
+#endif
       fclose(plotCommands);
       if (0 != system(buf)) {
         WARNING1("Plot command failed: %s\n", buf);
