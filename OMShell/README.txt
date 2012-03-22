@@ -1,22 +1,30 @@
-2011-03-06 [adeel.asghar@liu.se]
-------------------------------
-
 Windows
 ------------------------------
 
-OMShell uses Qt 4.7.0
-------------------------------
-- Download the Qt SDK for windows from http://qt.nokia.com/downloads. The SDK also contains the Qt Creator.
+  Qt 4.8.0
+  ------------------------------
+  - Download the Qt SDK for windows from http://qt.nokia.com/downloads.
+  - Qt 4.8.0 comes with MSVC tool chain by-default. Make sure you install the MINGW tool chain also. Use the MINGW tool chain while compiling.
+  - If you don't have OMDev then download it from the svn repository here https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev.
+  - Download OMDev in c:\OMDev. Set the environment variable OMDEV which points to c:\OMDev.
 
-OmniORB
+  Build & Run
+  ------------------------------
+  - Load the file OMShellGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
+  - Build and run the project.
+  - Copy omniORB414_rt.dll, omniORB414_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+
+Linux
 ------------------------------
-- OMShell uses the OmniORB 4.1.4.
-- If you have OMDev downloaded then make sure its environment variable (OMDEV) is also set. OmniORB is included in OMDev package.
-- If you don't have OMDev then download OmniORB from 
-https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/lib/omniORB-4.1.4-mingw and set the path in 
-OMShellGUI.pro file accordingly.
-- Load the project in Qt Creator, build and run.
-- Copy omniORB414_rt.dll and omniORB414_rtd.dll from /omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMShell.exe-is-created.
+  
+  Run the following commands
+  ------------------------------
+  - apt-get build-dep openmodelica
+  - svn co https://openmodelica.org/svn/OpenModelica/trunk
+  - cd trunk
+  - autoconf
+  - ./configure '--disable-rml-trace' 'CC=gcc-4.4' 'CXX=g++-4.4' 'CFLAGS=-O2' '--with-omniORB'
+  - make -j2 omshell
 
 ------------------------------
 Adeel.

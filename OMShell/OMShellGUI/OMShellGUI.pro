@@ -7,6 +7,13 @@ TRANSLATIONS = \
 TARGET = OMShell
 TEMPLATE = app
 
+# Generate the CORBA stub files for windows. On Linux we generate them in the makefile.
+win32 {
+    !exists(omc_communication.cc || omc_communication.h) {
+        system($$(OMDEV)/lib/omniORB-4.1.4-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
+    }
+}
+
 SOURCES += commandcompletion.cpp \
     omc_communication.cc \
     omc_communicator.cpp \
