@@ -23,7 +23,7 @@ doublereal enorm_(integer *n, doublereal *x)
 
     /* System generated locals */
     integer i__1;
-    doublereal ret_val, d__1;
+    doublereal ret_val = 0., d__1;
 
     /* Builtin functions */
     double sqrt(doublereal);

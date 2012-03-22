@@ -361,7 +361,7 @@ char readChr(const char **ptr, size_t *len, char chr)
   return 1;
 }
 
-char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, char **name,
+char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char **name,
   size_t *rows, size_t *cols)
 {
   char* endptr;
@@ -461,7 +461,7 @@ size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, size_t *rows)
 {
   char *strLn=0;
-  char *tblName=0;
+  const char *tblName=0;
   int ch=0;
   size_t buflen=0;
   size_t _cols = 0;
@@ -882,7 +882,7 @@ void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows
         for (col=0;col<cols;col++)
         {
           data[row*cols+col] = strtod(number,&entp);
-          trim(&entp,&lh);
+          trim((const char**)&entp,&lh);
           number = entp+1;
         }
       }

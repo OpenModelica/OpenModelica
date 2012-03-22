@@ -81,7 +81,7 @@ enum INIT_INIT_METHOD
 {
   IIM_UNKNOWN = 0,
   IIM_NONE,
-  IIM_STATE,
+  IIM_STATE
 };
 
 const char *initMethodStr[3] = {"unknown", "none", "state"};
@@ -1132,7 +1132,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
  *
  *  \author lochel
  */
-const char* mapToDymolaVars(const char* varname)
+char* mapToDymolaVars(const char* varname)
 {
   unsigned int varnameSize = strlen(varname);
   unsigned int level = 0;
@@ -1195,7 +1195,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
   const char *pError = NULL;
-  const char* newVarname = NULL;
+  char* newVarname = NULL;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;

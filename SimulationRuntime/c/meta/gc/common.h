@@ -187,14 +187,15 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size);
 /***********************************************************************/
 /***********************************************************************/
 
-
-//struct mmc_GC_local_state_type /* the structure of local GC state that is saved on stack */
+/*
+//struct mmc_GC_local_state_type // the structure of local GC state that is saved on stack
 //{
-//  const char* functionName; /* the function name */
-//  size_t rootsMark;         /* the roots mark */
-//  size_t rootsStackIndex;   /* the index in the mark stack (basically the depth) */
+//  const char* functionName; // the function name 
+//  size_t rootsMark;         // the roots mark 
+//  size_t rootsStackIndex;   // the index in the mark stack (basically the depth)
 //};
 //typedef struct mmc_GC_local_state_type mmc_GC_local_state_type;
+*/
 
 #define mmc_GC_local_state_type size_t
 

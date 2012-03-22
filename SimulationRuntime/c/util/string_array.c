@@ -938,7 +938,7 @@ void convert_alloc_string_array_from_f77(const string_array_t * a,
     transpose_string_array(a, dest);
 }
 
-void fill_alloc_string_array(string_array_t* dest, modelica_string value, int ndims, ...)
+void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int ndims, ...)
 {
   size_t i;
   size_t elements = 0;

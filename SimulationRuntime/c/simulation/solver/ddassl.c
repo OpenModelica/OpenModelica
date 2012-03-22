@@ -4354,7 +4354,7 @@ L20:
 /*       CONTROL FLAG IS SET FOR RECOVERY, THEN RETURN. */
 
 /* L30: */
-    if (*level <= 0 || *level == 1 && mkntrl <= 1) {
+    if (*level <= 0 || (*level == 1 && mkntrl <= 1)) {
   return 0;
     }
 

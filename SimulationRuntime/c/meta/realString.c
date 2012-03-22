@@ -215,7 +215,7 @@ modelica_string _old_realString(modelica_real r)
    * Add safety margin in case some C runtime is trigger happy. */
   static char buffer[32];
   modelica_string res;
-  // fprintf(stderr, "\nrealString(%g)\n", r);
+  /* fprintf(stderr, "\nrealString(%g)\n", r);*/
   if (isinf(r) && r < 0)
     res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
   else if (isinf(r))

@@ -81,7 +81,7 @@
 
 #include "generational.h"
 
-//#undef NDEBUG
+/*#undef NDEBUG*/
 #include <assert.h>
 
 #define MMC_CLOCKS_PER_SEC  1000 /* milliseconds */
@@ -241,16 +241,16 @@ void mmc_free_c_heap_region(void) {
     return;
   ++mmc_c_heap_collect_count;
   while (current != NULL) {
-    // set to zero!
-    //mmc_free_core(current->region, current->size);
+    /* set to zero!*/
+    /*mmc_free_core(current->region, current->size);*/
     current->next = current->region;
     current->limit = current->next;
-    //tmp = current;
+    /*tmp = current;*/
     current = current->next_region;
-    //free(tmp);
+    /*free(tmp);*/
   }
   /* allocate a new C managed heap for the next round */
-  //mmc_c_heap = mmc_alloc_c_heap_region(MMC_C_HEAP_REGION_SIZE);
+  /*mmc_c_heap = mmc_alloc_c_heap_region(MMC_C_HEAP_REGION_SIZE);*/
   mmc_c_heap_region_total_size = 0;
   mmc_string_cache_index = 0;
   allocatedInCHeap = 0;
@@ -400,7 +400,7 @@ static INLINE void **mmc_forward_vec(void **scan, mmc_uint_t nwords, void **next
       assert(mmc_isYoungOrOlder(old));
       if (!mmc_isYoungOrOlder(old))
       {
-        fprintf(stderr, "slots: %lu p: %p nwords: %lu\n", hdr, old, nwords); fflush(stderr);
+        fprintf(stderr, "slots: %lu p: %p nwords: %lu\n", hdr, *old, nwords); fflush(stderr);
       }
       /* reuse `hdr' as `#slots' */
       *next++ = *old++;
@@ -474,14 +474,14 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
     ++scan; /* since slots doesn't include the header itself */
     if (MMC_HDRHASPTRS(hdr))
     {
-      //if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1) /* RECORD */
-      //{
-      //  start = 1; /* ignore the fields slot! */
-      //}
-      //else
-      //  start = 0; /* do NOT ignore the fields slot! */
+      /*if (slots > 0 && ctor != MMC_ARRAY_TAG && ctor > 1)*/ /* RECORD */
+      /*{*/
+      /*  start = 1;*/ /* ignore the fields slot! */
+      /*}*/
+      /*else*/
+      /*  start = 0; */ /* do NOT ignore the fields slot! */
       
-      //assert(slots > start);
+      /*assert(slots > start);*/
       next = mmc_forward_vec(scan, slots, next, region_low, region_nbytes);
     }
     scan += slots;

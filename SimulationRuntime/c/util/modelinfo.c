@@ -336,8 +336,8 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fclose(fout);
   if (plotCommands) {
-    char *omhome;
-    char *buf;
+    char *omhome = NULL;
+    char *buf = NULL;
     int genHtmlRes;
     omhome = getenv("OPENMODELICAHOME");
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
