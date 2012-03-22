@@ -725,7 +725,7 @@ algorithm
     case {} then {};
     case ((Absyn.EQUATIONS(contents = eql) :: rest))
       equation
-        eql_1 = translateEquations(eql);
+        eql_1 = translateEquations(eql, false);
         eqs = translateClassdefEquations(rest);
         eqs_1 = listAppend(eqs, eql_1);
       then
@@ -752,7 +752,7 @@ algorithm
     case {} then {};
     case ((Absyn.INITIALEQUATIONS(contents = eql) :: rest))
       equation
-        eql_1 = translateEquations(eql);
+        eql_1 = translateEquations(eql, true);
         eqs = translateClassdefInitialequations(rest);
         eqs_1 = listAppend(eqs, eql_1);
       then
@@ -1536,9 +1536,10 @@ protected function translateEquations
   SCode.Equation, by applying the translateEquation function to each
   equation."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input Boolean inIsInitial;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inAbsynEquationItemLst)
+  outEquationLst := matchcontinue (inAbsynEquationItemLst, inIsInitial)
     local
       SCode.EEquation e_1;
       list<SCode.Equation> es_1;
@@ -1550,20 +1551,20 @@ algorithm
       String s1, s2;
       Absyn.ComponentRef c1, c2;
 
-    case {} then {};
+    case ({}, _) then {};
 
-    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
+    case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
         com = translateComment(acom);
-        e_1 = translateEquation(e,com,info);
-        es_1 = translateEquations(es);
+        e_1 = translateEquation(e,com,info,inIsInitial);
+        es_1 = translateEquations(es, inIsInitial);
       then
         (SCode.EQUATION(e_1) :: es_1);
 
-    case (Absyn.EQUATIONITEMANN(annotation_ = _) :: es)
+    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: es), _)
       equation
-        es_1 = translateEquations(es);
+        es_1 = translateEquations(es, inIsInitial);
       then
         es_1;
   end matchcontinue;
@@ -1574,9 +1575,10 @@ protected function translateEEquations
 "function: translateEEquations
   Helper function to translateEquations"
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input Boolean inIsInitial;
   output list<SCode.EEquation> outEEquationLst;
 algorithm
-  outEEquationLst := match (inAbsynEquationItemLst)
+  outEEquationLst := match (inAbsynEquationItemLst, inIsInitial)
     local
       SCode.EEquation e_1;
       list<SCode.EEquation> es_1;
@@ -1586,20 +1588,20 @@ algorithm
       Option<SCode.Comment> com;
       Absyn.Info info;
 
-    case {} then {};
+    case ({}, _) then {};
 
-    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
+    case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
         com = translateComment(acom);
-        e_1 = translateEquation(e,com,info);
-        es_1 = translateEEquations(es);
+        e_1 = translateEquation(e,com,info, inIsInitial);
+        es_1 = translateEEquations(es, inIsInitial);
       then
         (e_1 :: es_1);
 
-    case (Absyn.EQUATIONITEMANN(annotation_ = _) :: es)
+    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: es), _)
       equation
-        es_1 = translateEEquations(es);
+        es_1 = translateEEquations(es, inIsInitial);
       then
         es_1;
   end match;
@@ -1642,9 +1644,10 @@ protected function translateEquation
   input Absyn.Equation inEquation;
   input Option<SCode.Comment> inComment;
   input Absyn.Info inInfo;
+  input Boolean inIsInitial;
   output SCode.EEquation outEEquation;
 algorithm
-  outEEquation := matchcontinue (inEquation,inComment,inInfo)
+  outEEquation := matchcontinue (inEquation,inComment,inInfo,inIsInitial)
     local
       list<SCode.EEquation> tb_1,fb_1,eb_1,l_1;
       Absyn.Exp e,ee,econd_1,cond,econd,e1,e2;
@@ -1663,23 +1666,23 @@ algorithm
       list<list<SCode.EEquation>> trueEEquations;
       Absyn.Info info;
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info,_)
       equation
-        tb_1 = translateEEquations(tb);
-        fb_1 = translateEEquations(fb);
+        tb_1 = translateEEquations(tb, inIsInitial);
+        fb_1 = translateEEquations(fb, inIsInitial);
       then
         SCode.EQ_IF({e},{tb_1},fb_1,com,info);
 
     /* else-if branches are put as if branches in false branch */
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info,_)
       equation
         (conditions,trueBranches) = Util.splitTuple2List((e,tb)::eis);
-        trueEEquations = List.map(trueBranches,translateEEquations);
-        fb_1 = translateEEquations(fb);
+        trueEEquations = List.map1(trueBranches,translateEEquations,inIsInitial);
+        fb_1 = translateEEquations(fb, inIsInitial);
       then
         SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info,_)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
         eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
@@ -1689,65 +1692,72 @@ algorithm
       then
         fail();
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = ((econd,eb) :: elsewhen_)),com,info)
+    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = ((econd,eb) :: elsewhen_)),com,info,_)
       equation
-        tb_1 = translateEEquations(tb);
-        SCode.EQ_WHEN(econd_1,eb_1,elsewhen_1,com,info) = translateEquation(Absyn.EQ_WHEN_E(econd,eb,elsewhen_),com,info);
+        tb_1 = translateEEquations(tb, inIsInitial);
+        SCode.EQ_WHEN(econd_1,eb_1,elsewhen_1,com,info) =
+          translateEquation(Absyn.EQ_WHEN_E(econd,eb,elsewhen_),com,info,inIsInitial);
       then
         SCode.EQ_WHEN(cond,tb_1,((econd_1,eb_1) :: elsewhen_1),com,info);
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = {}),com,info)
+    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = {}),com,info,_)
       equation
-        tb_1 = translateEEquations(tb);
+        tb_1 = translateEEquations(tb, inIsInitial);
       then
         SCode.EQ_WHEN(cond,tb_1,{},com,info);
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info) then SCode.EQ_EQUALS(e1,e2,com,info);
-    case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info) then SCode.EQ_CONNECT(c1,c2,com,info);
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info,_) then SCode.EQ_EQUALS(e1,e2,com,info);
+    case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info,false) then SCode.EQ_CONNECT(c1,c2,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),SOME(e))},forEquations = l),com,info) /* for loop with a single iterator with explicit range */
+    case (Absyn.EQ_CONNECT(connector1 = _), _, info, true)
       equation
-        l_1 = translateEEquations(l);
+        Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+      then
+        fail();
+
+    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),SOME(e))},forEquations = l),com,info,_) /* for loop with a single iterator with explicit range */
+      equation
+        l_1 = translateEEquations(l, inIsInitial);
       then
         SCode.EQ_FOR(i,e,l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),NONE())},forEquations = l),com,info) /* for loop with a single iterator with implicit range */
+    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),NONE())},forEquations = l),com,info,_) /* for loop with a single iterator with implicit range */
       equation
-        l_1 = translateEEquations(l);
+        l_1 = translateEEquations(l, inIsInitial);
       then
         SCode.EQ_FOR(i,Absyn.END(),l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
       equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
+        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
       then
         SCode.EQ_FOR(i,e,{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),NONE())::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),NONE())::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
       equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
+        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
       then
         SCode.EQ_FOR(i,Absyn.END(),{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = l),_,info)
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = l),_,info,_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
       then
         fail();
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info)
+                            functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info,_)
       then SCode.EQ_ASSERT(e1,e2,com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info)
+                            functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info,_)
       then SCode.EQ_TERMINATE(e1,com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com,info)
+                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com,info,_)
       then SCode.EQ_REINIT(cr,e2,com,info);
 
-    case (Absyn.EQ_NORETCALL(fname,fargs),com,info)
+    case (Absyn.EQ_NORETCALL(fname,fargs),com,info,_)
       then SCode.EQ_NORETCALL(fname,fargs,com,info);
   end matchcontinue;
 end translateEquation;

@@ -585,6 +585,8 @@ public constant Message SUM_EXPECTED_ARRAY = MESSAGE(219, TRANSLATION(), ERROR()
   "In sum(%s), the expression is of type %s, but is required to be of builtin array type (of any number of dimensions).");
 public constant Message INVALID_CLASS_RESTRICTION = MESSAGE(220, TRANSLATION(), ERROR(),
   "Invalid specialized class type '%s' for component %s.");
+public constant Message CONNECT_IN_INITIAL_EQUATION = MESSAGE(221, TRANSLATION(), ERROR(),
+  "Connect equations are not allowed in initial equation sections.");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
