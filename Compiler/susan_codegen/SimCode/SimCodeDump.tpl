@@ -50,7 +50,7 @@ template dumpAlias(AliasVariable alias)
 end dumpAlias;
 
 template dumpEqs(list<SimEqSystem> eqs)
-::= eqs |> eq =>
+::= eqs |> eq hasindex i0 =>
   match eq
     case e as SES_RESIDUAL(__) then
       <<
@@ -94,7 +94,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       >>
     case e as SES_WHEN(__) then
       <<
-      when: conditions
+      when (#<%i0%>): <%conditions |> (cond,_) => printExpStr(cond) ; separator="," %>
         <%crefStr(e.left)%> = <%printExpStr(e.right)%>
         <%dumpElementSource(e.source)%><%\n%>
       >>
