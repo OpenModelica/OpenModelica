@@ -55,6 +55,7 @@ THREAD_RET_TYPE threadServerControl(void*)
                 cout << "Server recieved message: " << message << endl; fflush(stdout);
          }
   }
+  return 0;
 }
 
 THREAD_RET_TYPE threadServerTransfer(void*)
@@ -88,6 +89,7 @@ THREAD_RET_TYPE threadServerTransfer(void*)
                 cout << "Server recieved message: " << message << endl; fflush(stdout);
          }
   }
+  return 0;
 }
 
 THREAD_RET_TYPE threadControlClient(void*)

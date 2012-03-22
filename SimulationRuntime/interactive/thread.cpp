@@ -182,7 +182,7 @@ bool Semaphore::Post()
   int sem_val;
   bool success = false;
 
-  if(sem_getvalue(&semaphore_handle, &sem_val) == 0 && sem_val < impl->max_count)
+  if(sem_getvalue(&semaphore_handle, &sem_val) == 0 && sem_val < (int)impl->max_count)
   {
          success = (sem_post(&semaphore_handle) == 0);
   }
@@ -204,7 +204,7 @@ bool Semaphore::Post(unsigned count)
   }
 
   bool success = true;
-  for(int i = 0; i < count; ++i)
+  for(unsigned i = 0; i < count; ++i)
   {
          if(!(sem_val + i < impl->max_count && sem_post(&semaphore_handle) == 0))
          {
