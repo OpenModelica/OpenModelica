@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h>
 #include "thread.h"
 
 /* Windows and mingw32 */

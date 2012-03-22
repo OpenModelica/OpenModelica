@@ -37,10 +37,10 @@ class Socket {
    private:
    // Socket number (Socket-Descriptor)
    int m_sock;
-        int m_socket_type;
+   int m_socket_type;
    // struct sockaddr_in
    sockaddr_in m_addr;
-        
+
    public:
    // Constructor
    Socket();

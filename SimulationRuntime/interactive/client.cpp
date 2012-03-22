@@ -10,6 +10,7 @@
 #include <string>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 
 #include "thread.h"
 #include "socket.h"

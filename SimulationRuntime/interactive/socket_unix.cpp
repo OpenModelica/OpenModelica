@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cstring>
 #include <errno.h>
+#include <unistd.h>
 #include "socket.h"
 
 template<typename T>
@@ -63,12 +64,12 @@ bool Socket::listen() const
   if(!is_valid()) return false;
 
   return ::listen(m_sock, MAXCONNECTIONS) != -1;
-}  
+}
 
 bool Socket::accept(Socket &new_socket) const
 {
   socklen_t addr_length = sizeof(m_addr);
-  new_socket.m_sock = ::accept(m_sock, (sockaddr*)&m_addr, &addr_length);       
+  new_socket.m_sock = ::accept(m_sock, (sockaddr*)&m_addr, &addr_length);
 
   return new_socket.m_sock != -1;
 }
@@ -94,7 +95,7 @@ bool Socket::connect(const std::string &host, const int port)
 
 bool Socket::send(const std::string &s) const
 {
-  return ::send(m_sock, s.c_str(), s.size(), 0) != -1;       
+  return ::send(m_sock, s.c_str(), s.size(), 0) != -1;
 }
 
 int Socket::recv(std::string &s) const
