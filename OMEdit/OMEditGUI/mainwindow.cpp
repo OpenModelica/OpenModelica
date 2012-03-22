@@ -81,6 +81,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     #endif
     //Create a dock for the MessageWidget
     messagedock = new QDockWidget(tr(" Messages"), this);
+    messagedock->setObjectName(tr("Messages"));
     messagedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     #ifdef Q_OS_MAC
         messagedock->setContentsMargins(0, 6, 1, 0);
@@ -99,6 +100,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
     //Create a dock for the search MSL
     searchMSLdock = new QDockWidget(tr(" Search MSL"), this);
+    searchMSLdock->setObjectName(tr("Search MSL"));
     searchMSLdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpSearchMSLWidget = new SearchMSLWidget(this);
     searchMSLdock->setWidget(mpSearchMSLWidget);
@@ -107,12 +109,14 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     searchMSLdock->hide();
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
+    libdock->setObjectName(tr("Components"));
     libdock->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
     //create a dock for the model browser
     modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
+    modelBrowserdock->setObjectName(tr("Model Browser"));
     #ifdef Q_OS_MAC
         modelBrowserdock->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     #else
@@ -132,6 +136,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
     // plot dock
     plotdock = new QDockWidget(tr(" Plot Variables"), this);
+    plotdock->setObjectName(tr("Plot Variables"));
     plotdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     plotdock->setContentsMargins(0, 1, 1, 1);
     mpPlotWidget = new PlotWidget(this);
@@ -140,6 +145,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     plotdock->hide();
     // plot dock
     documentationdock = new QDockWidget(tr(" Documentation"), this);
+    documentationdock->setObjectName(tr("Documentation"));
     documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     documentationdock->setContentsMargins(0, 1, 1, 1);
     mpDocumentationWidget = new DocumentationWidget(this);
@@ -180,6 +186,10 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpModelCreator = new ModelCreator(this);
     connect(this, SIGNAL(fileOpen(QString)), mpProjectTabs, SLOT(openFile(QString)));
     QMetaObject::connectSlotsByName(this);
+    // restore OMEdit widgets state
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    restoreGeometry(settings.value("application/geometry").toByteArray());
+    restoreState(settings.value("application/windowState").toByteArray());
 }
 
 //! Destructor
@@ -206,6 +216,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
         this->mpOMCProxy->stopServer();
         delete mpOMCProxy;
         mpProjectTabs->blockSignals(true);
+        // save OMEdit widgets state
+        QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+        settings.setValue("application/geometry", saveGeometry());
+        settings.setValue("application/windowState", saveState());
         event->accept();
     }
     else
@@ -213,6 +227,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     }
 }
+
 //when the dragged object enters the main window
 //! @param event contains information of the drag operation.
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -652,6 +667,7 @@ void MainWindow::createMenus()
 void MainWindow::createToolbars()
 {
     fileToolBar = addToolBar(tr("File Toolbar"));
+    fileToolBar->setObjectName(tr("File Toolbar"));
     fileToolBar->setAllowedAreas(Qt::TopToolBarArea);
 
     QToolButton *newMenuButton = new QToolButton(fileToolBar);
@@ -684,6 +700,7 @@ void MainWindow::createToolbars()
 //    editToolBar->addAction(pasteAction);
 
     viewToolBar = addToolBar(tr("View Toolbar"));
+    viewToolBar->setObjectName(tr("View Toolbar"));
     viewToolBar->setAllowedAreas(Qt::TopToolBarArea);
     viewToolBar->addAction(gridLinesAction);
     viewToolBar->addSeparator();
@@ -695,6 +712,7 @@ void MainWindow::createToolbars()
     viewToolBar->addAction(checkModelAction);
 
     shapesToolBar = addToolBar(tr("Shapes Toolbar"));
+    shapesToolBar->setObjectName(tr("Shapes Toolbar"));
     shapesToolBar->setAllowedAreas(Qt::TopToolBarArea);
     shapesToolBar->addAction(lineAction);
     shapesToolBar->addAction(polygonAction);
@@ -708,23 +726,27 @@ void MainWindow::createToolbars()
     shapesToolBar->addAction(connectAction);
 
     simulationToolBar = addToolBar(tr("Simulation"));
+    simulationToolBar->setObjectName(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
     simulationToolBar->addAction(simulationAction);
     simulationToolBar->addAction(interactiveSimulationAction);
     simulationToolBar->addAction(plotAction);
 
     omnotebookToolbar = addToolBar(tr("OMNotebook"));
+    omnotebookToolbar->setObjectName(tr("OMNotebook"));
     omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
     omnotebookToolbar->addAction(exportToOMNotebookAction);
     omnotebookToolbar->addAction(importFromOMNotebookAction);
 
     plotToolBar = addToolBar(tr("Plot Toolbar"));
+    plotToolBar->setObjectName(tr("Plot Toolbar"));
     plotToolBar->setAllowedAreas(Qt::TopToolBarArea);
     plotToolBar->setVisible(false);
     plotToolBar->addAction(newPlotWindowAction);
     plotToolBar->addAction(newPlotParametricWindowAction);
 
     perspectiveToolBar = addToolBar(tr("Perspective Toolbar"));
+    perspectiveToolBar->setObjectName(tr("Perspective Toolbar"));
     perspectiveToolBar->setAllowedAreas(Qt::TopToolBarArea);
     perspectiveToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     perspectiveToolBar->setMovable(false);
