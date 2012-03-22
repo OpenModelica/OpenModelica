@@ -56,6 +56,7 @@ protected import Flags;
 protected import InstSymbolTable;
 protected import InstUtil;
 protected import List;
+protected import SCodeCheck;
 protected import SCodeExpand;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
@@ -578,11 +579,14 @@ algorithm
         condition = NONE(), info = info), _, _, _, _)
       equation
         // Look up the class of the component.
-        (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
+        (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
 
         // Instantiate array dimensions and add them to the prefix.
         dims = instDimensions(ad, inEnv, inPrefix);
         prefix = InstUtil.addPrefix(name, dims, inPrefix);
+
+        // Check that it's legal to instantiate the class.
+        SCodeCheck.checkInstanceRestriction(item, prefix, info);
 
         // Merge the class modifications with this elements' modifications.
         dim_count = listLength(ad);

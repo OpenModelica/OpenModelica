@@ -41,11 +41,12 @@ encapsulated package SCodeCheck
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
-public import SCodeInst;
+public import InstTypes;
 
 protected import Config;
 protected import Dump;
 protected import Error;
+protected import InstUtil;
 protected import List;
 protected import Util;
 protected import SCodeDump;
@@ -591,8 +592,8 @@ algorithm
 end checkIdentNotEqTypeName;
 
 public function checkComponentsEqual
-  input SCodeInst.Component inComponent1;
-  input SCodeInst.Component inComponent2;
+  input InstTypes.Component inComponent1;
+  input InstTypes.Component inComponent2;
 algorithm
   _ := match(inComponent1, inComponent2)
     case (_, _)
@@ -603,5 +604,49 @@ algorithm
 
   end match;
 end checkComponentsEqual;
+
+public function checkInstanceRestriction
+  input SCodeEnv.Item inItem;
+  input InstTypes.Prefix inPrefix;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inItem, inPrefix, inInfo)
+    local
+      SCode.Restriction res;
+      String pre_str, res_str;
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
+      equation
+        true = isInstantiableClassRestriction(res);
+      then
+        ();
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
+      equation
+        res_str = SCodeDump.restrictionStringPP(res);
+        pre_str = InstUtil.printPrefix(inPrefix);
+        Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
+          {res_str, pre_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkInstanceRestriction;
+  
+protected function isInstantiableClassRestriction
+  input SCode.Restriction inRestriction;
+  output Boolean outIsInstantiable;
+algorithm
+  outIsInstantiable := match(inRestriction)
+    case SCode.R_CLASS() then true;
+    case SCode.R_MODEL() then true;
+    case SCode.R_RECORD() then true;
+    case SCode.R_BLOCK() then true;
+    case SCode.R_CONNECTOR(isExpandable = _) then true;
+    case SCode.R_TYPE() then true;
+    case SCode.R_ENUMERATION() then true;
+    else false;
+  end match;
+end isInstantiableClassRestriction;
 
 end SCodeCheck;
