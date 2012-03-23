@@ -178,17 +178,16 @@ void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelic
 {
     size_t elements, offset=0;
     size_t i;
-	modelica_real value;
+    modelica_real value;
     modelica_real (*comp_func)(modelica_real, modelica_real);
-
     assert(step != 0);
-
+ 
     comp_func = (step > 0) ? &real_le : &real_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
 /*
-	for(i = 0; i < dim; i++)
+    for(i = 0; i < dim; i++)
         offset += dest->dim_size[i];
-*/	
+*/  
     for(value = start; comp_func(value, stop); value += step, ++offset) {
         real_set(dest, offset, value);
     }

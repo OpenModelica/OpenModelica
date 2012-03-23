@@ -196,8 +196,7 @@ void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start
 {
     size_t elements, offset=0;
     size_t i;
-	modelica_integer value;
-	
+    modelica_integer value;
     modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 
     assert(step != 0);
@@ -205,7 +204,7 @@ void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start
     comp_func = (step > 0) ? &integer_le : &integer_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
 /*
-	for(i = 0; i < dim; i++)
+    for(i = 0; i < dim; i++)
         offset += dest->dim_size[i];
 */	
     for(value = start; comp_func(value, stop); value += step, ++offset) {
