@@ -20,7 +20,7 @@ INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst
+.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -39,7 +39,10 @@ mkbuilddirs:
 
 debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
-release: omc
+release: omc install-python
+
+install-python:
+	$(MAKE) -C PythonInterface -f $(defaultMakefileTarget)
 
 interactive: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
@@ -166,7 +169,7 @@ install-dirs:
 	test ! -d ${builddir_share}/omshell/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
-install: install-dirs
+install: install-dirs install-python
 	echo Installing OpenModelica...
 	# Application directory (OSX)
 	if [ "$(EXE)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi

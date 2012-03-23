@@ -513,7 +513,8 @@ Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile \
 Compiler/omc_profiler/Makefile Compiler/runtime/Makefile \
 Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
-Compiler/scripts/PythonInterface/OMPython/OMConfig.py \
+PythonInterface/Makefile \
+PythonInterface/OMPython/OMConfig.py \
 Parser/Makefile \
 OMNotebook/OMNotebookGUI/OMNotebook.config \
 OMNotebook/OMNotebookGUI/Makefile.unix \
