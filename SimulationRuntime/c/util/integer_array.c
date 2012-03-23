@@ -206,7 +206,7 @@ void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start
 /*
     for(i = 0; i < dim; i++)
         offset += dest->dim_size[i];
-*/	
+*/
     for(value = start; comp_func(value, stop); value += step, ++offset) {
         integer_set(dest, offset, value);
     }
