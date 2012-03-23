@@ -7,7 +7,7 @@ ulimitOmc:="300"; // 5 minutes to generate the C-code
 ulimitExe:="40";  // 40 seconds to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
 
-system("date +'%Y-%m-%d %H:%M:%S' > tmp.date);
+system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
