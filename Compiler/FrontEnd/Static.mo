@@ -6588,7 +6588,7 @@ algorithm
       Absyn.Info info;
       String cname_str;
       Absyn.Path className;
-      DAE.Exp startTime,stopTime,numberOfIntervals,tolerance,method,cflags;
+      DAE.Exp startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
       DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime;
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
@@ -6655,6 +6655,11 @@ algorithm
           getOptionalNamedArg(cache, env, SOME(st), impl, "cflags", DAE.T_STRING_DEFAULT, 
                               args,  CevalScript.getSimulationOption(defaulSimOpt, "cflags"),
                               pre, info);
+        (cache,simflags) = 
+          getOptionalNamedArg(cache, env, SOME(st), impl, "simflags", DAE.T_STRING_DEFAULT, 
+                              args, CevalScript.getSimulationOption(defaulSimOpt, "simflags"),
+                              pre, info);
+        
       then 
         (cache, 
          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),
@@ -6670,7 +6675,8 @@ algorithm
           outputFormat,
           variableFilter,
           measureTime,
-          cflags});
+          cflags,
+          simflags});
   
   end match;
 end getSimulationArguments;
