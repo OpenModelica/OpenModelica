@@ -78,6 +78,9 @@ extern void copy_real_array_data_mem(const real_array_t * source, modelica_real*
 /* Copy real array*/
 extern void copy_real_array(const real_array_t * source, real_array_t* dest);
 
+void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, 
+                                modelica_real stop/*, size_t dim*/);
+
 extern modelica_real* calc_real_index(int ndims, const _index_t* idx_vec, const real_array_t * arr);
 extern modelica_real* calc_real_index_va(const real_array_t * source,int ndims,va_list ap);
 

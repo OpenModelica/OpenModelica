@@ -80,7 +80,10 @@ extern void copy_integer_array_data_mem(const integer_array_t * source,
 /* Copy integer array*/
 extern void copy_integer_array(const integer_array_t * source, integer_array_t* dest);
 
-extern void create_integer_array_from_range(integer_array_t *dest, int start, int step, int stop);
+extern void create_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step, modelica_integer stop);
+
+void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start, 
+                                   modelica_integer step, modelica_integer stop/*, size_t dim*/);
 
 extern modelica_integer* calc_integer_index(int ndims, const _index_t* idx_vec,
                                             const integer_array_t * arr);

@@ -155,23 +155,23 @@ void copy_integer_array(const integer_array_t *source, integer_array_t *dest)
     copy_integer_array_data(source, dest);
 }
 
-static int integer_le(int x, int y)
+static modelica_integer integer_le(modelica_integer x, modelica_integer y)
 {
     return (x <= y);
 }
 
-static int integer_ge(int x, int y)
+static modelica_integer integer_ge(modelica_integer x, modelica_integer y)
 {
     return (x >= y);
 }
 
 /* Creates an integer array from a range with a start, stop and step value.
  * Ex: 1:2:6 => {1,3,5} */
-void create_integer_array_from_range(integer_array_t *dest, int start, int step, int stop)
+void create_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step, modelica_integer stop)
 {
     size_t elements;
     size_t i;
-    int (*comp_func)(int, int);
+    modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 
     assert(step != 0);
 
@@ -182,6 +182,34 @@ void create_integer_array_from_range(integer_array_t *dest, int start, int step,
 
     for(i = 0; comp_func(start, stop); start += step, ++i) {
         integer_set(dest, i, start);
+    }
+}
+
+/* 
+ * Fills an integer array ROW from a range with a start, stop and step value.
+ * The last argument is the row/dimension to be filled.
+ * e.g: Integer a[10], b[2][10]; a := 1:2:6; b[1] := 1:10; 
+ * 
+*/
+void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step, 
+                                   modelica_integer stop/*, size_t dim*/)
+{
+    size_t elements, offset=0;
+    size_t i;
+	modelica_integer value;
+	
+    modelica_integer (*comp_func)(modelica_integer, modelica_integer);
+
+    assert(step != 0);
+
+    comp_func = (step > 0) ? &integer_le : &integer_ge;
+    elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
+/*
+	for(i = 0; i < dim; i++)
+        offset += dest->dim_size[i];
+*/	
+    for(value = start; comp_func(value, stop); value += step, ++offset) {
+        integer_set(dest, offset, value);
     }
 }
 

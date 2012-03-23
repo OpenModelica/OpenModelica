@@ -3942,6 +3942,10 @@ template algStmtAssignArr(DAE.Statement stmt, Context context,
  "Generates an array assigment algorithm statement."
 ::=
 match stmt
+case STMT_ASSIGN_ARR(exp=RANGE(__), componentRef=cr, type_=t) then
+  <<
+  <%fillArrayFromRange(t,exp,cr,context,&varDecls)%>
+  >>
 case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3957,6 +3961,25 @@ case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
     <%copyArrayData(t, expPart, cr, context)%>
     >>
 end algStmtAssignArr;
+
+template fillArrayFromRange(DAE.Type ty, Exp exp, DAE.ComponentRef cr, Context context, 
+                            Text &varDecls /*BUFP*/) 
+ "Generates an array assigment to RANGE expressions. (Fills an array from range expresion)"
+::=
+match exp
+case RANGE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let cref = contextArrayCref(cr, context)
+  let ty_str = expTypeArray(ty)
+  let start_exp = daeExp(exp, context, &preExp, &varDecls)
+  let stop_exp = daeExp(range, context, &preExp, &varDecls)
+  let step = match expOption case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
+  <<
+  <%preExp%>
+  fill_<%ty_str%>_from_range(&<%cref%>, <%start_exp%>, <%step%>, <%stop_exp%>);<%\n%>
+  >>
+ 
+end fillArrayFromRange;
 
 template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr, 
   String ispec, Context context, Text &varDecls)

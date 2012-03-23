@@ -155,6 +155,45 @@ void copy_real_array(const real_array_t *source, real_array_t *dest)
     copy_real_array_data(source,dest);
 }
 
+
+static modelica_real real_le(modelica_real x, modelica_real y)
+{
+    return (x <= y);
+}
+
+static modelica_real real_ge(modelica_real x, modelica_real y)
+{
+    return (x >= y);
+}
+
+
+/* 
+ * Fills a real array ROW from a range with a start, stop and step value.
+ * The last argument is the row/dimension to be filled.
+ * e.g: Real a[10], b[2][10]; a := 1.0:2.5:10.0; b[1] := 1.0:10.0; 
+ * 
+*/
+void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, 
+                                modelica_real stop/*, size_t dim*/)
+{
+    size_t elements, offset=0;
+    size_t i;
+	modelica_real value;
+    modelica_real (*comp_func)(modelica_real, modelica_real);
+
+    assert(step != 0);
+
+    comp_func = (step > 0) ? &real_le : &real_ge;
+    elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
+/*
+	for(i = 0; i < dim; i++)
+        offset += dest->dim_size[i];
+*/	
+    for(value = start; comp_func(value, stop); value += step, ++offset) {
+        real_set(dest, offset, value);
+    }
+}
+
 /*
  a[1:3] := b;
 */
