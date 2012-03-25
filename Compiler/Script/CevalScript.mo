@@ -1332,8 +1332,9 @@ algorithm
       equation
         cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
+        str = "Unknown model in instantiateModel: " +& Absyn.pathString(className) +& "\n";
       then
-        (cache,Values.STRING("Unknown model.\n"),st);
+        (cache,Values.STRING(str),st);
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
       equation
@@ -3638,6 +3639,14 @@ algorithm
         retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
         (cache,Values.STRING(retStr),st);
+
+    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p), _)
+      equation
+        classNameStr = Absyn.pathString(className);
+        false = Interactive.existClass(Absyn.pathToCref(className), p);
+        errorMsg = "Unknown model in checkModel: " +& classNameStr +& "\n";
+      then
+        (cache,Values.STRING(errorMsg),st);
 
     // errors
     case (cache,env,className,st,_)
