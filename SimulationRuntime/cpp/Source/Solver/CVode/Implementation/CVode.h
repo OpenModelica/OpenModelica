@@ -12,7 +12,7 @@
 
 /*****************************************************************************/
 // Cvode aus dem SUNDIALS-Package
-// BDF-Verfahren für steife und nicht-steife ODEs
+// BDF-Verfahren fÃ¼r steife und nicht-steife ODEs
 // Dokumentation siehe offizielle Cvode Doku
 
 /*****************************************************************************
@@ -37,13 +37,13 @@ public:
 
 	// geerbt von ISolver
 	//---------------------------------------
-	/// Setzen der Startzeit für die numerische Lösung
+	/// Setzen der Startzeit fÃ¼r die numerische LÃ¶sung
 	virtual void setStartTime(const double& time)
 	{
 		SolverDefaultImplementation::setStartTime(time);
 	};
 
-	/// Setzen der Endzeit für die numerische Lösung
+	/// Setzen der Endzeit fÃ¼r die numerische LÃ¶sung
 	virtual void setEndTime(const double& time)
 	{
 		SolverDefaultImplementation::setEndTime(time);
@@ -55,7 +55,7 @@ public:
 		SolverDefaultImplementation::setInitStepSize(stepSize);
 	};
 
-	/// Berechung der numerischen Lösung innerhalb eines gegebenen Zeitintervalls
+	/// Berechung der numerischen LÃ¶sung innerhalb eines gegebenen Zeitintervalls
 	virtual void solve(const SOLVERCALL command = UNDEF_CALL);
 
 	/*/// Liefert den Zeitpunkt des letzten erfolgreichen Zeitschrittes (kann ~= tend sein)
@@ -95,28 +95,28 @@ public:
 	SolverDefaultImplementation::setOutputStream(outputStream);
 	};
 	*/
-	//// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
+	//// Ausgabe von statistischen Informationen (wird vom SimManager nach AbschluÃŸ der Simulation aufgerufen)
 	virtual void writeSimulationInfo(ostream& outputStream);
 
 	/// Anfangszustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
 	virtual void saveInitState();
 
-	/// Anfangszustand (und entsprechenden Zeitpunkt) zurück ins System kopieren
+	/// Anfangszustand (und entsprechenden Zeitpunkt) zurÃ¼ck ins System kopieren
 	virtual void restoreInitState();
 
-	/// Letzten gültigen Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
+	/// Letzten gÃ¼ltigen Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
 	virtual void saveLastSuccessfullState();
 
-	/// Letzten gültigen Zustand  (und entsprechenden Zeitpunkt) zurück ins System kopieren
+	/// Letzten gÃ¼ltigen Zustand  (und entsprechenden Zeitpunkt) zurÃ¼ck ins System kopieren
 	virtual void restoreLastSuccessfullState();
 
-	/// speichert den Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) nach einem "großen Schritt" bei partitionierter Integration
+	/// speichert den Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) nach einem "groÃŸen Schritt" bei partitionierter Integration
 	virtual void saveLargeStepState();
 
-	/// liefert den normierten Fehler zwischen aktuellem Zustand und Zustand nach einem "großen Schritt" bei partitionierter Integration
+	/// liefert den normierten Fehler zwischen aktuellem Zustand und Zustand nach einem "groÃŸen Schritt" bei partitionierter Integration
 	virtual void giveScaledError(const double& h, double& error);
 
-	/// Approximation höherer Ordnung des Zustandes berechnen und in System kopieren
+	/// Approximation hÃ¶herer Ordnung des Zustandes berechnen und in System kopieren
 	virtual void refineCurrentState(const double& r);
 	virtual const int reportErrorMessage(ostream& messageStream);
 private:
@@ -127,7 +127,7 @@ private:
 	/// Kapselung der Berechnung der rechten Seite 
 	void calcFunction(const double& time, const double* y, double* yd);
 
-	// Callback für die rechte Seite
+	// Callback fÃ¼r die rechte Seite
 	static int CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data);
 
 	// Checks error flags of SUNDIALS

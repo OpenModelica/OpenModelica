@@ -120,7 +120,7 @@ void Euler::init()
 		memset(_zLastSucess,0,_dimSys*sizeof(double));
 		memset(_zLargeStep,0,_dimSys*sizeof(double));
 		
-		// Arrays für Zustandswerte an den Berechnungsintervallgrenzen
+		// Arrays fÃ¼r Zustandswerte an den Berechnungsintervallgrenzen
 
 		if(_z0)		delete [] _z0;
 		if(_z1)		delete [] _z1;
@@ -402,7 +402,7 @@ void Euler::doEulerBackward()
 	double		nu,
 		theta;
 	double		nu_old = 1e6;
-	long int	dimRHS = 1;							// Dimension der rechten Seite zur Lösung LGS
+	long int	dimRHS = 1;							// Dimension der rechten Seite zur LÃ¶sung LGS
 
 	double 	
 		*Z		= new double[_dimSys],				// Steigung (1. Stufe)
@@ -480,7 +480,7 @@ void Euler::doEulerBackward()
 			for(int i=0; i<_dimSys; ++i)
 				LSErhs[i] =-Z[i] + _h*fHelp[i];
 		
-			// Löse das LGS (delta_Z wird in LSErhs geschrieben)
+			// LÃ¶se das LGS (delta_Z wird in LSErhs geschrieben)
 	 	    dgesv_(&_dimSys,&dimRHS,T,&_dimSys,pHelp,LSErhs,&_dimSys,&_idid);
 		   
 			// Konvergenzcheck
@@ -558,8 +558,8 @@ void Euler::doEulerBackward()
 			_firstStep			= true;
 
 			// Originale maximale Schrittweite wiederherstellen, 
-			// Startschrittweite mit Verhältnis multiplizieren. Dadurch wird zu großer Startschritt vermieden.
-			// Dies kann z.B. bei Diode zu großen rechten Seiten führen. 
+			// Startschrittweite mit VerhÃ¤ltnis multiplizieren. Dadurch wird zu groÃŸer Startschritt vermieden.
+			// Dies kann z.B. bei Diode zu groÃŸen rechten Seiten fÃ¼hren. 
 			_hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
 			_h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
@@ -608,18 +608,18 @@ void Euler::doMidpoint()
 		theta,
 		nu_old = 1e6,
 		C = 1.5;
-	long int	dimRHS	= 1;								// Dimension rechte Seite zur Lösung LGS
+	long int	dimRHS	= 1;								// Dimension rechte Seite zur LÃ¶sung LGS
 
 	double		
 		*jac	= new double[_dimSys*_dimSys],		// Jacobimatrix
 		*T		= new double[_dimSys*_dimSys],			// Iterationsmatrix
-		*yHelp	= new double[_dimSys],					// Hilfsvariable für y
-		*Z		= new double[_dimSys],					// Hilfsvariable für Stufe
-		*deltaZ	= new double[_dimSys],					// Hilfsvariable für Stufe
+		*yHelp	= new double[_dimSys],					// Hilfsvariable fÃ¼r y
+		*Z		= new double[_dimSys],					// Hilfsvariable fÃ¼r Stufe
+		*deltaZ	= new double[_dimSys],					// Hilfsvariable fÃ¼r Stufe
 		*f0		= new double[_dimSys],
 		*LSErhs	= new double[_dimSys],
 		*pHelp	= new double[_dimSys],
-		*fHelp	= new double[_dimSys];					// Hilfsvariable für rechte Seite
+		*fHelp	= new double[_dimSys];					// Hilfsvariable fÃ¼r rechte Seite
 
 	IEvent* event_system =  dynamic_cast<IEvent*>(_system);
 	// Rechte Seite
@@ -638,7 +638,7 @@ void Euler::doMidpoint()
 		numberOfIterations = 0;
 
 
-		// alten Zustandsvektor für Dense-Output zwischenspeichern
+		// alten Zustandsvektor fÃ¼r Dense-Output zwischenspeichern
 		memcpy(_z0,_z,(int)_dimSys*sizeof(double));
 
 
@@ -679,7 +679,7 @@ void Euler::doMidpoint()
 				for(int i=0; i<_dimSys; ++i)
 					LSErhs[i] =-Z[i] + C/(C+1)*_h*fHelp[i] + (1-C/(C+1))*_h*f0[i] ;
 
-				// Löse das LGS (delta_Z wird in LSErhs geschrieben)
+				// LÃ¶se das LGS (delta_Z wird in LSErhs geschrieben)
 				dgesv_(&_dimSys,&dimRHS,T,&_dimSys,pHelp,LSErhs,&_dimSys,&_idid);
 
 				// Konvergenzcheck
@@ -749,8 +749,8 @@ void Euler::doMidpoint()
 			//_firstStep			= true;
 
 			// Originale maximale Schrittweite wiederherstellen, 
-			// Startschrittweite mit Verhältnis multiplizieren. Dadurch wird zu großer Startschritt vermieden.
-			// Dies kann z.B. bei Diode zu großen rechten Seiten führen. 
+			// Startschrittweite mit VerhÃ¤ltnis multiplizieren. Dadurch wird zu groÃŸer Startschritt vermieden.
+			// Dies kann z.B. bei Diode zu groÃŸen rechten Seiten fÃ¼hren. 
 			_hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
 			_h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit()* dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
@@ -836,7 +836,7 @@ void Euler::giveZeroIdx(double *vL,double *vR,int *zeroIdx, int &zeroExist)
 	zeroExist = 0;
 	for (int i=0; i<_dimZeroFunc; i++)
 	{
-		// Überprüfung auf Vorzeichenwechsel
+		// ÃœberprÃ¼fung auf Vorzeichenwechsel
 		if (vL[i] * vR[i] <= 0 && abs(vL[i]- vR[i])>UROUND)
 		{
 			zeroIdx[i] = 1;
@@ -887,7 +887,7 @@ void Euler::doMyZeroSearch()
 		IllinoisV = new double[_dimZeroFunc];
 		zeroIdx = new int[_dimZeroFunc];
 
-		// Initialisierung der benötigten Größen
+		// Initialisierung der benÃ¶tigten GrÃ¶ÃŸen
 		//
 		//tL,tR: Zeit am linken/rechten Intervallrans
 		//yL,yR: Zustand am linken/rechten Intervallrand
@@ -920,7 +920,7 @@ void Euler::doMyZeroSearch()
 				giveZeroIdx(vL,vR,zeroIdx,zeroExist);
 				if ( zeroExist == 0)
 					return;
-				//Ist das Zeitintervall noch groß genug ?
+				//Ist das Zeitintervall noch groÃŸ genug ?
 				tDelta = tR - tL;
 
 				for (int i=0;i<_dimZeroFunc;i++)
@@ -1000,7 +1000,7 @@ void Euler::doMyZeroSearch()
 				interp1(tTry,yTry);
 				giveZeroVal(tTry,yTry,vTry);
 
-				// Nullstellendurchgänge zwischen tL und tTry
+				// NullstellendurchgÃ¤nge zwischen tL und tTry
 				giveZeroIdx(vL,vTry,zeroIdx,zeroExist);
 
 				if (zeroExist)
@@ -1018,7 +1018,7 @@ void Euler::doMyZeroSearch()
 					memcpy(vR,vTry,_dimZeroFunc*sizeof(double));
 					memcpy(vTry,vSwap,_dimZeroFunc*sizeof(double));
 
-					// falls zweimal in Folge nach links verschoben wurde, wird vL halbiert (nächstes mal wird weiter gerückt)
+					// falls zweimal in Folge nach links verschoben wurde, wird vL halbiert (nÃ¤chstes mal wird weiter gerÃ¼ckt)
 					if (lastMoved == 2)
 					{
 						for (int i=0;i<_dimZeroFunc;i++)
@@ -1045,7 +1045,7 @@ void Euler::doMyZeroSearch()
 					memcpy(vL,vTry,_dimZeroFunc*sizeof(double));
 					memcpy(vTry,vSwap,_dimZeroFunc*sizeof(double));
 
-					// falls zweimal in Folge nach rechts verschoben wurde, wird vR halbiert (nächstes mal wird weiter gerückt)
+					// falls zweimal in Folge nach rechts verschoben wurde, wird vR halbiert (nÃ¤chstes mal wird weiter gerÃ¼ckt)
 					if (lastMoved == 1)
 					{
 						for (int i=0;i<_dimZeroFunc;i++)
@@ -1229,7 +1229,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
 					SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
 
 				}//end while t -_tLastWritten
-				// System in den alten Zustand zurück versetzen
+				// System in den alten Zustand zurÃ¼ck versetzen
 
 				// setTime
 				continous_system->setTime(t);
@@ -1244,7 +1244,7 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
 		else
 			SolverDefaultImplementation::writeToFile(stp, t, h);
 
-		// Zähler für die Anzahl der ausgegebenen Schritte erhöhen
+		// ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
 		++ _outputStps;
 
 		saveLastSuccessfullState();
@@ -1384,7 +1384,7 @@ void Euler::restoreInitState()
 	// Initialen Zeitpunkt wiederherstellen
 	_tCurrent = _tInit;
 
-	// Einträge im ZeroFunction-Vektor wiederherstellen
+	// EintrÃ¤ge im ZeroFunction-Vektor wiederherstellen
 	if (_zeroVal)
 		memcpy(_zeroVal,_zeroValInit,_dimZeroFunc*sizeof(double));
 

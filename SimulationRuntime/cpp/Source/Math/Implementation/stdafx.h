@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN             // Selten verwendete Teile der Windows-Header nicht einbinden.
 
 
-// TODO: Hier auf zus‰tzliche Header, die das Programm erfordert, verweisen.
+// TODO: Hier auf zus√§tzliche Header, die das Programm erfordert, verweisen.
 #pragma once
 
 //typedef ublas::shallow_array_adaptor<double> adaptor_t;

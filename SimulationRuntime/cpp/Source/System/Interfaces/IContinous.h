@@ -18,7 +18,7 @@ class IContinous
 {
 public:
 	/// Enumeration with variable- and differentiation-index to sort state vector and vector of right hand side
-	/// (see: Simeon, B.: "Numerische Integration mechanischer Mehrkörpersysteme", PhD-Thesis, Düsseldorf, 1994)
+	/// (see: Simeon, B.: "Numerische Integration mechanischer MehrkÃ¶rpersysteme", PhD-Thesis, DÃ¼sseldorf, 1994)
 	enum INDEX
 	{
 		UNDEF_INDEX			=	0x00000,	

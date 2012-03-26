@@ -74,7 +74,7 @@ void KinsolCall::init()
 			memset(_f,0,_dimSys*sizeof(double));
 			memset(_yHelp,0,_dimSys*sizeof(double));
 			memset(_fHelp,0,_dimSys*sizeof(double));
-			memset(_jac,0,_dimSys*_dimSys*sizeof(double));  // Wird nur benötigt, falls symbolisch vorhanden
+			memset(_jac,0,_dimSys*_dimSys*sizeof(double));  // Wird nur benÃ¶tigt, falls symbolisch vorhanden
 			for (int i=0;i<_dimSys;i++)
 				_yHelp[i] = 1; 
 

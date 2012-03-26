@@ -1,6 +1,6 @@
-// stdafx.h : Includedatei f¸r Standardsystem-Includedateien
-// oder h‰ufig verwendete projektspezifische Includedateien,
-// die nur in unregelm‰ﬂigen Abst‰nden ge‰ndert werden.
+// stdafx.h : Includedatei f√ºr Standardsystem-Includedateien
+// oder h√§ufig verwendete projektspezifische Includedateien,
+// die nur in unregelm√§√üigen Abst√§nden ge√§ndert werden.
 //
 
 #pragma once
@@ -34,4 +34,4 @@ using namespace boost::numeric;
 using namespace std;
 using std::ios;
 
-// TODO: Hier auf zus‰tzliche Header, die das Programm erfordert, verweisen.
+// TODO: Hier auf zus√§tzliche Header, die das Programm erfordert, verweisen.

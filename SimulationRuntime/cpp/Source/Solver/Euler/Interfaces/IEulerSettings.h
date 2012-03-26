@@ -54,7 +54,7 @@ public:
 	virtual bool getUseSturmSequence() =0;
 	virtual void setUseSturmSequence(bool) =0;
 	/**
-	For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew‰hlt werden. ([false,true]; default: false = Fixpunktiteration)
+	For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew√§hlt werden. ([false,true]; default: false = Fixpunktiteration)
 	*/
 	virtual bool getUseNewtonIteration() =0;
 	virtual void setUseNewtonIteration(bool) =0;	

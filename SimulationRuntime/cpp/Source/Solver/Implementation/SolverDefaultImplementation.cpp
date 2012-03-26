@@ -155,20 +155,20 @@ void SolverDefaultImplementation::setZeroState()
 	// Alle Elemente im ZeroFunction-Array durchgehen
 	for (int i=0; i<_dimZeroFunc; ++i)
 	{
-		// Überprüfung auf Vorzeichenwechsel
+		// ÃœberprÃ¼fung auf Vorzeichenwechsel
 		// wenn _zeroVal[i] = _zeroValLastSuccess[i] = 0 ist.
 		//if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && (_zeroVal[i]!= 0.0 || _zeroValLastSuccess[i] != 0.0))
 		if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && abs(_zeroVal[i]-_zeroValLastSuccess[i])>UROUND)
 		{
 		
-			// Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
+			// ÃœberprÃ¼fung, ob rechte Seite kleiner als vorgegebene Toleranz ist
 			if ( (fabs(_zeroVal[i])) < _settings->getZeroTol() || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) < _settings->getZeroTimeTol()) ) 
 			{
 				
 				//  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
 				_zeroStatus = IDAESolver::EQUAL_ZERO;
 				_events[i] = true;
-				// ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+				// ZeroVal darf nicht null werden, da sonst im nÃ¤chsten Schritt 
 				// die Richtung des Vorzeichenwechsels nicht erkannt werden kann
 				if ( _zeroVal[i] == 0.0 )
 					_zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
@@ -176,7 +176,7 @@ void SolverDefaultImplementation::setZeroState()
 			else
 			{
 			  
-				// Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
+				// Vorzeichenwechsel, aber Eintrag ist grÃ¶ÃŸer (oder kleiner) als Toleranzbereich
 				_zeroStatus = IDAESolver::ZERO_CROSSING;
 
 				// Rest ZeroSign
@@ -190,23 +190,23 @@ void SolverDefaultImplementation::setZeroState()
 		else
 			_events[i] = false;
 	}
-	// Bei erstem Schritt können gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt für den Fall : 
+	// Bei erstem Schritt kÃ¶nnen gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt fÃ¼r den Fall : 
 	//_zeroVal[i]-_zeroValLastSuccess[i])<UROUND
 	if (_tLastSuccess == 0.0 && _zeroStatus == IDAESolver::EQUAL_ZERO)
 	{
 		for (int i=0; i<_dimZeroFunc; ++i)
 		{
-		// Überprüfung auf Vorzeichenwechsel
+		// ÃœberprÃ¼fung auf Vorzeichenwechsel
 		if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0)
 		{
-			// Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
+			// ÃœberprÃ¼fung, ob rechte Seite kleiner als vorgegebene Toleranz ist
 			if ( (fabs(_zeroVal[i])) < _settings->getZeroTol()  || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) <_settings->getZeroTimeTol()) ) 
 			{
 				
 				//  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
 				_zeroStatus = IDAESolver::EQUAL_ZERO;
 				_events[i] = true;
-				// ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+				// ZeroVal darf nicht null werden, da sonst im nÃ¤chsten Schritt 
 				// die Richtung des Vorzeichenwechsels nicht erkannt werden kann
 				if ( _zeroVal[i] == 0.0 )
 					_zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
@@ -214,7 +214,7 @@ void SolverDefaultImplementation::setZeroState()
 			else
 			{
 				
-				// Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
+				// Vorzeichenwechsel, aber Eintrag ist grÃ¶ÃŸer (oder kleiner) als Toleranzbereich
 				_zeroStatus = IDAESolver::ZERO_CROSSING;
 
 				// Rest ZeroSign
@@ -229,8 +229,8 @@ void SolverDefaultImplementation::setZeroState()
 			_events[i] = false;
 		}
 	}
-	// Sofern Nullstellensuche aktiv, wird überprüft ob über den Punkt wo ZeroCrossing war schon drüber ist.
-	// Wenn ja, gab es wohl doch keine Nullstelle (Berechnungsfehler wg. zu großer Schrittweite)
+	// Sofern Nullstellensuche aktiv, wird Ã¼berprÃ¼ft ob Ã¼ber den Punkt wo ZeroCrossing war schon drÃ¼ber ist.
+	// Wenn ja, gab es wohl doch keine Nullstelle (Berechnungsfehler wg. zu groÃŸer Schrittweite)
 	if (_zeroSearchActive && (_tCurrent > _tLastUnsucess))
 		_zeroStatus = IDAESolver::NO_ZERO;
 

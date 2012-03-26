@@ -68,7 +68,7 @@ public:
 
 
 	double
-		_tInit,							///< (initiale) Startzeit (wird nicht vom Solver verändert)
+		_tInit,							///< (initiale) Startzeit (wird nicht vom Solver verÃ¤ndert)
 		_tCurrent,						///< current time (is changed by the solver)
 		_tEnd,							///< end time
 		_tLastSuccess,					///< time of last successfull integration step (before zero crossing)

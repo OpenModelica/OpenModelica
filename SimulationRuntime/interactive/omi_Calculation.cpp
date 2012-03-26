@@ -8,10 +8,10 @@
  * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Calculation.cpp
- * The “Calculation” thread is synonymous to a producer which uses the “OM Solving Service”
- * to get results for a specific time step and to inform the “ResultManager”
+ * The Â“CalculationÂ” thread is synonymous to a producer which uses the Â“OM Solving ServiceÂ”
+ * to get results for a specific time step and to inform the Â“ResultManagerÂ”
  * about the new simulation results. It uses parameters to calculate the interval between single calculation steps
- * in a loop, until the simulation is interrupted by the “Control” or because of an occurred error.
+ * in a loop, until the simulation is interrupted by the Â“ControlÂ” or because of an occurred error.
  * If a single solving step is very complex and takes a long time to be solved,
  * it is possible to create more than one producer to start the next simulation step during the data storing time.
  *

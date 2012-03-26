@@ -7,9 +7,9 @@
 /*****************************************************************************/
 /**
 
-Klasse zur Kapselung der Parameter (Einstellungen) für Newton.
+Klasse zur Kapselung der Parameter (Einstellungen) fÃ¼r Newton.
 Hier werden default-Einstellungen entsprechend der allgemeinen Simulations-
-einstellugnen gemacht, diese können überprüft und ev. Fehleinstellungen korrigiert 
+einstellugnen gemacht, diese kÃ¶nnen Ã¼berprÃ¼ft und ev. Fehleinstellungen korrigiert 
 werden.
 \date     Montag, 1. August 2005
 \author   Daniel Kanth
@@ -27,13 +27,13 @@ public:
 	/*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 	virtual long int    getNewtMax() =0;					
 	virtual void    setNewtMax(long int) =0;	
-	/* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
+	/* Relative Toleranz fÃ¼r die Newtoniteration (default: 1e-6)*/
 	virtual double		getRtol() = 0;
 	virtual void		setRtol(double) = 0;				
-	/*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
+	/*Absolute Toleranz fÃ¼r die Newtoniteration (default: 1e-6)*/
 	virtual double		getAtol() = 0;						
 	virtual void		setAtol(double) = 0;				
-	/*Dämpfungsfaktor (default: 0.9)*/
+	/*DÃ¤mpfungsfaktor (default: 0.9)*/
 	virtual double	    getDelta() = 0;							
 	virtual void	    setDelta(double) = 0;		
 	virtual void load(string)=0;

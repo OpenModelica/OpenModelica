@@ -81,7 +81,6 @@ fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
 SOURCE_DIRS=OM*/ Compiler/ SimulationRuntime/ mosh/
-#SOURCE_DIRS=Compiler/
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
@@ -97,7 +96,7 @@ tab-error:
 
 utf8-error:
 	rm -f utf8-error.log*
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n "{}: " && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
+	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
 	@if test -e utf8-error.log; then cat utf8-error.log; fi
 	@test ! -e utf8-error.log
 	rm -f utf8-error.log*

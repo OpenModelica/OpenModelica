@@ -19,7 +19,7 @@ void		 NewtonSettings::setNewtMax(long int max)
 {
 	iNewt_max =max;
 }	
-/* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
+/* Relative Toleranz fÃ¼r die Newtoniteration (default: 1e-6)*/
 double		 NewtonSettings::getRtol()
 {
 	return dRtol;
@@ -28,7 +28,7 @@ void		 NewtonSettings::setRtol(double t)
 {
 	dRtol=t;
 }				
-/*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
+/*Absolute Toleranz fÃ¼r die Newtoniteration (default: 1e-6)*/
 double		 NewtonSettings::getAtol()
 {
 	return dAtol;
@@ -37,7 +37,7 @@ void		 NewtonSettings::setAtol(double t)
 {
 	dAtol =t;
 }				
-/*Dämpfungsfaktor (default: 0.9)*/
+/*DÃ¤mpfungsfaktor (default: 0.9)*/
 double	     NewtonSettings::getDelta()
 {
 	return dDelta;

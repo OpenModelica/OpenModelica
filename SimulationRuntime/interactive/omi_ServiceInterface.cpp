@@ -420,8 +420,8 @@ void fillSimulationStepDataWithValuesFromGlobalData(string method, SimStepData* 
 
 /* Because of Optimization while manipulating the whole global data structure
  * The mutex will only lock/unlock once
- * Kommentar: Normalerweise müsste für jede anfrage der Mutex gelocked werden und erneut frei gegeben
- * mit diesen methoden sorgen wir dafür, dass dies nur ein einziges mal geschiecht!
+ * Kommentar: Normalerweise mÃ¼sste fÃ¼r jede anfrage der Mutex gelocked werden und erneut frei gegeben
+ * mit diesen methoden sorgen wir dafÃ¼r, dass dies nur ein einziges mal geschiecht!
  */
 
 void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(

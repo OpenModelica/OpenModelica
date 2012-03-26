@@ -38,7 +38,7 @@ public:
 	 virtual bool getUseSturmSequence();
 	virtual void setUseSturmSequence(bool);
 	/**
-	For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew‰hlt werden. ([false,true]; default: false = Fixpunktiteration)
+	For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew√§hlt werden. ([false,true]; default: false = Fixpunktiteration)
 	*/
 	 virtual bool getUseNewtonIteration();
 	 virtual void setUseNewtonIteration(bool);	
@@ -61,7 +61,7 @@ private:
 
 	bool
 		_denseOutput,			///< Equidistant output(by interpolation polynominal) ([true,false]; default: false)
-		_useNewtonIteration,		///< For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew‰hlt werden. ([false,true]; default: false = Fixpunktiteration)
+		_useNewtonIteration,		///< For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gew√§hlt werden. ([false,true]; default: false = Fixpunktiteration)
 		_useSturmSequence;		///< Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
 
 	double

@@ -55,7 +55,7 @@ public:
 	virtual const int reportErrorMessage(ostream& messageStream);
 	/// Anfangszustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
 	virtual void saveInitState();
-	/// Anfangszustand (und entsprechenden Zeitpunkt) zurück ins System kopieren
+	/// Anfangszustand (und entsprechenden Zeitpunkt) zurÃ¼ck ins System kopieren
 	virtual void restoreInitState();
 
 private:
@@ -69,11 +69,11 @@ private:
 
 	/// Explizite Verfahren 1. und 2. Ordnung
 	/*
-	Euler-Cauchy (wie impliziter Euler, aber explizit durch Präd. Korr., 1. Ordnung): 
+	Euler-Cauchy (wie impliziter Euler, aber explizit durch PrÃ¤d. Korr., 1. Ordnung): 
 	y_n+1^P = y_n + h * f(t_n, y_n)
 	y_n+1 = y_n + h * f((t_n+1, y_n+1^P)
 
-	Heun (wie Trapezregel, aber explizit durch Präd. Korr., 2. Ordnung):
+	Heun (wie Trapezregel, aber explizit durch PrÃ¤d. Korr., 2. Ordnung):
 	y_n+1^P = y_n + h * f(t_n, y_n)
 	y_n+1 = y_n + h * 1/2(f(t_n, y_n) + f(t_n+1, y_n+1^P))
 
@@ -85,9 +85,9 @@ private:
 	/*void doHeun(); */
 
 
-	/// Implizites Euler-Verfahren 1. Ordnung (A-stabil, teilw. auch für instab. Systeme)
+	/// Implizites Euler-Verfahren 1. Ordnung (A-stabil, teilw. auch fÃ¼r instab. Systeme)
 	/*
-	Euler Rückwärts (wie Euler-Cauchy, ohne Prädiktor Schritt):
+	Euler RÃ¼ckwÃ¤rts (wie Euler-Cauchy, ohne PrÃ¤diktor Schritt):
 	y_n+1 = y_n + h * f(t_n+1, y_n+1)
 
 	*/
@@ -96,7 +96,7 @@ private:
 
 	/// Implizite Mittelpunkts- oder Trapezregel 2. Ordnung (A-stabil)
 	/*
-	Trapezregel (wie Heun, ohne Prädiktor Schritt):
+	Trapezregel (wie Heun, ohne PrÃ¤diktor Schritt):
 	y_n+1 = y_n + h * 1/2(f(t_n, y_n) + f(t_n+1, y_n+1))
 
 	*/
@@ -119,17 +119,17 @@ private:
 
 	// Hilfsfunktionen
 	//------------------------------------------
-	// Interpolation der Lösung für Euler-Verfahren
+	// Interpolation der LÃ¶sung fÃ¼r Euler-Verfahren
 	void interp1(double time, double* value);
 
 	/// Kapselung der Nullstellensuche
 	void doMyZeroSearch(); 
 	void doZeroSearch(); 
 
-	// gibt den Wert der Nullstellenfunktion für die Zeit t und den Zustand y wieder
+	// gibt den Wert der Nullstellenfunktion fÃ¼r die Zeit t und den Zustand y wieder
 	void giveZeroVal(const double &t,const double *y,double *zeroValue);
 
-	// gibt die Indizes der Nullstellenfunktion mit Vorzeichenwechsel zurück
+	// gibt die Indizes der Nullstellenfunktion mit Vorzeichenwechsel zurÃ¼ck
 	void giveZeroIdx(double *vL,double *vR,int *zeroIdx, int &zeroExist);
 
 	
@@ -138,21 +138,21 @@ private:
 	///// Output routine for dense output (Encapsulates interpolation, calls solverOutput() for output)
 	//void denseout(double* pK1); 
 
-	///// Ausgaberoutine zur dichten Ausgabe für alle Verfahren mit Ordnung > 1 
+	///// Ausgaberoutine zur dichten Ausgabe fÃ¼r alle Verfahren mit Ordnung > 1 
 	///// (Kapselt die Interpolation, ruft solverOut zur Ausgabe, ruft numberOfRootsBySturm() zur Bestimmung der Anzahl der Nullstellen 
 	///// im aktuellen Ausgabeintervall)
 	//void denseout(double* pK1, double* pK2, double b, double* w1, double* w2, double* w3); 
 
-	/// Bildung der Sturmsequenz, Ermittlung der Anzahl der Nullstellen, die aufgrund der Schrittweite ev. übersehen wurden, mit Hilfe der Sturm-Sequenz
+	/// Bildung der Sturmsequenz, Ermittlung der Anzahl der Nullstellen, die aufgrund der Schrittweite ev. Ã¼bersehen wurden, mit Hilfe der Sturm-Sequenz
 	void numberOfZerosBySturm(double& tHelp, double* Y0_ZeroF, double* Y12_ZeroF, double* Y1_ZeroF); 
 
 
 
 
-	/// Letzten gültigen Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
+	/// Letzten gÃ¼ltigen Zustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
 	virtual void saveLastSuccessfullState();
 
-	/// Letzten gültigen Zustand  (und entsprechenden Zeitpunkt) zurück ins System kopieren
+	/// Letzten gÃ¼ltigen Zustand  (und entsprechenden Zeitpunkt) zurÃ¼ck ins System kopieren
 	virtual void restoreLastSuccessfullState();
 	/// Berechnung der Jacobimatrix
 	void calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac, const bool& flag);

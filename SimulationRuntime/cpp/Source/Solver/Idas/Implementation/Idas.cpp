@@ -67,7 +67,7 @@ void Idas::init()
 	_idid = 5000;
 
 	// System im Solver assemblen, da folgende Reihenfolge einzuhalten ist: 
-	// 1) System assemblen und updaten, alles für Nullstellsuche anlegen
+	// 1) System assemblen und updaten, alles fÃ¼r Nullstellsuche anlegen
 	// 2) Spezielle Dimensionen bestimmen (muss wg. ODE/DAE im Solver stattfinden) 
 	// 3) Zustandsvektor anlegen
 	SolverDefaultImplementation::init();
@@ -104,7 +104,7 @@ void Idas::init()
 		memset(_zInit,0,_dimSys*sizeof(double));
 		memset(_zLastSucess,0,_dimSys*sizeof(double));
 		memset(_zLargeStep,0,_dimSys*sizeof(double));
-		// Arrays für Zustandswerte an den Berechnungsintervallgrenzen
+		// Arrays fÃ¼r Zustandswerte an den Berechnungsintervallgrenzen
 
 		if(_z0)		delete [] _z0;
 		if(_z1)		delete [] _z1;
@@ -203,7 +203,7 @@ void Idas::solve(const SOLVERCALL action)
 
 	if (_idasSettings && _system)
 	{
-		// Solver und System für Integration vorbereiten
+		// Solver und System fÃ¼r Integration vorbereiten
 		if(action & RECORDCALL && action & FIRST_CALL)
 		{
 			init();
@@ -262,7 +262,7 @@ void Idas::solve(const SOLVERCALL action)
 			// Solveraufruf
 			if(_idid == 0)
 			{
-				// Zähler zurücksetzen
+				// ZÃ¤hler zurÃ¼cksetzen
 				_accStps = 0;
 				_locStps = 0;
 
@@ -335,7 +335,7 @@ void Idas::callIDA()
 		continous_system->giveVars(_z);
 		_idid = IDAReInit(_idaMem, _tCurrent, _IDA_y, _IDA_yp);
 
-			// Zähler für die Anzahl der ausgegebenen Schritte erhöhen
+			// ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen
 			++ _outStps;
 
 			//saveLastSuccessfullState();
@@ -453,7 +453,7 @@ void Idas::writeSimulationInfo(ostream& outputStream)
 	//	<< "ausgegebene Schritte:                     " << _outStps << "\n"
 	//	<< "Anfangsschrittweite:                      " << _idasSettings->dH_init << "\n"
 	//	<< "Ausgabeschrittweite:                      " << _idasSettings->getGlobalSettings()->gethOutput() << "\n"
-	//	<< "Obere Grenze für Schrittweite:            " << _hUpLim << "\n\n";
+	//	<< "Obere Grenze fÃ¼r Schrittweite:            " << _hUpLim << "\n\n";
 
 	//// Status
 	//outputStream 
@@ -482,7 +482,7 @@ void Idas::restoreInitState()
 	// Initialen Zeitpunkt wiederherstellen
 	_tCurrent = _tInit;
 
-	// Einträge im ZeroFunction-Vektor wiederherstellen
+	// EintrÃ¤ge im ZeroFunction-Vektor wiederherstellen
 	if (_zeroVal)
 		memcpy(_zeroVal,_zeroValInit,_dimZeroFunc*sizeof(double));
 
@@ -493,7 +493,7 @@ void Idas::restoreInitState()
 void Idas::saveLargeStepState()
 {
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
-	// Aktuellen Zeitpunkt als "End-Zeitpunkt des großen Schrittes bei partitionierter Integration" abspeichern
+	// Aktuellen Zeitpunkt als "End-Zeitpunkt des groÃŸen Schrittes bei partitionierter Integration" abspeichern
 	_tLargeStep = _tCurrent;
 
 	// Zustandsvektor abspeichern
@@ -521,7 +521,7 @@ void Idas::restoreLastSuccessfullState()
 	// Letzten erfolgreichen Zeitpunkt wiederherstellen
 	_tCurrent = _tLastSuccess;
 
-	// Einträge im ZeroFunction-Vektor wiederherstellen
+	// EintrÃ¤ge im ZeroFunction-Vektor wiederherstellen
 	if (_zeroVal)
 		memcpy(_zeroVal,_zeroValLastSuccess,_dimZeroFunc*sizeof(double));
 
@@ -534,7 +534,7 @@ void Idas::giveScaledError(const double& h, double& error)
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
 	continous_system->giveVars(_z,IContinous::ALL_VARS);
 
-	// Berechnung der Skalierten Fehlernorm für ODE-Systeme
+	// Berechnung der Skalierten Fehlernorm fÃ¼r ODE-Systeme
 	double sc = 0.0;
 	for(int i=0; i<_dimSys; ++i)
 	{
@@ -546,7 +546,7 @@ void Idas::giveScaledError(const double& h, double& error)
 void Idas::refineCurrentState(const double& r)
 {
 	IContinous* continous_system = dynamic_cast<IContinous*>(_system);
-	// Approximation höherer Ordnung
+	// Approximation hÃ¶herer Ordnung
 	for(int i=0; i<_dimSys; ++i)
 		_z[i] += (_z[i] - _zLargeStep[i]) / ( pow(1.0/r,3.0) );
 
