@@ -904,7 +904,7 @@ function iconv "The iconv() function converts one multibyte characters from one 
   input String from;
   input String to;
   output String result;
-external "C" result=SystemImpl__iconv(string,from,to) annotation(Library = {"omcruntime"});
+external "C" result=SystemImpl__iconv(string,from,to,true /* Print errors */) annotation(Library = {"omcruntime"});
 end iconv;
 
 function snprintff "sprintf format string that takes one double as argument"

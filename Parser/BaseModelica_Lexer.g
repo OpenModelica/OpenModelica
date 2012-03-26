@@ -295,11 +295,19 @@ IMPURE : 'impure';
 STRING : '"' STRING_GUTS '"'
        {
          pANTLR3_STRING text = $STRING_GUTS.text;
-         /*
-          * adpro: this is not needed anymore as we
-          *        open the files in binary mode "wb" 
-          *        in System.writeFile and Print.writeBuf
-          * fixString(text); */ /* Replace \r\n with \n, but only in Windows */
+         if (*text->chars && !*SystemImpl__iconv((const char*)text->chars,"UTF-8","UTF-8",0)) {
+           int len = strlen((char*)$text->chars), i;
+           signed char *buf  = (signed char*) strdup((char*)text->chars);
+           for (i=0;i<len;i++) {
+             if (buf[i] < 0)
+               buf[i] = '?';
+           }
+           c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in UTF-8: \"\%s\".",
+                (const char**) &buf, 1, $line, $pos+1, $line, $pos+len+1,
+                ModelicaParser_readonly, ModelicaParser_filename_C);
+           free(buf);
+           ModelicaParser_lexerError = ANTLR3_TRUE;
+         }
          SETTEXT(text);
        };
 

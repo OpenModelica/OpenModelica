@@ -56,7 +56,7 @@ extern "C" {
 #include "runtime/systemimpl.h"
 
 static long unsigned int szMemoryUsed = 0;
-static long lexerFailed;
+int ModelicaParser_lexerError = 0;
 
 static void lexNoRecover(pANTLR3_LEXER lexer)
 {
@@ -174,7 +174,7 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer got '%s' but failed to recognize the rest: '%s'", (const char**) chars, 2, line, offset, line, offset, false, ModelicaParser_filename_C);
   else
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer failed to recognize '%s'", (const char**) chars, 1, line, offset, line, offset, false, ModelicaParser_filename_C);
-  lexerFailed = ANTLR3_TRUE;
+  ModelicaParser_lexerError = ANTLR3_TRUE;
   free(chars[0]);
   free(chars[1]);
 }
@@ -200,7 +200,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   recognizer->state->error = ANTLR3_TRUE;
   recognizer->state->failed = ANTLR3_TRUE;
 
-  if (lexerFailed)
+  if (ModelicaParser_lexerError)
     return;
 
   // Retrieve some info for easy reading.
@@ -286,8 +286,9 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
     SystemImpl__basename(ModelicaParser_filename_C) :
     ModelicaParser_filename_C;
   oldfilename = (char*) ModelicaParser_filename_C;
-  ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8");
+  ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8",1);
   if (!*ModelicaParser_filename_C) return NULL;
+  ModelicaParser_filename_C = strdup(ModelicaParser_filename_C);
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
@@ -315,7 +316,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
     pLexer->recover = lexNoRecover;
     tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pModelica_3_Lexer)lxr)));
   }
-  lexerFailed = ANTLR3_FALSE;
+  ModelicaParser_lexerError = ANTLR3_FALSE;
 
   if (tstream == NULL) { fprintf(stderr, "Out of memory trying to allocate token stream\n"); fflush(stderr); exit(ANTLR3_ERR_NOMEM); }
   tstream->channel = ANTLR3_TOKEN_DEFAULT_CHANNEL;
@@ -339,7 +340,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   else
     res = psr->stored_definition(psr);
 
-  if (lexerFailed || pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
+  if (ModelicaParser_lexerError || pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
     res = NULL;
   psr->free(psr);
   psr = (pModelicaParser) NULL;
@@ -356,6 +357,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   lxr = NULL;
   input->close(input);
   input = (pANTLR3_INPUT_STREAM) NULL;
+  free((char*)ModelicaParser_filename_C);
   ModelicaParser_filename_C = oldfilename;
   return res;
 }

@@ -1649,7 +1649,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   return 1;
 }
 
-extern char* SystemImpl__iconv(const char * str, const char *from, const char *to)
+extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
 {
   static char *buf = 0;
   static int buflen = 0;
@@ -1672,7 +1672,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
     return (char*) "";
   }
   in_str = (char*) str;
@@ -1682,13 +1682,13 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   iconv_close(ic);
   if (count == -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
     return (char*) "";
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
     const char *tokens[1] = {to};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(to=%s) failed because the character set output null bytes in the middle of the string.",&to,1);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(to=%s) failed because the character set output null bytes in the middle of the string.",&to,1);
     return (char*) "";
   }
   return buf;

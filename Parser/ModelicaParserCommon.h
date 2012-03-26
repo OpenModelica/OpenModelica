@@ -36,10 +36,13 @@
 extern "C" {
 #endif
 
+#include "systemimpl.h"
+
 extern int ModelicaParser_flags;
 extern int ModelicaParser_readonly;
 extern void *ModelicaParser_filename_RML;
 extern const char *ModelicaParser_filename_C;
+extern int ModelicaParser_lexerError;
 
 #define PARSE_MODELICA        0
 #define PARSE_FLAT            1<<0
