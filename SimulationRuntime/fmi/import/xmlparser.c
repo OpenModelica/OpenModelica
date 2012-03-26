@@ -125,8 +125,9 @@ static int checkEnumValue(const char* enu);
  * Returns -1 or a globally unique id for the value such that
  * enuNames[id] is the string representation of the enum value. */
 Enu getEnumValue(void* element, Att a, ValueStatus* vs) {
+    Enu id;
     const char* value = getString(element, a);
-    Enu id = valueDefined;
+    *vs = valueDefined;
     if (!value) { 
         *vs = valueMissing;
         switch (a) {
@@ -777,24 +778,26 @@ void freeElement(void* element){
     /* free child nodes */
     switch (getAstNodeType(e->type)) {
         case astListElement:
-            freeList((void **)((ListElement*)e)->list);
-            break;
+          freeList((void **)((ListElement*)e)->list);
+          break;
         case astScalarVariable:
-            freeList((void **)((ScalarVariable*)e)->directDependencies);
+          freeList((void **)((ScalarVariable*)e)->directDependencies);
+					break;
         case astType:
-            freeElement(((Type*)e)->typeSpec);
-            break;
+          freeElement(((Type*)e)->typeSpec);
+          break;
         case astModelDescription:
-            md = (ModelDescription*)e;
-            freeList((void **)md->unitDefinitions);
-            freeList((void **)md->typeDefinitions);
-            freeElement((void *)md->defaultExperiment);
-            freeList((void **)md->vendorAnnotations);
-            freeList((void **)md->modelVariables);
-            break;
-		default:
-			/* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
-			exit(EXIT_FAILURE);
+          md = (ModelDescription*)e;
+          freeList((void **)md->unitDefinitions);
+          freeList((void **)md->typeDefinitions);
+          freeElement((void *)md->defaultExperiment);
+          freeList((void **)md->vendorAnnotations);
+          freeList((void **)md->modelVariables);
+        	break;
+				default:
+					//ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
+					//exit(EXIT_FAILURE);
+				  break;
     }
     /* free the struct */
     free(e);

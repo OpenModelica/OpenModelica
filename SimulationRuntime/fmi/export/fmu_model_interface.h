@@ -54,7 +54,6 @@ typedef enum {
 } ModelState;
 
 typedef struct {
-    fmiBoolean *isPositive;
     fmiString instanceName;
     fmiString GUID;
     fmiCallbackFunctions functions;

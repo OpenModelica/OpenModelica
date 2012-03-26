@@ -3,14 +3,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 
 
 /* Define for Debuging */
-//#define _PRINT_OUT__
-//#define _DEBUG_
-extern int smi_verbose;
-
+/*
+#define _PRINT_OUT__ 
+#define _DEBUG_ 
+*/
 
 #define BUFSIZE 4096
 
@@ -167,7 +168,7 @@ void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx){
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nx;i++){
-      printf("\n#### fmiSetContStates[%d] = %f\n",i,((ModelInstance*)in_fmu)->r[i]);
+      printf("\n#### fmiSetContStates[%d] = %f\n",i,in_x[i]);
     }
 #endif
     if(status>fmiWarning){
@@ -190,7 +191,7 @@ void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiSetReal[%d] = %f\n",i,((ModelInstance*)in_fmu)->r[in_vr[i]]);
+      printf("\n#### fmiSetReal[%d] = %f\n",i,rv[i]);
     }
 #endif
     if(status>fmiWarning){
@@ -384,7 +385,7 @@ void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int 
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiGetReal[%d] = %f\n",i,((ModelInstance*)in_fmu)->r[in_vr[i]]);
+      printf("\n#### fmiGetReal[%d] = %f\n",i,rv[i]);
     }
 #endif
     if(status>fmiWarning){
@@ -555,12 +556,12 @@ void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * 
 #ifdef _PRINT_OUT__
   printf("#### eventInfo->stateValuesChanged = %d\n",((fmiEventInfo*) in_evtInfo)->stateValuesChanged);
 #endif
-  if(*((fmiBoolean*)timeEvt)||*((fmiBoolean*)stepEvt)||*((fmiBoolean*)stateEvt)){
-    fmiEvtUpdate(in_fmufun,in_inst,*((fmiBoolean*)interMediateRes),(fmiEventInfo*) in_evtInfo);
+  /*if(*((fmiBoolean*)timeEvt)||*((fmiBoolean*)stepEvt)||*((fmiBoolean*)stateEvt)){*/
+  fmiEvtUpdate(in_fmufun,in_inst,*((fmiBoolean*)interMediateRes),(fmiEventInfo*) in_evtInfo);
 #ifdef _PRINT_OUT__
     printf("#### fmiEvtUpdate(...) has been called ...\n\n");
 #endif
-  }
+  /*}*/
   return;
 }
 
@@ -568,9 +569,13 @@ void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * 
  * logger(c, comp->instanceName, fmiOK, "log", "fmiSetTime: time=%.16g", time); */
 void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
     const char* category, const char* message, ...){
+  va_list message_args;
+  va_start(message_args, message);
+  printf("-----------------------------------------------------------\n");
+  printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message:\n",(long)in_fmu,instanceName,status,category);
+  vprintf(message, message_args);
   printf("\n-----------------------------------------------------------\n");
-  printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message: %s\n",(long)in_fmu,instanceName,status,category,message);
-  printf("-----------------------------------------------------------\n\n");
+  va_end(message_args);
 }
 
 /* instantiation of an fmiComponent instance, i.e. an FMU

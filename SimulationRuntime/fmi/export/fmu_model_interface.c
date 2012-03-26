@@ -120,12 +120,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
 		"fmiInstantiateModel: Error: Could not initialize the global data structure file.");
 		return NULL;
 	}
-    comp->isPositive = (fmiBoolean*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmiBoolean));
-    if (!comp->isPositive) {
-      functions.logger(NULL, instanceName, fmiError, "error",
-          "fmiInstantiateModel: Out of memory.");
-      return NULL;
-    }
   }else{
     functions.logger(NULL, instanceName, fmiError, "error",
         "fmiInstantiateModel: Out of memory.");
@@ -134,8 +128,9 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
       "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
-  setupDataStruc2(comp->fmuData);
+  setupDataStruc(comp->fmuData);
   initializeDataStruc(comp->fmuData);
+  setupDataStruc2(comp->fmuData);
 
   comp->instanceName = instanceName;
   comp->GUID = GUID;
@@ -148,10 +143,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp->eventInfo.terminateSimulation = fmiFalse;
   comp->eventInfo.upcomingTimeEvent = fmiFalse;
   comp->eventInfo.nextEventTime = 0;
-
-  comp->fmuData->localData[0]->timeValue= 0;
-
-  setStartValues(comp); // to be implemented by the includer of this file
 
   return comp;
 }
@@ -283,8 +274,8 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     }
     strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]);
   }
-  comp->outputsvalid = fmiFalse;
-  comp->eventInfo.stateValuesChanged = fmiTrue;
+  //comp->outputsvalid = fmiFalse;
+  //comp->eventInfo.stateValuesChanged = fmiTrue;
   return fmiOK;
 }
 
@@ -296,6 +287,9 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
     "fmiSetTime: time=%.16g", time);
   rotateRingBuffer(comp->fmuData->simulationData, 1, (void**) comp->fmuData->localData);
   comp->fmuData->localData[0]->timeValue = time;
+  functionODE(comp->fmuData);
+  functionAlgebraics(comp->fmuData);
+  function_storeDelayed(comp->fmuData);
   return fmiOK;
 }
 
@@ -316,14 +310,13 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i]);
     assert(vr>=0 && vr<NUMBER_OF_REALS);
-    if (setReal(comp, vr,x[i]) != fmiOK) // to be implemented by the includer of this file
+    if (setReal(comp, vr, x[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
   // calculate new values
   functionODE(comp->fmuData);
 #endif
   functionAlgebraics(comp->fmuData);
-  functionAliasEquations(comp->fmuData);
   function_storeDelayed(comp->fmuData);
   return fmiOK;
 }
@@ -545,7 +538,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
   eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
 
-
+  setStartValues(comp);
   copyStartValuestoInitValues(comp->fmuData);
   /* read input vars */
   //input_function(comp->fmuData);
@@ -556,7 +549,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
-  if (initialization(comp->fmuData, "state", "nelder_mead_ex")){
+  if (initialization(comp->fmuData, "state", "nelder_mead_ex","",0)){
     comp->state = modelError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
           "fmiInitialization: failed");
@@ -634,7 +627,12 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiCompletedIntegratorStep");
-  *callEventUpdate = fmiFalse;
+  functionODE(comp->fmuData);
+  functionAlgebraics(comp->fmuData);
+  function_storeDelayed(comp->fmuData);
+  output_function(comp->fmuData);
+  SaveZeroCrossings(comp->fmuData);
+  storePreValues(comp->fmuData);
 
   return fmiOK;
 }

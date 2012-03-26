@@ -529,7 +529,7 @@ OMOptim/build/OMOptim.config \
 OMOptim/OMOptimBasis/build/Makefile.unix \
 OMOptim/OMOptimBasis/build/OMOptimBasis.config \
 testsuite/bootstrapping/LinkMain.makefile \
-FMI/import/source/Makefile \
+SimulationRuntime/fmi/import/Makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \

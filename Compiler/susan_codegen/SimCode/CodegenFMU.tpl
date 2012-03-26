@@ -555,18 +555,14 @@ template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
-    match initialValue 
-      case SOME(v) then 
-       '<%str%> = <%initVal(v)%>;'
+      '<%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>];'
 end initVals;
 
 template initParams(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(__) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue 
-      case SOME(v) then 
-       '<%str%> = <%initVal(v)%>;'
+      '<%str%> = comp->fmuData->simulationInfo.<%arrayName%>[<%index%>];'
 end initParams;
 
 template initVal(Exp initialValue) 

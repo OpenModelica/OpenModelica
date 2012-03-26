@@ -58,11 +58,11 @@ docs: mkbuilddirs omlibrary
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
 fmi: interactive
-	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget)
-	(cp -p FMI/import/source/fmuWrapper.h FMI/import/source/xmlparser.h $(builddir_inc))
+	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
+	(cp -p SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc))
 	
 fmiclean: 
-	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget) clean
+	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
 
 breakprocess:
 	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
