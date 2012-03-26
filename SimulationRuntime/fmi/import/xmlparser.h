@@ -24,9 +24,9 @@ extern const char *enuNames[SIZEOF_ENU];
 typedef enum {
     elm_fmiModelDescription,elm_UnitDefinitions,elm_BaseUnit,elm_DisplayUnitDefinition,elm_TypeDefinitions,
     elm_Type,elm_RealType,elm_IntegerType,elm_BooleanType,elm_StringType,
-	elm_EnumerationType,elm_Item, elm_DefaultExperiment,elm_VendorAnnotations,elm_Tool,
-	elm_Annotation,elm_ModelVariables,elm_ArrayVariable,elm_ScalarVariable,elm_DirectDependency,
-	elm_Name,elm_Real,elm_Integer,elm_Boolean,elm_String,elm_Enumeration
+  elm_EnumerationType,elm_Item, elm_DefaultExperiment,elm_VendorAnnotations,elm_Tool,
+  elm_Annotation,elm_ModelVariables,elm_ArrayVariable,elm_ScalarVariable,elm_DirectDependency,
+  elm_Name,elm_Real,elm_Integer,elm_Boolean,elm_String,elm_Enumeration
 } Elm;
 
 /* Attributes */
@@ -86,8 +86,8 @@ typedef struct{
 */
 
 typedef struct{
-	ScalarVariable** scalarVariables;
-	/* ArrayVariable** arrayVariables; array varialbes for later use */
+  ScalarVariable** scalarVariables;
+  /* ArrayVariable** arrayVariables; array varialbes for later use */
 } ModelVariables;
 
 /* AST node for element ModelDescription */
@@ -108,8 +108,8 @@ typedef enum {
     astListElement,
     astType,
     astScalarVariable,
-	astArrayVariable,
-	astModelVariables,
+  astArrayVariable,
+  astModelVariables,
     astModelDescription
 } AstNodeType;
 

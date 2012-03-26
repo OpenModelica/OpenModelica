@@ -4,48 +4,48 @@
 #include "KinsolSettings.h"
 
 KinsolSettings::KinsolSettings()
-: iNewt_max					(50)
-, dRtol						(1e-6)
-, dAtol						(1.0)
-, dDelta					(0.9)
+: iNewt_max         (50)
+, dRtol           (1e-6)
+, dAtol           (1.0)
+, dDelta          (0.9)
 {
 };
 /*max. Anzahl an Newtonititerationen pro Schritt (default: 25)*/
 long int     KinsolSettings::getNewtMax()
 {
-	return iNewt_max;
+  return iNewt_max;
 }
-void		 KinsolSettings::setNewtMax(long int max)
+void     KinsolSettings::setNewtMax(long int max)
 {
-	iNewt_max =max;
-}	
+  iNewt_max =max;
+} 
 /* Relative Toleranz für die Newtoniteration (default: 1e-6)*/
-double		 KinsolSettings::getRtol()
+double     KinsolSettings::getRtol()
 {
-	return dRtol;
+  return dRtol;
 }
-void		 KinsolSettings::setRtol(double t)
+void     KinsolSettings::setRtol(double t)
 {
-	dRtol=t;
-}				
+  dRtol=t;
+}       
 /*Absolute Toleranz für die Newtoniteration (default: 1e-6)*/
-double		 KinsolSettings::getAtol()
+double     KinsolSettings::getAtol()
 {
-	return dAtol;
-}						
-void		 KinsolSettings::setAtol(double t)
+  return dAtol;
+}           
+void     KinsolSettings::setAtol(double t)
 {
-	dAtol =t;
-}				
+  dAtol =t;
+}       
 /*Dämpfungsfaktor (default: 0.9)*/
-double	     KinsolSettings::getDelta()
+double       KinsolSettings::getDelta()
 {
-	return dDelta;
-}							
-void	     KinsolSettings::setDelta(double t)
+  return dDelta;
+}             
+void       KinsolSettings::setDelta(double t)
 {
-	dDelta = t;
-}	
+  dDelta = t;
+} 
 
 void KinsolSettings::load(string)
 {

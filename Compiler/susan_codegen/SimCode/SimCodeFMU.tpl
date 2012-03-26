@@ -163,9 +163,9 @@ template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
 ::=
 match simulationSettingsOpt
   case SOME(v) then 
-	<<
-	<DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
-  	>>
+    <<
+    <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
+      >>
 end DefaultExperiment;
 
 template DefaultExperimentAttribute(SimulationSettings simulationSettings)
@@ -173,9 +173,9 @@ template DefaultExperimentAttribute(SimulationSettings simulationSettings)
 ::=
 match simulationSettings
   case SIMULATION_SETTINGS(__) then 
-	<<
-	startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
-  	>>
+    <<
+    startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
+      >>
 end DefaultExperimentAttribute;
 
 template VendorAnnotations(SimCode simCode)
@@ -214,7 +214,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-	ScalarVariable(var)
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
     ScalarVariable(var)
@@ -655,7 +655,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.paramVars |> var => SwitchVars(var,"parameters") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var,"realAlias","-") ;separator="\n"%>
         default: 
-        	return 0.0;
+            return 0.0;
     }
   }
   
@@ -676,7 +676,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.paramVars |> var => SwitchVarsSet(var,"parameters") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVarsSet(var,"realAlias") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -696,7 +696,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.intParamVars |> var => SwitchVars(var,"intVariables.parameters") ;separator="\n"%>
         <%vars.intAliasVars |> var => SwitchAliasVars(var,"intVariables.alias","-") ;separator="\n"%>
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -715,7 +715,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.intParamVars |> var => SwitchVarsSet(var,"intVariables.parameters") ;separator="\n"%>
         <%vars.intAliasVars |> var => SwitchAliasVarsSet(var,"intVariables.alias") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -735,7 +735,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolParamVars |> var => SwitchVars(var,"boolVariables.parameters") ;separator="\n"%>
         <%vars.boolAliasVars |> var => SwitchAliasVars(var,"boolVariables.alias","!") ;separator="\n"%>
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -754,7 +754,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolParamVars |> var => SwitchVarsSet(var,"boolVariables.parameters") ;separator="\n"%>
         <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var,"boolVariables.alias") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -774,7 +774,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.stringParamVars |> var => SwitchVars(var,"stringVariables.parameters") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVars(var,"stringVariables.alias","") ;separator="\n"%>
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -792,7 +792,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%externalFuncs%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }

@@ -164,9 +164,9 @@ template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
 ::=
 match simulationSettingsOpt
   case SOME(v) then 
-	<<
-	<DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
-  	>>
+    <<
+    <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
+      >>
 end DefaultExperiment;
 
 template DefaultExperimentAttribute(SimulationSettings simulationSettings)
@@ -174,9 +174,9 @@ template DefaultExperimentAttribute(SimulationSettings simulationSettings)
 ::=
 match simulationSettings
   case SIMULATION_SETTINGS(__) then 
-	<<
-	startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
-  	>>
+    <<
+    startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
+      >>
 end DefaultExperimentAttribute;
 
 template VendorAnnotations(SimCode simCode)
@@ -215,7 +215,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%vars.intAlgVars |> var =>
-	ScalarVariable(var)
+    ScalarVariable(var)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
     ScalarVariable(var)
@@ -602,7 +602,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.algVars |> var => SwitchVars(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var,"realParameter") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
   }
   
@@ -624,7 +624,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.paramVars |> var => SwitchParametersSet(var,"realParameter") ;separator="\n"%>
         
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -647,7 +647,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.intParamVars |> var => SwitchParameters(var,"integerParameter") ;separator="\n"%>
 
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -666,7 +666,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.intAlgVars |> var => SwitchVarsSet(var,"integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParametersSet(var,"integerParameter") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -686,7 +686,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolAlgVars |> var => SwitchVars(var,"booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParameters(var,"booleanParameter") ;separator="\n"%>
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -705,7 +705,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolAlgVars |> var => SwitchVarsSet(var,"booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParametersSet(var,"booleanParameter") ;separator="\n"%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }
@@ -726,7 +726,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.stringParamVars |> var => SwitchParameters(var,"stringParameter") ;separator="\n"%>
         
         default: 
-        	return 0;
+            return 0;
     }
   }
   
@@ -765,7 +765,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%externalFuncs%>
         default: 
-        	return fmiError;
+            return fmiError;
     }
     return fmiOK;
   }

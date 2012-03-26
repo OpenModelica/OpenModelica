@@ -72,9 +72,9 @@ template testMap2(list<Integer> ints) ::=
 end testMap2;
 
 template testMap3(list<list<Integer>> lstOfLst) ::= 
-	(lstOfLst |> intLst => 
-		(intLst |> int => mapInt(int) ;separator=", ") 
-	;separator=";\n"; anchor)
+    (lstOfLst |> intLst => 
+        (intLst |> int => mapInt(int) ;separator=", ") 
+    ;separator=";\n"; anchor)
 end testMap3;
 
 template testMap4(list<list<Integer>> lstOfLst) ::= 
@@ -88,7 +88,7 @@ end testMap5;
 template intMatrix(list<list<Integer>> lstOfLst) ::= 
 << 
 [ <%lstOfLst |> intLst => 
-		(intLst ;separator=", ") 
+        (intLst ;separator=", ") 
    ;separator=";\n"; anchor%> ]
 >>
 end intMatrix;
@@ -271,9 +271,9 @@ mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
 testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
 testMap3(list<list<Integer>> lstOfLst) ::= 
-	(lstOfLst of intLst : 
-		(intLst of int : mapInt(int) ", ") 
-	";\n"; anchor)
+    (lstOfLst of intLst : 
+        (intLst of int : mapInt(int) ", ") 
+    ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst : (lst : mapInt())
 testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
 
@@ -286,9 +286,9 @@ mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 testMap(list<Integer> ints) ::= (ints map i -> mapInt(i) map mi -> mapString(mi) ", ")
 testMap2(list<Integer> ints) ::= (ints map int -> mapInt(int) map st -> mapIntString(int, st) ", ")
 testMap3(list<list<Integer>> lstOfLst) ::= 
-	(lstOfLst map intLst -> 
-		(intLst map int -> mapInt(int) ", ") 
-	";\n"; anchor)
+    (lstOfLst map intLst -> 
+        (intLst map int -> mapInt(int) ", ") 
+    ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst map it -> it map it -> mapInt(it)
 testMap5(list<Integer> ints) ::= (ints map i -> mapString(mapInt(i)) ", ")
 
@@ -313,9 +313,9 @@ arg |> tmpl |> tmpl2
 testMap(list<Integer> ints) ::= (ints | i -> mapInt(i) | mi -> mapString(mi) ;separ = ", ")
 testMap2(list<Integer> ints) ::= (ints | int -> mapInt(int) | st -> mapIntString(int, st) ;separ = ", ")
 testMap3(list<list<Integer>> lstOfLst) ::= 
-	(lstOfLst | intLst -> 
-		(intLst | int -> mapInt(int) ; separ = ", ") 
-	; separ = ";\n"; anchor)
+    (lstOfLst | intLst -> 
+        (intLst | int -> mapInt(int) ; separ = ", ") 
+    ; separ = ";\n"; anchor)
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst | intLst -> intLst | it -> mapInt(it)
 testMap5(list<Integer> ints) ::= (ints | i -> mapString(mapInt(i)) ; separ = ", ")
 
@@ -324,9 +324,9 @@ lstOfLst | intLst -> (intLst | it -> mapInt(it))
 lstOfLst | intLst -> intLst | it -> mapInt(it) //not correct!! 
 
 lstOfLst | intLst -> 
-	let outerIndex = i0 
-	(intLst | it -> 
-		'<<outerIndex>>/<<i0>> ... <<mapInt(it)>>') 
+    let outerIndex = i0 
+    (intLst | it -> 
+        '<<outerIndex>>/<<i0>> ... <<mapInt(it)>>') 
 
 
 lstOfLst |> map (fun lst -> lst |> map (fun it -> mapInt(it)) )
@@ -334,30 +334,30 @@ lstOfLst |> map (fun lst -> lst |> map (fun it -> mapInt(it)) )
 lstOfLst |> map intLst -> (intLst |> map it -> mapInt(it))
 
 testMap(list<Integer> ints) ::=
-	<< >>
+    << >>
 
-<<	
+<<    
 private static readonly SimVarInfo[] VariableInfosStatic = new[] {
-	<% {  
-		filter vars.stateVars with SIMVAR(__) then 
-		
-		map vars.stateVars with el then
-		 
-		  <<
-		  new SimVarInfo( "(% cref(origName) %)", "(%comment%)", SimVarType.State, <% index %>, false)
-		  >>; separator=",\n"
-		,
-		vars.derivativeVars |? SIMVAR(__) => <<
-		new SimVarInfo( "<% cref(origName) %>", "<% comment %>", SimVarType.StateDer, <% index %>, false)
-		>>; separator=",\n"
-		,
-		(vars.algVars of SIMVAR(__): <<
-		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
-		>>; separator=",\n"),
-		(vars.paramVars of SIMVAR(__): <<
-		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
-		>>; separator=",\n")
-	}; separator=",\n\n" %>
+    <% {  
+        filter vars.stateVars with SIMVAR(__) then 
+        
+        map vars.stateVars with el then
+         
+          <<
+          new SimVarInfo( "(% cref(origName) %)", "(%comment%)", SimVarType.State, <% index %>, false)
+          >>; separator=",\n"
+        ,
+        vars.derivativeVars |? SIMVAR(__) => <<
+        new SimVarInfo( "<% cref(origName) %>", "<% comment %>", SimVarType.StateDer, <% index %>, false)
+        >>; separator=",\n"
+        ,
+        (vars.algVars of SIMVAR(__): <<
+        new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
+        >>; separator=",\n"),
+        (vars.paramVars of SIMVAR(__): <<
+        new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
+        >>; separator=",\n")
+    }; separator=",\n\n" %>
 };  
 
 */
@@ -367,13 +367,13 @@ typeTempl(list<String> lst) ::= lst
 typeTemplCall(list<String> lst) ::= '<%typeTempl( (lst) )> hoop'
 
 multiTest(list<String> lst, String s, String s2, list<String> lst2) ::=
-	({lst, s, lst2, s2} ; separator=",")
+    ({lst, s, lst2, s2} ; separator=",")
 
 multiTest2(list<String> lst, String s, String s2, list<String> lst2) ::=
-	({lst : if it then it, s, lst2, s2} ; separator=",")
+    ({lst : if it then it, s, lst2, s2} ; separator=",")
 
 multiTest23(list<String> lst, String s, String s2, list<String> lst2) ::=
-	({lst : if it then it, s, '<%lst2>', s2} : 'bla<%it>' ; separator=",") //!! TODO: '<%lst2>' is same as lst2 ... it is not reduced
+    ({lst : if it then it, s, '<%lst2>', s2} : 'bla<%it>' ; separator=",") //!! TODO: '<%lst2>' is same as lst2 ... it is not reduced
 */
 
 template implementationTempl(String str) 

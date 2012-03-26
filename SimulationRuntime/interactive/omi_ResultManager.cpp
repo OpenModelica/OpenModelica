@@ -123,75 +123,75 @@ void printSRDF();
  * Initialization for simulation data
  *****************************************************************/
 bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
-	bool retValue = true;
-	//simDataNames_SimulationResult will be initialize from the SimulationControl
+  bool retValue = true;
+  //simDataNames_SimulationResult will be initialize from the SimulationControl
 
-	p_ssdArray_NextFreeSlot = ssdArray;
+  p_ssdArray_NextFreeSlot = ssdArray;
 
-	{ //initialize the SSDArray with NullSSDs
-		for (int i = 0; i < MAX_SSD; i++) {
-			SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
-			nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
-			double *statesTMP1 = new double[nStates];
-			double *statesDerivativesTMP1 = new double[nStates];
-			double *algebraicsTMP1 = new double[nAlgebraic];
-			double *parametersTMP1 = new double[nParameters];
-			//TODO [201105222] pv: optimization try putting new array directly into the ssdArraySlot instead of creating an nullSDD first
-			nullSSD.states = statesTMP1;
-			nullSSD.statesDerivatives = statesDerivativesTMP1;
-			nullSSD.algebraics = algebraicsTMP1;
-			nullSSD.parameters = parametersTMP1;
+  { //initialize the SSDArray with NullSSDs
+    for (int i = 0; i < MAX_SSD; i++) {
+      SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
+      nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
+      double *statesTMP1 = new double[nStates];
+      double *statesDerivativesTMP1 = new double[nStates];
+      double *algebraicsTMP1 = new double[nAlgebraic];
+      double *parametersTMP1 = new double[nParameters];
+      //TODO [201105222] pv: optimization try putting new array directly into the ssdArraySlot instead of creating an nullSDD first
+      nullSSD.states = statesTMP1;
+      nullSSD.statesDerivatives = statesDerivativesTMP1;
+      nullSSD.algebraics = algebraicsTMP1;
+      nullSSD.parameters = parametersTMP1;
 
-			ssdArray[i] = nullSSD;
-		}
-	}
+      ssdArray[i] = nullSSD;
+    }
+  }
 
-	{ //initialize the SSD for the first simulation run (e.g. at time 0)
-		p_simulationStartSSD = &simulationStartSSD;
-		double *statesTMP2 = new double[nStates];
-		double *statesDerivativesTMP2 = new double[nStates];
-		double *algebraicsTMP2 = new double[nAlgebraic];
-		double *parametersTMP2 = new double[nParameters];
-		p_simulationStartSSD->states = statesTMP2;
-		p_simulationStartSSD->statesDerivatives = statesDerivativesTMP2;
-		p_simulationStartSSD->algebraics = algebraicsTMP2;
-		p_simulationStartSSD->parameters = parametersTMP2;
-	}
-	//p_ssdArray_NextFreeSlot = ssdArray; //Done from resetSSDArrayWithNull...
-	p_ssdArray_LastSlot = &ssdArray[MAX_SSD - 1];
+  { //initialize the SSD for the first simulation run (e.g. at time 0)
+    p_simulationStartSSD = &simulationStartSSD;
+    double *statesTMP2 = new double[nStates];
+    double *statesDerivativesTMP2 = new double[nStates];
+    double *algebraicsTMP2 = new double[nAlgebraic];
+    double *parametersTMP2 = new double[nParameters];
+    p_simulationStartSSD->states = statesTMP2;
+    p_simulationStartSSD->statesDerivatives = statesDerivativesTMP2;
+    p_simulationStartSSD->algebraics = algebraicsTMP2;
+    p_simulationStartSSD->parameters = parametersTMP2;
+  }
+  //p_ssdArray_NextFreeSlot = ssdArray; //Done from resetSSDArrayWithNull...
+  p_ssdArray_LastSlot = &ssdArray[MAX_SSD - 1];
 
-	pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
-	pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
-	pp_srdfArray_LastSlot = &srdfArrayOfPointer[MAX_SRDF - 1];
+  pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
+  pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
+  pp_srdfArray_LastSlot = &srdfArrayOfPointer[MAX_SRDF - 1];
 
-	p_simdatanumbers = &simdatanumbers;
-	p_simdatanumbers->nStates = nStates;
-	p_simdatanumbers->nAlgebraic = nAlgebraic;
-	p_simdatanumbers->nParameters = nParameters;
+  p_simdatanumbers = &simdatanumbers;
+  p_simdatanumbers->nStates = nStates;
+  p_simdatanumbers->nAlgebraic = nAlgebraic;
+  p_simdatanumbers->nParameters = nParameters;
 
-	p_simDataNames_SimulationResult = &simDataNames_SimulationResult;
-	p_simDataNamesFilterForTransfer = &simDataNamesFilterForTransfer;
+  p_simDataNames_SimulationResult = &simDataNames_SimulationResult;
+  p_simDataNamesFilterForTransfer = &simDataNamesFilterForTransfer;
 
-	/*
-	 * Dynamic definition of struct data
-	 */
-	string *statesNamesTMP = new string[nStates];
-	string *stateDerivativesNamesTMP = new string[nStates];
-	string *algebraicsNamesTMP = new string[nAlgebraic];
-	string *parametersNames1TMP = new string[nParameters];
-	p_simDataNames_SimulationResult->statesNames = statesNamesTMP;
-	p_simDataNames_SimulationResult->stateDerivativesNames = stateDerivativesNamesTMP;
-	p_simDataNames_SimulationResult->algebraicsNames = algebraicsNamesTMP;
-	p_simDataNames_SimulationResult->parametersNames = parametersNames1TMP;
-	//****
-	string *variablesNamesTMP = new string[nStates + nAlgebraic];
-	string *parametersNames2TMP = new string[nParameters];
-	p_simDataNamesFilterForTransfer->variablesNames = variablesNamesTMP;
-	p_simDataNamesFilterForTransfer->parametersNames = parametersNames2TMP;
-	//****
-	p_sdnMutex = &sdnMutex;
+  /*
+   * Dynamic definition of struct data
+   */
+  string *statesNamesTMP = new string[nStates];
+  string *stateDerivativesNamesTMP = new string[nStates];
+  string *algebraicsNamesTMP = new string[nAlgebraic];
+  string *parametersNames1TMP = new string[nParameters];
+  p_simDataNames_SimulationResult->statesNames = statesNamesTMP;
+  p_simDataNames_SimulationResult->stateDerivativesNames = stateDerivativesNamesTMP;
+  p_simDataNames_SimulationResult->algebraicsNames = algebraicsNamesTMP;
+  p_simDataNames_SimulationResult->parametersNames = parametersNames1TMP;
+  //****
+  string *variablesNamesTMP = new string[nStates + nAlgebraic];
+  string *parametersNames2TMP = new string[nParameters];
+  p_simDataNamesFilterForTransfer->variablesNames = variablesNamesTMP;
+  p_simDataNamesFilterForTransfer->parametersNames = parametersNames2TMP;
+  //****
+  p_sdnMutex = &sdnMutex;
 
-	return retValue;
+  return retValue;
 }
 
 /*
@@ -199,13 +199,13 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
  * TODO [20110523] pv: TBD
  */
 bool deInitializeSSD_AND_SRDF() {
-	for (int i = 0; i < MAX_SSD; i++) {
-		delete [] ssdArray[i].states;
-		delete [] ssdArray[i].statesDerivatives;
-		delete [] ssdArray[i].algebraics;
-		delete [] ssdArray[i].parameters;
-	}
-	return true;
+  for (int i = 0; i < MAX_SSD; i++) {
+    delete [] ssdArray[i].states;
+    delete [] ssdArray[i].statesDerivatives;
+    delete [] ssdArray[i].algebraics;
+    delete [] ssdArray[i].parameters;
+  }
+  return true;
 }
 
 /*****************************************************************
@@ -213,7 +213,7 @@ bool deInitializeSSD_AND_SRDF() {
  *****************************************************************/
 
 P_SimDataNumbers getSimDataNumbers(void) {
-	return p_simdatanumbers;
+  return p_simdatanumbers;
 }
 
 /**
@@ -221,62 +221,62 @@ P_SimDataNumbers getSimDataNumbers(void) {
  * parameter: pointer from type SimStepData, it points on a data struct in a Calculation thread
  */
 bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
-	bool retValue = true;
+  bool retValue = true;
 
-	/*
-	 * This part is necessary for the producer &consumer problem with districted buffer
-	 * The any entity which want to use the array must pas this part
-	 */
-	// Try to enter the ghSemaphore_NumberFreeSlots gate.
-	ghSemaphore_NumberFreeSlots.Wait();
+  /*
+   * This part is necessary for the producer &consumer problem with districted buffer
+   * The any entity which want to use the array must pas this part
+   */
+  // Try to enter the ghSemaphore_NumberFreeSlots gate.
+  ghSemaphore_NumberFreeSlots.Wait();
 
-	ssdMutex.Lock();
-	/********************************************************************
-	 * Entity has pas the synchronization sektion and can work on the SSD buffer
-	 * Restrictions: if the simulation has been reseted the first time value must be VALID_TIME_AFTER_RESET
-	 * otherwise the result won't be added to the system
-	 */
+  ssdMutex.Lock();
+  /********************************************************************
+   * Entity has pas the synchronization sektion and can work on the SSD buffer
+   * Restrictions: if the simulation has been reseted the first time value must be VALID_TIME_AFTER_RESET
+   * otherwise the result won't be added to the system
+   */
 
-	//block used by normal running simulation
-	if(!simulationReset && !simulationChangetime){
-		addDataToSSD(p_SimStepData_from_Calculation);
-		//cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
-	}else{//block used once after simulation has been reseted or more if the next time to add into the ssd is not VALID_TIME_AFTER_RESET
-		if(simulationReset){
-			if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET || p_SimStepData_from_Calculation->forTimeStep == 0){
-					addDataToSSD(p_SimStepData_from_Calculation);
-					//cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
-					simulationReset = false;
-			}
-			else{
-				//cout << "no chance for reset ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
-			}
-		} else{
-			if(simulationChangetime){
+  //block used by normal running simulation
+  if(!simulationReset && !simulationChangetime){
+    addDataToSSD(p_SimStepData_from_Calculation);
+    //cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+  }else{//block used once after simulation has been reseted or more if the next time to add into the ssd is not VALID_TIME_AFTER_RESET
+    if(simulationReset){
+      if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET || p_SimStepData_from_Calculation->forTimeStep == 0){
+          addDataToSSD(p_SimStepData_from_Calculation);
+          //cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+          simulationReset = false;
+      }
+      else{
+        //cout << "no chance for reset ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+      }
+    } else{
+      if(simulationChangetime){
 
-				if(compareDouble(p_SimStepData_from_Calculation->forTimeStep, VALID_TIME_AFTER_CHANGETIME)){
-					//cout << "add after change time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
-						addDataToSSD(p_SimStepData_from_Calculation);
-						simulationChangetime = false;
-				} else{
-					//cout << "no chance for change ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
-				}
-			}
-		}
-	}
+        if(compareDouble(p_SimStepData_from_Calculation->forTimeStep, VALID_TIME_AFTER_CHANGETIME)){
+          //cout << "add after change time: " << p_SimStepData_from_Calculation->forTimeStep   << endl; fflush(stdout);
+            addDataToSSD(p_SimStepData_from_Calculation);
+            simulationChangetime = false;
+        } else{
+          //cout << "no chance for change ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+        }
+      }
+    }
+  }
 
-	//Work on SSD and SRDF buffer ended **********************************
+  //Work on SSD and SRDF buffer ended **********************************
 
-	// Release the mutex
-	if (!ssdMutex.Unlock()) {
-		//printf("ReleaseMutex ssdMutex error: %d\n", GetLastError());
-		return false;
-	}
-	//if(debugResultManager) { cout << "set released mutex" << endl; fflush(stdout); }
-	// Release the semaphore ghSemaphore_NumberUsedSlots
-	ghSemaphore_NumberUsedSlots.Post();
+  // Release the mutex
+  if (!ssdMutex.Unlock()) {
+    //printf("ReleaseMutex ssdMutex error: %d\n", GetLastError());
+    return false;
+  }
+  //if(debugResultManager) { cout << "set released mutex" << endl; fflush(stdout); }
+  // Release the semaphore ghSemaphore_NumberUsedSlots
+  ghSemaphore_NumberUsedSlots.Post();
 
-	return retValue;
+  return retValue;
 }
 
 /**
@@ -285,30 +285,30 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
  * parameter: pointer from type SimStepData, it points on a data struct in a Transfer thread
  */
 bool getResultData(SimStepData* p_SimResDataForw_from_Transfer) {
-	bool retValue = true;
+  bool retValue = true;
 
-	/*
-	 * This part is necessary for the producer &consumer problem with districted buffer
-	 * An entity which want to use the array must pas this part
-	 */
-	ghSemaphore_NumberUsedSlots.Wait();
-	ssdMutex.Lock();
+  /*
+   * This part is necessary for the producer &consumer problem with districted buffer
+   * An entity which want to use the array must pas this part
+   */
+  ghSemaphore_NumberUsedSlots.Wait();
+  ssdMutex.Lock();
 
-	/********************************************************************
-	 * Entity has pas the synchronization station and can work on the SSD buffer
-	 */
-	if ((*pp_srdfArray_FirstQueueElement)->forTimeStep != -1) {
-		popSRDF(p_SimResDataForw_from_Transfer);
-	} else{
-		//cout << "no chance ;) for time: " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << endl; fflush(stdout);
-	}
+  /********************************************************************
+   * Entity has pas the synchronization station and can work on the SSD buffer
+   */
+  if ((*pp_srdfArray_FirstQueueElement)->forTimeStep != -1) {
+    popSRDF(p_SimResDataForw_from_Transfer);
+  } else{
+    //cout << "no chance ;) for time: " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << endl; fflush(stdout);
+  }
 
 
-	// Release the mutex
-	ssdMutex.Unlock();
-	ghSemaphore_NumberFreeSlots.Post();
+  // Release the mutex
+  ssdMutex.Unlock();
+  ghSemaphore_NumberFreeSlots.Post();
 
-	return retValue;
+  return retValue;
 }
 
 /**
@@ -326,94 +326,94 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer) {
  */
 SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 
-	if (debugResultManager > 1) {
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush( stdout);
-		for (int i = 0; i < MAX_SSD; i++) {
-			cout << ssdArray[i].forTimeStep << endl; fflush(stdout);
-		}
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END"	<< endl; fflush(stdout);
-	}
+  if (debugResultManager > 1) {
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush( stdout);
+    for (int i = 0; i < MAX_SSD; i++) {
+      cout << ssdArray[i].forTimeStep << endl; fflush(stdout);
+    }
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END"  << endl; fflush(stdout);
+  }
 
-	if (debugResultManager > 1) {
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: "
-				<< p_ssdArray_NextFreeSlot << endl;	fflush( stdout);
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot: "
-				<< p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot-1: "
-				<< (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
-		cout
-				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: timeStep: "
-				<< timeStep << endl;
-		fflush(stdout);
-	}
+  if (debugResultManager > 1) {
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: "
+        << p_ssdArray_NextFreeSlot << endl;  fflush( stdout);
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot: "
+        << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot-1: "
+        << (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
+    cout
+        << "ResultManager:\tFunct.: getResultDataForTime\tMessage: timeStep: "
+        << timeStep << endl;
+    fflush(stdout);
+  }
 
-	SimStepData* temp;
+  SimStepData* temp;
 
-	//check if the searched time step is available in simulationstepdata (ssd)
-	if (timeStep == p_ssdArray_NextFreeSlot->forTimeStep || (timeStep
-			> p_ssdArray_NextFreeSlot->forTimeStep && timeStep
-			<= (p_ssdArray_NextFreeSlot - 1)->forTimeStep)) {
+  //check if the searched time step is available in simulationstepdata (ssd)
+  if (timeStep == p_ssdArray_NextFreeSlot->forTimeStep || (timeStep
+      > p_ssdArray_NextFreeSlot->forTimeStep && timeStep
+      <= (p_ssdArray_NextFreeSlot - 1)->forTimeStep)) {
 
-		SimStepData* firstSSD_Element = ssdArray;
+    SimStepData* firstSSD_Element = ssdArray;
 
-		//If this query returns true we have to search in Part B, because the time step is smaller than the lowest ssd in Part A
-		if (timeStep < firstSSD_Element->forTimeStep) {
-			temp = static_cast<int> (((timeStep
-					- p_ssdArray_NextFreeSlot->forTimeStep) / stepSize)
-					+ 0.0001) + p_ssdArray_NextFreeSlot; //+0.0001 is needed because of type cast and vision from int and double
-			if (debugResultManager > 1) {
-				cout
-						<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part B temp->forTimeStep: "
-						<< temp->forTimeStep << endl;
-				fflush( stdout);
-			}
-			return temp;
-		} else {
-			temp
-					= static_cast<int> (((timeStep
-							- firstSSD_Element->forTimeStep) / stepSize)
-							+ 0.0001) //+0.0001 is important while casting from double to integer
-							+ firstSSD_Element;
-			if (debugResultManager > 1) {
-				cout
-						<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part A temp->forTimeStep: "
-						<< temp->forTimeStep << endl;
-				fflush( stdout);
-			}
-			return temp;
-		}
-	} else {
-		SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
-		nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
-		/*double *statesTMP1 = new double[1];
-		double *statesDerivativesTMP1 = new double[1];
-		double *algebraicsTMP1 = new double[1];
-		double *parametersTMP1 = new double[1];
-		nullSSD.states = statesTMP1;
-		nullSSD.statesDerivatives = statesDerivativesTMP1;
-		nullSSD.algebraics = algebraicsTMP1;
-		nullSSD.parameters = parametersTMP1;*/
-		temp = &nullSSD;
-		if (debugResultManager > 1) {
-			cout
-					<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD"
-					<< endl;
-			fflush( stdout);
-		}
-	}
-	return temp;
+    //If this query returns true we have to search in Part B, because the time step is smaller than the lowest ssd in Part A
+    if (timeStep < firstSSD_Element->forTimeStep) {
+      temp = static_cast<int> (((timeStep
+          - p_ssdArray_NextFreeSlot->forTimeStep) / stepSize)
+          + 0.0001) + p_ssdArray_NextFreeSlot; //+0.0001 is needed because of type cast and vision from int and double
+      if (debugResultManager > 1) {
+        cout
+            << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part B temp->forTimeStep: "
+            << temp->forTimeStep << endl;
+        fflush( stdout);
+      }
+      return temp;
+    } else {
+      temp
+          = static_cast<int> (((timeStep
+              - firstSSD_Element->forTimeStep) / stepSize)
+              + 0.0001) //+0.0001 is important while casting from double to integer
+              + firstSSD_Element;
+      if (debugResultManager > 1) {
+        cout
+            << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part A temp->forTimeStep: "
+            << temp->forTimeStep << endl;
+        fflush( stdout);
+      }
+      return temp;
+    }
+  } else {
+    SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
+    nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
+    /*double *statesTMP1 = new double[1];
+    double *statesDerivativesTMP1 = new double[1];
+    double *algebraicsTMP1 = new double[1];
+    double *parametersTMP1 = new double[1];
+    nullSSD.states = statesTMP1;
+    nullSSD.statesDerivatives = statesDerivativesTMP1;
+    nullSSD.algebraics = algebraicsTMP1;
+    nullSSD.parameters = parametersTMP1;*/
+    temp = &nullSSD;
+    if (debugResultManager > 1) {
+      cout
+          << "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD"
+          << endl;
+      fflush( stdout);
+    }
+  }
+  return temp;
 }
 
 /*
  * Retuns the simulation state data at the initial state
  */
 SimStepData* getResultDataFirstStart() {
-	return p_simulationStartSSD;
+  return p_simulationStartSSD;
 }
 
 /*
@@ -421,11 +421,11 @@ SimStepData* getResultDataFirstStart() {
  * to signal a changed time to the simulation
  */
 void setSimulationTimeReversed(double validTime){
-	VALID_TIME_AFTER_CHANGETIME = validTime;
-	if (debugResultManager > 0) {
-		cout << "ResultManager:\tFunct.: setSimulationTimeReversed\tData: VALID_TIME_AFTER_CHANGETIME: "	<< VALID_TIME_AFTER_CHANGETIME << endl; fflush( stdout);
-	}
-	simulationChangetime = true;
+  VALID_TIME_AFTER_CHANGETIME = validTime;
+  if (debugResultManager > 0) {
+    cout << "ResultManager:\tFunct.: setSimulationTimeReversed\tData: VALID_TIME_AFTER_CHANGETIME: "  << VALID_TIME_AFTER_CHANGETIME << endl; fflush( stdout);
+  }
+  simulationChangetime = true;
 }
 
 /*****************************************************************
@@ -438,20 +438,20 @@ void setSimulationTimeReversed(double validTime){
  * because old simulation data mustn't send to the GUI.
  */
 void resetSRDFAfterChangetime() {
-	if (debugResultManager > 1) {
-		cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START"	<< endl; fflush( stdout);
-	}
-	pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
-	pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
+  if (debugResultManager > 1) {
+    cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START"  << endl; fflush( stdout);
+  }
+  pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
+  pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
 
-	while (ghSemaphore_NumberUsedSlots.TryWait()) {
-		ghSemaphore_NumberFreeSlots.Post();
-	}
+  while (ghSemaphore_NumberUsedSlots.TryWait()) {
+    ghSemaphore_NumberFreeSlots.Post();
+  }
 
-	if (debugResultManager > 1) {
-		printSRDF();
-		cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END"	<< endl; fflush( stdout);
-	}
+  if (debugResultManager > 1) {
+    printSRDF();
+    cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END"  << endl; fflush( stdout);
+  }
 }
 
 /**
@@ -459,56 +459,56 @@ void resetSRDFAfterChangetime() {
  * The SSD array has to reset with nullSSD elements
  */
 void resetSSDArrayWithNullSSD(long nStates, long nAlgebraic, long nParameters) {
-	p_ssdArray_NextFreeSlot = ssdArray;
-	simulationReset = true;
-	for (int i = 0; i < MAX_SSD; i++) {
+  p_ssdArray_NextFreeSlot = ssdArray;
+  simulationReset = true;
+  for (int i = 0; i < MAX_SSD; i++) {
 
-		delete [] ssdArray[i].states;
-		delete [] ssdArray[i].statesDerivatives;
-		delete [] ssdArray[i].algebraics;
-		delete [] ssdArray[i].parameters;
+    delete [] ssdArray[i].states;
+    delete [] ssdArray[i].statesDerivatives;
+    delete [] ssdArray[i].algebraics;
+    delete [] ssdArray[i].parameters;
 
-		SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
-		nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
-		double *statesTMP1 = new double[nStates];
-		double *statesDerivativesTMP1 = new double[nStates];
-		double *algebraicsTMP1 = new double[nAlgebraic];
-		double *parametersTMP1 = new double[nParameters];
-		//TODO [201105222] optimization try putting new array directly into the ssdArraySlot instead of creating an nullSDD first
-		nullSSD.states = statesTMP1;
-		nullSSD.statesDerivatives = statesDerivativesTMP1;
-		nullSSD.algebraics = algebraicsTMP1;
-		nullSSD.parameters = parametersTMP1;
+    SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
+    nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
+    double *statesTMP1 = new double[nStates];
+    double *statesDerivativesTMP1 = new double[nStates];
+    double *algebraicsTMP1 = new double[nAlgebraic];
+    double *parametersTMP1 = new double[nParameters];
+    //TODO [201105222] optimization try putting new array directly into the ssdArraySlot instead of creating an nullSDD first
+    nullSSD.states = statesTMP1;
+    nullSSD.statesDerivatives = statesDerivativesTMP1;
+    nullSSD.algebraics = algebraicsTMP1;
+    nullSSD.parameters = parametersTMP1;
 
-		ssdArray[i] = nullSSD;
-		// if(debugResultManager) { cout << ssdArray[i].forTimeStep << endl; fflush(stdout); }
-	}
-	if (debugResultManager > 0) {
-		cout << "ResultManager:\tFunct.: resetSSDArrayWithNullSSD" << endl;	fflush( stdout);
-		printSSD();
-	}
+    ssdArray[i] = nullSSD;
+    // if(debugResultManager) { cout << ssdArray[i].forTimeStep << endl; fflush(stdout); }
+  }
+  if (debugResultManager > 0) {
+    cout << "ResultManager:\tFunct.: resetSSDArrayWithNullSSD" << endl;  fflush( stdout);
+    printSSD();
+  }
 }
 
 void lockMutexSSD() {
-	ssdMutex.Lock();
+  ssdMutex.Lock();
 }
 
 void releaseMutexSSD() {
-	ssdMutex.Unlock();
+  ssdMutex.Unlock();
 }
 
 /*
  * Returns the minimum time stored in the SSDArray
  */
 double getMinTime_inSSD() {
-	return p_ssdArray_NextFreeSlot->forTimeStep;
+  return p_ssdArray_NextFreeSlot->forTimeStep;
 }
 
 /*
  * Returns the maximum time stored in the SSDArray
  */
 double getMaxTime_inSSD() {
-	return (p_ssdArray_NextFreeSlot - 1)->forTimeStep;
+  return (p_ssdArray_NextFreeSlot - 1)->forTimeStep;
 }
 /*****************************************************************
  * Organization of SSD and SRDF
@@ -519,41 +519,41 @@ double getMaxTime_inSSD() {
  */
 void addDataToSSD(SimStepData* p_SimStepData_from_Calculation) {
 
-	p_ssdArray_NextFreeSlot->forTimeStep = p_SimStepData_from_Calculation->forTimeStep; //is the lastEmittedTime or timeValue of this step
-	if (firstRun)
-		p_simulationStartSSD->forTimeStep = p_SimStepData_from_Calculation->forTimeStep;
+  p_ssdArray_NextFreeSlot->forTimeStep = p_SimStepData_from_Calculation->forTimeStep; //is the lastEmittedTime or timeValue of this step
+  if (firstRun)
+    p_simulationStartSSD->forTimeStep = p_SimStepData_from_Calculation->forTimeStep;
 
-	for (int i = 0; i < p_simdatanumbers->nStates; i++) {
-		p_ssdArray_NextFreeSlot->states[i] = p_SimStepData_from_Calculation->states[i];
-		p_ssdArray_NextFreeSlot->statesDerivatives[i]= p_SimStepData_from_Calculation->statesDerivatives[i];
+  for (int i = 0; i < p_simdatanumbers->nStates; i++) {
+    p_ssdArray_NextFreeSlot->states[i] = p_SimStepData_from_Calculation->states[i];
+    p_ssdArray_NextFreeSlot->statesDerivatives[i]= p_SimStepData_from_Calculation->statesDerivatives[i];
 
-		//Save the first simulation data
-		if (firstRun)
-			p_simulationStartSSD->states[i]	= p_SimStepData_from_Calculation->states[i];
-		if (firstRun)
-			p_simulationStartSSD->statesDerivatives[i] = p_SimStepData_from_Calculation->statesDerivatives[i];
-	}
-	if (debugResultManager > 1) {
-		cout << "ResultManager:\tFunct.: addDataToSSD\tData 2: time = " << (p_ssdArray_NextFreeSlot)->forTimeStep << " tank1.h = " << (p_ssdArray_NextFreeSlot)->states[0] << endl; fflush( stdout);
-		printSSD();
-	}
-	for (int i = 0; i < p_simdatanumbers->nAlgebraic; i++) {
-		p_ssdArray_NextFreeSlot->algebraics[i] = p_SimStepData_from_Calculation->algebraics[i];
-		if (firstRun)
-			p_simulationStartSSD->algebraics[i]	= p_SimStepData_from_Calculation->algebraics[i];
-	}
+    //Save the first simulation data
+    if (firstRun)
+      p_simulationStartSSD->states[i]  = p_SimStepData_from_Calculation->states[i];
+    if (firstRun)
+      p_simulationStartSSD->statesDerivatives[i] = p_SimStepData_from_Calculation->statesDerivatives[i];
+  }
+  if (debugResultManager > 1) {
+    cout << "ResultManager:\tFunct.: addDataToSSD\tData 2: time = " << (p_ssdArray_NextFreeSlot)->forTimeStep << " tank1.h = " << (p_ssdArray_NextFreeSlot)->states[0] << endl; fflush( stdout);
+    printSSD();
+  }
+  for (int i = 0; i < p_simdatanumbers->nAlgebraic; i++) {
+    p_ssdArray_NextFreeSlot->algebraics[i] = p_SimStepData_from_Calculation->algebraics[i];
+    if (firstRun)
+      p_simulationStartSSD->algebraics[i]  = p_SimStepData_from_Calculation->algebraics[i];
+  }
 
-	for (int i = 0; i < p_simdatanumbers->nParameters; i++) {
-		p_ssdArray_NextFreeSlot->parameters[i] = p_SimStepData_from_Calculation->parameters[i];
-		if (firstRun)
-			p_simulationStartSSD->parameters[i]	= p_SimStepData_from_Calculation->parameters[i];
-	}
+  for (int i = 0; i < p_simdatanumbers->nParameters; i++) {
+    p_ssdArray_NextFreeSlot->parameters[i] = p_SimStepData_from_Calculation->parameters[i];
+    if (firstRun)
+      p_simulationStartSSD->parameters[i]  = p_SimStepData_from_Calculation->parameters[i];
+  }
 
-	firstRun = false; //simulationStartSSD should only initialize once
+  firstRun = false; //simulationStartSSD should only initialize once
 
-	//If a simulation result is pushed into SSD it also have to push into the SRDF buffer
-	pushSRDF();
-	pointNextFreeSSDSlot();
+  //If a simulation result is pushed into SSD it also have to push into the SRDF buffer
+  pushSRDF();
+  pointNextFreeSSDSlot();
 }
 
 /**
@@ -562,13 +562,13 @@ void addDataToSSD(SimStepData* p_SimStepData_from_Calculation) {
  * otherwise to the next higher index
  */
 void pointNextFreeSSDSlot() {
-	//cout << "pointNextFreeSSDSlot: p_ssdArray_NextFreeSlot " << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
-	if (p_ssdArray_NextFreeSlot != p_ssdArray_LastSlot) {
+  //cout << "pointNextFreeSSDSlot: p_ssdArray_NextFreeSlot " << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
+  if (p_ssdArray_NextFreeSlot != p_ssdArray_LastSlot) {
 
-		p_ssdArray_NextFreeSlot++;
-	} else {
-		p_ssdArray_NextFreeSlot = ssdArray;
-	}
+    p_ssdArray_NextFreeSlot++;
+  } else {
+    p_ssdArray_NextFreeSlot = ssdArray;
+  }
 }
 
 /*
@@ -582,19 +582,19 @@ void pointNextFreeSSDSlot() {
  * otherwise to the next higher index
  */
 void pointNextFreeSRDFSlot() {
-	if (pp_srdfArray_NextFreeSlot != pp_srdfArray_LastSlot) {
-		pp_srdfArray_NextFreeSlot++;
-	} else {
-		pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
-	}
+  if (pp_srdfArray_NextFreeSlot != pp_srdfArray_LastSlot) {
+    pp_srdfArray_NextFreeSlot++;
+  } else {
+    pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
+  }
 }
 
 void pointNextUsedSRDFSlot() {
-	if (pp_srdfArray_FirstQueueElement != pp_srdfArray_LastSlot) {
-		pp_srdfArray_FirstQueueElement++;
-	} else {
-		pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
-	}
+  if (pp_srdfArray_FirstQueueElement != pp_srdfArray_LastSlot) {
+    pp_srdfArray_FirstQueueElement++;
+  } else {
+    pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
+  }
 }
 
 /**
@@ -602,14 +602,14 @@ void pointNextUsedSRDFSlot() {
  * and calls the pointNextFreeSRDFSlot method
  */
 void pushSRDF() {
-	*pp_srdfArray_NextFreeSlot = &(*p_ssdArray_NextFreeSlot);
+  *pp_srdfArray_NextFreeSlot = &(*p_ssdArray_NextFreeSlot);
 
-	if (debugResultManager > 1) {
-		cout << "ResultManager:\tFunct.: pushSRDF\tData 1: time = " << (*pp_srdfArray_NextFreeSlot)->forTimeStep << " tank1.h = " << (*pp_srdfArray_NextFreeSlot)->states[0] << endl; fflush( stdout);
-		cout << "ResultManager:\tFunct.: pushSRDF\tData 2: time = " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << " tank1.h = " << (*pp_srdfArray_FirstQueueElement)->states[0] << endl; fflush( stdout);
-		printSRDF();
-	}
-	pointNextFreeSRDFSlot();
+  if (debugResultManager > 1) {
+    cout << "ResultManager:\tFunct.: pushSRDF\tData 1: time = " << (*pp_srdfArray_NextFreeSlot)->forTimeStep << " tank1.h = " << (*pp_srdfArray_NextFreeSlot)->states[0] << endl; fflush( stdout);
+    cout << "ResultManager:\tFunct.: pushSRDF\tData 2: time = " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << " tank1.h = " << (*pp_srdfArray_FirstQueueElement)->states[0] << endl; fflush( stdout);
+    printSRDF();
+  }
+  pointNextFreeSRDFSlot();
 }
 
 /*
@@ -617,35 +617,35 @@ void pushSRDF() {
  */
 void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
 
-	p_SimResDataForw_from_Transfer->forTimeStep
-			= (*pp_srdfArray_FirstQueueElement)->forTimeStep; //is the lastEmittedTime of this step
+  p_SimResDataForw_from_Transfer->forTimeStep
+      = (*pp_srdfArray_FirstQueueElement)->forTimeStep; //is the lastEmittedTime of this step
 
-	for (int i = 0; i < p_simdatanumbers->nStates; i++) {
-		p_SimResDataForw_from_Transfer->states[i]
-				= (*pp_srdfArray_FirstQueueElement)->states[i];
-		p_SimResDataForw_from_Transfer->statesDerivatives[i]
-				= (*pp_srdfArray_FirstQueueElement)->statesDerivatives[i];
-	}
+  for (int i = 0; i < p_simdatanumbers->nStates; i++) {
+    p_SimResDataForw_from_Transfer->states[i]
+        = (*pp_srdfArray_FirstQueueElement)->states[i];
+    p_SimResDataForw_from_Transfer->statesDerivatives[i]
+        = (*pp_srdfArray_FirstQueueElement)->statesDerivatives[i];
+  }
 
-	for (int i = 0; i < p_simdatanumbers->nAlgebraic; i++) {
-		p_SimResDataForw_from_Transfer->algebraics[i]
-				= (*pp_srdfArray_FirstQueueElement)->algebraics[i];
-	}
+  for (int i = 0; i < p_simdatanumbers->nAlgebraic; i++) {
+    p_SimResDataForw_from_Transfer->algebraics[i]
+        = (*pp_srdfArray_FirstQueueElement)->algebraics[i];
+  }
 
-	for (int i = 0; i < p_simdatanumbers->nParameters; i++) {
-		p_SimResDataForw_from_Transfer->parameters[i]
-				= (*pp_srdfArray_FirstQueueElement)->parameters[i];
-	}
+  for (int i = 0; i < p_simdatanumbers->nParameters; i++) {
+    p_SimResDataForw_from_Transfer->parameters[i]
+        = (*pp_srdfArray_FirstQueueElement)->parameters[i];
+  }
 
-	if (debugResultManager > 1) {
-		cout << "ResultManager:\tFunct.: popSRDF\tData: time = "
-				<< (*pp_srdfArray_FirstQueueElement)->forTimeStep
-				<< " tank1.h = "
-				<< (*pp_srdfArray_FirstQueueElement)->states[0] << endl;
-		fflush( stdout);
-	}
+  if (debugResultManager > 1) {
+    cout << "ResultManager:\tFunct.: popSRDF\tData: time = "
+        << (*pp_srdfArray_FirstQueueElement)->forTimeStep
+        << " tank1.h = "
+        << (*pp_srdfArray_FirstQueueElement)->states[0] << endl;
+    fflush( stdout);
+  }
 
-	pointNextUsedSRDFSlot();
+  pointNextUsedSRDFSlot();
 }
 
 /*****************************************************************
@@ -654,7 +654,7 @@ void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
 
 bool compareDouble(double a, double b)
 {
-	cout << "fabs(a - b): " << fabs(a - b) << endl;
+  cout << "fabs(a - b): " << fabs(a - b) << endl;
     return fabs(a - b) < EPSILON;
 }
 
@@ -664,37 +664,37 @@ bool compareDouble(double a, double b)
 
 void printSSD() {
 
-	cout << "ResultManager:\tFunct.: printSSD****************" << endl;
-	fflush( stdout);
-	for (int i = 0; i < MAX_SSD; i++) {
+  cout << "ResultManager:\tFunct.: printSSD****************" << endl;
+  fflush( stdout);
+  for (int i = 0; i < MAX_SSD; i++) {
 
-		if (ssdArray[i].forTimeStep != -1) {
-			cout << "ResultManager:\tFunct.: printSSD\tData: SSD[" << i
-					<< "]: time= " << ssdArray[i].forTimeStep
-					<< " tank1.h = " << ssdArray[i].states[0]
-					<< endl;
-			fflush(stdout);
-		}
-	}
+    if (ssdArray[i].forTimeStep != -1) {
+      cout << "ResultManager:\tFunct.: printSSD\tData: SSD[" << i
+          << "]: time= " << ssdArray[i].forTimeStep
+          << " tank1.h = " << ssdArray[i].states[0]
+          << endl;
+      fflush(stdout);
+    }
+  }
 }
 
 void printSRDF() {
-	cout << "ResultManager:\tFunct.: printSRDF****************" << endl;
-	fflush( stdout);
-	for (int i = 0; i < MAX_SRDF; i++) {
-		if (srdfArrayOfPointer[i] != 0) {
-			if ((*srdfArrayOfPointer[i]).forTimeStep != -1) {
-				cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
-						<< "]: time = " << (*srdfArrayOfPointer[i]).forTimeStep
-						<< " tank1.h = " << (*srdfArrayOfPointer[i]).states[0]
-						<< endl;
-				fflush(stdout);
-			}
-		} else {
-			cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
-					<< "]: " << srdfArrayOfPointer[i] << endl;
-			fflush(stdout);
-		}
+  cout << "ResultManager:\tFunct.: printSRDF****************" << endl;
+  fflush( stdout);
+  for (int i = 0; i < MAX_SRDF; i++) {
+    if (srdfArrayOfPointer[i] != 0) {
+      if ((*srdfArrayOfPointer[i]).forTimeStep != -1) {
+        cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
+            << "]: time = " << (*srdfArrayOfPointer[i]).forTimeStep
+            << " tank1.h = " << (*srdfArrayOfPointer[i]).states[0]
+            << endl;
+        fflush(stdout);
+      }
+    } else {
+      cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i
+          << "]: " << srdfArrayOfPointer[i] << endl;
+      fflush(stdout);
+    }
 
-	}
+  }
 }

@@ -7,10 +7,10 @@ add_library(Math SHARED ArrayOperations.cpp  )
 
 install (TARGETS Math DESTINATION bin)
 install (FILES Functions.h
-			   ArrayOperations.h
-			DESTINATION include/omc/cpp/Math/Implementation)
+         ArrayOperations.h
+      DESTINATION include/omc/cpp/Math/Implementation)
 install (FILES ../Interfaces/ILapack.h
-			DESTINATION include/omc/cpp/Math/Interfaces)
+      DESTINATION include/omc/cpp/Math/Interfaces)
 
 
   

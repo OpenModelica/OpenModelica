@@ -99,9 +99,9 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
 
   int sampleEvent_actived = 0;
 
-  const std::string* init_method = getFlagValue("im", argc, argv);		/* get the old initialization-flag */
-  const std::string* init_initMethod = getFlagValue("iim", argc, argv);	/* get the initialization method */
-  const std::string* init_optiMethod = getFlagValue("iom", argc, argv);	/* get the optimization method for the initialization */
+  const std::string* init_method = getFlagValue("im", argc, argv);      /* get the old initialization-flag */
+  const std::string* init_initMethod = getFlagValue("iim", argc, argv); /* get the initialization method */
+  const std::string* init_optiMethod = getFlagValue("iom", argc, argv); /* get the optimization method for the initialization */
 
   if(init_method)
   { /* can be removed? */
@@ -337,9 +337,9 @@ void init_ompd()
       *result_file_cstr = *result_file;
   }
 
-  const std::string* init_method = getFlagValue("im", argc, argv);		/* get the old initialization-flag */
-  const std::string* init_initMethod = getFlagValue("iim", argc, argv);	/* get the initialization method */
-  const std::string* init_optiMethod = getFlagValue("iom", argc, argv);	/* get the optimization method for the initialization */
+  const std::string* init_method = getFlagValue("im", argc, argv);    /* get the old initialization-flag */
+  const std::string* init_initMethod = getFlagValue("iim", argc, argv); /* get the initialization method */
+  const std::string* init_optiMethod = getFlagValue("iom", argc, argv); /* get the optimization method for the initialization */
 
   if(init_method)
   { /* can be removed? */

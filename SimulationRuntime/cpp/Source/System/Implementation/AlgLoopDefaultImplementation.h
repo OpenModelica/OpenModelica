@@ -1,12 +1,12 @@
 #pragma once
 
-#include "System/Interfaces/IAlgLoop.h"					// Interface for algebraic loop
+#include "System/Interfaces/IAlgLoop.h"         // Interface for algebraic loop
 
-#include "Math/Implementation/Functions.h"	// Include for use of abs
+#include "Math/Implementation/Functions.h"  // Include for use of abs
 
 
 
-#include <ostream>									// Use stream for output
+#include <ostream>                  // Use stream for output
 using std::ostream;
 
 /*****************************************************************************/
@@ -24,92 +24,92 @@ Copyright (c) 2008, OSMC
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL AlgLoopDefaultImplementation
 {
 public:
-	AlgLoopDefaultImplementation();
+  AlgLoopDefaultImplementation();
 
-	~AlgLoopDefaultImplementation();
-
-
-	/// Provide number (dimension) of variables according to data type
-	int getDimVars(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) const;
+  ~AlgLoopDefaultImplementation();
 
 
-	/// Provide number (dimension) of residuals according to data type
-	int getDimRHS(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) const;
+  /// Provide number (dimension) of variables according to data type
+  int getDimVars(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) const;
 
 
-	/// Provide number (dimension) of inputs according to data type
-	int getDimInputs(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) ;
+  /// Provide number (dimension) of residuals according to data type
+  int getDimRHS(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) const;
 
 
-	/// Provide number (dimension) of outputs according to data type
-	int getDimOutputs(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) ;
+  /// Provide number (dimension) of inputs according to data type
+  int getDimInputs(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) ;
 
 
-	/// Add inputs of algebraic loop
-	void addInputs(const double* doubleInputs, const int* intInputs, const bool* boolInputs);
+  /// Provide number (dimension) of outputs according to data type
+  int getDimOutputs(const IAlgLoop::DATATYPE type = IAlgLoop::ALL) ;
 
 
-	/// Add outputs of algebraic loop
-	void addOutputs(double* doubleOutputs, int* intOutputs, bool* boolOutputs);
-	
-
-	
-	/// (Re-) initialize the system of equations
-	void init()	;
+  /// Add inputs of algebraic loop
+  void addInputs(const double* doubleInputs, const int* intInputs, const bool* boolInputs);
 
 
-	/// Provide variables with given index to the system
-	void giveVars(double* doubleUnknowns, int* intUnknowns, bool* boolUnknowns);
+  /// Add outputs of algebraic loop
+  void addOutputs(double* doubleOutputs, int* intOutputs, bool* boolOutputs);
+  
+
+  
+  /// (Re-) initialize the system of equations
+  void init() ;
 
 
-	/// Set variables with given index to the system
-	void setVars(const double* doubleUnknowns, const int* intUnknowns, const bool* boolUnknowns);
+  /// Provide variables with given index to the system
+  void giveVars(double* doubleUnknowns, int* intUnknowns, bool* boolUnknowns);
 
 
-	/// Provide the right hand side (according to the index)
-	void giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
+  /// Set variables with given index to the system
+  void setVars(const double* doubleUnknowns, const int* intUnknowns, const bool* boolUnknowns);
 
 
-	/// Output routine (to be called by the solver after every successful integration step)
-	void writeOutput(const IDAESystem::OUTPUT command = IDAESystem::UNDEF_OUTPUT);
+  /// Provide the right hand side (according to the index)
+  void giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals);
 
 
-	/// Set stream for output
-	void setOutput(ostream* outputStream) ;
+  /// Output routine (to be called by the solver after every successful integration step)
+  void writeOutput(const IDAESystem::OUTPUT command = IDAESystem::UNDEF_OUTPUT);
 
 
-	// Member variables
-	//---------------------------------------------------------------
+  /// Set stream for output
+  void setOutput(ostream* outputStream) ;
+
+
+  // Member variables
+  //---------------------------------------------------------------
 protected:
-	int
-		*_dim,						///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
-		*_dimInputs,				///< Number (dimension) of inputs
-		*_dimOutputs;				///< Number (dimension) of outputs
+  int
+    *_dim,            ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+    *_dimInputs,        ///< Number (dimension) of inputs
+    *_dimOutputs;       ///< Number (dimension) of outputs
 
-	double 
-		*_xd_init,		///< Double values before update of loop
-		*_xd,			///< Double values after update of loop
-		*_doubleOutputs;			///< Double outputs of loop 
+  double 
+    *_xd_init,    ///< Double values before update of loop
+    *_xd,     ///< Double values after update of loop
+    *_doubleOutputs;      ///< Double outputs of loop 
 
-	const double
-		*_doubleInputs;				///< Double inputs of loop 
+  const double
+    *_doubleInputs;       ///< Double inputs of loop 
 
-	int 
-		*_xi_init,			///< Integer values before update of loop
-		*_xi,				///< Integer values after update of loop
-		*_intOutputs;				///< Integer outputs of loop 
-									
-	const int						
-		*_intInputs;				///< Integer inputs of loop 
+  int 
+    *_xi_init,      ///< Integer values before update of loop
+    *_xi,       ///< Integer values after update of loop
+    *_intOutputs;       ///< Integer outputs of loop 
+                  
+  const int           
+    *_intInputs;        ///< Integer inputs of loop 
 
-	bool 
-		*_xb_init,			///< Boolean values before update of loop
-		*_xb,				///< Boolean values after update of loop
-		*_boolOutputs;				///< Boolean outputs of loop 
-									
-	const bool						
-		*_boolInputs;				///< Boolean inputs of loop 
+  bool 
+    *_xb_init,      ///< Boolean values before update of loop
+    *_xb,       ///< Boolean values after update of loop
+    *_boolOutputs;        ///< Boolean outputs of loop 
+                  
+  const bool            
+    *_boolInputs;       ///< Boolean inputs of loop 
 
-	ostream
-		*_outputStream;				///< Output stream for results
+  ostream
+    *_outputStream;       ///< Output stream for results
 };

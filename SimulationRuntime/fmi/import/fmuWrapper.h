@@ -83,7 +83,7 @@ typedef struct {
     fGetNominalContinuousStates getNominalContinuousStates;
     fGetStateValueReferences getStateValueReferences;
     fTerminate terminate;
-	int flagInit;
+  int flagInit;
 } FMI;
 
 #ifdef _DEBUG_

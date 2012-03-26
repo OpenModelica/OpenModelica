@@ -92,7 +92,7 @@ Multiplies an array with a scalar value (a type as template parameter)
 template < typename T, size_t NumDims >
 boost::multi_array< T, NumDims > multiply_array( boost::multi_array_ref< T, NumDims > a,  const T &b )
 {
-	return  op_cp_array<T>( a, std::bind2nd( std::multiplies< T >(), b ) );
+  return  op_cp_array<T>( a, std::bind2nd( std::multiplies< T >(), b ) );
 };
 
 
@@ -102,7 +102,7 @@ Divides an array with a scalar value (a type as template parameter)
 template < typename T, size_t NumDims >
 boost::multi_array< T, NumDims > divide_array( boost::multi_array_ref< T, NumDims > a,  const T &b )
 {
-	return  op_cp_array<T>( a, std::bind2nd( std::divides< T >(), b ) );
+  return  op_cp_array<T>( a, std::bind2nd( std::divides< T >(), b ) );
 };
 
 /**
@@ -111,7 +111,7 @@ Subtracts two arrays (a,b type as template parameter)
 template < typename T, size_t dims >
 boost::multi_array< T, dims > subtract_array( boost::multi_array_ref< T, dims > a ,  boost::multi_array_ref< T, dims > b  )
 {
-	return op_cp_array< T >( a, b, std::minus< T >() );
+  return op_cp_array< T >( a, b, std::minus< T >() );
 };
 
 /**
@@ -120,7 +120,7 @@ Adds two arrays (a,b type as template parameter)
 template < typename T, size_t dims >
 boost::multi_array< T, dims > add_array( boost::multi_array_ref< T, dims > a ,  boost::multi_array_ref< T, dims > b  )
 {
-	return op_cp_array< T >( a, b, std::plus< T >() );
+  return op_cp_array< T >( a, b, std::plus< T >() );
 };
 
 
@@ -139,7 +139,7 @@ boost::multi_array_ref< T1, dims >  array_operation( Array1< T1, dims > a, const
   typename Array2< T2, dims >::const_iterator j = b.begin();
   for ( typename Array1< T1, dims >::iterator i = a.begin();
         i != a.end(); i++, j++ )
-		array_operation( *i, *j, op );
+    array_operation( *i, *j, op );
   return a;
 }
 
@@ -336,16 +336,16 @@ template <class LAYOUT, class T>
 ublas::matrix<const T, LAYOUT, ublas::shallow_array_adaptor<T> >
 toMatrix(const size_t size1, const size_t size2,  T * data)
 {
-	typedef ublas::shallow_array_adaptor<T> a_t;
-	typedef ublas::matrix<const T, LAYOUT, a_t>      m_t;
-	return m_t(size1, size2, a_t(size1*size2, data));
+  typedef ublas::shallow_array_adaptor<T> a_t;
+  typedef ublas::matrix<const T, LAYOUT, a_t>      m_t;
+  return m_t(size1, size2, a_t(size1*size2, data));
 }
 // default layout: row_major
 template <class T>
 ublas::matrix<const T, ublas::row_major, ublas::shallow_array_adaptor<T> >
 toMatrix(const size_t size1, const size_t size2,  T * data)
 {
-	return toMatrix<ublas::row_major>(size1,size2, data);
+  return toMatrix<ublas::row_major>(size1,size2, data);
 }
 
 
@@ -353,7 +353,7 @@ template <class T>
 ublas::vector<T,ublas::shallow_array_adaptor<T> >
 toVector(const size_t size, T * data)
 {
-	ublas::vector<T,ublas::shallow_array_adaptor<T> > 
-	v(size,ublas::shallow_array_adaptor<T>(size,data));
-	return v;
+  ublas::vector<T,ublas::shallow_array_adaptor<T> > 
+  v(size,ublas::shallow_array_adaptor<T>(size,data));
+  return v;
 }

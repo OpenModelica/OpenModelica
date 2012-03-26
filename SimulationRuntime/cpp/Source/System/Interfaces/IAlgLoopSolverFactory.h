@@ -20,12 +20,12 @@ class IAlgLoopSolverFactory
 {
 
 public:
-	
+  
 
-	virtual ~IAlgLoopSolverFactory()	{};
+  virtual ~IAlgLoopSolverFactory()  {};
 
-	virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
+  virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
 
-	
+  
 
 };

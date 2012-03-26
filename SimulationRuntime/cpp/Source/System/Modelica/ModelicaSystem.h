@@ -24,117 +24,117 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
  { 
  public: 
 
-	Modelica(IGlobalSettings& globalSettings); 
+  Modelica(IGlobalSettings& globalSettings); 
 
-	~Modelica(); 
+  ~Modelica(); 
 
-	//Releases the Modelica System
-	 virtual void destroy();
+  //Releases the Modelica System
+   virtual void destroy();
 
-	//Provide number (dimension) of variables according to the index
-	 virtual int getDimVars(const INDEX index = ALL_VARS) const ;
+  //Provide number (dimension) of variables according to the index
+   virtual int getDimVars(const INDEX index = ALL_VARS) const ;
 
-	//Provide number (dimension) of right hand sides (equations and/or residuals) according to the index 
-	 virtual int getDimRHS(const INDEX index = ALL_VARS)const;
+  //Provide number (dimension) of right hand sides (equations and/or residuals) according to the index 
+   virtual int getDimRHS(const INDEX index = ALL_VARS)const;
 
-	//(Re-) initialize the system of equations
-	 virtual void init(double ts,double te);
+  //(Re-) initialize the system of equations
+   virtual void init(double ts,double te);
 
-	//Resets all time events
-	 virtual void resetTimeEvents();
+  //Resets all time events
+   virtual void resetTimeEvents();
 
-	//Set current integration time 
-	 virtual void setTime(const double& t);
+  //Set current integration time 
+   virtual void setTime(const double& t);
 
-	// Provide variables with given index to the system 
-	 virtual void giveVars(double* z, const INDEX index = ALL_VARS);
+  // Provide variables with given index to the system 
+   virtual void giveVars(double* z, const INDEX index = ALL_VARS);
 
-	// Set variables with given index to the system
-	 virtual void setVars(const double* z, const INDEX index = ALL_VARS);
+  // Set variables with given index to the system
+   virtual void setVars(const double* z, const INDEX index = ALL_VARS);
 
-	// Update transfer behavior of the system of equations according to command given by solver
-	 virtual void update(const UPDATE command =IContinous::UNDEF_UPDATE);
+  // Update transfer behavior of the system of equations according to command given by solver
+   virtual void update(const UPDATE command =IContinous::UNDEF_UPDATE);
 
-	// Provide the right hand side (according to the index)
-	 virtual void giveRHS(double* f, const INDEX index = ALL_VARS);
+  // Provide the right hand side (according to the index)
+   virtual void giveRHS(double* f, const INDEX index = ALL_VARS);
 
-	// Output routine (to be called by the solver after every successful integration step)
-	 virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
+  // Output routine (to be called by the solver after every successful integration step)
+   virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
 
-	// Provide pattern for Jacobian
-	 virtual void giveJacobianSparsityPattern(SparcityPattern pattern) ;
+  // Provide pattern for Jacobian
+   virtual void giveJacobianSparsityPattern(SparcityPattern pattern) ;
 
-	// Provide Jacobian
-	 virtual void giveJacobian(SparseMatrix matrix);
+  // Provide Jacobian
+   virtual void giveJacobian(SparseMatrix matrix);
 
-	// Provide pattern for mass matrix
-	 virtual void giveMassSparsityPattern(SparcityPattern pattern) ;
+  // Provide pattern for mass matrix
+   virtual void giveMassSparsityPattern(SparcityPattern pattern) ;
 
-	// Provide mass matrix 
-	 virtual void giveMassMatrix(SparseMatrix matrix);
+  // Provide mass matrix 
+   virtual void giveMassMatrix(SparseMatrix matrix);
 
-	// Provide pattern for global constraint jacobian 
-	 virtual void giveConstraintSparsityPattern(SparcityPattern pattern);
+  // Provide pattern for global constraint jacobian 
+   virtual void giveConstraintSparsityPattern(SparcityPattern pattern);
 
-	// Provide global constraint jacobian 
-	 virtual void giveConstraint(SparseMatrix matrix);
+  // Provide global constraint jacobian 
+   virtual void giveConstraint(SparseMatrix matrix);
 
-	// Provide number (dimension) of zero functions 
-	 virtual int getDimZeroFunc() ;
+  // Provide number (dimension) of zero functions 
+   virtual int getDimZeroFunc() ;
 
-	// Provides current values of root/zero functions 
-	 virtual void giveZeroFunc(double* f);
-	virtual void giveConditions(bool* c);
+  // Provides current values of root/zero functions 
+   virtual void giveZeroFunc(double* f);
+  virtual void giveConditions(bool* c);
     virtual void setConditions(bool* c);
-	//Called to handle all  events occured at same time  
-	 virtual void handleSystemEvents(const bool* events);
-	virtual void saveConditions();
-	virtual void checkConditions(unsigned int, bool all);
-	//Called to handle an event  
-	 virtual void handleEvent(unsigned long index);
+  //Called to handle all  events occured at same time  
+   virtual void handleSystemEvents(const bool* events);
+  virtual void saveConditions();
+  virtual void checkConditions(unsigned int, bool all);
+  //Called to handle an event  
+   virtual void handleEvent(unsigned long index);
 
-	//Checks if a discrete variable has changed and triggers an event 
-	 virtual bool checkForDiscreteEvents();
+  //Checks if a discrete variable has changed and triggers an event 
+   virtual bool checkForDiscreteEvents();
 
-	//Returns the vector with all time events 
-	virtual event_times_type getTimeEvents();
+  //Returns the vector with all time events 
+  virtual event_times_type getTimeEvents();
 
-	// No input
-	 virtual bool isAutonomous() ;
+  // No input
+   virtual bool isAutonomous() ;
 
-	// Time is not present
-	 virtual bool isTimeInvariant();
+  // Time is not present
+   virtual bool isTimeInvariant();
 
-	// M is regular 
-	 virtual bool isODE();
+  // M is regular 
+   virtual bool isODE();
 
-	// M is singular 
-	 virtual bool isAlgebraic();
+  // M is singular 
+   virtual bool isAlgebraic();
 
-	// M = identity 
-	 virtual bool isExplicit() ;
+  // M = identity 
+   virtual bool isExplicit() ;
 
-	// M does not depend on t, z 
-	 virtual bool hasConstantMass() ;
+  // M does not depend on t, z 
+   virtual bool hasConstantMass() ;
 
-	// M depends on z 
-	 virtual bool hasStateDependentMass() ;
+  // M depends on z 
+   virtual bool hasStateDependentMass() ;
 
-	// System is able to provide the Jacobian symbolically 
-	 virtual bool provideSymbolicJacobian() ;
+  // System is able to provide the Jacobian symbolically 
+   virtual bool provideSymbolicJacobian() ;
 
 private:
 
-	//Methods:
-	//Saves all variables before an event is handled, is needed for the pre, edge and change operator
-	void saveAll();
+  //Methods:
+  //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+  void saveAll();
 
-	 void resetHelpVar(const int index);
+   void resetHelpVar(const int index);
 
-	//Variables:
-	EventHandling _event_handling;
+  //Variables:
+  EventHandling _event_handling;
 
 
-	HistoryImplType* _historyImpl;
+  HistoryImplType* _historyImpl;
 
 };

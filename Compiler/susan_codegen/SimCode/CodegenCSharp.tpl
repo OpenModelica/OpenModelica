@@ -332,19 +332,19 @@ public override int StringParametersCount { get { return NPSTR; } }
 
 #region VariableInfos
 public static readonly SimVarInfo[] VariableInfosStatic = new[] {
-	<%{  
-		varInfos("State", vars.stateVars, false, simCode),
-		varInfos("StateDer", vars.derivativeVars, false, simCode),
-		varInfos("Algebraic", vars.algVars, false, simCode),
-		varInfos("alias Algebraic", vars.aliasVars, false, simCode),
+    <%{  
+        varInfos("State", vars.stateVars, false, simCode),
+        varInfos("StateDer", vars.derivativeVars, false, simCode),
+        varInfos("Algebraic", vars.algVars, false, simCode),
+        varInfos("alias Algebraic", vars.aliasVars, false, simCode),
         varInfos("AlgebraicInt", vars.intAlgVars, false, simCode),
-		varInfos("alias AlgebraicInt", vars.intAliasVars, false, simCode),
+        varInfos("alias AlgebraicInt", vars.intAliasVars, false, simCode),
         varInfos("AlgebraicBool", vars.boolAlgVars, false, simCode),
-		varInfos("alias AlgebraicBool", vars.boolAliasVars, false, simCode),
+        varInfos("alias AlgebraicBool", vars.boolAliasVars, false, simCode),
         varInfos("Parameter", vars.paramVars, true, simCode),
-		varInfos("ParameterInt", vars.intParamVars, true, simCode),
-		varInfos("ParameterBool", vars.boolParamVars, true, simCode)
-	} ;separator=",\n\n"%>
+        varInfos("ParameterInt", vars.intParamVars, true, simCode),
+        varInfos("ParameterBool", vars.boolParamVars, true, simCode)
+    } ;separator=",\n\n"%>
 };
 public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
 #endregion
@@ -369,31 +369,31 @@ public <%lastIdentOfPath(name)%>() {
     CreateData();
     
     //**** states *****
-	<%initVals("states", vars.stateVars, simCode)%>
-	  	
-	//**** state derivatives *****
-	//all are default values ... 0.0
-	<%/* TODO: is it correct to have derivatives without initial values at all ?? 
-	  initVals("statesDerivatives", vars.derivativeVars, simCode)
-	*/%>
-	
-	//**** algebraics *****  
-	<%initVals("algebraics", vars.algVars, simCode)%>
-	
-	//**** algebraics Int *****  
-	<%initVals("algebraicsInt", vars.intAlgVars, simCode)%>
-	
-	//**** algebraics Bool *****  
-	<%initVals("algebraicsBool", vars.boolAlgVars, simCode)%>
-	
-	//**** parameters *****  
-	<%initVals("parameters", vars.paramVars, simCode)%>
-	
-	//**** parameters Int *****  
-	<%initVals("parametersInt", vars.intParamVars, simCode)%>
-	
-	//**** parameters Bool *****  
-	<%initVals("parametersBool", vars.boolParamVars, simCode)%>
+    <%initVals("states", vars.stateVars, simCode)%>
+          
+    //**** state derivatives *****
+    //all are default values ... 0.0
+    <%/* TODO: is it correct to have derivatives without initial values at all ?? 
+      initVals("statesDerivatives", vars.derivativeVars, simCode)
+    */%>
+    
+    //**** algebraics *****  
+    <%initVals("algebraics", vars.algVars, simCode)%>
+    
+    //**** algebraics Int *****  
+    <%initVals("algebraicsInt", vars.intAlgVars, simCode)%>
+    
+    //**** algebraics Bool *****  
+    <%initVals("algebraicsBool", vars.boolAlgVars, simCode)%>
+    
+    //**** parameters *****  
+    <%initVals("parameters", vars.paramVars, simCode)%>
+    
+    //**** parameters Int *****  
+    <%initVals("parametersInt", vars.intParamVars, simCode)%>
+    
+    //**** parameters Bool *****  
+    <%initVals("parametersBool", vars.boolParamVars, simCode)%>
 }
 #endregion
 >>
@@ -438,17 +438,17 @@ template varInfos(String regionName, list<SimVar> varsLst, Boolean isMInd, SimCo
           case NEGATEDALIAS(__) then '<%cref2simvar(varName, simCode) |> SIMVAR(__) => '<%simVarTypeName(varKind, type_)%>, <%index%>'%>, -1/*alias to <%crefStr(varName, simCode)%>*/'
           else error(sourceInfo(), "Unknown alias var type")           
        <<
-	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>", SimVarType.<%typeIdxAndAliasMode%>)
-	   >> ;separator=",\n"
-	%>
+       new SimVarInfo( "<%crefStr(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>", SimVarType.<%typeIdxAndAliasMode%>)
+       >> ;separator=",\n"
+    %>
     #endregion<%\n%>    
     >>
 end varInfos;
 
 template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
   varsLst |> sv as SIMVAR(__) =>
-	match initialValue 
-  	case SOME(v) then 
+    match initialValue 
+      case SOME(v) then 
       let &preExp = buffer "" //dummy ... the value is always a constant
       match daeExp(v, contextOther, &preExp, simCode) 
       case vStr as "0"
@@ -460,8 +460,8 @@ template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
       // '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
       case vStr then
        '<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
-  	  end match
-  	else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'	
+        end match
+      else '//<%arrName%>[<%sv.index%>] = 0.0; //<%crefStr(sv.name, simCode)%> --> default val'    
   ;separator="\n"
 end initVals;
 
@@ -760,7 +760,7 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                                            case GREATER(__)
                                            case GREATEREQ(__) then '<%e2%> - <%e1%>'
                                            case EQUAL(__) then '<%e2%> == <%e1%>'
-                                           case NEQUAL(__) then '<%e2%> != <%e1%>'    			
+                                           case NEQUAL(__) then '<%e2%> != <%e1%>'                
                                            else "!!!unsupported ZC operator!!!"
                                           %>) : 1.0; }
     >>
@@ -949,9 +949,9 @@ end edgeHelpVar;
 
 //TODO: eliminate this entirely  ??
 template daeExpToReal(Exp exp, Context context, Text &preExp, SimCode simCode) ::=
-	daeExp(exp, context, &preExp, simCode)
-	+ (match expTypeFromExp(exp) case "bool" then " ?1.0:0.0") //TODO: a HACK ?
-	  
+    daeExp(exp, context, &preExp, simCode)
+    + (match expTypeFromExp(exp) case "bool" then " ?1.0:0.0") //TODO: a HACK ?
+      
 end daeExpToReal;
 
 // Residual equations are not handled here
@@ -1011,14 +1011,14 @@ case SES_MIXED(__) then
         //<%cref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
         
         ;separator="\n"
-  	/*
-  	match discEqs
+      /*
+      match discEqs
     case { discEq as SES_SIMPLE_ASSIGN(__) } then
       <<
       <%cref(discEq.cref, simCode)%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
       double discrete_loc2_0 = <%crefToReal(discEq.cref, simCode)%>;
       >>
-  	case discEqs then
+      case discEqs then
       <<
       var discrete_loc2 = new double[<%numDiscVarsStr%>];
       <%discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
@@ -1035,31 +1035,31 @@ case SES_MIXED(__) then
     int cur_value_indx = -1;
     var values = new double[]{<%values ;separator=", "%>};
     do {
-	  <%
-	    discVars |> SIMVAR(__) hasindex i0 => 
-	      'double discrete_loc_<%i0%> = <%crefToReal(name, simCode)%>;'
-	    ;separator=",\n"
-	   
-	   /*match discVars
-	    case { var as SIMVAR(__) } then
-	      <<
-	      double discrete_loc_0 = <%crefToReal(var.name, simCode)%>;
+      <%
+        discVars |> SIMVAR(__) hasindex i0 => 
+          'double discrete_loc_<%i0%> = <%crefToReal(name, simCode)%>;'
+        ;separator=",\n"
+       
+       /*match discVars
+        case { var as SIMVAR(__) } then
+          <<
+          double discrete_loc_0 = <%crefToReal(var.name, simCode)%>;
           >>
-	    case discVars then
-	      <<
-	      var discrete_loc = new double[<%numDiscVarsStr%>] {
-	        <%discVars |> SIMVAR(__) => cref(name, simCode) ;separator=",\n"%>
-	      };
-	      >> */
-	  %>
-	  {
-	    <%contEqs%>
-	  }
-	  <%preDisc%>
-	  <%discLoc2%>
-	  {
-	    // check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
-	    if (found_solution == -1) { /*system of equations failed*/
+        case discVars then
+          <<
+          var discrete_loc = new double[<%numDiscVarsStr%>] {
+            <%discVars |> SIMVAR(__) => cref(name, simCode) ;separator=",\n"%>
+          };
+          >> */
+      %>
+      {
+        <%contEqs%>
+      }
+      <%preDisc%>
+      <%discLoc2%>
+      {
+        // check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
+        if (found_solution == -1) { /*system of equations failed*/
             found_solution = 0;
         } else {
             found_solution = 1;
@@ -1069,21 +1069,21 @@ case SES_MIXED(__) then
                 if ( Math.Abs(discrete_loc_<%i0%> - discrete_loc2_<%i0%>) > 1e-12) found_solution = 0;                
                 >> ;separator="\nelse "
               /*match discVars
-	    	  case { SIMVAR(__) } then
-	    	    <<
-	    	    if ( Math.Abs(discrete_loc_0 - discrete_loc2_0) > 1e-12) {
+              case { SIMVAR(__) } then
+                <<
+                if ( Math.Abs(discrete_loc_0 - discrete_loc2_0) > 1e-12) {
                     found_solution = 0;
                 }
                 >>
               case discVars then
                 <<
                 for (int i=0; i < <%numDiscVarsStr%>; i++) {
-	                if ( Math.Abs(discrete_loc[i] - discrete_loc2[i]) > 1e-12) {
-	                    found_solution = 0;
-	                }
-	            }
-	            >>*/
-	        %>
+                    if ( Math.Abs(discrete_loc[i] - discrete_loc2[i]) > 1e-12) {
+                        found_solution = 0;
+                    }
+                }
+                >>*/
+            %>
         }
         if (found_solution == 0) { //!found_solution
             cur_value_indx++;
@@ -1171,7 +1171,7 @@ end cref;
 
 template representationCref(ComponentRef inCref, SimCode simCode) ::=
   cref2simvar(inCref, simCode) |> SIMVAR(__) =>
-	'<%representationArrayName(varKind, type_)%>[<% index %>]'
+    '<%representationArrayName(varKind, type_)%>[<% index %>]'
 end representationCref;
 
 template representationArrayName(VarKind varKind, Type type_) ::=
@@ -1678,9 +1678,9 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
       //match ecr.ty 
       //case T_INTEGER(__)  then '(int)<%contextCref(cr, context, simCode)%>'
       //case T_BOOL(__) then 
-      //	match context
-      //	case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
-      //	else '(<%contextCref(cr, context, simCode)%> !=0.0)'
+      //    match context
+      //    case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
+      //    else '(<%contextCref(cr, context, simCode)%> !=0.0)'
       //else 
       contextCref(cr, context, simCode)
     else if crefSubIsScalar(cr) then
@@ -1776,13 +1776,13 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
         <<
         /*<% crefStr(cr, simCode) 
            %>[]*/<% cref2simvar(cr, simCode) |> SIMVAR(__) =>
-	                 let &constSum = buffer index
-	                 let baseSub = asubSubsripts(dims, subs, &constSum, context, &preExp, simCode)
-	                 <<
-	                 <%representationArrayName(varKind,type_)%>[<%constSum%><%baseSub%>]
-	                 >>	                      
-	              %>
-	    >> 
+                     let &constSum = buffer index
+                     let baseSub = asubSubsripts(dims, subs, &constSum, context, &preExp, simCode)
+                     <<
+                     <%representationArrayName(varKind,type_)%>[<%constSum%><%baseSub%>]
+                     >>                          
+                  %>
+        >> 
       else "ASUB_SIMULATION_OTHER_ERROR"
         
       
@@ -1795,7 +1795,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
       arrName
      */      
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
-  	"ASUB_FAST_ONE"
+      "ASUB_FAST_ONE"
   case ASUB(exp=e, sub=indexes) then
     <<
     <%daeExp(e, context, &preExp, simCode)
@@ -1810,17 +1810,17 @@ template asubSubsripts(list<Dimension> dims, list<Exp> subs, Text &constSum,
  "Helper to daeExpAsub."
 ::=
   match subs case s :: subsRest then
-  	match dims  case _ :: dimsRest then
-  		let subStr = daeExp(s, context, &preExp, simCode)
-  		if dimsRest then //not last
-  		   let ds = dimsRest |> dim => dimension(dim) ;separator="*"
-  		   //if ds then //TODO: assuming every dimension is SOME, is it true ??
-  		   let &constSum += '-(<%ds%>)' //-1 * ds
-  		   '+<%subStr%>*(<%ds%>)<% asubSubsripts(dimsRest, subsRest, &constSum, context, &preExp, simCode) %>'
-  		else //the last sub, add it to constSum (better optimization on compilation)
-  		   let &constSum += '-1 + <% subStr %>'
-  		   ""  		
-  	else "ERROR_asubSubsripts_not_enough_dims" 
+      match dims  case _ :: dimsRest then
+          let subStr = daeExp(s, context, &preExp, simCode)
+          if dimsRest then //not last
+             let ds = dimsRest |> dim => dimension(dim) ;separator="*"
+             //if ds then //TODO: assuming every dimension is SOME, is it true ??
+             let &constSum += '-(<%ds%>)' //-1 * ds
+             '+<%subStr%>*(<%ds%>)<% asubSubsripts(dimsRest, subsRest, &constSum, context, &preExp, simCode) %>'
+          else //the last sub, add it to constSum (better optimization on compilation)
+             let &constSum += '-1 + <% subStr %>'
+             ""          
+      else "ERROR_asubSubsripts_not_enough_dims" 
 end asubSubsripts;
 
 // TODO: Optimize as in Codegen
@@ -1854,11 +1854,11 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   //TODO FIX: bad type of SUB operator when on bools; the following does not work
   //case SUB(ty = T_BOOL(__)) then '((<%e1%>?1.0:0.0) - (<%e2%>?1.0:0.0))' //in InitialResidual() ...
   case SUB(__) then 
-  	//match expTypeFromExp(exp1) //TODO FIX: bool typed CREF returns "double"; the following is not working, too 
-  	//case "bool" then '((<%e1%>?1.0:0.0) - (<%e2%>?1.0:0.0))' //in InitialResidual() ...
-  	//HACK!!
-  	let boolConv = daeExpRealConversionPostfix(exp1, simCode)  		 
-  	'((<%e1%><%boolConv%>) - (<%e2%><%boolConv%>))'
+      //match expTypeFromExp(exp1) //TODO FIX: bool typed CREF returns "double"; the following is not working, too 
+      //case "bool" then '((<%e1%>?1.0:0.0) - (<%e2%>?1.0:0.0))' //in InitialResidual() ...
+      //HACK!!
+      let boolConv = daeExpRealConversionPostfix(exp1, simCode)           
+      '((<%e1%><%boolConv%>) - (<%e2%><%boolConv%>))'
   case MUL(__) then '(<%e1%> * <%e2%>)'
   case DIV(__) then '(<%e1%> / <%e2%>)'
   case POW(__) then 'Math.Pow(<%e1%>, <%e2%>)'
@@ -1921,36 +1921,36 @@ match it
 case sim as SIMULATION(__) then
   match inExp
   case RELATION(__) then
-	 let op = 
-	 	(match operator 
-	 	 case LESS(__)      then " < "
-	     case LESSEQ(__)    then " <= "
-	     case GREATER(__)   then " > "
-	     case GREATEREQ(__) then " >= "
-	     case EQUAL(__)     then " == "
-	     case NEQUAL(__)	then " != "
-	     case _             then " daeExpSimRelation:ERR ")
-	 let &res = buffer ""
-	 let &preExp +=
-	   match index
-	   case -1 then
-	     '<%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;<%\n%>'
-	   else if sim.genDiscrete then
-	           <<
-	           <%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;
-	           backuprelations[<%index%>] = <%res%>;<%\n%>
-	           >>
-	        else
-	           '<%tempDecl("bool", res)%> = backuprelations[<%index%>];<%\n%>'
-	 res
-	   /*
-	   match operator
-	   case LESS(__)      then SimRelationSimple(inExp, e1, e2, " < ", &preExp)
-	   case LESSEQ(__)    then SimRelationEqual(e1, e2, " <= ", &preExp)
-	   case GREATER(__)   then SimRelationSimple(e1, e2, " > ", &preExp)
-	   case GREATEREQ(__) then SimRelationEqual(e1, e2, " >= ", &preExp)
-	   end match
-	   */
+     let op = 
+         (match operator 
+          case LESS(__)      then " < "
+         case LESSEQ(__)    then " <= "
+         case GREATER(__)   then " > "
+         case GREATEREQ(__) then " >= "
+         case EQUAL(__)     then " == "
+         case NEQUAL(__)    then " != "
+         case _             then " daeExpSimRelation:ERR ")
+     let &res = buffer ""
+     let &preExp +=
+       match index
+       case -1 then
+         '<%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;<%\n%>'
+       else if sim.genDiscrete then
+               <<
+               <%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;
+               backuprelations[<%index%>] = <%res%>;<%\n%>
+               >>
+            else
+               '<%tempDecl("bool", res)%> = backuprelations[<%index%>];<%\n%>'
+     res
+       /*
+       match operator
+       case LESS(__)      then SimRelationSimple(inExp, e1, e2, " < ", &preExp)
+       case LESSEQ(__)    then SimRelationEqual(e1, e2, " <= ", &preExp)
+       case GREATER(__)   then SimRelationSimple(e1, e2, " > ", &preExp)
+       case GREATEREQ(__) then SimRelationEqual(e1, e2, " >= ", &preExp)
+       end match
+       */
 end daeExpSimRelation;
 
 
@@ -2013,18 +2013,18 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     let string = //TODO: a local hack here to retrieve the shared litral ... make more like it was designed to
        match simCode
        case SIMCODE(__) then
-       	   match listNth(literals, e3.index)
-       	   case DAE.SCONST(__) then string
-       	   else "TemplErr:division msg string not recognized"        
+              match listNth(literals, e3.index)
+              case DAE.SCONST(__) then string
+              else "TemplErr:division msg string not recognized"        
     let msg = Util.escapeModelicaStringToCString(string)
     match e2 
     case RCONST(__) then 
-     	//match rr case 0.0 then 'DivBy0(<%var1%>,0.0,"<%msg%>")'
-     	//else 
-     	'<%var1%> / <%daeExp(e2, context, &preExp, simCode)%>'
+         //match rr case 0.0 then 'DivBy0(<%var1%>,0.0,"<%msg%>")'
+         //else 
+         '<%var1%> / <%daeExp(e2, context, &preExp, simCode)%>'
     case _ then
-     	let var2 = daeExp(e2, context, &preExp, simCode)
-    	'(<%var2%>!=0.0 ? <%var1%> / <%var2%> : DivBy0(<%var1%>,<%var2%>,"<%msg%>"))' 
+         let var2 = daeExp(e2, context, &preExp, simCode)
+        '(<%var2%>!=0.0 ? <%var1%> / <%var2%> : DivBy0(<%var1%>,<%var2%>,"<%msg%>"))' 
     end match 
     
   
@@ -2116,11 +2116,11 @@ template daeExpArray(Exp aexp, Context context, Text &preExp, SimCode simCode) :
   case cr as CREF(__) then daeExpCrefRhs(cr, context, &preExp, simCode)
   case a as ARRAY(__) then
     if scalar then 
-  	  let &arrayVar = buffer ""
-	  let params = a.array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>' 
-	               ;separator=", "
-	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(a.ty,1)%>(<%listLength(a.array)%>,-1,new[]{<%params%>});<%\n%>'
-	  arrayVar
+        let &arrayVar = buffer ""
+      let params = a.array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>' 
+                   ;separator=", "
+      let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(a.ty,1)%>(<%listLength(a.array)%>,-1,new[]{<%params%>});<%\n%>'
+      arrayVar
     else
       "NON_SCALAR_ARRAY_notYetImplemeted"
 end daeExpArray;

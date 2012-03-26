@@ -19,8 +19,8 @@ Copyright (c) 2008, OSMC
 class IDataExchange 
 {
 public:
-	virtual ~IDataExchange()	{};
+  virtual ~IDataExchange()  {};
 
-	/// Set stream for output
-	virtual void setOutput(ostream* outputStream) = 0;
+  /// Set stream for output
+  virtual void setOutput(ostream* outputStream) = 0;
 };

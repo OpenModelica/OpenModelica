@@ -5,8 +5,8 @@ pathIdent(PathIdent path) <>=
 
 
 templPackage(TemplPackage) <>= 
-	case TEMPL_PACKAGE then 
-	<<
+    case TEMPL_PACKAGE then 
+    <<
 spackage <pathIdent(name)>
 <astDefs of AST_DEF : <<
   <if isDefault then 'default '>absyn <pathIdent(importPackage)>
@@ -16,27 +16,27 @@ spackage <pathIdent(name)>
 
 <templateDefs : templateDef()\n\n>
 end <pathIdent(name)>;
-	>>
+    >>
 
 
-astDefType(Ident id, TypeInfo info) <>=	
+astDefType(Ident id, TypeInfo info) <>=    
   match info
-	case TI_UNION_TYPE then
-	<<
+    case TI_UNION_TYPE then
+    <<
 uniontype <id>
   <recTags of (rid, tids) : recordTypeDef(rid, tids) \n>
 end <id>;
-	>>
-	case TI_RECORD_TYPE then  recordTypeDef(id, fields)
-	case TI_ALIAS_TYPE  then  "type <id> = <typeSig(aliasType)>;"
-	case TI_FUN_TYPE    then
-	<<
+    >>
+    case TI_RECORD_TYPE then  recordTypeDef(id, fields)
+    case TI_ALIAS_TYPE  then  "type <id> = <typeSig(aliasType)>;"
+    case TI_FUN_TYPE    then
+    <<
 function <id>
   <inArgs of (aid,ts)  : "input <typeSig(ts)> <aid>;<\n>">
   <outArgs of (aid,ts) : "output <typeSig(ts)> <aid>;<\n>">
 end <id>;
-	>>
-	case TI_CONST_TYPE then "constant <typeSig(constType)> <id>;"
+    >>
+    case TI_CONST_TYPE then "constant <typeSig(constType)> <id>;"
 
 
 recordTypeDef(Ident id, TypedIdents fields) <>= 
@@ -52,7 +52,7 @@ record <id> <if fields then
 
 
 templateDef(TemplateDef, Ident templId) <>= 
-	case STR_TOKEN_DEF then
+    case STR_TOKEN_DEF then
 case TEMPLATE_DEF then 
 {
 <name>(<signature : 

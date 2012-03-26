@@ -14,7 +14,7 @@
 ********************************/
 
 extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot, 
-					  double *b, long int *ldb, long int *idid);
+            double *b, long int *ldb, long int *idid);
 
 
 
@@ -68,11 +68,11 @@ extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, do
 
 ********************************/
 extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs, 
-					   double *J, long int *ldj, double *Jscal, long int *ldjscal, 
-					   double *pivot, char *equilibriate, double *r, double *c, 
-					   double *b, long int *ldb, double *x, long int *ldx,
-					   double* rcond, double *forwerr, double *backerr,
-					   double* work, long int *iwork, long int *idid);
+             double *J, long int *ldj, double *Jscal, long int *ldjscal, 
+             double *pivot, char *equilibriate, double *r, double *c, 
+             double *b, long int *ldb, double *x, long int *ldx,
+             double* rcond, double *forwerr, double *backerr,
+             double* work, long int *iwork, long int *idid);
 
 
 
@@ -94,8 +94,8 @@ extern "C" void DGESVX(char *fact, char * trans, long int * n, long int *nrhs,
 ********************************/
 
 extern "C" void DGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA, 
-		    double *S, double *U, long int *LDU, double *VT, long int *LDVT, 
-		    double *WORK, long int *LWORK, long int *INFO);
+        double *S, double *U, long int *LDU, double *VT, long int *LDVT, 
+        double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -109,8 +109,8 @@ using the singular value decomposition (SVD) of A. A is an M-by-N
 matrix which may be rank-deficient.
 ********************************/
 extern "C" void DGELSS(long int *M, long int *N, long int *NRHS, double *A, long int *LDA, 
-			double *B, long int *LDB, double *S, double *RCOND, long int *RANK, 
-			double *WORK, long int *LWORK, long int *INFO);
+      double *B, long int *LDB, double *S, double *RCOND, long int *RANK, 
+      double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -120,19 +120,19 @@ DGEEV computes for an N-by-N real nonsymmetric matrix A, the
 eigenvalues and, optionally, the left and/or right eigenvectors.
 
 The right eigenvector v(j) of A satisfies
-	A * v(j) = lambda(j) * v(j)
+  A * v(j) = lambda(j) * v(j)
 where lambda(j) is its eigenvalue.
 
 The left eigenvector u(j) of A satisfies
-	u(j)**H * A = lambda(j) * u(j)**H
+  u(j)**H * A = lambda(j) * u(j)**H
 where u(j)**H denotes the conjugate transpose of u(j).
 
 The computed eigenvectors are normalized to have Euclidean norm
 equal to 1 and largest component real.
 ********************************/
 extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int *LDA, 
-		   double *WR, double *WI, double *VL, long int *LDVL, double *VR, long int *LDVR, 
-		   double *WORK, long int *LWORK, long int *INFO);
+       double *WR, double *WI, double *VL, long int *LDVL, double *VR, long int *LDVR, 
+       double *WORK, long int *LWORK, long int *INFO);
 
 
 
@@ -155,8 +155,8 @@ extern "C" void DGEEV(char *JOBVL, char *JOBVR, long int *N, double *A, long int
 *  Note that the routine returns V**T, not V.
 ********************************/
 extern "C" void SGESVD(char *JOBU, char *JOBVT, long int *M,  long int *N, double *A, long int *LDA, 
-		    double *S, double *U, long int *LDU, double *VT, long int *LDVT, 
-		    double *WORK, long int *LWORK, long int *INFO);
+        double *S, double *U, long int *LDU, double *VT, long int *LDVT, 
+        double *WORK, long int *LWORK, long int *INFO);
 
 
 

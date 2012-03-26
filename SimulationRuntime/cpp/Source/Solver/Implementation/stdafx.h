@@ -3,7 +3,7 @@
 #define BOOST_ALL_DYN_LINK
 #endif
 
-#define WIN32_LEAN_AND_MEAN		
+#define WIN32_LEAN_AND_MEAN    
 
 #include <vector>
 #include <map>

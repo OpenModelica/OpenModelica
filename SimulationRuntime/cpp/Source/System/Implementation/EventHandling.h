@@ -1,6 +1,6 @@
 #pragma once
-#include "../Interfaces/IDAESystem.h"				// System interface
-#include "../Interfaces/IEvent.h"				// System interface
+#include "../Interfaces/IDAESystem.h"        // System interface
+#include "../Interfaces/IEvent.h"        // System interface
 
 /**
 Auxiliary  class to handle system events
@@ -12,57 +12,57 @@ typedef boost::function<void (unsigned int)> resetHelpVar_type;
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:
-	EventHandling();
-	~EventHandling(void);
-	//Inits the event variables
-	void init(IDAESystem* system,int dim);
-	//Returns the help vector 
-	void giveHelpVars(double* h);
-	//sets the help vector
-	void setHelpVars(const double* h);
-	//returns the dimension of the help vector
-	int getDimHelpVars() const;	
-	
-	
-	
-	//saves a variable in _pre_vars vector
-	void save(double var,string key);
-	//saves all helpvariables
-	void saveH();
+  EventHandling();
+  ~EventHandling(void);
+  //Inits the event variables
+  void init(IDAESystem* system,int dim);
+  //Returns the help vector 
+  void giveHelpVars(double* h);
+  //sets the help vector
+  void setHelpVars(const double* h);
+  //returns the dimension of the help vector
+  int getDimHelpVars() const;  
+  
+  
+  
+  //saves a variable in _pre_vars vector
+  void save(double var,string key);
+  //saves all helpvariables
+  void saveH();
     void setHelpVar(unsigned int i,double var);
-	const double& operator[](unsigned int i) const;
-  	//Implementation of the Modelica pre  operator
-	double pre(double var,string key);
-	//Implementation of the Modelica edge  operator
-	bool edge(double var,string key);
-	//Implementation of the Modelica change  operator
-	bool change(double var,string key);
-	//Implementation of the Modelica change  operator
-	double sample(double start,double interval);
-	//Adds an event to the eventqueue
-	void addEvent(long index);
-	//removes an event from the eventqueue
-	void removeEvent(long index);
-	//Handles  all events occured a the same time. Returns true if a second event iteration is needed
-	bool IterateEventQueue(const bool* events);
+  const double& operator[](unsigned int i) const;
+    //Implementation of the Modelica pre  operator
+  double pre(double var,string key);
+  //Implementation of the Modelica edge  operator
+  bool edge(double var,string key);
+  //Implementation of the Modelica change  operator
+  bool change(double var,string key);
+  //Implementation of the Modelica change  operator
+  double sample(double start,double interval);
+  //Adds an event to the eventqueue
+  void addEvent(long index);
+  //removes an event from the eventqueue
+  void removeEvent(long index);
+  //Handles  all events occured a the same time. Returns true if a second event iteration is needed
+  bool IterateEventQueue(const bool* events);
 
-	
-	void addTimeEvent(long index,double time);
-	void addTimeEvents( event_times_type times);
-	 event_times_type makePeriodeEvents(double ts,double te,double ti,long index);
-	///returns the vector with all time events
-	 event_times_type& getTimeEvents();
+  
+  void addTimeEvent(long index,double time);
+  void addTimeEvents( event_times_type times);
+   event_times_type makePeriodeEvents(double ts,double te,double ti,long index);
+  ///returns the vector with all time events
+   event_times_type& getTimeEvents();
     resetHelpVar_type  resetHelpVar;
-	bool CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values);
+  bool CheckDiscreteValues(bool* values,bool* pre_values,bool* next_values, bool** cur_values,unsigned int size,unsigned int cur_index,unsigned int num_values);
 private:
-	//Stores all varibales occured before an event
-	unordered_map<string,double> _pre_vars;
-	//stores all eventes 
-	vector<long> _event_queue;
-	IDAESystem* _system;
-	//Helpvarsvector for discrete variables
-	double* _h;
-	//Dimesion of Helpvarsvector
-	int _dimH;
-	 event_times_type _time_events;
+  //Stores all varibales occured before an event
+  unordered_map<string,double> _pre_vars;
+  //stores all eventes 
+  vector<long> _event_queue;
+  IDAESystem* _system;
+  //Helpvarsvector for discrete variables
+  double* _h;
+  //Dimesion of Helpvarsvector
+  int _dimH;
+   event_times_type _time_events;
 };

@@ -37,10 +37,10 @@ find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
 find_package( BLAS )
 find_package( LAPACK  )
 if(MSVC)
-	#workaround  because cmake does not find the lapack libraries for Visual Studio 10
-	SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
-	SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
-	SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
+  #workaround  because cmake does not find the lapack libraries for Visual Studio 10
+  SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
+  SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
+  SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
 endif()
 message(STATUS "Lapack Libraries")
 message(STATUS ${LAPACK_LIBRARIES})
@@ -48,16 +48,16 @@ message(STATUS ${LAPACK_LIBRARIES})
 if(USE_SUNDIALS)
 
 find_path(SUNDIALS_INCLUDE_DIR cvode/cvode.h
-		PATHS ${SUNDIALS_INLCUDE_HOME})
+    PATHS ${SUNDIALS_INLCUDE_HOME})
 message(STATUS ${SUNDIALS_INCLUDE_DIR})
 
 find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial"
-		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
+    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
 find_library(SUNDIALS_CVODES_LIB "sundials_cvodes"
-		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
 find_library(SUNDIALS_IDAS_LIB "sundials_idas"
-		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
 set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB})
 
@@ -68,12 +68,12 @@ endif()
 
 #Mico corba
 if(USE_MICO)
-	find_library(MICO_LIBRARY  mico2313  
-		PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
-	find_path(MICO_INCLUDE_DIR CORBA.h 
-		 ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
-	message(STATUS ${MICO_LIBRARY})
-	message(STATUS ${MICO_INCLUDE_DIR})
+  find_library(MICO_LIBRARY  mico2313  
+    PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
+  find_path(MICO_INCLUDE_DIR CORBA.h 
+     ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
+  message(STATUS ${MICO_LIBRARY})
+  message(STATUS ${MICO_INCLUDE_DIR})
 endif()
 
 
@@ -105,7 +105,7 @@ add_subdirectory (SettingsFactory/Implementation)
 add_subdirectory (SimManager)
 
 if(REDUCE_DAE)
-	add_subdirectory(ReduceDAE/Implementation)
+  add_subdirectory(ReduceDAE/Implementation)
 endif()
 
 add_subdirectory (System/Implementation)
@@ -161,17 +161,17 @@ configure_file (
 message(STATUS  ${SUNDIALS_CVODES_LIB})
 
 if(INSTALL_OMDEV_LIBS)
-	if(USE_SUNDIALS)
-		install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
-	endif()
+  if(USE_SUNDIALS)
+    install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+  endif()
 
-	if(USE_MICO)
-		install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
-	endif()
+  if(USE_MICO)
+    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
+  endif()
 
-	install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
-	install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
-	#install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
+  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
+  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
+  #install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 endif()
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION bin)

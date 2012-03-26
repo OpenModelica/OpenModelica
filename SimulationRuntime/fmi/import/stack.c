@@ -28,7 +28,7 @@ int stackIsEmpty(Stack* s) {
 int stackPush(Stack* s, void* e) {
     s->stackPos++;
     if (s->stackPos==s->stackSize){
-		s->stackSize += (s->stack ? s->inc: s->initialSize);
+    s->stackSize += (s->stack ? s->inc: s->initialSize);
         s->stack = (void**) realloc(s->stack, s->stackSize * sizeof(void*));
         if (!s->stack) return 0; // error;
     }

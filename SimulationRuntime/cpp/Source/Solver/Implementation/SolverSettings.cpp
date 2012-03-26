@@ -4,74 +4,74 @@
 #include "SolverSettings.h"
 
 SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
-	: _hInit		(globalSettings->gethOutput() )
-	, _hUpperLimit	(globalSettings->getEndTime() - globalSettings->getStartTime())
-	, _hLowerLimit	(10*UROUND)
-	, _endTimeTol	(1e-6)
-	, _zeroTol		(1e-6)
-	, _zeroTimeTol	(1e-10)
-	,_zeroRatio(1.0)
+  : _hInit    (globalSettings->gethOutput() )
+  , _hUpperLimit  (globalSettings->getEndTime() - globalSettings->getStartTime())
+  , _hLowerLimit  (10*UROUND)
+  , _endTimeTol  (1e-6)
+  , _zeroTol    (1e-6)
+  , _zeroTimeTol  (1e-10)
+  ,_zeroRatio(1.0)
 
-{	
-	_globalSettings = globalSettings ;
+{  
+  _globalSettings = globalSettings ;
 }
 double SolverSettings::gethInit()
 {
-	return _hInit;
+  return _hInit;
 }
 void SolverSettings::sethInit(double h)
 {
-	_hInit=h;
+  _hInit=h;
 }
 
 double SolverSettings::getLowerLimit()
 {
-	return _hLowerLimit;
+  return _hLowerLimit;
 }
 void SolverSettings::setLowerLimit(double h)
 {
-	_hLowerLimit=h;
+  _hLowerLimit=h;
 }
 
 double SolverSettings::getUpperLimit()
 {
-	return _hUpperLimit;
+  return _hUpperLimit;
 }
 void SolverSettings::setUpperLimit(double h)
 {
-	_hUpperLimit=h;
+  _hUpperLimit=h;
 }
 
 double SolverSettings::getEndTimeTol()
 {
-	return _endTimeTol;
+  return _endTimeTol;
 }
 void SolverSettings::setEndTimeTol(double tol)
 {
-	_endTimeTol=tol;
+  _endTimeTol=tol;
 }
 
 double SolverSettings::getZeroTol()
 {
-	return _zeroTol;
+  return _zeroTol;
 }
 void SolverSettings::setZeroTol(double tol)
 {
-	_zeroTol=tol;
+  _zeroTol=tol;
 }
 
 double SolverSettings::getZeroTimeTol()
 {
-	return _zeroTimeTol;
+  return _zeroTimeTol;
 }
 void SolverSettings::setZeroTimeTol(double tol)
 {
-	_zeroTimeTol=tol;
+  _zeroTimeTol=tol;
 }
 
 IGlobalSettings* SolverSettings::getGlobalSettings()
 {
-	return _globalSettings;
+  return _globalSettings;
 }
 
 void SolverSettings::load(string)
@@ -80,10 +80,10 @@ void SolverSettings::load(string)
 
 double SolverSettings::getZeroRatio()
 {
-	return _zeroRatio ;
+  return _zeroRatio ;
 }
 
 void SolverSettings::setZeroRatio(double ratio)
 {
-	_zeroRatio=ratio;
+  _zeroRatio=ratio;
 }

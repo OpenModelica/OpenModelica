@@ -228,7 +228,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
       <% generateStateValues(qssInfo) %>
     }
   }
-	
+    
   double quantum_values(int state)
   {
     return 0.0;
@@ -405,7 +405,7 @@ template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> help
   "Generates function for when in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-	let whenCases = functionQssWhen2(whenClauses,helpVars,varDecls,zeroCrossings)
+    let whenCases = functionQssWhen2(whenClauses,helpVars,varDecls,zeroCrossings)
   <<
   bool functionQssWhen(unsigned int whenIndex, double t,double *out, double *in)
   {
@@ -415,7 +415,7 @@ template functionQssWhen(list<SimWhenClause> whenClauses, list<HelpVarInfo> help
     mem_state = get_memory_state();
     switch (whenIndex)
     {
- 	  <% whenCases %>
+       <% whenCases %>
     }
     return false;
   }
@@ -426,11 +426,11 @@ end functionQssWhen;
 template functionQssWhen2(list<SimWhenClause> whenClauses, list<HelpVarInfo> helpVars, Text &varDecls,list<ZeroCrossing> zeroCrossings)
   "Generates function for when in simulation file."
 ::= 
-	(whenClauses |> SIM_WHEN_CLAUSE (__) hasindex i0 =>
-  	let &preExp = buffer "" /*BUFD*/
-  	let &saves = buffer "" /*BUFD*/
-		let cond = functionPreWhenCondition(conditions,varDecls,preExp, zeroCrossings) 
-		let equations = generateWhenEquations(reinits,whenEq,varDecls)
+    (whenClauses |> SIM_WHEN_CLAUSE (__) hasindex i0 =>
+      let &preExp = buffer "" /*BUFD*/
+      let &saves = buffer "" /*BUFD*/
+        let cond = functionPreWhenCondition(conditions,varDecls,preExp, zeroCrossings) 
+        let equations = generateWhenEquations(reinits,whenEq,varDecls)
   <<
   case <% i0 %>:
     #ifdef _OMC_OMPD
@@ -439,43 +439,43 @@ template functionQssWhen2(list<SimWhenClause> whenClauses, list<HelpVarInfo> hel
     <% preExp %>
     if (<% cond %>) {
       <% equations %>
-			<%saves%>
+            <%saves%>
       restore_memory_state(mem_state);
       return true;
     } else {
-			<%saves%>
+            <%saves%>
       restore_memory_state(mem_state);
       return false;
     }
     break;
   >>
- 	;separator="\n")
+     ;separator="\n")
 end functionQssWhen2;
 
 template generateWhenEquations(list<BackendDAE.WhenOperator> reinits,Option<BackendDAE.WhenEquation> whenEq, Text &varDecls)
   "Generate the when equtions"
 ::=
   match whenEq
-	case SOME(BackendDAE.WHEN_EQ(right=right,left=left)) then
-	let &preExp = buffer ""
+    case SOME(BackendDAE.WHEN_EQ(right=right,left=left)) then
+    let &preExp = buffer ""
   let exp = daeExp(right, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-	<<
-	<% cref(left) %>  = <% exp %>;
-	<% generateReinits(reinits,varDecls) %>
-	>>
-	case NONE() then
-	generateReinits(reinits,varDecls)
+    <<
+    <% cref(left) %>  = <% exp %>;
+    <% generateReinits(reinits,varDecls) %>
+    >>
+    case NONE() then
+    generateReinits(reinits,varDecls)
 end generateWhenEquations;
 
 template generateReinits(list<BackendDAE.WhenOperator> reinits, Text &varDecls)
   "Generate the reinit when equtions"
 ::=
   (reinits |> BackendDAE.REINIT(stateVar=stateVar, value=value) =>
-	let &preExp = buffer ""
-	let val = daeExp(value, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &preExp = buffer ""
+    let val = daeExp(value, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <% cref(stateVar) %> = <% val %>; // Reinit of var <% cref(stateVar) %> 
-	>>;separator="\n")
+    >>;separator="\n")
 end generateReinits;
 
 
@@ -484,30 +484,30 @@ template functionPreWhenCondition (list<tuple<DAE.Exp, Integer>> conditions, Tex
   "Generate conditions for when eq"
 ::=
   (conditions |> (e,hvar) => 
-	match e
-	case CALL(path=IDENT(name="samplecondition"),expLst={DAE.ICONST(integer=i)}) then
-	'condition(<% i %>)'
-	case _ then
+    match e
+    case CALL(path=IDENT(name="samplecondition"),expLst={DAE.ICONST(integer=i)}) then
+    'condition(<% i %>)'
+    case _ then
   let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-	let &preExp += <<localData->helpVars[<%hvar%>] = <% helpInit %>;
+    let &preExp += <<localData->helpVars[<%hvar%>] = <% helpInit %>;
 
-	>>
+    >>
   'localData->helpVars[<%hvar%>] && !localData->helpVars_saved[<%hvar%>] /* edge */'
-	;separator=" || ")
+    ;separator=" || ")
 end functionPreWhenCondition;
 
 template functionQssStaticBlocks(list<list<SimEqSystem>> derivativEquations,list<ZeroCrossing> zeroCrossings, QSSinfo qssInfo, Integer nStates)
   "Generates function in simulation file."
 ::=
-	match qssInfo
-	case BackendQSS.QSSINFO(__) then
-  	let &varDecls = buffer "" /*BUFD*/
+    match qssInfo
+    case BackendQSS.QSSINFO(__) then
+      let &varDecls = buffer "" /*BUFD*/
     let &tmp = buffer ""
-		let numStatic = intAdd(listLength(eqs),listLength(zeroCrossings))
-		let numPureStatic = listLength(eqs)
-		let numZeroCross = listLength(zeroCrossings)
-		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates,tmp)
-		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls,DEVSstructure,outVarLst,nStates)
+        let numStatic = intAdd(listLength(eqs),listLength(zeroCrossings))
+        let numPureStatic = listLength(eqs)
+        let numZeroCross = listLength(zeroCrossings)
+        let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates,tmp)
+        let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls,DEVSstructure,outVarLst,nStates)
 
   <<
   int staticBlocks = <% numStatic %>;
@@ -536,28 +536,28 @@ end functionQssStaticBlocks;
 template generateOutputs(BackendQSS.DevsStruct devsst, Integer index, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate outputs for static blocks"
 ::= 
-	(BackendQSS.getOutputs(devsst,intAdd(index,intAdd(1,nStates))) |> i hasindex i0 =>
-	<<
-	// Output <% i0 %> is var <% i %>
-	out[<% i0 %>] =  <% BackendQSS.derPrefix(listNth(varLst,intAdd(i,-1)))%><% cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %>;
-	>>
-	; separator="\n")
+    (BackendQSS.getOutputs(devsst,intAdd(index,intAdd(1,nStates))) |> i hasindex i0 =>
+    <<
+    // Output <% i0 %> is var <% i %>
+    out[<% i0 %>] =  <% BackendQSS.derPrefix(listNth(varLst,intAdd(i,-1)))%><% cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %>;
+    >>
+    ; separator="\n")
 end generateOutputs;
 
 
 template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate inputs for static blocks"
 ::= 
-	(BackendQSS.getInputs(devsst,index) |> i hasindex i0 =>
-	<<
-	// Input <% i0 %> is var <% i %>
-	<% cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %> = in[<% i0 %>];
-	>>
-	; separator="\n")
+    (BackendQSS.getInputs(devsst,index) |> i hasindex i0 =>
+    <<
+    // Input <% i0 %> is var <% i %>
+    <% cref(BackendVariable.varCref(listNth(varLst,intAdd(i,-1)))) %> = in[<% i0 %>];
+    >>
+    ; separator="\n")
 end generateInputs;
 
 template generateStaticFunc(list<list<SimEqSystem>> odeEq,list<ZeroCrossing> zeroCrossings, 
-	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates, Text &tmp)
+    Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates, Text &tmp)
 "Generate the cases for the static function "
 ::= 
   (BLTblocks |> eqs hasindex i0 =>
@@ -619,15 +619,15 @@ template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
    let &preExp = buffer "" /*BUFD*/
    let zcExp = generateZCExp(relation_, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-	 match relation_
-	 case CALL(path=IDENT(name="sample")) then
+     match relation_
+     case CALL(path=IDENT(name="sample")) then
   <<
 
   case <%intAdd(i0,offset)%>:
     // This zero crossing is a sample. This case should not be called
     break;
   >>
-	case _ then
+    case _ then
   <<
 
   case <%intAdd(i0,offset)%>:
@@ -665,64 +665,64 @@ template functionQssUpdateDiscrete(list<SimEqSystem> allEquationsPlusWhen,list<Z
 end functionQssUpdateDiscrete;
 
 template generateDiscUpdate(SimEqSystem eq, list<ZeroCrossing> zeroCrossings, Text &varDecls)
-	"Generate the updates of the disc variavbles
-	author: fbergero"
+    "Generate the updates of the disc variavbles
+    author: fbergero"
 ::=
-	match eq 
-	case SES_MIXED(__) then
-	let disc = (discEqs |> SES_SIMPLE_ASSIGN(__) =>
-  	let &preDisc = buffer "" /*BUFD*/
-		let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
-	<<
+    match eq 
+    case SES_MIXED(__) then
+    let disc = (discEqs |> SES_SIMPLE_ASSIGN(__) =>
+      let &preDisc = buffer "" /*BUFD*/
+        let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
+    <<
     <%preDisc%>
     <%cref(cref)%> = <%expPart%>;
-	>>
+    >>
     ;separator="\n")
-	<<
+    <<
     <%disc%>
-	>>
+    >>
 
   /*
-	case SES_SIMPLE_ASSIGN(__) then
-  	let &preDisc = buffer "" /*BUFD*/
-		let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
-	<<
+    case SES_SIMPLE_ASSIGN(__) then
+      let &preDisc = buffer "" /*BUFD*/
+        let expPart = daeExp(exp, contextSimulationDiscrete, &preDisc /* BUFC */, &varDecls /* BUFD */)
+    <<
     <%preDisc%>
     <%cref(cref)%> = <%expPart%>;
-	>>
-	*/
-	case _ then ''
+    >>
+    */
+    case _ then ''
 end generateDiscUpdate;
 
 
 template generateIntegrators(Integer nStates)
 "Function to generate the integrator atomics for the DEVS structure"
 ::= 
-	(fill(0,nStates) |> i hasindex i0 =>
+    (fill(0,nStates) |> i hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_integrator.h
       Parameters = <% i0 %>.0 // Index
     }
   >>
-	;separator="\n")
+    ;separator="\n")
 end generateIntegrators;
 
 template generateStaticBlocks(QSSinfo qssInfo, Integer nStates)
 "Function to generate the static functions atomics for the DEVS structure"
 ::= 
-	match qssInfo
-	case QSSINFO(DEVSstructure = BackendQSS.DEVS_STRUCT(__)) then
-	(eqs |> eq hasindex i0 =>
+    match qssInfo
+    case QSSINFO(DEVSstructure = BackendQSS.DEVS_STRUCT(__)) then
+    (eqs |> eq hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_static.h
       Parameters = <% BackendQSS.numInputs(qssInfo,intAdd(i0,intAdd(1,nStates)))
-				%>.0, <%
-				BackendQSS.numOutputs(qssInfo,intAdd(i0,intAdd(1,nStates))) %>.0, <% i0 %>.0 // Inputs, Outputs, Index
+                %>.0, <%
+                BackendQSS.numOutputs(qssInfo,intAdd(i0,intAdd(1,nStates))) %>.0, <% i0 %>.0 // Inputs, Outputs, Index
     }
   >>
-	;separator="\n")
+    ;separator="\n")
 end generateStaticBlocks;
 
 template generateZeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo,Integer nStates)

@@ -113,13 +113,13 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
-	DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
-	comp->fmuData = fmudata;
-	if (!comp->fmuData) {
-		functions.logger(NULL, instanceName, fmiError, "error",
-		"fmiInstantiateModel: Error: Could not initialize the global data structure file.");
-		return NULL;
-	}
+  DATA* fmudata = (DATA *)functions.allocateMemory(1, sizeof(DATA));
+  comp->fmuData = fmudata;
+  if (!comp->fmuData) {
+    functions.logger(NULL, instanceName, fmiError, "error",
+    "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
+    return NULL;
+  }
   }else{
     functions.logger(NULL, instanceName, fmiError, "error",
         "fmiInstantiateModel: Out of memory.");
@@ -545,7 +545,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
   /*TODO: Simulation stop time is need to calculate in before hand all sample events
-   	   	  We shouldn't generate them all in beforehand */
+          We shouldn't generate them all in beforehand */
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 

@@ -5153,24 +5153,24 @@ case rel as RELATION(__) then
           res
         end match
     case SOME((exp,i,j)) then
-	    let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-	    let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-	    let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-	    let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-	    //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-	    match rel.operator
-	    case LESS(__) then
-	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
-	      res
-	    case LESSEQ(__) then
-	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
-	      res
-	    case GREATER(__) then
-	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
-	      res
-	    case GREATEREQ(__) then
-	      let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
-	      res
+        let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+        //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        match rel.operator
+        case LESS(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += 'RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
+          res
         end match
       end match
    case SIMULATION(genDiscrete=true) then
@@ -5199,22 +5199,22 @@ case rel as RELATION(__) then
          let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
          //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
          let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-		 match rel.operator
-		 case LESS(__) then
-		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
-		    res
-		 case LESSEQ(__) then
-		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
-		    res
-		 case GREATER(__) then
-		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
-		    res
-		 case GREATEREQ(__) then
-		    let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
-		    res
-   	     end match
-   	   end match
-	end match
+         match rel.operator
+         case LESS(__) then
+            let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>'
+            res
+         case LESSEQ(__) then
+            let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>'
+            res
+         case GREATER(__) then
+            let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>'
+            res
+         case GREATEREQ(__) then
+            let &preExp += 'SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>'
+            res
+            end match
+          end match
+    end match
 end match
 end daeExpRelationSim;
 

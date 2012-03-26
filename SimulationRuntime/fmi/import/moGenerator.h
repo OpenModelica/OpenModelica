@@ -40,38 +40,38 @@ typedef enum{fmi_false, fmi_true} fmiBooleanXML;
 typedef enum{sv_real, sv_integer, sv_boolean, sv_string, sv_enum} fmiScalarVariableType;
 
 typedef struct {
-	const char* name;
-	fmiValueReference vr;
-	int aliasInd;
-	void* variable;
-	void* next;
+  const char* name;
+  fmiValueReference vr;
+  int aliasInd;
+  void* variable;
+  void* next;
 } fmuOutputVar;
 
 
 typedef struct{
-	const char* declType;
-	const char* start;
-	int defStart;
-	fmiBooleanXML fixed;
+  const char* declType;
+  const char* start;
+  int defStart;
+  fmiBooleanXML fixed;
 } fmiSTRING;
 
 typedef struct{
-	fmiBooleanXML start;
-	const char* declType;
-	int defStart;
-	fmiBooleanXML fixed;
+  fmiBooleanXML start;
+  const char* declType;
+  int defStart;
+  fmiBooleanXML fixed;
 } fmiBOOLEAN;
 
 typedef struct{
-	const char* declType;
-	const char* quantity;
-	double min;
-	int defMin;
-	double max;
-	int defMax;
-	int start;
-	int defStart;
-	fmiBooleanXML fixed;
+  const char* declType;
+  const char* quantity;
+  double min;
+  int defMin;
+  double max;
+  int defMax;
+  int start;
+  int defStart;
+  fmiBooleanXML fixed;
 } fmiINTEGER;
 
 typedef struct{
@@ -87,11 +87,11 @@ typedef struct{
 } fmiENUM;
 
 typedef struct{
-	const char* declType;
-	const char* quantity;
-	const char* unit;
-	const char* displayUnit;
-	fmiBooleanXML relQuantity;
+  const char* declType;
+  const char* quantity;
+  const char* unit;
+  const char* displayUnit;
+  fmiBooleanXML relQuantity;
   double min;
   int defMin;
   double max;
@@ -100,19 +100,19 @@ typedef struct{
   int defNorminal;
   double start;
   int defStart;
-	fmiBooleanXML fixed;
+  fmiBooleanXML fixed;
 } fmiREAL;
 
 typedef struct{
-	const char* name;
-	char* flatName;
-	fmiValueReference vr; // value reference;
-	const char* description;
-	fmiVariability var;
-	fmiCausality causality;
-	fmiAlias alias;
-	fmiScalarVariableType type;
-	void* variable;	
+  const char* name;
+  char* flatName;
+  fmiValueReference vr; // value reference;
+  const char* description;
+  fmiVariability var;
+  fmiCausality causality;
+  fmiAlias alias;
+  fmiScalarVariableType type;
+  void* variable; 
 } fmiScalarVariable;
 
 typedef struct{
@@ -120,10 +120,10 @@ typedef struct{
 } fmiArrayVariable;
 
 typedef struct{
-	int nsv; // number of scalar variables
-	fmiScalarVariable* list_sv;
-	int nav; // number of array variables
-	fmiArrayVariable* list_av;	
+  int nsv; // number of scalar variables
+  fmiScalarVariable* list_sv;
+  int nav; // number of array variables
+  fmiArrayVariable* list_av;  
 } fmiModelVariable;
 
 typedef struct{
@@ -133,20 +133,20 @@ typedef struct{
 } fmiDefaultExperiment;
 
 typedef struct{
-	const char* fmiver; // fmi version number;
-	const char* mn; // fmi model name
-	const char* mid; // model identifier;
-	const char* guid; // fingerprint of xml-file content
-	const char* description; // string describing the model
-	const char* author;
-	const char* mver; // model version
-	const char* genTool;// generation tool;
-	const char* genTime; // generation date and time;
-	fmiNamingConvention nconv; // variable naming convention;
-	unsigned int ncs; // number of continuous states;
-	unsigned int nei; // number of event indicators;
-	fmiDefaultExperiment *defaultExperiment;
-	fmiModelVariable* modelVariable;
+  const char* fmiver; // fmi version number;
+  const char* mn; // fmi model name
+  const char* mid; // model identifier;
+  const char* guid; // fingerprint of xml-file content
+  const char* description; // string describing the model
+  const char* author;
+  const char* mver; // model version
+  const char* genTool;// generation tool;
+  const char* genTime; // generation date and time;
+  fmiNamingConvention nconv; // variable naming convention;
+  unsigned int ncs; // number of continuous states;
+  unsigned int nei; // number of event indicators;
+  fmiDefaultExperiment *defaultExperiment;
+  fmiModelVariable* modelVariable;
 } fmuModelDescription;
 
 

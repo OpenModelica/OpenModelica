@@ -148,6 +148,7 @@ distclean: clean
 	rm -rf build/
 clean: qtclean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
