@@ -77,8 +77,8 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	# copy fmi stuff
 	cp ../fmi/export/*.h \
 	   ../fmi/export/fmu_model_interface.c \
-	   ../../FMI/import/source/fmuWrapper.h \
-	   ../../FMI/import/source/xmlparser.h $(builddir_inc)
+	   ../fmi/import/fmuWrapper.h \
+	   ../fmi/import/xmlparser.h $(builddir_inc)
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
