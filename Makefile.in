@@ -91,19 +91,19 @@ bom-error:
 	rm -f bom-error.log bom-error.sh
 
 tab-error:
-	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
+	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
           grep -v " 0\$$" | egrep -v '/omc_release/|/omc_debug/|/omc_profiling/|/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
 
 utf8-error:
 	rm -f utf8-error.log*
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
+	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
 	@if test -e utf8-error.log; then cat utf8-error.log; fi
 	@test ! -e utf8-error.log
 	rm -f utf8-error.log*
 
 utf8-iconv:
 	rm -f tmp
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
+	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>tmp || (rm -f tmp && cp '{}' tmp && iconv -f ISO-8859-1 -t UTF-8 tmp -o '{}' && echo Converted {} to UTF-8)" ';'
 	rm -f tmp
 
 .PRECIOUS: Makefile

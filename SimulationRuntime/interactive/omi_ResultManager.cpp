@@ -8,13 +8,13 @@
  * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_ResultManager.cpp
- * While a simulation is running the “Calculation” thread produces simulation results for every time step,
- * and the “Transfer” thread sends the single results to a client.
+ * While a simulation is running the `Calculation' thread produces simulation results for every time step,
+ * and the `Transfer' thread sends the single results to a client.
  * There is a need for synchronization and organisation of simulation results.
  * However, the application cannot store all results because this would cause the system to run out of memory.
- * This scenario is the typical “producer and consumer problem with restricted buffer”,
+ * This scenario is the typical `producer and consumer problem with restricted buffer',
  * which is well known in IT science.
- * The “ResultManager” assumes responsibility for organizing simulation result data and
+ * The `ResultManager' assumes responsibility for organizing simulation result data and
  * synchronizing access to these data.
  *
  * Full specification available in the bachelor thesis of Parham Vasaiely
@@ -38,7 +38,7 @@ int debugResultManager = 0; //Set the debug level higher zero to print out messa
  * This element signalizes that the simulation runs for the first time.
  * It is important to store data into the "simulationStartSSD"
  */
-bool firstRun = true; //TODO [20110522] firstRun zurück setzten für stop
+bool firstRun = true; //TODO [20110522] firstRun zurÃ¼ck setzten fÃ¼r stop
 
 /*
  * After a simulation reset a (all) calculation thread must start from new

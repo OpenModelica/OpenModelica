@@ -8,12 +8,12 @@
  * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Control.cpp
- * The “Control” module is the interface between OMI and a GUI.
+ * The `Control' module is the interface between OMI and a GUI.
  * It is implemented as a single thread to support parallel tasks and independent reactivity.
  * As the main controlling and communication instance at simulation initialisation phase and
  * while simulation is running it manages simulation properties and also behaviour.
- * A client can permanently send operations as messages to the “Control” unit,
- * it can react at any time to feedback from the “Calculation” or “Transfer” threads and
+ * A client can permanently send operations as messages to the `Control' unit,
+ * it can react at any time to feedback from the `Calculation' or `Transfer' threads and
  * it also sends messages to a client, for example error or status messages.
  *
  * Full specification available in the bachelor thesis of Parham Vasaiely

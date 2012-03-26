@@ -115,7 +115,7 @@ template txtTest2() ::=
 let &txt = buffer "ahoj2"
 let &txt += "hej2"
 <<
-bláá <%txt%>
+blÃ¡Ã¡ <%txt%>
   <%/* jhgjhgjh  */%>  
 jo
 >>
@@ -127,7 +127,7 @@ let &txt += "ahej2"
 let &buf += txt 
 //OK: ERROR let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
-abláá <%txt%>
+ablÃ¡Ã¡ <%txt%>
   <%/* jhgjhgjh  */%>  
 ajo
 >>
@@ -139,7 +139,7 @@ if hej then
   let &txt += hej
   let &buf += txt
   <<
-  bláá <%txt%>
+  blÃ¡Ã¡ <%txt%>
   <%/* jhgjhgjh  */%>  
   jo
   >>
@@ -151,7 +151,7 @@ let &txt += "ahej2"
 let &buf += txt
 //let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
-abláá <%txt%>
+ablÃ¡Ã¡ <%txt%>
   <%/* jhgjhgjh  */%>  
 ajo
 >>

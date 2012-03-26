@@ -8,12 +8,12 @@
  * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Transfer.cpp
- * Similar to a consumer, the “Transfer” thread tries to get simulation results from
- * the “ResultManager” and send them to the GUI immediately after starting a simulation.
+ * Similar to a consumer, the `Transfer' thread tries to get simulation results from
+ * the `ResultManager' and send them to the GUI immediately after starting a simulation.
  * If the  communication takes longer than a calculation step,
  * it is also possible to create more than one consumer.
- * The “Transfer” uses a property filter mask containing all property names whoes result values are important for the GUI.
- * The GUI must set this mask using the “setfilter” operation,
+ * The `Transfer' uses a property filter mask containing all property names whoes result values are important for the GUI.
+ * The GUI must set this mask using the `setfilter' operation,
  * otherwise the transfer sends only the actual simulation time.
  * This is very useful for increasing the communication speed while sending results to the GUI.
  *
