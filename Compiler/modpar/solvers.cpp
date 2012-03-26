@@ -1,6 +1,6 @@
 /* Implementation of numerical differential solvers for OpenModelica
    Copyright Peter Aronsson, Programming Environments laboratory
-   Linköping University, Sweden
+   LinkÃ¶ping University, Sweden
 */
 
 /* Euler:

@@ -703,7 +703,7 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
            "true*Tpl.Susan*:)", true, true, "TplParser.typeSig \n\""+& str +&"\"\n", notPassedCnt);
         
         //*************
-        str = "list< tuple<Hej.Susan,list <String>,Option< /*uáá*/Integer>> >:)";
+        str = "list< tuple<Hej.Susan,list <String>,Option< /*uÃ¡Ã¡*/Integer>> >:)";
         chars = stringListStringChar( str );
         
         (chars,_, ts) = TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));

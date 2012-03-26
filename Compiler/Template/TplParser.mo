@@ -3464,7 +3464,7 @@ end expressionPlus;
 
 /*
 plusTailOpt(lesc,resc,bexp):  
-  '+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+  '+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation same as "<expression><expression>"
     => TEMPLATE(bexp::exp::expLst, "+", "");
   |
   _ => bexp 
@@ -3557,7 +3557,7 @@ expression_base(lesc,resc):
   '{' '}'  => MAP_ARG_LIST({})                                                             
   |
   '{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
-                                                             //… useful in map/concatenation context
+                                                             // useful in map/concatenation context
      => MAP_ARG_LIST(exp::expLst)                                                             
   |
   '(' expression(lesc,resc):exp ')'

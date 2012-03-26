@@ -1602,7 +1602,7 @@ protected
 algorithm
   i_txt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("hej2"));
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("bláá "));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("blÃ¡Ã¡ "));
   out_txt := Tpl.writeText(out_txt, i_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("jo"));
@@ -1623,7 +1623,7 @@ algorithm
   out_i_buf := Tpl.writeText(i_buf, i_txt);
   (out_i_buf, out_i_buf) := txtTest4(out_i_buf, "ha!", out_i_buf);
   out_i_buf := Tpl.writeTok(out_i_buf, Tpl.ST_STRING("ahoj"));
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("abláá "));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("ablÃ¡Ã¡ "));
   out_txt := Tpl.writeText(out_txt, i_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("ajo"));
@@ -1658,7 +1658,7 @@ algorithm
         i_txt = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ahoj2"));
         i_txt = Tpl.writeStr(i_txt, i_hej);
         i_buf = Tpl.writeText(i_buf, i_txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("bláá "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("blÃ¡Ã¡ "));
         txt = Tpl.writeText(txt, i_txt);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("jo"));
@@ -1683,7 +1683,7 @@ algorithm
   out_i_buf := Tpl.writeText(i_buf, i_txt);
   (out_i_buf, out_i_buf) := txtTest4(out_i_buf, "ha!", out_i_buf);
   out_i_buf := Tpl.writeTok(out_i_buf, Tpl.ST_STRING("ahoj"));
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("abláá "));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("ablÃ¡Ã¡ "));
   out_txt := Tpl.writeText(out_txt, i_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("ajo"));

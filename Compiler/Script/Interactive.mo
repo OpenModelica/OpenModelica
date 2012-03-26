@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from LinkÃ¶ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -10141,7 +10141,7 @@ end addClassAnnotation;
 
 protected function addClassAnnotationToClass
 "function: addClassAnnotationToClass
-   This function adds an annotation on element level to a `Class´."
+   This function adds an annotation on element level to a `ClassÂ´."
   input Absyn.Class inClass;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Class outClass;
@@ -14086,7 +14086,7 @@ end createFuncargsFromElementargs;
 
 protected function getNthConnectionitemInClass
 "function: getNthConnectionitemInClass
-   This function takes a Class and  an int ane returns the nth
+   This function takes a ClassÂ and  an int ane returns the nth
    `EquationItem\' containing a connect statement in that class."
   input Absyn.Class inClass;
   input Integer inInteger;
