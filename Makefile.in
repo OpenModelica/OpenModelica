@@ -97,8 +97,8 @@ tab-error:
 utf8-error:
 	rm -f utf8-error.log*
 	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
-	@if test -e utf8-error.log; then cat utf8-error.log; fi
-	@test ! -e utf8-error.log
+	@cat utf8-error.log
+	@test ! -s utf8-error.log
 	rm -f utf8-error.log*
 
 utf8-iconv:
