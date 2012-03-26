@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -34,7 +34,7 @@
 
 /*!
 * \file stylesheet.cpp
-* \author Anders Fernström (and Ingemar Axelsson)
+* \author Anders FernstrÃ¶m (and Ingemar Axelsson)
 * \date 2005-10-26
 *
 * \brief Had to remake the class to be compatible with the richtext
@@ -64,7 +64,7 @@ namespace IAEX
 {
   /*!
    * \class Stylesheet
-   * \author Anders Fernström (and Ingemar Axelsson)
+   * \author Anders FernstrÃ¶m (and Ingemar Axelsson)
    * \date 2005-10-26
    *
    * \brief Reads a stylesheet file and creates CellStyle object
@@ -91,7 +91,7 @@ namespace IAEX
       throw runtime_error( tmp.c_str() );
     }
 
-    //Här kan det bli feeeeel!
+    //HÃ¤r kan det bli feeeeel!
     if(!doc_->setContent(&file))
     {
       file.close();
@@ -112,7 +112,7 @@ namespace IAEX
   Stylesheet *Stylesheet::instance_ = 0;
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Instance the Stylesheet object.
@@ -130,7 +130,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Returns the CellStyle that correspondence with the
@@ -153,7 +153,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Returns all the CellStyles.
@@ -165,7 +165,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Returns all the CellStyle names of the visible styles
@@ -212,7 +212,7 @@ namespace IAEX
 
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief loop through the DOM tree and creates CellStyle after
@@ -255,7 +255,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief traverse through a style tag in the DOM tree
@@ -285,7 +285,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Parse the BORDER tag
@@ -312,7 +312,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Parse the ALIGNMENT tag
@@ -347,7 +347,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-26
    *
    * \brief Parse the FONT tag
@@ -488,7 +488,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief Parse the CHAPTERLEVEL tag

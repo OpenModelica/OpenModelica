@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -34,7 +34,7 @@
 
 /*!
  * \file stripstring.h
- * \author Anders Fernström
+ * \author Anders FernstrÃ¶m
  */
 
 #ifndef STRIPSTRING_H
@@ -56,7 +56,7 @@ using namespace std;
 
 /*!
   * \class CellStyle
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-09
   *
   * \brief A class that remove/add some stuff in the content strings taken
@@ -90,19 +90,19 @@ public:
             case '"':
             case '[':
         // remove '\"' and '\[' from the text.
-        // also repace mathematica notebook symbols for the letter å,ä,ö
+        // also repace mathematica notebook symbols for the letter Ã¥,Ã¤,Ã¶
         if( str.find( "[ODoubleDot]", pos ) == pos+1 )
-          str.replace( pos, 13, "ö" );
+          str.replace( pos, 13, "Ã¶" );
         else if( str.find( "[CapitalODoubleDot]", pos ) == pos+1 )
-          str.replace( pos, 20, "Ö" );
+          str.replace( pos, 20, "Ã–" );
         else if( str.find( "[ADoubleDot]", pos ) == pos+1 )
-          str.replace( pos, 13, "ä" );
+          str.replace( pos, 13, "Ã¤" );
         else if( str.find( "[CapitalADoubleDot]", pos ) == pos+1 )
-          str.replace( pos, 20, "Ä" );
+          str.replace( pos, 20, "Ã„" );
         else if( str.find( "[ARing]", pos ) == pos+1 )
-          str.replace( pos, 8, "å" );
+          str.replace( pos, 8, "Ã¥" );
         else if( str.find( "[CapitalARing]", pos ) == pos+1 )
-          str.replace( pos, 15, "Å" );
+          str.replace( pos, 15, "Ã…" );
         else if( str.find( "[LeftRightArrow]", pos ) == pos+1 ) // NOT CORRECT SYMBOL
           str.replace( pos, 17, "<->" );
         else if( str.find( "[Bullet]", pos ) == pos+1 )
@@ -146,7 +146,7 @@ public:
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-06
    * \date 2005-12-08 (update)
    *
@@ -280,7 +280,7 @@ public:
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-08
    *
    * \brief Apply a html <span style=""> tag to the text, and
@@ -300,7 +300,7 @@ public:
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-10
    *
    * \brief Add # symbol to filenames for links.

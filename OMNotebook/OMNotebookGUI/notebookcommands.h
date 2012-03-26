@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -32,7 +32,7 @@
 
 /*!
 * \file notebookcommands.h
-* \author Ingemar Axelsson and Anders Fernström
+* \author Ingemar Axelsson and Anders FernstrÃ¶m
 */
 
 #ifndef _NOTEBOOK_COMMANDS_H
@@ -74,7 +74,7 @@ namespace IAEX
 {
   /*!
   * \class SleeperThread
-  * \author Anders Ferström
+  * \author Anders FerstrÃ¶m
   *
   * \brief Extends QThread. A small trick to get access to protected
   * function in QThread.
@@ -90,7 +90,7 @@ namespace IAEX
 
   /*!
   * \class SaveDocumentCommand
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2005-12-05 (update)
   *
   * \brief Saves the document.
@@ -252,7 +252,7 @@ namespace IAEX
 
   /*!
   * \class OpenOldFileCommand
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-01
   *
   * \breif Opens an old file, using the specified filename.
@@ -286,7 +286,7 @@ namespace IAEX
 
   /*!
   * \class PrintDocumentCommand
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-19
   *
   * \breif print a document
@@ -392,7 +392,7 @@ namespace IAEX
 
   /*!
   * \class ExportToPureText
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   *
   * Export the documents content to a file as pure text, all structure
   * is removed
@@ -437,7 +437,7 @@ namespace IAEX
 
   /*!
   * \class EvalSelectedCells
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-14
   *
   * Eval all inputcells in the vector of selected cells
@@ -502,7 +502,7 @@ namespace IAEX
 
   /*!
   * \class UpdateChapterCounters
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-03-02
   *
   * Updates all chapter counter in a documetn

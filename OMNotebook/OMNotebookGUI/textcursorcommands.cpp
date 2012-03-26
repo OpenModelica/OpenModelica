@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -32,7 +32,7 @@
 
 /*!
  * \file cellcommands.h
- * \author Anders Fernström
+ * \author Anders FernstrÃ¶m
  * \date 2005-11-03
  *
  * \brief Describes different textcursor commands
@@ -62,7 +62,7 @@ namespace IAEX
 {
   /*!
      * \class TextCursorCutText
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
      *
      * \brief Command for cuting text
@@ -110,7 +110,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorCopyText
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
      *
      * \brief Command for copying text
@@ -156,7 +156,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorCopyText
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
      *
      * \brief Command for pasting text
@@ -173,7 +173,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeFontFamily
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
      *
      * \brief Command for changing font family
@@ -189,7 +189,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeFontFace
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2006-01-13 (update)
      *
@@ -267,7 +267,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeFontSize
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-04 (update)
      *
@@ -287,7 +287,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeFontStretch
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-04 (update)
      *
@@ -325,7 +325,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeFontColor
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2006-01-13 (update)
      *
@@ -366,7 +366,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeTextAlignment
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-07 (update)
      *
@@ -403,7 +403,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeVerticalAlignment
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-07 (update)
      *
@@ -427,7 +427,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeMargin
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-07 (update)
      *
@@ -459,7 +459,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangePadding
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-07 (update)
      *
@@ -491,7 +491,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorChangeBorder
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    * \date 2005-11-07 (update)
      *
@@ -523,7 +523,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorInsertImage
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-18
      *
      * \brief Command for inserting an image
@@ -570,7 +570,7 @@ namespace IAEX
 
   /*!
      * \class TextCursorInsertLink
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-05
      *
      * \brief Command for inserting an link

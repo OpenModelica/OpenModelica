@@ -3,9 +3,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -16,7 +16,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -34,7 +34,7 @@
 
 /*!
  * \file celldocument.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  *
  * \brief Implementation of CellDocument class.
  */
@@ -76,7 +76,7 @@ namespace IAEX
 {
   /*!
    * \class CellDocument
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    * \brief Main widget for the cell workspace.
    *
@@ -113,7 +113,7 @@ namespace IAEX
 
 
   /*!
-   * \author Ingemar Axelsson (and Anders Fernström)
+   * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
    * \date 2005-11-28 (update)
    *
    * \brief Constructor, initialize a CellGroup as maincontent.
@@ -197,7 +197,7 @@ namespace IAEX
 
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-12-01 (update)
    *
    * \brief Open an file and parse the content
@@ -242,7 +242,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-10-28 (update)
    *
    * \brief Change the style of the selected cell/cells
@@ -254,7 +254,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-11-01 (update)
    *
    * \brief Attach a CellGroup to be the main workspace for cells.
@@ -325,7 +325,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-10-03 (update)
    *
    * 2005-10-03 AF, addad the try-catch expression
@@ -345,7 +345,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-26
    *
    * \brief Ungroup all selected groupcells
@@ -364,7 +364,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-26
    *
    * \brief Split current cell
@@ -440,7 +440,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
    *
    * \brief Cut text
@@ -451,7 +451,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
    *
    * \brief Copy text
@@ -462,7 +462,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-07
    *
    * \brief Paste text
@@ -473,7 +473,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the font family on the selected text, if
@@ -487,7 +487,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the font weight on the selected text, if
@@ -501,7 +501,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the font size on the selected text, if
@@ -515,7 +515,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the font stretch on the selected text, if
@@ -529,7 +529,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the font color on the selected text, if
@@ -543,7 +543,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the text alignment on the text inside the cell
@@ -556,7 +556,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the vertical alignment on the selected text, if
@@ -570,7 +570,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the margin of the cell
@@ -583,7 +583,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the padding of the cell
@@ -596,7 +596,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-03
    *
    * \brief Change the border of the cell
@@ -609,7 +609,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-18
    *
    * \brief Insert a image into the selected cell
@@ -622,7 +622,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-18
    * \date 2006-02-13 (update)
    *
@@ -675,7 +675,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-20
    * \date 2005-12-12 (update)
    *
@@ -704,7 +704,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-05
    *
    * \brief Insert a link to the selected text
@@ -717,7 +717,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    */
   bool CellDocument::hasChanged() const
   {
@@ -733,7 +733,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    */
   bool CellDocument::isSaved() const
   {
@@ -741,7 +741,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-08-24
    *
    * \brief Return true if the document is empty, otherwise false
@@ -773,7 +773,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-29
    * \date 2006-03-03 (update)
    *
@@ -892,7 +892,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-17
    *
    * \brief set the change variable
@@ -904,7 +904,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-10
    */
   void CellDocument::hoverOverUrl( const QUrl &link )
@@ -978,7 +978,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-03
    *
    * \brief set focus on output part in inputcell
@@ -1031,7 +1031,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-02-10 (update)
    *
    * \brief open a new document
@@ -1133,7 +1133,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-08-24
    *
    * \brief get the main cell
@@ -1218,7 +1218,7 @@ namespace IAEX
   ////SELECTION HANDLING/////////////////////////
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-18
    *
    * \brief Help function for selection handling
@@ -1234,7 +1234,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-18
    *
    * \brief Help function for selection handling

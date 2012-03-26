@@ -2,9 +2,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
  * \file textcell.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  * \date 2005-02-08
  *
  * \brief Describes a textcell.
@@ -68,7 +68,7 @@ namespace IAEX
 {
   /*!
    * \class MyTextBrowser
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    * \brief extends QTextBrowser. Mostly so I can catch when a user
    * clicks on a link without a change in textbrowsers content.
@@ -85,7 +85,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * date 2005-11-03
    *
    * 2005-11-03 AF, Updated the function to reflect the changes made
@@ -98,7 +98,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-01
    *
    * \brief Needed a signal to be emited when the user click on
@@ -118,7 +118,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-28
    *
    * \brief Handles mouse wheel events, ignore them and send the up
@@ -132,7 +132,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-23
    *
    * \brief If the mimedata that should be insertet contain text,
@@ -154,7 +154,7 @@ namespace IAEX
   }
 
 /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-30
    *
    * \brief Handles key event, added ignore to 'Alt+Enter'
@@ -210,7 +210,7 @@ namespace IAEX
 
   /*!
    * \class TextCell
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    * \brief A concrete cellclass using QTextEdit as mainwidget.
    *
@@ -228,7 +228,7 @@ namespace IAEX
    */
 
   /*!
-   * \author Ingemar Axelsson (and Anders Fernström)
+   * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
    * \date 2005-10-31 (update)
    *
    * \brief The class constructor
@@ -260,7 +260,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-03-02 (update)
    *
    * \brief Creates the QTextBrowser for the text inside the
@@ -320,7 +320,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief Creates the chapter counter
@@ -344,7 +344,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Returns the text (as plain text) from the mainarea.
@@ -357,7 +357,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Return the text inside the cell as Html code
@@ -370,7 +370,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Return the text cursor to the QTextBrowser that make up
@@ -384,7 +384,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Return the text editor that make up the cell
@@ -397,7 +397,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-11-03 (update)
    *
    * \brief Sets the visible text.
@@ -456,7 +456,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Sets the visible text, given an specific text format.
@@ -477,7 +477,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Sets the visible text using html code.
@@ -498,7 +498,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Set cell style
@@ -511,7 +511,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    * \date 2006-03-02 (update)
    *
@@ -598,7 +598,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief set the chapter counter
@@ -616,7 +616,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief return the value of the chapter counter, as plain text.
@@ -631,7 +631,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-03
    *
    * \brief return the value of the chapter counter, as html code.
@@ -646,7 +646,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-03-02 (update)
    *
    * \breif Set readonly value on the texteditor
@@ -691,7 +691,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    * \breif send a clicked signal if the user clicks on the cell
    */
@@ -716,7 +716,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-04-10 (update)
    *
    * \breif Recalculates height.
@@ -748,7 +748,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-10
    */
   void TextCell::hoverOverLink(const QUrl &link)
@@ -778,7 +778,7 @@ namespace IAEX
 
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    */
   void TextCell::textChangedInternal()
   {
@@ -786,7 +786,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-17
    *
    * \breif set the correct style if the charFormat is changed and the
@@ -808,7 +808,7 @@ namespace IAEX
 
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Function for telling if the user is allowed to change
@@ -824,7 +824,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-11-01 (update)
    *
    * \breif toggle between showing the html code in the cell and

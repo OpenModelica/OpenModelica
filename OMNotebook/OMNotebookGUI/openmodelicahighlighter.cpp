@@ -2,9 +2,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
 * \file openmodelicahighlighter.h
-* \author Anders Fernström
+* \author Anders FernstrÃ¶m
 * \date 2005-12-17
 *
 * Part of this code for taken from the example highlighter on TrollTechs website.
@@ -68,7 +68,7 @@ namespace IAEX
 {
   /*!
    * \class OpenModelicaHighlighter
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief Implements syntaxhighlightning for Modelica code.
@@ -77,7 +77,7 @@ namespace IAEX
    */
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief The class constructor
@@ -91,7 +91,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief The class destructor
@@ -102,7 +102,7 @@ namespace IAEX
 
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    * \date 2005-12-29 (update)
    *
@@ -139,7 +139,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief Highlights a block of thext
@@ -341,7 +341,7 @@ namespace IAEX
 
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief Initialize the different text formats by reading the
@@ -418,7 +418,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief Initialize the mapping by adding different patterns to
@@ -483,7 +483,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-17
    *
    * \brief Parse "type" settings tags

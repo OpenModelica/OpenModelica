@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -32,7 +32,7 @@
 
 /*!
  * \file cellcommands.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  *
  * \brief Describes different cell commands
  */
@@ -61,7 +61,7 @@ namespace IAEX
 {
    /*!
     * \class AddCellCommand
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
     *
     * \brief Command for adding a new cell to the cellstructure.
     */
@@ -276,12 +276,12 @@ namespace IAEX
       }
    }
 
-   //Det borde vara möjligt att titta på stylen för att avgöra om en
-   //cell är en grupp cell. Då borde det gå att kopiera in underceller
-   //också.
+   //Det borde vara mÃ¶jligt att titta pÃ¥ stylen fÃ¶r att avgÃ¶ra om en
+   //cell Ã¤r en grupp cell. DÃ¥ borde det gÃ¥ att kopiera in underceller
+   //ocksÃ¥.
    //
-   // Kontrollera på stylen hur cellerna ska kopieras. Speciellt ska
-   // gruppceller specialbehandlas så att deras subceller också
+   // Kontrollera pÃ¥ stylen hur cellerna ska kopieras. Speciellt ska
+   // gruppceller specialbehandlas sÃ¥ att deras subceller ocksÃ¥
    // kopieras. Just nu funkar det att kopiera enstaka celler. Men
    // inte gruppceller.
   void PasteCellsCommand::execute()
@@ -511,7 +511,7 @@ namespace IAEX
 
      /*!
    * \class ChangeStyleOnSelectedCellsCommand
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-10-28 (update)
    *
    * \brief Changes style on selected cells.
@@ -606,7 +606,7 @@ namespace IAEX
 
    /*!
     * \class UngroupCellCommand
-    * \author Anders Fernström
+    * \author Anders FernstrÃ¶m
     * \date 2006-04-26
     *
     * \brief Ungroup the cell
@@ -699,7 +699,7 @@ namespace IAEX
 
  /*!
     * \class SplitCellCommand
-    * \author Anders Fernström
+    * \author Anders FernstrÃ¶m
     * \date 2006-04-26
     *
     * \brief Split the cell

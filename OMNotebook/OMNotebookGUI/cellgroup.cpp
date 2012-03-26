@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -32,7 +32,7 @@
 
 /*!
  * \file cellgroup.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  *
  */
 
@@ -53,7 +53,7 @@ namespace IAEX{
 
   /*!
    * \class CellGroup
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    *  \brief CellGroup implements the functionality to
    *  be a Cell and contain a lot of subcells.
@@ -103,7 +103,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-10-28 (update)
    *
    * \brief Set the cells style. If the cell is closed, set style
@@ -120,7 +120,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-10-28 (update)
    *
    * \brief Return the cells style. If the cell is closed, style
@@ -143,7 +143,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-30
    *
    * \brief hide() or show() the child cells of the groupcell,
@@ -191,7 +191,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Function for telling if the user is allowed to change
@@ -207,7 +207,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-08-24
    *
    * \brief Returns the first childs text editor, if the cell is closed. If
@@ -302,7 +302,7 @@ namespace IAEX{
   }
 
   /*!
-   * \author Ingemar Axelsson (and Anders Fernström)
+   * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
    * \date 2005-11-30 (update)
    *
    * \brief open and close the groupcell when double click on the
@@ -435,7 +435,7 @@ namespace IAEX{
     par->addCellWidgets();
   }
 
-  //Just add widget. Don´t forget to repaint.
+  //Just add widget. Don't forget to repaint.
   void CellGroup::addCellWidget(Cell *newCell)
   {
     // PORT >> newCell->reparent(mainWidget(), QPoint(0,0), true);

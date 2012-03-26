@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Link�pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Link�ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Link�pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -98,7 +98,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-02
    *
    *\brief Method for get error message from OMC
@@ -111,7 +111,7 @@ namespace IAEX
   // QMutex omcMutex;
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-02-02 (update)
    *
    *\brief Method for evaluationg expressions
@@ -149,7 +149,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-02
    *
    *\brief Method for closing connection to OMC
@@ -160,7 +160,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-02
    *
    *\brief Method for closing reconnection to OMC
@@ -178,7 +178,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-09
    *
    *\brief Method for starting OMC
@@ -196,7 +196,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-09
    * \date 2006-03-14 (update)
    *
@@ -253,7 +253,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-08-17
    *
    *\brief Ststic method for returning the version of omc

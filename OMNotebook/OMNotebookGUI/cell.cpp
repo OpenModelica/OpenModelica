@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -55,7 +55,7 @@ namespace IAEX
 {
   /*!
    * \class Cell
-   * \author Ingemar Axelsson and Anders Ferström
+   * \author Ingemar Axelsson and Anders FerstrÃ¶m
    *
    * \brief Cellinterface contains all functionality required to be a cell.
    *
@@ -158,7 +158,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Set cell style
@@ -180,7 +180,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-10-27
   *
   * \brief Set the current cell style.
@@ -195,7 +195,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-10-27
   *
   * \brief Get the current cell style.
@@ -208,7 +208,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-16
   *
   * \brief Set cells tag name
@@ -219,7 +219,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-16
   *
   * \brief Get the cell tag name
@@ -232,7 +232,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-02
    *
    * \brief Function for telling if the function viewExpression is
@@ -246,7 +246,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-02-09 (update)
    *
    * \brief Adds a rule to the cell
@@ -261,7 +261,7 @@ namespace IAEX
    *
    * \todo Implement functionality for 'InitializationCell':
    * inputcells should be evaled from the start if the value is true.
-   * (Anders Fernström)
+   * (Anders FernstrÃ¶m)
    */
   void Cell::addRule(Rule *r)
   {
@@ -334,7 +334,7 @@ namespace IAEX
 
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief Apply any rules to the current cellstyle
@@ -434,7 +434,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief return the cells text cursor. if the cell don't have
@@ -466,7 +466,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief Update the cell layout with a chapter counter

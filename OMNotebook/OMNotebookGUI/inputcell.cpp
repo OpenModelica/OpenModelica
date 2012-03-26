@@ -2,9 +2,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
  * \file inputcell.cpp
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  * \date 2005-10-27 (update)
  *
  * \brief Describes an inputcell.
@@ -73,7 +73,7 @@ namespace IAEX
 {
   /*!
    * \class SleeperThread
-   * \author Anders Ferström
+   * \author Anders FerstrÃ¶m
    *
    * \brief Extends QThread. A small trick to get access to protected
    * function in QThread.
@@ -91,7 +91,7 @@ namespace IAEX
 
   /*!
    * \class MyTextEdit
-   * \author Anders Ferström
+   * \author Anders FerstrÃ¶m
    * \date 2005-11-01
    *
    * \brief Extends QTextEdit. Mostly so I can catch when a user
@@ -114,7 +114,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-01
    * \date 2005-12-15 (update)
    *
@@ -140,7 +140,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-28
    *
    * \brief Handles mouse wheel events, ignore them and send the up
@@ -154,7 +154,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-15
    * \date 2006-01-30 (update)
    *
@@ -287,7 +287,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-23
    *
    * \brief If the mimedata that should be insertet contain text,
@@ -309,7 +309,7 @@ namespace IAEX
 
   /*!
   * \class InputCell
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   * \brief Describes how an inputcell works.
   *
@@ -327,7 +327,7 @@ namespace IAEX
   int InputCell::numEvals_ = 1;
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-11-23 (update)
    *
    * \brief The class constructor
@@ -364,7 +364,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    *
    * \brief The class destructor
    */
@@ -397,7 +397,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-03-02 (update)
    *
    * \brief Creates the QTextEdit for the input part of the
@@ -468,7 +468,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2005-10-28 (update)
    *
    * \brief Creates the QTextEdit for the output part of the
@@ -507,7 +507,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-21
    *
    * \brief Set the output style
@@ -539,7 +539,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief Creates the chapter counter
@@ -563,7 +563,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief Returns the text (as plain text) fromthe cell
@@ -576,7 +576,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief Return the text inside the cell as Html code
@@ -589,7 +589,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-23
    *
    * \brief Return the text inside the output part of the cell
@@ -603,7 +603,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-23
    *
    * \brief Return the text inside the output part of the cell
@@ -617,7 +617,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief Return the text cursor to the QTextEdit that make up
@@ -631,7 +631,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-05
    *
    * \brief Return the input texteditor
@@ -644,7 +644,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-03
    *
    * \brief Return the output texteditor
@@ -657,7 +657,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2005-12-16 (update)
    *
    * \brief Set text to the cell
@@ -718,7 +718,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-01
    *
    * \brief Sets the visible text using html code.
@@ -737,7 +737,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-23
    *
    * \brief Set text to the output part of the cell
@@ -757,7 +757,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-23
    *
    * \brief Sets the output text using html code.
@@ -781,7 +781,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Set cell style
@@ -797,7 +797,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    * \date 2006-03-02 (update)
    *
@@ -854,7 +854,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief set the chapter counter
@@ -872,7 +872,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-02
    *
    * \brief return the value of the chapter counter, as plain text.
@@ -887,7 +887,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-03-03
    *
    * \brief return the value of the chapter counter, as html code.
@@ -902,7 +902,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-01
    * \date 2006-03-02 (update)
    *
@@ -934,7 +934,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-16
    *
    * \breif Set evaluated value on the texteditor
@@ -947,7 +947,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson (and Anders Fernström)
+   * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
    * \date 2005-11-01 (update)
    *
    * \breif Set if the output part of the cell shoud be
@@ -972,7 +972,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    */
   void InputCell::setFocus(const bool focus)
   {
@@ -981,7 +981,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    */
   void InputCell::setFocusOutput(const bool focus)
   {
@@ -990,7 +990,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    */
   void InputCell::clickEvent()
   {
@@ -999,7 +999,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    */
   void InputCell::clickEventOutput()
   {
@@ -1007,7 +1007,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-04-10 (update)
    *
    * \breif Recalculates height.
@@ -1049,7 +1049,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-17
    *
    * \brief Returns true if inputcell is closed, otherwise the method
@@ -1063,7 +1063,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-27
    *
    * \brief Function for telling if the user is allowed to change
@@ -1079,7 +1079,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-11-23
    *
    * \brief Returns true if inputcell is evaluated, returns false if
@@ -1093,7 +1093,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-04-18 (update)
    *
    *\brief Sends the content of the inputcell to the evaluator.
@@ -1231,7 +1231,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-02-02
    * \date 2006-02-09 (update)
    *
@@ -1281,7 +1281,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-15
    *
    *\brief Get/Insert the command that match the last word in the
@@ -1297,7 +1297,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-15
    *
    *\brief Get/Insert the next command that match the last word in
@@ -1314,7 +1314,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-15
    *
    *\brief Select the next field in the command, if any exists
@@ -1330,7 +1330,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-29
    * \date 2006-01-16 (update)
    *
@@ -1357,7 +1357,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-01-17
    *
    * \breif set the correct style if the charFormat is changed and the

@@ -2,9 +2,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Link�pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Link�ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Link�pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
  * \file notebook.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  * \date 2005-02-07
  */
 
@@ -89,7 +89,7 @@ namespace IAEX
 {
 /*!
   * \class NotebookWindow
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   * \brief This class describes a mainwindow using the CellDocument
   *
@@ -117,7 +117,7 @@ QString NotebookWindow::linkDir_ = QString::null;
 
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2006-01-17 (update)
   *
   * \brief The class constructor
@@ -280,7 +280,7 @@ NotebookWindow::NotebookWindow(Document *subject,
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2006-08-24 (update)
   *
   * \brief The class destructor
@@ -484,7 +484,7 @@ void NotebookWindow::update()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-30
   *
   * \brief Return the notebook windons document
@@ -503,7 +503,7 @@ CellApplication *NotebookWindow::application()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-01 (update)
   *
   * \brief Method for creating file nemu.
@@ -638,7 +638,7 @@ void NotebookWindow::createFileMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-08-24 (update)
   *
   * \brief Method for creating edit nemu.
@@ -791,7 +791,7 @@ void NotebookWindow::createEditMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-04-27 (update)
   *
   * \brief Method for creating cell nemu.
@@ -927,7 +927,7 @@ void NotebookWindow::createCellMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-10-07
   * \date 2005-11-03 (update)
   *
@@ -1567,7 +1567,7 @@ void NotebookWindow::createFormatMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-18
   *
   * \brief Method for creating insert nemu.
@@ -1654,7 +1654,7 @@ void NotebookWindow::createInsertMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-27
   *
   * \brief Method for creating window nemu.
@@ -1670,7 +1670,7 @@ void NotebookWindow::createWindowMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03 (update)
   *
   * \brief Method for creating about nemu.
@@ -1716,7 +1716,7 @@ void NotebookWindow::createAboutMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-11
   *
   * \brief Check if the currentCell is editable
@@ -1727,7 +1727,7 @@ bool NotebookWindow::cellEditable()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-14
   *
   * \brief eval all selected cell
@@ -1757,7 +1757,7 @@ void NotebookWindow::evalCells()
 
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   * \date 2005-11-15 (update)
   *
@@ -1798,7 +1798,7 @@ void NotebookWindow::updateMenus()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2005-11-02 (update)
   *
   * \brief Method for unpdating the style menu
@@ -1827,7 +1827,7 @@ void NotebookWindow::updateStyleMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-02
   * \date 2006-04-27 (update)
   *
@@ -1933,7 +1933,7 @@ void NotebookWindow::updateEditMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   * \date 2006-04-26 (update)
   *
@@ -1987,7 +1987,7 @@ void NotebookWindow::updateCellMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-03
   *
   * \brief Method for updating the font menu
@@ -2016,7 +2016,7 @@ void NotebookWindow::updateFontMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-03
   *
   * \brief Method for updating the face menu
@@ -2044,7 +2044,7 @@ void NotebookWindow::updateFontFaceMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-04
   *
   * \brief Method for updating the size menu
@@ -2082,7 +2082,7 @@ void NotebookWindow::updateFontSizeMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-04
   *
   * \brief Method for updating the stretch menu
@@ -2109,7 +2109,7 @@ void NotebookWindow::updateFontStretchMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the color menu
@@ -2143,7 +2143,7 @@ void NotebookWindow::updateFontColorMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the alignment menu
@@ -2171,7 +2171,7 @@ void NotebookWindow::updateTextAlignmentMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the vertical alignment menu
@@ -2198,7 +2198,7 @@ void NotebookWindow::updateVerticalAlignmentMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the border menu
@@ -2231,7 +2231,7 @@ void NotebookWindow::updateBorderMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the margin menu
@@ -2264,7 +2264,7 @@ void NotebookWindow::updateMarginMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for updating the padding menu
@@ -2297,7 +2297,7 @@ void NotebookWindow::updatePaddingMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-27
   *
   * \brief Method for updating the window menu
@@ -2324,7 +2324,7 @@ void NotebookWindow::updateWindowMenu()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-17
   *
   * \brief Method for updateing the window title
@@ -2349,7 +2349,7 @@ void NotebookWindow::updateWindowTitle()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-03-02
   *
   * \brief Method for updateing the chapter counters
@@ -2361,7 +2361,7 @@ void NotebookWindow::updateChapterCounters()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-10
   *
   * \brief Set the status message to msg, if msg is empty the default
@@ -2402,7 +2402,7 @@ void NotebookWindow::setStatusMenu(QList<QAction*> l)
 
 }
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-04-27
   *
   * \brief handles forwarded actions
@@ -2427,7 +2427,7 @@ void NotebookWindow::forwardedAction( int action )
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   */
 void NotebookWindow::keyPressEvent(QKeyEvent *event)
@@ -2452,7 +2452,7 @@ void NotebookWindow::keyPressEvent(QKeyEvent *event)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2005-11-22 (update)
   *
   * \brief Method for catching some keyevent, and given them
@@ -2501,7 +2501,7 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   * \todo Fix the code, when the window dosen't have any file open,
   * the command should create the new document, not this function //AF
@@ -2581,7 +2581,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   * \brief Open a file. Shows a file dialog.
   */
@@ -2638,7 +2638,7 @@ void NotebookWindow::openFile(const QString filename)
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   *
   */
 void NotebookWindow::closeFile()
@@ -2660,7 +2660,7 @@ void NotebookWindow::closeFile()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-19
   *
   * \brief Reimplemented closeEvent so all close event are handled
@@ -2746,7 +2746,7 @@ void NotebookWindow::closeEvent( QCloseEvent *event )
 }
 
 /*!
-  * \author Anders Fernström and Ingemar Axelsson
+  * \author Anders FernstrÃ¶m and Ingemar Axelsson
   *
   * \brief display an ABOUT message box with information about
   * OMNotebook.
@@ -2764,7 +2764,7 @@ void NotebookWindow::aboutQTNotebook()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   *
   * \brief display an ABOUT message box with information about
   * Qt.
@@ -2775,7 +2775,7 @@ void NotebookWindow::aboutQT()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   *
   * \brief open the help document, if it exists
@@ -2814,7 +2814,7 @@ void NotebookWindow::helpText()
 }
 
 /*!
-  * \author Anders Fernström and Ingemar Axelsson
+  * \author Anders FernstrÃ¶m and Ingemar Axelsson
   * \date 2005-09-30 (update)
   *
   * \breif Save As function
@@ -2885,7 +2885,7 @@ void NotebookWindow::saveas()
 }
 
 /*!
-  * \author Anders Fernström and Ingemar Axelsson
+  * \author Anders FernstrÃ¶m and Ingemar Axelsson
   *
   * Added a check that controlls if the user have saved before,
   * if not the function saveas should be used insted. //AF
@@ -2915,7 +2915,7 @@ void NotebookWindow::save()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-18
   *
   * \brief Quit OMNotebook
@@ -2927,7 +2927,7 @@ void NotebookWindow::quitOMNotebook()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-19
   * \date 2006-02-23 (update)
   *
@@ -2970,7 +2970,7 @@ void NotebookWindow::print()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing the font
@@ -3030,7 +3030,7 @@ void NotebookWindow::changeStyle(QAction *action)
 }
 
 /*!
-  * \author Ingemar Axelsson (and Anders Fernström)
+  * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
   */
 void NotebookWindow::changeStyle()
 {
@@ -3054,7 +3054,7 @@ void NotebookWindow::changeStyle()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-03
   *
   * \brief Method for changing font on selected text
@@ -3068,7 +3068,7 @@ void NotebookWindow::changeFont(QAction *action)
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-03
   *
   * \brief Method for changing face on selected text
@@ -3089,7 +3089,7 @@ void NotebookWindow::changeFontFace( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-04
   *
   * \brief Method for changing size on selected text
@@ -3154,7 +3154,7 @@ void NotebookWindow::changeFontSize( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-04
   *
   * \brief Method for changing stretch on selected text
@@ -3185,7 +3185,7 @@ void NotebookWindow::changeFontStretch( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing color on selected text
@@ -3215,7 +3215,7 @@ void NotebookWindow::changeFontColor( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing alignment on selected paragraf
@@ -3246,7 +3246,7 @@ void NotebookWindow::changeTextAlignment( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing vertical alignment on selected text
@@ -3277,7 +3277,7 @@ void NotebookWindow::changeVerticalAlignment( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing border on selected cell
@@ -3320,7 +3320,7 @@ void NotebookWindow::changeBorder( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing margin on selected cell
@@ -3363,7 +3363,7 @@ void NotebookWindow::changeMargin( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-07
   *
   * \brief Method for changing padding on selected cell
@@ -3406,7 +3406,7 @@ void NotebookWindow::changePadding( QAction *action )
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-27
   *
   * \brief Method for changing the current notebook window
@@ -3421,7 +3421,7 @@ void NotebookWindow::changeWindow(QAction *action)
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   *
   * \brief Method for doing undo on text
@@ -3436,7 +3436,7 @@ void NotebookWindow::undoEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   *
   * \brief Method for doing redo on text
@@ -3451,7 +3451,7 @@ void NotebookWindow::redoEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3472,7 +3472,7 @@ void NotebookWindow::cutEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3493,7 +3493,7 @@ void NotebookWindow::copyEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-02-03
   * \date 2006-04-27 (update)
   *
@@ -3514,7 +3514,7 @@ void NotebookWindow::pasteEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-08-24
   *
   * \brief Menu function, perform find
@@ -3536,7 +3536,7 @@ void NotebookWindow::findEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-08-24
   *
   * \brief Menu function, perform replace
@@ -3558,7 +3558,7 @@ void NotebookWindow::replaceEdit()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-18
   *
   * \brief Method for inserting an image into the cell
@@ -3600,7 +3600,7 @@ void NotebookWindow::insertImage()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-05
   *
   * \brief Method for inserting an link to the selected cell
@@ -3742,7 +3742,7 @@ void NotebookWindow::viewSketchImageAttributes()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-12-01
   *
   * \brief Method for opening an old file, saved with OMNotebook (QT3)
@@ -3775,7 +3775,7 @@ void NotebookWindow::openOldFile()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2005-11-21
   * \date 2006-03-24 (update)
   *
@@ -3871,7 +3871,7 @@ void NotebookWindow::pasteCell()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-04-26
   *
   * \brief Ungroup all selected groupcells
@@ -3885,7 +3885,7 @@ void NotebookWindow::ungroupCell()
 }
 
 /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-04-26
   *
   * \brief Split current cell
@@ -3912,7 +3912,7 @@ void NotebookWindow::moveCursorUp()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2005-11-29 (update)
   *
   * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
@@ -3937,7 +3937,7 @@ void NotebookWindow::groupCellsAction()
 }
 
 /*!
-  * \author Ingemar Axelsson and Anders Fernström
+  * \author Ingemar Axelsson and Anders FernstrÃ¶m
   * \date 2005-11-29 (update)
   *
   * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea

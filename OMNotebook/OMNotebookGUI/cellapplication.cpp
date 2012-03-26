@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -59,7 +59,7 @@ namespace IAEX
 {
   /*!
    * \class CellApplication
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-04-10 (update)
    *
    * \brief Implements the application interface. This class is the
@@ -292,7 +292,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-05-03 (update)
    *
    * \brief Class destructor
@@ -345,7 +345,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström and Ingemar Axelsson
+   * \author Anders FernstrÃ¶m and Ingemar Axelsson
    * \date 2006-01-12 (update)
    *
    * 2006-01-12 AF, added so any images in the cell are copied.
@@ -406,7 +406,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Ingemar Axelsson and Anders Fernström
+   * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-05-03 (update)
    *
    * \brief Open an file, and display the content of hte file
@@ -474,7 +474,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-16
   *
   * \brief Add filename to a list of temporary files that should
@@ -486,7 +486,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-27
   *
   * \brief returns list of all current doucment views
@@ -497,7 +497,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-01-27
   *
   * \brief remove document view from internal list, also remove
@@ -531,7 +531,7 @@ namespace IAEX
   }
 
   /*!
-  * \author Anders Fernström
+  * \author Anders FernstrÃ¶m
   * \date 2006-03-21
   *
   * \brief convert DrModelica documentation into OMNotebook format

@@ -2,9 +2,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
  * \file cellcursor.h
- * \author Ingemar Axelsson (and Anders Fenström)
+ * \author Ingemar Axelsson (and Anders FenstrÃ¶m)
  *
  * \brief Implementation of a marker made as an Cell.
  */
@@ -110,7 +110,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-10-28
    *
    * \brief Function for telling if the user is allowed to change
@@ -126,7 +126,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-27
    *
    * \brief Return state of the clickedOn_ property.
@@ -137,7 +137,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-27
    *
    * \brief Reimplemenation of the mousePressEvent function
@@ -148,7 +148,7 @@ namespace IAEX
   }
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2006-04-27
    *
    * \brief Function that should be called everytime the cursor
@@ -491,7 +491,7 @@ namespace IAEX
   }
 
   /*!
-  * \bug Fel vid flytt så cursor hamnar som sista barn.
+  * \bug Fel vid flytt sÃ¥ cursor hamnar som sista barn.
   */
   void CellCursor::moveAfter(Cell *current)
   {
@@ -537,7 +537,7 @@ namespace IAEX
 
 
   /*
-  * \bug fel  om vi flyttas till att vara första barn..
+  * \bug fel  om vi flyttas till att vara fÃ¶rsta barn..
   */
   void CellCursor::moveBefore(Cell *current)
   {
