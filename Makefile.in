@@ -80,7 +80,7 @@ fix-svn-eol-style:
 fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
-SOURCE_DIRS=OM*/ Compiler/ SimulationRuntime/ mosh/
+SOURCE_DIRS=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
