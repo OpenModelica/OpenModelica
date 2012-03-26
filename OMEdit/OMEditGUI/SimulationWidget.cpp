@@ -43,7 +43,7 @@ SimulationWidget::SimulationWidget(MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
-    setMinimumSize(375, 440);
+    setMinimumSize(400, 475);
     mpParentMainWindow = pParent;
     setUpForm();
     mpProgressDialog = new ProgressDialog(this);
@@ -59,11 +59,18 @@ SimulationWidget::~SimulationWidget()
 //! Creates all the controls and set their layout.
 void SimulationWidget::setUpForm()
 {
+    // simulation widget heading
     mpSimulationHeading = new QLabel(tr("Simulation"));
     mpSimulationHeading->setFont(QFont("", Helper::headingFontSize));
-    line = new QFrame();
-    line->setFrameShape(QFrame::HLine);
-    line->setFrameShadow(QFrame::Sunken);
+    // Horizontal separator
+    mpHorizontalLine = new QFrame();
+    mpHorizontalLine->setFrameShape(QFrame::HLine);
+    mpHorizontalLine->setFrameShadow(QFrame::Sunken);
+    // simulation tab widget
+    mpSimulationTabWidget = new QTabWidget;
+    mpSimulationFlagsTab = new QWidget;
+    // General Tab
+    mpGeneralTab = new QWidget;
     // Simulation Interval
     QGridLayout *gridSimulationIntervalLayout = new QGridLayout;
     mpSimulationIntervalGroup = new QGroupBox(tr("Simulation Interval"));
@@ -77,15 +84,6 @@ void SimulationWidget::setUpForm()
     gridSimulationIntervalLayout->addWidget(mpStopTimeLabel, 1, 0);
     gridSimulationIntervalLayout->addWidget(mpStopTimeTextBox, 1, 1);
     mpSimulationIntervalGroup->setLayout(gridSimulationIntervalLayout);
-    // Output Interval
-    QGridLayout *gridOutputIntervalLayout = new QGridLayout;
-    mpOutputIntervalGroup = new QGroupBox(tr("Output Interval"));
-    mpNumberofIntervalLabel = new QLabel(tr("Number of Intervals:"));
-    mpNumberofIntervalsTextBox = new QLineEdit(tr("500"));
-    // set the layout for output interval groupbox
-    gridOutputIntervalLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
-    gridOutputIntervalLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
-    mpOutputIntervalGroup->setLayout(gridOutputIntervalLayout);
     // Integration
     QGridLayout *gridIntegrationLayout = new QGridLayout;
     mpIntegrationGroup = new QGroupBox(tr("Integration"));
@@ -94,36 +92,117 @@ void SimulationWidget::setUpForm()
     mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
     mpToleranceLabel = new QLabel(tr("Tolerance:"));
     mpToleranceTextBox = new QLineEdit(tr("0.0001"));
-    mpOutputFormatLabel = new QLabel(tr("Output Format:"));
-    mpOutputFormatComboBox = new QComboBox;
-    mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
-    mpFileNameLabel = new QLabel(tr("File Name (Optional):"));
-    mpFileNameTextBox = new QLineEdit(tr(""));
-    mpVariableFilterLabel = new QLabel(tr("Variable Filter (Optional):"));
-    mpVariableFilterTextBox = new QLineEdit(tr(""));
-    mpCflagsLabel = new QLabel(tr("Compiler Flags (Optional):"));
-    mpCflagsTextBox = new QLineEdit(tr(""));
     // set the layout for integration groupbox
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
     gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
     gridIntegrationLayout->addWidget(mpToleranceLabel, 1, 0);
     gridIntegrationLayout->addWidget(mpToleranceTextBox, 1, 1);
-    gridIntegrationLayout->addWidget(mpOutputFormatLabel, 2, 0);
-    gridIntegrationLayout->addWidget(mpOutputFormatComboBox, 2, 1);
-    gridIntegrationLayout->addWidget(mpFileNameLabel, 3, 0);
-    gridIntegrationLayout->addWidget(mpFileNameTextBox, 3, 1);
-    gridIntegrationLayout->addWidget(mpVariableFilterLabel, 4, 0);
-    gridIntegrationLayout->addWidget(mpVariableFilterTextBox, 4, 1);
-    gridIntegrationLayout->addWidget(mpCflagsLabel, 5, 0);
-    gridIntegrationLayout->addWidget(mpCflagsTextBox, 5, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
-    // save simulations options
-    QGridLayout *gridSaveSimulationLayout = new QGridLayout;
-    mpSaveSimulationGroup = new QGroupBox(tr("Save Simulation"));
-    mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
-    // set the layout for save simulation groupbox
-    gridSaveSimulationLayout->addWidget(mpSaveSimulationCheckbox, 0, 0);
-    mpSaveSimulationGroup->setLayout(gridSaveSimulationLayout);
+    // Compiler Flags
+    mpCflagsLabel = new QLabel(tr("Compiler Flags (Optional):"));
+    mpCflagsTextBox = new QLineEdit(tr(""));
+    // set General Tab Layout
+    QGridLayout *pGeneralTabLayout = new QGridLayout;
+    pGeneralTabLayout->setAlignment(Qt::AlignTop);
+    pGeneralTabLayout->addWidget(mpSimulationIntervalGroup, 0, 0, 1, 2);
+    pGeneralTabLayout->addWidget(mpIntegrationGroup, 1, 0, 1, 2);
+    pGeneralTabLayout->addWidget(mpCflagsLabel, 2, 0);
+    pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1);
+    mpGeneralTab->setLayout(pGeneralTabLayout);
+    // add General Tab to Simulation TabWidget
+    mpSimulationTabWidget->addTab(mpGeneralTab, tr("General"));
+    // Output Tab
+    mpOutputTab = new QWidget;
+    // Output Interval
+    mpNumberofIntervalLabel = new QLabel(tr("Number of Intervals:"));
+    mpNumberofIntervalsTextBox = new QLineEdit(tr("500"));
+    // Output Format
+    mpOutputFormatLabel = new QLabel(tr("Output Format:"));
+    mpOutputFormatComboBox = new QComboBox;
+    mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
+    // Output filename
+    mpFileNameLabel = new QLabel(tr("File Name (Optional):"));
+    mpFileNameTextBox = new QLineEdit(tr(""));
+    // Variable filter
+    mpVariableFilterLabel = new QLabel(tr("Variable Filter (Optional):"));
+    mpVariableFilterTextBox = new QLineEdit(tr(""));
+    // set Output Tab Layout
+    QGridLayout *pOutputTabLayout = new QGridLayout;
+    pOutputTabLayout->setAlignment(Qt::AlignTop);
+    pOutputTabLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
+    pOutputTabLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
+    pOutputTabLayout->addWidget(mpOutputFormatLabel, 1, 0);
+    pOutputTabLayout->addWidget(mpOutputFormatComboBox, 1, 1);
+    pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
+    pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
+    pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
+    pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
+    mpOutputTab->setLayout(pOutputTabLayout);
+    // add Output Tab to Simulation TabWidget
+    mpSimulationTabWidget->addTab(mpOutputTab, tr("Output"));
+    // Simulation Flags Tab
+    mpSimulationFlagsTab = new QWidget;
+    // Model Setup File
+    mpModelSetupFileLabel = new QLabel(tr("Model Setup File:"));
+    mpModelSetupFileTextBox = new QLineEdit;
+    mpModelSetupFileBrowseButton = new QPushButton(Helper::browse);
+    connect(mpModelSetupFileBrowseButton, SIGNAL(clicked()), SLOT(browseModelSetupFile()));
+    // Initialization Methods
+    mpInitializationMethodLabel = new QLabel(tr("Initialization Method:"));
+    mpInitializationMethodComboBox = new QComboBox;
+    mpInitializationMethodComboBox->addItems(Helper::ModelicaInitializationMethods.toLower().split(","));
+    // Optimization Methods
+    mpOptimizationMethodLabel = new QLabel(tr("Optimization Method:"));
+    mpOptimizationMethodComboBox = new QComboBox;
+    mpOptimizationMethodComboBox->addItems(Helper::ModelicaOptimizationMethods.toLower().split(","));
+    // Equation System Initialization File
+    mpEquationSystemInitializationFileLabel = new QLabel(tr("Equation System Initialization File:"));
+    mpEquationSystemInitializationFileTextBox = new QLineEdit;
+    mpEquationSystemInitializationFileBrowseButton = new QPushButton(Helper::browse);
+    connect(mpEquationSystemInitializationFileBrowseButton, SIGNAL(clicked()), SLOT(browseEquationSystemInitializationFile()));
+    // Equation System time
+    mpEquationSystemInitializationTimeLabel = new QLabel(tr("Equation System Initialization Time:"));
+    mpEquationSystemInitializationTimeTextBox = new QLineEdit;
+    // Logging
+    mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
+    mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
+    mpLogResultInitializationCheckBox = new QCheckBox(tr("Result Initialization"));
+    mpLogSolverCheckBox = new QCheckBox(tr("Solver"));
+    mpLogEventsCheckBox = new QCheckBox(tr("Events"));
+    mpLogNonLinearSystemsCheckBox = new QCheckBox(tr("Non Linear Systems"));
+    mpLogZeroCrossingsCheckBox = new QCheckBox(tr("Zero Crossings"));
+    mpLogDebugCheckBox = new QCheckBox(tr("Debug"));
+    // layout for logging group
+    QGridLayout *pLoggingGroupLayout = new QGridLayout;
+    pLoggingGroupLayout->addWidget(mpLogStatsCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogInitializationCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogResultInitializationCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogSolverCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogEventsCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox);
+    pLoggingGroupLayout->addWidget(mpLogDebugCheckBox);
+    mpLoggingGroup = new QGroupBox(tr("Logging"));
+    mpLoggingGroup->setLayout(pLoggingGroupLayout);
+    // set Output Tab Layout
+    QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
+    pSimulationFlagsTabLayout->setAlignment(Qt::AlignTop);
+    pSimulationFlagsTabLayout->addWidget(mpModelSetupFileLabel, 0, 0);
+    pSimulationFlagsTabLayout->addWidget(mpModelSetupFileTextBox, 0, 1);
+    pSimulationFlagsTabLayout->addWidget(mpModelSetupFileBrowseButton, 0, 2);
+    pSimulationFlagsTabLayout->addWidget(mpInitializationMethodLabel, 1, 0);
+    pSimulationFlagsTabLayout->addWidget(mpInitializationMethodComboBox, 1, 1, 1, 2);
+    pSimulationFlagsTabLayout->addWidget(mpOptimizationMethodLabel, 2, 0);
+    pSimulationFlagsTabLayout->addWidget(mpOptimizationMethodComboBox, 2, 1, 1, 2);
+    pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileLabel, 3, 0);
+    pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileTextBox, 3, 1);
+    pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileBrowseButton, 3, 2);
+    pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeLabel, 4, 0);
+    pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeTextBox, 4, 1, 1, 2);
+    pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 5, 0, 1, 3);
+    mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
+    // add Output Tab to Simulation TabWidget
+    mpSimulationTabWidget->addTab(mpSimulationFlagsTab, tr("Simulation Flags"));
     // Add the validators
     QDoubleValidator *doubleValidator = new QDoubleValidator(this);
     doubleValidator->setBottom(0);
@@ -134,26 +213,26 @@ void SimulationWidget::setUpForm()
     intValidator->setBottom(1);
     mpNumberofIntervalsTextBox->setValidator(intValidator);
     // Create the buttons
-    mpSimulateButton = new QPushButton(tr("Simulate!"));
+    mpSimulateButton = new QPushButton(tr("Simulate"));
     mpSimulateButton->setAutoDefault(true);
     connect(mpSimulateButton, SIGNAL(clicked()), this, SLOT(simulate()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
     connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+    // save simulations options
+    mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
     // adds buttons to the button box
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
     // Create a layout
-    QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addWidget(mpSimulationHeading, 0, 0);
-    mainLayout->addWidget(line, 1, 0);
-    mainLayout->addWidget(mpSimulationIntervalGroup, 2, 0);
-    mainLayout->addWidget(mpOutputIntervalGroup, 3, 0);
-    mainLayout->addWidget(mpIntegrationGroup, 4, 0);
-    mainLayout->addWidget(mpSaveSimulationGroup, 5, 0);
-    mainLayout->addWidget(mpButtonBox, 6, 0);
-    setLayout(mainLayout);
+    QGridLayout *pMainLayout = new QGridLayout;
+    pMainLayout->addWidget(mpSimulationHeading, 0, 0, 1, 2);
+    pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+    pMainLayout->addWidget(mpSimulationTabWidget, 2, 0, 1, 2);
+    pMainLayout->addWidget(mpSaveSimulationCheckbox, 3, 0);
+    pMainLayout->addWidget(mpButtonBox, 3, 1);
+    setLayout(pMainLayout);
 }
 
 //! Initializes the simulation dialog with the default values.
@@ -209,12 +288,26 @@ void SimulationWidget::show(bool isInteractive)
     setVisible(true);
 }
 
+//! Slot activated when mpModelSetupFileBrowseButton clicked signal is raised.
+//! Allows user to select Model Setup File.
+void SimulationWidget::browseModelSetupFile()
+{
+    mpModelSetupFileTextBox->setText(StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::xmlFileTypes, NULL));
+}
+
+//! Slot activated when mpEquationSystemInitializationFileBrowseButton clicked signal is raised.
+//! Allows user to select Equation System Initialization File.
+void SimulationWidget::browseEquationSystemInitializationFile()
+{
+    mpEquationSystemInitializationFileTextBox->setText(StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::matFileTypes, NULL));
+}
+
 //! Slot activated when mpSimulateButton clicked signal is raised.
 //! Reads the simulation options set by the user and sends them to OMC by calling buildModel.
 void SimulationWidget::simulate()
 {
     // check if user is already running one interactive simultation or not
-    // beacuse only interactive simulation is required.
+    // beacuse only one interactive simulation is allowed.
     if (mIsInteractive)
     {
         if (mpParentMainWindow->mpInteractiveSimualtionTabWidget->count() > 0)
@@ -227,33 +320,34 @@ void SimulationWidget::simulate()
 
     if (validate())
     {
-        QString simualtionParameters;
+        QString simulationParameters;
+        QStringList simulationFlags;
         // if user is performing a simple simulation then take start and stop times
         if (!mIsInteractive)
         {
             if (mpStartTimeTextBox->text().isEmpty())
-                simualtionParameters.append(tr("startTime=0.0"));
+                simulationParameters.append(tr("startTime=0.0"));
             else
-                simualtionParameters.append(tr("startTime=")).append(mpStartTimeTextBox->text());
-            simualtionParameters.append(tr(", stopTime=")).append(mpStopTimeTextBox->text()).append(",");
+                simulationParameters.append(tr("startTime=")).append(mpStartTimeTextBox->text());
+            simulationParameters.append(tr(", stopTime=")).append(mpStopTimeTextBox->text()).append(",");
         }
         if (mpNumberofIntervalsTextBox->text().isEmpty())
-            simualtionParameters.append(tr(" numberOfIntervals=500"));
+            simulationParameters.append(tr(" numberOfIntervals=500"));
         else
-            simualtionParameters.append(tr(" numberOfIntervals=")).append(mpNumberofIntervalsTextBox->text());
+            simulationParameters.append(tr(" numberOfIntervals=")).append(mpNumberofIntervalsTextBox->text());
         if (mpMethodComboBox->currentText().isEmpty())
-            simualtionParameters.append(tr(", method=\"dassl\""));
+            simulationParameters.append(tr(", method=\"dassl\""));
         else
-            simualtionParameters.append(tr(", method=")).append("\"").append(mpMethodComboBox->currentText()).append("\"");
+            simulationParameters.append(tr(", method=")).append("\"").append(mpMethodComboBox->currentText()).append("\"");
         if (!mpToleranceTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
-        simualtionParameters.append(tr(", outputFormat=")).append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
+            simulationParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
+        simulationParameters.append(tr(", outputFormat=")).append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
         if (!mpFileNameTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", fileNamePrefix=")).append("\"").append(mpFileNameTextBox->text()).append("\"");
+            simulationParameters.append(tr(", fileNamePrefix=")).append("\"").append(mpFileNameTextBox->text()).append("\"");
         if (!mpVariableFilterTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", variableFilter=")).append("\"").append(mpVariableFilterTextBox->text()).append("\"");
+            simulationParameters.append(tr(", variableFilter=")).append("\"").append(mpVariableFilterTextBox->text()).append("\"");
         if (!mpCflagsTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", cflags=")).append("\"").append(mpCflagsTextBox->text()).append("\"");
+            simulationParameters.append(tr(", cflags=")).append("\"").append(mpCflagsTextBox->text()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
         if (!projectTab)
@@ -264,6 +358,57 @@ void SimulationWidget::simulate()
                                                                                0, mpParentMainWindow->mpMessageWidget->mpProblem));
             accept();
             return;
+        }
+        // setup simulation flags
+        // setup initiaization method flag
+        simulationFlags.append(tr("-iim"));
+        simulationFlags.append(mpInitializationMethodComboBox->currentText());
+        // setup Model Setup file flag
+        if (!mpModelSetupFileTextBox->text().isEmpty())
+        {
+            simulationFlags.append(tr("-f"));
+            simulationFlags.append(mpModelSetupFileTextBox->text());
+        }
+        // setup Optimization Method flag
+        if (!mpModelSetupFileTextBox->text().isEmpty())
+        {
+            simulationFlags.append(tr("-iom"));
+            simulationFlags.append(mpOptimizationMethodComboBox->currentText());
+        }
+        // setup Equation System Initialization file flag
+        if (!mpEquationSystemInitializationFileTextBox->text().isEmpty())
+        {
+            simulationFlags.append(tr("-iif"));
+            simulationFlags.append(mpEquationSystemInitializationFileTextBox->text());
+        }
+        // setup Equation System Initialization time flag
+        if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
+        {
+            simulationFlags.append(tr("iit"));
+            simulationFlags.append(mpEquationSystemInitializationTimeTextBox->text());
+        }
+        // setup Logging flags
+        if (mpLogStatsCheckBox->isChecked() || mpLogInitializationCheckBox->isChecked() || mpLogResultInitializationCheckBox->isChecked()
+            || mpLogSolverCheckBox->isChecked() || mpLogEventsCheckBox->isChecked() || mpLogNonLinearSystemsCheckBox->isChecked()
+            || mpLogZeroCrossingsCheckBox->isChecked() || mpLogDebugCheckBox->isChecked())
+        {
+            simulationFlags.append(tr("-lv"));
+            if (mpLogStatsCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_STATS"));
+            if (mpLogInitializationCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_INIT"));
+            if (mpLogResultInitializationCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_RES_INIT"));
+            if (mpLogSolverCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_SOLVER"));
+            if (mpLogEventsCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_EVENTS"));
+            if (mpLogNonLinearSystemsCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_NONLIN_SYS"));
+            if (mpLogZeroCrossingsCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_ZEROCROSSINGS"));
+            if (mpLogDebugCheckBox->isChecked())
+                simulationFlags.append(tr("LOG_DEBUG"));
         }
         // before simulating save the simulation options
         saveSimulationOptions();
@@ -276,9 +421,9 @@ void SimulationWidget::simulate()
         mpParentMainWindow->mpStatusBar->showMessage(Helper::compiling_Model);
         // interactive or non interactive
         if (mIsInteractive)
-            buildModel(simualtionParameters);
+            buildModel(simulationParameters, simulationFlags);
         else
-            simulateModel(simualtionParameters);
+            simulateModel(simulationParameters, simulationFlags);
         // hide the progress bar
         mpParentMainWindow->mpStatusBar->clearMessage();
         mpProgressDialog->hide();
@@ -326,7 +471,8 @@ bool SimulationWidget::validate()
 //! Starts the simulation executable with -port argument.
 //! Creates a TCP server and starts listening for the simulation runtime progress messages.
 //! @param simulationParameters a comma seperated list of simulation parameters.
-void SimulationWidget::simulateModel(QString simulationParameters)
+//! @param simulationFlags a list of simulation flags for the simulation executable.
+void SimulationWidget::simulateModel(QString simulationParameters, QStringList simulationFlags)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
     if (mpParentMainWindow->mpOMCProxy->buildModel(projectTab->mModelNameStructure, simulationParameters))
@@ -365,7 +511,7 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         char buf[SOCKMAXLEN];
         server.listen(QHostAddress("127.0.0.1"));
         QStringList args("-port");
-        args << QString::number(server.serverPort());
+        args << QString::number(server.serverPort()) << simulationFlags;
         // start the executable
         mpSimulationProcess->start(file,args);
         while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
@@ -418,7 +564,7 @@ void SimulationWidget::simulateModel(QString simulationParameters)
             pOMCProxy->closeSimulationResultFile();
             emit showPlottingView();
             pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()),list);
-            mpParentMainWindow->plotdock->show();
+            mpParentMainWindow->mpPlotDockWidget->show();
         }
     }
 }
@@ -426,7 +572,8 @@ void SimulationWidget::simulateModel(QString simulationParameters)
 //! Used for interactive simulation
 //! Sends the buildModel command to OMC.
 //! @param simulationParameters a comma seperated list of simulation parameters.
-void SimulationWidget::buildModel(QString simulationParameters)
+//! @param simulationFlags a list of simulation flags for the simulation executable.
+void SimulationWidget::buildModel(QString simulationParameters, QStringList simulationFlags)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
     if (mpParentMainWindow->mpOMCProxy->buildModel(projectTab->mModelNameStructure, simulationParameters))

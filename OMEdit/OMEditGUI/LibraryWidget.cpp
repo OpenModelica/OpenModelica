@@ -876,7 +876,7 @@ void LibraryTree::showComponent()
 void LibraryTree::viewDocumentation()
 {
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
-    pMainWindow->documentationdock->show();
+    pMainWindow->mpDocumentationDockWidget->show();
     LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
     pMainWindow->mpDocumentationWidget->setIsCustomModel(false);
     pMainWindow->mpDocumentationWidget->show(pItem->mNameStructure);
@@ -1186,8 +1186,8 @@ void MSLSuggestCompletion::showCompletion(const QStringList &choices)
     mpPopup->setUpdatesEnabled(true);
 
     // subtract -3 from width and -40 from height to make the suggestion box best fit :D
-    mpPopup->resize(mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->searchMSLdock->width() - 3,
-                    mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->searchMSLdock->height() - 40);
+    mpPopup->resize(mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->mpSearchMSLDockWidget->width() - 3,
+                    mpMSLSearchBox->mpSearchMSLWidget->mpParentMainWindow->mpSearchMSLDockWidget->height() - 40);
 
     // adjust the position of popup tree
     mpPopup->move(mpMSLSearchBox->mapToGlobal(QPoint(0, mpMSLSearchBox->height())));

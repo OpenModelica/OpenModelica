@@ -221,8 +221,13 @@ void OptionsWidget::readSettings()
 //! Reads the General section settings from omedit.ini
 void OptionsWidget::readGeneralSettings()
 {
+    // read the plotting view mode
     if (mSettings.contains("plotting/viewmode"))
         mpGeneralSettingsPage->setViewMode(mSettings.value("plotting/viewmode").toString());
+    // read the working directory
+    if (mSettings.contains("workingDirectory"))
+        mpParentMainWindow->mpOMCProxy->changeDirectory(mSettings.value("workingDirectory").toString());
+    mpGeneralSettingsPage->setWorkingDirectory(mpParentMainWindow->mpOMCProxy->changeDirectory());
 }
 
 //! Reads the ModelicaText settings from omedit.ini
@@ -334,12 +339,15 @@ void OptionsWidget::readLibrariesSettings()
 //! Saves the General section settings to omedit.ini
 void OptionsWidget::saveGeneralSettings()
 {
+    // save plotting view mode
     mSettings.setValue("plotting/viewmode", mpGeneralSettingsPage->getViewMode());
-
     if (mpGeneralSettingsPage->getViewMode().compare("SubWindow") == 0)
         mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::SubWindowView);
     else
         mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::TabbedView);
+    // save working directory
+    mpParentMainWindow->mpOMCProxy->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
+    mSettings.setValue("workingDirectory", mpParentMainWindow->mpOMCProxy->changeDirectory());
 }
 
 //! Saves the ModelicaText settings to omedit.ini
@@ -519,28 +527,39 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
     : QWidget(pParent)
 {
     mpParentOptionsWidget = pParent;
-
-    mpPlottingGroup = new QGroupBox(tr("Plotting"));
-
-    mpViewModeLabel = new QLabel(tr("View Mode:"));
+    // Plotting View Mode
+    mpGeneralGroup = new QGroupBox(tr("General"));
+    mpPlottingViewModeLabel = new QLabel(tr("Plotting View Mode:"));
     mpTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
     mpTabbedViewRadioButton->setChecked(true);
     mpSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
     QButtonGroup *pViewModeGroup = new QButtonGroup;
     pViewModeGroup->addButton(mpTabbedViewRadioButton);
     pViewModeGroup->addButton(mpSubWindowViewRadioButton);
-
+    // horizontal line
+    QFrame *pHorizontalLine = new QFrame();
+    pHorizontalLine->setFrameShape(QFrame::HLine);
+    pHorizontalLine->setFrameShadow(QFrame::Sunken);
+    // Working Directory
+    mpWorkingDirectoryLabel = new QLabel(tr("Working Directory:"));
+    mpWorkingDirectoryTextBox = new QLineEdit(mpParentOptionsWidget->mpParentMainWindow->mpOMCProxy->changeDirectory());
+    mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
+    connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
+    // set the layout of plotting group
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    mainLayout->addWidget(mpViewModeLabel, 0, 0);
-    mainLayout->addWidget(mpTabbedViewRadioButton, 1, 0);
-    mainLayout->addWidget(mpSubWindowViewRadioButton, 2, 0);
-    mpPlottingGroup->setLayout(mainLayout);
-
+    mainLayout->addWidget(mpPlottingViewModeLabel, 0, 0, 1, 3);
+    mainLayout->addWidget(mpTabbedViewRadioButton, 1, 0, 1, 3);
+    mainLayout->addWidget(mpSubWindowViewRadioButton, 2, 0, 1, 3);
+    mainLayout->addWidget(pHorizontalLine, 3, 0, 1, 3);
+    mainLayout->addWidget(mpWorkingDirectoryLabel, 4, 0);
+    mainLayout->addWidget(mpWorkingDirectoryTextBox, 4, 1);
+    mainLayout->addWidget(mpWorkingDirectoryBrowseButton, 4, 2);
+    mpGeneralGroup->setLayout(mainLayout);
+    // set the layout
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(mpPlottingGroup);
-
+    layout->addWidget(mpGeneralGroup);
     setLayout(layout);
 }
 
@@ -564,6 +583,29 @@ void GeneralSettingsPage::setViewMode(QString value)
         mpSubWindowViewRadioButton->setChecked(true);
     else
         mpTabbedViewRadioButton->setChecked(true);
+}
+
+//! Returns the working directory text box value.
+//! @return working directory as string.
+//! @see setWorkingDirectory();
+QString GeneralSettingsPage::getWorkingDirectory()
+{
+   return mpWorkingDirectoryTextBox->text();
+}
+
+//! Sets the working directory text box value.
+//! @param value the working directory value.
+//! @see getWorkingDirectory();
+void GeneralSettingsPage::setWorkingDirectory(QString value)
+{
+   mpWorkingDirectoryTextBox->setText(value);
+}
+
+//! Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
+//! Allows user to choose a new working directory.
+void GeneralSettingsPage::selectWorkingDirectory()
+{
+    mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, tr("Choose Working Directory"), NULL));
 }
 
 //! @class ModelicaTextEditorPage

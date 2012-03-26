@@ -68,6 +68,7 @@ private:
 public:
     OMCProxy(MainWindow *pParent, bool displayErrors = true);
     ~OMCProxy();
+    void enableCustomExpression(bool enable);
     void getPreviousCommand();
     void getNextCommand();
     void addExpressionInCommandMap(QString expression, QString result);

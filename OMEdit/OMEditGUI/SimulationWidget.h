@@ -49,37 +49,64 @@ public:
     void show(bool isInteractive);
     bool validate();
     void initializeFields();
-    void simulateModel(QString simulationParameters);
-    void buildModel(QString simulationParameters);
+    void simulateModel(QString simulationParameters, QStringList simulationFlags);
+    void buildModel(QString simulationParameters, QStringList simulationFlags);
     void saveSimulationOptions();
 
     MainWindow *mpParentMainWindow;
 private:
     QLabel *mpSimulationHeading;
-    QFrame *line;
+    QFrame *mpHorizontalLine;
+    QTabWidget *mpSimulationTabWidget;
+    // General Tab
+    QWidget *mpGeneralTab;
     QGroupBox *mpSimulationIntervalGroup;
     QLabel *mpStartTimeLabel;
     QLineEdit *mpStartTimeTextBox;
     QLabel *mpStopTimeLabel;
     QLineEdit *mpStopTimeTextBox;
-    QGroupBox *mpOutputIntervalGroup;
-    QLabel *mpNumberofIntervalLabel;
-    QLineEdit *mpNumberofIntervalsTextBox;
     QGroupBox *mpIntegrationGroup;
     QLabel *mpMethodLabel;
     QComboBox *mpMethodComboBox;
     QLabel *mpToleranceLabel;
     QLineEdit *mpToleranceTextBox;
+    QCheckBox *mpSaveSimulationCheckbox;
+    QLabel *mpCflagsLabel;
+    QLineEdit *mpCflagsTextBox;
+    // Output Tab
+    QWidget *mpOutputTab;
+    QLabel *mpNumberofIntervalLabel;
+    QLineEdit *mpNumberofIntervalsTextBox;
     QLabel *mpOutputFormatLabel;
     QComboBox *mpOutputFormatComboBox;
     QLabel *mpFileNameLabel;
     QLineEdit *mpFileNameTextBox;
     QLabel *mpVariableFilterLabel;
     QLineEdit *mpVariableFilterTextBox;
-    QLabel *mpCflagsLabel;
-    QLineEdit *mpCflagsTextBox;
-    QGroupBox *mpSaveSimulationGroup;
-    QCheckBox *mpSaveSimulationCheckbox;
+    // Simulation Flags Tab
+    QWidget *mpSimulationFlagsTab;
+    QLabel *mpModelSetupFileLabel;
+    QLineEdit *mpModelSetupFileTextBox;
+    QPushButton *mpModelSetupFileBrowseButton;
+    QLabel *mpInitializationMethodLabel;
+    QComboBox *mpInitializationMethodComboBox;
+    QLabel *mpOptimizationMethodLabel;
+    QComboBox *mpOptimizationMethodComboBox;
+    QLabel *mpEquationSystemInitializationFileLabel;
+    QLineEdit *mpEquationSystemInitializationFileTextBox;
+    QPushButton *mpEquationSystemInitializationFileBrowseButton;
+    QLabel *mpEquationSystemInitializationTimeLabel;
+    QLineEdit *mpEquationSystemInitializationTimeTextBox;
+    QGroupBox *mpLoggingGroup;
+    QCheckBox *mpLogStatsCheckBox;
+    QCheckBox *mpLogInitializationCheckBox;
+    QCheckBox *mpLogResultInitializationCheckBox;
+    QCheckBox *mpLogSolverCheckBox;
+    QCheckBox *mpLogEventsCheckBox;
+    QCheckBox *mpLogNonLinearSystemsCheckBox;
+    QCheckBox *mpLogZeroCrossingsCheckBox;
+    QCheckBox *mpLogDebugCheckBox;
+    // buttons
     QPushButton *mpCancelButton;
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
@@ -89,6 +116,8 @@ private:
 signals:
     void showPlottingView();
 public slots:
+    void browseModelSetupFile();
+    void browseEquationSystemInitializationFile();
     void simulate();
     void cancelSimulation();
 };

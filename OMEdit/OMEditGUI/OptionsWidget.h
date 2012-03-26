@@ -127,13 +127,20 @@ public:
     GeneralSettingsPage(OptionsWidget *pParent);
     QString getViewMode();
     void setViewMode(QString value);
+    QString getWorkingDirectory();
+    void setWorkingDirectory(QString value);
 
     OptionsWidget *mpParentOptionsWidget;
 private:
-    QGroupBox *mpPlottingGroup;
-    QLabel *mpViewModeLabel;
+    QGroupBox *mpGeneralGroup;
+    QLabel *mpPlottingViewModeLabel;
+    QLabel *mpWorkingDirectoryLabel;
+    QLineEdit *mpWorkingDirectoryTextBox;
+    QPushButton *mpWorkingDirectoryBrowseButton;
     QRadioButton *mpTabbedViewRadioButton;
     QRadioButton *mpSubWindowViewRadioButton;
+public slots:
+    void selectWorkingDirectory();
 };
 
 class ModelicaTextEditorPage : public QWidget

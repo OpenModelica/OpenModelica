@@ -44,6 +44,8 @@ QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
+QString Helper::xmlFileTypes = "XML Files (*.xml)";
+QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");
@@ -132,7 +134,9 @@ QString Helper::exportAsImage = QString("Exporting model as an Image");
 QString Helper::exportToOMNotebook = QString("Exporting model to OMNotebook");
 QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook");
 /* Simulation Messages */
-QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,RungeKutta";
+QString Helper::ModelicaSimulationMethods = "dassl,dassl2,euler,rungekutta,dopri5,inline-euler,inline-rungekutta";
+QString Helper::ModelicaInitializationMethods = "none,state";
+QString Helper::ModelicaOptimizationMethods = "nelder_mead_ex,nelder_mead_ex2,simplex,newuoa";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString Helper::fontSizes = QString("6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72");

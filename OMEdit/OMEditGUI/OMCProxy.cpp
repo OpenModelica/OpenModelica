@@ -98,6 +98,15 @@ OMCProxy::~OMCProxy()
     delete mpOMCLogger;
 }
 
+void OMCProxy::enableCustomExpression(bool enable)
+{
+    if (!enable)
+    {
+        mpExpressionTextBox->hide();
+        mpSendButton->hide();
+    }
+}
+
 //! Puts the previous send OMC command in the send command text box.
 //! Invoked by the up arrow key.
 void OMCProxy::getPreviousCommand()

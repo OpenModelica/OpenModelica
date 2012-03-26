@@ -431,7 +431,7 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
         return;
 
     // if component is a connector type then emit the componentClicked signal
-    if (event->button() == Qt::LeftButton  && pMainWindow->connectAction->isChecked() && mIsConnector)
+    if (event->button() == Qt::LeftButton  && pMainWindow->mpConnectAction->isChecked() && mIsConnector)
     {
         emit componentClicked(this);
     }

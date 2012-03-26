@@ -37,6 +37,13 @@
 #include "SplashScreen.h"
 #include "mainwindow.h"
 
+void printUsage()
+{
+    printf("Usage: OMEdit [--OMCLogger=true|false] [files]\n");
+    printf("    --OMCLogger=[true|false]        Allows sending OMC commands from OMCLogger. Default is false.\n");
+    printf("    files                           List of Modelica files(*.mo) to open.\n");
+}
+
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(resource_omedit);
@@ -58,11 +65,20 @@ int main(int argc, char *argv[])
         a.quit();
         exit(1);
     }
+    bool OMCLogger = false;
     // if user has requested to open the file by passing it in argument then,
     if (a.arguments().size() > 1)
     {
         for (int i = 1; i < a.arguments().size(); i++)
         {
+            if (strncmp(a.arguments().at(i).toStdString().c_str(), "--OMCLogger=",12) == 0) {
+              QString omcLoggerArg = a.arguments().at(i);
+              omcLoggerArg.remove("--OMCLogger=");
+              if (0 == strcmp("true", omcLoggerArg.toStdString().c_str()))
+                  OMCLogger = true;
+              else if (0 == strcmp("false", omcLoggerArg.toStdString().c_str()))
+                  OMCLogger = false;
+            }
             fileName = a.arguments().at(i);
             if (!fileName.isEmpty())
             {
@@ -76,6 +92,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+    // hide OMCLogger send custom expression feature if OMCLogger is false
+    mainwindow.mpOMCProxy->enableCustomExpression(OMCLogger);
     // finally show the main window
     mainwindow.show();
     // hide the splash screen

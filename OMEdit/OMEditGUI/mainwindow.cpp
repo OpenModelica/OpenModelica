@@ -80,52 +80,52 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
         mpCentralgrid->setContentsMargins(0, 1, 0, 0);
     #endif
     //Create a dock for the MessageWidget
-    messagedock = new QDockWidget(tr(" Messages"), this);
-    messagedock->setObjectName(tr("Messages"));
-    messagedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+    mpMessageDockWidget = new QDockWidget(tr(" Messages"), this);
+    mpMessageDockWidget->setObjectName(tr("Messages"));
+    mpMessageDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     #ifdef Q_OS_MAC
         messagedock->setContentsMargins(0, 6, 1, 0);
     #else
-        messagedock->setContentsMargins(0, 1, 1, 0);
+        mpMessageDockWidget->setContentsMargins(0, 1, 1, 0);
     #endif
-    messagedock->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
+    mpMessageDockWidget->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
                              | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     mpMessageWidget = new ProblemsWidget(this);
-    messagedock->setWidget(mpMessageWidget);
-    addDockWidget(Qt::BottomDockWidgetArea, messagedock);
+    mpMessageDockWidget->setWidget(mpMessageWidget);
+    addDockWidget(Qt::BottomDockWidgetArea, mpMessageDockWidget);
     // load library
     mpLibrary = new LibraryWidget(this);
     // Loads and adds the OM Standard Library into the Library Widget.
     splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
     mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
     //Create a dock for the search MSL
-    searchMSLdock = new QDockWidget(tr(" Search MSL"), this);
-    searchMSLdock->setObjectName(tr("Search MSL"));
-    searchMSLdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpSearchMSLDockWidget = new QDockWidget(tr(" Search MSL"), this);
+    mpSearchMSLDockWidget->setObjectName(tr("Search MSL"));
+    mpSearchMSLDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpSearchMSLWidget = new SearchMSLWidget(this);
-    searchMSLdock->setWidget(mpSearchMSLWidget);
-    addDockWidget(Qt::LeftDockWidgetArea, searchMSLdock);
-    connect(searchMSLdock, SIGNAL(visibilityChanged(bool)), SLOT(focusMSLSearch(bool)));
-    searchMSLdock->hide();
+    mpSearchMSLDockWidget->setWidget(mpSearchMSLWidget);
+    addDockWidget(Qt::LeftDockWidgetArea, mpSearchMSLDockWidget);
+    connect(mpSearchMSLDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(focusMSLSearch(bool)));
+    mpSearchMSLDockWidget->hide();
     //Create a dock for the componentslibrary
-    libdock = new QDockWidget(tr(" Components"), this);
-    libdock->setObjectName(tr("Components"));
-    libdock->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    libdock->setWidget(mpLibrary);
-    addDockWidget(Qt::LeftDockWidgetArea, libdock);
+    mpLibraryDockWidget = new QDockWidget(tr(" Components"), this);
+    mpLibraryDockWidget->setObjectName(tr("Components"));
+    mpLibraryDockWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+    mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpLibraryDockWidget->setWidget(mpLibrary);
+    addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
     //create a dock for the model browser
-    modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
-    modelBrowserdock->setObjectName(tr("Model Browser"));
+    mpModelBrowserDockWidget = new QDockWidget(tr("Model Browser"), this);
+    mpModelBrowserDockWidget->setObjectName(tr("Model Browser"));
     #ifdef Q_OS_MAC
         modelBrowserdock->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     #else
-        modelBrowserdock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        mpModelBrowserDockWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     #endif
-    modelBrowserdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpModelBrowserDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpModelBrowser = new ModelBrowserWidget(this);
-    modelBrowserdock->setWidget(mpModelBrowser);
-    addDockWidget(Qt::LeftDockWidgetArea, modelBrowserdock);
+    mpModelBrowserDockWidget->setWidget(mpModelBrowser);
+    addDockWidget(Qt::LeftDockWidgetArea, mpModelBrowserDockWidget);
     //Set dock widget corner owner
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
     // Create simulation widget.
@@ -135,23 +135,23 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // create the interactive simulation widget
     mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
     // plot dock
-    plotdock = new QDockWidget(tr(" Plot Variables"), this);
-    plotdock->setObjectName(tr("Plot Variables"));
-    plotdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    plotdock->setContentsMargins(0, 1, 1, 1);
+    mpPlotDockWidget = new QDockWidget(tr(" Plot Variables"), this);
+    mpPlotDockWidget->setObjectName(tr("Plot Variables"));
+    mpPlotDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpPlotDockWidget->setContentsMargins(0, 1, 1, 1);
     mpPlotWidget = new PlotWidget(this);
-    plotdock->setWidget(mpPlotWidget);
-    addDockWidget(Qt::RightDockWidgetArea, plotdock);
-    plotdock->hide();
+    mpPlotDockWidget->setWidget(mpPlotWidget);
+    addDockWidget(Qt::RightDockWidgetArea, mpPlotDockWidget);
+    mpPlotDockWidget->hide();
     // plot dock
-    documentationdock = new QDockWidget(tr(" Documentation"), this);
-    documentationdock->setObjectName(tr("Documentation"));
-    documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    documentationdock->setContentsMargins(0, 1, 1, 1);
+    mpDocumentationDockWidget = new QDockWidget(tr(" Documentation"), this);
+    mpDocumentationDockWidget->setObjectName(tr("Documentation"));
+    mpDocumentationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpDocumentationDockWidget->setContentsMargins(0, 1, 1, 1);
     mpDocumentationWidget = new DocumentationWidget(this);
-    documentationdock->setWidget(mpDocumentationWidget);
-    addDockWidget(Qt::RightDockWidgetArea, documentationdock);
-    documentationdock->hide();
+    mpDocumentationDockWidget->setWidget(mpDocumentationWidget);
+    addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
+    mpDocumentationDockWidget->hide();
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
     this->setAcceptDrops(true);
@@ -196,7 +196,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete mpProjectTabs;
-    delete menubar;
+    delete mpMenuBar;
     delete mpStatusBar;
     delete mpModelCreator;
     delete mpLibrary;
@@ -299,467 +299,478 @@ void MainWindow::dropEvent(QDropEvent *event)
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
 {
-    newAction = new QAction(tr("New"), this);
-
-    newModelAction = new QAction(tr("Model"), this);
-    newModelAction->setStatusTip(tr("Create New Model"));
-    newModelAction->setShortcut(QKeySequence("Ctrl+n"));
-    connect(newModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
-
-    newClassAction = new QAction(tr("Class"), this);
-    newClassAction->setStatusTip(tr("Create New Class"));
-    connect(newClassAction, SIGNAL(triggered()), SLOT(openNewClass()));
-
-    newConnectorAction = new QAction(tr("Connector"), this);
-    newConnectorAction->setStatusTip(tr("Create New Connector"));
-    connect(newConnectorAction, SIGNAL(triggered()), SLOT(openNewConnector()));
-
-    newRecordAction = new QAction(tr("Record"), this);
-    newRecordAction->setStatusTip(tr("Create New Record"));
-    connect(newRecordAction, SIGNAL(triggered()), SLOT(openNewRecord()));
-
-    newBlockAction = new QAction(tr("Block"), this);
-    newBlockAction->setStatusTip(tr("Create New Block"));
-    connect(newBlockAction, SIGNAL(triggered()), SLOT(openNewBlock()));
-
-    newFunctionAction = new QAction(tr("Function"), this);
-    newFunctionAction->setStatusTip(tr("Create New Function"));
-    connect(newFunctionAction, SIGNAL(triggered()), SLOT(openNewFunction()));
-
-    newPackageAction = new QAction(tr("Package"), this);
-    newPackageAction->setStatusTip(tr("Create New Package"));
-    newPackageAction->setShortcut(QKeySequence("Ctrl+p"));
-    connect(newPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
-
-    openAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open"), this);
-    openAction->setShortcut(QKeySequence("Ctrl+o"));
-    openAction->setStatusTip(tr("Opens OpenModelica file"));
-
-    saveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
-    saveAction->setShortcut(QKeySequence("Ctrl+s"));
-    saveAction->setStatusTip(tr("Save a file"));
-
-    saveAsAction = new QAction(QIcon(":/Resources/icons/saveas.png"), tr("Save As"), this);
-    saveAsAction->setShortcut(QKeySequence("Ctrl+Shift+s"));
-    saveAsAction->setStatusTip(tr("Save As a File"));
-
-    saveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
-    saveAllAction->setStatusTip(tr("Save All Files"));
-
-    undoAction = new QAction(QIcon(":/Resources/icons/undo.png"), tr("Undo"), this);
-    undoAction->setShortcut(QKeySequence("Ctrl+z"));
-    undoAction->setStatusTip(tr("Undo last activity"));
-
-    redoAction = new QAction(QIcon(":/Resources/icons/redo.png"), tr("Redo"), this);
-    redoAction->setShortcut(QKeySequence("Ctrl+y"));
-    redoAction->setStatusTip(tr("Redo last activity"));
-
-    cutAction = new QAction(QIcon(":/Resources/icons/cut.png"), tr("Cut"), this);
-    cutAction->setShortcut(QKeySequence("Ctrl+x"));
-
-    copyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
-    //copyAction->setShortcut(QKeySequence("Ctrl+c"));
-    //! @todo opening this will stop copying data from messages window.
-
-    pasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
-    pasteAction->setShortcut(QKeySequence("Ctrl+v"));
-
-    gridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
-    gridLinesAction->setStatusTip(tr("Show/Hide the grid lines"));
-    gridLinesAction->setCheckable(true);
-
-    resetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
-    resetZoomAction->setStatusTip(tr("Resets the zoom"));
-    resetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
-
-    zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
-    zoomInAction->setStatusTip(tr("Zoom in"));
-    zoomInAction->setShortcut(QKeySequence("Ctrl++"));
-
-    zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
-    zoomOutAction->setStatusTip(tr("Zoom out"));
-    zoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
-
-    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
-    checkModelAction->setStatusTip(tr("Check the modelica model"));
-    connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
-
-    flatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
-    flatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
-    connect(flatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
-
-    exportFMIAction = new QAction(QIcon(":/Resources/icons/export-fmi.png"), tr("Export FMI"), this);
-    exportFMIAction->setStatusTip(tr("Exports the model as Functional Mockup Interface (FMI)"));
-    exportFMIAction->setEnabled(false);
-    connect(exportFMIAction, SIGNAL(triggered()), SLOT(exportModelFMI()));
-
-    importFMIAction = new QAction(QIcon(":/Resources/icons/import-fmi.png"), tr("Import FMI"), this);
-    importFMIAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMI)"));
-    connect(importFMIAction, SIGNAL(triggered()), SLOT(importModelFMI()));
-
-    omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
-    omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
-    connect(omcLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
-
-    openOMShellAction = new QAction(QIcon(":/Resources/icons/omshell.svg"), tr("OMShell"), this);
-    openOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
-    connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
-
-    exportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.png"), tr("Export to OMNotebook"), this);
-    exportToOMNotebookAction->setStatusTip(tr("Exports the current model to OMNotebook"));
-    exportToOMNotebookAction->setEnabled(false);
-    connect(exportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
-
-    importFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.png"), tr("Import from OMNotebook"), this);
-    importFromOMNotebookAction->setStatusTip(tr("Imports the models from OMNotebook"));
-    connect(importFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
-
-    exportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Export as an Image"), this);
-    exportAsImageAction->setStatusTip(tr("Exports the current model to Image"));
-    exportAsImageAction->setEnabled(false);
-    connect(exportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
-
-    openOptions = new QAction(tr("Options"), this);
-    openOptions->setStatusTip(tr("Shows the options window"));
-    connect(openOptions, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
-
-    closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
-    closeAction->setStatusTip(tr("Exits the ").append(Helper::applicationIntroText));
-    closeAction->setShortcut(QKeySequence("Ctrl+q"));
-    connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
-
+    // File Menu
+    // New Model Action
+    mpNewModelAction = new QAction(tr("Model"), this);
+    mpNewModelAction->setStatusTip(tr("Create New Model"));
+    mpNewModelAction->setShortcut(QKeySequence("Ctrl+n"));
+    connect(mpNewModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
+    // New Class Action
+    mpNewClassAction = new QAction(tr("Class"), this);
+    mpNewClassAction->setStatusTip(tr("Create New Class"));
+    connect(mpNewClassAction, SIGNAL(triggered()), SLOT(openNewClass()));
+    // New Connector Action
+    mpNewConnectorAction = new QAction(tr("Connector"), this);
+    mpNewConnectorAction->setStatusTip(tr("Create New Connector"));
+    connect(mpNewConnectorAction, SIGNAL(triggered()), SLOT(openNewConnector()));
+    // New Record Action
+    mpNewRecordAction = new QAction(tr("Record"), this);
+    mpNewRecordAction->setStatusTip(tr("Create New Record"));
+    connect(mpNewRecordAction, SIGNAL(triggered()), SLOT(openNewRecord()));
+    // New Block Action
+    mpNewBlockAction = new QAction(tr("Block"), this);
+    mpNewBlockAction->setStatusTip(tr("Create New Block"));
+    connect(mpNewBlockAction, SIGNAL(triggered()), SLOT(openNewBlock()));
+    // New Function Action
+    mpNewFunctionAction = new QAction(tr("Function"), this);
+    mpNewFunctionAction->setStatusTip(tr("Create New Function"));
+    connect(mpNewFunctionAction, SIGNAL(triggered()), SLOT(openNewFunction()));
+    // New Package Action
+    mpNewPackageAction = new QAction(tr("Package"), this);
+    mpNewPackageAction->setStatusTip(tr("Create New Package"));
+    mpNewPackageAction->setShortcut(QKeySequence("Ctrl+p"));
+    connect(mpNewPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
+    // Open Action
+    mpOpenAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open"), this);
+    mpOpenAction->setShortcut(QKeySequence("Ctrl+o"));
+    mpOpenAction->setStatusTip(tr("Opens OpenModelica file"));
+    // Save Action
+    mpSaveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
+    mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
+    mpSaveAction->setStatusTip(tr("Save a file"));
+    // SaveAs Action
+    mpSaveAsAction = new QAction(QIcon(":/Resources/icons/saveas.png"), tr("Save As"), this);
+    mpSaveAsAction->setShortcut(QKeySequence("Ctrl+Shift+s"));
+    mpSaveAsAction->setStatusTip(tr("Save As a File"));
+    // SaveAll Action
+    mpSaveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
+    mpSaveAllAction->setStatusTip(tr("Save All Files"));
+    // Recent Files Actions
     for (int i = 0; i < MaxRecentFiles; ++i)
     {
-        recentFileActs[i] = new QAction(this);
-        recentFileActs[i]->setVisible(false);
-        connect(recentFileActs[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
+        mpRecentFileActions[i] = new QAction(this);
+        mpRecentFileActions[i]->setVisible(false);
+        connect(mpRecentFileActions[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
     }
-
-    simulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Simulate"), this);
-    simulationAction->setStatusTip(tr("Simulate the Model"));
-    connect(simulationAction, SIGNAL(triggered()), SLOT(openSimulation()));
-
-    plotAction = plotdock->toggleViewAction();
-    plotAction->setStatusTip(tr("Show/Hide the plot variables window"));
-    plotAction->setIcon(QIcon(":/Resources/icons/plot.png"));
-    plotAction->setText(tr("Plot Variables"));
-
-    interactiveSimulationAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"), this);
-    interactiveSimulationAction->setStatusTip(tr("Interactive Simulate the Model"));
-    connect(interactiveSimulationAction, SIGNAL(triggered()), SLOT(openInteractiveSimulation()));
-
-    documentationAction = documentationdock->toggleViewAction();
-    documentationAction->setStatusTip(tr("Show/Hide the documentation window"));
-    documentationAction->setIcon(QIcon(":/Resources/icons/info-icon.png"));
-    documentationAction->setText(tr("View Documentation"));
-
-    userManualAction = new QAction(tr("User Manual"), this);
-    userManualAction->setStatusTip(tr("Opens the User Manual"));
-    userManualAction->setShortcut(QKeySequence(Qt::Key_F1));
-    connect(userManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
-
-    aboutAction = new QAction(tr("About OMEdit"), this);
-    aboutAction->setStatusTip(tr("Information about OMEdit"));
-    connect(aboutAction, SIGNAL(triggered()), SLOT(openAbout()));
-
-    shapesActionGroup = new QActionGroup(this);
-    shapesActionGroup->setExclusive(false);
-
-    lineAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), tr("Line"), shapesActionGroup);
-    lineAction->setStatusTip(tr("Draws a line."));
-    lineAction->setCheckable(true);
-    connect(lineAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    polygonAction = new QAction(QIcon(":/Resources/icons/polygon-shape.png"), tr("Polygon"), shapesActionGroup);
-    polygonAction->setStatusTip(tr("Draws a polygon."));
-    polygonAction->setCheckable(true);
-    connect(polygonAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    rectangleAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.png"), tr("Rectangle"), shapesActionGroup);
-    rectangleAction->setStatusTip(tr("Draws a rectangle."));
-    rectangleAction->setCheckable(true);
-    connect(rectangleAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    ellipseAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.png"), tr("Ellipse"), shapesActionGroup);
-    ellipseAction->setStatusTip(tr("Draws an Ellipse."));
-    ellipseAction->setCheckable(true);
-    connect(ellipseAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    textAction = new QAction(QIcon(":/Resources/icons/text-shape.png"), tr("Text"), shapesActionGroup);
-    textAction->setStatusTip(tr("Draws a Text."));
-    textAction->setCheckable(true);
-    connect(textAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    // Add the bitmap picture
-    bitmapAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Bitmap"), shapesActionGroup);
-    bitmapAction->setStatusTip(tr("Imports a Bitmap."));
-    bitmapAction->setCheckable(true);
-    connect(bitmapAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    connectAction = new QAction(QIcon(":/Resources/icons/connector-icon.png"), tr("Connect/Unconnect Mode"),this);
-    connectAction->setStatusTip(tr("Changes to/from connect mode"));
-    connectAction->setCheckable(true);
-    connectAction->setChecked(true);
-    connect(connectAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
-
-    welcomeViewAction = new QAction(tr("Welcome Page"), this);
-    welcomeViewAction->setStatusTip(tr("Shows Welcome Page"));
-    welcomeViewAction->setCheckable(true);
-    welcomeViewAction->setChecked(true);
-    connect(welcomeViewAction, SIGNAL(toggled(bool)), SLOT(switchToWelcomeView(bool)));
-
-    viewActionGroup = new QActionGroup(this);
-    viewActionGroup->setExclusive(true);
-
-    modelingViewAction = new QAction(QIcon(":/Resources/icons/omeditor.png"), tr("Modeling"), viewActionGroup);
-    modelingViewAction->setStatusTip(tr("Shows Modeling View"));
-    modelingViewAction->setShortcut(QKeySequence("Ctrl+Shift+m"));
-    modelingViewAction->setCheckable(true);
-    connect(modelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
-
-    plottingViewAction = new QAction(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"), viewActionGroup);
-    plottingViewAction->setStatusTip(tr("Shows Plotting View"));
-    plottingViewAction->setShortcut(QKeySequence("Ctrl+Shift+p"));
-    plottingViewAction->setCheckable(true);
-    connect(plottingViewAction, SIGNAL(triggered()), SLOT(switchToPlottingView()));
-
-    interactiveSimulationViewAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"),
-                                                  tr("Interactive Simulation"), viewActionGroup);
-    interactiveSimulationViewAction->setStatusTip(tr("Shows Interactive Simulation View"));
-    interactiveSimulationViewAction->setShortcut(QKeySequence("Ctrl+Shift+i"));
-    interactiveSimulationViewAction->setCheckable(true);
-    connect(interactiveSimulationViewAction, SIGNAL(triggered()), SLOT(switchToInteractiveSimulationView()));
-
-    newPlotWindowAction = new QAction(QIcon(":/Resources/icons/plotwindow.png"), tr("New Plot Window"), this);
-    newPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
-    connect(newPlotWindowAction, SIGNAL(triggered()), SLOT(addNewPlotWindow()));
-
-    newPlotParametricWindowAction = new QAction(QIcon(":/Resources/icons/plotparametricwindow.png"), tr("New Plot Parametric Window"), this);
-    newPlotParametricWindowAction->setStatusTip(tr("Inserts new plot parametric window"));
-    connect(newPlotParametricWindowAction, SIGNAL(triggered()), SLOT(addNewPlotParametricWindow()));
+    // close Action
+    mpCloseAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
+    mpCloseAction->setStatusTip(tr("Exits the ").append(Helper::applicationIntroText));
+    mpCloseAction->setShortcut(QKeySequence("Ctrl+q"));
+    connect(this->mpCloseAction,SIGNAL(triggered()), SLOT(close()));
+    // Edit Menu
+    // Undo Action
+    mpUndoAction = new QAction(QIcon(":/Resources/icons/undo.png"), tr("Undo"), this);
+    mpUndoAction->setShortcut(QKeySequence("Ctrl+z"));
+    mpUndoAction->setStatusTip(tr("Undo last activity"));
+    // Redo Action
+    mpRedoAction = new QAction(QIcon(":/Resources/icons/redo.png"), tr("Redo"), this);
+    mpRedoAction->setShortcut(QKeySequence("Ctrl+y"));
+    mpRedoAction->setStatusTip(tr("Redo last activity"));
+    // Cut Action
+    mpCutAction = new QAction(QIcon(":/Resources/icons/cut.png"), tr("Cut"), this);
+    mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
+    // Copy Action
+    mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
+    //copyAction->setShortcut(QKeySequence("Ctrl+c"));
+    //! @todo opening this will stop copying data from messages window.
+    // Paste Action
+    mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
+    mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
+    // View Menu
+    // Welcome View Action
+    mpWelcomeViewAction = new QAction(tr("Welcome Page"), this);
+    mpWelcomeViewAction->setStatusTip(tr("Shows Welcome Page"));
+    mpWelcomeViewAction->setCheckable(true);
+    mpWelcomeViewAction->setChecked(true);
+    connect(mpWelcomeViewAction, SIGNAL(toggled(bool)), SLOT(switchToWelcomeView(bool)));
+    // Views Actions Group
+    mpViewActionGroup = new QActionGroup(this);
+    mpViewActionGroup->setExclusive(true);
+    // Modelling View Action
+    mpModelingViewAction = new QAction(QIcon(":/Resources/icons/omeditor.png"), tr("Modeling"), mpViewActionGroup);
+    mpModelingViewAction->setStatusTip(tr("Shows Modeling View"));
+    mpModelingViewAction->setShortcut(QKeySequence("Ctrl+Shift+m"));
+    mpModelingViewAction->setCheckable(true);
+    connect(mpModelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
+    // Plotting View Action
+    mpPlottingViewAction = new QAction(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"), mpViewActionGroup);
+    mpPlottingViewAction->setStatusTip(tr("Shows Plotting View"));
+    mpPlottingViewAction->setShortcut(QKeySequence("Ctrl+Shift+p"));
+    mpPlottingViewAction->setCheckable(true);
+    connect(mpPlottingViewAction, SIGNAL(triggered()), SLOT(switchToPlottingView()));
+    // Interactive Simulation View Action
+    mpInteractiveSimulationViewAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"),
+                                                  tr("Interactive Simulation"), mpViewActionGroup);
+    mpInteractiveSimulationViewAction->setStatusTip(tr("Shows Interactive Simulation View"));
+    mpInteractiveSimulationViewAction->setShortcut(QKeySequence("Ctrl+Shift+i"));
+    mpInteractiveSimulationViewAction->setCheckable(true);
+    mpInteractiveSimulationViewAction->setEnabled(false);
+    connect(mpInteractiveSimulationViewAction, SIGNAL(triggered()), SLOT(switchToInteractiveSimulationView()));
+    // Grid Lines Action
+    mpGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
+    mpGridLinesAction->setStatusTip(tr("Show/Hide the grid lines"));
+    mpGridLinesAction->setCheckable(true);
+    // Reset Zoom Action
+    mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
+    mpResetZoomAction->setStatusTip(tr("Resets the zoom"));
+    mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
+    // Zoom In Action
+    mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
+    mpZoomInAction->setStatusTip(tr("Zoom in"));
+    mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
+    // Zoom Out Action
+    mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
+    mpZoomOutAction->setStatusTip(tr("Zoom out"));
+    mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
+    // Simulation Menu
+    // Simulate Action
+    mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Simulate"), this);
+    mpSimulationAction->setStatusTip(tr("Simulate the Model"));
+    connect(mpSimulationAction, SIGNAL(triggered()), SLOT(openSimulation()));
+    // Interactive Simulation Action
+    mpInteractiveSimulationAction = new QAction(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"), this);
+    mpInteractiveSimulationAction->setStatusTip(tr("Interactive Simulate the Model"));
+    mpInteractiveSimulationAction->setEnabled(false);
+    connect(mpInteractiveSimulationAction, SIGNAL(triggered()), SLOT(openInteractiveSimulation()));
+    // check Model Action
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    mpCheckModelAction->setStatusTip(tr("Check the modelica model"));
+    connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+    // Instantiate Model Action
+    mpFlatModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
+    mpFlatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
+    connect(mpFlatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
+    // FMI Menu
+    // Export FMI Action
+    mpExportFMIAction = new QAction(QIcon(":/Resources/icons/export-fmi.png"), tr("Export FMI"), this);
+    mpExportFMIAction->setStatusTip(tr("Exports the model as Functional Mockup Interface (FMI)"));
+    mpExportFMIAction->setEnabled(false);
+    connect(mpExportFMIAction, SIGNAL(triggered()), SLOT(exportModelFMI()));
+    // Import FMI Action
+    mpImportFMIAction = new QAction(QIcon(":/Resources/icons/import-fmi.png"), tr("Import FMI"), this);
+    mpImportFMIAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMI)"));
+    connect(mpImportFMIAction, SIGNAL(triggered()), SLOT(importModelFMI()));
+    // Tools Menu
+    // OMC Logger Action
+    mpOMCLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
+    mpOMCLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
+    connect(mpOMCLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
+    // OMShell Action
+    mpOpenOMShellAction = new QAction(QIcon(":/Resources/icons/omshell.svg"), tr("OMShell"), this);
+    mpOpenOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
+    connect(mpOpenOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
+    // Export OMNotebook Action
+    mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.png"), tr("Export to OMNotebook"), this);
+    mpExportToOMNotebookAction->setStatusTip(tr("Exports the current model to OMNotebook"));
+    mpExportToOMNotebookAction->setEnabled(false);
+    connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
+    // Import OMNotebook Action
+    mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.png"), tr("Import from OMNotebook"), this);
+    mpImportFromOMNotebookAction->setStatusTip(tr("Imports the models from OMNotebook"));
+    connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
+    // Options Action
+    mpOpenOptionsAction = new QAction(tr("Options"), this);
+    mpOpenOptionsAction->setStatusTip(tr("Shows the options window"));
+    connect(mpOpenOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
+    // Help Menu
+    // User Manual Action
+    mpUserManualAction = new QAction(tr("User Manual"), this);
+    mpUserManualAction->setStatusTip(tr("Opens the User Manual"));
+    mpUserManualAction->setShortcut(QKeySequence(Qt::Key_F1));
+    connect(mpUserManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
+    // About OMEdit Action
+    mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
+    mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
+    connect(mpAboutOMEditAction, SIGNAL(triggered()), SLOT(openAbout()));
+    // Shapes Toolbar Actions
+    mpShapesActionGroup = new QActionGroup(this);
+    mpShapesActionGroup->setExclusive(false);
+    // Line Shape Action
+    mpLineAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), tr("Line"), mpShapesActionGroup);
+    mpLineAction->setStatusTip(tr("Draws a line."));
+    mpLineAction->setCheckable(true);
+    connect(mpLineAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Polygon Shape Action
+    mpPolygonAction = new QAction(QIcon(":/Resources/icons/polygon-shape.png"), tr("Polygon"), mpShapesActionGroup);
+    mpPolygonAction->setStatusTip(tr("Draws a polygon."));
+    mpPolygonAction->setCheckable(true);
+    connect(mpPolygonAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Rectangle Shape Action
+    mpRectangleAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.png"), tr("Rectangle"), mpShapesActionGroup);
+    mpRectangleAction->setStatusTip(tr("Draws a rectangle."));
+    mpRectangleAction->setCheckable(true);
+    connect(mpRectangleAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Ellipse Shape Action
+    mpEllipseAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.png"), tr("Ellipse"), mpShapesActionGroup);
+    mpEllipseAction->setStatusTip(tr("Draws an Ellipse."));
+    mpEllipseAction->setCheckable(true);
+    connect(mpEllipseAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Text Shape Action
+    mpTextAction = new QAction(QIcon(":/Resources/icons/text-shape.png"), tr("Text"), mpShapesActionGroup);
+    mpTextAction->setStatusTip(tr("Draws a Text."));
+    mpTextAction->setCheckable(true);
+    connect(mpTextAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Bitmap Shape Action
+    mpBitmapAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Bitmap"), mpShapesActionGroup);
+    mpBitmapAction->setStatusTip(tr("Imports a Bitmap."));
+    mpBitmapAction->setCheckable(true);
+    connect(mpBitmapAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Connect Action
+    mpConnectAction = new QAction(QIcon(":/Resources/icons/connector-icon.png"), tr("Connect/Unconnect Mode"),this);
+    mpConnectAction->setStatusTip(tr("Changes to/from connect mode"));
+    mpConnectAction->setCheckable(true);
+    mpConnectAction->setChecked(true);
+    connect(mpConnectAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+    // Plot Toolbar Actions
+    mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plotwindow.png"), tr("New Plot Window"), this);
+    mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
+    connect(mpNewPlotWindowAction, SIGNAL(triggered()), SLOT(addNewPlotWindow()));
+    mpNewPlotParametricWindowAction = new QAction(QIcon(":/Resources/icons/plotparametricwindow.png"), tr("New Plot Parametric Window"), this);
+    mpNewPlotParametricWindowAction->setStatusTip(tr("Inserts new plot parametric window"));
+    connect(mpNewPlotParametricWindowAction, SIGNAL(triggered()), SLOT(addNewPlotParametricWindow()));
+    // Other Actions
+    // Export As Image Action
+    mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Export as an Image"), this);
+    mpExportAsImageAction->setStatusTip(tr("Exports the current model to Image"));
+    mpExportAsImageAction->setEnabled(false);
+    connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
 }
 
 //! Creates the menus
 void MainWindow::createMenus()
 {
     //Create the menubar
-    menubar = new QMenuBar();
-    menubar->setGeometry(QRect(0,0,800,25));
-    menubar->setObjectName("menubar");
-
-    //Create the menues
-    menuFile = new QMenu(menubar);
-    menuFile->setObjectName("menuFile");
-    menuFile->setTitle("&File");
-
-    menuNew = new QMenu(menubar);
-    menuNew->setObjectName("menuNew");
-    menuNew->setTitle("New");
-
-    menuEdit = new QMenu(menubar);
-    menuEdit->setTitle("&Edit");
-
-    menuView = new QMenu(menubar);
-    menuView->setTitle("&View");
-
-    menuSimulation = new QMenu(menubar);
-    menuSimulation->setTitle("&Simulation");
-
-    menuFMI = new QMenu(menubar);
-    menuFMI->setTitle("F&MI");
-
-    menuTools = new QMenu(menubar);
-    menuTools->setTitle("&Tools");
-
-    menuHelp = new QMenu(menubar);
-    menuHelp->setTitle("&Help");
-
-    this->setMenuBar(menubar);
-
-    //Add the actionbuttons to the menues
-    menuNew->addAction(newModelAction);
-    menuNew->addAction(newClassAction);
-    menuNew->addAction(newConnectorAction);
-    menuNew->addAction(newRecordAction);
-    menuNew->addAction(newBlockAction);
-    menuNew->addAction(newFunctionAction);
-    menuNew->addAction(newPackageAction);
-
-    menuFile->addAction(menuNew->menuAction());
-    menuFile->addAction(openAction);
-    menuFile->addAction(saveAction);
-    menuFile->addAction(saveAsAction);
+    mpMenuBar = new QMenuBar();
+    mpMenuBar->setGeometry(QRect(0,0,800,25));
+    mpMenuBar->setObjectName("menubar");
+    // File Menu
+    mpFileMenu = new QMenu(mpMenuBar);
+    mpFileMenu->setObjectName("menuFile");
+    mpFileMenu->setTitle("&File");
+    // File New Menu
+    mpFileNewMenu = new QMenu(mpMenuBar);
+    mpFileNewMenu->setObjectName("menuNew");
+    mpFileNewMenu->setTitle("New");
+    // Add actions to File Menu
+    mpFileNewMenu->addAction(mpNewModelAction);
+    mpFileNewMenu->addAction(mpNewClassAction);
+    mpFileNewMenu->addAction(mpNewConnectorAction);
+    mpFileNewMenu->addAction(mpNewRecordAction);
+    mpFileNewMenu->addAction(mpNewBlockAction);
+    mpFileNewMenu->addAction(mpNewFunctionAction);
+    mpFileNewMenu->addAction(mpNewPackageAction);
+    mpFileMenu->addAction(mpFileNewMenu->menuAction());
+    mpFileMenu->addAction(mpOpenAction);
+    mpFileMenu->addAction(mpSaveAction);
+    mpFileMenu->addAction(mpSaveAsAction);
     //menuFile->addAction(saveAllAction);
-    separatorAct = menuFile->addSeparator();
+    mpSeparatorAction = mpFileMenu->addSeparator();
     for (int i = 0; i < MaxRecentFiles; ++i)
-        menuFile->addAction(recentFileActs[i]);
-    menuFile->addSeparator();
-    menuFile->addAction(closeAction);
-
+        mpFileMenu->addAction(mpRecentFileActions[i]);
+    mpFileMenu->addSeparator();
+    mpFileMenu->addAction(mpCloseAction);
+    // Edit Menu
+    mpEditMenu = new QMenu(mpMenuBar);
+    mpEditMenu->setTitle("&Edit");
+    // Add actions to Edit Menu
     //menuEdit->addAction(undoAction);
     //menuEdit->addAction(redoAction);
-    menuEdit->addSeparator();
-    menuEdit->addAction(cutAction);
-    menuEdit->addAction(copyAction);
-    menuEdit->addAction(pasteAction);
-
-    QAction *searchMSLAction = searchMSLdock->toggleViewAction();
+    mpEditMenu->addSeparator();
+    mpEditMenu->addAction(mpCutAction);
+    mpEditMenu->addAction(mpCopyAction);
+    mpEditMenu->addAction(mpPasteAction);
+    // View Menu
+    mpViewMenu = new QMenu(mpMenuBar);
+    mpViewMenu->setTitle("&View");
+    // Toolbars View Menu
+    mpViewToolbarsMenu = new QMenu(mpMenuBar);
+    mpViewToolbarsMenu->setObjectName("ToolbarsViewMenu");
+    mpViewToolbarsMenu->setTitle("Toolbars");
+    // Windows View Menu
+    mpViewWindowsMenu = new QMenu(mpMenuBar);
+    mpViewWindowsMenu->setObjectName("WindowsViewMenu");
+    mpViewWindowsMenu->setTitle("Windows");
+    // Perspectives View Menu
+    mpViewPerspectivesMenu = new QMenu(mpMenuBar);
+    mpViewPerspectivesMenu->setObjectName("PerspectivesViewMenu");
+    mpViewPerspectivesMenu->setTitle("Perspectives");
+    // Add actions to View Menu
+    // Add Actions to Toolbars View Sub Menu
+    mpViewToolbarsMenu->addAction(mpFileToolBar->toggleViewAction());
+    //mpToolbarsViewMenu->addAction(editToolBar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpViewToolBar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpShapesToolBar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpOMNotebookToolbar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
+    mpViewToolbarsMenu->addAction(mpPerspectiveToolBar->toggleViewAction());
+    mpViewMenu->addAction(mpViewToolbarsMenu->menuAction());
+    // Add Actions to Windows View Sub Menu
+    QAction *searchMSLAction = mpSearchMSLDockWidget->toggleViewAction();
     searchMSLAction->setText(tr("Search MSL"));
     searchMSLAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
-    searchMSLAction->setIcon(QIcon(":/Resources/icons/search.png"));
-    QAction *libAction = libdock->toggleViewAction();
+    mpViewWindowsMenu->addAction(searchMSLAction);
+    QAction *libAction = mpLibraryDockWidget->toggleViewAction();
     libAction->setText(tr("Components"));
-    QAction *modelBrowserAction = modelBrowserdock->toggleViewAction();
+    mpViewWindowsMenu->addAction(libAction);
+    QAction *modelBrowserAction = mpModelBrowserDockWidget->toggleViewAction();
     modelBrowserAction->setText(tr("Model Browser"));
-    QAction *messageAction = messagedock->toggleViewAction();
+    mpViewWindowsMenu->addAction(modelBrowserAction);
+    QAction *messageAction = mpMessageDockWidget->toggleViewAction();
     messageAction->setText(tr("Messages"));
-
-    menuView->addAction(searchMSLAction);
-    menuView->addAction(libAction);
-    menuView->addAction(modelBrowserAction);
-    menuView->addAction(messageAction);
-    menuView->addAction(welcomeViewAction);
-    //menuView->addAction(fileToolBar->toggleViewAction());
-    //menuView->addAction(editToolBar->toggleViewAction());
-    //menuView->addAction(documentationAction);
-    menuView->addSeparator();
-    menuView->addAction(gridLinesAction);
-    menuView->addAction(resetZoomAction);
-    menuView->addAction(zoomInAction);
-    menuView->addAction(zoomOutAction);
-    menuView->addSeparator();
-    menuView->addAction(flatModelAction);
-    menuView->addAction(checkModelAction);
-    menuView->addSeparator();
-    menuView->addAction(modelingViewAction);
-    menuView->addAction(plottingViewAction);
-    menuView->addAction(interactiveSimulationViewAction);
-
-    menuSimulation->addAction(simulationAction);
-    menuSimulation->addAction(interactiveSimulationAction);
-    menuSimulation->addAction(plotAction);
-
-    menuFMI->addAction(exportFMIAction);
-    menuFMI->addAction(importFMIAction);
-
-    menuTools->addAction(omcLoggerAction);
-    menuTools->addSeparator();
-    menuTools->addAction(openOMShellAction);
-    menuTools->addSeparator();
-    menuTools->addAction(exportToOMNotebookAction);
-    menuTools->addAction(importFromOMNotebookAction);
-    menuTools->addSeparator();
-    menuTools->addAction(openOptions);
-
-    menuHelp->addAction(userManualAction);
-    menuHelp->addAction(aboutAction);
-
-    menubar->addAction(menuFile->menuAction());
-    menubar->addAction(menuEdit->menuAction());
-    menubar->addAction(menuView->menuAction());
-    menubar->addAction(menuSimulation->menuAction());
-    menubar->addAction(menuFMI->menuAction());
-    menubar->addAction(menuTools->menuAction());
-    menubar->addAction(menuHelp->menuAction());
+    mpViewWindowsMenu->addAction(messageAction);
+    QAction *documentationAction = mpDocumentationDockWidget->toggleViewAction();
+    documentationAction->setText(tr("Documentation"));
+    mpViewWindowsMenu->addAction(documentationAction);
+    QAction *plotAction = mpPlotDockWidget->toggleViewAction();
+    plotAction->setText(tr("Plot Variables"));
+    mpViewWindowsMenu->addAction(plotAction);
+    mpViewMenu->addAction(mpViewWindowsMenu->menuAction());
+    // Add Actions to Perspectives View Sub Menu
+    mpViewPerspectivesMenu->addAction(mpWelcomeViewAction);
+    mpViewPerspectivesMenu->addAction(mpModelingViewAction);
+    mpViewPerspectivesMenu->addAction(mpPlottingViewAction);
+    mpViewPerspectivesMenu->addAction(mpInteractiveSimulationViewAction);
+    mpViewMenu->addAction(mpViewPerspectivesMenu->menuAction());
+    mpViewMenu->addSeparator();
+    mpViewMenu->addAction(mpGridLinesAction);
+    mpViewMenu->addAction(mpResetZoomAction);
+    mpViewMenu->addAction(mpZoomInAction);
+    mpViewMenu->addAction(mpZoomOutAction);
+    // Simulation Menu
+    mpSimulationMenu = new QMenu(mpMenuBar);
+    mpSimulationMenu->setTitle("&Simulation");
+    // Add Actions to Simulation Menu
+    mpSimulationMenu->addAction(mpSimulationAction);
+    mpSimulationMenu->addAction(mpInteractiveSimulationAction);
+    mpSimulationMenu->addSeparator();
+    mpSimulationMenu->addAction(mpFlatModelAction);
+    mpSimulationMenu->addAction(mpCheckModelAction);
+    // FMI Menu
+    mpFMIMenu = new QMenu(mpMenuBar);
+    mpFMIMenu->setTitle("F&MI");
+    // Add Actions to FMI Menu
+    mpFMIMenu->addAction(mpExportFMIAction);
+    mpFMIMenu->addAction(mpImportFMIAction);
+    // Tools Menu
+    mpMenuTools = new QMenu(mpMenuBar);
+    mpMenuTools->setTitle("&Tools");
+    // Add Actions to Tools Menu
+    mpMenuTools->addAction(mpOMCLoggerAction);
+    mpMenuTools->addSeparator();
+    mpMenuTools->addAction(mpOpenOMShellAction);
+    mpMenuTools->addSeparator();
+    mpMenuTools->addAction(mpExportToOMNotebookAction);
+    mpMenuTools->addAction(mpImportFromOMNotebookAction);
+    mpMenuTools->addSeparator();
+    mpMenuTools->addAction(mpOpenOptionsAction);
+    // Help Menu
+    mpHelpMenu = new QMenu(mpMenuBar);
+    mpHelpMenu->setTitle("&Help");
+    // Add Actions to Help Menu
+    mpHelpMenu->addAction(mpUserManualAction);
+    mpHelpMenu->addAction(mpAboutOMEditAction);
+    // Add all menus to the menubar
+    mpMenuBar->addAction(mpFileMenu->menuAction());
+    mpMenuBar->addAction(mpEditMenu->menuAction());
+    mpMenuBar->addAction(mpViewMenu->menuAction());
+    mpMenuBar->addAction(mpSimulationMenu->menuAction());
+    mpMenuBar->addAction(mpFMIMenu->menuAction());
+    mpMenuBar->addAction(mpMenuTools->menuAction());
+    mpMenuBar->addAction(mpHelpMenu->menuAction());
+    // Set the menubar
+    setMenuBar(mpMenuBar);
 }
 
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
-    fileToolBar = addToolBar(tr("File Toolbar"));
-    fileToolBar->setObjectName(tr("File Toolbar"));
-    fileToolBar->setAllowedAreas(Qt::TopToolBarArea);
-
-    QToolButton *newMenuButton = new QToolButton(fileToolBar);
+    // File Toolbar
+    mpFileToolBar = addToolBar(tr("File Toolbar"));
+    mpFileToolBar->setObjectName(tr("File Toolbar"));
+    mpFileToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    QToolButton *newMenuButton = new QToolButton(mpFileToolBar);
     QMenu *newMenu = new QMenu(newMenuButton);
-    newMenu->addAction(newModelAction);
-    newMenu->addAction(newClassAction);
-    newMenu->addAction(newConnectorAction);
-    newMenu->addAction(newRecordAction);
-    newMenu->addAction(newBlockAction);
-    newMenu->addAction(newFunctionAction);
-    newMenu->addAction(newPackageAction);
-
+    newMenu->addAction(mpNewModelAction);
+    newMenu->addAction(mpNewClassAction);
+    newMenu->addAction(mpNewConnectorAction);
+    newMenu->addAction(mpNewRecordAction);
+    newMenu->addAction(mpNewBlockAction);
+    newMenu->addAction(mpNewFunctionAction);
+    newMenu->addAction(mpNewPackageAction);
     newMenuButton->setMenu(newMenu);
-    newMenuButton->setDefaultAction(newModelAction);
+    newMenuButton->setDefaultAction(mpNewModelAction);
     newMenuButton->setPopupMode(QToolButton::MenuButtonPopup);
     newMenuButton->setIcon(QIcon(":/Resources/icons/new.png"));
-
-    fileToolBar->addWidget(newMenuButton);
-    fileToolBar->addAction(openAction);
-    fileToolBar->addAction(saveAction);
-    fileToolBar->addAction(saveAsAction);
+    mpFileToolBar->addWidget(newMenuButton);
+    mpFileToolBar->addAction(mpOpenAction);
+    mpFileToolBar->addAction(mpSaveAction);
+    mpFileToolBar->addAction(mpSaveAsAction);
     //fileToolBar->addAction(saveAllAction);
-
+    // Edit Toolbar
 //    editToolBar = addToolBar(tr("Clipboard Toolbar"));
 //    editToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    //editToolBar->addAction(undoAction);
-    //editToolBar->addAction(redoAction);
+//    editToolBar->addAction(undoAction);
+//    editToolBar->addAction(redoAction);
 //    editToolBar->addAction(cutAction);
 //    editToolBar->addAction(copyAction);
 //    editToolBar->addAction(pasteAction);
-
-    viewToolBar = addToolBar(tr("View Toolbar"));
-    viewToolBar->setObjectName(tr("View Toolbar"));
-    viewToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    viewToolBar->addAction(gridLinesAction);
-    viewToolBar->addSeparator();
-    viewToolBar->addAction(resetZoomAction);
-    viewToolBar->addAction(zoomInAction);
-    viewToolBar->addAction(zoomOutAction);
-    viewToolBar->addSeparator();
-    viewToolBar->addAction(flatModelAction);
-    viewToolBar->addAction(checkModelAction);
-
-    shapesToolBar = addToolBar(tr("Shapes Toolbar"));
-    shapesToolBar->setObjectName(tr("Shapes Toolbar"));
-    shapesToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    shapesToolBar->addAction(lineAction);
-    shapesToolBar->addAction(polygonAction);
-    shapesToolBar->addAction(rectangleAction);
-    shapesToolBar->addAction(ellipseAction);
-    shapesToolBar->addAction(textAction);
-
-    //ADD bitmapaction HK
-    shapesToolBar->addAction(bitmapAction);
-    shapesToolBar->addSeparator();
-    shapesToolBar->addAction(connectAction);
-
-    simulationToolBar = addToolBar(tr("Simulation"));
-    simulationToolBar->setObjectName(tr("Simulation"));
-    simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    simulationToolBar->addAction(simulationAction);
-    simulationToolBar->addAction(interactiveSimulationAction);
-    simulationToolBar->addAction(plotAction);
-
-    omnotebookToolbar = addToolBar(tr("OMNotebook"));
-    omnotebookToolbar->setObjectName(tr("OMNotebook"));
-    omnotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
-    omnotebookToolbar->addAction(exportToOMNotebookAction);
-    omnotebookToolbar->addAction(importFromOMNotebookAction);
-
-    plotToolBar = addToolBar(tr("Plot Toolbar"));
-    plotToolBar->setObjectName(tr("Plot Toolbar"));
-    plotToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    plotToolBar->setVisible(false);
-    plotToolBar->addAction(newPlotWindowAction);
-    plotToolBar->addAction(newPlotParametricWindowAction);
-
-    perspectiveToolBar = addToolBar(tr("Perspective Toolbar"));
-    perspectiveToolBar->setObjectName(tr("Perspective Toolbar"));
-    perspectiveToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    perspectiveToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    perspectiveToolBar->setMovable(false);
-
+    // View Toolbar
+    mpViewToolBar = addToolBar(tr("View Toolbar"));
+    mpViewToolBar->setObjectName(tr("View Toolbar"));
+    mpViewToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    mpViewToolBar->addAction(mpGridLinesAction);
+    mpViewToolBar->addSeparator();
+    mpViewToolBar->addAction(mpResetZoomAction);
+    mpViewToolBar->addAction(mpZoomInAction);
+    mpViewToolBar->addAction(mpZoomOutAction);
+    // Shapes Toobar
+    mpShapesToolBar = addToolBar(tr("Shapes Toolbar"));
+    mpShapesToolBar->setObjectName(tr("Shapes Toolbar"));
+    mpShapesToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    mpShapesToolBar->addAction(mpLineAction);
+    mpShapesToolBar->addAction(mpPolygonAction);
+    mpShapesToolBar->addAction(mpRectangleAction);
+    mpShapesToolBar->addAction(mpEllipseAction);
+    mpShapesToolBar->addAction(mpTextAction);
+    mpShapesToolBar->addAction(mpBitmapAction);
+    mpShapesToolBar->addSeparator();
+    mpShapesToolBar->addAction(mpConnectAction);
+    // Simulation Toolbar
+    mpSimulationToolBar = addToolBar(tr("Simulation"));
+    mpSimulationToolBar->setObjectName(tr("Simulation"));
+    mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    mpSimulationToolBar->addAction(mpSimulationAction);
+    mpSimulationToolBar->addAction(mpInteractiveSimulationAction);
+    mpSimulationToolBar->addSeparator();
+    mpSimulationToolBar->addAction(mpFlatModelAction);
+    mpSimulationToolBar->addAction(mpCheckModelAction);
+    // Tools Toolbar
+    mpOMNotebookToolbar = addToolBar(tr("OMNotebook"));
+    mpOMNotebookToolbar->setObjectName(tr("OMNotebook"));
+    mpOMNotebookToolbar->setAllowedAreas(Qt::TopToolBarArea);
+    mpOMNotebookToolbar->addAction(mpExportToOMNotebookAction);
+    mpOMNotebookToolbar->addAction(mpImportFromOMNotebookAction);
+    // Plot Toolbar
+    mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
+    mpPlotToolBar->setObjectName(tr("Plot Toolbar"));
+    mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    mpPlotToolBar->addAction(mpNewPlotWindowAction);
+    mpPlotToolBar->addAction(mpNewPlotParametricWindowAction);
+    // Perspective Toolbar
+    mpPerspectiveToolBar = addToolBar(tr("Perspective Toolbar"));
+    mpPerspectiveToolBar->setObjectName(tr("Perspective Toolbar"));
+    mpPerspectiveToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    mpPerspectiveToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    mpPerspectiveToolBar->setMovable(false);
     // a trick :: just to move the toolbar to the right
     QWidget *spacerWidget = new QWidget(this);
     spacerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     spacerWidget->setVisible(true);
-    perspectiveToolBar->addWidget(spacerWidget);
-
-    perspectiveToolBar->addAction(modelingViewAction);
-    perspectiveToolBar->addAction(plottingViewAction);
-    perspectiveToolBar->addAction(interactiveSimulationViewAction);
+    mpPerspectiveToolBar->addWidget(spacerWidget);
+    mpPerspectiveToolBar->addAction(mpModelingViewAction);
+    mpPerspectiveToolBar->addAction(mpPlottingViewAction);
+    mpPerspectiveToolBar->addAction(mpInteractiveSimulationViewAction);
 }
 
 //! Adds the currently opened file to the recentFileList settings.
@@ -786,14 +797,14 @@ void MainWindow::updateRecentFileActions()
 
     for (int i = 0; i < numRecentFiles; ++i) {
         QString text = tr("%1").arg(QFileInfo(files[i]).fileName());
-        recentFileActs[i]->setText(text);
-        recentFileActs[i]->setData(files[i]);
-        recentFileActs[i]->setVisible(true);
+        mpRecentFileActions[i]->setText(text);
+        mpRecentFileActions[i]->setData(files[i]);
+        mpRecentFileActions[i]->setVisible(true);
     }
     for (int j = numRecentFiles; j < MaxRecentFiles; ++j)
-        recentFileActs[j]->setVisible(false);
+        mpRecentFileActions[j]->setVisible(false);
 
-    separatorAct->setVisible(numRecentFiles > 0);
+    mpSeparatorAction->setVisible(numRecentFiles > 0);
     mpWelcomePageWidget->addListItems();
 }
 
@@ -1203,7 +1214,7 @@ void MainWindow::toggleShapesButton()
 {
     QAction *clickedAction = qobject_cast<QAction*>(const_cast<QObject*>(sender()));
 
-    QList<QAction*> shapeActions = shapesActionGroup->actions();
+    QList<QAction*> shapeActions = mpShapesActionGroup->actions();
     foreach (QAction *shapeAction, shapeActions)
     {
         if (shapeAction != clickedAction)
@@ -1230,14 +1241,13 @@ void MainWindow::switchToWelcomeView(bool show)
 {
     if (show)
     {
-        modelingViewAction->setChecked(false);
-        plottingViewAction->setChecked(false);
-        interactiveSimulationViewAction->setChecked(false);
+        mpModelingViewAction->setChecked(false);
+        mpPlottingViewAction->setChecked(false);
+        mpInteractiveSimulationViewAction->setChecked(false);
         mpWelcomePageWidget->setVisible(true);
         mpProjectTabs->setVisible(false);
         mpInteractiveSimualtionTabWidget->setVisible(false);
         mpPlotWindowContainer->setVisible(false);
-        plotToolBar->setVisible(false);
     }
     else
     {
@@ -1247,13 +1257,12 @@ void MainWindow::switchToWelcomeView(bool show)
 
 void MainWindow::switchToModelingView()
 {
-    modelingViewAction->setChecked(true);
+    mpModelingViewAction->setChecked(true);
     mpProjectTabs->setVisible(true);
     mpWelcomePageWidget->setVisible(false);
-    welcomeViewAction->setChecked(false);
+    mpWelcomeViewAction->setChecked(false);
     mpInteractiveSimualtionTabWidget->setVisible(false);
     mpPlotWindowContainer->setVisible(false);
-    plotToolBar->setVisible(false);
 }
 
 void MainWindow::switchToPlottingView()
@@ -1262,24 +1271,22 @@ void MainWindow::switchToPlottingView()
     if (mpPlotWindowContainer->subWindowList().size() == 0)
         mpPlotWindowContainer->addPlotWindow();
 
-    plottingViewAction->setChecked(true);
+    mpPlottingViewAction->setChecked(true);
     mpWelcomePageWidget->setVisible(false);
-    welcomeViewAction->setChecked(false);
+    mpWelcomeViewAction->setChecked(false);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(false);
     mpPlotWindowContainer->setVisible(true);
-    plotToolBar->setVisible(true);
 }
 
 void MainWindow::switchToInteractiveSimulationView()
 {
-    interactiveSimulationViewAction->setChecked(true);
+    mpInteractiveSimulationViewAction->setChecked(true);
     mpWelcomePageWidget->setVisible(false);
-    welcomeViewAction->setChecked(false);
+    mpWelcomeViewAction->setChecked(false);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(true);
     mpPlotWindowContainer->setVisible(false);
-    plotToolBar->setVisible(false);
 }
 
 void MainWindow::addNewPlotWindow()

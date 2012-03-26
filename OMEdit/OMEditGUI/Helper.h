@@ -51,6 +51,8 @@ public:
     static QString omnotebookFileTypes;
     static QString imageFileTypes;
     static QString fmuFileTypes;
+    static QString xmlFileTypes;
+    static QString matFileTypes;
     static QString readOnly;
     static QString writeAble;
     static QString iconView;
@@ -65,6 +67,8 @@ public:
     static qreal globalIconYScale;
     static QString ModelicaSimulationMethods;
     static QString ModelicaSimulationOutputFormats;
+    static QString ModelicaInitializationMethods;
+    static QString ModelicaOptimizationMethods;
     static int treeIndentation;
     static QSize iconSize;
     static QSize buttonIconSize;

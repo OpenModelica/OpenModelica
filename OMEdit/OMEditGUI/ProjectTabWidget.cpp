@@ -91,7 +91,7 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
                                 .append(", stop: 0 gray, stop: 1 lightGray);"));
         }
     }
-    connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
+    connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpGridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
     connect(this, SIGNAL(currentChange(int)),mpParentProjectTab->mpParentProjectTabWidget, SLOT(tabChanged()));
 }
@@ -554,37 +554,37 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
 
     }
     // if left button presses and we are starting to create a Line
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->lineAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpLineAction->isChecked())
     {
         // if we are starting to create a line then create line object and add to graphicsview
         createLineShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create a Polygon
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->polygonAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpPolygonAction->isChecked())
     {
         // if we are starting to create a polygon then create line object and add to graphicsview
         createPolygonShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create a Rectangle
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->rectangleAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpRectangleAction->isChecked())
     {
         // if we are starting to create a rectangle then create rectangle object and add to graphicsview
         createRectangleShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create an Ellipse
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->ellipseAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpEllipseAction->isChecked())
     {
         // if we are starting to create a rectangle then create rectangle object and add to graphicsview
         createEllipseShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create a Text
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->textAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpTextAction->isChecked())
     {
         // if we are starting to create a text then create text object and add to graphicsview
         createTextShape(this->mapToScene(event->pos()));
     }
     // if left button presses and we are starting to create a BITMAP
-    else if ((event->button() == Qt::LeftButton) && pMainWindow->bitmapAction->isChecked())
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->mpBitmapAction->isChecked())
     {
         // if we are starting to create a BITMAP then create BITMAP object and add to graphicsview
         createBitmapShape(this->mapToScene(event->pos()));
@@ -670,7 +670,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
         mpLineShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpLineShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        pMainWindow->lineAction->setChecked(false);
+        pMainWindow->mpLineAction->setChecked(false);
     }
     else if (this->mIsCreatingPolygon)
     {
@@ -681,7 +681,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
         mpPolygonShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpPolygonShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        pMainWindow->polygonAction->setChecked(false);
+        pMainWindow->mpPolygonAction->setChecked(false);
     }
     QGraphicsView::mouseDoubleClickEvent(event);
 }
@@ -886,7 +886,7 @@ void GraphicsView::createRectangleShape(QPointF point)
         mpRectangleShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpRectangleShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->rectangleAction->setChecked(false);
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpRectangleAction->setChecked(false);
     }
 }
 
@@ -913,7 +913,7 @@ void GraphicsView::createEllipseShape(QPointF point)
         mpEllipseShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpEllipseShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->ellipseAction->setChecked(false);
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpEllipseAction->setChecked(false);
     }
 }
 
@@ -940,7 +940,7 @@ void GraphicsView::createTextShape(QPointF point)
         mpTextShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpTextShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->textAction->setChecked(false);
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpTextAction->setChecked(false);
         // open the text properties dialog
         mpTextWidget = new TextWidget(mpTextShape, mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
         mpTextWidget->show();
@@ -964,7 +964,7 @@ void GraphicsView::createBitmapShape(QPointF point)
             msgBox->setStandardButtons(QMessageBox::Ok);
             msgBox->setDefaultButton(QMessageBox::Ok);
             msgBox->exec();
-            mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->bitmapAction->setChecked(false);
+            mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpBitmapAction->setChecked(false);
             return;
         }
 
@@ -983,7 +983,7 @@ void GraphicsView::createBitmapShape(QPointF point)
         mpBitmapShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
         mpBitmapShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
-        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->bitmapAction->setChecked(false);
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpBitmapAction->setChecked(false);
 
         mpBitmapWidget = new BitmapWidget(mpBitmapShape, mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
         mpBitmapWidget->show();
@@ -1006,9 +1006,9 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     {
         QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
         mpCancelConnectionAction->setText("Context Menu");
-        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImageAction);
+        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpExportAsImageAction);
         menu.addSeparator();
-        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpExportToOMNotebookAction);
 
         if (StringHandler::DIAGRAM == mIconType)
         {
@@ -1828,7 +1828,7 @@ void ProjectTab::showModelicaTextView(bool checked)
 
 void ProjectTab::showDocumentationView()
 {
-    mpParentProjectTabWidget->mpParentMainWindow->documentationdock->show();
+    mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationDockWidget->show();
     mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->setIsCustomModel(true);
     mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->show(mModelNameStructure);
 }
@@ -2834,17 +2834,17 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     mShowLines = false;
     mToolBarEnabled = true;
     // make connections
-    connect(mpParentMainWindow->openAction, SIGNAL(triggered()), this,SLOT(openFile()));
-    connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
-    connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
+    connect(mpParentMainWindow->mpOpenAction, SIGNAL(triggered()), this,SLOT(openFile()));
+    connect(mpParentMainWindow->mpSaveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
+    connect(mpParentMainWindow->mpSaveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
     connect(this, SIGNAL(tabAdded()), SLOT(enableProjectToolbar()));
     connect(this, SIGNAL(tabRemoved()), SLOT(disableProjectToolbar()));
     connect(this, SIGNAL(currentChanged(int)), SLOT(tabChanged()));
     emit tabRemoved();
-    connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
-    connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
-    connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
+    connect(mpParentMainWindow->mpResetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
+    connect(mpParentMainWindow->mpZoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
+    connect(mpParentMainWindow->mpZoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
     connect(mpParentMainWindow->mpLibrary->mpModelicaTree, SIGNAL(nodeDeleted()), SLOT(updateTabIndexes()));
     connect(this, SIGNAL(modelSaved(QString,QString)), mpParentMainWindow->mpLibrary->mpModelicaTree, SLOT(saveChildModels(QString,QString)));
 }
@@ -3448,20 +3448,20 @@ void ProjectTabWidget::enableProjectToolbar()
 {
     if (!mToolBarEnabled)
     {
-        mpParentMainWindow->gridLinesAction->setEnabled(true);
-        mpParentMainWindow->resetZoomAction->setEnabled(true);
-        mpParentMainWindow->zoomInAction->setEnabled(true);
-        mpParentMainWindow->zoomOutAction->setEnabled(true);
-        mpParentMainWindow->flatModelAction->setEnabled(true);
-        mpParentMainWindow->checkModelAction->setEnabled(true);
+        mpParentMainWindow->mpGridLinesAction->setEnabled(true);
+        mpParentMainWindow->mpResetZoomAction->setEnabled(true);
+        mpParentMainWindow->mpZoomInAction->setEnabled(true);
+        mpParentMainWindow->mpZoomOutAction->setEnabled(true);
+        mpParentMainWindow->mpFlatModelAction->setEnabled(true);
+        mpParentMainWindow->mpCheckModelAction->setEnabled(true);
         // enable the shapes tool bar
-        mpParentMainWindow->shapesToolBar->setEnabled(true);
+        mpParentMainWindow->mpShapesToolBar->setEnabled(true);
         // enable the export as image action
-        mpParentMainWindow->exportAsImageAction->setEnabled(true);
+        mpParentMainWindow->mpExportAsImageAction->setEnabled(true);
         // enable the export to omnotebook action
-        mpParentMainWindow->exportToOMNotebookAction->setEnabled(true);
+        mpParentMainWindow->mpExportToOMNotebookAction->setEnabled(true);
         // enable the export FMI
-        mpParentMainWindow->exportFMIAction->setEnabled(true);
+        mpParentMainWindow->mpExportFMIAction->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -3470,20 +3470,20 @@ void ProjectTabWidget::disableProjectToolbar()
 {
     if (mToolBarEnabled and (count() == 0))
     {
-        mpParentMainWindow->gridLinesAction->setEnabled(false);
-        mpParentMainWindow->resetZoomAction->setEnabled(false);
-        mpParentMainWindow->zoomInAction->setEnabled(false);
-        mpParentMainWindow->zoomOutAction->setEnabled(false);
-        mpParentMainWindow->flatModelAction->setEnabled(false);
-        mpParentMainWindow->checkModelAction->setEnabled(false);
+        mpParentMainWindow->mpGridLinesAction->setEnabled(false);
+        mpParentMainWindow->mpResetZoomAction->setEnabled(false);
+        mpParentMainWindow->mpZoomInAction->setEnabled(false);
+        mpParentMainWindow->mpZoomOutAction->setEnabled(false);
+        mpParentMainWindow->mpFlatModelAction->setEnabled(false);
+        mpParentMainWindow->mpCheckModelAction->setEnabled(false);
         // disable the shapes tool bar
-        mpParentMainWindow->shapesToolBar->setEnabled(false);
+        mpParentMainWindow->mpShapesToolBar->setEnabled(false);
         // disable the export as image action
-        mpParentMainWindow->exportAsImageAction->setEnabled(false);
+        mpParentMainWindow->mpExportAsImageAction->setEnabled(false);
         // disable the export to omnotebook action
-        mpParentMainWindow->exportToOMNotebookAction->setEnabled(false);
+        mpParentMainWindow->mpExportToOMNotebookAction->setEnabled(false);
         // disable the export FMI
-        mpParentMainWindow->exportFMIAction->setEnabled(false);
+        mpParentMainWindow->mpExportFMIAction->setEnabled(false);
         mToolBarEnabled = false;
     }
 }
