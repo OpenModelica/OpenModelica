@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Link�pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Link�ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Link�pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -33,7 +33,7 @@
 
 /*!
  * \file otherdlg.h
- * \author Anders Fernström
+ * \author Anders FernstrÃ¶m
  * \date 2005-11-10 (created)
  */
 

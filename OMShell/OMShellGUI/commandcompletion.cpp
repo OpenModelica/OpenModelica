@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -34,7 +34,7 @@
 
 /*!
 * \file commandcompetion.h
-* \author Anders Fernström
+* \author Anders FernstrÃ¶m
 * \date 2005-12-12
 */
 
@@ -57,7 +57,7 @@ namespace IAEX
 {
   /*!
    * \class CommandCompletion
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief Reads a command file and creates omc command object for
@@ -65,7 +65,7 @@ namespace IAEX
    */
 
   /*!
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief The class constructor
@@ -109,7 +109,7 @@ namespace IAEX
   CommandCompletion *CommandCompletion::instance_ = 0;
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief Instance the CommandCompetion object.
@@ -126,7 +126,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    * \date 2005-12-15 (update)
    *
@@ -198,7 +198,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief Insert the next possible command into the text, that match
@@ -241,7 +241,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief Returns the help text to the current command
@@ -264,7 +264,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    * \date 2005-12-15 (update)
    *
@@ -332,7 +332,7 @@ namespace IAEX
    */
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief loop through the DOM tree and creates CommandUnit after
@@ -364,7 +364,7 @@ namespace IAEX
   }
 
   /*
-   * \author Anders Fernström
+   * \author Anders FernstrÃ¶m
    * \date 2005-12-12
    *
    * \brief parse through a command tag in the DOM tree
