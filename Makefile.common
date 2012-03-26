@@ -42,7 +42,7 @@ profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc install-python
 
 install-python:
-	$(MAKE) -C PythonInterface -f $(defaultMakefileTarget)
+	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
 
 interactive: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
