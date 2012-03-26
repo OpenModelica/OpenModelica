@@ -1200,20 +1200,20 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             }
             if (bool_defMin) {
               if (existPre)
-                fprintf(pfile, ", min = %d",
+                fprintf(pfile, ", min = %ld",
                     ((fmiINTEGER*) tmpSV[j].variable)->min);
               else {
-                fprintf(pfile, "min = %d",
+                fprintf(pfile, "min = %ld",
                     ((fmiINTEGER*) tmpSV[j].variable)->min);
                 existPre = 1;
               }
             }
             if (bool_defMax) {
               if (existPre)
-                fprintf(pfile, ", max = %d",
+                fprintf(pfile, ", max = %ld",
                     ((fmiINTEGER*) tmpSV[j].variable)->max);
               else {
-                fprintf(pfile, "max = %d",
+                fprintf(pfile, "max = %ld",
                     ((fmiINTEGER*) tmpSV[j].variable)->max);
                 existPre = 1;
               }
@@ -1862,9 +1862,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             j, prez, j);
         */
       }
-      fprintf(pfile,"\twhen ",flagSE);
+      fprintf(pfile,"\twhen ");
       for (j = 1; j <= fmuMD->nei-1; j++) {
-        fprintf(pfile, "%change(s[%d]) or ", flagSE, j);
+        fprintf(pfile, "change(%s[%d]) or ", flagSE, j);
       }
       fprintf(pfile, "change(%s[%d]) then\n", flagSE, j);
       fprintf(
