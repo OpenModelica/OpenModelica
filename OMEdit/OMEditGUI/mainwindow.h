@@ -179,7 +179,7 @@ public:
     QMenu *mpHelpMenu;
     QAction *mpUserManualAction;
     QAction *mpAboutOMEditAction;
-    // File Toolbar
+    // Toolbars
     QToolBar *mpFileToolBar;
     QToolBar *mpEditToolBar;
     QToolBar *mpViewToolBar;
