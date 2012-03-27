@@ -36,6 +36,10 @@
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "Version: 1.8.1";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
+/* Increment this settings number if you change something in the QMainWindow appereance
+ * Otherwise OMEdit will load the old settings and Qt make a mess of your toolbars and dockwidgets.
+ */
+int Helper::settingsVersion = 0;
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
 QString Helper::OpenModelicaHome = QString();
 QString Helper::OpenModelicaLibrary = QString();

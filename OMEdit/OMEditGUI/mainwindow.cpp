@@ -84,7 +84,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpMessageDockWidget->setObjectName(tr("Messages"));
     mpMessageDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     #ifdef Q_OS_MAC
-        messagedock->setContentsMargins(0, 6, 1, 0);
+        mpMessageDockWidget->setContentsMargins(0, 6, 1, 0);
     #else
         mpMessageDockWidget->setContentsMargins(0, 1, 1, 0);
     #endif
@@ -118,7 +118,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpModelBrowserDockWidget = new QDockWidget(tr("Model Browser"), this);
     mpModelBrowserDockWidget->setObjectName(tr("Model Browser"));
     #ifdef Q_OS_MAC
-        modelBrowserdock->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        mpMessageDockWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     #else
         mpModelBrowserDockWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     #endif
@@ -189,7 +189,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // restore OMEdit widgets state
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
     restoreGeometry(settings.value("application/geometry").toByteArray());
-    restoreState(settings.value("application/windowState").toByteArray());
+    restoreState(settings.value("application/windowState").toByteArray(), Helper::settingsVersion);
 }
 
 //! Destructor
@@ -219,7 +219,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         // save OMEdit widgets state
         QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
         settings.setValue("application/geometry", saveGeometry());
-        settings.setValue("application/windowState", saveState());
+        settings.setValue("application/windowState", saveState(Helper::settingsVersion));
         event->accept();
     }
     else
@@ -766,7 +766,6 @@ void MainWindow::createToolbars()
     // a trick :: just to move the toolbar to the right
     QWidget *spacerWidget = new QWidget(this);
     spacerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    spacerWidget->setVisible(true);
     mpPerspectiveToolBar->addWidget(spacerWidget);
     mpPerspectiveToolBar->addAction(mpModelingViewAction);
     mpPerspectiveToolBar->addAction(mpPlottingViewAction);

@@ -98,6 +98,8 @@ OMCProxy::~OMCProxy()
     delete mpOMCLogger;
 }
 
+//! Show/Hide the custom command expression box.
+//! @param enable
 void OMCProxy::enableCustomExpression(bool enable)
 {
     if (!enable)
