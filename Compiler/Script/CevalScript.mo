@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -707,14 +707,18 @@ protected function cevalInteractiveFunctions2
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String functionName;
+      String functionName,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
+             outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,
+             plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
+             title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
+             platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to,
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
-      SCode.Element c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to;
+      SCode.Element c; 
       DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
@@ -740,8 +744,7 @@ algorithm
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
-      Interactive.Statements istmts;
-      String legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str;
+      Interactive.Statements istmts; 
       Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
@@ -1192,7 +1195,7 @@ algorithm
       equation
         List.map_0(buildModelClocks,System.realtimeClear);
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
+        (cache,st,compileDir,executable,method_str,outputFormat_str,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
@@ -1202,12 +1205,13 @@ algorithm
         
     case (cache,env,"buildModelBeast",vals,st,msg)
       equation
-        (cache,compileDir,executable,method_str,st,initfilename) = buildModelBeast(cache,env,vals,st,msg);
+        (cache,st,compileDir,executable,method_str,initfilename) = buildModelBeast(cache,env,vals,st,msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     
-      /* Remove output.log before simulate in case it already exists. This is so we can check for the presence of output.log later. */
+    // Remove output.log before simulate in case it already exists. 
+    // This is so we can check for the presence of output.log later.
     case (cache,env,"simulate",vals,st,msg)
       equation
         true = System.regularFileExists("output.log");
@@ -1215,7 +1219,7 @@ algorithm
         simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
       then (cache,simValue,st);
         
-        /* adrpo: see if the model exists before simulation! */
+    // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         crefCName = Absyn.pathToCref(className);
@@ -1228,14 +1232,14 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,msg)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,compileDir,executable,method_str,outputFormat_str,st,_,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
         executable1=Util.if_(ifcpp,"Simulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," > output.log 2>&1"});
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ",simflags," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
@@ -2768,31 +2772,58 @@ algorithm
   end match;
 end calculateSimulationSettings;
 
+protected function getListFirstShowError
+"@author: adrpo
+ return the first element in the list and the rest of values.
+ if the list is empty display the errorMessage!"
+  input list<Values.Value> inValues;
+  input String errorMessage;
+  output Values.Value outValue;
+  output list<Values.Value> restValues;
+algorithm
+  (outValue, restValues) := matchcontinue(inValues, errorMessage)
+    local
+      Values.Value v;
+      list<Values.Value> rest;
+    
+    // everything is fine and dandy
+    case (v::rest, _) then (v, rest);
+    
+    // ups, we're missing an argument
+    case ({}, errorMessage)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+      then
+        fail();
+  end matchcontinue; 
+end getListFirstShowError;
+
 protected function buildModel "function buildModel
  author: x02lucpo
  translates and builds the model by running compiler script on the generated makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Values.Value> vals;
+  input list<Values.Value> inValues;
   input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
+  output Interactive.SymbolTable outInteractiveSymbolTable3;  
   output String compileDir;
   output String outString1 "className";
   output String outString2 "method";
   output String outputFormat_str;
-  output Interactive.SymbolTable outInteractiveSymbolTable3;
-  output String outString4 "initFileName";
+  output String outInitFileName "initFileName";
+  output String outSimFlags;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,compileDir,outString1,outString2,outputFormat_str,outInteractiveSymbolTable3,outString4,resultValues):=
-  matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
+  (outCache,outInteractiveSymbolTable3,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues):=
+  matchcontinue (inCache,inEnv,inValues,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
       Interactive.SymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
-      String file_dir,init_filename,method_str,filenameprefix,oldDir,exeFile,s3;
+      String file_dir,init_filename,method_str,filenameprefix,oldDir,exeFile,s3,simflags;
       Absyn.Path classname;
       Absyn.Program p;
       Absyn.Class cdef;
@@ -2802,7 +2833,7 @@ algorithm
       SimCode.SimulationSettings simSettings;
       Values.Value starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat,variableFilter;
       list<SCode.Element> sp;
-      list<Values.Value> vals;
+      list<Values.Value> vals, values;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.Variable> iv;
       Ceval.Msg msg;
@@ -2811,14 +2842,32 @@ algorithm
       Absyn.TimeStamp ts;
       
     // do not recompile.
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,Values.STRING(method_str),Values.STRING(filenameprefix),Values.BOOL(cdToTemp),_,options,Values.STRING(outputFormat_str),_,_,_},
+    case (cache,env,vals,
           (st as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)))),msg)
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
+        // buildModel expects these arguments:
+        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, 
+        // storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
+        (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (Values.STRING(method_str),vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
+        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (8 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the noClean (9 arg) from the buildModel arguments");
+        (options,vals) = getListFirstShowError(vals, "while retreaving the options (10 arg) from the buildModel arguments");
+        (Values.STRING(outputFormat_str),vals) = getListFirstShowError(vals, "while retreaving the outputFormat (11 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (12 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (13 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (14 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (15 arg) from the buildModel arguments");
         //cdef = Interactive.getPathedClassInProgram(classname,p);
-       Error.clearMessages() "Clear messages";
+        Error.clearMessages() "Clear messages";
         // Only compile if change occured after last build.
-        ( Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
+        (Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
         true = (build >. edit);
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
@@ -2828,18 +2877,38 @@ algorithm
         _ = System.cd(oldDir);
         true = existFile;
     then
-      (cache,compileDir,filenameprefix,method_str,outputFormat_str,st,init_filename,zeroAdditionalSimulationResultValues);
+      (cache,st,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,zeroAdditionalSimulationResultValues);
     
     // compile the model
-    case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_,_,_},(st_1 as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,vals,(st_1 as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
+        // buildModel expects these arguments:
+        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, 
+        // storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags
+        values = vals;
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
+        (starttime,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (stoptime,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (interval,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (tolerance,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (method,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
+        (Values.BOOL(cdToTemp),vals) = getListFirstShowError(vals, "while retreaving the storeInTemp (8 arg) from the buildModel arguments");
+        (noClean,vals) = getListFirstShowError(vals, "while retreaving the noClean (9 arg) from the buildModel arguments");
+        (options,vals) = getListFirstShowError(vals, "while retreaving the options (10 arg) from the buildModel arguments");
+        (outputFormat,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (11 arg) from the buildModel arguments");
+        (variableFilter,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (12 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the measureTime (13 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (14 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (15 arg) from the buildModel arguments");
+        
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
 
        Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
+        (cache,simSettings) = calculateSimulationSettings(cache,env,values,st_1,msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) 
            = simSettings;
         
@@ -2862,7 +2931,7 @@ algorithm
         timeCompile = System.realtimeTock(RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
-        (cache,compileDir,filenameprefix,method_str,outputFormat_str,st2,init_filename,resultValues);
+        (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
     
     // failure
     case (_,_,vals,_,_)
@@ -4142,13 +4211,13 @@ public function buildModelBeast "function buildModelBeast
   input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
+  output Interactive.SymbolTable outInteractiveSymbolTable;  
   output String compileDir;
   output String outString1 "className";
   output String outString2 "method";
-  output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
 algorithm
-  (outCache,compileDir,outString1,outString2,outInteractiveSymbolTable3,outString4):=
+  (outCache,outInteractiveSymbolTable,compileDir,outString1,outString2,outString4):=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
@@ -4199,7 +4268,7 @@ algorithm
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
       then
-        (cache,compileDir,filenameprefix,"",st2,"");
+        (cache,st2,compileDir,filenameprefix,"","");
     
     // failure
     case (_,_,_,_,_)

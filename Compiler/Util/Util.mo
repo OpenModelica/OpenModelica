@@ -1807,6 +1807,11 @@ algorithm
   xmlString := System.stringReplace(xmlString, "\\\"", "&quot;");
   xmlString := System.stringReplace(xmlString, "<", "&lt;");
   xmlString := System.stringReplace(xmlString, ">", "&gt;");
+  // TODO! FIXME!, we have issues with accented chars in comments
+  // that end up in the Model_init.xml file and makes it not well 
+  // formed but the line below does not work if the xmlString is 
+  // already UTF-8. We should somehow detect the encoding.
+  // xmlString := System.iconv(xmlString, "", "UTF-8");
 end escapeModelicaStringToXmlString;
 
 public function makeTuple

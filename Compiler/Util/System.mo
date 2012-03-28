@@ -558,7 +558,7 @@ end setUsesCardinality;
 public function getUsesCardinality
   "Retrieves the external flag that signals the use of the cardinality operator."
   output Boolean outUses;
-  external "C" System_getUsesCardinality(outUses) annotation(Library = "omcruntime");
+  external "C" outUses=System_getUsesCardinality() annotation(Library = "omcruntime");
 end getUsesCardinality;
 
 public function setHasInnerOuterDefinitions

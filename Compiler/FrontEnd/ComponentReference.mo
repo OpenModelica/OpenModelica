@@ -2276,5 +2276,27 @@ algorithm
   end match;
 end toStringList_tail;
 
+public function crefDepth
+  input DAE.ComponentRef inCref;
+  output Integer depth;
+algorithm
+  depth :=
+  match (inCref)
+    local
+      DAE.ComponentRef n;
+      Integer d;
+    
+    case (DAE.WILD()) then 0;
+    case (DAE.CREF_IDENT(ident = _)) then 1;
+    case (DAE.CREF_QUAL(componentRef = n))
+      equation
+        d = crefDepth(n);
+        d = d + 1;
+      then
+        d;
+  end match;  
+end crefDepth;
+
+
 end ComponentReference;
 

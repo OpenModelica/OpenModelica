@@ -2416,6 +2416,17 @@ algorithm
         e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
       then v1;     
+    
+    // adrpo: TODO! FIXME! maybe we should use another heuristic here such as:
+    //        use the value from the variable that is closer to the top of the 
+    //        hierarchy i.e. A.B value has priority over X.Y.Z value!
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+      equation
+        true = intGt(ComponentReference.crefDepth(cr), ComponentReference.crefDepth(cra));
+        // invert arguments
+        v = mergeStartFixed(inAVar,fixeda,sva,inVar,fixed,sv,negate);
+      then v;
+
     case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);

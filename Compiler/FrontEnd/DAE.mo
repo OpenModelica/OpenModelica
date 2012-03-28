@@ -1112,7 +1112,7 @@ uniontype Exp "Expressions
     Type ty;
   end CREF;
 
-   record BINARY "Binary operations, e.g. a+4"
+  record BINARY "Binary operations, e.g. a+4"
     Exp exp1;
     Operator operator;
     Exp exp2;
