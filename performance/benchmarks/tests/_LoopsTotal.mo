@@ -434,7 +434,7 @@ extends Modelica.Icons.Library;
 
       // Point gravity visualization
       parameter Integer ndim_pointGravity=if enableAnimation and animateGravity
-           and gravityType == 2 then 1 else 0;
+           and gravityType == GravityTypes.UniformGravity then 1 else 0;
       Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape gravitySphere(
         shapeType="sphere",
         r_shape={-gravitySphereDiameter/2,0,0},
@@ -4441,10 +4441,10 @@ degree of freedom is lost.
           " Color of shape";
           input Types.SpecularCoefficient specularCoefficient = world.defaultSpecularCoefficient
           "Reflection of ambient light (= 0: light is completely absorbed)";
-          final parameter Frames.Orientation R_rel=if rotationType == 1 then 
+          final parameter Frames.Orientation R_rel=if rotationType == Types.RotationTypes.RotationAxis then 
               Frames.planarRotation(Modelica.Math.Vectors.normalize(
                                                      n), Cv.from_deg(angle), 0) else 
-              if rotationType == 2 then Frames.from_nxy(n_x, n_y) else 
+              if rotationType == Types.RotationTypes.TwoAxesVectors then Frames.from_nxy(n_x, n_y) else 
               Frames.axesRotations(sequence, Cv.from_deg(angles), zeros(3))
           "Fixed rotation object from frame_a to frame_b";
         /*

@@ -17399,7 +17399,7 @@ Connector with one input signal of type Posture.
       Library.Interfaces.RealInput_ u annotation (Placement(transformation(extent={{-130,
                 -20},{-90,20}}),      iconTransformation(extent={{-140,-20},{-100,20}})));
     equation
-      y = integer(u);
+      Integer(y) = integer(u);
       annotation (
         Icon(coordinateSystem(
         preserveAspectRatio=true,
