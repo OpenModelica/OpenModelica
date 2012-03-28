@@ -6204,6 +6204,7 @@ algorithm
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, inDAE);
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
+  _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
@@ -6218,6 +6219,7 @@ algorithm
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
   Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  _ := traverseBackendDAEExps(indexed_dlow,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   sode2 := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := expandAlgorithmsbyInitStmts(sode2);

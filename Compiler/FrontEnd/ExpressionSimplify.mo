@@ -104,6 +104,19 @@ algorithm
   end matchcontinue;
 end simplify;
 
+public function simplifyTraverseHelper
+  input tuple<DAE.Exp,A> tpl;
+  output tuple<DAE.Exp,A> otpl;
+  replaceable type A subtypeof Any; 
+protected
+  A a;
+  DAE.Exp exp;
+algorithm
+  (exp,a) := tpl;
+  (exp,_) := simplify(exp);
+  otpl := (exp,a);
+end simplifyTraverseHelper;
+
 public function simplify1time "simplify1 with timing"
   input DAE.Exp e;
   output DAE.Exp outE;
@@ -3097,7 +3110,7 @@ protected function simplifyBinaryConst
 algorithm
   outExp := match (inOperator1,inExp2,inExp3)
     local
-      Integer ie1,ie2;
+      Integer ie1,ie2,i1,i2;
       Real e2_1,e1_1,v1,v2;
       Boolean b,b1,b2;
       DAE.Exp exp1,exp2,val;
@@ -3235,6 +3248,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.LESS(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 < i2;
+      then 
+        DAE.BCONST(b);
+
     case(DAE.LESSEQ(ty=_),DAE.BCONST(true),DAE.BCONST(false))
       then DAE.BCONST(false);
 
@@ -3246,6 +3265,12 @@ algorithm
         v1 = Expression.getRealConst(exp1);
         v2 = Expression.getRealConst(exp2);
         b = v1 <=. v2;
+      then 
+        DAE.BCONST(b);
+
+    case(DAE.LESSEQ(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 <= i2;
       then 
         DAE.BCONST(b);
     
@@ -3263,6 +3288,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.GREATER(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 > i2;
+      then 
+        DAE.BCONST(b);
+
     case(DAE.GREATEREQ(ty=_),DAE.BCONST(false),DAE.BCONST(true))
       then DAE.BCONST(false);
 
@@ -3277,6 +3308,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.GREATEREQ(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 >= i2;
+      then 
+        DAE.BCONST(b);
+
     case(DAE.EQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
       equation
         b = boolEq(b1,b2);
@@ -3297,6 +3334,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.EQUAL(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 == i2;
+      then 
+        DAE.BCONST(b);
+
     case(DAE.NEQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
       equation
         b = not boolEq(b1,b2);
@@ -3317,6 +3360,12 @@ algorithm
       then 
         DAE.BCONST(b);
     
+    case(DAE.NEQUAL(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
+      equation
+        b = i1 <> i2;
+      then 
+        DAE.BCONST(b);
+
     case(DAE.AND(DAE.T_BOOL(varLst = _)),exp1,exp2) 
       equation
         b1 = Expression.getBoolConst(exp1);

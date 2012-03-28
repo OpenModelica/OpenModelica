@@ -2242,13 +2242,6 @@ template initVal(Exp initialValue)
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
-template evalConstExpCond(Exp expCond) 
-::=
-  match expCond 
-  case BCONST(__) then if bool then true else false
-  else error(sourceInfo(), 'condition of unknown type: <%printExpStr(expCond)%>')
-end evalConstExpCond;
-
 template initValXml(Exp initialValue) 
 ::=
   match initialValue 
@@ -2257,7 +2250,6 @@ template initValXml(Exp initialValue)
   case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
   case BCONST(__) then if bool then "true" else "false"
   case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
-  case IFEXP(__) then if '<%evalConstExpCond(expCond)%>' then '<%initValXml(expThen)%>' else '<%initValXml(expThen)%>'
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initValXml;
 

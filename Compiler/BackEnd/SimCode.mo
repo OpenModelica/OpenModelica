@@ -10540,24 +10540,26 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Exp minValue, maxValue;
 
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
-      (SOME(minValue), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
-      true = Expression.isConst(minValue);
-      true = Expression.isConst(maxValue);
-    then (SOME(minValue), SOME(maxValue));
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
+      equation
+        (SOME(minValue), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+        true = Expression.isConstValue(minValue);
+        true = Expression.isConstValue(maxValue);
+      then (SOME(minValue), SOME(maxValue));
       
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
-      (SOME(minValue), NONE()) = DAEUtil.getMinMaxValues(dae_var_attr);
-      true = Expression.isConst(minValue);
-    then (SOME(minValue), NONE());
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
+      equation
+        (SOME(minValue), NONE()) = DAEUtil.getMinMaxValues(dae_var_attr);
+        true = Expression.isConstValue(minValue);
+      then (SOME(minValue), NONE());
       
-    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr)) equation
-      (NONE(), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
-      true = Expression.isConst(maxValue);
-    then (NONE(), SOME(maxValue));
+    case(BackendDAE.VAR(varType=DAE.T_REAL(source=_), values=dae_var_attr))
+      equation
+        (NONE(), SOME(maxValue)) = DAEUtil.getMinMaxValues(dae_var_attr);
+        true = Expression.isConstValue(maxValue);
+      then (NONE(), SOME(maxValue));
       
-    case (_) equation
-    then (NONE(), NONE());
+    else (NONE(), NONE());
   end matchcontinue;
 end getMinMaxValues;
 
@@ -10576,87 +10578,87 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = DAE.T_STRING(source = _), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
         /* String - Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
         /* Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        true = Expression.isConst(e);
+        true = Expression.isConstValue(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
@@ -10678,7 +10680,7 @@ algorithm
 
     case (BackendDAE.VAR(varType = DAE.T_REAL(source = _), values = dae_var_attr)) equation
       e = DAEUtil.getNominalAttrFail(dae_var_attr);
-      true = Expression.isConst(e);
+      true = Expression.isConstValue(e);
     then SOME(e);
       
     case (_) equation
