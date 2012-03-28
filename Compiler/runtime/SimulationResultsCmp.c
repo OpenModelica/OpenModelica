@@ -380,8 +380,8 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
   }
   if (isdifferent)
   {
-	  cmpdiffvars[vardiffindx] = varname;
-	  vardiffindx++;
+    cmpdiffvars[vardiffindx] = varname;
+    vardiffindx++;
   }
   return vardiffindx;
 }
@@ -535,8 +535,8 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
 
   if (ddf.n > 0){
     /* fprintf(stderr, "diff: %d\n",ddf.n); */
-	/* for (i=0;i<vardiffindx;i++)
-		fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
+    /* for (i=0;i<vardiffindx;i++)
+      fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
     res = mk_cons(mk_scon("Files not Equal!"),mk_nil());
     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Files not Equal\n", msg, 0);
   }
