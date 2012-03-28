@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "division.h"
 #include "omc_error.h"
@@ -45,7 +46,10 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
   return b;
 }
 
-#define isnan(x) ((x) != (x))
+#if defined(_MSC_VER)
+#include <float.h>
+#define isnan _isnan
+#endif
 
 modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line)
 {
