@@ -35,9 +35,16 @@
 
 #include "openmodelica.h"
 
-#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
+#define isnan(x) ((x) != (x))
 
+/* #define CHECK_NAN */
+#ifdef CHECK_NAN
+#define DIVISION(a,b,c) (((b) != 0) ? (isnan_error(((a) / (b)), c, __FILE__, __LINE__)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
+#else
+#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
+#endif
 
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line);
+modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line);
 
 #endif

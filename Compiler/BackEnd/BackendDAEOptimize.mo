@@ -2274,6 +2274,9 @@ algorithm
   // connectors
   b := BackendVariable.isVarConnector(var);
   i := intAdd(i,Util.if_(b,1,0));
+  // self generated var
+  b := BackendVariable.isDummyDerVar(var);
+  i := intAdd(i,Util.if_(b,1,0));
 end calcAliasKey;
 
 protected function selectAlias2

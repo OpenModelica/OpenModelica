@@ -44,3 +44,17 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
 #endif
   return b;
 }
+
+
+modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line)
+{
+  if (isnan(b))
+  {
+    WARNING1("division result in NAN in partial equation: %s", division_str);
+    WARNING_AL2("[line] %ld | [file] %s", line, file);
+#ifndef __APPLE_CC__
+    THROW("division by zero");
+#endif
+  }
+  return b;
+}
