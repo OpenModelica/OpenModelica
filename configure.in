@@ -40,6 +40,7 @@ AC_SUBST(OPENMP_CFLAGS)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
+AC_SUBST(PYTHON_INTERFACE)
 
 if test -z "$MAKE"; then
   MAKE=make
@@ -142,8 +143,17 @@ rmlinc=$rmlhome/include/plain/
 
 AC_MSG_CHECKING([if the user wants RML -trace support])
 RML_TRACE=",-ftrace"
-AC_ARG_ENABLE(rml-trace, [--enable-rml-trace[[=no]]                RML -trace support],[test "xno" = x"$enableval" && RML_TRACE=""])
+AC_ARG_ENABLE(rml-trace,        [--enable-rml-trace[[=yes]]                RML -trace support],[test "xno" = x"$enableval" && RML_TRACE=""])
 if test -z "$RML_TRACE" ; then
+AC_MSG_RESULT([no])
+else
+AC_MSG_RESULT([yes])
+fi
+
+AC_MSG_CHECKING([if the user wants to use the Python interface])
+PYTHON_INTERFACE="yes"
+AC_ARG_ENABLE(python-interface, [--enable-python-interface[[=yes]]         Python interface to omc],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
+if test -z "$PYTHON_INTERFACE" ; then
 AC_MSG_RESULT([no])
 else
 AC_MSG_RESULT([yes])
