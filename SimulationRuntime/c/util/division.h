@@ -35,8 +35,6 @@
 
 #include "openmodelica.h"
 
-#define isnan(x) ((x) != (x))
-
 /* #define CHECK_NAN */
 #ifdef CHECK_NAN
 #define DIVISION(a,b,c) (((b) != 0) ? (isnan_error(((a) / (b)), c, __FILE__, __LINE__)) : ((a) / division_error(b, c, __FILE__, __LINE__)))

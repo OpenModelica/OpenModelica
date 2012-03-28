@@ -45,6 +45,7 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
   return b;
 }
 
+#define isnan(x) ((x) != (x))
 
 modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line)
 {
