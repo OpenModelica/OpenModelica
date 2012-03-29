@@ -360,17 +360,17 @@ void SimulationWidget::simulate()
             return;
         }
         // setup simulation flags
-        // setup initiaization method flag
-        if (!mpInitializationMethodComboBox->currentText().isEmpty())
-        {
-          simulationFlags.append(tr("-iim"));
-          simulationFlags.append(mpInitializationMethodComboBox->currentText());
-        }
         // setup Model Setup file flag
         if (!mpModelSetupFileTextBox->text().isEmpty())
         {
             simulationFlags.append(tr("-f"));
             simulationFlags.append(mpModelSetupFileTextBox->text());
+        }
+        // setup initiaization method flag
+        if (!mpInitializationMethodComboBox->currentText().isEmpty())
+        {
+          simulationFlags.append(tr("-iim"));
+          simulationFlags.append(mpInitializationMethodComboBox->currentText());
         }
         // setup Optimization Method flag
         if (!mpOptimizationMethodComboBox->currentText().isEmpty())
