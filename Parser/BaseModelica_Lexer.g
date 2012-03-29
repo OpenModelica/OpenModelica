@@ -39,6 +39,7 @@ T_ALGORITHM;
 T_AND;
 T_ANNOTATION;
 BLOCK;
+BOM;
 CODE;
 CODE_EXP;
 CODE_NAME;
@@ -269,9 +270,11 @@ SEMICOLON : ';';
  * LEXER RULES
  *------------------------------------------------------------------*/
 
+BOM : '\u00EF' '\u00BB' '\u00BF' ;
+
 WS : ( ' ' | '\t' | NL )+ { $channel=HIDDEN; }
   ;
-  
+
 LINE_COMMENT
     : '//' ( ~('\r'|'\n')* ) (NL|EOF) { $channel=HIDDEN; }
     ;  

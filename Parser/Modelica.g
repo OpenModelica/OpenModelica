@@ -127,7 +127,7 @@ goto rule ## func ## Ex; }}
  *------------------------------------------------------------------*/
 
 stored_definition returns [void* ast] :
-  (within=within_clause SEMICOLON)?
+  BOM? (within=within_clause SEMICOLON)?
   cl=class_definition_list?
   EOF
     {
@@ -1374,7 +1374,7 @@ interactive_stmt returns [void* ast]
 int last_sc = 0;
 } :
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
-  ss=interactive_stmt_list[&last_sc] EOF
+  BOM? ss=interactive_stmt_list[&last_sc] EOF
     {
       ast = Interactive__ISTMTS(or_nil(ss), mk_bcon(last_sc));
     }
