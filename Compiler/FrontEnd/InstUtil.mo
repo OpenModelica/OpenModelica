@@ -198,6 +198,14 @@ algorithm
   end match;
 end getComponentBinding;
  
+public function getComponentBindingExp
+  input Component inComponent;
+  output DAE.Exp outExp;
+algorithm
+  InstTypes.TYPED_COMPONENT(binding = 
+    InstTypes.TYPED_BINDING(bindingExp = outExp)) := inComponent;
+end getComponentBindingExp;
+
 public function getComponentVariability
   input Component inComponent;
   output DAE.VarKind outVariability;
@@ -1189,14 +1197,17 @@ algorithm
   outString := match(inEquation)
     local
       DAE.Exp exp1, exp2;
-      String str1, str2;
+      DAE.Type ty1, ty2;
+      String exp_str1, exp_str2, ty_str1, ty_str2;
 
-    case (InstTypes.EQUALITY_EQUATION(rhs = exp1, lhs = exp2))
+    case (InstTypes.EQUALITY_EQUATION(lhs = exp1, rhs = exp2))
       equation
-        str1 = ExpressionDump.printExpStr(exp1);
-        str2 = ExpressionDump.printExpStr(exp2);
+        exp_str1 = ExpressionDump.printExpStr(exp1);
+        exp_str2 = ExpressionDump.printExpStr(exp2);
+        ty_str1 = Types.unparseType(Expression.typeof(exp1));
+        ty_str2 = Types.unparseType(Expression.typeof(exp2));
       then
-        str1 +& " = " +& str2 +& ";";
+      exp_str1 +& " {" +& ty_str1 +& "} = {" +& ty_str2 +& "} " +& exp_str2 +& ";";
 
     else "UNKNOWN EQUATION";
   end match;

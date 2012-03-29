@@ -621,7 +621,8 @@ algorithm
       equation
         comp = InstSymbolTable.lookupCref(inCref, st);
         var = InstUtil.getComponentVariability(comp);
-        param_or_const = DAEUtil.isParamOrConstVarKind(var);
+        //param_or_const = DAEUtil.isParamOrConstVarKind(var);
+        param_or_const = false;
         (exp, ty, st) = typeCref2(inCref, comp, param_or_const, st);
       then
         (exp, ty, st);
@@ -697,5 +698,92 @@ algorithm
 
   end match;
 end typeCref2;
+
+public function typeSections
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  output Class outClass;
+algorithm
+  outClass := match(inClass, inSymbolTable)
+    local
+      list<Element> comps;
+      list<Equation> eq, ieq;
+      list<SCode.AlgorithmSection> al, ial;
+      SymbolTable st;
+
+    case (InstTypes.BASIC_TYPE(), _) then inClass;
+
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
+      equation
+        comps = List.map1(comps, typeSectionsInElement, st);
+        eq = List.map1(eq, typeEquation, st);
+        ieq = List.map1(ieq, typeEquation, st);
+      then
+        InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
+
+  end match;
+end typeSections;
+
+protected function typeSectionsInElement
+  input Element inElement;
+  input SymbolTable inSymbolTable;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inSymbolTable)
+    local
+      Component comp;
+      Class cls;
+      Absyn.Path bc;
+      DAE.Type ty;
+      SymbolTable st;
+
+    case (InstTypes.ELEMENT(comp, cls), st)
+      equation
+        cls = typeSections(cls, st);
+      then
+        InstTypes.ELEMENT(comp, cls);
+
+    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st)
+      equation
+        cls = typeSections(cls, st);
+      then
+        InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
+
+    case (InstTypes.CONDITIONAL_ELEMENT(_), st)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Typing.typeSectionsInElement got a conditional element!"});
+      then
+        fail();
+
+  end match;
+end typeSectionsInElement;
+
+protected function typeEquation
+  input Equation inEquation;
+  input SymbolTable inSymbolTable;
+  output Equation outEquation;
+algorithm
+  outEquation := match(inEquation, inSymbolTable)
+    local
+      DAE.Exp rhs, lhs;
+      SymbolTable st;
+
+    case (InstTypes.EQUALITY_EQUATION(lhs, rhs), st)
+      equation
+        (rhs, _, _) = typeExp(rhs, st);
+        (lhs, _, _) = typeExp(lhs, st);
+      then
+        InstTypes.EQUALITY_EQUATION(lhs, rhs);
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Typing.typeEquation got an unknown equation type!"});
+      then
+        fail();
+
+  end match;
+end typeEquation;
 
 end Typing;

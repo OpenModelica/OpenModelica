@@ -190,8 +190,8 @@ public constant Prefixes DEFAULT_CONST_PREFIXES = PREFIXES(
 
 public uniontype Equation
   record EQUALITY_EQUATION
-    DAE.Exp rhs;
     DAE.Exp lhs;
+    DAE.Exp rhs;
   end EQUALITY_EQUATION;
 end Equation;
 

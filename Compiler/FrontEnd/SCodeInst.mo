@@ -115,18 +115,16 @@ algorithm
 
         //print(InstUtil.printClass(cls));
         (cls, symtab) = InstSymbolTable.build(cls);
-        //print("SymbolTable:\n");
-        //InstSymbolTable.dumpSymbolTableKeys(symtab);
-
         (cls, symtab) = Typing.typeClass(cls, symtab);
-        // Type normal equations and algorithm here.
+
         (cls, symtab) = instConditionalComponents(cls, symtab);
         (cls, symtab) = Typing.typeClass(cls, symtab);
-        // Type connects here.
+        cls = Typing.typeSections(cls, symtab);
+
         System.stopTimer();
-        //print("\nclass " +& name +& "\n");
-        //print(InstUtil.printClass(cls));
-        //print("\nend " +& name +& "\n");
+        print("\nclass " +& name +& "\n");
+        print(InstUtil.printClass(cls));
+        print("\nend " +& name +& "\n");
 
         _ = SCodeExpand.expand(name, cls);
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
@@ -202,8 +200,8 @@ algorithm
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
         (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix);
-        inel = instEquations(snel, inEnv, inPrefix);
-        iiel = instEquations(siel, inEnv, inPrefix);
+        inel = instEquations(snel, env, inPrefix);
+        iiel = instEquations(siel, env, inPrefix);
         (cls, ty) = InstUtil.makeClass(elems, inel, iiel, nal, ial, cse);
       then
         (cls, ty);
@@ -1627,8 +1625,8 @@ protected function instEquations
   input Prefix inPrefix;
   output list<Equation> outEquations;
 algorithm
-  //outEquations := List.map2(inEquations, instEquation, inEnv, inPrefix);
-  outEquations := {};
+  outEquations := List.map2(inEquations, instEquation, inEnv, inPrefix);
+  //outEquations := {};
 end instEquations;
 
 protected function instEquation

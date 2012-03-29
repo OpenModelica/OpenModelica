@@ -846,7 +846,7 @@ algorithm
       then 
         getDimensions(tp);
     
-    case (_) then {};
+    else {};
   end matchcontinue;
 end getDimensions;
 

@@ -53,7 +53,10 @@ protected import Flags;
 protected import InstUtil;
 protected import List;
 protected import SCode;
+protected import Types;
   
+protected type Equation = InstTypes.Equation;
+
 replaceable type ElementType subtypeof Any;
 
 partial function ExpandScalarFunc
@@ -153,12 +156,14 @@ algorithm
     local
       list<InstTypes.Element> comps;
       list<DAE.Element> el;
+      list<Equation> eq;
 
     case (InstTypes.BASIC_TYPE(), _, _) then inAccumEl;
     
-    case (InstTypes.COMPLEX_CLASS(components = comps), _, _)
+    case (InstTypes.COMPLEX_CLASS(components = comps, equations = eq), _, _)
       equation
         el = List.fold1(comps, expandElement, inSubscripts, inAccumEl);
+        el = List.fold1(eq, expandEquation, inSubscripts, el);
       then
         el;
 
@@ -436,7 +441,7 @@ algorithm
         flat_subs = List.flatten(inSubscripts);
         flat_subs = List.lastN(flat_subs, pd);
         sub_exps = List.map(flat_subs, Expression.subscriptExp);
-        exp = subscriptBindingExp(exp, sub_exps);
+        exp = DAE.ASUB(exp, sub_exps);
         (exp, _) = ExpressionSimplify.simplify(exp);
       then 
         SOME(exp);
@@ -449,27 +454,6 @@ algorithm
 
   end match;
 end expandBinding;
-
-protected function subscriptBindingExp
-  input DAE.Exp inExp;
-  input list<DAE.Exp> inSubscripts;
-  output DAE.Exp outExp;
-algorithm
-  outExp := match(inExp, inSubscripts)
-    local
-      DAE.Exp exp, sub;
-      list<DAE.Exp> rest_subs;
-
-    case (_, {}) then inExp;
-
-    case (exp, sub :: rest_subs)
-      equation
-        exp = DAE.ASUB(exp, {sub});
-      then
-        subscriptBindingExp(exp, rest_subs);
-
-  end match;
-end subscriptBindingExp;
 
 protected function subscriptPath
   input Absyn.Path inPath;
@@ -524,6 +508,67 @@ algorithm
   end match;
 end subscriptPath2;
 
+protected function subscriptCref
+  input DAE.ComponentRef inCref;
+  input list<list<DAE.Subscript>> inSubscripts;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inSubscripts)
+    case (_, {{}}) then inCref;
+    else subscriptCref2(inCref, inSubscripts);
+  end match;
+end subscriptCref;
+
+protected function subscriptCref2
+  input DAE.ComponentRef inCref;
+  input list<list<DAE.Subscript>> inSubscripts;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inSubscripts)
+    local
+      String id;
+      DAE.Type ty;
+      DAE.ComponentRef cref;
+      list<DAE.Subscript> subs;
+      list<list<DAE.Subscript>> rest_subs;
+
+    case (DAE.CREF_IDENT(id, ty, {}), {subs})
+      then DAE.CREF_IDENT(id, ty, subs);
+
+    case (DAE.CREF_IDENT(id, ty, subs), {_})
+      then DAE.CREF_IDENT(id, ty, subs);
+
+    case (DAE.CREF_QUAL(id, ty, {}, cref), subs :: rest_subs)
+      equation
+        cref = subscriptCref2(cref, rest_subs);
+      then
+        DAE.CREF_QUAL(id, ty, subs, cref);
+
+    case (DAE.CREF_QUAL(id, ty, subs, cref), _ :: rest_subs)
+      equation
+        cref = subscriptCref2(cref, rest_subs);
+      then
+        DAE.CREF_QUAL(id, ty, subs, cref);
+
+    case (DAE.WILD(), _) then inCref;
+
+    case (_, {})
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeExpand.subscriptCref ran out of subscripts!\n"});
+      then
+        fail();
+
+    case (DAE.CREF_IDENT(ident = _), _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeExpand.subscriptCref got too many subscripts!\n"});
+      then
+        fail();
+
+  end match;
+end subscriptCref2;
+
 protected function unliftComponentType
   input InstTypes.Component inComponent;
   output InstTypes.Component outComponent;
@@ -564,5 +609,139 @@ algorithm
 
   end match;
 end getPrefixes;
+
+protected function expandEquation
+  input Equation inEquation;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Element> inAccumEl;
+  output list<DAE.Element> outElements;
+algorithm
+  outElements := matchcontinue(inEquation, inSubscripts, inAccumEl)
+    local
+      DAE.Exp rhs, lhs;
+      DAE.Element eq;
+      DAE.ComponentRef cref1, cref2;
+      DAE.Type ty1, ty2;
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Element> accum_el;
+      list<DAE.Dimension> dims;
+
+    case (InstTypes.EQUALITY_EQUATION(lhs = lhs, rhs = rhs), _, _)
+      equation
+        ty1 = Expression.typeof(lhs);
+        dims = Types.getDimensions(ty1);
+        accum_el = expandArray((lhs, rhs), dims, {} :: inSubscripts, inAccumEl,
+          expandEqEquation);
+      then
+        accum_el;
+        
+    else
+      equation
+        print("SCodeExpand.expandEquation failed\n");
+      then
+        fail();
+
+  end matchcontinue;
+end expandEquation; 
+
+protected function expandEqEquation
+  input tuple<DAE.Exp, DAE.Exp> inTuple;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Element> inAccumEl;
+  output list<DAE.Element> outAccumEl;
+algorithm
+  outAccumEl := match(inTuple, inSubscripts, inAccumEl)
+    local
+      DAE.Exp lhs, rhs;
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Subscript> comp_subs;
+      DAE.Element eq;
+      list<DAE.Exp> sub_expl;
+
+    case ((lhs, rhs), subs as comp_subs :: _, _)
+      equation
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        lhs = subscriptExp(lhs, sub_expl, subs);
+        (lhs, _) = ExpressionSimplify.simplify(lhs);
+        rhs = subscriptExp(rhs, sub_expl, subs);
+        (rhs, _) = ExpressionSimplify.simplify(rhs);
+        eq = DAE.EQUATION(lhs, rhs, DAE.emptyElementSource);
+      then
+        eq :: inAccumEl;
+        
+  end match;
+end expandEqEquation;
+
+protected function subscriptExp
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inEqSubscripts;
+  input list<list<DAE.Subscript>> inAllSubscripts;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inEqSubscripts, inAllSubscripts)
+    local
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      DAE.Exp e1, e2;
+      DAE.Operator op;
+      Boolean scalar;
+      list<DAE.Exp> expl;
+
+    case (DAE.ICONST(_), _, _) then inExp;
+    case (DAE.RCONST(_), _, _) then inExp;
+    case (DAE.SCONST(_), _, _) then inExp;
+    case (DAE.BCONST(_), _, _) then inExp;
+    case (DAE.ENUM_LITERAL(name = _), _, _) then inExp;
+
+    case (DAE.CREF(cref, ty), _, _)
+      equation
+        cref = subscriptCref(cref, inAllSubscripts);
+      then
+        DAE.CREF(cref, ty);
+
+    case (DAE.BINARY(e1, op, e2), _, _)
+      equation
+        e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
+        e2 = subscriptExp(e2, inEqSubscripts, inAllSubscripts);
+      then
+        DAE.BINARY(e1, op, e2);
+
+    case (DAE.ARRAY(ty = _), _, _)
+      equation
+        e1 = subscriptArrayElements(inExp, inAllSubscripts);
+        e2 = DAE.ASUB(e1, inEqSubscripts);
+      then
+        e2;
+
+    else inExp;
+  end match;
+end subscriptExp;
+
+protected function subscriptArrayElements
+  input DAE.Exp inArray;
+  input list<list<DAE.Subscript>> inAllSubscripts;
+  output DAE.Exp outArray;
+algorithm
+  outArray := match(inArray, inAllSubscripts)
+    local
+      DAE.Type ty;
+      Boolean scalar;
+      list<DAE.Exp> expl;
+
+    case (DAE.ARRAY(ty as DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = _)), scalar, expl), _)
+      equation
+        expl = List.map1(expl, subscriptArrayElements, inAllSubscripts);
+      then
+        DAE.ARRAY(ty, scalar, expl);
+
+    case (DAE.ARRAY(ty, scalar, expl), _)
+      equation
+        expl = List.map2(expl, subscriptExp, {}, inAllSubscripts);
+      then
+        DAE.ARRAY(ty, scalar, expl);
+       
+  end match;
+end subscriptArrayElements;
 
 end SCodeExpand;
