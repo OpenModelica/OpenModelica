@@ -985,6 +985,152 @@ algorithm
   end match;
 end dumpComplexEquations;
 
+public function dumpEqnsSolved
+"function: dumpEqnsSolved
+  This function dumps the equations in the order they have to be calculate."
+  input BackendDAE.BackendDAE inBackendDAE;
+algorithm
+  _:=
+  match (inBackendDAE)
+    local
+      BackendDAE.EqSystems eqs;
+      BackendDAE.Shared shared;
+    case (BackendDAE.DAE(eqs,shared))
+      equation
+        List.map1_0(eqs,dumpEqnsSolved1,shared);
+      then
+        ();
+  end match;
+end dumpEqnsSolved;
+
+protected function dumpEqnsSolved1
+"function: dumpEqnsSolved1."
+  input BackendDAE.EqSystem inEqSystem;
+  input BackendDAE.Shared inShared;
+algorithm
+  _:=
+  match (inEqSystem,inShared)
+    local
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
+      BackendDAE.StrongComponents comps;    
+      array<BackendDAE.MultiDimEquation> arrayEqs;
+      array< .DAE.Algorithm> algorithms;
+      array<BackendDAE.ComplexEquation> complEqs;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(_,_,comps)),BackendDAE.SHARED(arrayEqs=arrayEqs,algorithms=algorithms,complEqs=complEqs))
+      equation
+        dumpEqnsSolved2(comps,eqns,vars,arrayEqs,algorithms,complEqs);
+       then
+        ();
+    else
+      equation
+        print("No Matching\n");
+       then
+        ();        
+  end match;
+end dumpEqnsSolved1;
+
+protected function dumpEqnsSolved2 
+" function: dumpEqnsSolved2
+  autor: Frenkel TUD 2012-03"
+  input BackendDAE.StrongComponents inComps;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.Variables vars;
+  input array<BackendDAE.MultiDimEquation> arrayEqs;
+  input array< .DAE.Algorithm> algorithms;
+  input array<BackendDAE.ComplexEquation> complEqs;
+algorithm
+  _ := 
+  matchcontinue (inComps,eqns,vars,arrayEqs,algorithms,complEqs)
+    local
+      Integer e,v;
+      list<Integer> elst,vlst;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.StrongComponents rest;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Var> varlst;
+      list<BackendDAE.Equation> eqnlst;
+      BackendDAE.MultiDimEquation aeqn;
+      DAE.Algorithm alg;
+      BackendDAE.ComplexEquation ceqn;
+    case ({},_,_,_,_,_)  then (); 
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_,_,_,_) 
+      equation
+        print("SingleEquation: " +& intString(e) +& "\n");
+        var = BackendVariable.getVarAt(vars,v);
+        dumpVars({var});
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        dumpEqns({eqn}); 
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)::rest,_,_,_,_,_) 
+      equation
+        print("Mixed EquationSystem:\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        eqnlst = BackendEquation.getEqns(elst,eqns); 
+        dumpEqns(eqnlst);        
+        dumpEqnsSolved2({comp},eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,eqns,vars,_,_,_) 
+      equation
+        print("Equationsystem:\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        eqnlst = BackendEquation.getEqns(elst,eqns); 
+        dumpEqns(eqnlst);
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();
+    case (BackendDAE.SINGLEARRAY(arrayIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+      equation
+        print("ArrayEquation: " +& intString(e) +& "\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        aeqn = arrayEqs[e+1];
+        dumpArrayEqns({aeqn},e);  
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();  
+    case (BackendDAE.SINGLEALGORITHM(algorithmIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+      equation
+        print("Algorithm: " +& intString(e) +& "\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        alg = algorithms[e+1];
+        dumpAlgorithms({alg},e);    
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();  
+    case (BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+      equation
+        print("ComplexEquation: " +& intString(e) +& "\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        ceqn = complEqs[e];
+        dumpComplexEquations({ceqn},e);     
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();  
+    case (_::rest,_,_,_,_,_) 
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("BackendDump.dumpEqnsSolved2 failed!");
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();
+  case (_::rest,_,_,_,_,_) 
+      equation
+        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+      then 
+        ();
+  end matchcontinue;  
+end dumpEqnsSolved2;
+
 public function dumpEqns
 "function: dumpEqns
   Helper function to dump."
