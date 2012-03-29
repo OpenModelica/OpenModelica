@@ -1041,6 +1041,7 @@ algorithm
         
     case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
+        filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);

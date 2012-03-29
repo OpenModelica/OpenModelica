@@ -102,7 +102,7 @@ template fmiModelDescriptionAttributes(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
   let fmiVersion = '1.0' 
   let modelName = dotPath(modelInfo.name)
   let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
@@ -111,8 +111,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   let version= '' 
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
-  let variableNamingConvention= 'structured'
-  let numberOfContinuousStates = vi.numStateVars //the same as modelInfo.varInfo.numStateVars without the vi binding; but longer
+  let variableNamingConvention = 'structured'
+  let numberOfContinuousStates = if intEq(vi.numStateVars,1) then statesnumwithDummy(listStates) else  vi.numStateVars
   let numberOfEventIndicators = vi.numZeroCrossings 
 //  description="<%description%>" 
 //    author="<%author%>" 
@@ -129,6 +129,12 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   numberOfEventIndicators="<%numberOfEventIndicators%>" 
   >>
 end fmiModelDescriptionAttributes;
+
+template statesnumwithDummy(list<SimVar> vars)
+" return number of states without dummy vars"
+::=
+ (vars |> var =>  match var case SIMVAR(__) then if stringEq(crefStr(name),"$dummy") then '0' else '1' ;separator="\n")
+end statesnumwithDummy;
 
 template xsdateTime(DateTime dt)
  "YYYY-MM-DDThh:mm:ssZ"
@@ -254,6 +260,11 @@ template ScalarVariable(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(__) then
+  if stringEq(crefStr(name),"$dummy") then 
+  <<>>
+  else if stringEq(crefStr(name),"der($dummy)") then
+  <<>>
+  else
   <<
   <ScalarVariable 
     <%ScalarVariableAttribute(simVar)%>>
@@ -273,7 +284,7 @@ match simVar
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
   <<
-  name="<%crefStr(name)%>" 
+  name="<%System.stringReplace(crefStr(name),"$", "_D_")%>" 
   valueReference="<%valueReference%>" 
   <%description%>
   variability="<%variability%>" 
@@ -394,6 +405,7 @@ case SIMCODE(__) then
   #endif
 
   void setStartValues(ModelInstance *comp);
+  void setDefaultStartValues(ModelInstance *comp);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
@@ -409,6 +421,7 @@ case SIMCODE(__) then
   // implementation of the Model Exchange functions
   #include "fmu_model_interface.c"
  
+  <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
   <%eventUpdateFunction(simCode)%>
   <%getRealFunction(modelInfo)%>
@@ -431,14 +444,14 @@ template ModelDefineData(ModelInfo modelInfo)
  "Generates global data in simulation file."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-let numberOfReals = intAdd(varInfo.numStateVars,intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars)))
+case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
+let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars)))
 let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
 let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
 let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
   <<
   // define model size
-  #define NUMBER_OF_STATES <%varInfo.numStateVars%>
+  #define NUMBER_OF_STATES <%if intEq(varInfo.numStateVars,1) then statesnumwithDummy(listStates) else  varInfo.numStateVars%>
   #define NUMBER_OF_EVENT_INDICATORS <%varInfo.numZeroCrossings%>
   #define NUMBER_OF_REALS <%numberOfReals%>
   #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
@@ -468,8 +481,8 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   
   
   // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%cref(name)%>_'  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%cref(name)%>_'  ;separator=", "%> }  
   
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -480,7 +493,7 @@ template dervativeNameCStyle(ComponentRef cr)
  "Generates the name of a derivative in c style, replaces ( with _"
 ::=
   match cr
-  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
+  case CREF_QUAL(ident = "$DER") then 'der_<%CodegenC.crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
 template DefineVariables(SimVar simVar)
@@ -489,6 +502,11 @@ template DefineVariables(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
+  if stringEq(crefStr(name),"$dummy") then 
+  <<>>
+  else if stringEq(crefStr(name),"der($dummy)") then
+  <<>>
+  else
   <<
   #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
   >>
@@ -504,6 +522,30 @@ template defineExternalFunction(Function fn)
       #define $P<%fname%> <%System.tmpTick()%>
       >> 
 end defineExternalFunction;
+
+
+template setDefaultStartValues(ModelInfo modelInfo)
+ "Generates code in c file for function setStartValues() which will set start values for all variables." 
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
+  <<
+  // Set values for all variables that define a start value
+  void setDefaultStartValues(ModelInstance *comp) {
+  
+  <%vars.stateVars |> var => initValsDefault(var,"realVars",0) ;separator="\n"%>
+  <%vars.derivativeVars |> var => initValsDefault(var,"realVars",numStateVars) ;separator="\n"%>
+  <%vars.algVars |> var => initValsDefault(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
+  <%vars.intAlgVars |> var => initValsDefault(var,"integerVars",0) ;separator="\n"%>
+  <%vars.boolAlgVars |> var => initValsDefault(var,"booleanVars",0) ;separator="\n"%>
+  <%vars.stringAlgVars |> var => initValsDefault(var,"stringVars",0) ;separator="\n"%>  
+  <%vars.paramVars |> var => initParamsDefault(var,"realParameter") ;separator="\n"%>
+  <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
+  <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
+  <%vars.stringParamVars |> var => initParamsDefault(var,"stringParameter") ;separator="\n"%>
+  }
+  >>
+end setDefaultStartValues;
 
 template setStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables." 
@@ -554,8 +596,15 @@ end initializeFunction;
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
+    if stringEq(crefStr(name),"$dummy") then 
+    <<>>
+    else if stringEq(crefStr(name),"der($dummy)") then
+    <<>>
+    else
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
-      '<%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>];'
+    <<
+      <%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>];
+    >>
 end initVals;
 
 template initParams(SimVar var, String arrayName) ::=
@@ -564,6 +613,25 @@ template initParams(SimVar var, String arrayName) ::=
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
       '<%str%> = comp->fmuData->simulationInfo.<%arrayName%>[<%index%>];'
 end initParams;
+
+
+template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
+  match var
+    case SIMVAR(__) then
+    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
+    match initialValue 
+      case SOME(v) then 
+      '<%str%> = <%initVal(v)%>;'
+end initValsDefault;
+
+template initParamsDefault(SimVar var, String arrayName) ::=
+  match var
+    case SIMVAR(__) then
+    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
+    match initialValue 
+      case SOME(v) then 
+      '<%str%> = <%initVal(v)%>;'
+end initParamsDefault;
 
 template initVal(Exp initialValue) 
 ::=
@@ -601,13 +669,13 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.derivativeVars |> var => SwitchVars(var,"realVars", numStateVars) ;separator="\n"%>
         <%vars.algVars |> var => SwitchVars(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var,"realParameter") ;separator="\n"%>
+        <%vars.aliasVars |> var hasindex i0 => SwitchAliasVars(var,"realAlias","realVars","realParameter","-",i0) ;separator="\n"%>
         default: 
             return fmiError;
     }
   }
   
-  >>
-//         <%vars.aliasVars |> var => SwitchAliasVars(var,"realAlias","-") ;separator="\n"%>  
+  >>        
 end getRealFunction;
 
 template setRealFunction(ModelInfo modelInfo)
@@ -622,7 +690,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.derivativeVars |> var => SwitchVarsSet(var,"realVars", numStateVars) ;separator="\n"%>
         <%vars.algVars |> var => SwitchVarsSet(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParametersSet(var,"realParameter") ;separator="\n"%>
-        
+        <%vars.aliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"realAlias","realVars","realParameter","-",i0) ;separator="\n"%>
         default: 
             return fmiError;
     }
@@ -630,9 +698,6 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
   }
   
   >>
-// TODO: integrate alias vars
-
-// <%vars.aliasVars |> var => SwitchAliasVarsSet(var,"realAlias") ;separator="\n"%>
 end setRealFunction;
 
 template getIntegerFunction(ModelInfo modelInfo)
@@ -645,14 +710,12 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.intAlgVars |> var => SwitchVars(var,"integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParameters(var,"integerParameter") ;separator="\n"%>
-
+        <%vars.intAliasVars |> var hasindex i0 => SwitchAliasVars(var,"integerAlias","integerVars","integerParameter","-",i0) ;separator="\n"%>
         default: 
             return 0;
     }
   }
-  
   >>
-//         <%vars.intAliasVars |> var => SwitchAliasVars(var,"intVariables.alias","-") ;separator="\n"%>  
 end getIntegerFunction;
 
 template setIntegerFunction(ModelInfo modelInfo)
@@ -665,14 +728,13 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.intAlgVars |> var => SwitchVarsSet(var,"integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParametersSet(var,"integerParameter") ;separator="\n"%>
+        <%vars.intAliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"integerAlias","integerVars","integerParameter","-",i0) ;separator="\n"%>        
         default: 
             return fmiError;
     }
     return fmiOK;
   }
-  
-  >>
-//         <%vars.intAliasVars |> var => SwitchAliasVarsSet(var,"intVariables.alias") ;separator="\n"%>
+  >>  
 end setIntegerFunction;
 
 template getBooleanFunction(ModelInfo modelInfo)
@@ -685,13 +747,13 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVars(var,"booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParameters(var,"booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var hasindex i0 => SwitchAliasVars(var,"booleanAlias","booleanVars","booleanParameter","!",i0) ;separator="\n"%>        
         default: 
             return 0;
     }
   }
   
   >>
-// <%vars.boolAliasVars |> var => SwitchAliasVars(var,"boolVariables.alias","!") ;separator="\n"%>  
 end getBooleanFunction;
 
 template setBooleanFunction(ModelInfo modelInfo)
@@ -704,14 +766,14 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.boolAlgVars |> var => SwitchVarsSet(var,"booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParametersSet(var,"booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"booleanAlias","booleanVars","booleanParameter","!",i0) ;separator="\n"%> 
         default: 
             return fmiError;
     }
     return fmiOK;
   }
   
-  >>
-//         <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var,"boolVariables.alias") ;separator="\n"%>  
+  >>       
 end setBooleanFunction;
 
 template getStringFunction(ModelInfo modelInfo)
@@ -724,14 +786,13 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVars(var,"stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParameters(var,"stringParameter") ;separator="\n"%>
-        
+        <%vars.stringAliasVars |> var hasindex i0 => SwitchAliasVars(var,"stringAlias","stringVars","stringParameter","",i0) ;separator="\n"%>
         default: 
             return 0;
     }
   }
   
   >>
-//  <%vars.stringAliasVars |> var => SwitchAliasVars(var,"stringVariables.alias","") ;separator="\n"%>
 end getStringFunction;
 
 template setStringFunction(ModelInfo modelInfo)
@@ -744,14 +805,13 @@ case MODELINFO(vars=SIMVARS(__)) then
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVarsSet(var,"stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParametersSet(var,"stringParameter") ;separator="\n"%>
-        
+        <%vars.stringAliasVars |> var hasindex i0  => SwitchAliasVarsSet(var,"stringAlias","stringVars","stringParameter","",i0) ;separator="\n"%>    
         default: 
             return 0;
     }
   }
   
   >>
-//  <%vars.stringAliasVars |> var => SwitchAliasVars(var,"stringVariables.alias","") ;separator="\n"%>
 end setStringFunction;
 
 template setExternalFunction(ModelInfo modelInfo)
@@ -796,6 +856,11 @@ template SwitchVars(SimVar simVar, String arrayName, Integer offset)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
+  if stringEq(crefStr(name),"$dummy") then 
+  <<>>
+  else if stringEq(crefStr(name),"der($dummy)") then
+  <<>>
+  else
   <<
   case <%cref(name)%>_ : return comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]; break;
   >>
@@ -812,18 +877,50 @@ match simVar
   >>
 end SwitchParameters;
 
-/*
-template SwitchAliasVars(SimVar simVar, String arrayName, String negator)
+
+template SwitchAliasVars(SimVar simVar, String aliasArrayName, String arrayName, String arrayName2, String negate, Integer varIndex)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  <<
-  case <%cref(name)%>_ : return (comp->fmuData->localData[0]-><%arrayName%>[<%index%>].negate?<%negator%>*(comp->fmuData->localData[0]-><%arrayName%>[<%index%>].alias):*(globalData-><%arrayName%>[<%index%>].alias)); break;
-  >>
+    let description = if comment then '// "<%comment%>"'
+    let crefName = '<%cref(name)%>_'   
+      match aliasvar
+        case ALIAS(__) then 
+        <<
+        case <%crefName%> :
+        { 
+          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
+              return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_];
+            } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
+              return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_];
+            } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
+              return comp->fmuData->localData[0]->timeValue;
+            } else {
+              return fmiError;
+            }
+            break;
+          }
+        >>
+        case NEGATEDALIAS(__) then
+        <<
+        case <%crefName%> :
+        { 
+          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
+            return (<%negate%> comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_]);
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
+            return (<%negate%> comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_]);
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
+            return (<%negate%> comp->fmuData->localData[0]->timeValue);
+          } else {
+            return fmiError;
+          }
+          break;
+        }
+        >>
+     end match 
 end SwitchAliasVars;
-*/
+
 
 template SwitchVarsSet(SimVar simVar, String arrayName, Integer offset)
  "Generates code for defining variables in c file for FMU target. "
@@ -831,6 +928,11 @@ template SwitchVarsSet(SimVar simVar, String arrayName, Integer offset)
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
+  if stringEq(crefStr(name),"$dummy") then 
+  <<>>
+  else if stringEq(crefStr(name),"der($dummy)") then
+  <<>>
+  else 
   <<
   case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]=value; break;
   >>
@@ -847,18 +949,52 @@ match simVar
   >>
 end SwitchParametersSet;
 
-/*
-template SwitchAliasVarsSet(SimVar simVar, String arrayName)
+
+template SwitchAliasVarsSet(SimVar simVar,String aliasArrayName, String arrayName, String arrayName2, String negate, Integer varIndex)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
-  <<
-  case <%cref(name)%>_ : *(comp->fmuData->localData[0]-><%arrayName%>[<%index%>].alias)=value; break;
-  >>
+    let description = if comment then '// "<%comment%>"'
+    let crefName = '<%cref(name)%>_'
+      match aliasvar
+        case ALIAS(__) then 
+        <<
+        case <%crefName%> :
+        { 
+          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
+            return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_] = value;
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
+            return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_] = value;
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
+            return fmiOK;
+          } else {
+            return fmiError;
+          }
+          break;
+        }
+        >>
+        case NEGATEDALIAS(__) then
+        <<
+        case <%crefName%> :
+        { 
+          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
+            return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_] = (<%negate%> value);
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
+            return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_] = (<%negate%> value);
+          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
+            return fmiOK;
+          } else {
+            return fmiError;
+          }
+          break;
+        }
+        >>
+     end match 
 end SwitchAliasVarsSet;
-*/
+
+
 template getPlatformString2(String platform, String fileNamePrefix, String dirExtra, String libsPos1, String libsPos2, String omhome)
  "returns compilation commands for the platform. "
 ::=
@@ -951,7 +1087,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
   MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  
   
-  PHONY: clean <%fileNamePrefix%>_FMU
+  PHONY: <%fileNamePrefix%>_FMU
   <%compilecmds%>
   
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c

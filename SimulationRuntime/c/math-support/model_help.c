@@ -172,6 +172,25 @@ void printAllVars(DATA *data, int ringSegment)
   }
 }
 
+
+/*! \fn printAllHelpVars
+ *
+ *  print all helpVars and corresponding pre values
+ *
+ *  \param [out] [data]
+ *
+ *  \author wbraun
+ */
+void printAllHelpVars(DATA *data)
+{
+  int i;
+  for(i=0; i<data->modelData.nHelpVars; i++)
+  {
+    INFO2("simulationInfo.helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
+    INFO2("simulationInfo.helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
+  }
+}
+
 /*! \fn overwriteOldSimulationData
  *
  *  Stores variables (states, derivatives and algebraic) to be used

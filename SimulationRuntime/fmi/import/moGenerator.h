@@ -65,9 +65,9 @@ typedef struct{
 typedef struct{
   const char* declType;
   const char* quantity;
-  long min;
+  int min;
   int defMin;
-  long max;
+  int max;
   int defMax;
   int start;
   int defStart;

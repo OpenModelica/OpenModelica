@@ -122,7 +122,7 @@ void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx);
 void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr);
 void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv, int nvr);
 void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr);
-void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const char* in_bv, int nvr);
+void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* in_bv, int nvr);
 void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt);
 void fmiGetContStates(void* in_fmi, void* in_fmu, double* out_x, int nx);
 void fmiGetNomContStates(void* in_fmi, void* in_fmu, double* x_nom, int nx);

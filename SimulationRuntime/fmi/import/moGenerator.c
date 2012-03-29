@@ -43,10 +43,9 @@
 #define QUOTEME(x) QUOTEME_(x)
 
 /*#define _DEBUG_ 1
-#define PRINT_INFORMATION
-*/
+ #define PRINT_INFORMATION
+ */
 /* #define _DEBUG_MODELICA 1*/
-
 
 /* macro for error message print */
 #define _IMPORT_ERROR_LOG_
@@ -154,8 +153,8 @@ char* getFMUname(const char* fmupath) {
 char* getDllPath(const char* decompPath, const char* mid) {
   char *fmudllpath;
 
-  const int lenStr1 = (strlen(FMU_BINARIES_PATH) + 1)
-      + (strlen(decompPath) + 1) + (strlen(mid) + 1) + 4;
+  const int lenStr1 = (strlen(FMU_BINARIES_PATH) + 1) + (strlen(decompPath) + 1)
+      + (strlen(mid) + 1) + 4;
   fmudllpath = (char*) calloc(lenStr1, sizeof(char));
   sprintf(fmudllpath, "%s%s%s%s", decompPath, FMU_BINARIES_PATH, mid,
       FMU_BINARIES_END);
@@ -238,8 +237,7 @@ static int decompress(const char* fmuPath, const char* decompPath) {
       printf("no zip files found...\n");
       break;
     case UNZIP_METHOD_DECRYPTION_ERROR:
-      printf(
-          "unsupported compression methods or unsupported decryption...\n");
+      printf("unsupported compression methods or unsupported decryption...\n");
       break;
     case UNZIP_WRONG_PASS:
       printf(" no files were found due to bad decryption password...\n");
@@ -312,8 +310,8 @@ fmiScalarVariableType getElementType(ScalarVariable* sv) {
     return sv_type;
   default:
     ERRORPRINT;
-    fprintf(errLogFile,
-        "#### Unknown element type in ScalarVaraible %s...\n", "");
+    fprintf(errLogFile, "#### Unknown element type in ScalarVaraible %s...\n",
+        "");
     exit(EXIT_FAILURE);
   }
 }
@@ -357,12 +355,10 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv) {
   switch (fmisv.type) {
   case sv_real: {
     tmp_str = getString(sv->typeSpec, att_declaredType);
-    ((fmiREAL *) fmisv.variable)->declType =
-        (tmp_str != NULL ? tmp_str : "");
+    ((fmiREAL *) fmisv.variable)->declType = (tmp_str != NULL ? tmp_str : "");
 
     tmp_str = getString(sv->typeSpec, att_quantity);
-    ((fmiREAL *) fmisv.variable)->quantity =
-        (tmp_str != NULL ? tmp_str : "");
+    ((fmiREAL *) fmisv.variable)->quantity = (tmp_str != NULL ? tmp_str : "");
 
     tmp_str = getString(sv->typeSpec, att_unit);
     ((fmiREAL *) fmisv.variable)->unit = (tmp_str != NULL ? tmp_str : "");
@@ -444,8 +440,7 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv) {
       exit(EXIT_FAILURE);
     }
     tmp_bl = getBoolean(sv->typeSpec, att_fixed, &vs);
-    ((fmiINTEGER*) fmisv.variable)->fixed =
-        (vs == valueDefined ? tmp_bl : 0);
+    ((fmiINTEGER*) fmisv.variable)->fixed = (vs == valueDefined ? tmp_bl : 0);
 
     break;
   }
@@ -466,20 +461,16 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv) {
       exit(EXIT_FAILURE);
     }
     tmp_bl = getBoolean(sv->typeSpec, att_fixed, &vs);
-    ((fmiBOOLEAN *) fmisv.variable)->fixed = (
-        vs == valueDefined ? tmp_bl : 0);
+    ((fmiBOOLEAN *) fmisv.variable)->fixed = (vs == valueDefined ? tmp_bl : 0);
 
     tmp_bl = getBoolean(sv->typeSpec, att_fixed, &vs);
-    ((fmiBOOLEAN*) fmisv.variable)->fixed =
-        (vs == valueDefined ? tmp_bl : 0);
+    ((fmiBOOLEAN*) fmisv.variable)->fixed = (vs == valueDefined ? tmp_bl : 0);
     break;
   }
   case sv_string: {
-    ((fmiSTRING*) fmisv.variable)->start = getString(sv->typeSpec,
-        att_start);
+    ((fmiSTRING*) fmisv.variable)->start = getString(sv->typeSpec, att_start);
     tmp_str = getString(sv->typeSpec, att_declaredType);
-    ((fmiSTRING *) fmisv.variable)->declType = (
-        tmp_str != NULL ? tmp_str : "");
+    ((fmiSTRING *) fmisv.variable)->declType = (tmp_str != NULL ? tmp_str : "");
 
     tmp_str = getString(sv->typeSpec, att_start);
     if (tmp_str) {
@@ -491,18 +482,15 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv) {
     }
 
     tmp_bl = getBoolean(sv->typeSpec, att_fixed, &vs);
-    ((fmiSTRING*) fmisv.variable)->fixed =
-        (vs == valueDefined ? tmp_bl : 0);
+    ((fmiSTRING*) fmisv.variable)->fixed = (vs == valueDefined ? tmp_bl : 0);
     break;
   }
   case sv_enum: {
     tmp_str = getString(sv->typeSpec, att_declaredType);
-    ((fmiENUM *) fmisv.variable)->declType =
-        (tmp_str != NULL ? tmp_str : "");
+    ((fmiENUM *) fmisv.variable)->declType = (tmp_str != NULL ? tmp_str : "");
 
     tmp_str = getString(sv->typeSpec, att_quantity);
-    ((fmiENUM *) fmisv.variable)->quantity =
-        (tmp_str != NULL ? tmp_str : "");
+    ((fmiENUM *) fmisv.variable)->quantity = (tmp_str != NULL ? tmp_str : "");
 
     tmp_i = getInt(sv->typeSpec, att_min, &vs);
     if (vs == valueDefined) {
@@ -530,8 +518,7 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv) {
 
   default:
     ERRORPRINT;
-    fprintf(
-        errLogFile,
+    fprintf(errLogFile,
         "#### Unknown error in instElmSV() for fmiScalarVariable: %s...\n",
         fmisv.name);
     exit(EXIT_FAILURE);
@@ -636,8 +623,7 @@ fmiAlias getFMIAlias(ScalarVariable* sv) {
 
   default:
     ERRORPRINT;
-    fprintf(
-        stderr,
+    fprintf(stderr,
         "#### Unknown error in getFMIAlias() for fmiScalarVariable: %s...\n",
         getString(sv, att_name));
     exit(EXIT_FAILURE);
@@ -707,8 +693,7 @@ fmiNamingConvention getNamingConvention(ModelDescription* md, Att att) {
   if (vs == valueIllegal) {
     ERRORPRINT;
     fprintf(errLogFile,
-        "#### Return value of getNamingConvention is illegal...%s\n",
-        "");
+        "#### Return value of getNamingConvention is illegal...%s\n", "");
     exit(EXIT_FAILURE);
   }
   if (enu == enu_flat)
@@ -1013,43 +998,34 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
           switch (tmpSV[j].type) { /* sorting by variable types */
           case sv_real: {
             /* local variables for Real type varialbe definition */
-            int bool_quantity, bool_unit, bool_displayUnit,
-                bool_defMin, bool_defMax, bool_norminal,
-                bool_defStart, bool_fixed;
+            int bool_quantity, bool_unit, bool_displayUnit, bool_defMin,
+                bool_defMax, bool_norminal, bool_defStart, bool_fixed;
 
             bool_quantity =
-                (strcmp(
-                    ((fmiREAL *) tmpSV[j].variable)->quantity,
-                    "") != 0) ? 1 : 0;
+                (strcmp(((fmiREAL *) tmpSV[j].variable)->quantity, "") != 0) ?
+                    1 : 0;
             bool_unit =
-                (strcmp(((fmiREAL *) tmpSV[j].variable)->unit,
-                    "") != 0) ? 1 : 0;
+                (strcmp(((fmiREAL *) tmpSV[j].variable)->unit, "") != 0) ?
+                    1 : 0;
             bool_displayUnit =
-                (strcmp(
-                    ((fmiREAL *) tmpSV[j].variable)->displayUnit,
-                    "") != 0) ? 1 : 0;
+                (strcmp(((fmiREAL *) tmpSV[j].variable)->displayUnit, "")
+                    != 0) ? 1 : 0;
             bool_defMin = ((fmiREAL *) tmpSV[j].variable)->defMin;
             bool_defMax = ((fmiREAL *) tmpSV[j].variable)->defMax;
-            bool_norminal =
-                ((fmiREAL *) tmpSV[j].variable)->defNorminal;
-            bool_defStart =
-                ((fmiREAL *) tmpSV[j].variable)->defStart;
+            bool_norminal = ((fmiREAL *) tmpSV[j].variable)->defNorminal;
+            bool_defStart = ((fmiREAL *) tmpSV[j].variable)->defStart;
             bool_fixed =
-                (((fmiREAL *) tmpSV[j].variable)->fixed
-                    == fmi_true) ? 1 : 0;
+                (((fmiREAL *) tmpSV[j].variable)->fixed == fmi_true) ? 1 : 0;
 
             if (((tmpSV[j].causality) != none)
                 && ((tmpSV[j].causality) != internal))
-              fprintf(pfile, "\t%s",
-                  causalityNames[tmpSV[j].causality]);
+              fprintf(pfile, "\t%s", causalityNames[tmpSV[j].causality]);
             if ((tmpSV[j].var) != continuous)
-              fprintf(pfile, " %s",
-                  variabilityNames[tmpSV[j].var]);
+              fprintf(pfile, " %s", variabilityNames[tmpSV[j].var]);
             fprintf(pfile, " Real %s", tmpSV[j].flatName);
             existPre = 0;
-            if (bool_quantity || bool_unit || bool_displayUnit
-                || bool_defMin || bool_defMax || bool_norminal
-                || bool_defStart || bool_fixed)
+            if (bool_quantity || bool_unit || bool_displayUnit || bool_defMin
+                || bool_defMax || bool_norminal || bool_defStart || bool_fixed)
               fprintf(pfile, "%s", "(");
             if (bool_quantity) {
               fprintf(pfile, "quantity = \"%s\"",
@@ -1068,14 +1044,10 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             }
             if (bool_displayUnit) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", displayUnit = \"%s\"",
+                fprintf(pfile, ", displayUnit = \"%s\"",
                     ((fmiREAL *) tmpSV[j].variable)->displayUnit);
               else {
-                fprintf(
-                    pfile,
-                    "displayUnit = \"%s\"",
+                fprintf(pfile, "displayUnit = \"%s\"",
                     ((fmiREAL *) tmpSV[j].variable)->displayUnit);
                 existPre = 1;
               }
@@ -1112,24 +1084,19 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             }
             if (bool_fixed) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", fixed = %s",
+                fprintf(pfile, ", fixed = %s",
                     startValueFixed[((fmiREAL*) tmpSV[j].variable)->fixed]);
               else {
-                fprintf(
-                    pfile,
-                    "fixed = %s",
+                fprintf(pfile, "fixed = %s",
                     startValueFixed[((fmiREAL*) tmpSV[j].variable)->fixed]);
                 /* existPre = 1; */
               }
             }
-            if (bool_quantity || bool_unit || bool_displayUnit
-                || bool_defMin || bool_defMax || bool_norminal
-                || bool_defStart || bool_fixed)
+            if (bool_quantity || bool_unit || bool_displayUnit || bool_defMin
+                || bool_defMax || bool_norminal || bool_defStart || bool_fixed)
               fprintf(pfile, "%s", " )");
-            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)){
-              fprintf(pfile, " =  %lf",((fmiREAL*) tmpSV[j].variable)->start);
+            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)) {
+              fprintf(pfile, " =  %lf", ((fmiREAL*) tmpSV[j].variable)->start);
             }
             if (strcmp(varDesc, "") != 0)
               fprintf(pfile, " \"%s\"", varDesc);
@@ -1139,10 +1106,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
              variabilityNames[tmpSV[j].var],tmpSV[j].flatName,((fmiREAL*)tmpSV[j].variable)->start,
              startValueFixed[((fmiREAL*)tmpSV[j].variable)->fixed],varDesc);
              */
-            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)){
-              addOutputVariable(&tmpSV[j], &pntReal, &tmpReal,
-                  &noReal);
-            }else {
+            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)) {
+              addOutputVariable(&tmpSV[j], &pntReal, &tmpReal, &noReal);
+            } else {
               addOutputVariable(&tmpSV[j], &pntRealParam, &tmpRealParam,
                   &noRealParam);
             }
@@ -1151,92 +1117,76 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
 
           case sv_integer: {
             /* local variables for Integer type varialbe definition */
-            int bool_quantity, bool_defMin, bool_defMax,
-                bool_defStart, bool_fixed;
+            int bool_quantity, bool_defMin, bool_defMax, bool_defStart,
+                bool_fixed;
 
             bool_quantity =
-                (strcmp(
-                    ((fmiINTEGER *) tmpSV[j].variable)->quantity,
-                    "") != 0) ? 1 : 0;
-            bool_defMin =
-                ((fmiINTEGER *) tmpSV[j].variable)->defMin;
-            bool_defMax =
-                ((fmiINTEGER *) tmpSV[j].variable)->defMax;
-            bool_defStart =
-                ((fmiINTEGER *) tmpSV[j].variable)->defStart;
+                (strcmp(((fmiINTEGER *) tmpSV[j].variable)->quantity, "")
+                    != 0) ? 1 : 0;
+            bool_defMin = ((fmiINTEGER *) tmpSV[j].variable)->defMin;
+            bool_defMax = ((fmiINTEGER *) tmpSV[j].variable)->defMax;
+            bool_defStart = ((fmiINTEGER *) tmpSV[j].variable)->defStart;
             bool_fixed =
-                (((fmiINTEGER *) tmpSV[j].variable)->fixed
-                    == fmi_true) ? 1 : 0;
+                (((fmiINTEGER *) tmpSV[j].variable)->fixed == fmi_true) ? 1 : 0;
 
             if (((tmpSV[j].causality) != none)
                 && ((tmpSV[j].causality) != internal))
-              fprintf(pfile, "\t%s",
-                  causalityNames[tmpSV[j].causality]);
+              fprintf(pfile, "\t%s", causalityNames[tmpSV[j].causality]);
             fprintf(pfile, " Integer %s", tmpSV[j].flatName);
             existPre = 0;
-            if (bool_quantity || bool_defMin || bool_defMax
-                || bool_defStart || bool_fixed)
+            if (bool_quantity || bool_defMin || bool_defMax || bool_defStart
+                || bool_fixed)
               fprintf(pfile, " %s", "(");
             if (bool_quantity) {
-              fprintf(
-                  pfile,
-                  "quantity = \"%s\"",
+              fprintf(pfile, "quantity = \"%s\"",
                   ((fmiINTEGER *) tmpSV[j].variable)->quantity);
               existPre = 1;
             }
             if (bool_defStart) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", start = %d",
+                fprintf(pfile, ", start = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->start);
               else {
-                fprintf(
-                    pfile,
-                    "start = %d",
+                fprintf(pfile, "start = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->start);
                 existPre = 1;
               }
             }
             if (bool_defMin) {
               if (existPre)
-                fprintf(pfile, ", min = %ld",
+                fprintf(pfile, ", min = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->min);
               else {
-                fprintf(pfile, "min = %ld",
+                fprintf(pfile, "min = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->min);
                 existPre = 1;
               }
             }
             if (bool_defMax) {
               if (existPre)
-                fprintf(pfile, ", max = %ld",
+                fprintf(pfile, ", max = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->max);
               else {
-                fprintf(pfile, "max = %ld",
+                fprintf(pfile, "max = %d",
                     ((fmiINTEGER*) tmpSV[j].variable)->max);
                 existPre = 1;
               }
             }
             if (bool_fixed) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", fixed = %s",
+                fprintf(pfile, ", fixed = %s",
                     startValueFixed[((fmiINTEGER*) tmpSV[j].variable)->fixed]);
               else {
-                fprintf(
-                    pfile,
-                    "fixed = %s",
+                fprintf(pfile, "fixed = %s",
                     startValueFixed[((fmiINTEGER*) tmpSV[j].variable)->fixed]);
                 /* existPre = 1; */
               }
             }
-            if (bool_quantity || bool_defMin || bool_defMax
-                || bool_defStart || bool_fixed)
+            if (bool_quantity || bool_defMin || bool_defMax || bool_defStart
+                || bool_fixed)
               fprintf(pfile, " %s", ")");
-            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)){
-              fprintf(pfile, " = %d",((fmiINTEGER*) tmpSV[j].variable)->start);
+            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)) {
+              fprintf(pfile, " = %d", ((fmiINTEGER*) tmpSV[j].variable)->start);
             }
             if (strcmp(varDesc, "") != 0)
               fprintf(pfile, " \"%s\"", varDesc);
@@ -1246,10 +1196,10 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             // variabilityNames[tmpSV[j].var],tmpSV[j].flatName,((fmiINTEGER*)tmpSV[j].variable)->start,
             // startValueFixed[((fmiINTEGER*)tmpSV[j].variable)->fixed],varDesc);
 
-            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)){
-              addOutputVariable(&tmpSV[j], &pntInteger,
-                  &tmpInteger, &noInteger);
-            }else {
+            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)) {
+              addOutputVariable(&tmpSV[j], &pntInteger, &tmpInteger,
+                  &noInteger);
+            } else {
               addOutputVariable(&tmpSV[j], &pntIntegerParam, &tmpIntegerParam,
                   &noIntegerParam);
             }
@@ -1258,16 +1208,13 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
           case sv_boolean: {
             int bool_defStart, bool_fixed;
 
-            bool_defStart =
-                ((fmiBOOLEAN *) tmpSV[j].variable)->defStart;
+            bool_defStart = ((fmiBOOLEAN *) tmpSV[j].variable)->defStart;
             bool_fixed =
-                (((fmiBOOLEAN *) tmpSV[j].variable)->fixed
-                    == fmi_true) ? 1 : 0;
+                (((fmiBOOLEAN *) tmpSV[j].variable)->fixed == fmi_true) ? 1 : 0;
 
             if (((tmpSV[j].causality) != none)
                 && ((tmpSV[j].causality) != internal))
-              fprintf(pfile, "\t%s",
-                  causalityNames[tmpSV[j].causality]);
+              fprintf(pfile, "\t%s", causalityNames[tmpSV[j].causality]);
             fprintf(pfile, " Boolean %s", tmpSV[j].flatName);
             existPre = 0;
             if (bool_defStart || bool_fixed)
@@ -1281,21 +1228,17 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             }
             if (bool_fixed) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", fixed = %s",
+                fprintf(pfile, ", fixed = %s",
                     startValueFixed[((fmiBOOLEAN*) tmpSV[j].variable)->fixed]);
               else {
-                fprintf(
-                    pfile,
-                    "fixed = %s",
+                fprintf(pfile, "fixed = %s",
                     startValueFixed[((fmiBOOLEAN*) tmpSV[j].variable)->fixed]);
                 existPre = 1;
               }
             }
             if (bool_defStart || bool_fixed)
               fprintf(pfile, " %s", ")");
-            if ((tmpSV[j].var == 0) && (tmpSV[j].var == 1)){
+            if ((tmpSV[j].var == 0) && (tmpSV[j].var == 1)) {
               if (((fmiINTEGER*) tmpSV[j].variable)->start == 1)
                 fprintf(pfile, " = %s", "true");
               else
@@ -1309,10 +1252,10 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             // variabilityNames[tmpSV[j].var],tmpSV[j].flatName,fmiBooleanValue[((fmiBOOLEAN*)tmpSV[j].variable)->start],
             // startValueFixed[((fmiBOOLEAN*)tmpSV[j].variable)->fixed],varDesc);
 
-            if ((tmpSV[j].var != 0) || (tmpSV[j].var != 1)){
-              addOutputVariable(&tmpSV[j], &pntBoolean,
-                  &tmpBoolean, &noBoolean);
-            }else {
+            if ((tmpSV[j].var != 0) || (tmpSV[j].var != 1)) {
+              addOutputVariable(&tmpSV[j], &pntBoolean, &tmpBoolean,
+                  &noBoolean);
+            } else {
               addOutputVariable(&tmpSV[j], &pntBooleanParam, &tmpBooleanParam,
                   &noBooleanParam);
             }
@@ -1321,15 +1264,12 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
           case sv_string: {
             int bool_defStart, bool_fixed;
 
-            bool_defStart =
-                ((fmiSTRING *) tmpSV[j].variable)->defStart;
+            bool_defStart = ((fmiSTRING *) tmpSV[j].variable)->defStart;
             bool_fixed =
-                (((fmiSTRING *) tmpSV[j].variable)->fixed
-                    == fmi_true) ? 1 : 0;
+                (((fmiSTRING *) tmpSV[j].variable)->fixed == fmi_true) ? 1 : 0;
             if (((tmpSV[j].causality) != none)
                 && ((tmpSV[j].causality) != internal))
-              fprintf(pfile, "\t%s",
-                  causalityNames[tmpSV[j].causality]);
+              fprintf(pfile, "\t%s", causalityNames[tmpSV[j].causality]);
             fprintf(pfile, " String %s", tmpSV[j].flatName);
             existPre = 0;
             if (bool_defStart || bool_fixed)
@@ -1341,22 +1281,19 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             }
             if (bool_fixed) {
               if (existPre)
-                fprintf(
-                    pfile,
-                    ", fixed = %s",
+                fprintf(pfile, ", fixed = %s",
                     startValueFixed[((fmiSTRING*) tmpSV[j].variable)->fixed]);
               else {
-                fprintf(
-                    pfile,
-                    "fixed = %s",
+                fprintf(pfile, "fixed = %s",
                     startValueFixed[((fmiSTRING*) tmpSV[j].variable)->fixed]);
                 existPre = 1;
               }
             }
             if (bool_defStart || bool_fixed)
               fprintf(pfile, " %s", ")");
-            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)){
-              fprintf(pfile, " = \"%s\"", ((fmiSTRING*) tmpSV[j].variable)->start);
+            if ((tmpSV[j].var == 0) || (tmpSV[j].var == 1)) {
+              fprintf(pfile, " = \"%s\"",
+                  ((fmiSTRING*) tmpSV[j].variable)->start);
             }
             if (strcmp(varDesc, "") != 0)
               fprintf(pfile, " \"%s\"", varDesc);
@@ -1366,10 +1303,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
             // variabilityNames[tmpSV[j].var],tmpSV[j].flatName,((fmiSTRING*)tmpSV[j].variable)->start,
             // startValueFixed[((fmiSTRING*)tmpSV[j].variable)->fixed],varDesc);
 
-            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)){
-              addOutputVariable(&tmpSV[j], &pntString, &tmpString,
-                  &noString);
-            }else {
+            if ((tmpSV[j].var != 0) && (tmpSV[j].var != 1)) {
+              addOutputVariable(&tmpSV[j], &pntString, &tmpString, &noString);
+            } else {
               addOutputVariable(&tmpSV[j], &pntStringParam, &tmpStringParam,
                   &noStringParam);
             }
@@ -1404,142 +1340,143 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       fprintf(pfile, "\tReal %s[%s];\n", der_x, nx);
       fprintf(pfile, "\tReal %s[%s];\n", out_x, nx);
       //fprintf(pfile, "\tReal %s[%s];\n", out_der_x, nx);
-
-      if (noReal > 0) {
-        tmpReal = pntReal;
-        fprintf(pfile, "\tReal realV[%d];\n", noReal);
-        fprintf(pfile, "\tparameter Integer realVR[%d] = {", noReal);
-        if (noReal == 1)
-          fprintf(pfile, "%d};\n", tmpReal->vr);
-        else if (noReal > 1) {
-          for (j = 0; j < noReal - 1; j++) {
-            fprintf(pfile, "%d, ", tmpReal->vr);
-            tmpReal = tmpReal->next;
-          }
-          fprintf(pfile, "%d};\n", tmpReal->vr);
-        }
-      }
-      if (noRealParam > 0) {
-        tmpRealParam = pntRealParam;
-        fprintf(pfile, "\tparameter Real realVParam[%d];\n", noRealParam);
-        fprintf(pfile, "\tparameter Integer realVRParam[%d] = {", noRealParam);
-        if (noRealParam == 1)
-          fprintf(pfile, "%d};\n", tmpRealParam->vr);
-        else if (noRealParam > 1) {
-          for (j = 0; j < noRealParam - 1; j++) {
-            fprintf(pfile, "%d, ", tmpRealParam->vr);
-            tmpRealParam = tmpRealParam->next;
-          }
-          fprintf(pfile, "%d};\n", tmpRealParam->vr);
-        }
-      }
-
-      if (noInteger > 0) {
-        tmpInteger = pntInteger;
-        fprintf(pfile, "\tInteger integerV[%d];\n", noInteger);
-        fprintf(pfile, "\tparameter Integer integerVR[%d] = {",
-            noInteger);
-        if (noInteger == 1)
-          fprintf(pfile, "%d};\n", tmpInteger->vr);
-        else if (noInteger > 1) {
-          for (j = 0; j < noInteger - 1; j++) {
-            fprintf(pfile, "%d, ", tmpInteger->vr);
-            tmpInteger = tmpInteger->next;
-          }
-          fprintf(pfile, "%d};\n", tmpInteger->vr);
-        }
-      }
-
-      if (noInteger > 0) {
-        tmpIntegerParam = pntIntegerParam;
-        fprintf(pfile, "\tparameter Integer integerVParam[%d];\n", noIntegerParam);
-        fprintf(pfile, "\tparameter Integer integerVRParam[%d] = {",
-            noIntegerParam);
-        if (noIntegerParam == 1)
-          fprintf(pfile, "%d};\n", tmpIntegerParam->vr);
-        else if (noIntegerParam > 1) {
-          for (j = 0; j < noIntegerParam - 1; j++) {
-            fprintf(pfile, "%d, ", tmpIntegerParam->vr);
-            tmpIntegerParam = tmpIntegerParam->next;
-          }
-          fprintf(pfile, "%d};\n", tmpIntegerParam->vr);
-        }
-      }
-      if (noBoolean > 0) {
-        tmpBoolean = pntBoolean;
-        fprintf(pfile, "\tBoolean booleanV[%d];\n", noBoolean);
-        fprintf(pfile, "\tparameter Integer booleanVR[%d] = {",
-            noBoolean);
-        if (noBoolean == 1)
-          fprintf(pfile, "%d};\n", tmpBoolean->vr);
-        else if (noBoolean > 1) {
-          for (j = 0; j < noBoolean - 1; j++) {
-            fprintf(pfile, "%d, ", tmpBoolean->vr);
-            tmpBoolean = tmpBoolean->next;
-          }
-          fprintf(pfile, "%d};\n", tmpBoolean->vr);
-        }
-      }
-
-      if (noBooleanParam > 0) {
-        tmpBooleanParam = pntBooleanParam;
-        fprintf(pfile, "\tparameter Boolean booleanVParam[%d];\n", noBooleanParam);
-        fprintf(pfile, "\tparameter Integer booleanVRParam[%d] = {",
-            noBooleanParam);
-        if (noBooleanParam == 1)
-          fprintf(pfile, "%d};\n", tmpBoolean->vr);
-        else if (noBooleanParam > 1) {
-          for (j = 0; j < noBooleanParam - 1; j++) {
-            fprintf(pfile, "%d, ", tmpBooleanParam->vr);
-            tmpBooleanParam = tmpBooleanParam->next;
-          }
-          fprintf(pfile, "%d};\n", tmpBooleanParam->vr);
-        }
-      }
-
-      if (noString > 0) {
-        tmpString = pntString;
-        fprintf(pfile, "\tString stringV[%d];\n", noString);
-        fprintf(pfile, "\tparameter Integer stringVR[%d] = {",
-            noString);
-        if (noString == 1)
-          fprintf(pfile, "%d};\n", tmpString->vr);
-        else if (noString > 1) {
-          for (j = 0; j < noString - 1; j++) {
-            fprintf(pfile, "%d, ", tmpString->vr);
-            tmpString = tmpString->next;
-          }
-          fprintf(pfile, "%d};\n", tmpString->vr);
-        }
-      }
-
-      if (noStringParam > 0) {
-        tmpStringParam = pntStringParam;
-        fprintf(pfile, "\tparameter String stringVParam[%d];\n", noString);
-        fprintf(pfile, "\tparameter Integer stringVRParam[%d] = {",
-            noStringParam);
-        if (noStringParam == 1)
-          fprintf(pfile, "%d};\n", tmpStringParam->vr);
-        else if (noStringParam > 1) {
-          for (j = 0; j < noStringParam - 1; j++) {
-            fprintf(pfile, "%d, ", tmpStringParam->vr);
-            tmpStringParam = tmpStringParam->next;
-          }
-          fprintf(pfile, "%d};\n", tmpStringParam->vr);
-        }
-      }
-
       fprintf(pfile, "\treplaceable Real %s[%s];\n", x, nx);
+    }else {
+      fprintf(pfile, "\tReal dummy;\n");
     }
+
+    if (noReal > 0) {
+      tmpReal = pntReal;
+      fprintf(pfile, "\tReal realV[%d];\n", noReal);
+      fprintf(pfile, "\tparameter Integer realVR[%d] = {", noReal);
+      if (noReal == 1)
+        fprintf(pfile, "%d};\n", tmpReal->vr);
+      else if (noReal > 1) {
+        for (j = 0; j < noReal - 1; j++) {
+          fprintf(pfile, "%d, ", tmpReal->vr);
+          tmpReal = tmpReal->next;
+        }
+        fprintf(pfile, "%d};\n", tmpReal->vr);
+      }
+    }
+    if (noRealParam > 0) {
+      tmpRealParam = pntRealParam;
+      fprintf(pfile, "\tparameter Real realVParam[%d];\n", noRealParam);
+      fprintf(pfile, "\tparameter Integer realVRParam[%d] = {", noRealParam);
+      if (noRealParam == 1)
+        fprintf(pfile, "%d};\n", tmpRealParam->vr);
+      else if (noRealParam > 1) {
+        for (j = 0; j < noRealParam - 1; j++) {
+          fprintf(pfile, "%d, ", tmpRealParam->vr);
+          tmpRealParam = tmpRealParam->next;
+        }
+        fprintf(pfile, "%d};\n", tmpRealParam->vr);
+      }
+    }
+
+    if (noInteger > 0) {
+      tmpInteger = pntInteger;
+      fprintf(pfile, "\tInteger integerV[%d];\n", noInteger);
+      fprintf(pfile, "\tparameter Integer integerVR[%d] = {", noInteger);
+      if (noInteger == 1)
+        fprintf(pfile, "%d};\n", tmpInteger->vr);
+      else if (noInteger > 1) {
+        for (j = 0; j < noInteger - 1; j++) {
+          fprintf(pfile, "%d, ", tmpInteger->vr);
+          tmpInteger = tmpInteger->next;
+        }
+        fprintf(pfile, "%d};\n", tmpInteger->vr);
+      }
+    }
+
+    if (noIntegerParam > 0) {
+      tmpIntegerParam = pntIntegerParam;
+      fprintf(pfile, "\tparameter Integer integerVParam[%d];\n",
+          noIntegerParam);
+      fprintf(pfile, "\tparameter Integer integerVRParam[%d] = {",
+          noIntegerParam);
+      if (noIntegerParam == 1)
+        fprintf(pfile, "%d};\n", tmpIntegerParam->vr);
+      else if (noIntegerParam > 1) {
+        for (j = 0; j < noIntegerParam - 1; j++) {
+          fprintf(pfile, "%d, ", tmpIntegerParam->vr);
+          tmpIntegerParam = tmpIntegerParam->next;
+        }
+        fprintf(pfile, "%d};\n", tmpIntegerParam->vr);
+      }
+    }
+    if (noBoolean > 0) {
+      tmpBoolean = pntBoolean;
+      fprintf(pfile, "\tBoolean booleanV[%d];\n", noBoolean);
+      fprintf(pfile, "\tparameter Integer booleanVR[%d] = {", noBoolean);
+      if (noBoolean == 1)
+        fprintf(pfile, "%d};\n", tmpBoolean->vr);
+      else if (noBoolean > 1) {
+        for (j = 0; j < noBoolean - 1; j++) {
+          fprintf(pfile, "%d, ", tmpBoolean->vr);
+          tmpBoolean = tmpBoolean->next;
+        }
+        fprintf(pfile, "%d};\n", tmpBoolean->vr);
+      }
+    }
+
+    if (noBooleanParam > 0) {
+      tmpBooleanParam = pntBooleanParam;
+      fprintf(pfile, "\tparameter Boolean booleanVParam[%d];\n",
+          noBooleanParam);
+      fprintf(pfile, "\tparameter Integer booleanVRParam[%d] = {",
+          noBooleanParam);
+      if (noBooleanParam == 1)
+        fprintf(pfile, "%d};\n", tmpBoolean->vr);
+      else if (noBooleanParam > 1) {
+        for (j = 0; j < noBooleanParam - 1; j++) {
+          fprintf(pfile, "%d, ", tmpBooleanParam->vr);
+          tmpBooleanParam = tmpBooleanParam->next;
+        }
+        fprintf(pfile, "%d};\n", tmpBooleanParam->vr);
+      }
+    }
+
+    if (noString > 0) {
+      tmpString = pntString;
+      fprintf(pfile, "\tString stringV[%d];\n", noString);
+      fprintf(pfile, "\tparameter Integer stringVR[%d] = {", noString);
+      if (noString == 1)
+        fprintf(pfile, "%d};\n", tmpString->vr);
+      else if (noString > 1) {
+        for (j = 0; j < noString - 1; j++) {
+          fprintf(pfile, "%d, ", tmpString->vr);
+          tmpString = tmpString->next;
+        }
+        fprintf(pfile, "%d};\n", tmpString->vr);
+      }
+    }
+
+    if (noStringParam > 0) {
+      tmpStringParam = pntStringParam;
+      fprintf(pfile, "\tparameter String stringVParam[%d];\n", noString);
+      fprintf(pfile, "\tparameter Integer stringVRParam[%d] = {",
+          noStringParam);
+      if (noStringParam == 1)
+        fprintf(pfile, "%d};\n", tmpStringParam->vr);
+      else if (noStringParam > 1) {
+        for (j = 0; j < noStringParam - 1; j++) {
+          fprintf(pfile, "%d, ", tmpStringParam->vr);
+          tmpStringParam = tmpStringParam->next;
+        }
+        fprintf(pfile, "%d};\n", tmpStringParam->vr);
+      }
+    }
+
     if (fmuMD->nei > 0) {
       fprintf(pfile, "\tparameter Integer %s = %d;\n", nz, fmuMD->nei);
       fprintf(pfile, "\tReal %s[%s];\n", z, nz);
       fprintf(pfile, "\tReal %s[%s];\n", prez, nz);
       /*fprintf(pfile, "\tReal %s[%s];\n", zXprez, nz); */
-      fprintf(pfile, "\tBoolean %s[%s] \"flag for state events\";\n",
-          flagSE, nz);
+      fprintf(pfile, "\tBoolean %s[%s] \"flag for state events\";\n", flagSE,
+          nz);
       /*fprintf(pfile, "\tBoolean %s[%s] \"indicator for state events\";\n",
-          indSE, nz);*/
+       indSE, nz);*/
     }
     fprintf(pfile, "\treplaceable parameter Real relTol = 0.0001;\n");
     fprintf(pfile, "\tparameter Integer %s = 0;\n", defaultVar);
@@ -1554,60 +1491,57 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     fprintf(pfile, "\tfmuBoolean interMediateRes = fmuBoolean(%s);\n",
         defaultVar);
     /*fprintf(pfile,"\tfmuBoolean freeAll = fmuBoolean(default);\n");*/
-    fprintf(pfile,
-        "\tfmuFunctions fmufun = fmuFunctions(\"%s\",dllPath);\n",
+    fprintf(pfile, "\tfmuFunctions fmufun = fmuFunctions(\"%s\",dllPath);\n",
         fmuMD->mid);
     fprintf(pfile, "\tfmuCallbackFuns functions = fmuCallbackFuns();\n");
     fprintf(pfile, "\tReal flowhack1;\n");
     fprintf(pfile, "\tReal flowhack2;\n");
     fprintf(pfile, "\tReal flowhack3;\n");
     fprintf(pfile, "\tReal flowhack4;\n");
+    fprintf(pfile, "\tBoolean initializationDone(start=false);\n");
     fprintf(pfile, "initial algorithm\n");
     fprintf(pfile, "\tfmuSetTime(fmufun, inst, time);\n");
+    fprintf(pfile, "\tif not initializationDone then\n");
 
     /* Set start values for real variables */
     if (noReal > 0) {
       tmpReal = pntReal;
-      fprintf(pfile, "\tfmuSetRealVR(fmufun, inst, %d, realVR,", noReal);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\tfmuSetRealVR(fmufun, inst, %d, realVR,", noReal);
+      fprintf(pfile, "\t\t{");
       if (noReal == 1)
-        fprintf(pfile, "%s});\n",
-            tmpReal->name);
+        fprintf(pfile, "%s});\n", tmpReal->name);
       else if (noReal > 1) {
         for (j = 0; j < noReal - 1; j++) {
-          fprintf(pfile, "%s, ",
-              tmpReal->name);
+          fprintf(pfile, "%s, ", tmpReal->name);
           tmpReal = tmpReal->next;
         }
-        fprintf(pfile, " %s});\n",tmpReal->name);
+        fprintf(pfile, " %s});\n", tmpReal->name);
       }
     }
 
     /* Set start values for real parameters */
     if (noRealParam > 0) {
       tmpRealParam = pntRealParam;
-      fprintf(pfile, "\tfmuSetRealVR(fmufun, inst, %d, realVRParam,", noRealParam);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\tfmuSetRealVR(fmufun, inst, %d, realVRParam,",
+          noRealParam);
+      fprintf(pfile, "\t\t{");
       if (noRealParam == 1)
-        fprintf(pfile, "%s});\n",
-            tmpRealParam->name);
+        fprintf(pfile, "%s});\n", tmpRealParam->name);
       else if (noRealParam > 1) {
         for (j = 0; j < noRealParam - 1; j++) {
           fprintf(pfile, "%s, ", tmpRealParam->name);
           tmpRealParam = tmpRealParam->next;
         }
-        fprintf(pfile, " %s});",tmpRealParam->name);
+        fprintf(pfile, " %s});", tmpRealParam->name);
       }
     }
 
     /* Set start values for integer variables */
     if (noInteger > 0) {
       tmpInteger = pntInteger;
-      fprintf(
-          pfile,
-          "\tintegerV = fmuSetIntegerVR(fmufun, inst, %d, integerVR,",
+      fprintf(pfile, "\t\tfmuSetIntegerVR(fmufun, inst, %d, integerVR,",
           noInteger);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\t{");
       if (noInteger == 1)
         fprintf(pfile, "%s});\n", tmpInteger->name);
       else if (noInteger > 1) {
@@ -1622,11 +1556,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     /* Set start values for integer parameters */
     if (noIntegerParam > 0) {
       tmpIntegerParam = pntIntegerParam;
-      fprintf(
-          pfile,
-          "\tintegerV = fmuSetIntegerVR(fmufun, inst, %d, integerVR,",
+      fprintf(pfile, "\t\tfmuSetIntegerVR(fmufun, inst, %d, integerVR,",
           noIntegerParam);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\t{");
       if (noIntegerParam == 1)
         fprintf(pfile, "%s});\n", tmpIntegerParam->name);
       else if (noIntegerParam > 1) {
@@ -1641,13 +1573,11 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     /* Set start values for boolean variables */
     if (noBoolean > 0) {
       tmpBoolean = pntBoolean;
-      fprintf(
-          pfile,
-          "\tbooleanV = fmuSetBooleanVR(fmufun, inst, %d, booleanVR,",
+      fprintf(pfile, "\t\tfmuSetBooleanVR(fmufun, inst, %d, booleanVR,",
           noBoolean);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\t{");
       if (noBoolean == 1)
-        fprintf(pfile, "%s})\n", tmpBoolean->name);
+        fprintf(pfile, "%s});\n", tmpBoolean->name);
       else if (noBoolean > 1) {
         for (j = 0; j < noBoolean - 1; j++) {
           fprintf(pfile, "%s, ", tmpBoolean->name);
@@ -1660,8 +1590,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     /* Set start values for boolean parameters */
     if (noBooleanParam > 0) {
       tmpBooleanParam = pntBooleanParam;
-      fprintf(pfile,
-          "\tParamV = fmuSetBooleanVR(fmufun, inst, %d, booleanParamVR,",
+      fprintf(pfile, "\t\tfmuSetBooleanVR(fmufun, inst, %d, booleanParamVR,",
           noBoolean);
       fprintf(pfile, "\t{");
       if (noBooleanParam == 1)
@@ -1677,11 +1606,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     /* Set start values for string variables */
     if (noString > 0) {
       tmpString = pntString;
-      fprintf(
-          pfile,
-          "\tbooleanV = fmuSetBooleanVR(fmufun, inst, %d, booleanVR,",
+      fprintf(pfile, "\t\tfmuSetStringVR(fmufun, inst, %d, stringVR,",
           noBoolean);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\t{");
       if (noString == 1)
         fprintf(pfile, "%s})\n", tmpString->name);
       else if (noString > 1) {
@@ -1696,10 +1623,9 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     /* Set start values for string parameters */
     if (noStringParam > 0) {
       tmpStringParam = pntStringParam;
-      fprintf(pfile,
-          "\tParamV = fmuSetBooleanVR(fmufun, inst, %d, booleanParamVR,",
+      fprintf(pfile, "\t\tfmuSetstringVR(fmufun, inst, %d, stringParamVR,",
           noBoolean);
-      fprintf(pfile, "\t{");
+      fprintf(pfile, "\t\t{");
       if (noStringParam == 1)
         fprintf(pfile, "%s});\n", tmpStringParam->name);
       else if (noStringParam > 1) {
@@ -1711,144 +1637,154 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    fprintf(pfile,
-        "\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
-    if (fmuMD->ncs > 0) {
-      fprintf(pfile, "\t%s:=fmuGetContStates(fmufun, inst, %s);\n", x,
-          nx);
+    fprintf(pfile, "\t\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
+    fprintf(pfile, "\t\tinitializationDone:= true;\n");
+    fprintf(pfile, "\tend if;\n");
 
+    if (fmuMD->ncs > 0) {
+      fprintf(pfile, "\t%s:=fmuGetContStates(fmufun, inst, %s);\n", x, nx);
+    }
 #ifdef _DEBUG_MODELICA
-      fprintf(pfile,"\tprintVariable(%s, %s, \"%s, initial algorithm\");\n",x,nx,x);
+    fprintf(pfile,"\tprintVariable(%s, %s, \"%s, initial algorithm\");\n",x,nx,x);
 #endif
 
-      fprintf(pfile, "algorithm \n");
-      fputs("\tfmuSetTime(fmufun, inst, time);", pfile);
-      fprintf(pfile, "\tfmuSetContStates(fmufun, inst, %s, %s);\n", nx,
-          x);
-      fprintf(pfile, "\t%s:=fmuGetDer(fmufun, inst, %s, %s);\n", der_x,
-          nx, x);
-      fprintf(pfile, "\t%s:=%s;\n", y, der_x);
-      fprintf(pfile, "\tflowhack1:=1;\n");
-      fprintf(pfile, "equation\n");
-      fprintf(pfile, "\tder(%s) = %s;\n", x, der_x);
+    fprintf(pfile, "algorithm \n");
+    fprintf(pfile, "\tinitializationDone:= true;\n");
+    fputs("\tfmuSetTime(fmufun, inst, time);\n", pfile);
 
-      if (noReal > 0) {
-        int *aliasInd = (int *) calloc(noReal, sizeof(int));
-        tmpReal = pntReal;
-        for (j = 0; j < noReal; j++) {
-          aliasInd[j] = tmpReal->aliasInd;
+    if (fmuMD->ncs > 0) {
+      fprintf(pfile, "\tfmuSetContStates(fmufun, inst, %s, %s);\n", nx, x);
+      fprintf(pfile, "\t%s:=fmuGetDer(fmufun, inst, %s, %s);\n", der_x, nx, x);
+      fprintf(pfile, "\t%s:=%s;\n", y, der_x);
+    }else{
+      /* workaround for array with zero-elements
+       * we need to call that function for our export
+       */
+      fprintf(pfile, "\tfmuSetContStates(fmufun, inst, 0, {dummy});\n");
+    }
+
+
+    fprintf(pfile, "\tflowhack1:=1;\n");
+    fprintf(pfile, "equation\n");
+    if (fmuMD->ncs > 0) {
+      fprintf(pfile, "\tder(%s) = %s;\n", x, der_x);
+    }else{
+      fprintf(pfile, "\tder(dummy) = 0;\n");
+    }
+
+
+    if (noReal > 0) {
+      int *aliasInd = (int *) calloc(noReal, sizeof(int));
+      tmpReal = pntReal;
+      for (j = 0; j < noReal; j++) {
+        aliasInd[j] = tmpReal->aliasInd;
+        tmpReal = tmpReal->next;
+      }
+
+      fprintf(pfile, "\trealV = fmuGetRealVR(fmufun, inst, %d, realVR);\n",
+          noReal);
+      tmpReal = pntReal;
+      fprintf(pfile, "\t{");
+      if (noReal == 1)
+        fprintf(pfile, "%s} = realV;\n", tmpReal->name);
+      else if (noReal > 1) {
+        for (j = 0; j < noReal - 1; j++) {
+          fprintf(pfile, "%s, ", tmpReal->name);
           tmpReal = tmpReal->next;
         }
-
-        fprintf(pfile,
-            "\trealV = fmuGetRealVR(fmufun, inst, %d, realVR);\n",
-            noReal);
-        tmpReal = pntReal;
-        fprintf(pfile, "\t{");
-        if (noReal == 1)
-          fprintf(pfile, "%s} = realV;\n", tmpReal->name);
-        else if (noReal > 1) {
-          for (j = 0; j < noReal - 1; j++) {
-            fprintf(pfile, "%s, ", tmpReal->name);
-            tmpReal = tmpReal->next;
-          }
-          fprintf(pfile, "%s} = realV*diagonal({", tmpReal->name);
-          for (j = 0; j < noReal - 1; j++)
-            fprintf(pfile, "%d,", aliasInd[j]);
-          fprintf(pfile, "%d});\n", aliasInd[noReal - 1]);
-        }
-        free(aliasInd);
+        fprintf(pfile, "%s} = realV*diagonal({", tmpReal->name);
+        for (j = 0; j < noReal - 1; j++)
+          fprintf(pfile, "%d,", aliasInd[j]);
+        fprintf(pfile, "%d});\n", aliasInd[noReal - 1]);
       }
-      if (noInteger > 0) {
-        int *aliasInd = (int *) calloc(noInteger, sizeof(int));
-        tmpInteger = pntInteger;
-        for (j = 0; j < noInteger; j++) {
-          aliasInd[j] = tmpInteger->aliasInd;
+      free(aliasInd);
+    }
+    if (noInteger > 0) {
+      int *aliasInd = (int *) calloc(noInteger, sizeof(int));
+      tmpInteger = pntInteger;
+      for (j = 0; j < noInteger; j++) {
+        aliasInd[j] = tmpInteger->aliasInd;
+        tmpInteger = tmpInteger->next;
+      }
+
+      fprintf(pfile,
+          "\tintegerV = fmuGetIntegerVR(fmufun, inst, %d, integerVR);\n",
+          noInteger);
+      tmpInteger = pntInteger;
+      fprintf(pfile, "\t{");
+      if (noInteger == 1)
+        fprintf(pfile, "%s} = integerV;\n", tmpInteger->name);
+      else if (noInteger > 1) {
+        for (j = 0; j < noInteger - 1; j++) {
+          fprintf(pfile, "%s, ", tmpInteger->name);
           tmpInteger = tmpInteger->next;
         }
-
-        fprintf(
-            pfile,
-            "\tintegerV = fmuGetIntegerVR(fmufun, inst, %d, integerVR);\n",
-            noInteger);
-        tmpInteger = pntInteger;
-        fprintf(pfile, "\t{");
-        if (noInteger == 1)
-          fprintf(pfile, "%s} = integerV;\n", tmpInteger->name);
-        else if (noInteger > 1) {
-          for (j = 0; j < noInteger - 1; j++) {
-            fprintf(pfile, "%s, ", tmpInteger->name);
-            tmpInteger = tmpInteger->next;
-          }
-          fprintf(pfile, "%s} = integerV*diagonal({",
-              tmpInteger->name);
-          for (j = 0; j < noInteger - 1; j++)
-            fprintf(pfile, "%d,", aliasInd[j]);
-          fprintf(pfile, "%d});\n", aliasInd[noInteger - 1]);
-        }
-        free(aliasInd);
+        fprintf(pfile, "%s} = integerV*diagonal({", tmpInteger->name);
+        for (j = 0; j < noInteger - 1; j++)
+          fprintf(pfile, "%d,", aliasInd[j]);
+        fprintf(pfile, "%d});\n", aliasInd[noInteger - 1]);
       }
-      if (noBoolean > 0) {
-        int *aliasInd = (int *) calloc(noBoolean, sizeof(int));
-        tmpBoolean = pntBoolean;
-        for (j = 0; j < noBoolean; j++) {
-          aliasInd[j] = tmpBoolean->aliasInd;
+      free(aliasInd);
+    }
+    if (noBoolean > 0) {
+      int *aliasInd = (int *) calloc(noBoolean, sizeof(int));
+      tmpBoolean = pntBoolean;
+      for (j = 0; j < noBoolean; j++) {
+        aliasInd[j] = tmpBoolean->aliasInd;
+        tmpBoolean = tmpBoolean->next;
+      }
+
+      fprintf(pfile,
+          "\tbooleanV = fmuGetBooleanVR(fmufun, inst, %d, booleanVR);\n",
+          noBoolean);
+      tmpBoolean = pntBoolean;
+      fprintf(pfile, "\t{");
+      if (noBoolean == 1)
+        fprintf(pfile, "%s} = booleanV;\n", tmpBoolean->name);
+      else if (noBoolean > 1) {
+        for (j = 0; j < noBoolean - 1; j++) {
+          fprintf(pfile, "%s, ", tmpBoolean->name);
           tmpBoolean = tmpBoolean->next;
         }
-
-        fprintf(
-            pfile,
-            "\tbooleanV = fmuGetBooleanVR(fmufun, inst, %d, booleanVR);\n",
-            noBoolean);
-        tmpBoolean = pntBoolean;
-        fprintf(pfile, "\t{");
-        if (noBoolean == 1)
-          fprintf(pfile, "%s} = booleanV;\n", tmpBoolean->name);
-        else if (noBoolean > 1) {
-          for (j = 0; j < noBoolean - 1; j++) {
-            fprintf(pfile, "%s, ", tmpBoolean->name);
-            tmpBoolean = tmpBoolean->next;
-          }
-          fprintf(pfile, "%s} = booleanV;\n", tmpBoolean->name);
-        }
-        free(aliasInd);
+        fprintf(pfile, "%s} = booleanV;\n", tmpBoolean->name);
       }
-      if (noString > 0) {
-        int *aliasInd = (int *) calloc(noString, sizeof(int));
-        tmpString = pntString;
-        for (j = 0; j < noString; j++) {
-          aliasInd[j] = tmpString->aliasInd;
+      free(aliasInd);
+    }
+    if (noString > 0) {
+      int *aliasInd = (int *) calloc(noString, sizeof(int));
+      tmpString = pntString;
+      for (j = 0; j < noString; j++) {
+        aliasInd[j] = tmpString->aliasInd;
+        tmpString = tmpString->next;
+      }
+
+      fprintf(pfile,
+          "\tstringV = fmuGetStringVR(fmufun, inst, %d, stringVR);\n",
+          noString);
+      tmpString = pntString;
+      fprintf(pfile, "\t{");
+      if (noString == 1)
+        fprintf(pfile, "%s} = stringV;\n", tmpString->name);
+      else if (noString > 1) {
+        for (j = 0; j < noString - 1; j++) {
+          fprintf(pfile, "%s, ", tmpString->name);
           tmpString = tmpString->next;
         }
-
-        fprintf(
-            pfile,
-            "\tstringV = fmuGetStringVR(fmufun, inst, %d, stringVR);\n",
-            noString);
-        tmpString = pntString;
-        fprintf(pfile, "\t{");
-        if (noString == 1)
-          fprintf(pfile, "%s} = stringV;\n", tmpString->name);
-        else if (noString > 1) {
-          for (j = 0; j < noString - 1; j++) {
-            fprintf(pfile, "%s, ", tmpString->name);
-            tmpString = tmpString->next;
-          }
-          fprintf(pfile, "%s} = stringV;\n", tmpString->name);
-        }
-        free(aliasInd);
+        fprintf(pfile, "%s} = stringV;\n", tmpString->name);
       }
-      fprintf(
-          pfile,
-          "\tflowhack2 = flowhack1*time; // added time just to be sure it's not simple\n");
-      fprintf(pfile, "algorithm\n");
-      fprintf(pfile, "\tflowhack3 := flowhack2*time;\n");
+      free(aliasInd);
+    }
+
+    fprintf(
+        pfile,
+        "\tflowhack2 = flowhack1*time; // added time just to be sure it's not simple\n");
+    fprintf(pfile, "algorithm\n");
+    fprintf(pfile, "\tflowhack3 := flowhack2*time;\n");
 
 #ifdef _DEBUG_MODELICA
-      fprintf(pfile,"\tprintVariable(time, 1, \"time\");\n");
-      fprintf(pfile,"\tprintVariable(%s, %s, \"nx\");\n",x,nx);
+    fprintf(pfile,"\tprintVariable(time, 1, \"time\");\n");
+    fprintf(pfile,"\tprintVariable(%s, %s, \"nx\");\n",x,nx);
 #endif
-    }
 
     if (fmuMD->nei > 0) {
       fprintf(pfile, "\t%s:=%s;\n", prez, z);
@@ -1856,44 +1792,42 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       for (j = 1; j <= fmuMD->nei; j++) {
         fprintf(pfile, "\t%s[%d] := %s[%d]>0;\n", flagSE, j, z, j);
         /*
-        fprintf(pfile, "\t%s[%d] := change(%s[%d]);\n", indSE, j,
-            flagSE, j);
-        fprintf(pfile, "\t%s[%d] := %s[%d] * %s[%d];\n", zXprez, j, z,
-            j, prez, j);
-        */
+         fprintf(pfile, "\t%s[%d] := change(%s[%d]);\n", indSE, j,
+         flagSE, j);
+         fprintf(pfile, "\t%s[%d] := %s[%d] * %s[%d];\n", zXprez, j, z,
+         j, prez, j);
+         */
       }
-      fprintf(pfile,"\twhen ");
-      for (j = 1; j <= fmuMD->nei-1; j++) {
+      fprintf(pfile, "\twhen (");
+      for (j = 1; j <= fmuMD->nei - 1; j++) {
         fprintf(pfile, "change(%s[%d]) or ", flagSE, j);
       }
-      fprintf(pfile, "change(%s[%d]) then\n", flagSE, j);
+      fprintf(pfile, "change(%s[%d])) and not initial() then\n", flagSE, j);
       fprintf(
           pfile,
           "\t\tfmuEvtUpdate(fmufun, inst, evtInfo, timeEvt, stepEvt, stateEvt, interMediateRes);\n");
       //fprintf(pfile,"\tend when;\n");
       /*fprintf(pfile,"algorithm \n");
-      fprintf(pfile, "\tflowhack4 := flowhack3*time;\n");
-      fprintf(pfile, "\tfmuStateEvtCheck(stateEvt, %s, %s, save_%s);\n", nz, z,
-          prez);
-      */
+       fprintf(pfile, "\tflowhack4 := flowhack3*time;\n");
+       fprintf(pfile, "\tfmuStateEvtCheck(stateEvt, %s, %s, save_%s);\n", nz, z,
+       prez);
+       */
     }
     if (fmuMD->ncs > 0) {
-      fprintf(pfile, "\t%s:=fmuGetContStates(fmufun, inst, %s);\n", out_x,
-          nx);
+      fprintf(pfile, "\t\t%s:=fmuGetContStates(fmufun, inst, %s);\n", out_x, nx);
       /*fprintf(pfile, "\t%s:=fmuGetDer(fmufun, inst, %s, %s);\n",
-          out_der_x, nx, out_x);
-      */
-      //fprintf(pfile, "equation\n");
-      if (fmuMD->nei > 0) {
-        for (j = 1; j <= fmuMD->ncs; j++) {
-          fprintf(pfile, "\t\treinit(%s[%d], %s[%d]);\n", x, j, out_x,
-              j);
-          /*fprintf(pfile, "\t\treinit(%s[%d], %s[%d]);\n", der_x, j,
-              out_der_x, j);
-          */
-        }
-        fprintf(pfile, "\tend when;\n");
+       out_der_x, nx, out_x);
+       */
+    }
+    //fprintf(pfile, "equation\n");
+    if (fmuMD->nei > 0) {
+      for (j = 1; j <= fmuMD->ncs; j++) {
+        fprintf(pfile, "\t\treinit(%s[%d], %s[%d]);\n", x, j, out_x, j);
+        /*fprintf(pfile, "\t\treinit(%s[%d], %s[%d]);\n", der_x, j,
+         out_der_x, j);
+         */
       }
+      fprintf(pfile, "\tend when;\n");
     }
     fprintf(pfile, "algorithm\n");
     fprintf(pfile, "\tflowhack4 := flowhack3*time;\n");
@@ -1971,8 +1905,7 @@ int main(int argc, char *argv[]) {
   if (argc < 3) {
     printUsage();
     ERRORPRINT;
-    fprintf(errLogFile, "#### Wrong arguments passed to main entry...%s\n",
-        "");
+    fprintf(errLogFile, "#### Wrong arguments passed to main entry...%s\n", "");
     exit(EXIT_FAILURE);
   } else if (strcasecmp(argv[1], "-h") == 0) {
     printUsage();
@@ -1997,25 +1930,22 @@ int main(int argc, char *argv[]) {
   printf("#### fmuname: %s\n",fmuname);
 #endif
   if (strncmp(argv[2], "--outputdir=", 12) == 0) {
-    decompPath = (char*) calloc((strlen(argv[2]) - 10), sizeof(char));
-    strncpy((char*) decompPath, argv[2] + 12, strlen(argv[2]) - 11);
+    decompPath = (char*) calloc((strlen(argv[2]) - 10), sizeof(char));strncpy((char*)decompPath, argv[2] + 12, strlen(argv[2]) - 11);
     strcat((char*) decompPath, "/");
   } else {
-    printUsage();
-    ERRORPRINT;
-    fprintf(
-        errLogFile,
-        "#### Invalid output directory. Wrong argument for decompression path...%s\n",
-        "");
-    exit(EXIT_FAILURE);
-  }
+      printUsage();
+      ERRORPRINT;
+      fprintf(
+          errLogFile,
+          "#### Invalid output directory. Wrong argument for decompression path...%s\n",
+          "");
+      exit(EXIT_FAILURE);
+    }
   if (decompPath == NULL) {
-    printf(
-        "#### path for decompression is not available: decompPath = %s\n",
+    printf("#### path for decompression is not available: decompPath = %s\n",
         "NULL");
     ERRORPRINT;
-    fprintf(
-        errLogFile,
+    fprintf(errLogFile,
         "#### path for decompression is not available: decompPath = %s\n",
         "NULL");
     exit(EXIT_FAILURE);
@@ -2026,12 +1956,10 @@ int main(int argc, char *argv[]) {
   decompress(argv[1] + 10, decompPath);
   xmlFile = getNameXMLfile(decompPath, MODEL_DESCRIPTION);
   if (xmlFile == NULL) {
-    printf(
-        "#### model description xml file is not available: xmlFile = %s\n",
+    printf("#### model description xml file is not available: xmlFile = %s\n",
         "NULL");
     ERRORPRINT;
-    fprintf(
-        errLogFile,
+    fprintf(errLogFile,
         "#### model description xml file is not available: xmlFile = %s\n",
         "NULL");
     exit(EXIT_FAILURE);
@@ -2040,12 +1968,10 @@ int main(int argc, char *argv[]) {
   /* Parsing the model description file as a tree-like structure */
   md = parse(xmlFile);
   if (md == NULL) {
-    printf(
-        "#### parsing model description xml file occurred error: md = %s\n",
+    printf("#### parsing model description xml file occurred error: md = %s\n",
         "NULL");
     ERRORPRINT;
-    fprintf(
-        errLogFile,
+    fprintf(errLogFile,
         "#### parsing model description xml file occurred error: md = %s\n",
         "NULL");
     exit(EXIT_FAILURE);
@@ -2059,8 +1985,8 @@ int main(int argc, char *argv[]) {
   } else {
     printf("#### There is no scalar variable in the model %s\n", fmuname);
     ERRORPRINT;
-    fprintf(errLogFile,
-        "#### There is no scalar variable in the model %s\n", fmuname);
+    fprintf(errLogFile, "#### There is no scalar variable in the model %s\n",
+        fmuname);
     exit(EXIT_FAILURE);
   }
   fmuMV = (fmiModelVariable*) calloc(1, sizeof(fmiModelVariable));

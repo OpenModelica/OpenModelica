@@ -252,7 +252,7 @@ void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
 /* set boolean variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const char* in_bv, int nvr){
+void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* in_bv, int nvr){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -571,10 +571,9 @@ void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
     const char* category, const char* message, ...){
   va_list message_args;
   va_start(message_args, message);
-  printf("-----------------------------------------------------------\n");
-  printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message:\n",(long)in_fmu,instanceName,status,category);
+  printf("[ '%s', %d, '%s'",instanceName,status,category);
   vprintf(message, message_args);
-  printf("\n-----------------------------------------------------------\n");
+  printf("]\n");
   va_end(message_args);
 }
 
