@@ -144,7 +144,9 @@ algorithm
     case (_,path,name,false)
       equation
         pd = System.pathDelimiter();
-        p = Parser.parse(path +& pd +& name,"UTF-8");
+        encodingfile = stringAppendList({path,pd,"package.encoding"});
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,"UTF-8"),"\n")," ");
+        p = Parser.parse(path +& pd +& name,encoding);
       then
         p;
 
