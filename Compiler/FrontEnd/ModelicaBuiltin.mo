@@ -885,13 +885,13 @@ end Time;
 
 end Internal;
 
-function checkSettings "Display some diagnostics"
+function checkSettings "Display some diagnostics."
   output CheckSettingsResult result;
 external "builtin";
 annotation(preferredView="text");
 end checkSettings;
 
-function loadFile "load file (*.mo) and merge it with the loaded AST"
+function loadFile "load file (*.mo) and merge it with the loaded AST."
   input String fileName;
   input String encoding := "UTF-8";
   output Boolean success;
@@ -954,14 +954,14 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system;
 
-function saveAll "save the entire loaded AST to file"
+function saveAll "save the entire loaded AST to file."
   input String fileName;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end saveAll;
 
-function help "display the OpenModelica help text"
+function help "display the OpenModelica help text."
   output String helpText;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
@@ -969,13 +969,13 @@ algorithm
 annotation(preferredView="text");
 end help;
 
-function clear
+function clear "Clears everything: symboltable and variables."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clear;
 
-function clearVariables
+function clearVariables "Clear all user defined variables."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -1074,13 +1074,13 @@ external "builtin";
 annotation(preferredView="text");
 end setTempDirectoryPath;
 
-function getTempDirectoryPath
+function getTempDirectoryPath "Returns the current user temporary directory location."
   output String tempDirectoryPath;
 external "builtin";
 annotation(preferredView="text");
 end getTempDirectoryPath;
 
-function getEnvironmentVar
+function getEnvironmentVar "Returns the value of the environment variable."
   input String var;
   output String value "returns empty string on failure";
 external "builtin";
@@ -1095,7 +1095,7 @@ external "builtin";
 annotation(preferredView="text");
 end setEnvironmentVar;
 
-function appendEnvironmentVar
+function appendEnvironmentVar "Appends a variable to the environment variables list."
   input String var;
   input String value;
   output String result "returns \"error\" if the variable could not be appended";
@@ -1105,7 +1105,7 @@ algorithm
 annotation(preferredView="text");
 end appendEnvironmentVar;
         
-function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar"
+function setInstallationDirectoryPath "Sets the OPENMODELICAHOME environment variable. Use this method instead of setEnvironmentVar."
   input String installationDirectoryPath;
   output Boolean success;
 external "builtin";
@@ -1128,7 +1128,7 @@ See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for 
   preferredView="text");
 end setModelicaPath;
 
-function getModelicaPath "Get the Modelica Library Path"
+function getModelicaPath "Get the Modelica Library Path."
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1162,7 +1162,7 @@ algorithm
 annotation(preferredView="text");
 end setPreOptModules;
 
-function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations"
+function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
   input String modules;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1188,8 +1188,7 @@ external "builtin";
 annotation(preferredView="text");
 end setCommandLineOptions;
 
-function getVersion
-  "Returns the version of the Modelica compiler"
+function getVersion "Returns the version of the Modelica compiler."
   input TypeName cl := $TypeName(OpenModelica);
   output String version;
 external "builtin";
@@ -1307,7 +1306,7 @@ external "builtin";
 annotation(preferredView="text");
 end regex;
 
-function regexBool "Returns true if the string matches the regular expression"
+function regexBool "Returns true if the string matches the regular expression."
   input String str;
   input String re;
   input Boolean extended := true "Use POSIX extended or regular syntax";
@@ -1332,8 +1331,7 @@ external "builtin";
 annotation(preferredView="text");
 end readFileNoNumeric;
 
-function getErrorString
-  "[file.mo:n:n-n:n:b] Error: message"
+function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
   output String errorString;
 external "builtin";
 annotation(preferredView="text");
@@ -1382,7 +1380,7 @@ external "builtin";
 annotation(preferredView="text");
 end getMessagesStringInternal;
 
-function clearMessages "Clears the error buffer"
+function clearMessages "Clears the error buffer."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -1408,7 +1406,7 @@ external "builtin";
 annotation(preferredView="text");
 end getClassesInModelicaPath;
 
-function strictRMLCheck "Checks if any loaded function"
+function strictRMLCheck "Checks if any loaded function."
   output String message "empty if there was no problem";
 external "builtin";
 annotation(preferredView="text");
@@ -1427,13 +1425,13 @@ external "builtin";
 end setClassNamesForSimulation;
 */
 
-function getAnnotationVersion
+function getAnnotationVersion "Returns the current annotation version."
   output String annotationVersion;
 external "builtin";
 annotation(preferredView="text");
 end getAnnotationVersion;
 
-function setAnnotationVersion
+function setAnnotationVersion "Sets the annotation version."
   input String annotationVersion;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1442,13 +1440,13 @@ algorithm
 annotation(preferredView="text");
 end setAnnotationVersion;
 
-function getNoSimplify
+function getNoSimplify "Returns true if noSimplify flag is set."
   output Boolean noSimplify;
 external "builtin";
 annotation(preferredView="text");
 end getNoSimplify;
 
-function setNoSimplify
+function setNoSimplify "Sets the noSimplify flag."
   input Boolean noSimplify;
   output Boolean success;
 external "builtin";
@@ -1483,7 +1481,7 @@ external "builtin";
 annotation(preferredView="text");
 end getShowAnnotations;
 
-function setOrderConnections
+function setOrderConnections "Sets the orderConnection flag."
   input Boolean orderConnections;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1492,13 +1490,13 @@ algorithm
 annotation(preferredView="text");
 end setOrderConnections;
 
-function getOrderConnections
+function getOrderConnections "Returns true if orderConnections flag is set."
   output Boolean orderConnections;
 external "builtin";
 annotation(preferredView="text");
 end getOrderConnections;
 
-function setLanguageStandard
+function setLanguageStandard "Sets the Modelica Language Standard."
   input String inVersion;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1507,7 +1505,7 @@ algorithm
 annotation(preferredView="text");
 end setLanguageStandard;
 
-function getLanguageStandard
+function getLanguageStandard "Returns the current Modelica Language Standard in use."
   output String outVersion;
 external "builtin";
 annotation(preferredView="text");
@@ -1527,22 +1525,21 @@ end getAstAsCorbaString;
 
 function cd "change directory to the given path (which may be either relative or absolute)
   returns the new working directory on success or a message on failure
-  if the given path is the empty string, the function simply returns the current working directory
-  "
+  if the given path is the empty string, the function simply returns the current working directory."
   input String newWorkingDirectory := "";
   output String workingDirectory;
 external "builtin";
 annotation(preferredView="text");
 end cd;
 
-function checkModel
+function checkModel "Checks a model and returns number of variables and equations."
   input TypeName className;
   output String result;
 external "builtin";
 annotation(preferredView="text");
 end checkModel;
 
-function checkAllModelsRecursive
+function checkAllModelsRecursive "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
   input Boolean checkProtected := false "Checks also protected classes if true";
   output String result;
@@ -1557,21 +1554,21 @@ external "builtin";
 annotation(preferredView="text");
 end typeOf;
 
-function instantiateModel
+function instantiateModel "Instantiates the class and returns the flat Modelica code."
   input TypeName className;
   output String result;
 external "builtin";
 annotation(preferredView="text");
 end instantiateModel;
 
-function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
+function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so."
   input TypeName className;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end generateCode;
 
-function loadModel "Loads a Modelica library"
+function loadModel "Loads the Modelica Standard Library."
   input TypeName className;
   input String[:] priorityVersion := {"default"};
   output Boolean success;
@@ -1611,7 +1608,7 @@ You are recommended to convert your files to UTF-8 without byte-order mark.
 preferredView="text");
 end loadModel;
 
-function deleteFile "Deletes a file with the given name"
+function deleteFile "Deletes a file with the given name."
   input String fileName;
   output Boolean success;
 external "builtin";
@@ -1663,7 +1660,7 @@ external "builtin";
 annotation(preferredView="text");
 end codeToString;
 
-function dumpXMLDAE
+function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input TypeName className;
   input String translationLevel := "flat";
   input Boolean addOriginalIncidenceMatrix := false;
@@ -1701,7 +1698,7 @@ external "builtin";
 annotation(preferredView="text");
 end stringReplace;
 
-function list "Lists the contents of the given class, or all loaded classes"
+function list "Lists the contents of the given class, or all loaded classes."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean interfaceOnly := false;
   input Boolean shortOnly := false "only short class definitions";
@@ -1773,7 +1770,7 @@ external "builtin";
 annotation(preferredView="text");
 end importFMU;
 
-function getSourceFile
+function getSourceFile "Returns the filename of the class."
   input TypeName class_;
   output String filename "empty on failure";
 external "builtin";
@@ -1788,7 +1785,7 @@ external "builtin";
 annotation(preferredView="text");
 end setSourceFile;
 
-function setClassComment
+function setClassComment "Sets the class comment."
   input TypeName class_;
   input String filename;
   output Boolean success;
@@ -1796,7 +1793,7 @@ external "builtin";
 annotation(preferredView="text");
 end setClassComment;
 
-function getClassNames
+function getClassNames "Returns the list of class names defined in the class."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean recursive := false;
   input Boolean qualified := false;
@@ -1808,14 +1805,14 @@ external "builtin";
 annotation(preferredView="text");
 end getClassNames;
 
-function getPackages
+function getPackages "Returns the list of packages defined in the class."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output TypeName classNames[:]; 
 external "builtin";
 annotation(preferredView="text");
 end getPackages;
 
-function setPlotSilent
+function setPlotSilent "Sets the plotSilent flag."
   input Boolean silent;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1824,7 +1821,7 @@ algorithm
 annotation(preferredView="text");
 end setPlotSilent;
 
-function getPlotSilent
+function getPlotSilent "Returns true if plotSilent flag is set."
   output Boolean plotSilent;
 external "builtin";
 annotation(preferredView="text");
@@ -1983,21 +1980,21 @@ external "builtin";
 annotation(preferredView="text");
 end readSimulationResult;
 
-function readSimulationResultSize "The number of intervals that are present in the output file"
+function readSimulationResultSize "The number of intervals that are present in the output file."
   input String fileName;
   output Integer sz;
 external "builtin";
 annotation(preferredView="text");
 end readSimulationResultSize;
 
-function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names"
+function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names."
   input String fileName;
   output String[:] vars;
 external "builtin";
 annotation(preferredView="text");
 end readSimulationResultVars;
 
-public function compareSimulationResults "compare simulation results"
+public function compareSimulationResults "compares simulation results."
   input String filename;
   input String reffilename;
   input String logfilename;
@@ -2023,20 +2020,20 @@ end val;
 function closeSimulationResultFile "Closes the current simulation result file.
   Only needed by Windows. Windows cannot handle reading and writing to the same file from different processes.
   To allow OMEdit to make successful simulation again on the same file we must close the file after reading the Simulation Result Variables.
-  Even OMEdit only use this API for Windows :)"
+  Even OMEdit only use this API for Windows."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end closeSimulationResultFile;
 
-function getAlgorithmCount "Counts the number of Algorithm sections in a class"
+function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getAlgorithmCount;
 
-function getNthAlgorithm "Returns the Nth Algorithm section"
+function getNthAlgorithm "Returns the Nth Algorithm section."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2044,14 +2041,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAlgorithm;
 
-function getInitialAlgorithmCount "Counts the number of Initial Algorithm sections in a class"
+function getInitialAlgorithmCount "Counts the number of Initial Algorithm sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getInitialAlgorithmCount;
 
-function getNthInitialAlgorithm "Returns the Nth Initial Algorithm section"
+function getNthInitialAlgorithm "Returns the Nth Initial Algorithm section."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2059,14 +2056,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialAlgorithm;
 
-function getAlgorithmItemsCount "Counts the number of Algorithm items in a class"
+function getAlgorithmItemsCount "Counts the number of Algorithm items in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getAlgorithmItemsCount;
 
-function getNthAlgorithmItem "Returns the Nth Algorithm Item"
+function getNthAlgorithmItem "Returns the Nth Algorithm Item."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2074,14 +2071,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAlgorithmItem;
 
-function getInitialAlgorithmItemsCount "Counts the number of Initial Algorithm items in a class"
+function getInitialAlgorithmItemsCount "Counts the number of Initial Algorithm items in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getInitialAlgorithmItemsCount;
 
-function getNthInitialAlgorithmItem "Returns the Nth Initial Algorithm Item"
+function getNthInitialAlgorithmItem "Returns the Nth Initial Algorithm Item."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2089,14 +2086,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialAlgorithmItem;
 
-function getEquationCount "Counts the number of Equation sections in a class"
+function getEquationCount "Counts the number of Equation sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getEquationCount;
 
-function getNthEquation "Returns the Nth Equation section"
+function getNthEquation "Returns the Nth Equation section."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2104,14 +2101,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthEquation;
 
-function getInitialEquationCount "Counts the number of Initial Equation sections in a class"
+function getInitialEquationCount "Counts the number of Initial Equation sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getInitialEquationCount;
 
-function getNthInitialEquation "Returns the Nth Initial Equation section"
+function getNthInitialEquation "Returns the Nth Initial Equation section."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2119,14 +2116,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialEquation;
 
-function getEquationItemsCount "Counts the number of Equation items in a class"
+function getEquationItemsCount "Counts the number of Equation items in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getEquationItemsCount;
 
-function getNthEquationItem "Returns the Nth Equation Item"
+function getNthEquationItem "Returns the Nth Equation Item."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2134,14 +2131,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthEquationItem;
 
-function getInitialEquationItemsCount "Counts the number of Initial Equation items in a class"
+function getInitialEquationItemsCount "Counts the number of Initial Equation items in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getInitialEquationItemsCount;
 
-function getNthInitialEquationItem "Returns the Nth Initial Equation Item"
+function getNthInitialEquationItem "Returns the Nth Initial Equation Item."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2149,14 +2146,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthInitialEquationItem;
 
-function getAnnotationCount "Counts the number of Annotation sections in a class"
+function getAnnotationCount "Counts the number of Annotation sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getAnnotationCount;
 
-function getNthAnnotationString "Returns the Nth Annotation section as string"
+function getNthAnnotationString "Returns the Nth Annotation section as string."
   input TypeName class_;
   input Integer index;
   output String result;
@@ -2164,14 +2161,14 @@ external "builtin";
 annotation(preferredView="text");
 end getNthAnnotationString;
 
-function getImportCount "Counts the number of Import sections in a class"
+function getImportCount "Counts the number of Import sections in a class."
   input TypeName class_;
   output Integer count;
 external "builtin";
 annotation(preferredView="text");
 end getImportCount;
 
-function getNthImport "Returns the Nth Import as string"
+function getNthImport "Returns the Nth Import as string."
   input TypeName class_;
   input Integer index;
   output String out[3] "{\"Path\",\"Id\",\"Kind\"}";
@@ -2191,11 +2188,9 @@ external "builtin";
 annotation(preferredView="text");
 end iconv;
 
-function getDocumentationAnnotation "
-  TODO: Should be changed to have 2 outputs instead of an array of 2 Strings...
-"
+function getDocumentationAnnotation "Returns the documentaiton annotation defined in the class."
   input TypeName cl;
-  output String out[2] "{info,revision}";
+  output String out[2] "{info,revision} TODO: Should be changed to have 2 outputs instead of an array of 2 Strings...";
 external "builtin";
 annotation(preferredView="text");
 end getDocumentationAnnotation;
@@ -2214,7 +2209,7 @@ external "builtin";
 annotation(preferredView="text");
 end typeNameStrings;
 
-function getClassComment
+function getClassComment "Returns the class comment."
   input TypeName cl;
   output String comment;
 external "builtin";
