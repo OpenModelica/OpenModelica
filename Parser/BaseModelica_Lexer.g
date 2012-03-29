@@ -295,15 +295,18 @@ IMPURE : 'impure';
 STRING : '"' STRING_GUTS '"'
        {
          pANTLR3_STRING text = $STRING_GUTS.text;
-         if (*text->chars && !*SystemImpl__iconv((const char*)text->chars,"UTF-8","UTF-8",0)) {
+         if (*text->chars && !*SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0)) {
+           const char *strs[2];
            int len = strlen((char*)$text->chars), i;
            signed char *buf  = (signed char*) strdup((char*)text->chars);
            for (i=0;i<len;i++) {
              if (buf[i] < 0)
                buf[i] = '?';
            }
-           c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in UTF-8: \"\%s\".",
-                (const char**) &buf, 1, $line, $pos+1, $line, $pos+len+1,
+           strs[0] = (const char*) buf;
+           strs[1] = ModelicaParser_encoding;
+           c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in \%s: \"\%s\".",
+                strs, 2, $line, $pos+1, $line, $pos+len+1,
                 ModelicaParser_readonly, ModelicaParser_filename_C);
            free(buf);
            ModelicaParser_lexerError = ANTLR3_TRUE;

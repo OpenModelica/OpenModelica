@@ -46,10 +46,10 @@ protected import ParserExt;
 
 public function parse "Parse a mo-file"
   input String filename;
+  input String encoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parse(filename, Config.acceptedGrammar(),
-    Config.getRunningTestsuite());
+  outProgram := ParserExt.parse(filename, Config.acceptedGrammar(), encoding, Config.getRunningTestsuite());
 end parse;
 
 public function parseexp "Parse a mos-file"

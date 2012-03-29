@@ -52,7 +52,7 @@ RML_BEGIN_LABEL(ParserExt__parse)
   if(RML_UNTAGFIXNUM(rmlA1) == 2) flags |= PARSE_META_MODELICA;
   else if(RML_UNTAGFIXNUM(rmlA1) == 3) flags |= PARSE_PAR_MODELICA;
   
-  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,RML_UNTAGFIXNUM(rmlA2));
+  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,RML_STRINGDATA(rmlA2),RML_UNTAGFIXNUM(rmlA3));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
   else
@@ -67,7 +67,7 @@ RML_BEGIN_LABEL(ParserExt__parseexp)
   if(RML_UNTAGFIXNUM(rmlA1) == 2) flags |= PARSE_META_MODELICA;
   else if(RML_UNTAGFIXNUM(rmlA1) == 3) flags |= PARSE_PAR_MODELICA;
   
-  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,RML_UNTAGFIXNUM(rmlA2));
+  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,"UTF-8",RML_UNTAGFIXNUM(rmlA2));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
   else

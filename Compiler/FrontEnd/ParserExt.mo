@@ -45,10 +45,11 @@ public import Interactive;
 public function parse "Parse a mo-file"
   input String filename;
   input Integer acceptedGram;
+  input String encoding;
   input Boolean runningTestsuite;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, acceptedGram, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, acceptedGram, encoding, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"

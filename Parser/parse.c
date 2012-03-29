@@ -57,6 +57,7 @@ extern "C" {
 
 static long unsigned int szMemoryUsed = 0;
 int ModelicaParser_lexerError = 0;
+const char *ModelicaParser_encoding = 0;
 
 static void lexNoRecover(pANTLR3_LEXER lexer)
 {
@@ -371,6 +372,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
 
+  ModelicaParser_encoding = "UTF-8";
   ModelicaParser_filename_C = interactiveFilename;
   ModelicaParser_flags = flags;
   isReadOnly = 0;
@@ -387,7 +389,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   return parseStream(input, runningTestsuite);
 }
 
-static void* parseFile(const char* fileName, int flags, int runningTestsuite)
+static void* parseFile(const char* fileName, int flags, const char *encoding, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
   bool parsedump     = false; //check_debug_flag("parsedump");
@@ -397,6 +399,7 @@ static void* parseFile(const char* fileName, int flags, int runningTestsuite)
   pANTLR3_INPUT_STREAM        input;
   int len = 0;
 
+  ModelicaParser_encoding = encoding;
   ModelicaParser_filename_C = fileName;
   ModelicaParser_flags = flags;
   isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);

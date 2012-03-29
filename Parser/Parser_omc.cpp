@@ -34,13 +34,13 @@ extern "C" {
 #include "rml_compatibility.h"
 #include "parse.c"
 
-void* ParserExt_parse(const char* filename, int acceptedGrammer, int runningTestsuite)
+void* ParserExt_parse(const char* filename, int acceptedGrammer, const char* encoding, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
 
-  void *res = parseFile(filename, flags, runningTestsuite);
+  void *res = parseFile(filename, flags, encoding, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
@@ -53,7 +53,7 @@ void* ParserExt_parseexp(const char* filename, int acceptedGrammer, int runningT
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
   
-  void *res = parseFile(filename, flags, runningTestsuite);
+  void *res = parseFile(filename, flags, "UTF-8", runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   return res;

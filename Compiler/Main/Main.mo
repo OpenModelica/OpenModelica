@@ -467,7 +467,7 @@ algorithm
    case (f :: rest, st as Interactive.SYMBOLTABLE(p, aDep, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
-       pnew = Parser.parse(f);
+       pnew = Parser.parse(f,"UTF-8");
        pnew = Interactive.updateProgram(pnew, p);
        newst = Interactive.SYMBOLTABLE(pnew, aDep, NONE(), ic, iv, cf, lf);
        newst = loadLibs(rest, newst);
@@ -542,7 +542,7 @@ algorithm
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
-        (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f);
+        (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f,"UTF-8");
         // Parse libraries and extra mo-files that might have been given at the command line.
         Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
         // Show any errors that occured during parsing.

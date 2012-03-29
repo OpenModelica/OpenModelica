@@ -893,6 +893,7 @@ end checkSettings;
 
 function loadFile "load file (*.mo) and merge it with the loaded AST"
   input String fileName;
+  input String encoding := "UTF-8";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -903,6 +904,8 @@ function loadString "Parses the data and merges the resulting AST with the
   If a filename is given, it is used to provide error-messages as if the string
 was read in binary format from a file with the same name.
   The file is converted to UTF-8 from the given character set.
+  
+  NOTE: Encoding is deprecated as *ALL* strings are now UTF-8 encoded.
   "
   input String data;
   input String filename := "<interactive>";
@@ -922,6 +925,7 @@ end parseString;
 
 function parseFile
   input String filename;
+  input String encoding := "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -929,6 +933,7 @@ end parseFile;
 
 function loadFileInteractiveQualified
   input String filename;
+  input String encoding := "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -936,6 +941,7 @@ end loadFileInteractiveQualified;
 
 function loadFileInteractive
   input String filename;
+  input String encoding := "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1583,6 +1589,12 @@ Loads a Modelica library.
 If the version searched for is \"default\", the following special priority is used: no version name > highest main release > highest pre-release > lexical sort of others (see table below for examples).
 If none of the searched versions exist, false is returned and an error is added to the buffer.</p>
 <p>A top-level package may either be defined in a file (\"Modelica 3.2.mo\") or directory (\"Modelica 3.2/package.mo\")</p>
+<p>The encoding of any Modelica file in the package is assumed to be UTF-8.
+Legacy code may contain files in a different encoding.
+In order to handle this, add a file package.encoding at the top-level of the package, containing a single line with the name of the encoding in it.
+If your package contains files with mixed encodings and your system iconv supports UTF-8//IGNORE, you can ignore the bad characters in some of the files.
+You are recommended to convert your files to UTF-8 without byte-order mark.
+</p>
 
 <table summary=\"Modelica version numbering\">
 <tr><th>Priority</th><th>Example</th></tr>

@@ -137,21 +137,25 @@ protected function loadClassFromMp
 algorithm
   outProgram := match (id,path,name,isDir)
     local
-      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
+      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,encoding,encodingfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
 
     case (_,path,name,false)
       equation
         pd = System.pathDelimiter();
-        p = Parser.parse(path +& pd +& name);
+        p = Parser.parse(path +& pd +& name,"UTF-8");
       then
         p;
 
     case (id,path,name,true)
       equation
         ts = Absyn.getNewTimeStamp();
-        p = loadCompletePackageFromMp(id, name, path, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
+        /* Check for path/package.encoding; OpenModelica extension */
+        pd = System.pathDelimiter();
+        encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,"UTF-8"),"\n")," ");
+        p = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
       then
         p;
   end match;
@@ -163,11 +167,12 @@ protected function loadCompletePackageFromMp
   input String id "actual class identifier";
   input Absyn.Ident inIdent;
   input String inString;
+  input String encoding;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (id,inIdent,inString,inWithin,inProgram)
+  outProgram := matchcontinue (id,inIdent,inString,encoding,inWithin,inProgram)
     local
       String pd,mp_1,packagefile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
@@ -176,13 +181,13 @@ algorithm
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
       Absyn.TimeStamp ts;
-    case (id,pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
+    case (id,pack,mp,encoding,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile);
+        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile,encoding);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
@@ -190,18 +195,18 @@ algorithm
         subdirs = System.subDirectories(mp_1);
         subdirs = List.sort(subdirs, Util.strcmpBool);
         subdirstr = stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
-        p = loadCompleteSubfiles(id, mp_1, within_, p2);
+        p2 = loadCompleteSubdirs(subdirs, id, mp_1, encoding, within_, p1_1);
+        p = loadCompleteSubfiles(id, mp_1, encoding, within_, p2);
       then
         p;
 
-    case (id,pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
+    case (id,pack,mp,encoding,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile);
+        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile,encoding);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
@@ -209,12 +214,12 @@ algorithm
         subdirs = System.subDirectories(mp_1);
         subdirs = List.sort(subdirs, Util.strcmpBool);
         subdirstr = stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
-        p = loadCompleteSubfiles(id, mp_1, within_, p2);
+        p2 = loadCompleteSubdirs(subdirs, id, mp_1, encoding, within_, p1_1);
+        p = loadCompleteSubfiles(id, mp_1, encoding, within_, p2);
       then
         p;
 
-    case (id,pack,mp,within_,p) // No package.mo file is different from a parse error
+    case (id,pack,mp,encoding,within_,p) // No package.mo file is different from a parse error
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
@@ -231,11 +236,12 @@ protected function loadCompleteSubdirs
   input list<String> inStringLst;
   input Absyn.Ident inIdent;
   input String inString;
+  input String encoding;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inStringLst,inIdent,inString,inWithin,inProgram)
+  outProgram := matchcontinue (inStringLst,inIdent,inString,encoding,inWithin,inProgram)
     local
       Absyn.Within w,w2,within_;
       list<Absyn.Class> oldcls;
@@ -245,21 +251,21 @@ algorithm
       list<String> packs;
       Absyn.TimeStamp ts;
 
-    case ({},_,_,w,Absyn.PROGRAM(classes = oldcls,within_ = w2, globalBuildTimes=ts))
+    case ({},_,_,encoding,w,Absyn.PROGRAM(classes = oldcls,within_ = w2, globalBuildTimes=ts))
       then (Absyn.PROGRAM(oldcls,w2,ts));
-    case ((pack :: packs),pack1,mp,(within_ as Absyn.WITHIN(path = pack2)),oldp)
+    case ((pack :: packs),pack1,mp,encoding,(within_ as Absyn.WITHIN(path = pack2)),oldp)
       equation
         pack_1 = Absyn.joinPaths(pack2, Absyn.IDENT(pack1));
-        p = loadCompletePackageFromMp(pack, pack, mp, Absyn.WITHIN(pack_1), oldp);
-        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
+        p = loadCompletePackageFromMp(pack, pack, mp, encoding, Absyn.WITHIN(pack_1), oldp);
+        p_1 = loadCompleteSubdirs(packs, pack1, mp, encoding, within_, p);
       then
         p_1;
 
-    case ((pack :: packs),pack1,mp,(within_ as Absyn.TOP()),oldp)
+    case ((pack :: packs),pack1,mp,encoding,(within_ as Absyn.TOP()),oldp)
       equation
         pack_1 = Absyn.joinPaths(Absyn.IDENT(pack1), Absyn.IDENT(pack));
-        p = loadCompletePackageFromMp(pack, pack, mp, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
-        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
+        p = loadCompletePackageFromMp(pack, pack, mp, encoding, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
+        p_1 = loadCompleteSubdirs(packs, pack1, mp, encoding, within_, p);
       then
         p_1;
 
@@ -271,7 +277,7 @@ algorithm
         p_1;
     */
 
-    case (pack::_,_,_,_,_)
+    case (pack::_,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubdirs failed: " +& pack);
       then
@@ -284,35 +290,36 @@ protected function loadCompleteSubfiles
   This function loads all modelicafiles (.mo) from a subdir package."
   input Absyn.Ident inIdent;
   input String inString;
+  input String encoding;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inIdent,inString,inWithin,inProgram)
+  outProgram := matchcontinue (inIdent,inString,encoding,inWithin,inProgram)
     local
       list<String> mofiles;
       Absyn.Path within_1,within_;
       Absyn.Program p,oldp;
       String pack,mp;
 
-    case (pack,mp,Absyn.WITHIN(path = within_),oldp)
+    case (pack,mp,encoding,Absyn.WITHIN(path = within_),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
         mofiles = List.sort(mofiles, Util.strcmpBool);
         within_1 = Absyn.joinPaths(within_, Absyn.IDENT(pack));
-        p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(within_1), oldp);
+        p = loadSubpackageFiles(mofiles, mp, encoding, Absyn.WITHIN(within_1), oldp);
       then
         p;
 
-    case (pack,mp,Absyn.TOP(),oldp)
+    case (pack,mp,encoding,Absyn.TOP(),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
         mofiles = List.sort(mofiles, Util.strcmpBool);
-        p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
+        p = loadSubpackageFiles(mofiles, mp, encoding, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
       then
         p;
 
-    case (_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubfiles failed");
       then
@@ -325,11 +332,12 @@ protected function loadSubpackageFiles
   Loads all classes from a subpackage"
   input list<String> inStringLst;
   input String inString;
+  input String encoding;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inStringLst,inString,inWithin,inProgram)
+  outProgram := matchcontinue (inStringLst,inString,encoding,inWithin,inProgram)
     local
       String mp,pd,f_1,f;
       Absyn.Within within_,w;
@@ -338,20 +346,20 @@ algorithm
       list<String> fs;
       Absyn.TimeStamp ts;
 
-    case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w, globalBuildTimes=ts))
+    case ({},mp,encoding,within_,Absyn.PROGRAM(classes = cls,within_ = w, globalBuildTimes=ts))
       then Absyn.PROGRAM(cls,w,ts);
 
-    case ((f :: fs),mp,within_,Absyn.PROGRAM(classes = oldc,globalBuildTimes = ts))
+    case ((f :: fs),mp,encoding,within_,Absyn.PROGRAM(classes = oldc,globalBuildTimes = ts))
       equation
         pd = System.pathDelimiter();
         f_1 = stringAppendList({mp,pd,f});
-        Absyn.PROGRAM(cls,_,_) = Parser.parse(f_1);
+        Absyn.PROGRAM(cls,_,_) = Parser.parse(f_1,encoding);
         p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
-        p_2 = loadSubpackageFiles(fs, mp, within_, p_1);
+        p_2 = loadSubpackageFiles(fs, mp, encoding, within_, p_1);
       then
         p_2;
 
-    case (_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadSubpackageFiles failed");
       then fail();
@@ -362,37 +370,38 @@ public function loadFile
 "function loadFile
   author: x02lucpo
   load the file or the directory structure if the file is named package.mo"
-  input String inString;
+  input String name;
+  input String encoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue inString
+  outProgram := matchcontinue (name,encoding)
     local
       String dir,pd,dir_1,name,filename;
       Absyn.Program p1_1,p1;
 
-    case name
+    case (name,encoding)
       equation
         true = System.regularFileExists(name);
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
-        p1_1 = Parser.parse(name);
+        p1_1 = Parser.parse(name,encoding);
         pd = System.pathDelimiter();
         dir_1 = stringAppendList({dir,pd,".."});
         p1 = loadModelFromEachClass(p1_1, dir_1);
       then
         p1;
 
-    case name
+    case (name,encoding)
       equation
         true = System.regularFileExists(name);
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
-        p1 = Parser.parse(name);
+        p1 = Parser.parse(name,encoding);
       then
         p1;
 
     // faliling
-    case _
+    else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&inString+&"\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+&name+&"\n");
       then
         fail();
   end matchcontinue;

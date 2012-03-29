@@ -775,27 +775,27 @@ algorithm
     case (cache,env,"parseString",_,st,msg)
       then (cache,ValuesUtil.makeArray({}),st);
 
-    case (cache,env,"parseFile",{Values.STRING(str1)},st,msg)
+    case (cache,env,"parseFile",{Values.STRING(str1),Values.STRING(encoding)},st,msg)
       equation
         // clear the errors before!
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        (paths, st) = Interactive.parseFile(str1, st);
+        (paths, st) = Interactive.parseFile(str1, encoding, st);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"loadFileInteractiveQualified",{Values.STRING(str1)},st,msg)
+    case (cache,env,"loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)},st,msg)
       equation
         // clear the errors before!
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        (paths, st) = Interactive.loadFileInteractiveQualified(str1, st);
+        (paths, st) = Interactive.loadFileInteractiveQualified(str1, encoding, st);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"loadFileInteractive",{Values.STRING(str1)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
-        pnew = ClassLoader.loadFile(str1) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
+        pnew = ClassLoader.loadFile(str1,encoding) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
         p = Interactive.updateProgram(pnew, p);
         st = Interactive.setSymbolTableAST(st, p);
@@ -1614,18 +1614,18 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"loadFile",{Values.STRING(name)},
+    case (cache,env,"loadFile",{Values.STRING(name),Values.STRING(encoding)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
-        newp = ClassLoader.loadFile(name);
+        newp = ClassLoader.loadFile(name,encoding);
         newp = Interactive.updateProgram(newp, p);
       then
         (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
-    case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
+    case (cache,env,"loadFile",_,st,msg)
       then (cache,Values.BOOL(false),st);
         
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
