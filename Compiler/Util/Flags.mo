@@ -268,15 +268,15 @@ constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(52, "interactivedump",
 constant DebugFlag RELIDX = DEBUG_FLAG(53, "relidx",
   "");
 constant DebugFlag DUMP_REPL = DEBUG_FLAG(54, "dumprepl",
-  "");
+  "dump the found replacments for remove simple equation");
 constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(55, "dumpFPrepl",
-  "");
+  "dump the found replacements for final parameters");
 constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(56, "dumpParamrepl",
-  "");
+  "dump the found replacements for remove parameters");
 constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(57, "dumpPPrepl",
-  "");
+  "dump the found replacements for protected parameters");
 constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(58, "debugAlias",
-  "");
+  "dump the found alias variables");
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(59, "tearingdump",
   "Dumps tearing information.");
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(60, "jacdump",
@@ -347,6 +347,11 @@ constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(92, "gendebugsymbols",
   "Generate code with debugging symbols.");
 constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(93, "stateselection",
   "Enables dumping of selected states. Works only in combination with backenddaeinfo.");
+constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(94, "dumpderrepl",
+  "Enables dumping of selected states. Works only in combination with backenddaeinfo.");
+constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(95, "dumpeqninorder",
+  "Enables dumping of the equations in the order they are calculated");
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -445,7 +450,9 @@ constant list<DebugFlag> allDebugFlags = {
   WRITE_TO_BUFFER,
   DUMP_BACKENDDAE_INFO,
   GEN_DEBUG_SYMBOLS,
-  DUMP_STATESELECTION_INFO
+  DUMP_STATESELECTION_INFO,
+  DUMP_DERREPL,
+  DUMP_EQNINORDER
 };
 
 // CONFIGURATION FLAGS

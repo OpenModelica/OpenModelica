@@ -646,6 +646,7 @@ algorithm
          BackendDAE.SHARED(knownVars=knvars,externalObjects=eo,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,
          arrayEqs=ae,algorithms=al,complEqs=ce,eventInfo=BackendDAE.EVENT_INFO(wclst,zcl),extObjClasses=eoc,backendDAEType=bdaetype),derrepl)
       equation
+       Debug.fcall(Flags.DUMP_DERREPL, BaseHashTable.dumpHashTable, derrepl);
        n = BackendDAEUtil.equationSize(eqns);
        deeqns = List.sort(deeqns,intGt);
        (eqns1,ae1,al1,ce1,wclst1) = replaceDerEquations1(deeqns,0,n,derrepl,eqns,ae,al,ce,wclst);
@@ -903,6 +904,34 @@ algorithm
         (_,i::_) = BackendVariable.getVar(cr, vars);
       then (cr,i,es,syst,shared,newvars,newvars1,eqTy);        
     // a = der(b) 
+    // a is a dummy_der_state
+    case ({var,var2},pos,eqn,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        (cr2,cr,e2,es,negate) = BackendEquation.derivativeEquation(eqn);
+        // select candidate
+        ((var::_),(k::_)) = BackendVariable.getVar(cr,vars);
+        ((var2::_),(j::_)) = BackendVariable.getVar(cr2,vars);
+        true = BackendVariable.isDummyDerVar(var);
+        // because this is a self genererated var we need not check for uncertainities
+        //false = BackendVariable.varHasUncertainValueRefine(var);
+        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,es,e2,syst,shared,mavars,negate,BackendEquation.equationSource(eqn));
+      then (cr,k,es,syst,shared,mvars,newvars,1);
+    // a = der(b) 
+    // a is not a state
+    /* Frenkel TUD: -because we have no way to store the min,max,nominval,start attribute for der(state) variables we cannot replace 
+                     this simple equations. */   
+    /*case ({var,var2},pos,eqn,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
+      equation
+        (cr2,cr,e2,es,negate) = BackendEquation.derivativeEquation(eqn);
+        // select candidate
+        ((var::_),(k::_)) = BackendVariable.getVar(cr,vars);
+        ((var2::_),(j::_)) = BackendVariable.getVar(cr2,vars);
+        false = BackendVariable.varHasUncertainValueRefine(var);
+        replaceableAlias(var);
+        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,es,e2,syst,shared,mavars,negate,,BackendEquation.equationSource(eqn));
+      then (cr,k,es,syst,shared,mvars,newvars,1);
+    */    
+    // a = der(b) 
     case ({var,var2},pos,eqn,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)
       equation
         (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
@@ -999,12 +1028,13 @@ algorithm
       equation
         // equations of var
         vareqns = mT[i];
-        vareqns1 = List.removeOnTrue(0, intLt, vareqns);
-        derrepl = BaseHashTable.add((cr,exp),derrepl);
+        vareqns1 = List.removeOnTrue(0, intGt, vareqns);
         pos_1 = pos - 1;
+        vareqns1 = List.removeOnTrue(pos, intEq, vareqns1);
+        derrepl = BaseHashTable.add((cr,exp),derrepl);
         vareqns2 = List.intersectionOnTrue(vareqns1, comp, intEq);
         // replace der(a)=b in vareqns
-        (syst,shared) = replacementsInEqns2(vareqns2,exp,cr,syst,shared);
+        (syst,shared) = replacementsInEqns2(vareqns1,exp,cr,syst,shared);
         // update IncidenceMatrix
         syst= BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns2);
       then (vareqns1,syst,shared,repl,derrepl,pos_1::deeqns,meqns);
@@ -3231,9 +3261,12 @@ algorithm
   end matchcontinue;
 end replaceFinalVarTraverser;
 
+/*  
+ * remove paramters stuff 
+ */ 
 
 public function removeParameters
-"function: removeFinalParameters
+"function: removeParameters
   autor wbraun"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
