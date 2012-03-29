@@ -5006,7 +5006,7 @@ algorithm
         tf = List.flatten(t);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, complEqs, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
-        equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, helpVarInfo);
+        equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, helpVarInfo,index);
       then
         {equation_};
         /* continuous system of equations */
@@ -5056,14 +5056,14 @@ protected function generateTearingSystem "function: generateTearingSystem
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerBackendDAEEquationLstOption;
   input BackendDAE.JacobianType inJacobianType;
   input list<HelpVarInfo> helpVarInfo;
+  input Integer index;
   output SimEqSystem equation_;
 algorithm
   equation_:=
-  matchcontinue (inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,mixedEvent,genDiscrete,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,helpVarInfo)
+  matchcontinue (inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,mixedEvent,genDiscrete,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,helpVarInfo,index)
     local
       array<Integer> ass1,ass2;
       list<Integer> block_,block_1,r,t;
-      Integer index;
       BackendDAE.BackendDAE daelow,daelow1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
@@ -5085,7 +5085,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Equation eq;
     case (ass1,ass2,block_,r,t,mixedEvent,_,
-        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn)::{},shared=shared as BackendDAE.SHARED(arrayEqs=ae,initialEqs=ineq,algorithms=algorithms,complEqs=ce)),jac,jac_tp,helpVarInfo)
+        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn)::{},shared=shared as BackendDAE.SHARED(arrayEqs=ae,initialEqs=ineq,algorithms=algorithms,complEqs=ce)),jac,jac_tp,helpVarInfo,_)
       /* no analythic jacobian available. Generate non-linear system */
       equation
         // get equations and variables
@@ -5112,11 +5112,10 @@ algorithm
         simeqnsystemlst = List.map4(block_1,generateTearingOtherEqns,syst,shared,ass2,helpVarInfo);
         simeqnsystem = List.flatten(simeqnsystemlst);
         (resEqs,_) = createNonlinearResidualEquations(reqns, ae, algorithms, ce, {}, repl);
-        index = List.first(block_); // use first equation nr as index
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
         SES_NONLINEAR(index, simeqnsystem1, tcrs);
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "-generateTearingSystem failed \n");
       then
