@@ -143,25 +143,25 @@ void SimulationWidget::setUpForm()
     // Simulation Flags Tab
     mpSimulationFlagsTab = new QWidget;
     // Model Setup File
-    mpModelSetupFileLabel = new QLabel(tr("Model Setup File:"));
+    mpModelSetupFileLabel = new QLabel(tr("Model Setup File (Optional):"));
     mpModelSetupFileTextBox = new QLineEdit;
     mpModelSetupFileBrowseButton = new QPushButton(Helper::browse);
     connect(mpModelSetupFileBrowseButton, SIGNAL(clicked()), SLOT(browseModelSetupFile()));
     // Initialization Methods
-    mpInitializationMethodLabel = new QLabel(tr("Initialization Method:"));
+    mpInitializationMethodLabel = new QLabel(tr("Initialization Method (Optional):"));
     mpInitializationMethodComboBox = new QComboBox;
     mpInitializationMethodComboBox->addItems(Helper::ModelicaInitializationMethods.toLower().split(","));
     // Optimization Methods
-    mpOptimizationMethodLabel = new QLabel(tr("Optimization Method:"));
+    mpOptimizationMethodLabel = new QLabel(tr("Optimization Method (Optional):"));
     mpOptimizationMethodComboBox = new QComboBox;
     mpOptimizationMethodComboBox->addItems(Helper::ModelicaOptimizationMethods.toLower().split(","));
     // Equation System Initialization File
-    mpEquationSystemInitializationFileLabel = new QLabel(tr("Equation System Initialization File:"));
+    mpEquationSystemInitializationFileLabel = new QLabel(tr("Equation System Initialization File (Optional):"));
     mpEquationSystemInitializationFileTextBox = new QLineEdit;
     mpEquationSystemInitializationFileBrowseButton = new QPushButton(Helper::browse);
     connect(mpEquationSystemInitializationFileBrowseButton, SIGNAL(clicked()), SLOT(browseEquationSystemInitializationFile()));
     // Equation System time
-    mpEquationSystemInitializationTimeLabel = new QLabel(tr("Equation System Initialization Time:"));
+    mpEquationSystemInitializationTimeLabel = new QLabel(tr("Equation System Initialization Time (Optional):"));
     mpEquationSystemInitializationTimeTextBox = new QLineEdit;
     // Logging
     mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
@@ -182,7 +182,7 @@ void SimulationWidget::setUpForm()
     pLoggingGroupLayout->addWidget(mpLogNonLinearSystemsCheckBox);
     pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox);
     pLoggingGroupLayout->addWidget(mpLogDebugCheckBox);
-    mpLoggingGroup = new QGroupBox(tr("Logging"));
+    mpLoggingGroup = new QGroupBox(tr("Logging (Optional)"));
     mpLoggingGroup->setLayout(pLoggingGroupLayout);
     // set Output Tab Layout
     QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
@@ -361,8 +361,11 @@ void SimulationWidget::simulate()
         }
         // setup simulation flags
         // setup initiaization method flag
-        simulationFlags.append(tr("-iim"));
-        simulationFlags.append(mpInitializationMethodComboBox->currentText());
+        if (!mpInitializationMethodComboBox->currentText().isEmpty())
+        {
+          simulationFlags.append(tr("-iim"));
+          simulationFlags.append(mpInitializationMethodComboBox->currentText());
+        }
         // setup Model Setup file flag
         if (!mpModelSetupFileTextBox->text().isEmpty())
         {
@@ -370,7 +373,7 @@ void SimulationWidget::simulate()
             simulationFlags.append(mpModelSetupFileTextBox->text());
         }
         // setup Optimization Method flag
-        if (!mpModelSetupFileTextBox->text().isEmpty())
+        if (!mpOptimizationMethodComboBox->currentText().isEmpty())
         {
             simulationFlags.append(tr("-iom"));
             simulationFlags.append(mpOptimizationMethodComboBox->currentText());
@@ -541,7 +544,7 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
         // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
         if (mpProgressDialog->isHidden())
             return;
-        if (mpSimulationProcess->exitCode() != 0)
+        if (mpSimulationProcess->exitCode() != 0 || mpSimulationProcess->exitStatus() == QProcess::CrashExit)
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
                                   arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardError())),

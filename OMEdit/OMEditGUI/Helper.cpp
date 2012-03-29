@@ -139,8 +139,8 @@ QString Helper::exportToOMNotebook = QString("Exporting model to OMNotebook");
 QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook");
 /* Simulation Messages */
 QString Helper::ModelicaSimulationMethods = "dassl,dassl2,euler,rungekutta,dopri5,inline-euler,inline-rungekutta";
-QString Helper::ModelicaInitializationMethods = "none,state";
-QString Helper::ModelicaOptimizationMethods = "nelder_mead_ex,nelder_mead_ex2,simplex,newuoa";
+QString Helper::ModelicaInitializationMethods = ",none,state";
+QString Helper::ModelicaOptimizationMethods = ",nelder_mead_ex,nelder_mead_ex2,simplex,newuoa";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString Helper::fontSizes = QString("6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72");
