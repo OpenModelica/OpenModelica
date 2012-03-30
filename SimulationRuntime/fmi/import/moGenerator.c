@@ -1502,8 +1502,8 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     fprintf(pfile, "initial algorithm\n");
     fprintf(pfile, "\tfmuSetTime(fmufun, inst, time);\n");
     fprintf(pfile, "\tif not initializationDone then\n");
-
-    /* Set start values for real variables */
+		/*
+    // Set start values for real variables
     if (noReal > 0) {
       tmpReal = pntReal;
       fprintf(pfile, "\t\tfmuSetRealVR(fmufun, inst, %d, realVR,", noReal);
@@ -1519,7 +1519,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for real parameters */
+    // Set start values for real parameters 
     if (noRealParam > 0) {
       tmpRealParam = pntRealParam;
       fprintf(pfile, "\t\tfmuSetRealVR(fmufun, inst, %d, realVRParam,",
@@ -1536,7 +1536,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for integer variables */
+    // Set start values for integer variables 
     if (noInteger > 0) {
       tmpInteger = pntInteger;
       fprintf(pfile, "\t\tfmuSetIntegerVR(fmufun, inst, %d, integerVR,",
@@ -1553,7 +1553,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for integer parameters */
+    // Set start values for integer parameters 
     if (noIntegerParam > 0) {
       tmpIntegerParam = pntIntegerParam;
       fprintf(pfile, "\t\tfmuSetIntegerVR(fmufun, inst, %d, integerVR,",
@@ -1570,7 +1570,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for boolean variables */
+    // Set start values for boolean variables 
     if (noBoolean > 0) {
       tmpBoolean = pntBoolean;
       fprintf(pfile, "\t\tfmuSetBooleanVR(fmufun, inst, %d, booleanVR,",
@@ -1587,7 +1587,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for boolean parameters */
+    // Set start values for boolean parameters
     if (noBooleanParam > 0) {
       tmpBooleanParam = pntBooleanParam;
       fprintf(pfile, "\t\tfmuSetBooleanVR(fmufun, inst, %d, booleanParamVR,",
@@ -1603,7 +1603,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
         fprintf(pfile, "%s});\n", tmpBooleanParam->name);
       }
     }
-    /* Set start values for string variables */
+    // Set start values for string variables 
     if (noString > 0) {
       tmpString = pntString;
       fprintf(pfile, "\t\tfmuSetStringVR(fmufun, inst, %d, stringVR,",
@@ -1620,7 +1620,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
       }
     }
 
-    /* Set start values for string parameters */
+    // Set start values for string parameters
     if (noStringParam > 0) {
       tmpStringParam = pntStringParam;
       fprintf(pfile, "\t\tfmuSetstringVR(fmufun, inst, %d, stringParamVR,",
@@ -1636,7 +1636,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
         fprintf(pfile, "%s});\n", tmpStringParam->name);
       }
     }
-
+		*/
     fprintf(pfile, "\t\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
     fprintf(pfile, "\t\tinitializationDone:= true;\n");
     fprintf(pfile, "\tend if;\n");

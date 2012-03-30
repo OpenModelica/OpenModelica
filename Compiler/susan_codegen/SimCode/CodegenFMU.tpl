@@ -665,11 +665,11 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
   <<
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.stateVars |> var => SwitchVars(var,"realVars", 0) ;separator="\n"%>
-        <%vars.derivativeVars |> var => SwitchVars(var,"realVars", numStateVars) ;separator="\n"%>
-        <%vars.algVars |> var => SwitchVars(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
-        <%vars.paramVars |> var => SwitchParameters(var,"realParameter") ;separator="\n"%>
-        <%vars.aliasVars |> var hasindex i0 => SwitchAliasVars(var,"realAlias","realVars","realParameter","-",i0) ;separator="\n"%>
+        <%vars.stateVars |> var => SwitchVars(var, "realVars", 0) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVars(var, "realVars", numStateVars) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVars(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
         default: 
             return fmiError;
     }
@@ -686,11 +686,11 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
   <<
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value) {
     switch (vr) {
-        <%vars.stateVars |> var => SwitchVarsSet(var,"realVars",0 ) ;separator="\n"%>
-        <%vars.derivativeVars |> var => SwitchVarsSet(var,"realVars", numStateVars) ;separator="\n"%>
-        <%vars.algVars |> var => SwitchVarsSet(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
-        <%vars.paramVars |> var => SwitchParametersSet(var,"realParameter") ;separator="\n"%>
-        <%vars.aliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"realAlias","realVars","realParameter","-",i0) ;separator="\n"%>
+        <%vars.stateVars |> var => SwitchVarsSet(var, "realVars", 0) ;separator="\n"%>
+        <%vars.derivativeVars |> var => SwitchVarsSet(var, "realVars", numStateVars) ;separator="\n"%>
+        <%vars.algVars |> var => SwitchVarsSet(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
+        <%vars.paramVars |> var => SwitchParametersSet(var, "realParameter") ;separator="\n"%>
+        <%vars.aliasVars |> var => SwitchAliasVarsSet(var, "Real", "-") ;separator="\n"%>
         default: 
             return fmiError;
     }
@@ -708,9 +708,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.intAlgVars |> var => SwitchVars(var,"integerVars", 0) ;separator="\n"%>
-        <%vars.intParamVars |> var => SwitchParameters(var,"integerParameter") ;separator="\n"%>
-        <%vars.intAliasVars |> var hasindex i0 => SwitchAliasVars(var,"integerAlias","integerVars","integerParameter","-",i0) ;separator="\n"%>
+        <%vars.intAlgVars |> var => SwitchVars(var, "integerVars", 0) ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchParameters(var, "integerParameter") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVars(var, "Integer", "-") ;separator="\n"%>
         default: 
             return 0;
     }
@@ -726,9 +726,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value) {
     switch (vr) {
-        <%vars.intAlgVars |> var => SwitchVarsSet(var,"integerVars", 0) ;separator="\n"%>
-        <%vars.intParamVars |> var => SwitchParametersSet(var,"integerParameter") ;separator="\n"%>
-        <%vars.intAliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"integerAlias","integerVars","integerParameter","-",i0) ;separator="\n"%>        
+        <%vars.intAlgVars |> var => SwitchVarsSet(var, "integerVars", 0) ;separator="\n"%>
+        <%vars.intParamVars |> var => SwitchParametersSet(var, "integerParameter") ;separator="\n"%>
+        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>        
         default: 
             return fmiError;
     }
@@ -745,9 +745,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.boolAlgVars |> var => SwitchVars(var,"booleanVars", 0) ;separator="\n"%>
-        <%vars.boolParamVars |> var => SwitchParameters(var,"booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var hasindex i0 => SwitchAliasVars(var,"booleanAlias","booleanVars","booleanParameter","!",i0) ;separator="\n"%>        
+        <%vars.boolAlgVars |> var => SwitchVars(var, "booleanVars", 0) ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>        
         default: 
             return 0;
     }
@@ -764,9 +764,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value) {
     switch (vr) {
-        <%vars.boolAlgVars |> var => SwitchVarsSet(var,"booleanVars", 0) ;separator="\n"%>
-        <%vars.boolParamVars |> var => SwitchParametersSet(var,"booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var hasindex i0 => SwitchAliasVarsSet(var,"booleanAlias","booleanVars","booleanParameter","!",i0) ;separator="\n"%> 
+        <%vars.boolAlgVars |> var => SwitchVarsSet(var, "booleanVars", 0) ;separator="\n"%>
+        <%vars.boolParamVars |> var => SwitchParametersSet(var, "booleanParameter") ;separator="\n"%>
+        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%> 
         default: 
             return fmiError;
     }
@@ -784,9 +784,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.stringAlgVars |> var => SwitchVars(var,"stringVars", 0) ;separator="\n"%>
-        <%vars.stringParamVars |> var => SwitchParameters(var,"stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var hasindex i0 => SwitchAliasVars(var,"stringAlias","stringVars","stringParameter","",i0) ;separator="\n"%>
+        <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
         default: 
             return 0;
     }
@@ -803,9 +803,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
-        <%vars.stringAlgVars |> var => SwitchVarsSet(var,"stringVars", 0) ;separator="\n"%>
-        <%vars.stringParamVars |> var => SwitchParametersSet(var,"stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var hasindex i0  => SwitchAliasVarsSet(var,"stringAlias","stringVars","stringParameter","",i0) ;separator="\n"%>    
+        <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
+        <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
+        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>    
         default: 
             return 0;
     }
@@ -878,7 +878,7 @@ match simVar
 end SwitchParameters;
 
 
-template SwitchAliasVars(SimVar simVar, String aliasArrayName, String arrayName, String arrayName2, String negate, Integer varIndex)
+template SwitchAliasVars(SimVar simVar, String arrayName, String negate)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
@@ -888,35 +888,11 @@ match simVar
       match aliasvar
         case ALIAS(__) then 
         <<
-        case <%crefName%> :
-        { 
-          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
-              return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_];
-            } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
-              return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_];
-            } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
-              return comp->fmuData->localData[0]->timeValue;
-            } else {
-              return fmiError;
-            }
-            break;
-          }
+        case <%crefName%> : return get<%arrayName%>(comp, <%cref(varName)%>_); break;
         >>
         case NEGATEDALIAS(__) then
         <<
-        case <%crefName%> :
-        { 
-          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
-            return (<%negate%> comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_]);
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
-            return (<%negate%> comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_]);
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
-            return (<%negate%> comp->fmuData->localData[0]->timeValue);
-          } else {
-            return fmiError;
-          }
-          break;
-        }
+        case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%cref(varName)%>_)); break;
         >>
      end match 
 end SwitchAliasVars;
@@ -950,46 +926,21 @@ match simVar
 end SwitchParametersSet;
 
 
-template SwitchAliasVarsSet(SimVar simVar,String aliasArrayName, String arrayName, String arrayName2, String negate, Integer varIndex)
+template SwitchAliasVarsSet(SimVar simVar, String arrayName, String negate)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
     let description = if comment then '// "<%comment%>"'
     let crefName = '<%cref(name)%>_'
       match aliasvar
         case ALIAS(__) then 
         <<
-        case <%crefName%> :
-        { 
-          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
-            return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_] = value;
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
-            return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_] = value;
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
-            return fmiOK;
-          } else {
-            return fmiError;
-          }
-          break;
-        }
+        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, value); break;
         >>
         case NEGATEDALIAS(__) then
         <<
-        case <%crefName%> :
-        { 
-          if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 0){  
-            return comp->fmuData->localData[0]-><%arrayName%>[<%cref(varName)%>_] = (<%negate%> value);
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 1){
-            return comp->fmuData->simulationInfo.<%arrayName2%>[<%cref(varName)%>_] = (<%negate%> value);
-          } else if (comp->fmuData->modelData.<%aliasArrayName%>[<%varIndex%>].aliasType == 2){
-            return fmiOK;
-          } else {
-            return fmiError;
-          }
-          break;
-        }
+        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, (<%negate%> value)); break;
         >>
      end match 
 end SwitchAliasVarsSet;
