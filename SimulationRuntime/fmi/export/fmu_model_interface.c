@@ -129,12 +129,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   /* intialize modelData */
   setupDataStruc(comp->fmuData);
   initializeDataStruc(comp->fmuData);
-  //string method, outputFormat, variableFilter;
-  /*
-  function_initMemoryState();
-  read_input_xml(0, "", &(comp->fmuData->modelData), &(comp->fmuData->simulationInfo), NULL, NULL, NULL, NULL,
-       NULL, NULL, NULL, NULL);
-	*/
   setupDataStruc2(comp->fmuData);
 
   /* setup model data with default start data */

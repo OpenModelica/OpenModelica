@@ -1502,7 +1502,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     fprintf(pfile, "initial algorithm\n");
     fprintf(pfile, "\tfmuSetTime(fmufun, inst, time);\n");
     fprintf(pfile, "\tif not initializationDone then\n");
-		/*
+    /*
     // Set start values for real variables
     if (noReal > 0) {
       tmpReal = pntReal;
@@ -1636,7 +1636,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
         fprintf(pfile, "%s});\n", tmpStringParam->name);
       }
     }
-		*/
+    */
     fprintf(pfile, "\t\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
     fprintf(pfile, "\t\tinitializationDone:= true;\n");
     fprintf(pfile, "\tend if;\n");
