@@ -2105,7 +2105,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   # Simulations use -O3 by default
   SIM_OR_DYNLOAD_OPT_LEVEL=-O3
-  CC=<%if acceptParModelicaGrammar() then 'g++' else 'makefileParams.ccompiler'%>
+  CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
@@ -2995,8 +2995,8 @@ case FUNCTION(__) then
     /* GC: pop the mark! */
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
-	<%if acceptParModelicaGrammar() then 
-	'/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
+    <%if acceptParModelicaGrammar() then 
+    '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     /* functionBodyRegularFunction: return the outs */
     return <%if outVars then ' <%retVar%>' %>;
   }
@@ -3385,7 +3385,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
       " "
     else
       "")
-	  
+      
 //mahge: OpenCL/CUDA GPU variables.
 case var as VARIABLE(__) then
   parVarInit(var, outStruct, i, &varDecls, &varInits, &varFrees)
@@ -3416,17 +3416,17 @@ case var as VARIABLE(__) then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
     let &varInits += defaultValue
-	  
-	let &varFrees += 'clReleaseMemObject(<%varName%>.data);<%\n%>'
-	let &varFrees += 'clReleaseMemObject(<%varName%>.info_dev);<%\n%>'
-	let &varFrees += 'free(<%varName%>.info);<%\n%>'	
+      
+    let &varFrees += 'clReleaseMemObject(<%varName%>.data);<%\n%>'
+    let &varFrees += 'clReleaseMemObject(<%varName%>.info_dev);<%\n%>'
+    let &varFrees += 'free(<%varName%>.info);<%\n%>'    
     ""
   else
-	let &varDecls += 'device_<%expTypeShort(var.ty)%> <%varName%>;<%\n%>'
-	let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	let &varFrees += 'clReleaseMemObject(<%varName%>);<%\n%>'
+    let &varDecls += 'device_<%expTypeShort(var.ty)%> <%varName%>;<%\n%>'
+    let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+    let &varFrees += 'clReleaseMemObject(<%varName%>);<%\n%>'
     ""
-	  
+      
 else let &varDecls += '#error Unknown parallel variable type<%\n%>' ""
 end parVarInit;
 
