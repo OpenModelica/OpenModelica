@@ -565,6 +565,7 @@ algorithm
       DAE.ComponentRef name,origCr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind ;
       Option<Values.Value> bindval;
@@ -575,8 +576,8 @@ algorithm
       Option<SCode.Comment> cmt;
       DAE.Flow fl;
       DAE.Stream str;
-    case (BackendDAE.VAR(name,kind,dir,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),bindExp) then 
-      BackendDAE.VAR(name,kind,dir,tp,bindExp,bindval,ad,indx,source,attr,cmt,fl,str); 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),bindExp) then 
+      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,indx,source,attr,cmt,fl,str); 
   end matchcontinue;
 end setVarBindingOpt;
 
@@ -595,6 +596,7 @@ algorithm
       DAE.ComponentRef name,origCr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       DAE.Type tp;
       Option<DAE.Exp> bind ;
       Option<Values.Value> bindval;
@@ -605,8 +607,8 @@ algorithm
       Option<SCode.Comment> cmt;
       DAE.Flow fl;
       DAE.Stream str;
-    case (BackendDAE.VAR(name,kind,dir,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),cr) then 
-      BackendDAE.VAR(cr,kind,dir,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str); 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),cr) then 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str); 
   end matchcontinue;
 end setVarCref;
 

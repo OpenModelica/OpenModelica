@@ -1067,6 +1067,7 @@ algorithm
     local
       Expression.ComponentRef cr;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
@@ -1082,6 +1083,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
       varKind = BackendDAE.STATE(),
       varDirection = dir,
+      varParallelism = prl,
       varType = tp,
       bindExp = exp,
       bindValue = v,
@@ -1095,7 +1097,7 @@ algorithm
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
         
     case (backendVar)
     then
@@ -2566,6 +2568,7 @@ algorithm
       DAE.Exp e;
       BackendDAE.Variables vars,vars_1;
       DAE.VarDirection a;
+      DAE.VarParallelism prl;
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
@@ -2590,12 +2593,12 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
         (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, b, NONE(), NONE(), lstSubs, 0, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())), comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
         i = BackendVariable.varsSize(vars_1);
       then
@@ -2603,28 +2606,28 @@ algorithm
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,NONE(),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())),comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,g,source,NONE(),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())),comment,flowPrefix,streamPrefix), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst)));        
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,equationBound,isProtected,finalPrefix)),comment,flowPrefix,streamPrefix), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst)));
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,NONE(),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())),comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,g,source,NONE(),comment,flowPrefix,streamPrefix) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE())),comment,flowPrefix,streamPrefix), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst)));
 
@@ -4080,13 +4083,13 @@ algorithm
         (derdummystate,syst,shared) = makeDummyState(dummystate,stateno,syst,shared);
         (derdummystate1,syst,shared) = makeDummyState(dummystate1,stateno1,syst,shared);
         dsxy = ComponentReference.joinCrefs(dummystate,dummystate1);
-        dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         dsxyvar = BackendVariable.setVarFixed(dsxyvar,false);
         vars = BackendVariable.daeVars(syst);
         dummyvar = BackendVariable.getVarAt(vars,stateno1);
         dsxyvar = BackendVariable.setVarStartValue(dsxyvar,BackendVariable.varStartValue(dummyvar));
         dsxycont = ComponentReference.joinCrefs(dsxy,ComponentReference.makeCrefIdent("cont",DAE.T_BOOL_DEFAULT,{}));
-        dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),DAE.T_BOOL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_BOOL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         ev = BackendVariable.varsSize(vars)-1;
         syst = BackendVariable.addVarDAE(dsxyvar,syst);
         syst = BackendVariable.addVarDAE(dsxyvarcont,syst);
@@ -4827,6 +4830,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection d;
+      DAE.VarParallelism prl;
       BackendDAE.Type t;
       Option<DAE.Exp> b;
       Option<Values.Value> value;
@@ -4851,8 +4855,8 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching),cr)
       equation
-        ((BackendDAE.VAR(cr,kind,d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = BackendVariable.getVar(cr, vars);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(cr,kind,d,prl,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = BackendVariable.getVar(cr, vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
         BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching);
 
@@ -5527,6 +5531,7 @@ algorithm
       DAE.Exp e;
       BackendDAE.Variables vars,vars_1;
       DAE.VarDirection a;
+      DAE.VarParallelism prl;
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
@@ -5542,28 +5547,28 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
@@ -5588,6 +5593,7 @@ algorithm
     local
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> value;
@@ -5613,11 +5619,11 @@ algorithm
 
     case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching),op)
       equation
-        ((BackendDAE.VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
+        ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
         /* start value is not the same */
         source = DAEUtil.addSymbolicTransformation(source,op);
-        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,tp,NONE(),NONE(),dim,0,source,NONE(),comment,flowPrefix,streamPrefix);
+        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,0,source,NONE(),comment,flowPrefix,streamPrefix);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addVar(dummyvar, vars);

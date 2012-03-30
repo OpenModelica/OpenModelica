@@ -397,6 +397,7 @@ uniontype Variable
     DAE.Type ty;
     Option<DAE.Exp> value; // Default value
     list<DAE.Exp> instDims;
+    DAE.VarParallelism parallelism;
   end VARIABLE;
   
   record FUNCTION_PTR
@@ -1949,7 +1950,7 @@ algorithm
         tty = Types.simplifyType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, tty, {});
       then
-        VARIABLE(cref_,tty,NONE(),{});
+        VARIABLE(cref_,tty,NONE(),{}, DAE.NON_PARALLEL());
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -1962,6 +1963,7 @@ algorithm
       String name;
       DAE.Type daeType;
       Expression.ComponentRef id;
+      DAE.VarParallelism prl;
       list<Expression.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
@@ -1972,6 +1974,7 @@ algorithm
       then var;
         
     case (DAE.VAR(componentRef = id,
+      parallelism = prl,
       ty = daeType,
       binding = binding,
       dims = inst_dims
@@ -1979,7 +1982,7 @@ algorithm
       equation
         daeType = Types.simplifyType(daeType);
         inst_dims_exp = List.map(inst_dims, indexSubscriptToExp);
-      then VARIABLE(id,daeType,binding,inst_dims_exp);
+      then VARIABLE(id,daeType,binding,inst_dims_exp,prl);
     case (_)
       equation
         // TODO: ArrayEqn fails here
@@ -9039,6 +9042,7 @@ algorithm
     local
       Expression.ComponentRef cr;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
@@ -9054,6 +9058,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
       varKind = BackendDAE.STATE(),
       varDirection = dir,
+      varParallelism = prl,
       varType = tp,
       bindExp = exp,
       bindValue = v,
@@ -9067,7 +9072,7 @@ algorithm
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
         
     case (backendVar)
     then
@@ -9518,6 +9523,17 @@ algorithm
   end match;
 end isNotBuiltinCall;
 
+protected function scodeParallelismToDAEParallelism
+  input SCode.Parallelism inParallelism;
+  output DAE.VarParallelism outParallelism;
+algorithm
+  outParallelism := match(inParallelism)
+    case(SCode.PARGLOBAL())    then DAE.PARGLOBAL();
+    case(SCode.PARLOCAL())     then DAE.PARLOCAL();
+    case(SCode.NON_PARALLEL()) then DAE.NON_PARALLEL();
+  end match;
+end scodeParallelismToDAEParallelism;
+
 protected function typesVar
   input Types.Var inTypesVar;
   output Variable outVar;
@@ -9527,12 +9543,17 @@ algorithm
       String name;
       Types.Type ty;
       DAE.ComponentRef cref_;
+      DAE.Attributes attr;
+      SCode.Parallelism scPrl;
+      DAE.VarParallelism prl;
       
-    case (DAE.TYPES_VAR(name=name, ty=ty))
+    case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       equation
         ty = Types.simplifyType(ty);
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
-      then VARIABLE(cref_, ty, NONE(), {});
+        DAE.ATTR(_,_,scPrl,_,_,_) = attr;
+        prl = scodeParallelismToDAEParallelism(scPrl);
+      then VARIABLE(cref_, ty, NONE(), {}, prl);
   end match;
 end typesVar;
 

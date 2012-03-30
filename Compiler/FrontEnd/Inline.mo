@@ -321,6 +321,7 @@ algorithm
       DAE.ComponentRef varName;
       BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;
+      DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
       DAE.Exp e,e_1,startv,startv_1;
       Option<Values.Value> bindValue;
@@ -334,26 +335,26 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case(NONE(),_) then NONE();
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
+    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
+    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix));
+        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix));
     case(var,_) then var;
   end matchcontinue;
 end inlineVarOpt;

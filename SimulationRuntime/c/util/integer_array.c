@@ -195,7 +195,6 @@ void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start
                                    modelica_integer stop/*, size_t dim*/)
 {
     size_t elements, offset=0;
-    size_t i;
     modelica_integer value;
     modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 

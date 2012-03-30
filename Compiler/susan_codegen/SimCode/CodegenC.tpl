@@ -2068,7 +2068,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #define <%stringReplace(filePrefix,".","_")%>__H
   <%commonHeader()%>
   #include "simulation_runtime.h"
-  #include <stdio.h>
+  <%if acceptParModelicaGrammar() then '#include <omc_ocl_interface.h>'%>
   #ifdef __cplusplus
   extern "C" {
   #endif
@@ -2094,6 +2094,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
+  let ParModelicaLibs = if acceptParModelicaGrammar() then '-locl_runtime -lOpenCL' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER "
@@ -2104,7 +2105,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   # Simulations use -O3 by default
   SIM_OR_DYNLOAD_OPT_LEVEL=-O3
-  CC=<%makefileParams.ccompiler%>
+  CC=<%if acceptParModelicaGrammar() then 'g++' else 'makefileParams.ccompiler'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
@@ -2112,7 +2113,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
@@ -2942,10 +2943,11 @@ case FUNCTION(__) then
   let retType = if outVars then '<%fname%>_rettype' else "void"
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
+  let &varFrees = buffer "" /*BUFF*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
-      varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/) ; empty /* increase the counter! */
+      varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/) ; empty /* increase the counter! */
     )
   let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
   let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
@@ -2993,6 +2995,8 @@ case FUNCTION(__) then
     /* GC: pop the mark! */
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
+	<%if acceptParModelicaGrammar() then 
+	'/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     /* functionBodyRegularFunction: return the outs */
     return <%if outVars then ' <%retVar%>' %>;
   }
@@ -3027,13 +3031,14 @@ case efn as EXTERNAL_FUNCTION(__) then
   let retType = if outVars then '<%fname%>_rettype' else "void"
   let &preExp = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
+  let &varFrees = buffer "" /*BUFF*/
   // make sure the variable is named "out", doh!
   let retVar = if outVars then outDecl(retType, &varDecls /*BUFD*/)  
   let &outputAlloc = buffer "" /*BUFD*/
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let callPart = extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let _ = ( outVars |> var hasindex i1 fromindex 1 => 
-            varInit(var, retVar, i1, &varDecls /*BUFD*/, &outputAlloc /*BUFC*/)
+            varInit(var, retVar, i1, &varDecls /*BUFD*/, &outputAlloc /*BUFC*/, &varFrees /*BUFF*/)
             ; empty /* increase the counter! */ 
           )   
           
@@ -3339,12 +3344,12 @@ case T_COMPLEX(varLst=vl, complexClassType=n) then
   >>
 end writeOutVarRecordMembers;
 
-template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
+template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, Text &varFrees /*BUFF*/)
  "Generates code to initialize variables.
   Does not return anything: just appends declarations to buffers."
 ::=
 match var
-case var as VARIABLE(__) then
+case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   let typ = '<%varType(var)%>'
   let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
@@ -3380,12 +3385,50 @@ case var as VARIABLE(__) then
       " "
     else
       "")
+	  
+//mahge: OpenCL/CUDA GPU variables.
+case var as VARIABLE(__) then
+  parVarInit(var, outStruct, i, &varDecls, &varInits, &varFrees)
+  
 case var as FUNCTION_PTR(__) then
   let &ignore = buffer ""
   let &varDecls += functionArg(var,&ignore)
   ""
 else error(sourceInfo(), 'Unknown local variable type')
 end varInit;
+
+/* ParModelica Extension. */
+template parVarInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP2*/, Text varFrees /*BUFPF*/)
+ "Generates code to initialize ParModelica variables.
+  Does not return anything: just appends declarations to buffers."
+::=
+match var
+case var as VARIABLE(__) then
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  
+
+  let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+    ;separator=", ") 
+   
+  if instDims then
+    let &varDecls += 'device_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
+    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+    let &varInits += defaultValue
+	  
+	let &varFrees += 'clReleaseMemObject(<%varName%>.data);<%\n%>'
+	let &varFrees += 'clReleaseMemObject(<%varName%>.info_dev);<%\n%>'
+	let &varFrees += 'free(<%varName%>.info);<%\n%>'	
+    ""
+  else
+	let &varDecls += 'device_<%expTypeShort(var.ty)%> <%varName%>;<%\n%>'
+	let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+	let &varFrees += 'clReleaseMemObject(<%varName%>);<%\n%>'
+    ""
+	  
+else let &varDecls += '#error Unknown parallel variable type<%\n%>' ""
+end parVarInit;
 
 template varDefaultValue(Variable var, String outStruct, Integer i, String lhsVarName,  Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
 ::=
@@ -5909,9 +5952,10 @@ case exp as MATCHEXPRESSION(__) then
   let &preExpRes = buffer ""
   let &varDeclsInput = buffer ""
   let &varDeclsInner = buffer ""
+  let &varFrees = buffer "" /*BUFF*/
   let &ignore = buffer ""
   let ignore2 = (elementVars(localDecls) |> var =>
-      varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
+      varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/, &varFrees /*BUFF*/)
     )
   let prefix = 'tmp<%System.tmpTick()%>'
   let &preExpInput = buffer ""
@@ -5975,6 +6019,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let &preExpCaseInner = buffer ""
   let &assignments = buffer ""
   let &preRes = buffer ""
+  let &varFrees = buffer "" /*BUFF*/
   let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
   let caseRes = (match c.result
@@ -5988,7 +6033,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
       (tupleAssignExps |> cr hasindex i1 fromindex 1 =>
         '<%getTempDeclMatchOutputName(tupleAssignExps, res, startIndexOutputs, intSub(i1,1))%> = <%retStruct%>.c<%i1%>;<%\n%>')
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
-  let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))  
+  let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner, &varFrees /*BUFF*/))  
   <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
   
     <%varDeclsCaseInner%>

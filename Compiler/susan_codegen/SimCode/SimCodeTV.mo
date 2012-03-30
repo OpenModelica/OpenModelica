@@ -189,6 +189,7 @@ package SimCode
       DAE.Type ty;
       Option<DAE.Exp> value;
       list<DAE.Exp> instDims;
+      DAE.VarParallelism parallelism;
     end VARIABLE;  
 
     record FUNCTION_PTR
@@ -1026,6 +1027,12 @@ package DAE
     end CREF_IDENT;
     record WILD end WILD;
   end ComponentRef;
+  
+  uniontype VarParallelism
+    record PARGLOBAL     "Global variables for CUDA and OpenCL"     end PARGLOBAL;
+    record PARLOCAL      "Shared for CUDA and local for OpenCL"     end PARLOCAL;
+    record NON_PARALLEL  "Non parallel/Normal variables"            end NON_PARALLEL;
+  end VarParallelism;
 
   uniontype Operator
     record ADD
@@ -2176,6 +2183,10 @@ package Config
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;
   end acceptMetaModelicaGrammar;
+  
+  function acceptParModelicaGrammar
+    output Boolean outBoolean;
+  end acceptParModelicaGrammar;
 
   function noProc
     output Integer n;

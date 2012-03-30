@@ -91,7 +91,7 @@ algorithm
         addVariables(knvars, starttask);
         cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
         addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
-                      DAE.INPUT(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
+                      DAE.INPUT(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
                       NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, comps);
         print("done building taskgraph, about to build inits.\n");

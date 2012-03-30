@@ -177,7 +177,6 @@ void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelic
                                 modelica_real stop/*, size_t dim*/)
 {
     size_t elements, offset=0;
-    size_t i;
     modelica_real value;
     modelica_real (*comp_func)(modelica_real, modelica_real);
     assert(step != 0);

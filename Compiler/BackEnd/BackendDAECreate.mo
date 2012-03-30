@@ -583,6 +583,7 @@ algorithm
       Option<DAE.Exp> bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -597,6 +598,7 @@ algorithm
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
+                  parallelism = prl,
                   protection = protection,
                   ty = t,
                   binding = bind,
@@ -615,7 +617,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);        
       then
-        (BackendDAE.VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
+        (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
   end match;
 end lowerVar;
 
@@ -633,6 +635,7 @@ algorithm
       Option<DAE.Exp> bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -646,6 +649,7 @@ algorithm
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
+                  parallelism = prl,
                   protection = protection,
                   ty = t,
                   binding = bind,
@@ -665,7 +669,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
-        BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
 
     case (_)
       equation
@@ -922,6 +926,7 @@ algorithm
       Option<DAE.Exp> bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -933,6 +938,7 @@ algorithm
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
+                  parallelism = prl,
                   ty = t,
                   binding = bind,
                   dims = dims,
@@ -945,7 +951,7 @@ algorithm
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
       then
-        BackendDAE.VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
   end match;
 end lowerExtObjVar;
 
@@ -1292,7 +1298,7 @@ protected function makeVariable "function: makeVariable
   input BackendDAE.Type inType;
   output BackendDAE.Var outVar;
 algorithm
-  outVar:= BackendDAE.VAR(inCref, BackendDAE.VARIABLE(),DAE.BIDIR(),inType,NONE(),NONE(),{},-1,
+  outVar:= BackendDAE.VAR(inCref, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),inType,NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM());
 end makeVariable;
@@ -2330,7 +2336,7 @@ algorithm
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
         cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);

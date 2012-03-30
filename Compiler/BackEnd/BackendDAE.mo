@@ -95,6 +95,7 @@ uniontype Var "- Variables"
     .DAE.ComponentRef varName "varName ; variable name" ;
     VarKind varKind "varKind ; Kind of variable" ;
     .DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
+    .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
     Type varType "varType ; builtin type or enumeration" ;
     Option< .DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;

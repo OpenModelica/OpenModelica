@@ -136,6 +136,7 @@ algorithm
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
       DAE.VarDirection c;
+      DAE.VarParallelism prl;
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
@@ -152,6 +153,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = d,
               bindExp = e,
               bindValue = f,
@@ -164,11 +166,12 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       equation
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-      then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_REAL(source = _),
               bindExp = e,
               bindValue = f,
@@ -180,13 +183,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_INTEGER(source = _),
               bindExp = e,
               bindValue = f,
@@ -198,13 +202,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_BOOL(source = _),
               bindExp = e,
               bindValue = f,
@@ -216,13 +221,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_ENUMERATION(source = _),
               bindExp = e,
               bindValue = f,
@@ -234,7 +240,7 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
   end match;
@@ -290,6 +296,7 @@ algorithm
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
       DAE.VarDirection c;
+      DAE.VarParallelism prl;
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
@@ -305,6 +312,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = d,
               bindExp = e,
               bindValue = f,
@@ -317,11 +325,12 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       equation
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_REAL(source = _),
               bindExp = e,
               bindValue = f,
@@ -333,13 +342,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_INTEGER(source = _),
               bindExp = e,
               bindValue = f,
@@ -351,13 +361,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_BOOL(source = _),
               bindExp = e,
               bindValue = f,
@@ -369,13 +380,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_BOOL(NONE(),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = DAE.T_ENUMERATION(source = _),
               bindExp = e,
               bindValue = f,
@@ -387,7 +399,7 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
   end match;
@@ -492,6 +504,7 @@ algorithm
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
       DAE.VarDirection c;
+      DAE.VarParallelism prl;
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
@@ -507,6 +520,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = d,
               bindExp = e,
               bindValue = f,
@@ -519,7 +533,7 @@ algorithm
               streamPrefix = streamPrefix),minMax)
       equation
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
-    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
   end match;
 end setVarMinMax;
 
@@ -550,6 +564,7 @@ algorithm
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
       DAE.VarDirection c;
+      DAE.VarParallelism prl;
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
@@ -565,6 +580,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = prl,
               varType = d,
               bindExp = e,
               bindValue = f,
@@ -577,7 +593,7 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       equation
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
   end match;
 end setVarNominalValue;
 
@@ -1286,6 +1302,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
@@ -1301,6 +1318,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
               varDirection = dir,
+              varParallelism = prl,
               varType = tp,
               bindExp = bind,
               bindValue = v,
@@ -1313,7 +1331,7 @@ algorithm
               streamPrefix = streamPrefix))
     equation
       cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
-      oVar = BackendDAE.VAR(cr,BackendDAE.JAC_DIFF_VAR(),dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
+      oVar = BackendDAE.VAR(cr,BackendDAE.JAC_DIFF_VAR(),dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
     then
       oVar; 
   end match;
@@ -1332,6 +1350,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind,new_kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
@@ -1347,6 +1366,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
               varDirection = dir,
+              varParallelism = prl,
               varType = tp,
               bindExp = bind,
               bindValue = v,
@@ -1358,7 +1378,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_kind)
     equation
-      oVar = BackendDAE.VAR(cr,new_kind,dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 2, new_kind);
+      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 2, new_kind);
     then 
       oVar; 
   end match;
@@ -1377,6 +1397,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
@@ -1392,6 +1413,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
               varDirection = dir,
+              varParallelism = prl,
               varType = tp,
               bindExp = bind,
               bindValue = v,
@@ -1403,7 +1425,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_i)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
     then
       oVar; 
   end match;
@@ -1422,6 +1444,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
@@ -1436,6 +1459,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
               varDirection = dir,
+              varParallelism = prl,
               varType = tp,
               bindValue = v,
               arryDim = dim,
@@ -1447,7 +1471,7 @@ algorithm
               streamPrefix = streamPrefix),
           inBindExp)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 5, SOME(inBindExp));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 5, SOME(inBindExp));
     then 
       oVar;
   end match;
@@ -1466,6 +1490,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       list<DAE.Subscript> dim;
@@ -1480,6 +1505,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
               varDirection = dir,
+              varParallelism = prl,
               varType = tp,
               bindExp = bind,
               bindValue = NONE(),
@@ -1491,7 +1517,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),inBindValue)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 6, SOME(inBindValue));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 6, SOME(inBindValue));
     then 
       oVar;
   end match;
@@ -1508,6 +1534,7 @@ algorithm
   outVar := match (inVar,varDirection)
     local
       DAE.ComponentRef cr;
+      DAE.VarParallelism prl;
       BackendDAE.VarKind kind;
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
@@ -1523,6 +1550,7 @@ algorithm
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
+              varParallelism = prl,
               varType = tp,
               bindExp = bind,
               bindValue = v,
@@ -1534,7 +1562,7 @@ algorithm
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),varDirection)
     equation
-      oVar = BackendDAE.VAR(cr,kind,varDirection,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 3, varDirection);
+      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 3, varDirection);
     then 
       oVar; 
   end match;
@@ -2565,6 +2593,7 @@ algorithm
       list< tuple<BackendDAE.Var,Integer,Integer> > vars_1,vs,acc;
       DAE.ComponentRef cr;
       DAE.VarDirection d;
+      DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> b;
       Option<Values.Value> value;
@@ -2584,6 +2613,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.VARIABLE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2595,7 +2625,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2604,6 +2634,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.VARIABLE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2615,7 +2646,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2624,6 +2655,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.STATE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2635,7 +2667,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         x_1_strType = x_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,tp,b,value,dim,x_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2644,6 +2676,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.STATE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2655,7 +2688,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         x_1 = x + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,tp,b,value,dim,x,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2664,6 +2697,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_DER(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2675,7 +2709,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1 "Dummy derivatives become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2684,6 +2718,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_DER(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2695,7 +2730,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1 "Dummy derivatives become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2704,6 +2739,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_STATE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2715,7 +2751,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1 "Dummy state become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2724,6 +2760,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_STATE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2735,7 +2772,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1 "Dummy state become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2744,6 +2781,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DISCRETE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2755,7 +2793,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2764,6 +2802,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DISCRETE(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2775,7 +2814,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2784,6 +2823,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.PARAM(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
@@ -2795,7 +2835,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         p_1_strType = p_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,tp,b,value,dim,p_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType,fst::acc);
       then
@@ -2804,6 +2844,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.PARAM(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2815,7 +2856,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         p_1 = p + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2824,6 +2865,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.CONST(),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2836,7 +2878,7 @@ algorithm
       equation
          //IS THIS A BUG??
          // THE INDEX FOR const IS SET TO p (=last parameter index)
-        fst = (BackendDAE.VAR(cr,BackendDAE.CONST(),d,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.CONST(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2845,6 +2887,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.EXTOBJ(path),
                varDirection = d,
+               varParallelism = prl,
                varType = tp,
                bindExp = b,
                bindValue = value,
@@ -2856,7 +2899,7 @@ algorithm
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         ext_1 = ext+1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.EXTOBJ(path),d,tp,b,value,dim,ext,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.EXTOBJ(path),d,prl,tp,b,value,dim,ext,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
         (acc,x1,xd1,y1,p1,dummy,ext1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -4030,6 +4073,7 @@ algorithm
       DAE.ComponentRef a;
       BackendDAE.VarKind b;
       DAE.VarDirection c;
+      DAE.VarParallelism p;
       BackendDAE.Type d;
       Option<DAE.Exp> e;
       Option<Values.Value> f;
@@ -4047,6 +4091,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
+              varParallelism = p,
               varType = d,
               bindExp = e,
               bindValue = f,
@@ -4060,7 +4105,7 @@ algorithm
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
-      then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,p,d,e,f,g,i,source,oattr,s,t,streamPrefix);
   end match;
 end mergeVariableOperations;
 

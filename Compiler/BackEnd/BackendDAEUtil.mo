@@ -342,7 +342,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},0,
+  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},0,
                      DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
 end makeIterVariable;
 
@@ -895,6 +895,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind vk;
       DAE.VarDirection vd;
+      DAE.VarParallelism prl;
       BackendDAE.Type ty;
       DAE.Exp e, e2;
       DAE.InstDims dims;
@@ -905,14 +906,14 @@ algorithm
       DAE.Flow fp;
       DAE.Stream sp;
       Values.Value v;
-    case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varType = ty,
-          bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
+    case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
+          varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
         ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr));
         (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), Ceval.NO_MSG());
       then
-        BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
     else inVar;
   end matchcontinue;
 end calculateValue;
@@ -5737,6 +5738,7 @@ algorithm
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6;
       BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;
+      DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
       Option<Values.Value> bindValue;
       Integer index;
@@ -5748,7 +5750,7 @@ algorithm
     
     case (NONE(),func,inTypeA) then (NONE(),inTypeA);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);
@@ -5763,9 +5765,9 @@ algorithm
         n = DAEUtil.getNominalAttr(attr);
         ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
       equation
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);
         //expCref = Expression.crefExp(cref);
@@ -5779,7 +5781,7 @@ algorithm
         n = DAEUtil.getNominalAttr(attr);
         ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
     case (_,_,_)
       equation
