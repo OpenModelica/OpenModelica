@@ -188,7 +188,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
       "fmiSetReal: nvr = %d", nvr);
   // no check wether setting the value is allowed in the current state
   for (i=0; i<nvr; i++) {
-    if (vrOutOfRange(comp, "fmiSetReal", vr[i], NUMBER_OF_REALS))
+    if (vrOutOfRange(comp, "fmiSetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiSetReal: #r%d# = %.16g", vr[i], value[i]);
@@ -303,7 +303,7 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
     fmiValueReference vr = vrStates[i];
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiSetContinuousStates: #r%d#=%.16g", vr, x[i]);
-    assert(vr>=0 && vr<NUMBER_OF_STATES);
+    assert(vr>=0 && vr<NUMBER_OF_REALS);
     if (setReal(comp, vr, x[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
@@ -320,7 +320,7 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
 // ---------------------------------------------------------------------------
 
 fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal value[]) {
-  unsigned int i=0,bufferRotate, bufferSize;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetReal", not_modelError))
     return fmiError;
@@ -330,7 +330,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
     return fmiError;
 #if NUMBER_OF_REALS>0
   for (i=0; i<nvr; i++) {
-    if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS))
+    if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
     value[i] = getReal(comp, vr[i]);
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -343,7 +343,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
 }
 
 fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[]) {
-  unsigned int i=0,bufferRotate, bufferSize;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetInteger", not_modelError))
     return fmiError;
@@ -366,7 +366,7 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[]) {
-  unsigned int i=0,bufferRotate, bufferSize;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetBoolean", not_modelError))
     return fmiError;
@@ -389,7 +389,7 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
 }
 
 fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[]) {
-  unsigned int i=0,bufferRotate, bufferSize;
+  unsigned int i=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetString", not_modelError))
     return fmiError;
@@ -469,7 +469,6 @@ fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], siz
 
 fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   unsigned int i=0;
-  int needToIterate = 0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetDerivatives", not_modelError))
     return fmiError;
@@ -504,10 +503,8 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
      * getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file */
     eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
     if (comp->loggingOn){
-      for (i=0; i<ni; i++) {
         comp->functions.logger(c, comp->instanceName, fmiOK, "log",
             "fmiGetEventIndicators: z%d = %.16g", i, eventIndicators[i]);
-      }
     }
   }
 #endif
