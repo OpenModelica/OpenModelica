@@ -3982,8 +3982,10 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ICONST(__)          then '<%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as BCONST(__)          then if bool then "(1)" else "(0)" 
+  case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as CONS(__)            then "Cons not supported yet"
   case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as UNARY(__)           then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as LBINARY(__)         then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -3994,10 +3996,14 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as RANGE(__)           then "Range not supported yet"
+  case e as ASUB(__)            then "Asub not supported yet"
+  case e as TSUB(__)            then "Tsub not supported yet"
+  case e as REDUCTION(__)       then "Reduction not supported yet"
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case e as SHARED_LITERAL(__)  then /*daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)*/ ""
-  else ""
+  case e as SHARED_LITERAL(__)  then ""
+  else "ErrorExp"
 end daeExp;
 
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
@@ -4298,7 +4304,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%var%>'
     
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    '$P$DER<%cref(arg.componentRef)%>'
+    representationCref2(arg.componentRef,simCode)
   case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
@@ -5013,27 +5019,39 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
     case LESS(ty = T_INTEGER(__))
     case LESS(ty = T_REAL(__))        then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
+     
     case GREATER(ty = T_BOOL(__))     then '(<%e1%> && !<%e2%>)'
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))
     case GREATER(ty = T_REAL(__))     then '(<%e1%> > <%e2%>)'
+     case GREATER(ty = T_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
+     
     case LESSEQ(ty = T_BOOL(__))      then '(!<%e1%> || <%e2%>)'
     case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = T_INTEGER(__))
     case LESSEQ(ty = T_REAL(__))       then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
+    
     case GREATEREQ(ty = T_BOOL(__))   then '(<%e1%> || !<%e2%>)'
     case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
     case GREATEREQ(ty = T_INTEGER(__))
     case GREATEREQ(ty = T_REAL(__))   then '(<%e1%> >= <%e2%>)'
+     case GREATEREQ(ty = T_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
+     
     case EQUAL(ty = T_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
     case EQUAL(ty = T_STRING(__))
     case EQUAL(ty = T_INTEGER(__))
     case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'   
+     
     case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = T_STRING(__))
     case NEQUAL(ty = T_INTEGER(__))
     case NEQUAL(ty = T_REAL(__))      then '(<%e1%> != <%e2%>)'
-    case _                         then "daeExpRelation:ERR"
+    case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
+    
+    case _                        	  then "daeExpRelation:ERR"
       end match
   case _ then 
      match op
@@ -5041,27 +5059,32 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
     case LESS(ty = T_INTEGER(__))
     case LESS(ty = T_REAL(__))        then '_conditions1[<%index%>]'
+    
     case GREATER(ty = T_BOOL(__))     then '_conditions1[<%index%>]'
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))
     case GREATER(ty = T_REAL(__))     then '_conditions1[<%index%>]'
+    
     case LESSEQ(ty = T_BOOL(__))      then '_conditions1[<%index%>]'
     case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = T_INTEGER(__))
     case LESSEQ(ty = T_REAL(__))       then '_conditions1[<%index%>]'
+    
     case GREATEREQ(ty = T_BOOL(__))   then '_conditions1[<%index%>]'
     case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
     case GREATEREQ(ty = T_INTEGER(__))
     case GREATEREQ(ty = T_REAL(__))   then '_conditions1[<%index%>]'
+    
     case EQUAL(ty = T_BOOL(__))       then '_conditions1[<%index%>]'
     case EQUAL(ty = T_STRING(__))
     case EQUAL(ty = T_INTEGER(__))
     case EQUAL(ty = T_REAL(__))       then '_conditions1[<%index%>]'
+    
     case NEQUAL(ty = T_BOOL(__))      then '_conditions1[<%index%>]'
     case NEQUAL(ty = T_STRING(__))
     case NEQUAL(ty = T_INTEGER(__))
     case NEQUAL(ty = T_REAL(__))      then '_conditions1[<%index%>]'
-    case _                         then "daeExpRelation:ERR"
+    case _                         then "daeExpRelationCondition:ERR"
       end match
 end daeExpRelation;
 
