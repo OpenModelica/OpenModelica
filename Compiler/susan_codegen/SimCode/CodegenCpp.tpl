@@ -5051,7 +5051,7 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
     case NEQUAL(ty = T_REAL(__))      then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
     
-    case _                        	  then "daeExpRelation:ERR"
+    case _                            then "daeExpRelation:ERR"
       end match
   case _ then 
      match op
