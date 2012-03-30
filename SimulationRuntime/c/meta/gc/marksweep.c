@@ -617,7 +617,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
 
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
-mmc_GC_local_state_type dummy_local_GC_state = {0,0};
+mmc_GC_local_state_type dummy_local_GC_state = 0;
 
 /* primary allocation routine for MetaModelica */
 void *mmc_alloc_words(unsigned nwords)
