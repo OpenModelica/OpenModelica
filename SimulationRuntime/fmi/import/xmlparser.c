@@ -587,6 +587,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_RealType:
                     case elm_IntegerType:
                     case elm_BooleanType:
+                    case elm_StringType:
                     case elm_EnumerationType:
                         break;
                     default:
@@ -637,6 +638,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_Real:
                     case elm_Integer:
                     case elm_Boolean:
+                    case elm_String:
                     case elm_Enumeration:
                         break;
                     default:

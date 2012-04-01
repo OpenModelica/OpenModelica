@@ -637,6 +637,7 @@ fmiAlias getFMIAlias(ScalarVariable* sv) {
 void instScalarVariable(ModelDescription* md, fmiScalarVariable* list) {
   int i;
   unsigned int len;
+  char* tempDesc;
   if (md->modelVariables) {
     for (i = 0; md->modelVariables[i]; i++) {
       list[i].name = getName(md->modelVariables[i]);
@@ -644,8 +645,19 @@ void instScalarVariable(ModelDescription* md, fmiScalarVariable* list) {
       list[i].flatName = (char*) calloc(len + 1, sizeof(char));
       strcpy(list[i].flatName, list[i].name);
       charReplace(list[i].flatName, len, '.', '_');
+      charReplace(list[i].flatName, len, '[', '_');
+      charReplace(list[i].flatName, len, ']', '_');
+      charReplace(list[i].flatName, len, ',', '_');
       list[i].vr = getValueReference(md->modelVariables[i]);
       list[i].description = getDescription(md, md->modelVariables[i]);
+      if (list[i].description != NULL){
+    	  len = strlen(list[i].description);
+    	  tempDesc = (char*) calloc(len + 1, sizeof(char));
+    	  memcpy(tempDesc, list[i].description, len);
+          charReplace(tempDesc, len, 0x22, 0x27);
+          list[i].description = (const char *) tempDesc;
+      }
+      //tempDesc = (char*) calloc(len + 1, sizeof(char));
 
 #ifdef _DEBUG_
       printf("#### Description of sv %s, %s, value reference: %d\n",list[i].name, list[i].description,list[i].vr );
@@ -1359,6 +1371,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
         fprintf(pfile, "%d};\n", tmpReal->vr);
       }
     }
+
     if (noRealParam > 0) {
       tmpRealParam = pntRealParam;
       fprintf(pfile, "\tparameter Real realVParam[%d];\n", noRealParam);

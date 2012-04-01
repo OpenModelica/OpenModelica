@@ -1809,6 +1809,11 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     <%preExp%>
     copy_real_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
     >>
+  case "string" then
+    <<
+    <%preExp%>
+    copy_string_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
+    >>    
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
 %>
 <%endModelicaLine()%>
