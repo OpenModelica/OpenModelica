@@ -651,11 +651,11 @@ void instScalarVariable(ModelDescription* md, fmiScalarVariable* list) {
       list[i].vr = getValueReference(md->modelVariables[i]);
       list[i].description = getDescription(md, md->modelVariables[i]);
       if (list[i].description != NULL){
-    	  len = strlen(list[i].description);
-    	  tempDesc = (char*) calloc(len + 1, sizeof(char));
-    	  memcpy(tempDesc, list[i].description, len);
-          charReplace(tempDesc, len, 0x22, 0x27);
-          list[i].description = (const char *) tempDesc;
+        len = strlen(list[i].description);
+        tempDesc = (char*) calloc(len + 1, sizeof(char));
+        memcpy(tempDesc, list[i].description, len);
+        charReplace(tempDesc, len, 0x22, 0x27);
+        list[i].description = (const char *) tempDesc;
       }
       //tempDesc = (char*) calloc(len + 1, sizeof(char));
 
@@ -1515,7 +1515,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
     fprintf(pfile, "initial algorithm\n");
     fprintf(pfile, "\tfmuSetTime(fmufun, inst, time);\n");
     fprintf(pfile, "\tif not initializationDone then\n");
-    /*
+/*
     // Set start values for real variables
     if (noReal > 0) {
       tmpReal = pntReal;
@@ -1649,7 +1649,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath,
         fprintf(pfile, "%s});\n", tmpStringParam->name);
       }
     }
-    */
+*/
     fprintf(pfile, "\t\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
     fprintf(pfile, "\t\tinitializationDone:= true;\n");
     fprintf(pfile, "\tend if;\n");
