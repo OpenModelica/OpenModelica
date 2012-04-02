@@ -51,7 +51,11 @@
 cl_mem ocl_device_alloc(size_t size){
     
     cl_int err;
-    cl_mem tmp;
+    cl_mem tmp = NULL;
+
+    if (!device_comm_queue)
+        ocl_initialize();
+        
     tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE,
             size, NULL, &err);
     
@@ -63,6 +67,10 @@ cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
     
     cl_int err;
     cl_mem tmp = NULL;
+    
+    if (!device_comm_queue)
+        ocl_initialize();
+    
     if (host_array)
         tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
             CL_MEM_COPY_HOST_PTR, size, host_array, &err);
@@ -77,6 +85,10 @@ cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
     cl_int err;
     cl_mem tmp = NULL;
+    
+    if (!device_comm_queue)
+        ocl_initialize();
+    
     if (host_array)
         tmp = clCreateBuffer(device_context, CL_MEM_READ_WRITE |
             CL_MEM_COPY_HOST_PTR, size, host_array, &err);
@@ -90,7 +102,8 @@ cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
 cl_mem ocl_alloc_init(void* src_data, size_t size){
     cl_int err;
-    cl_mem tmp;
+    cl_mem tmp = NULL;
+    
     if (!device_comm_queue)
         ocl_initialize();
 

@@ -136,7 +136,7 @@ void alloc_integer_array(device_integer_array *dest, int ndims, ...){
 }
 
 //entry point for allocating real array on device
-void alloc_real_array(device_integer_array *dest, int ndims, ...){
+void alloc_real_array(device_real_array *dest, int ndims, ...){
 
     size_t elements = 0;
     va_list ap;
@@ -150,7 +150,11 @@ void alloc_real_array(device_integer_array *dest, int ndims, ...){
 }
 
 
-
+void free_device_array(device_array *dest){
+    clReleaseMemObject(dest->data);
+    clReleaseMemObject(dest->info_dev);
+    free(dest->info);
+}
 
 
 void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){

@@ -77,6 +77,10 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
   let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
   
+  // If ParModelica generate the kernels file too.
+  if acceptParModelicaGrammar() then
+    let()= textFile(parModelicaKernelsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_kernels.cl')
+  
   //this top-level template always returns an empty result 
   //since generated texts are written to files directly
   ""
@@ -2053,6 +2057,20 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   /* adpro: leave a newline at the end of file to get rid of warnings! */
 end simulationFunctionsFile;
 
+template parModelicaKernelsFile(String filePrefix, list<Function> functions, list<Exp> literals)
+ "Generates the content of the C file for functions in the simulation case."
+::=
+  <<
+  #include "<%filePrefix%>_functions.h"
+  
+  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
+  <%functionBodies(functions)%>
+  
+    
+  >>
+
+end parModelicaKernelsFile;
+
 template recordsFile(String filePrefix, list<RecordDeclaration> recordDecls)
  "Generates the content of the C file for functions in the simulation case."
 ::=
@@ -3408,7 +3426,7 @@ template parVarInit(Variable var, String outStruct, Integer i, Text &varDecls /*
   Does not return anything: just appends declarations to buffers."
 ::=
 match var
-case var as VARIABLE(__) then
+case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   
 
@@ -3422,16 +3440,16 @@ case var as VARIABLE(__) then
     let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
     let &varInits += defaultValue
       
-    let &varFrees += 'clReleaseMemObject(<%varName%>.data);<%\n%>'
-    let &varFrees += 'clReleaseMemObject(<%varName%>.info_dev);<%\n%>'
-    let &varFrees += 'free(<%varName%>.info);<%\n%>'    
+    let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'    
     ""
   else
     let &varDecls += 'device_<%expTypeShort(var.ty)%> <%varName%>;<%\n%>'
     let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
     let &varFrees += 'clReleaseMemObject(<%varName%>);<%\n%>'
     ""
-      
+case var as VARIABLE(parallelism = PARLOCAL(__)) then 
+  let &varDecls += '#PARLOCAL variable type should not be allowed here. FIXME!!<%\n%>' ""
+  
 else let &varDecls += '#error Unknown parallel variable type<%\n%>' ""
 end parVarInit;
 
