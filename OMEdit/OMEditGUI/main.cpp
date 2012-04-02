@@ -36,6 +36,7 @@
 
 #include "SplashScreen.h"
 #include "mainwindow.h"
+#include "../../Compiler/runtime/config.h"
 
 void printUsage()
 {
@@ -61,7 +62,13 @@ int main(int argc, char *argv[])
     splashScreen.show();
 
     //*a.severin/ add localozation
-    QString dir = "../share/omedit/nls";
+    const char *omhome = getenv("OPENMODELICAHOME");
+#ifdef WIN32
+    if (!omhome) throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
+#else /* unix */
+    omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
+#endif
+    QString dir = omhome + QString("/share/omedit/nls");
     QString locale = QString("OMEdit_") + QLocale::system().name(); //+ QString(".qm");
     QTranslator translator;
     translator.load(locale, dir);
