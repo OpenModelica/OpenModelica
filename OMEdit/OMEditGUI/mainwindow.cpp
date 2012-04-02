@@ -546,11 +546,11 @@ void MainWindow::createMenus()
     // File Menu
     mpFileMenu = new QMenu(mpMenuBar);
     mpFileMenu->setObjectName("menuFile");
-    mpFileMenu->setTitle("&File");
+    mpFileMenu->setTitle(tr("&File"));
     // File New Menu
     mpFileNewMenu = new QMenu(mpMenuBar);
     mpFileNewMenu->setObjectName("menuNew");
-    mpFileNewMenu->setTitle("New");
+    mpFileNewMenu->setTitle(tr("New"));
     // Add actions to File Menu
     mpFileNewMenu->addAction(mpNewModelAction);
     mpFileNewMenu->addAction(mpNewClassAction);
@@ -571,7 +571,7 @@ void MainWindow::createMenus()
     mpFileMenu->addAction(mpCloseAction);
     // Edit Menu
     mpEditMenu = new QMenu(mpMenuBar);
-    mpEditMenu->setTitle("&Edit");
+    mpEditMenu->setTitle(tr("&Edit"));
     // Add actions to Edit Menu
     //menuEdit->addAction(undoAction);
     //menuEdit->addAction(redoAction);
@@ -581,19 +581,19 @@ void MainWindow::createMenus()
     mpEditMenu->addAction(mpPasteAction);
     // View Menu
     mpViewMenu = new QMenu(mpMenuBar);
-    mpViewMenu->setTitle("&View");
+    mpViewMenu->setTitle(tr("&View"));
     // Toolbars View Menu
     mpViewToolbarsMenu = new QMenu(mpMenuBar);
     mpViewToolbarsMenu->setObjectName("ToolbarsViewMenu");
-    mpViewToolbarsMenu->setTitle("Toolbars");
+    mpViewToolbarsMenu->setTitle(tr("Toolbars"));
     // Windows View Menu
     mpViewWindowsMenu = new QMenu(mpMenuBar);
     mpViewWindowsMenu->setObjectName("WindowsViewMenu");
-    mpViewWindowsMenu->setTitle("Windows");
+    mpViewWindowsMenu->setTitle(tr("Windows"));
     // Perspectives View Menu
     mpViewPerspectivesMenu = new QMenu(mpMenuBar);
     mpViewPerspectivesMenu->setObjectName("PerspectivesViewMenu");
-    mpViewPerspectivesMenu->setTitle("Perspectives");
+    mpViewPerspectivesMenu->setTitle(tr("Perspectives"));
     // Add actions to View Menu
     // Add Actions to Toolbars View Sub Menu
     mpViewToolbarsMenu->addAction(mpFileToolBar->toggleViewAction());
@@ -639,7 +639,7 @@ void MainWindow::createMenus()
     mpViewMenu->addAction(mpZoomOutAction);
     // Simulation Menu
     mpSimulationMenu = new QMenu(mpMenuBar);
-    mpSimulationMenu->setTitle("&Simulation");
+    mpSimulationMenu->setTitle(tr("&Simulation"));
     // Add Actions to Simulation Menu
     mpSimulationMenu->addAction(mpSimulationAction);
     mpSimulationMenu->addAction(mpInteractiveSimulationAction);
@@ -648,13 +648,13 @@ void MainWindow::createMenus()
     mpSimulationMenu->addAction(mpCheckModelAction);
     // FMI Menu
     mpFMIMenu = new QMenu(mpMenuBar);
-    mpFMIMenu->setTitle("F&MI");
+    mpFMIMenu->setTitle(tr("F&MI"));
     // Add Actions to FMI Menu
     mpFMIMenu->addAction(mpExportFMIAction);
     mpFMIMenu->addAction(mpImportFMIAction);
     // Tools Menu
     mpMenuTools = new QMenu(mpMenuBar);
-    mpMenuTools->setTitle("&Tools");
+    mpMenuTools->setTitle(tr("&Tools"));
     // Add Actions to Tools Menu
     mpMenuTools->addAction(mpOMCLoggerAction);
     mpMenuTools->addSeparator();
@@ -666,7 +666,7 @@ void MainWindow::createMenus()
     mpMenuTools->addAction(mpOpenOptionsAction);
     // Help Menu
     mpHelpMenu = new QMenu(mpMenuBar);
-    mpHelpMenu->setTitle("&Help");
+    mpHelpMenu->setTitle(tr("&Help"));
     // Add Actions to Help Menu
     mpHelpMenu->addAction(mpUserManualAction);
     mpHelpMenu->addAction(mpAboutOMEditAction);

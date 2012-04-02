@@ -60,6 +60,14 @@ int main(int argc, char *argv[])
     splashScreen.setMessage();
     splashScreen.show();
 
+    //*a.severin/ add localozation
+    QString dir = "../share/omedit/nls";
+    QString locale = QString("OMEdit_") + QLocale::system().name(); //+ QString(".qm");
+    QTranslator translator;
+    translator.load(locale, dir);
+    a.installTranslator(&translator);
+    //a.severin*/
+
     MainWindow mainwindow(&splashScreen);
     if (mainwindow.mExitApplication) {        // if there is some issue in running the application.
         a.quit();

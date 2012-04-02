@@ -6,6 +6,11 @@
 
 QT += network core gui webkit xml svg
 
+TRANSLATIONS = \
+  OMEdit_de.ts \
+  OMEdit_sv.ts \
+  OMEdit_ru.ts
+
 TARGET = OMEdit
 TEMPLATE = app
 

@@ -58,7 +58,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     // create buttons
     mpEditButton = new QPushButton(tr("Edit"));
     mpEditButton->setAutoDefault(true);
-    mpEditButton->setMaximumSize(QSize(100,20));
+    mpEditButton->setMaximumSize(QSize(120,20));
     connect(mpEditButton, SIGNAL(clicked()), SLOT(editDocumentation()));
     mpSaveButton = new QPushButton(tr("Save"));
     mpSaveButton->setAutoDefault(false);
