@@ -217,7 +217,7 @@ public constant Message INST_ARRAY_EQ_UNKNOWN_SIZE = MESSAGE(46, TRANSLATION(), 
 public constant Message TUPLE_ASSIGN_FUNCALL_ONLY = MESSAGE(47, TRANSLATION(), ERROR(),
   "Tuple assignment only allowed when rhs is function call (in %s)");
 public constant Message INVALID_CONNECTOR_TYPE = MESSAGE(48, TRANSLATION(), ERROR(),
-  "Cannot connect objects of type %s, not a connector.");
+  "Illegal connection: component %s is not a connector.");
 public constant Message CONNECT_TWO_INPUTS = MESSAGE(49, TRANSLATION(), ERROR(),
   "Cannot connect two input variables while connecting %s to %s unless one of them is inside and the other outside connector.");
 public constant Message CONNECT_TWO_OUTPUTS = MESSAGE(50, TRANSLATION(), ERROR(),

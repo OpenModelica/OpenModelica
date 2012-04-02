@@ -3055,8 +3055,8 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        validConnector(ty1) "Check that the type of the connectors are good." ;
-        validConnector(ty2);
+        validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
+        validConnector(ty2, c2_2, info);
         checkConnectTypes(env, ih, c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
         f1 = ConnectUtil.componentFace(env,ih,c1_2);
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
@@ -3673,55 +3673,57 @@ protected function validConnector
 "function: validConnector
   This function tests whether a type is a eligible to be used in connections."
   input DAE.Type inType;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue (inType)
+  _ := matchcontinue (inType, inCref, inInfo)
     local
       ClassInf.State state;
-      DAE.Type tp,t;
+      DAE.Type tp;
       String str;
     
-    case (DAE.T_REAL(varLst = _)) then ();
-    case (DAE.T_INTEGER(varLst = _)) then ();
-    case (DAE.T_STRING(varLst = _)) then ();
-    case (DAE.T_BOOL(varLst = _)) then ();
-    case (DAE.T_ENUMERATION(index = _)) then ();
+    case (DAE.T_REAL(varLst = _), _, _) then ();
+    case (DAE.T_INTEGER(varLst = _), _, _) then ();
+    case (DAE.T_STRING(varLst = _), _, _) then ();
+    case (DAE.T_BOOL(varLst = _), _, _) then ();
+    case (DAE.T_ENUMERATION(index = _), _, _) then ();
     
-    case (DAE.T_COMPLEX(complexClassType = state))
+    case (DAE.T_COMPLEX(complexClassType = state), _, _)
       equation
         ClassInf.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
     
-    case (DAE.T_COMPLEX(complexClassType = state))
+    case (DAE.T_COMPLEX(complexClassType = state), _, _)
       equation
         ClassInf.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
     
     // TODO, check if subtype is needed here
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = state))
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       equation
         ClassInf.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
     
     // TODO, check if subtype is needed here
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = state))
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       equation
         ClassInf.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
     
-    case (DAE.T_ARRAY(ty = tp))
+    case (DAE.T_ARRAY(ty = tp), _, _)
       equation
-        validConnector(tp);
+        validConnector(tp, inCref, inInfo);
       then
         ();
     
-    case t
+    else
       equation
-        str = Types.unparseType(t);
-        Error.addMessage(Error.INVALID_CONNECTOR_TYPE, {str});
+        str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE, {str}, inInfo);
       then
         fail();
   end matchcontinue;
