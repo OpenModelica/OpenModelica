@@ -61,28 +61,22 @@ int main(int argc, char *argv[])
     splashScreen.setMessage();
     splashScreen.show();
 
-    try
-    {
-        //*a.severin/ add localization
-        const char *omhome = getenv("OPENMODELICAHOME");
+    //*a.severin/ add localization
+    const char *omhome = getenv("OPENMODELICAHOME");
     #ifdef WIN32
-        if (!omhome) throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
+    if (!omhome) {
+      QMessageBox::critical(0, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND), "OK");
+      a.quit();
+      exit(1);
+    }
     #else /* unix */
-        omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
+    omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
     #endif
-        QString dir = omhome + QString("/share/omedit/nls");
-        QString locale = QString("OMEdit_") + QLocale::system().name();
-        QTranslator translator;
-        if (!translator.load(locale, dir))
-            throw std::runtime_error(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(locale)).toStdString());
-        a.installTranslator(&translator);
-        //a.severin*/
-    }
-    catch(std::exception &e)
-    {
-        QString msg = e.what();
-        QMessageBox::critical(0, Helper::applicationName + " - Error", msg.append("\n\n").append("Unable to load translations file."), "OK");
-    }
+    QString dir = omhome + QString("/share/omedit/nls");
+    QString locale = QString("OMEdit_") + QLocale::system().name();
+    QTranslator translator;
+    translator.load(locale, dir);
+    a.installTranslator(&translator);
 
     MainWindow mainwindow(&splashScreen);
     if (mainwindow.mExitApplication) {        // if there is some issue in running the application.

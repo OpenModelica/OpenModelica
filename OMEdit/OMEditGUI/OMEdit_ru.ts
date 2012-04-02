@@ -1802,7 +1802,7 @@
         <location filename="OMCProxy.cpp" line="229"/>
         <source>hh:mm:ss:zzz</source>
         <translatorcomment>zzz-милисекунды</translatorcomment>
-        <translation>чч:мм:сс:zzz</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> - Error</source>
