@@ -249,16 +249,7 @@ namespace IAEX
       {
         // 2006-02-27 AF, use environment variable to find DrModelica
         // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-        QString drmodelica = getenv("DRMODELICAHOME"); // openmodelica;
-
-    drmodelica.remove("\"");
-
-        // ONB
-        if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-          drmodelica += "DrModelica.onb";
-        else
-          drmodelica += "/DrModelica.onb";
-
+        QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
 
         if( dir.exists( drmodelica ))
           open(drmodelica);
@@ -270,11 +261,7 @@ namespace IAEX
           cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
 
           // NB
-          drmodelica = getenv( "DRMODELICAHOME" );
-          if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-            drmodelica += "DrModelica.nb";
-          else
-            drmodelica += "/DrModelica.nb";
+          drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
 
           if( dir.exists( drmodelica ))
             open(drmodelica);
