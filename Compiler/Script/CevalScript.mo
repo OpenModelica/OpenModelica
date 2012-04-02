@@ -611,7 +611,7 @@ algorithm
       list<String> validVersions;
 
     case (_,_,true,_) then false;
-    case ((path,{str1,_}),p,false,_)
+    case ((path,str1::_),p,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
