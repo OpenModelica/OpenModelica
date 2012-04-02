@@ -1314,7 +1314,7 @@ algorithm
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
         str = Absyn.pathString(className);
         re = Absyn.restrString(restriction);
-        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
+        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) /* or Absyn.isPackageRestriction(restriction) */ ),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
         usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
         _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
