@@ -140,7 +140,7 @@ void fmiSetDebugLog(void* in_fmi, void* in_fmu, char log){
 /* set simulation time
  * FMI standard interface
  */
-void fmiSetT(void* in_fmi, void* in_fmu, double in_t){
+double fmiSetT(void* in_fmi, void* in_fmu, double in_t, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   if(fmi->setTime){
@@ -153,13 +153,13 @@ void fmiSetT(void* in_fmi, void* in_fmu, double in_t){
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* set new continuous states of the model
  * FMI standard interface
  */
-void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx){
+double fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   if(fmi->setContinuousStates){
@@ -175,13 +175,13 @@ void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx){
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* set real variable values via an array of value references
  * FMI standard interface
  */
-void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr){
+double fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -198,13 +198,13 @@ void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* set integer variable values via an array of value references
  * FMI standard interface
  */
-void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv, int nvr){
+double fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -221,14 +221,14 @@ void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 
 /* set string variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr){
+double fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -245,13 +245,13 @@ void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* set boolean variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* in_bv, int nvr){
+double fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* in_bv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -269,13 +269,13 @@ void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* in
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* fmiCompletedIntegratorStep(...) for step event
  * FMI standard interface
  */
-void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt){ /* in_events is an array of modelica boolean array */
+double fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt, double in_flowControl){ /* in_events is an array of modelica boolean array */
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   fmiBoolean* stepEvt = (fmiBoolean*) in_stepEvt;
@@ -289,7 +289,7 @@ void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt){ /* in_events 
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return in_flowControl;
 }
 
 /* --------------------------------------------------------------
@@ -352,7 +352,7 @@ void fmiGetStateVR(void* in_fmi, void* in_fmu, int* in_vrx, int nx){
 /* get the value of the derivaties of all continous states
  * FMI standard interface
  */
-void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* x){
+void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* x, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   if(fmi->getDerivatives)
@@ -375,7 +375,7 @@ void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* 
 /* get real variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr){
+void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -398,7 +398,7 @@ void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int 
 /* get integer variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int nvr){
+void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -421,7 +421,7 @@ void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int 
 /* get integer variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr){
+void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;
@@ -444,7 +444,7 @@ void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
 /* get boolean variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int nvr){
+void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int nvr, double in_flowControl){
   FMI* fmi = (FMI*) in_fmi;
   fmiStatus status;
   const unsigned int* vr = (const unsigned int*) in_vr;

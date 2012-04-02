@@ -308,10 +308,6 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
       return fmiError;
   }
 #endif
-  functionODE(comp->fmuData);
-  functionAlgebraics(comp->fmuData);
-  output_function(comp->fmuData);
-  function_storeDelayed(comp->fmuData);
   return fmiOK;
 }
 
@@ -476,6 +472,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
     return fmiError;
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
+  functionODE(comp->fmuData);
 #if (NUMBER_OF_STATES>0)
   for (i=0; i<nx; i++) {
     fmiValueReference vr = vrStatesDerivatives[i];
@@ -495,8 +492,6 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
   if (invalidNumber(comp, "fmiGetEventIndicators", "ni", ni, NUMBER_OF_EVENT_INDICATORS))
     return fmiError;
 #if NUMBER_OF_EVENT_INDICATORS>0
-  functionODE(comp->fmuData);
-  functionAlgebraics(comp->fmuData);
   function_onlyZeroCrossings(comp->fmuData,NULL,&(comp->fmuData->localData[0]->timeValue));
   for (i=0; i<ni; i++) {
     /* retVal = getEventIndicator(comp, i, eventIndicators[i]); // to be implemented by the includer of this file
@@ -549,6 +544,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   }
   /* due to an event overwrite old values */
   overwriteOldSimulationData(comp->fmuData);
+  resetAllHelpVars(comp->fmuData);
 
   return fmiOK;
 }
@@ -633,9 +629,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiCompletedIntegratorStep");
-  functionODE(comp->fmuData);
   functionAlgebraics(comp->fmuData);
-  output_function(comp->fmuData);
   function_storeDelayed(comp->fmuData);
   return fmiOK;
 }
