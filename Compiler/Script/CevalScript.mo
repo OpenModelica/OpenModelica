@@ -580,7 +580,7 @@ algorithm
     case ({},_,p,_) then (p,true);
     case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad)
       equation
-        b = checkModelLoaded(path,strings,p,forceLoad);
+        b = checkModelLoaded((path,strings),p,forceLoad,NONE());
         pnew = Debug.bcallret3(not b, ClassLoader.loadClass, path, strings, modelicaPath, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
         p = Interactive.updateProgram(pnew, p);
         (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false);
@@ -596,25 +596,33 @@ algorithm
 end loadModel;
 
 protected function checkModelLoaded
-  input Absyn.Path path;
-  input list<String> validVersions;
+  input tuple<Absyn.Path,list<String>> tpl;
   input Absyn.Program p;
   input Boolean forceLoad;
+  input Option<String> failNonLoad;
   output Boolean loaded;
 algorithm
-  loaded := matchcontinue (path,validVersions,p,forceLoad)
+  loaded := matchcontinue (tpl,p,forceLoad,failNonLoad)
     local
       Absyn.Class cdef;
       String str1,str2;
       Option<String> ostr2;
-    case (_,_,_,true) then false;
-    case (path,{str1,_},p,false)
+      Absyn.Path path;
+      list<String> validVersions;
+
+    case (_,_,true,_) then false;
+    case ((path,{str1,_}),p,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
         checkValidVersion(path,str1,ostr2);
       then true;
-    else false;
+    case (_,_,_,NONE()) then false;
+    case ((path,_),_,_,SOME(str2))
+      equation
+        str1 = Absyn.pathString(path);
+        Error.addMessage(Error.INST_NON_LOADED, {str1,str2});
+      then false;
   end matchcontinue;
 end checkModelLoaded;
 
@@ -741,6 +749,7 @@ algorithm
       Values.Value ret_val,simValue,size_value,value,v,cvar,cvar2,xRange,yRange,xRange1,xRange2,yRange1,yRange2;
       DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,varName,varTimeStamp;
       Absyn.ComponentRef cr_1;
+      Absyn.Restriction restriction;
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
@@ -763,6 +772,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       SimCode.SimulationSettings simSettings;
+      list<tuple<Absyn.Path,list<String>>> usedModels;
+      Absyn.Info info;
     
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
       equation
@@ -1298,8 +1309,16 @@ algorithm
         //System.startTimer();
         //print("\nExists+Dependency");
         
+        /* TODO: Make this one call CevalScript, not one for translateModel, checkModel, instantiateModel and Main loop... */
         crefCName = Absyn.pathToCref(className);
-        true = Interactive.existClass(crefCName, p);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        str = Absyn.pathString(className);
+        re = Absyn.restrString(restriction);
+        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
+          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
+        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
+        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
+        
         ptot = Dependency.getTotalProgram(className,p);
         
         //System.stopTimer();
@@ -2583,10 +2602,22 @@ algorithm
       Interactive.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, fileNamePrefix;
+      String file_dir, fileNamePrefix, str, re;
+      Absyn.Class absynClass;
+      Absyn.Restriction restriction;
+      list<tuple<Absyn.Path,list<String>>> usedModels;
+      Absyn.Program p;
     
-    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt)
+    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,addDummy,inSimSettingsOpt)
       equation
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        str = Absyn.pathString(className);
+        re = Absyn.restrString(restriction);
+        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
+          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
+        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
+        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
+
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
           SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
       then
