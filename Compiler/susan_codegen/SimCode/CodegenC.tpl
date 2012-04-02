@@ -2099,7 +2099,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
-  let ParModelicaLibs = if acceptParModelicaGrammar() then '-locl_runtime -lOpenCL' // else ""
+  let ParModelicaLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER "
