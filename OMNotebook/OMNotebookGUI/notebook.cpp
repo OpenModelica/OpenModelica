@@ -1596,7 +1596,6 @@ void NotebookWindow::createInsertMenu()
 
   //Sketch
   insertSketch = new QAction( tr("&Sketch"), this );
-  insertSketch->setShortcut( tr("Ctrl+Shift+S") );
   insertSketch->setStatusTip( tr("Sketch App") );
   connect( insertSketch, SIGNAL( triggered() ),
            this, SLOT( Sketch() ));
