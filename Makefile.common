@@ -191,6 +191,7 @@ install: install-dirs install-python
 	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/*.xml ${INSTALL_SHAREDIR}/omshell/
 	test ! -d ${builddir_share}/omshell/nls/ || cp -p ${builddir_share}/omshell/nls/*.qm ${INSTALL_SHAREDIR}/omshell/nls/
+	test ! -d ${builddir_share}/omedit/nls/ || cp -p ${builddir_share}/omedit/nls/*.qm ${INSTALL_SHAREDIR}/omedit/nls/
 	# Scripts
 	cp -rp ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
