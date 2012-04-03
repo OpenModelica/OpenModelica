@@ -2638,35 +2638,59 @@ Bug fixes, especially in the Linux version.
 The Functional Mockup Interface FMI 1.0 for model exchange import and export is supported by this release. The functionality is accessible via API calls as well as via pull-down menu commands in OMEdit.
 </html>"));
 end '1.8.0';
-package '1.8.1' "Version 1.8.1 (r11???, 2012-02-??)"
+package '1.8.1' "Version 1.8.1 (r11643, 2012-04-03)"
 annotation(Documentation(info="<html>
-Major changes:
+<p>The OpenModelica 1.8.1 has been <a href=\"http://build.openmodelica.org/omc/builds/windows/releases/1.8.1/\" target=\"_blank\">released</a>. You can find the Windows builds <a href=\"http://build.openmodelica.org/omc/builds/windows/releases/1.8.1/\" target=\"_blank\">here</a>. The Linux and MacOS builds are available via the Download menu above.</p>
+<p>Many thanks to everybody who contributed!</p>
+<p>The OpenModelica 1.8.1 release has a faster and more stable OMC model compiler. It flattens and simulates more models than the previous 1.8.0 version. Significant flattening speedup of the compiler has been achieved for certain large models. It also contains a New ModelicaML version with support for value bindings in requirements-driven modeling and importing Modelica library models into ModelicaML models. A beta version of the new OpenModelica Python scripting is also included.</p>
 <h4>OpenModelica Compiler (OMC)</h4>
-The feature sendData has been removed from OpenModelica. As a result, the kernel no longer depends on Qt. The <code>plot3()</code> family of functions have now replaced <code>plot()</code>, which in turn have been removed. The non-standard <code>visualize()</code> command has been removed in favour of more recent alternatives.
+<p>This release includes bug fixes and improvements of the flattening frontend part of the OpenModelica Compiler (OMC) and several improvements of the backend, including, but not restricted to:</p>
 <ul>
-<li>Store the documentation as Modelica <a href=\"modelica://ModelicaReference.Annotations.Documentation\">Documentation</a> annotations.</li>
+<li>A faster and more stable OMC model compiler. The 1.8.1 version flattens and simulates more models than the previous 1.8.0 version.</li>
+<li>Support for operator overloading (except Complex numbers).</li>
+<li>New ModelicaML version with support for value bindings in requirements-driven modeling and importing Modelica library models into ModelicaML models.</li>
+<li>Faster plotting in OMNotebook. The feature sendData has been removed from OpenModelica. As a result, the kernel no longer depends on Qt. The plot3() family of functions have now replaced to plot(), which in turn have been removed. The non-standard visualize() command has been removed in favour of more recent alternatives.</li>
+<li>Store OpenModelica documentation as Modelica <a href=\"modelica://ModelicaReference.Annotations.Documentation\">Documentation</a> annotations.</li>
 <li>Re-implementation of the simulation runtime using C instead of C++ (this was needed to export FMI source-based packages).</li>
-<li>FMI import/export fixes.</li>
+<li>FMI import/export bug fixes.</li>
 <li>Changed the internal representation of various structures to share more memory. This significantly improved the performance for very large models that use records.</li>
-<li>Faster model flattening, Improved simulation, initialization, some graphical API bug fixes.</li>
-<li>New options to API calls <strong>list</strong>, <strong>loadFile</strong>, and more.</li>
-<li>Some support for operator overloading.</li>
-<li>Enforce the restriction that <strong>input</strong> arguments of functions may not be assigned to.</li>
-<li>Improved the scripting environment. <code>cl := $TypeName(Modelica);getClassComment(cl);</code> now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
-<li>Faster plotting in OMNotebook</li>
-<li>Interactive simulation is currently not working.</li>
+<li>Faster model flattening, Improved simulation, some graphical API bug fixes.</li>
+<li>More robust and general initialization, but currently time-consuming.</li>
+<li>New initialization flags to omc and options to simulate(), to control whether fast or robust initialization is selected, or initialization from an external (.mat) data file.</li>
+<li>New options to API calls list, loadFile, and more.</li>
+<li>Enforce the restriction that input arguments of functions may not be assigned to.</li>
+<li>Improved the scripting environment. cl := $TypeName(Modelica);getClassComment(cl); now works as expected. As does looping over lists of typenames and using reduction expressions.</li>
+<li>Beta version of Python scripting.</li>
 <li>Various bugfixes.</li>
+<li>NOTE: interactive simulation is not operational in this release. It will be put back again in the near future, first available as a nightly build. It is also available in the previous 1.8.0 release.</li>
 </ul>
-<h4>OMNotebook</h4>
-<li>Faster plotting.</li>
-<li>New feature OMSketch.</li>
-<h4>ModelicaML</h4>
-New ModelicaML version with support for value bindings in requirements-driven modeling and importing Modelica library models into ModelicaML models.
-<h4>Missing functionality</h4>
-Functionality from 1.8 that is missing in 1.8.1 but will be put back in a subsequent release:
+<h4>OpenModelica Notebook (OMNotebook)</h4>
 <ul>
-<li>Interactive simulation.</li>
-<li>Plots in OMNotebook are not yet put in a cell in the notebook, instead just in a popup window.</li>
+<li>Faster and more stable plottning.</li>
+</ul>
+<h4>OpenModelica Shell (OMShell)</h4>
+<ul>
+<li>No changes.</li>
+</ul>
+<h4>OpenModelica Eclipse Plug-in (MDT)</h4>
+<ul>
+<li>Small  fixes and improvements.</li>
+</ul>
+<h4>OpenModelica Development Environment (OMDev)</h4>
+<ul>
+<li>No changes.</li>
+</ul>
+<h4>Graphic Editor OMEdit</h4>
+<ul>
+<li>Bug fixes.</li>
+</ul>
+<h4>OMOptim Optimization Subsystem</h4>
+<ul>
+<li>Bug fixes.</li>
+</ul>
+<h4>FMI Support</h4>
+<ul>
+<li>Bug fixes.</li>
 </ul>
 </html>"));
 end '1.8.1';
