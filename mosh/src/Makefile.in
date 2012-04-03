@@ -43,8 +43,9 @@ $(PROG)$(EXEEXT) : $(OBJS)
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
-omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+omc_communication.cc: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
+omc_communication.h: omc_communication.cc
 
 clean:
 	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
