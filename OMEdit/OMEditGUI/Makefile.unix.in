@@ -25,8 +25,9 @@ always:
 
 omc_communication.cpp: omc_communication.cc
 	ln -s $< $@
-omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+omc_communication.cc: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
+omc_communication.h: omc_communication.cc
 
 $(NAME): Makefile OMEdit.config omc_communication.cpp
 	$(MAKE) -f Makefile
