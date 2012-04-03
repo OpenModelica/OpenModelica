@@ -46,10 +46,9 @@ libomcruntime.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
 
-omc_communication.cc omc_communication.h : omc_communication.idl
+omc_communication.cc : omc_communication.idl
 	$(IDL) omc_communication.idl
-
-omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
+omc_communication.h: omc_communication.cc
 
 omc_communication_impl.o: omc_communication.h
 Corba_rml.o: omc_communication.h corbaimpl.cpp
