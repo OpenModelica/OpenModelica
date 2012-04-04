@@ -1501,7 +1501,7 @@ algorithm
         (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
         (DAE.MATRIX(t,b,bexpl_1),true);
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),repl,cond)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (e1_1,c1) = replaceExp(e1, repl, cond);
@@ -1509,7 +1509,7 @@ algorithm
         true = c1 or c2;
       then
         (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (e1_1,c1) = replaceExp(e1, repl, cond);

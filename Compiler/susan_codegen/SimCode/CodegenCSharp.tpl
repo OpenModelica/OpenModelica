@@ -1445,9 +1445,9 @@ case RANGE(__) then
   let iterName = iterator
   let &stopVar = buffer ""
   let &preExp = buffer ""
-  let startValue = daeExp(exp, context, &preExp, simCode)
-  let stopValue = daeExp(range, context, &preExp, simCode)
-  match expOption 
+  let startValue = daeExp(start, context, &preExp, simCode)
+  let stopValue = daeExp(stop, context, &preExp, simCode)
+  match step 
   case SOME(eo) then
     let &stepVar = buffer "" 
     let stepValue = daeExp(eo, context, &preExp, simCode)

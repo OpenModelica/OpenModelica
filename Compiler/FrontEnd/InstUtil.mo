@@ -40,6 +40,7 @@ encapsulated package InstUtil
 "
 
 public import Absyn;
+public import ClassInf;
 public import DAE;
 public import InstSymbolTable;
 public import InstTypes;
@@ -47,6 +48,8 @@ public import SCode;
 public import SCodeEnv;
 
 protected import ComponentReference;
+protected import Connect;
+protected import ConnectUtil;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -78,12 +81,13 @@ public function makeClass
   input list<Equation> inInitialEquations;
   input list<SCode.AlgorithmSection> inAlgorithms;
   input list<SCode.AlgorithmSection> inInitialAlgorithms;
+  input ClassInf.State inState;
   input Boolean inContainsSpecialExtends;
   output Class outClass;
   output DAE.Type outClassType;
 algorithm
   (outClass, outClassType) := match(inElements, inEquations, inInitialEquations,
-      inAlgorithms, inInitialAlgorithms, inContainsSpecialExtends)
+      inAlgorithms, inInitialAlgorithms, inState, inContainsSpecialExtends)
     local
       list<Element> elems;
       list<Equation> eq, ieq;
@@ -91,10 +95,11 @@ algorithm
       Class cls;
       DAE.Type ty;
 
-    case (elems, eq, ieq, al, ial, false)
-      then (InstTypes.COMPLEX_CLASS(elems, eq, ieq, al, ial), DAE.T_COMPLEX_DEFAULT);
+    case (elems, eq, ieq, al, ial, _, false)
+      then (InstTypes.COMPLEX_CLASS(elems, eq, ieq, al, ial), 
+        DAE.T_COMPLEX(inState, {}, NONE(), DAE.emptyTypeSource));
 
-    case (_, {}, {}, {}, {}, true)
+    case (_, {}, {}, {}, {}, _, true)
       equation
         (InstTypes.EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
           getSpecialExtends(inElements);
@@ -184,6 +189,20 @@ algorithm
   end match;
 end setComponentName;
     
+public function getComponentType
+  input Component inComponent;
+  output DAE.Type outType;
+algorithm
+  outType := match(inComponent)
+    local
+      DAE.Type ty;
+
+    case InstTypes.UNTYPED_COMPONENT(baseType = ty) then ty;
+    case InstTypes.TYPED_COMPONENT(ty = ty) then ty;
+
+  end match;
+end getComponentType;
+
 public function getComponentBinding
   input Component inComponent;
   output Binding outBinding;
@@ -1059,6 +1078,32 @@ algorithm
   end match;
 end isInnerComponent;
 
+public function isConnectorComponent
+  input Component inComponent;
+  output Boolean outIsConnector;
+algorithm
+  outIsConnector := match(inComponent)
+    local
+      DAE.Type ty;
+
+    case InstTypes.TYPED_COMPONENT(ty = ty)
+      equation
+        ty = Types.arrayElementType(ty);
+      then
+        Types.isComplexConnector(ty);
+
+    case InstTypes.UNTYPED_COMPONENT(baseType = ty)
+      then Types.isComplexConnector(ty);
+
+    else
+      equation
+        print("InstUtil.isConnectorComponent: IMPLEMENT ME\n");
+      then
+        fail();
+
+  end match;
+end isConnectorComponent;
+
 public function printBinding
   input Binding inBinding;
   output String outString;
@@ -1198,7 +1243,11 @@ algorithm
     local
       DAE.Exp exp1, exp2;
       DAE.Type ty1, ty2;
-      String exp_str1, exp_str2, ty_str1, ty_str2;
+      DAE.ComponentRef cref1, cref2;
+      Connect.Face face1, face2;
+      String index, res, eql_str;
+      String exp_str1, exp_str2, ty_str1, ty_str2, face_str1, face_str2;
+      list<Equation> eql;
 
     case (InstTypes.EQUALITY_EQUATION(lhs = exp1, rhs = exp2))
       equation
@@ -1207,7 +1256,28 @@ algorithm
         ty_str1 = Types.unparseType(Expression.typeof(exp1));
         ty_str2 = Types.unparseType(Expression.typeof(exp2));
       then
-      exp_str1 +& " {" +& ty_str1 +& "} = {" +& ty_str2 +& "} " +& exp_str2 +& ";";
+        exp_str1 +& " {" +& ty_str1 +& "} = {" +& ty_str2 +& "} " +& exp_str2 +& ";";
+
+    case (InstTypes.CONNECT_EQUATION(lhs = cref1, lhsFace = face1,
+        rhs = cref2, rhsFace = face2))
+      equation
+        exp_str1 = ComponentReference.printComponentRefStr(cref1);
+        exp_str2 = ComponentReference.printComponentRefStr(cref2);
+        face_str1 = ConnectUtil.printFaceStr(face1);
+        face_str2 = ConnectUtil.printFaceStr(face2);
+      then
+        "connect(" +& exp_str1 +& " <" +& face_str1 +& ">, " +& exp_str2 +& " <"
+          +& face_str2 +& ">);";
+
+    case (InstTypes.FOR_EQUATION(index = index, indexType = ty1, 
+        range = exp1, body = eql))
+      equation
+        ty_str1 = Types.unparseType(ty1);
+        res = "for {" +& ty_str1 +& "} " +& index +& " loop\n  ";
+        eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
+        res = res +& eql_str +& "\n  end for;\n";
+      then
+        res;
 
     else "UNKNOWN EQUATION";
   end match;

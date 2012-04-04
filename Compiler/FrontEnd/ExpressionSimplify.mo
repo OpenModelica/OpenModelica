@@ -600,7 +600,7 @@ algorithm
         DAE.ARRAY(tp,b,exps_1);
 
     // cast of array
-    case (DAE.RANGE(ty=DAE.T_INTEGER(source=_),exp=e1,expOption=eo,range=e2),tp1 as DAE.T_ARRAY(ty=tp2 as DAE.T_REAL(source=_)))
+    case (DAE.RANGE(ty=DAE.T_INTEGER(source=_),start=e1,step=eo,stop=e2),tp1 as DAE.T_ARRAY(ty=tp2 as DAE.T_REAL(source=_)))
       equation
         e1 = addCast(e1,tp2);
         e2 = addCast(e2,tp2);

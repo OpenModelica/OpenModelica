@@ -2855,12 +2855,12 @@ case RANGE(__) then
   let stepVar = tempDecl(type, &varDecls)
   let stopVar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
-  let startValue = daeExp(exp, context, &preExp, &varDecls)
-  let stepValue = match expOption case SOME(eo) then
+  let startValue = daeExp(start, context, &preExp, &varDecls)
+  let stepValue = match step case SOME(eo) then
       daeExp(eo, context, &preExp, &varDecls)
     else
       "(1)"
-  let stopValue = daeExp(range, context, &preExp, &varDecls)
+  let stopValue = daeExp(stop, context, &preExp, &varDecls)
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
@@ -4098,10 +4098,10 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a range expression."
 ::=
   match exp
-  case RANGE(expOption = NONE()) then
+  case RANGE(step = NONE()) then
     let ty_str = expTypeArray(ty)
-    let start_exp = daeExp(exp, context, &preExp, &varDecls)
-    let stop_exp = daeExp(range, context, &preExp, &varDecls)
+    let start_exp = daeExp(start, context, &preExp, &varDecls)
+    let stop_exp = daeExp(stop, context, &preExp, &varDecls)
     let tmp = tempDecl(ty_str, &varDecls)
     let &preExp += 'create_integer_range_array(&<%tmp%>, <%start_exp%>, 1, <%stop_exp%>);<%\n%>'
     '<%tmp%>'

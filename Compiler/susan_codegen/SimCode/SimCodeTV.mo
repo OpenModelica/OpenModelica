@@ -857,9 +857,9 @@ package DAE
     end MATRIX;
     record RANGE
       Type ty;
-      Exp exp;
-      Option<Exp> expOption;
-      Exp range;
+      Exp start;
+      Option<Exp> step;
+      Exp stop;
     end RANGE;
     record TUPLE
       list<Exp> PR;

@@ -87,7 +87,7 @@ algorithm
     case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
       equation
         SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty) = 
-          SCodeEnv.getItemInEnv(name, inEnv);
+          SCodeLookup.lookupInClass(name, inEnv);
         env = SCodeEnv.enterFrame(cls_env, inEnv);
 
         (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);

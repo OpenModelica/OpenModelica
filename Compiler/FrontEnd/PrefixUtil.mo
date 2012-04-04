@@ -821,14 +821,14 @@ algorithm
       then
         (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
-    case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE(),range = stop),p)
+    case (cache,env,ih,DAE.RANGE(ty = t,start = start,step = NONE(),stop = stop),p)
       equation
         (cache,start_1) = prefixExp(cache, env, ih, start, p);
         (cache,stop_1) = prefixExp(cache, env, ih, stop, p);
       then
         (cache,DAE.RANGE(t,start_1,NONE(),stop_1));
 
-    case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
+    case (cache,env,ih,DAE.RANGE(ty = t,start = start,step = SOME(step),stop = stop),p)
       equation
         (cache,start_1) = prefixExp(cache, env, ih, start, p);
         (cache,step_1) = prefixExp(cache, env, ih, step, p);

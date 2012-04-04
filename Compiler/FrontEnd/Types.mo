@@ -328,9 +328,10 @@ end isSimpleType;
 public function isComplexConnector ""
   input Type t;
   output Boolean b;
-algorithm b := matchcontinue(t)
-  case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
-  case (_) then false;
+algorithm
+  b := matchcontinue(t)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
+    else false;
   end matchcontinue;
 end isComplexConnector;
 
@@ -3953,7 +3954,7 @@ algorithm
         (DAE.ARRAY(DAE.T_ARRAY(ety1, dims, DAE.emptyTypeSource),sc,elist_1), ty2);
 
     // Full range expressions, e.g. 1:2:10
-    case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),
+    case (DAE.RANGE(ty = t,start = begin,step = SOME(step),stop = stop),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
           printFailtrace)
@@ -3967,7 +3968,7 @@ algorithm
         (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),DAE.T_ARRAY(ty2,{dim1},ts));
 
     // Range expressions, e.g. 1:10
-    case (DAE.RANGE(ty = t,exp = begin,expOption = NONE(),range = stop),
+    case (DAE.RANGE(ty = t,start = begin,step = NONE(),stop = stop),
           DAE.T_ARRAY(dims = {dim1}, ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
           printFailtrace)
@@ -7205,7 +7206,7 @@ algorithm
         verifyExpressionType2(ety1, inType);
       then
         ();
-    case (DAE.RANGE(ty = ety1, exp = e1, expOption = SOME(e2), range = e3), _)
+    case (DAE.RANGE(ty = ety1, start = e1, step = SOME(e2), stop = e3), _)
       equation
         verifyExpressionType2(ety1, inType);
         ty = unliftArray(inType);
@@ -7214,7 +7215,7 @@ algorithm
         verifyExpressionType(e3, ty);
       then
         ();
-    case (DAE.RANGE(ty = ety1, exp = e1, expOption = NONE(), range = e3), _)
+    case (DAE.RANGE(ty = ety1, start = e1, step = NONE(), stop = e3), _)
       equation
         verifyExpressionType2(ety1, inType);
         ty = unliftArray(inType);

@@ -636,7 +636,7 @@ algorithm
       then
         (cache,v,stOpt);
     
-    case (cache, env, DAE.RANGE(ty = DAE.T_INTEGER(varLst = _), exp = start, expOption = NONE(),range = stop), impl, stOpt, msg)
+    case (cache, env, DAE.RANGE(ty = DAE.T_INTEGER(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg)
       equation
         (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt, msg);
         (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt, msg);
@@ -646,7 +646,7 @@ algorithm
         (cache, ValuesUtil.makeArray(arr), stOpt);
 
     // range first:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),exp = start,expOption = NONE(),range = stop),impl,stOpt,msg) 
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg) 
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
@@ -655,7 +655,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
     // range first:step:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),exp = start,expOption = SOME(step),range = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg)
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
@@ -665,7 +665,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
     // range first:last for enumerations.
-    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(path = _),exp = start,expOption = NONE(),range = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(path = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg)
       equation
         (cache,Values.ENUM_LITERAL(index = start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.ENUM_LITERAL(index = stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
@@ -674,7 +674,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),exp = start,expOption = NONE(),range = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg)
       equation
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
@@ -685,7 +685,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:step:last for reals    
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),exp = start,expOption = SOME(step),range = stop),impl,stOpt,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg)
       equation
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
@@ -908,7 +908,7 @@ algorithm
       DAE.Type ty;
       Env.Cache cache;
       
-    case (_, _, DAE.RANGE(ty = ty, exp = e1, range = e2, expOption = e3), _, _, _)
+    case (_, _, DAE.RANGE(ty = ty, start = e1, stop = e2, step = e3), _, _, _)
       equation
         (cache, e1, _) = cevalIfConstant(inCache, inEnv, e1, inProp, impl, inInfo);
         (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl, inInfo);

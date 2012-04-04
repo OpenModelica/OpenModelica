@@ -70,9 +70,12 @@ public type SymbolTable = InstSymbolTable.SymbolTable;
 public type Key = Absyn.Path;
 public type Value = InstTypes.Component;
 
+
 public type HashTableFunctionsType = tuple<FuncHashKey, FuncKeyEqual, FuncKeyStr, FuncValueStr>;
 
-public type SymbolTable = tuple<
+public type SymbolTable = list<HashTable>;
+
+public type HashTable = tuple<
   array<list<tuple<Key, Integer>>>,
   tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
   Integer,
@@ -113,6 +116,21 @@ algorithm
   outHash := System.stringHashDjb2Mod(str, inMod);
 end hashFunc;
 
+protected constant DAE.Var BUILTIN_TIME_QUANTITY = DAE.TYPES_VAR(
+  "quantity", DAE.dummyAttrVar, SCode.PUBLIC(), DAE.T_STRING_DEFAULT,
+  DAE.EQBOUND(DAE.SCONST("Time"), NONE(), DAE.C_CONST(),
+  DAE.BINDING_FROM_DEFAULT_VALUE()), NONE());
+
+protected constant DAE.Var BUILTIN_TIME_UNIT = DAE.TYPES_VAR(
+  "unit", DAE.dummyAttrVar, SCode.PUBLIC(), DAE.T_STRING_DEFAULT,
+  DAE.EQBOUND(DAE.SCONST("s"), NONE(), DAE.C_CONST(),
+  DAE.BINDING_FROM_DEFAULT_VALUE()), NONE());
+
+protected constant Component BUILTIN_TIME_COMP = InstTypes.TYPED_COMPONENT(
+  Absyn.IDENT("time"), DAE.T_REAL({BUILTIN_TIME_QUANTITY, BUILTIN_TIME_UNIT},
+  DAE.emptyTypeSource), InstTypes.NO_PREFIXES(), InstTypes.UNBOUND(),
+  Absyn.dummyInfo);
+
 public function create
   output SymbolTable outSymbolTable;
 algorithm
@@ -122,9 +140,12 @@ end create;
 public function createSized
   input Integer inSize;
   output SymbolTable outSymbolTable;
+protected
+  HashTable table;
 algorithm
-  outSymbolTable := BaseHashTable.emptyHashTableWork(inSize,
+  table := BaseHashTable.emptyHashTableWork(inSize,
     (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+  outSymbolTable := {table};
 end createSized;
 
 public function build
@@ -141,16 +162,76 @@ algorithm
     case (_)
       equation
         // Set the bucket size to the nearest prime of the number of components
-        // multiplied with 4/3, to get ~75% occupancy.
+        // multiplied with 4/3, to get ~75% occupancy. +1 to make space for time.
         comp_size = InstUtil.countElementsInClass(inClass);
-        bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3));
+        bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
         symtab = createSized(bucket_size);
         (cls, symtab) = addClass(inClass, symtab);
+        (symtab, _) = addOptionalComponent(Absyn.IDENT("time"),
+          BUILTIN_TIME_COMP, NONE(), symtab);
       then
         (cls, symtab);
 
   end match;
 end build;
+
+protected function add
+  input Absyn.Path inName;
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  HashTable ht;
+  SymbolTable rest_st;
+algorithm
+  ht :: rest_st := inSymbolTable;
+  ht := BaseHashTable.add((inName, inComponent), ht);
+  outSymbolTable := ht :: rest_st;
+end add;
+
+protected function addUnique
+  input Absyn.Path inName;
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  HashTable ht;
+  SymbolTable rest_st;
+algorithm
+  ht :: rest_st := inSymbolTable;
+  ht := BaseHashTable.addUnique((inName, inComponent), ht);
+  outSymbolTable := ht :: rest_st;
+end addUnique;
+
+protected function addNoUpdCheck
+  input Absyn.Path inName;
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  HashTable ht;
+  SymbolTable rest_st;
+algorithm
+  ht :: rest_st := inSymbolTable;
+  ht := BaseHashTable.addNoUpdCheck((inName, inComponent), ht);
+  outSymbolTable := ht :: rest_st;
+end addNoUpdCheck;
+
+protected function get
+  input Absyn.Path inName;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+algorithm
+  outComponent := matchcontinue(inName, inSymbolTable)
+    local
+      HashTable ht;
+      SymbolTable rest_st;
+
+    case (_, ht :: rest_st) then BaseHashTable.get(inName, ht);
+    case (_, _ :: rest_st) then get(inName, rest_st);
+    
+  end matchcontinue;
+end get;
 
 public function addClass
   input Class inClass;
@@ -322,7 +403,7 @@ algorithm
 
     case (_, comp, NONE(), st)
       equation
-        st = BaseHashTable.addNoUpdCheck((inName, comp), st);
+        st = addNoUpdCheck(inName, comp, st);
       then
         (st, true);
 
@@ -334,6 +415,32 @@ algorithm
 
   end match;
 end addOptionalComponent;
+
+public function addIterator
+  input Absyn.Path inName;
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := matchcontinue(inName, inComponent, inSymbolTable)
+    local
+      HashTable ht;
+      SymbolTable st;
+      
+    case (_, _, _ :: _ :: _)
+      then addUnique(inName, inComponent, inSymbolTable);
+
+    else
+      equation
+        ht = BaseHashTable.emptyHashTableWork(11,
+          (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+        st = ht :: inSymbolTable;
+        st = add(inName, inComponent, st);
+      then
+        st;
+
+  end matchcontinue;
+end addIterator;
 
 public function updateComponent
   input Component inComponent;
@@ -348,7 +455,7 @@ algorithm
     case (_, st)
       equation
         name = InstUtil.getComponentName(inComponent);
-        st = BaseHashTable.add((name, inComponent), st);
+        st = add(name, inComponent, st);
       then
         st;
 
@@ -406,7 +513,7 @@ algorithm
 
     case (_, _, SOME(InstTypes.CONDITIONAL_COMPONENT(name = _)), st)
       equation
-        st = BaseHashTable.addNoUpdCheck((inName, inNewComponent), st);
+        st = addNoUpdCheck(inName, inNewComponent, st);
       then
         (st, true);
 
@@ -433,7 +540,7 @@ protected
   Absyn.Path path;
 algorithm
   path := ComponentReference.crefToPathIgnoreSubs(inCref);
-  outComponent := BaseHashTable.get(path, inSymbolTable);
+  outComponent := get(path, inSymbolTable);
 end lookupCref;
 
 public function lookupName
@@ -441,7 +548,7 @@ public function lookupName
   input SymbolTable inSymbolTable;
   output Component outComponent;
 algorithm
-  outComponent := BaseHashTable.get(inName, inSymbolTable);
+  outComponent := get(inName, inSymbolTable);
 end lookupName;
 
 public function lookupNameOpt
@@ -455,7 +562,7 @@ algorithm
 
     case (_, _)
       equation
-        comp = BaseHashTable.get(inName, inSymbolTable);
+        comp = get(inName, inSymbolTable);
       then
         SOME(comp);
 
@@ -481,7 +588,7 @@ algorithm
       equation
         (inner_name, inner_comp) = findInnerComponent(outer_name, st); 
         outer_comp = InstTypes.OUTER_COMPONENT(outer_name, SOME(inner_name));
-        st = BaseHashTable.add((outer_name, outer_comp), st);
+        st = add(outer_name, outer_comp, st);
       then
         (inner_name, SOME(inner_comp), st);
         
@@ -545,7 +652,7 @@ algorithm
     case (_, {}, _)
       equation
         path = Absyn.IDENT(inComponentName);
-        comp = BaseHashTable.get(path, inSymbolTable);
+        comp = get(path, inSymbolTable);
         true = InstUtil.isInnerComponent(comp);
       then
         (path, comp);
@@ -554,7 +661,7 @@ algorithm
       equation
         pathl = inComponentName :: inPrefix;
         path = Absyn.stringListPathReversed(pathl);
-        comp = BaseHashTable.get(path, inSymbolTable);
+        comp = get(path, inSymbolTable);
         true = InstUtil.isInnerComponent(comp);
       then
         (path, comp);
@@ -603,8 +710,10 @@ protected
   list<tuple<Absyn.Path, Component>> hash_list;
   list<tuple<DAE.Exp, list<DAE.Exp>>> dep_graph;
   list<DAE.Exp> deps;
+  HashTable ht;
 algorithm
-  hash_list := BaseHashTable.hashTableList(inSymbolTable);
+  ht :: _ := inSymbolTable;
+  hash_list := BaseHashTable.hashTableList(ht);
   dep_graph := buildDependencyGraph(hash_list, {});
   (_, dep_graph) := Graph.topologicalSort(dep_graph, nodeEqual);
   {outDeps} := Graph.findCycles(dep_graph, nodeEqual);
@@ -710,11 +819,23 @@ end nodeEqual;
 
 public function dumpSymbolTableKeys
   input SymbolTable inSymbolTable;
-protected
-  list<Absyn.Path> keys;
 algorithm
-  keys := BaseHashTable.hashTableKeyList(inSymbolTable);
-  print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
+  _ := matchcontinue(inSymbolTable)
+    local
+      list<Absyn.Path> keys;
+      HashTable ht;
+      SymbolTable rest_st;
+
+    case (ht :: rest_st)
+      equation
+        keys = BaseHashTable.hashTableKeyList(ht);
+        print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
+        dumpSymbolTableKeys(rest_st);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
 end dumpSymbolTableKeys;
   
 end InstSymbolTable;

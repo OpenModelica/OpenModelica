@@ -46,10 +46,15 @@ public import InstTypes;
 public import SCode;
 
 protected import ComponentReference;
+protected import Connect;
 protected import DAEUtil;
 protected import Error;
+protected import Expression;
+protected import ExpressionDump;
 protected import InstUtil;
 protected import List;
+protected import Types;
+protected import Util;
 
 public type Element = InstTypes.Element;
 public type Equation = InstTypes.Equation;
@@ -671,7 +676,10 @@ algorithm
         (exp, ty, st);
 
     case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, st)
-      then (DAE.CREF(inCref, ty), ty, st);
+      equation
+        ty = propagateCrefSubsToType(ty, inCref);
+      then
+        (DAE.CREF(inCref, ty), ty, st);
 
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, st)
       equation
@@ -684,6 +692,7 @@ algorithm
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, st)
       equation
         (ty, st) = typeComponentDims(inComponent, st);
+        ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
@@ -698,6 +707,93 @@ algorithm
 
   end match;
 end typeCref2;
+
+protected function propagateCrefSubsToType
+  input DAE.Type inType;
+  input DAE.ComponentRef inCref;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType, inCref)
+    local
+      DAE.Type ty;
+      DAE.Dimensions dims;
+      DAE.TypeSource src;
+
+    case (DAE.T_ARRAY(ty, dims, src), _)
+      equation
+        ty = propagateCrefSubsToType(ty, inCref);
+        dims = List.map1(dims, propagateCrefSubsToDimension, inCref);
+      then
+        DAE.T_ARRAY(ty, dims, src);
+
+    else inType;
+
+  end match;
+end propagateCrefSubsToType;
+
+protected function propagateCrefSubsToDimension
+  input DAE.Dimension inDimension;
+  input DAE.ComponentRef inCref;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := match(inDimension, inCref)
+    local
+      DAE.Exp exp;
+      
+    case (DAE.DIM_EXP(exp = exp), _)
+      equation
+        ((exp, _)) = Expression.traverseExp(exp, 
+          propagateCrefSubsToExpTraverser, inCref);
+      then
+        DAE.DIM_EXP(exp);
+
+    else inDimension;
+  end match;
+end propagateCrefSubsToDimension;
+  
+protected function propagateCrefSubsToExpTraverser
+  input tuple<DAE.Exp, DAE.ComponentRef> inTuple;
+  output tuple<DAE.Exp, DAE.ComponentRef> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.ComponentRef cref1, cref2;
+      DAE.Type ty;
+
+    case ((DAE.CREF(cref1, ty), cref2))
+      equation
+        cref1 = propagateCrefSubsToCref(cref1, cref2);
+        ty = propagateCrefSubsToType(ty, cref2);
+      then
+        ((DAE.CREF(cref1, ty), cref2));
+
+    else inTuple;
+  end match;
+end propagateCrefSubsToExpTraverser;
+
+protected function propagateCrefSubsToCref
+  input DAE.ComponentRef inDstCref;
+  input DAE.ComponentRef inSrcCref;
+  output DAE.ComponentRef outDstCref;
+algorithm
+  outDstCref := matchcontinue(inDstCref, inSrcCref)
+    local
+      DAE.Ident id1, id2;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cref1, cref2;
+
+    case (DAE.CREF_QUAL(id1, ty, {}, cref1), 
+          DAE.CREF_QUAL(id2, _, subs, cref2))
+      equation
+        true = stringEq(id1, id2);
+        cref1 = propagateCrefSubsToCref(cref1, cref2);
+      then
+        DAE.CREF_QUAL(id1, ty, subs, cref1);
+
+    else inDstCref;
+  end matchcontinue;
+end propagateCrefSubsToCref;
 
 public function typeSections
   input Class inClass;
@@ -716,8 +812,8 @@ algorithm
     case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
       equation
         comps = List.map1(comps, typeSectionsInElement, st);
-        eq = List.map1(eq, typeEquation, st);
-        ieq = List.map1(ieq, typeEquation, st);
+        eq = typeEquations(eq, st);
+        ieq = typeEquations(ieq, st);
       then
         InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
 
@@ -759,6 +855,14 @@ algorithm
   end match;
 end typeSectionsInElement;
 
+protected function typeEquations
+  input list<Equation> inEquation;
+  input SymbolTable inSymbolTable;
+  output list<Equation> outEquation;
+algorithm
+  outEquation := List.map1(inEquation, typeEquation, inSymbolTable);
+end typeEquations;
+
 protected function typeEquation
   input Equation inEquation;
   input SymbolTable inSymbolTable;
@@ -766,15 +870,38 @@ protected function typeEquation
 algorithm
   outEquation := match(inEquation, inSymbolTable)
     local
-      DAE.Exp rhs, lhs;
+      DAE.Exp rhs, lhs, exp1, exp2;
       SymbolTable st;
+      Absyn.Info info;
+      DAE.ComponentRef cref1, cref2;
+      Connect.Face face1, face2;
+      Prefix prefix;
+      String index;
+      list<Equation> eql;
+      DAE.Type ty;
 
-    case (InstTypes.EQUALITY_EQUATION(lhs, rhs), st)
+    case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st)
       equation
         (rhs, _, _) = typeExp(rhs, st);
         (lhs, _, _) = typeExp(lhs, st);
       then
-        InstTypes.EQUALITY_EQUATION(lhs, rhs);
+        InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
+
+    case (InstTypes.CONNECT_EQUATION(cref1, _, cref2, _, prefix, info), st)
+      equation
+        (cref1, face1) = lookupConnector(cref1, prefix, st, info);
+        (cref2, face2) = lookupConnector(cref2, prefix, st, info);
+      then
+        InstTypes.CONNECT_EQUATION(cref1, face1, cref2, face2,
+          InstTypes.emptyPrefix, info);
+
+    case (InstTypes.FOR_EQUATION(index, _, exp1, eql, info), st)
+      equation
+        (exp1, ty, _) = typeExp(exp1, st);
+        ty = rangeToIteratorType(ty, exp1, info);
+        eql = typeEquations(eql, st);
+      then
+        InstTypes.FOR_EQUATION(index, ty, exp1, eql, info);
 
     else
       equation
@@ -785,5 +912,126 @@ algorithm
 
   end match;
 end typeEquation;
+
+protected function lookupConnector
+  input DAE.ComponentRef inCref;
+  input Prefix inPrefix;
+  input SymbolTable inSymbolTable;
+  input Absyn.Info inInfo;
+  output DAE.ComponentRef outCref;
+  output Connect.Face outFace;
+algorithm
+  (outCref, outFace) := matchcontinue(inCref, inPrefix, inSymbolTable, inInfo)
+    local
+      DAE.ComponentRef cref, cref2;
+      Component comp;
+      DAE.Type ty;
+      String cref_str;
+      Boolean is_conn;
+      Connect.Face face;
+
+    // A simple identifier is always outside if it's a valid connector.
+    case (DAE.CREF_IDENT(ident = _), _, _, _)
+      equation
+        cref = InstUtil.prefixCref(inCref, inPrefix);
+        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
+        checkComponentIsConnector(comp, cref, inInfo);
+      then
+        (cref, Connect.OUTSIDE());
+
+    case (DAE.CREF_QUAL(ident = _), _, _, _)
+      equation
+        (cref, cref2) = ComponentReference.splitCrefFirst(inCref);
+        cref = InstUtil.prefixCref(cref, inPrefix);
+        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
+        is_conn = InstUtil.isConnectorComponent(comp);
+        face = Util.if_(is_conn, Connect.OUTSIDE(), Connect.INSIDE());
+        cref = ComponentReference.joinCrefs(cref, cref2);
+        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
+        checkComponentIsConnector(comp, cref, inInfo);
+      then
+        (cref, face);
+
+  end matchcontinue;
+end lookupConnector;
+
+protected function lookupConnectorCref
+  input DAE.ComponentRef inCref;
+  input SymbolTable inSymbolTable;
+  input Absyn.Info inInfo;
+  output Component outComponent;
+algorithm
+  outComponent := matchcontinue(inCref, inSymbolTable, inInfo)
+    local
+      Component comp;
+      String cref_str;
+
+    case (inCref, inSymbolTable, inInfo)
+      equation
+        comp = InstSymbolTable.lookupCref(inCref, inSymbolTable);
+      then
+        comp;
+
+    else
+      equation
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+          {cref_str, ""}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end lookupConnectorCref;
+
+protected function checkComponentIsConnector
+  input InstTypes.Component inComponent;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inComponent, inCref, inInfo)
+    local
+      String cref_str;
+
+    case (_, _, _)
+      equation
+        true = InstUtil.isConnectorComponent(inComponent);
+      then
+        ();
+
+    else
+      equation
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+          {cref_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkComponentIsConnector;
+
+protected function rangeToIteratorType
+  input DAE.Type inRangeType;
+  input DAE.Exp inRangeExp;
+  input Absyn.Info inInfo;
+  output DAE.Type outIteratorType;
+algorithm
+  outIteratorType := matchcontinue(inRangeType, inRangeExp, inInfo) 
+    local
+      String ty_str, exp_str;
+
+    case (_, _, _)
+      then Types.unliftArray(inRangeType);
+
+    else
+      equation
+        ty_str = Types.unparseType(inRangeType);
+        exp_str = ExpressionDump.printExpStr(inRangeExp);
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR,
+          {exp_str, ty_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end rangeToIteratorType;
 
 end Typing;

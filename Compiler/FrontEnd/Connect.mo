@@ -74,6 +74,7 @@ public uniontype Face
    multiplied with -1 (since flow is always into a component)."
   record INSIDE "This is an inside connection" end INSIDE;
   record OUTSIDE "This is an outside connection" end OUTSIDE;
+  record NO_FACE end NO_FACE;
 end Face;
 
 public uniontype ConnectorType

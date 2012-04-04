@@ -2590,7 +2590,7 @@ algorithm
       BackendDAE.Variables knv;
       Integer istart,istop,istep;
       list<Integer> ilst;
-    case (DAE.RANGE(ty=tp,exp=startvalue,expOption=stepvalueopt,range=stopvalue),knv)
+    case (DAE.RANGE(ty=tp,start=startvalue,step=stepvalueopt,stop=stopvalue),knv)
       equation
         stepvalue = Util.getOptionOrDefault(stepvalueopt,DAE.ICONST(1));
         istart = expInt(startvalue,knv);
@@ -3637,7 +3637,7 @@ algorithm
         true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
       then ((e,true,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
     // All other functions generate zerocrossing.
-    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range as DAE.RANGE(exp=startvalue,expOption=stepvalueopt),(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
+    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range as DAE.RANGE(start=startvalue,step=stepvalueopt),(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
         b1 = Expression.expContains(e1,iterator);
         b2 = Expression.expContains(e2,iterator);

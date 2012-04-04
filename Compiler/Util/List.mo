@@ -4738,8 +4738,27 @@ public function threadMap
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := threadMap_tail(inList1, inList2, inMapFunc, {});
+  outList := listReverse(threadMap_tail(inList1, inList2, inMapFunc, {}));
 end threadMap;
+
+public function threadMapReverse
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. The order of the result list
+   will be reversed compared to the input lists.
+     Example: threadMap({1, 2}, {3, 4}, intAdd) => {2+4, 1+3}"
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := threadMap_tail(inList1, inList2, inMapFunc, {});
+end threadMapReverse;
 
 public function threadMap_tail
   "Tail recursive implementation of threadMap."
@@ -4763,7 +4782,7 @@ algorithm
       list<ElementType2> rest2;
       ElementOutType res;
 
-    case ({}, {}, _, _) then listReverse(inAccum);
+    case ({}, {}, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _)
       equation
         res = inMapFunc(e1, e2);
@@ -4855,8 +4874,29 @@ public function threadMap1
     output ElementOutType outElement;
   end MapFunc;
 algorithm
-  outList := threadMap1_tail(inList1, inList2, inMapFunc, inArg1, {});
+  outList := listReverse(threadMap1_tail(inList1, inList2, inMapFunc, inArg1, {}));
 end threadMap1;
+
+public function threadMap1Reverse
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. This function also takes an
+   extra arguments that are passed to the mapping function. The order of the
+   result list will be reversed compared to the input lists."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := threadMap1_tail(inList1, inList2, inMapFunc, inArg1, {});
+end threadMap1Reverse;
 
 public function threadMap1_tail
   "Tail recursive implementation of threadMap1."
@@ -4882,7 +4922,7 @@ algorithm
       list<ElementType2> rest2;
       ElementOutType res;
 
-    case ({}, {}, _, _, _) then listReverse(inAccum);
+    case ({}, {}, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _)
       equation
         res = inMapFunc(e1, e2, inArg1);
@@ -4911,7 +4951,31 @@ public function threadMap2
   end MapFunc;
 algorithm
   outList := threadMap2_tail(inList1, inList2, inMapFunc, inArg1, inArg2, {});
+  outList := listReverse(outList);
 end threadMap2;
+
+public function threadMap2Reverse
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. This function also takes two
+   extra arguments that are passed to the mapping function. The order of the
+   result list will be reversed compared to the input lists."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := threadMap2_tail(inList1, inList2, inMapFunc, inArg1, inArg2, {});
+end threadMap2Reverse;
 
 public function threadMap2_tail
   "Tail recursive implementation of threadMap2."
@@ -4939,7 +5003,7 @@ algorithm
       list<ElementType2> rest2;
       ElementOutType res;
 
-    case ({}, {}, _, _, _, _) then listReverse(inAccum);
+    case ({}, {}, _, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _, _)
       equation
         res = inMapFunc(e1, e2, inArg1, inArg2);
@@ -4970,7 +5034,32 @@ public function threadMap3
   end MapFunc;
 algorithm
   outList := threadMap3_tail(inList1, inList2, inMapFunc, inArg1, inArg2, inArg3, {});
+  outList := listReverse(outList);
 end threadMap3;
+
+public function threadMap3Reverse
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. This function also takes three
+   extra arguments that are passed to the mapping function."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := threadMap3_tail(inList1, inList2, inMapFunc, inArg1, inArg2, inArg3, {});
+end threadMap3Reverse;
 
 public function threadMap3_tail
   "Tail recursive implementation of threadMap3."
@@ -5000,7 +5089,7 @@ algorithm
       list<ElementType2> rest2;
       ElementOutType res;
 
-    case ({}, {}, _, _, _, _, _) then listReverse(inAccum);
+    case ({}, {}, _, _, _, _, _) then inAccum;
     case (e1 :: rest1, e2 :: rest2, _, _, _, _, _)
       equation
         res = inMapFunc(e1, e2, inArg1, inArg2, inArg3);

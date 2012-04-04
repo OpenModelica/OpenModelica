@@ -214,6 +214,41 @@ algorithm
   end matchcontinue;
 end addNoUpdCheck;
 
+public function addUnique
+  "Add a Key-Value tuple to hashtable. If the Key is already used it fails."
+  input tuple<Key,Value> entry;
+  input HashTable hashTable;
+  output HashTable outHashTable;
+algorithm
+  outHashTable := match(entry, hashTable)
+    local
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+      FuncsTuple fntpl;
+      FuncHash hashFunc;
+    
+    // Adding when not existing previously
+    case ((v as (key, value)), 
+        (hashTable as (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
+      equation
+        failure((_) = get(key, hashTable));
+        indx = hashFunc(key, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);
+      then
+        ((hashvec_1, varr_1, bsize, n_1, fntpl));
+
+  end match;
+end addUnique;
+
 public function delete
 "
   delete the Value associatied with Key from the HashTable.

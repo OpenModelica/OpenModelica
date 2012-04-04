@@ -84,6 +84,7 @@ algorithm
     case (_, _)
       equation
         el = expandClass(inClass, {}, {});
+        el = listReverse(el);
         dae = DAE.DAE({DAE.COMP(inName, el, DAE.emptyElementSource, NONE())});
 
         tree = DAE.AVLTREENODE(NONE(), 0, NONE(), NONE());
@@ -299,7 +300,7 @@ algorithm
         
     case (_, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
       equation
-        el = expandArrayIntDim(inElement, dim, rest_dims, inSubscripts,
+        el = expandArrayIntDim(inElement, 1, dim, rest_dims, inSubscripts,
             inAccumEl, inScalarFunc);
       then
         el;
@@ -323,6 +324,7 @@ end expandArray;
 protected function expandArrayIntDim
   input ElementType inElement;
   input Integer inIndex;
+  input Integer inDimSize;
   input list<DAE.Dimension> inDimensions;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
@@ -330,35 +332,29 @@ protected function expandArrayIntDim
   output list<DAE.Element> outElements;
 algorithm
   outElements := 
-  match(inElement, inIndex, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
+  matchcontinue(inElement, inIndex, inDimSize, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       list<DAE.Element> el;
       String err_msg;
 
-    case (_, 0, _, _, _, _)
-      then inAccumEl;
+    case (_, _, _, _, _, _, _)
+      equation
+        true = (inIndex > inDimSize);
+      then
+        inAccumEl;
 
-    case (_, _, _, subs :: rest_subs, _, _)
+    case (_, _, _, _, subs :: rest_subs, _, _)
       equation
         subs = DAE.INDEX(DAE.ICONST(inIndex)) :: subs;
         el = expandArray(inElement, inDimensions, subs :: rest_subs,
             inAccumEl, inScalarFunc);
       then
-        expandArrayIntDim(inElement, inIndex - 1, inDimensions, inSubscripts,
-            el, inScalarFunc);
+        expandArrayIntDim(inElement, inIndex + 1, inDimSize, inDimensions,
+          inSubscripts, el, inScalarFunc);
 
-    else
-      equation
-        true = (inIndex < 0);
-        err_msg = "SCodeExpand.expandArrayIntDim got negative dimension " +&
-          intString(inIndex) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
-      then
-        fail();
-          
-  end match;
+  end matchcontinue;
 end expandArrayIntDim;      
 
 protected function expandScalar
@@ -635,6 +631,12 @@ algorithm
       then
         accum_el;
         
+    case (InstTypes.CONNECT_EQUATION(lhs = _), _, _)
+      equation
+        print("Skipping expansion of connect\n");
+      then
+        inAccumEl;
+
     else
       equation
         print("SCodeExpand.expandEquation failed\n");

@@ -45,7 +45,9 @@ public import InstTypes;
 public import SCode;
 public import SCodeEnv;
 
+protected import ClassInf;
 protected import ComponentReference;
+protected import Connect;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -79,6 +81,11 @@ public type Prefix = InstTypes.Prefix;
 protected type Item = SCodeEnv.Item;
 protected type SymbolTable = InstSymbolTable.SymbolTable;
 
+protected uniontype InstPolicy
+  record INST_ALL end INST_ALL;
+  record INST_ONLY_CONST end INST_ONLY_CONST;
+end InstPolicy;
+
 public function instClass
   "Flattens a class."
   input Absyn.Path inClassPath;
@@ -109,7 +116,7 @@ algorithm
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         (cls, _) = instClassItem(item, InstTypes.NOMOD(), 
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix);
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
         const_el = instGlobalConstants(inGlobalConstants, inClassPath, inEnv);
         cls = InstUtil.addElementsToClass(const_el, cls);
 
@@ -149,10 +156,12 @@ protected function instClassItem
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   output Class outClass;
   output DAE.Type outType;
 algorithm
-  (outClass, outType) := match(inItem, inMod, inPrefixes, inEnv, inPrefix)
+  (outClass, outType) :=
+  match(inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
     local
       list<SCode.Element> el;
       list<tuple<SCode.Element, Modifier>> mel;
@@ -164,9 +173,7 @@ algorithm
       Modifier mod;
       SCodeEnv.AvlTree cls_and_vars;
       String name, err_msg;
-      list<SCode.Equation> snel, siel;
-      list<Equation> inel, iiel;
-      list<SCode.AlgorithmSection> nal, ial;
+      list<Equation> eq, ieq;
       DAE.Type ty;
       Absyn.ArrayDim dims;
       list<DAE.Var> vars;
@@ -181,9 +188,12 @@ algorithm
       SCodeEnv.Frame frame;
       Integer dim_count;
       list<SCodeEnv.Extends> exts;
+      SCode.Restriction res;
+      ClassInf.State state;
+      InstPolicy ip;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
-        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _) 
+        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _) 
       equation
         vars = instBasicTypeAttributes(inMod, env);
         ty = instBasicType(name, inMod, vars);
@@ -191,43 +201,46 @@ algorithm
         (InstTypes.BASIC_TYPE(), ty);
 
     // A class with parts, instantiate all elements in it.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name,
-          classDef = SCode.PARTS(el, snel, siel, nal, ial, _, _, _), info = info),
-        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _)
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, restriction = res,
+        classDef = cdef as SCode.PARTS(elementLst = el), info = info),
+        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip)
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
-        (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix);
-        inel = instEquations(snel, env, inPrefix);
-        iiel = instEquations(siel, env, inPrefix);
-        (cls, ty) = InstUtil.makeClass(elems, inel, iiel, nal, ial, cse);
+        (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix, ip);
+        (eq, ieq) = instSections(cdef, env, inPrefix, ip);
+        state = ClassInf.start(res, Absyn.IDENT(name));
+        (cls, ty) = InstUtil.makeClass(elems, eq, ieq, {}, {}, state, cse);
       then
         (cls, ty);
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)), _, _, _, _)
+        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)),
+        _, _, _, _, ip)
       equation
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
-        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
+        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
         ty = liftArrayType(dims, ty, inEnv, inPrefix);
       then
         (cls, ty);
         
-    case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env), _, _, _, _)
+    case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env),
+        _, _, _, _, ip)
       equation
-        (cls, ty) = instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix);
+        (cls, ty) =
+          instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip);
       then
         (cls, ty);
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _)
+        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _)
       equation
         path = InstUtil.prefixToPath(inPrefix);
         ty = InstUtil.makeEnumType(enums, path);
@@ -251,11 +264,13 @@ protected function instClassExtends
   input Env inClassEnv;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   output Class outClass;
   output DAE.Type outType;
 algorithm
   (outClass, outType) := 
-  matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix)
+  matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix,
+      inInstPolicy)
     local
       SCode.ClassDef cdef;
       Absyn.Path bc_path;
@@ -267,16 +282,17 @@ algorithm
       Item item;
       String name;
       Absyn.Info info;
+      InstPolicy ip;
 
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
-        composition = cdef)), _, _, _, _, _)
+        composition = cdef)), _, _, _, _, _, ip)
       equation
         (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
         ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
         cdef = SCode.addElementToCompositeClassDef(ext, cdef);
         scls = SCode.setElementClassDefinition(cdef, inClassExtends);
         item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.USERDEFINED());
-        (cls, ty) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix);
+        (cls, ty) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip);
       then
         (cls, ty);
 
@@ -442,11 +458,12 @@ protected function instElementList
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
 algorithm
-  (outElements, outContainsSpecialExtends) :=
-    instElementList2(inElements, inPrefixes, inExtends, inEnv, inPrefix, {}, false);
+  (outElements, outContainsSpecialExtends) := instElementList2(inElements, 
+    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false);
 end instElementList;
 
 protected function instElementList2
@@ -455,70 +472,34 @@ protected function instElementList2
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
 algorithm
   (outElements, outContainsSpecialExtends) :=
-  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inContainsSpecialExtends)
+  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
+      inAccumEl, inContainsSpecialExtends)
     local
-      SCode.Element elem;
-      Modifier mod;
+      tuple<SCode.Element, Modifier> elem;
       list<tuple<SCode.Element, Modifier>> rest_el;
-      Element res;
-      Option<Element> ores;
       Boolean cse;
       list<Element> accum_el;
-      list<SCodeEnv.Redeclaration> redecls;
-      list<SCodeEnv.Extends> rest_exts;
-      String name;
+      list<SCodeEnv.Extends> exts;
 
-    case ({}, _, {}, _, _, _, cse) then (inAccumEl, cse);
-
-    case ((elem as SCode.COMPONENT(name = _), mod) :: rest_el, _, _, _, _, _, cse)
+    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse)
       equation
-        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix);
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inExtends,
-          inEnv, inPrefix, res :: inAccumEl, cse);
+        (accum_el, exts, cse) = instElementList_dispatch(elem, inPrefixes, exts,
+          inEnv, inPrefix, inInstPolicy, accum_el, cse);
+        (accum_el, cse) = instElementList2(rest_el, inPrefixes, exts,
+          inEnv, inPrefix, inInstPolicy, accum_el, cse);
       then
         (accum_el, cse);
 
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod) :: rest_el, _,
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _)
-      equation
-        (res, cse) = instExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix);
-        cse = inContainsSpecialExtends or cse;
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, rest_exts,
-          inEnv, inPrefix, res :: inAccumEl, cse);
-      then
-        (accum_el, cse);
+    case ({}, _, {}, _, _, _, _, cse) then (inAccumEl, cse);
 
-    case ((SCode.EXTENDS(baseClassPath = _), _) :: _, _, {}, _, _, _, _)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeInst.instElementList2 ran out of extends!."});
-      then
-        fail();
-
-    case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()), mod)
-        :: rest_el, _, _, _, _, accum_el, cse)
-      equation
-        ores = instPackageConstants(elem, mod, inEnv, inPrefix);
-        accum_el = List.consOption(ores, accum_el);
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inExtends,
-          inEnv, inPrefix, accum_el, cse);
-      then
-        (accum_el, cse);
-        
-    case (_ :: rest_el, _, _, _, _, _, cse)
-      equation
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, inExtends,
-          inEnv, inPrefix, inAccumEl, cse);
-      then
-        (accum_el, cse);
-
-    case ({}, _, _ :: _, _, _, _, _)
+    case ({}, _, _ :: _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList2 has extends left!."});
@@ -528,15 +509,86 @@ algorithm
   end match;
 end instElementList2;
 
+protected function instElementList_dispatch
+  input tuple<SCode.Element, Modifier> inElement;
+  input Prefixes inPrefixes;
+  input list<SCodeEnv.Extends> inExtends;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
+  input list<Element> inAccumEl;
+  input Boolean inContainsSpecialExtends;
+  output list<Element> outElements;
+  output list<SCodeEnv.Extends> outExtends;
+  output Boolean outContainsSpecialExtends;
+algorithm
+  (outElements, outExtends, outContainsSpecialExtends) :=
+  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
+      inAccumEl, inContainsSpecialExtends)
+    local
+      SCode.Element elem;
+      Modifier mod;
+      Element res;
+      Option<Element> ores;
+      Boolean cse;
+      list<Element> accum_el;
+      list<SCodeEnv.Redeclaration> redecls;
+      list<SCodeEnv.Extends> rest_exts;
+      String name;
+      InstPolicy ip;
+
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse)
+      equation
+        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy);
+      then
+        (res :: inAccumEl, inExtends, cse);
+
+    case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
+        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse)
+      equation
+        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy);
+      then
+        (res :: inAccumEl, inExtends, cse);
+
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _)
+      equation
+        (res, cse) = instExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix, ip);
+        cse = inContainsSpecialExtends or cse;
+      then
+        (res :: inAccumEl, rest_exts, cse);
+
+    case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
+        mod), _, _, _, _, ip, _, cse)
+      equation
+        ores = instPackageConstants(elem, mod, inEnv, inPrefix);
+        accum_el = List.consOption(ores, inAccumEl);
+      then
+        (accum_el, inExtends, cse);
+
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+        {"SCodeInst.instElementList_dispatch ran out of extends!."});
+      then
+        fail();
+
+    else (inAccumEl, inExtends, inContainsSpecialExtends);
+
+  end match;
+end instElementList_dispatch;
+
 protected function instElement
   input SCode.Element inElement;
   input Modifier inClassMod;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   output Element outElement;
 algorithm
-  outElement := match(inElement, inClassMod, inPrefixes, inEnv, inPrefix)
+  outElement := 
+  matchcontinue(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -560,9 +612,10 @@ algorithm
       SCode.Attributes attr;
       Prefixes prefs;
       Integer dim_count;
+      InstPolicy ip;
 
     case (SCode.COMPONENT(name = name, 
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _)
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _)
       equation
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
         path = InstUtil.prefixToPath(prefix);
@@ -574,7 +627,7 @@ algorithm
     case (SCode.COMPONENT(name = name, prefixes = pf, 
         attributes = attr as SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = path), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _)
+        condition = NONE(), info = info), _, _, _, _, ip)
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -600,7 +653,7 @@ algorithm
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
-        (cls, ty) = instClassItem(item, mod, prefs, env, prefix);
+        (cls, ty) = instClassItem(item, mod, prefs, env, prefix, ip);
 
         // Add dimensions from the class type.
         (dims, dim_count) = addDimensionsFromType(dims, ty);
@@ -618,7 +671,7 @@ algorithm
         InstTypes.ELEMENT(comp, cls);
 
     // A conditional component, save it for later.
-    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _, _)
+    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _, _, _)
       equation
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
         comp = InstTypes.CONDITIONAL_COMPONENT(path, inElement, inClassMod, inPrefixes, inEnv, inPrefix);
@@ -632,7 +685,7 @@ algorithm
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end instElement;
 
 protected function instExtends
@@ -642,11 +695,12 @@ protected function instExtends
   input list<SCodeEnv.Redeclaration> inRedeclares;
   input Env inEnv;
   input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
   output Element outElement;
   output Boolean outContainsSpecialExtends;
 algorithm
   (outElement, outContainsSpecialExtends) :=
-  match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix)
+  match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix, inInstPolicy)
     local
       Absyn.Path path, path2;
       SCode.Mod smod;
@@ -659,9 +713,10 @@ algorithm
       Class cls;
       DAE.Type ty;
       Boolean cse;
+      InstPolicy ip;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, _, _)
+        _, _, _, _, _, ip)
       equation
         // Look up the extended class.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -674,7 +729,7 @@ algorithm
         // Instantiate the class.
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix);
+        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
         cse = InstUtil.isSpecialExtends(ty);
       then
         (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse);
@@ -706,19 +761,19 @@ algorithm
       Prefix prefix;
       Env env;
       SCodeEnv.Frame class_env;
+      Item item;
+      Class cls;
       
     case (SCode.CLASS(partialPrefix = SCode.PARTIAL()), _, _, _)
       then NONE();
 
     case (SCode.CLASS(name = name), _, _, _)
       equation
-        SCodeEnv.CLASS(cls = SCode.CLASS(classDef = SCode.PARTS(elementLst = el)),
-          env = {class_env}) = SCodeLookup.lookupInClass(name, inEnv);
-        env = class_env :: inEnv;
+        item = SCodeLookup.lookupInClass(name, inEnv);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        mel = SCodeMod.applyModifications(inMod, el, prefix, env);
-        iel = instPackageConstants2(mel, env, prefix, {});
-        oel = makeConstantsPackage(prefix, iel);
+        (cls, _) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
+          prefix, INST_ONLY_CONST());
+        oel = makeConstantsPackage(prefix, cls);
       then
         oel;
 
@@ -727,54 +782,31 @@ algorithm
   end match;
 end instPackageConstants;
 
-protected function instPackageConstants2
-  input list<tuple<SCode.Element, Modifier>> inElements;
-  input Env inEnv;
-  input Prefix inPrefix;
-  input list<Element> inAccumEl;
-  output list<Element> outAccumEl;
-algorithm
-  outAccumEl := match(inElements, inEnv, inPrefix, inAccumEl)
-    local
-      SCode.Element sel;
-      Modifier mod;
-      list<tuple<SCode.Element, Modifier>> rest_el;
-      Element el;
-
-    case ({}, _, _, _) then inAccumEl;
-
-    case ((sel as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod) :: rest_el, _, _, _)
-      equation
-        el = instElement(sel, mod, InstTypes.NO_PREFIXES(), inEnv, inPrefix);
-      then
-        instPackageConstants2(rest_el, inEnv, inPrefix, el :: inAccumEl);
-
-    case (_ :: rest_el, _, _, _)
-      then instPackageConstants2(rest_el, inEnv, inPrefix, inAccumEl);
-
-  end match;
-end instPackageConstants2;
-
 protected function makeConstantsPackage
   input Prefix inPrefix;
-  input list<Element> inElements;
+  input Class inClass;
   output Option<Element> outElement;
 algorithm
-  outElement := match(inPrefix, inElements)
+  outElement := match(inPrefix, inClass)
     local
       Absyn.Path name;
       Element el;
 
-    case (_, {}) then NONE();
-
-    else
+    case (_, InstTypes.COMPLEX_CLASS(_ :: _, {}, {}, {}, {}))
       equation
         name = InstUtil.prefixToPath(inPrefix);
-        el = InstTypes.ELEMENT(InstTypes.PACKAGE(name),
-          InstTypes.COMPLEX_CLASS(inElements, {}, {}, {}, {}));
+        el = InstTypes.ELEMENT(InstTypes.PACKAGE(name), inClass);
       then
         SOME(el);
+
+    case (_, InstTypes.COMPLEX_CLASS(components = _ :: _))
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeInst.makeConstantsPackage got complex class with equations or algorithms!"});
+      then
+        fail();
+
+    else NONE();
 
   end match;
 end makeConstantsPackage;
@@ -1291,11 +1323,12 @@ algorithm
       DAE.ComponentRef cref;
       SCodeLookup.Origin origin;
       Boolean is_global;
+      Absyn.Path path;
 
     // If the name can be found in the local scope, call instLocalCref.
     case (_, _, _, _)
       equation
-        (_, _, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
+        (_, path, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
         is_global = SCodeLookup.originIsGlobal(origin);
         cref = prefixLocalCref(inCref, inPrefix, inEnv, env, is_global);
       then
@@ -1304,7 +1337,7 @@ algorithm
     // Otherwise, look it up in the scopes above, and call instGlobalCref.
     case (_, _, _, _ :: env)
       equation
-        (_, _, env, _) = SCodeLookup.lookupName(inCrefPath, env, Absyn.dummyInfo, NONE());
+        (_, path, env, _) = SCodeLookup.lookupName(inCrefPath, env, Absyn.dummyInfo, NONE());
         cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
@@ -1619,6 +1652,33 @@ algorithm
   end match;
 end instFunctionName2;
 
+protected function instSections
+  input SCode.ClassDef inClassDef;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
+  output list<Equation> outEquations;
+  output list<Equation> outInitialEquations;
+algorithm
+  (outEquations, outInitialEquations) :=
+  match(inClassDef, inEnv, inPrefix, inInstPolicy)
+    local
+      list<SCode.Equation> snel, siel;
+      list<Equation> inel, iiel;
+
+    case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel), _,
+        _, INST_ALL())
+      equation
+        inel = instEquations(snel, inEnv, inPrefix);
+        iiel = instEquations(siel, inEnv, inPrefix);
+      then
+        (inel, iiel);
+
+    case (_, _, _, INST_ONLY_CONST()) then ({}, {});
+
+  end match;
+end instSections;
+
 protected function instEquations
   input list<SCode.Equation> inEquations;
   input Env inEnv;
@@ -1641,6 +1701,15 @@ algorithm
   outEquation := instEEquation(eq, inEnv, inPrefix);
 end instEquation;
 
+protected function instEEquations
+  input list<SCode.EEquation> inEquations;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<Equation> outEquations;
+algorithm
+  outEquations := List.map2(inEquations, instEEquation, inEnv, inPrefix);
+end instEEquations;
+
 protected function instEEquation
   input SCode.EEquation inEquation;
   input Env inEnv;
@@ -1651,13 +1720,93 @@ algorithm
     local
       Absyn.Exp exp1, exp2;
       DAE.Exp dexp1, dexp2;
+      Absyn.ComponentRef cref1, cref2;
+      DAE.ComponentRef dcref1, dcref2;
+      Absyn.Info info;
+      String for_index;
+      list<SCode.EEquation> eql;
+      list<Equation> ieql;
+      list<Absyn.Exp> if_condition;
+      list<list<SCode.EEquation>> if_branches;
+      list<tuple<DAE.Exp, list<Equation>>> inst_branches;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> when_branches;
+      Env env;
 
-    case (SCode.EQ_EQUALS(exp1, exp2, _, _), _, _)
+    case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _)
       equation
         dexp1 = instExp(exp1, inEnv, inPrefix);
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then
-        InstTypes.EQUALITY_EQUATION(dexp1, dexp2);
+        InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info);
+
+    // To determine whether a connected component is inside or outside we need
+    // to know the type of the first identifier in the cref. Since it's illegal
+    // to connect to global constants we can just save the prefix until we do
+    // the typing, which means that we can then determine this with a hashtable
+    // lookup.
+    case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _)
+      equation
+        dcref1 = instCref2(cref1, inEnv, inPrefix);
+        dcref2 = instCref2(cref2, inEnv, inPrefix);
+      then
+        InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(),
+          dcref2, Connect.NO_FACE(), inPrefix, info);
+
+    case (SCode.EQ_FOR(index = for_index, range = exp1, eEquationLst = eql,
+        info = info), _, _)
+      equation
+        env = SCodeEnv.extendEnvWithIterators(
+          {Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        dexp1 = instExp(exp1, env, inPrefix);
+        ieql = instEEquations(eql, env, inPrefix);
+      then
+        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, dexp1, ieql, info);
+
+    case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
+        elseBranch = eql, info = info), _, _)
+      equation
+        inst_branches = List.threadMap2Reverse(if_condition, if_branches,
+          instIfBranch, inEnv, inPrefix);
+        ieql = instEEquations(eql, inEnv, inPrefix);
+        // Add else branch as a branch with condition true last in the list.
+        inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
+      then
+        InstTypes.IF_EQUATION(inst_branches, info);
+         
+    case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
+        elseBranches = when_branches, info = info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        ieql = instEEquations(eql, inEnv, inPrefix);
+        inst_branches = List.map2(when_branches, instWhenBranch, inEnv, inPrefix); 
+      then
+        InstTypes.WHEN_EQUATION(inst_branches, info);
+
+    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, info = info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        dexp2 = instExp(exp2, inEnv, inPrefix);
+      then
+        InstTypes.ASSERT_EQUATION(dexp1, dexp2, info);
+
+    case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+      then
+        InstTypes.TERMINATE_EQUATION(dexp1, info);
+
+    case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _)
+      equation
+        dcref1 = instCref(cref1, inEnv, inPrefix);
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+      then
+        InstTypes.REINIT_EQUATION(dcref1, dexp1, info);
+        
+    case (SCode.EQ_NORETCALL(functionName = _), _, _)
+      equation
+        print("SCodeInst.instEEquation: implement EQ_NORETCALL!\n");
+      then
+        fail();
 
     else
       equation
@@ -1667,6 +1816,38 @@ algorithm
 
   end match;
 end instEEquation;
+
+protected function instIfBranch
+  input Absyn.Exp inCondition;
+  input list<SCode.EEquation> inBody;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output tuple<DAE.Exp, list<Equation>> outIfBranch;
+protected
+  DAE.Exp cond_exp;
+  list<Equation> eql;
+algorithm
+  cond_exp := instExp(inCondition, inEnv, inPrefix);
+  eql := instEEquations(inBody, inEnv, inPrefix);
+  outIfBranch := (cond_exp, eql);
+end instIfBranch;
+
+protected function instWhenBranch
+  input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output tuple<DAE.Exp, list<Equation>> outBranch;
+protected
+  Absyn.Exp aexp;
+  list<SCode.EEquation> eql;
+  DAE.Exp dexp;
+  list<Equation> ieql;
+algorithm
+  (aexp, eql) := inBranch;
+  dexp := instExp(aexp, inEnv, inPrefix);
+  ieql := instEEquations(eql, inEnv, inPrefix);
+  outBranch := (dexp, ieql);
+end instWhenBranch;
 
 protected function instGlobalConstants
   input list<Absyn.Path> inGlobalConstants;
@@ -1752,7 +1933,7 @@ algorithm
     case (SCodeEnv.VAR(var = el), _, true, _)
       equation
         iel = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
-          InstTypes.emptyPrefix);
+          InstTypes.emptyPrefix, INST_ALL());
         pre_path = Absyn.pathPrefix(inPath);
         prefix = InstUtil.pathPrefix(pre_path);
         iel = InstUtil.prefixElement(iel, prefix);
@@ -1765,7 +1946,7 @@ algorithm
         prefix = InstUtil.pathPrefix(pre_path);
       then
         instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
-          prefix);
+          prefix, INST_ALL());
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
         SCode.ENUMERATION(enumLst = enuml), info = info)), _, _, _)
@@ -1993,7 +2174,7 @@ algorithm
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
         // Instantiate the element and update the symbol table.
-        el = instElement(sel, inMod, inPrefixes, inEnv, inPrefix);
+        el = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL());
         (el, st, added) = InstSymbolTable.addInstCondElement(el, st);
         // Recursively instantiate any conditional components in this element.
         (oel, st) = instConditionalElementOnTrue(added, el, st);

@@ -40,6 +40,7 @@ encapsulated package InstTypes
 "
 
 public import Absyn;
+public import Connect;
 public import DAE;
 public import SCode;
 public import SCodeEnv;
@@ -190,9 +191,56 @@ public constant Prefixes DEFAULT_CONST_PREFIXES = PREFIXES(
 
 public uniontype Equation
   record EQUALITY_EQUATION
-    DAE.Exp lhs;
-    DAE.Exp rhs;
+    DAE.Exp lhs "The left hand side expression.";
+    DAE.Exp rhs "The right hand side expression.";
+    Absyn.Info info;
   end EQUALITY_EQUATION;
+
+  record CONNECT_EQUATION
+    DAE.ComponentRef lhs "The left hand side component.";
+    Connect.Face lhsFace "The face of the lhs component, inside or outside.";
+    DAE.ComponentRef rhs "The right hand side component.";
+    Connect.Face rhsFace "The face of the rhs component, inside or outside.";
+    Prefix prefix;
+    Absyn.Info info;
+  end CONNECT_EQUATION;
+
+  record FOR_EQUATION
+    String index "The name of the index/iterator variable.";
+    DAE.Type indexType "The type of the index/iterator variable.";
+    DAE.Exp range "The range expression to loop over.";
+    list<Equation> body "The body of the for loop.";
+    Absyn.Info info;
+  end FOR_EQUATION;
+
+  record IF_EQUATION
+    list<tuple<DAE.Exp, list<Equation>>> branches
+      "List of branches, where each branch is a tuple of a condition and a body.";
+    Absyn.Info info;
+  end IF_EQUATION;
+
+  record WHEN_EQUATION
+    list<tuple<DAE.Exp, list<Equation>>> branches
+      "List of branches, where each branch is a tuple of a condition and a body.";
+    Absyn.Info info;
+  end WHEN_EQUATION;
+
+  record ASSERT_EQUATION
+    DAE.Exp condition "The assert condition.";
+    DAE.Exp message "The message to display if the assert fails.";
+    Absyn.Info info;
+  end ASSERT_EQUATION;
+
+  record TERMINATE_EQUATION
+    DAE.Exp message "The message to display if the terminate triggers.";
+    Absyn.Info info;
+  end TERMINATE_EQUATION;
+
+  record REINIT_EQUATION
+    DAE.ComponentRef cref "The variable to reinitialize.";
+    DAE.Exp reinitExp "The new value of the variable.";
+    Absyn.Info info;
+  end REINIT_EQUATION;
 end Equation;
 
 end InstTypes;

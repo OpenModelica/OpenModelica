@@ -4008,12 +4008,12 @@ case RANGE(__) then
   let &preExp = buffer "" /*BUFD*/
   let cref = contextArrayCref(cr, context)
   let ty_str = expTypeArray(ty)
-  let start_exp = daeExp(exp, context, &preExp, &varDecls)
-  let stop_exp = daeExp(range, context, &preExp, &varDecls)
-  let step = match expOption case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
+  let start_exp = daeExp(start, context, &preExp, &varDecls)
+  let stop_exp = daeExp(stop, context, &preExp, &varDecls)
+  let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
   <<
   <%preExp%>
-  fill_<%ty_str%>_from_range(&<%cref%>, <%start_exp%>, <%step%>, <%stop_exp%>);<%\n%>
+  fill_<%ty_str%>_from_range(&<%cref%>, <%start_exp%>, <%step_exp%>, <%stop_exp%>);<%\n%>
   >>
  
 end fillArrayFromRange;
@@ -4191,12 +4191,12 @@ case RANGE(__) then
   let stepVar = tempDecl(type, &varDecls)
   let stopVar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
-  let startValue = daeExp(exp, context, &preExp, &varDecls)
-  let stepValue = match expOption case SOME(eo) then
+  let startValue = daeExp(start, context, &preExp, &varDecls)
+  let stepValue = match step case SOME(eo) then
       daeExp(eo, context, &preExp, &varDecls)
     else
       "(1)"
-  let stopValue = daeExp(range, context, &preExp, &varDecls)
+  let stopValue = daeExp(stop, context, &preExp, &varDecls)
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
@@ -5673,11 +5673,11 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
   match exp
   case RANGE(__) then
     let ty_str = expTypeArray(ty)
-    let start_exp = daeExp(exp, context, &preExp, &varDecls)
-    let stop_exp = daeExp(range, context, &preExp, &varDecls)
+    let start_exp = daeExp(start, context, &preExp, &varDecls)
+    let stop_exp = daeExp(stop, context, &preExp, &varDecls)
     let tmp = tempDecl(ty_str, &varDecls)
-    let step = match expOption case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
-    let &preExp += 'create_<%ty_str%>_from_range(&<%tmp%>, <%start_exp%>, <%step%>, <%stop_exp%>);<%\n%>'
+    let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
+    let &preExp += 'create_<%ty_str%>_from_range(&<%tmp%>, <%start_exp%>, <%step_exp%>, <%stop_exp%>);<%\n%>'
     '<%tmp%>'
 end daeExpRange;
 

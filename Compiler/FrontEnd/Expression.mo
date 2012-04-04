@@ -3372,7 +3372,7 @@ algorithm
       then
         ((e,ext_arg_2));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
@@ -3381,7 +3381,7 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
@@ -3797,7 +3797,7 @@ algorithm
       then
         ((e,ext_arg_2));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
@@ -3806,7 +3806,7 @@ algorithm
       then
         ((e,ext_arg_3));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpWithoutRelations(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpWithoutRelations(e2, rel, ext_arg_1);
@@ -4182,14 +4182,14 @@ algorithm
       then
         ((DAE.MATRIX(tp,dim,lstexpl_1),ext_arg_1));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
       then
         ((DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2));
     
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e2),stop = e3)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
@@ -4833,7 +4833,7 @@ algorithm
       then
         (DAE.MATRIX(ty, dim, mat_expl), tup);
 
-    case (DAE.RANGE(ty = ty, exp = e1, expOption = oe1, range = e2), tup)
+    case (DAE.RANGE(ty = ty, start = e1, step = oe1, stop = e2), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (oe1, tup) = traverseExpOptBidir(oe1, tup);
@@ -5383,9 +5383,9 @@ algorithm
         res = List.fold(matrix,isConstWorkList,true);
       then res;
     
-    case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.RANGE(start=e1,step=NONE(),stop=e2),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
+    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
     
     case (DAE.PARTEVALFUNCTION(expList = ae),_) then isConstWorkList(ae,true);
     
@@ -5432,8 +5432,8 @@ algorithm
     case (DAE.ENUM_LITERAL(name = _),_) then true;
 
     /* A bit torn if we should simplify ranges or not */
-    case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));
-    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
+    case (DAE.RANGE(start=e1,step=NONE(),stop=e2),_) then isConstWork(e1,isConstWork(e2,true));
+    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
 
     case (DAE.ARRAY(array = ae),_) then isConstValueWorkList(ae,true);
     
@@ -5910,19 +5910,19 @@ algorithm
       then
         res;
     // ranges [e1:step:e2], where e1 is a vector call
-    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2))
+    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
       equation
         true = containVectorFunctioncall(e1);
       then
         true;
     // ranges [e1:step:e2], where e2 is a vector call
-    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2))
+    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
       equation
         true = containVectorFunctioncall(e2);
       then
         true;
     // ranges [e1:step:e2], where step is a vector call
-    case (DAE.RANGE(exp = e1,expOption = SOME(e),range = e2))
+    case (DAE.RANGE(start = e1,step = SOME(e),stop = e2))
       equation
         true = containVectorFunctioncall(e);
       then
@@ -6082,19 +6082,19 @@ algorithm
         res;
     
     // ranges
-    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2))
+    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
       equation
         true = containFunctioncall(e1);
       then
         true;
     
-    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2))
+    case (DAE.RANGE(start = e1,step = optexp,stop = e2))
       equation
         true = containFunctioncall(e2);
       then
         true;
     
-    case (DAE.RANGE(exp = e1,expOption = SOME(e),range = e2))
+    case (DAE.RANGE(start = e1,step = SOME(e),stop = e2))
       equation
         true = containFunctioncall(e);
       then
@@ -6492,7 +6492,8 @@ algorithm
       then valueEq(e1,e2); // TODO! FIXME! should use expEqual on elements
     
     // ranges [start:stop]
-    case (DAE.RANGE(ty = tp1,exp = e11,expOption = NONE(),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = NONE(),range = e23),_,_)
+    case (DAE.RANGE(ty = tp1,start = e11,step = NONE(),stop = e13),
+          DAE.RANGE(ty = tp2,start = e21,step = NONE(),stop = e23),_,_)
       equation
         res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
         res = expEqualWork(e13, e23, referenceEq(e13, e23), res);
@@ -6500,7 +6501,8 @@ algorithm
         res;
     
     // ranges [start:step:stop]
-    case (DAE.RANGE(ty = tp1,exp = e11,expOption = SOME(e12),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = SOME(e22),range = e23),_,_)
+    case (DAE.RANGE(ty = tp1,start = e11,step = SOME(e12),stop = e13),
+          DAE.RANGE(ty = tp2,start = e21,step = SOME(e22),stop = e23),_,_)
       equation
         res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
         res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
@@ -7466,9 +7468,9 @@ algorithm
         c1 = List.fold(List.map(List.flatten(matrix),complexity),intAdd,complexityAlloc);
         c2 = listLength(exps)*listLength(matrix);
       then c1 + c2;
-    case DAE.RANGE(exp=e1,range=e2,expOption=NONE())
+    case DAE.RANGE(start=e1,stop=e2,step=NONE())
       then complexityDimLarge+complexity(e1)+complexity(e2); /* TODO: Check type maybe? */
-    case DAE.RANGE(exp=e1,range=e2,expOption=SOME(e3))
+    case DAE.RANGE(start=e1,stop=e2,step=SOME(e3))
       then complexityDimLarge+complexity(e1)+complexity(e2)+complexity(e3); /* TODO: Check type maybe? */
     case DAE.TUPLE(PR=exps)
       equation

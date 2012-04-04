@@ -772,14 +772,14 @@ public uniontype Type "models the different front-end and back-end types"
   end T_UNKNOWN;
 
   record T_COMPLEX
-    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    ClassInf.State complexClassType "complexClassType ; The type of a class" ;
     list<Var> varLst "complexVarLst ; The variables of a complex type" ;
     EqualityConstraint equalityConstraint;
     TypeSource source;
   end T_COMPLEX;
   
   record T_SUBTYPE_BASIC
-    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    ClassInf.State complexClassType "complexClassType ; The type of a class" ;
     list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
     Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
     EqualityConstraint equalityConstraint;
@@ -1177,9 +1177,9 @@ uniontype Exp "Expressions
 
   record RANGE
     Type ty;
-    Exp exp "start value";
-    Option<Exp> expOption "step value";
-    Exp range "stop value; Range constructor, e.g. 1:0.5:10" ;
+    Exp start "start value";
+    Option<Exp> step "step value";
+    Exp stop "stop value" ;
   end RANGE;
 
   record TUPLE

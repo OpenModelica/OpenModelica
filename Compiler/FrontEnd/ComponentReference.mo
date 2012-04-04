@@ -2246,6 +2246,19 @@ algorithm
   end match;
 end splitCrefLast;
 
+public function splitCrefFirst
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCrefFirst;
+  output DAE.ComponentRef outCrefRest;
+protected
+  DAE.Ident id;
+  DAE.Type ty;
+  list<DAE.Subscript> subs;
+algorithm
+  DAE.CREF_QUAL(id, ty, subs, outCrefRest) := inCref;
+  outCrefFirst := DAE.CREF_IDENT(id, ty, subs);
+end splitCrefFirst;
+
 public function toStringList
   "Converts a component reference to a list of strings."
   input DAE.ComponentRef inCref;

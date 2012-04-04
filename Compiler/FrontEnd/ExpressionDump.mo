@@ -1284,7 +1284,7 @@ algorithm
       then
         Graphviz.LNODE("MATRIX",{s},{},{});
     
-    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop))
+    case (DAE.RANGE(start = start,step = NONE(),stop = stop))
       equation
         t1 = dumpExpGraphviz(start);
         t2 = Graphviz.NODE(":",{},{});
@@ -1292,7 +1292,7 @@ algorithm
       then
         Graphviz.NODE("RANGE",{},{t1,t2,t3});
     
-    case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop))
+    case (DAE.RANGE(start = start,step = SOME(step),stop = stop))
       equation
         t1 = dumpExpGraphviz(start);
         t2 = dumpExpGraphviz(step);
@@ -1542,7 +1542,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
+    case (DAE.RANGE(start = start,step = NONE(),stop = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1554,7 +1554,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
+    case (DAE.RANGE(start = start,step = SOME(step),stop = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -2040,7 +2040,7 @@ algorithm
       then
         ();
     
-    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop),pri1)
+    case (DAE.RANGE(start = start,step = NONE(),stop = stop),pri1)
       equation
         pri2 = 41;
         pri3 = printLeftpar(pri1, pri2);
@@ -2051,7 +2051,7 @@ algorithm
       then
         ();
     
-    case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop),pri1)
+    case (DAE.RANGE(start = start,step = SOME(step),stop = stop),pri1)
       equation
         pri2 = 41;
         pri3 = printLeftpar(pri1, pri2);

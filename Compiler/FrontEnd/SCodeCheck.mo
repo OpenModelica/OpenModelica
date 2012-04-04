@@ -39,17 +39,17 @@ encapsulated package SCodeCheck
   This module checks the SCode representation for conformance "
 
 public import Absyn;
+public import InstTypes;
 public import SCode;
 public import SCodeEnv;
-public import InstTypes;
 
 protected import Config;
 protected import Dump;
 protected import Error;
 protected import InstUtil;
 protected import List;
-protected import Util;
 protected import SCodeDump;
+protected import Util;
 
 public function checkDuplicateClasses
   input SCode.Program inProgram;

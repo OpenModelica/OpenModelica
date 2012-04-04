@@ -1992,7 +1992,7 @@ algorithm
     
     case (DAE.ARRAY(array = arrayElements)) then arrayElements;
     
-    case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE()))
+    case (DAE.RANGE(start = DAE.ICONST(integer = start), stop = DAE.ICONST(integer = stop), step = NONE()))
       equation
         vals = ExpressionSimplify.simplifyRange(start, 1, stop);
         arrayElements = List.map(vals, Expression.makeIntegerExp);

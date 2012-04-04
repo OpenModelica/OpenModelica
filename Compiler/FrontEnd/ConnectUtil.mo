@@ -3275,7 +3275,7 @@ algorithm
   end match;
 end printElementStr;
   
-protected function printFaceStr
+public function printFaceStr
   "Prints the Face to a String."
   input Face inFace;
   output String outString;
@@ -3283,6 +3283,7 @@ algorithm
   outString := match(inFace)
     case Connect.INSIDE() then "inside";
     case Connect.OUTSIDE() then "outside";
+    case Connect.NO_FACE() then "unknown";
   end match;
 end printFaceStr;
 
