@@ -1444,6 +1444,7 @@ algorithm
         matchApiFunction(istmts, "setParameterValue");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident),exp} = getApiFunctionArgs(istmts);
         (p_1,resstr) = setParameterValue(class_, ident, exp, p);
+        st = setSymbolTableAST(st, p_1);
       then
         (resstr, st);
 
@@ -6960,13 +6961,14 @@ algorithm
   (outProgram,outString) := matchcontinue (inComponentRefClass,inComponentRefComponentName,inBindingExp,inFullProgram)
     local
       Absyn.Path p_class;
-      String varname;
+      String varname, str;
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,name;
       Absyn.Exp exp;
       Absyn.TimeStamp ts;
+      Boolean b;
 
     case (class_,name,exp,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
@@ -6974,10 +6976,21 @@ algorithm
         Absyn.IDENT(varname) = Absyn.crefToPath(name);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
-        cdef_1 = setVariableBindingInClass(cdef, varname, exp);
+        (cdef_1, b) = setVariableBindingInClass(cdef, varname, exp);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        str = Util.if_(b, "Ok", "Error: component with name: " +& varname +& " in class: " +& Absyn.pathString(p_class) +& " not found.");
       then
-        (newp,"Ok");
+        (newp,str);
+    
+    case (class_,name,exp,p as Absyn.PROGRAM(globalBuildTimes=ts))
+      equation
+        p_class = Absyn.crefToPath(class_);
+        Absyn.IDENT(varname) = Absyn.crefToPath(name);
+        within_ = buildWithin(p_class);
+        failure(_ = getPathedClassInProgram(p_class, p));
+        str = "Error: class: " +& Absyn.pathString(p_class) +& " not found.";
+      then
+        (p,str);
     
     case (_,_,_,p) 
       then 
@@ -6993,9 +7006,9 @@ protected function setVariableBindingInClass
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
   output Absyn.Class outClass;
+  output Boolean outChangeMade;
 algorithm
-  outClass:=
-  match (inClass,inIdent,inExp)
+  (outClass, outChangeMade) := match (inClass,inIdent,inExp)
     local
       list<Absyn.ClassPart> parts_1,parts;
       String id,id2,bcname;
@@ -7006,22 +7019,25 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
-    /* a class with parts */
+      Boolean b;
+    
+    // a class with parts
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classParts = parts,comment = cmt),info = file_info),
           id2,exp)
       equation
-        parts_1 = setVariableBindingInClassparts(parts, id2, exp);
+        (parts_1, b) = setVariableBindingInClassparts(parts, id2, exp);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,parts_1,cmt),file_info);
-    /* adrpo: handle also model extends M end M; */
+        (Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(typeVars,parts_1,cmt),file_info), b);
+    
+    // adrpo: handle also model extends M end M; 
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),info = file_info),
           id2,exp)
       equation
-        parts_1 = setVariableBindingInClassparts(parts, id2, exp);
+        (parts_1,b) = setVariableBindingInClassparts(parts, id2, exp);
       then
-        Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1),file_info);
+        (Absyn.CLASS(id,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1),file_info), b);
   end match;
 end setVariableBindingInClass;
 
@@ -7033,33 +7049,40 @@ protected function setVariableBindingInClassparts
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
+  output Boolean outChangeMade;
 algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst,inIdent,inExp)
+  (outAbsynClassPartLst, outChangeMade) := matchcontinue (inAbsynClassPartLst,inIdent,inExp)
     local
       list<Absyn.ClassPart> res,rest;
       list<Absyn.ElementItem> elts_1,elts;
       String id;
       Absyn.Exp exp;
       Absyn.ClassPart elt;
-    case ({},_,_) then {};
+      Boolean b1, b2, b;
+      
+    case ({},_,_) then ({}, false);
+    
     case ((Absyn.PUBLIC(contents = elts) :: rest),id,exp)
       equation
-        res = setVariableBindingInClassparts(rest, id, exp);
-        elts_1 = setVariableBindingInElementitems(elts, id, exp);
+        (res, b1) = setVariableBindingInClassparts(rest, id, exp);
+        (elts_1, b2) = setVariableBindingInElementitems(elts, id, exp);
+        b = boolOr(b1, b2);
       then
-        (Absyn.PUBLIC(elts_1) :: res);
+        (Absyn.PUBLIC(elts_1) :: res, b);
+    
     case ((Absyn.PROTECTED(contents = elts) :: rest),id,exp)
       equation
-        res = setVariableBindingInClassparts(rest, id, exp);
-        elts_1 = setVariableBindingInElementitems(elts, id, exp);
+        (res, b1) = setVariableBindingInClassparts(rest, id, exp);
+        (elts_1, b2) = setVariableBindingInElementitems(elts, id, exp);
+        b = boolOr(b1, b2);
       then
-        (Absyn.PROTECTED(elts_1) :: res);
+        (Absyn.PROTECTED(elts_1) :: res, b);
+    
     case ((elt :: rest),id,exp)
       equation
-        res = setVariableBindingInClassparts(rest, id, exp);
+        (res, b) = setVariableBindingInClassparts(rest, id, exp);
       then
-        (elt :: res);
+        (elt :: res, b);
   end matchcontinue;
 end setVariableBindingInClassparts;
 
@@ -7070,8 +7093,9 @@ protected function setVariableBindingInElementitems
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
+  output Boolean outChangeMade;
 algorithm
-  outAbsynElementItemLst:=
+  (outAbsynElementItemLst, outChangeMade) :=
   matchcontinue (inAbsynElementItemLst,inIdent,inExp)
     local
       list<Absyn.ElementItem> res,rest;
@@ -7079,18 +7103,23 @@ algorithm
       String id;
       Absyn.Exp exp;
       Absyn.ElementItem elitem;
-    case ({},_,_) then {};
+      Boolean b1, b2, b;
+    
+    case ({},_,_) then ({}, false);
+    
     case ((Absyn.ELEMENTITEM(element = elt) :: rest),id,exp)
       equation
-        res = setVariableBindingInElementitems(rest, id, exp);
-        elt_1 = setVariableBindingInElement(elt, id, exp);
+        (res, b1) = setVariableBindingInElementitems(rest, id, exp);
+        (elt_1, b2) = setVariableBindingInElement(elt, id, exp);
+        b = boolOr(b1, b2);
       then
-        (Absyn.ELEMENTITEM(elt_1) :: res);
+        (Absyn.ELEMENTITEM(elt_1) :: res, b);
+    
     case ((elitem :: rest),id,exp)
       equation
-        res = setVariableBindingInElementitems(rest, id, exp);
+        (res, b) = setVariableBindingInElementitems(rest, id, exp);
       then
-        (elitem :: res);
+        (elitem :: res, b);
   end matchcontinue;
 end setVariableBindingInElementitems;
 
@@ -7101,12 +7130,13 @@ protected function setVariableBindingInElement
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
   output Absyn.Element outElement;
+  output Boolean outChangeMade;
 algorithm
-  outElement:=
+  (outElement, outChangeMade) :=
   matchcontinue (inElement,inIdent,inExp)
     local
       list<Absyn.ComponentItem> compitems_1,compitems;
-      Boolean f;
+      Boolean f,b;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter i;
       String n,id;
@@ -7116,24 +7146,28 @@ algorithm
       Option<Absyn.ConstrainClass> constr;
       Absyn.Exp exp;
       Absyn.Element elt;
+
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = compitems),info = info,constrainClass = constr),id,exp)
       equation
-        compitems_1 = setVariableBindingInCompitems(compitems, id, exp);
+        (compitems_1, b) = setVariableBindingInCompitems(compitems, id, exp);
       then
-        Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr);
-    case (elt,id,exp) then elt;
+        (Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr), b);
+    
+    case (elt,id,exp) then (elt, false);
   end matchcontinue;
 end setVariableBindingInElement;
 
 protected function setVariableBindingInCompitems
 "function: setVariableBindingInCompitems
-   Sets a variable binding in a ComponentItem list"
+   Sets a variable binding in a ComponentItem list
+   and returns true if it found it"
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
+  output Boolean outChangeMade;
 algorithm
-  outAbsynComponentItemLst := matchcontinue (inAbsynComponentItemLst,inIdent,inExp)
+  (outAbsynComponentItemLst,outChangeMade) := matchcontinue (inAbsynComponentItemLst,inIdent,inExp)
     local
       String id,id2;
       list<Absyn.Subscript> dim;
@@ -7143,26 +7177,27 @@ algorithm
       list<Absyn.ComponentItem> rest,res;
       Absyn.Exp exp;
       Absyn.ComponentItem item;
+      Boolean b;
     
-    case ({},_,_) then {};
+    case ({},_,_) then ({}, false);
     
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(arg,_))),condition = cond,comment = cmt) :: rest),id2,exp)
       equation
         true = stringEq(id, id2);
       then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest);
+        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest), true);
     
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),id2,exp)
       equation
         true = stringEq(id, id2);
       then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest);
+        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,Absyn.dummyInfo)))),cond,cmt) :: rest), true);
     
-    case ((item :: rest),id,exp)
+    case (item :: rest,id,exp)
       equation
-        res = setVariableBindingInCompitems(rest, id, exp);
+        (res, b) = setVariableBindingInCompitems(rest, id, exp);
       then
-        (item :: res);
+        (item :: res, b);
   end matchcontinue;
 end setVariableBindingInCompitems;
 
