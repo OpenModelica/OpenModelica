@@ -13,7 +13,8 @@ package builtin
     input list<TypeVar> lst;
     output Integer result;
   end listLength;
-  
+
+ 
   function listNth
     replaceable type TypeVar subtypeof Any;    
     input list<TypeVar> lst;
@@ -2108,6 +2109,14 @@ package List
     output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
     replaceable type Type_a subtypeof Any;
   end threadTuple;
+
+  function position
+    replaceable type Type_a subtypeof Any;
+    input Type_a inElement;
+    input list<Type_a> inList;
+    output Integer outPosition;
+  end position;
+ 
 end List;
 
 package ComponentReference
@@ -2241,88 +2250,28 @@ package ValuesUtil
 end ValuesUtil;
 
 package BackendQSS
-  function replaceCondWhens
-    input list<SimCode.SimWhenClause> whenClauses;
-    input list<SimCode.HelpVarInfo> helpVars;
-    input list<BackendDAE.ZeroCrossing> zeroCrossings;
-    output list<SimCode.SimWhenClause> replacedWhenClauses;
-  end replaceCondWhens;
-
-  function replaceZC
-    input SimCode.SimEqSystem i;
-    input list<BackendDAE.ZeroCrossing> zc;
-    output SimCode.SimEqSystem o;
-  end replaceZC;
-
-  uniontype DevsStruct "DEVS structure"
-    record DEVS_STRUCT  
-      list<list<Integer>>[:] outLinks "output connections for each DEVS block";
-      list<list<Integer>>[:] outVars "output variables for each DEVS block";
-      list<list<Integer>>[:] inLinks "input connections for each DEVS block";
-      list<list<Integer>>[:] inVars "input variables for each DEVS block";
-    end DEVS_STRUCT;
-  end DevsStruct;
-
   uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
     record QSSINFO
-      list<list<list<Integer>>> BLTblocks "BLT blocks in static functions";
-      DevsStruct DEVSstructure "DEVS structure of the model";
-      list<list<SimCode.SimEqSystem>> eqs;
-      list<BackendDAE.Var> outVarLst;
-      list<Integer> zcSamplesInd;
+      list<list<Integer>> stateVarIndex;
+      list<DAE.ComponentRef> stateVars;
     end QSSINFO;
   end QSSinfo;
 
-  function getInputs
-    input DevsStruct st;
-    input Integer index;
-    output list<Integer> vars;
-  end getInputs;
-
-  function getOutputs
-    input DevsStruct st;
-    input Integer index;
-    output list<Integer> vars;
-  end getOutputs;
-
-
-  function derPrefix
-     input BackendDAE.Var var;
-    output String prefix;
-  end derPrefix;
-
-  function numInputs
+  function getStateIndexList
     input QSSinfo qssInfo;
-    input Integer numBlock;
-    output Integer inputs;
-  end numInputs;
-
-  function numOutputs
-    input QSSinfo qssInfo;
-    input Integer numBlock;
-    output Integer outputs;
-  end numOutputs;
-
-  function generateConnections
-    input QSSinfo qssInfo;
-    output list<list<Integer>> conns;
-  end generateConnections;
+    output list<list<Integer>> refs;
+  end getStateIndexList;
 
   function getStates
     input QSSinfo qssInfo;
-    output list<BackendDAE.Var> states;
+    output list<DAE.ComponentRef> refs;
   end getStates;
 
-  function getAllInputs
-    input QSSinfo qssInfo;
-    output list<Integer> vars_tuple;
-  end getAllInputs;
-
-  function getAllOutputs
-    input QSSinfo qssInfo;
-    output list<Integer> vars_tuple;
-  end getAllOutputs;
-
+  function replaceVars
+    input DAE.Exp exp;
+    input list<DAE.ComponentRef> states;
+    output DAE.Exp expout;
+  end replaceVars;
 end BackendQSS;
 
 package BackendVariable

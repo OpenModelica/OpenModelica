@@ -1138,9 +1138,9 @@ algorithm
         BackendDAE.EQSYSTEM(m=SOME(incidenceMatrix), mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents))
       }),"QSS")
       equation
-        Debug.trace("Generating QSS solver code\n");
-        qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
-        Tpl.tplNoret2(CodegenQSS.translateModel, simCode, qssInfo);
+        Debug.trace("Generating code for QSS solver\n");
+        (qssInfo,simCode) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
+        Tpl.tplNoret2(CodegenQSS.translateModel, simCode,qssInfo);
       then ();
     case (simCode,_,"C")
       equation
