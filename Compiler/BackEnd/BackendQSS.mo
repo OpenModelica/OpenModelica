@@ -118,7 +118,7 @@ public function getAllVars
   output list<BackendDAE.Var> orderedVarsList; 
    
 algorithm 
-  (allVarsList, stateVarsList):=
+  (allVarsList, stateVarsList, orderedVarsList):=
   matchcontinue (inDAELow1)
     local
       list<BackendDAE.Var> orderedVarsList, knownVarsList, allVarsList;
@@ -322,6 +322,8 @@ indexs:=
       DAE.ComponentRef cref;
       list<SimCode.SimEqSystem> tail;
       Integer p;
+      list<list<Integer>> acc_1;
+
     case (_,{},acc) then acc;
     case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_) 
     equation
@@ -338,8 +340,8 @@ indexs:=
       print("\n");
       */
       p = List.position(cref,stateVarsList)+1;
-      acc = listAppend(acc,{{p}});
-    then computeStateRef(stateVarsList,tail,acc);
+      acc_1 = listAppend(acc_1,{{p}});
+    then computeStateRef(stateVarsList,tail,acc_1);
     case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);
   end matchcontinue;
 end computeStateRef;

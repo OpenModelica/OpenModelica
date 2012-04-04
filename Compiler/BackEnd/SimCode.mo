@@ -1121,6 +1121,7 @@ algorithm
       BackendDAE.StrongComponents strongComponents;
       BackendQSS.QSSinfo qssInfo;
       String str;
+      SimCode sc;
       
     case (simCode,_,"CSharp")
       equation
@@ -1139,8 +1140,8 @@ algorithm
       }),"QSS")
       equation
         Debug.trace("Generating code for QSS solver\n");
-        (qssInfo,simCode) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
-        Tpl.tplNoret2(CodegenQSS.translateModel, simCode,qssInfo);
+        (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
+        Tpl.tplNoret2(CodegenQSS.translateModel, sc,qssInfo);
       then ();
     case (simCode,_,"C")
       equation
