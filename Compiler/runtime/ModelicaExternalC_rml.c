@@ -35,6 +35,8 @@ void ModelicaInternal_print(const char*,const char*);
 const char* ModelicaInternal_readLine(const char*,int,int*);
 int ModelicaInternal_countLines(const char*);
 void ModelicaStreams_closeFile(const char*);
+void ModelicaStrings_scanReal(const char*,int,int,int*,double*);
+int ModelicaStrings_skipWhiteSpace(const char*,int);
 
 void ModelicaExternalC_5finit(void)
 {
@@ -81,3 +83,25 @@ RML_BEGIN_LABEL(ModelicaExternalC__Streams_5fclose)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(ModelicaExternalC__Strings_5fadvanced_5fscanReal)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  int i = RML_UNTAGFIXNUM(rmlA1);
+  int unsign = RML_UNTAGFIXNUM(rmlA2);
+  int next_ix=0;
+  double val=0;
+  ModelicaStrings_scanReal(str,i,unsign,&next_ix,&val);
+  rmlA0 = mk_icon(next_ix);
+  rmlA1 = mk_rcon(val);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(ModelicaExternalC__Strings_5fadvanced_5fskipWhiteSpace)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  int i = RML_UNTAGFIXNUM(rmlA1);
+  rmlA0 = mk_icon(ModelicaStrings_skipWhiteSpace(str,i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

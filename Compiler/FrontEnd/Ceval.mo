@@ -1559,6 +1559,8 @@ algorithm
     case ("ModelicaInternal_print") then ();
     case ("ModelicaInternal_countLines") then ();
     case ("ModelicaInternal_readLine") then ();
+    case ("ModelicaStrings_scanReal") then ();
+    case ("ModelicaStrings_skipWhiteSpace") then ();
     case ("ModelicaError") then ();
   end match;
 end isKnownExternalFunc;
@@ -1641,7 +1643,7 @@ protected function cevalKnownExternalFuncs2 "Helper function to cevalKnownExtern
 algorithm
   outValue := match (id,inValuesValueLst,inMsg)
     local 
-      Real rv_1,rv,rv1,rv2,sv,cv;
+      Real rv_1,rv,rv1,rv2,sv,cv,r;
       String str,fileName;
       Integer start, stop, i, lineNumber;
       Boolean b;
@@ -1746,6 +1748,16 @@ algorithm
         (str,b) = ModelicaExternalC.Streams_readLine(fileName,lineNumber);
       then Values.TUPLE({Values.STRING(str),Values.BOOL(b)});
         
+    case ("ModelicaStrings_scanReal",{Values.STRING(str),Values.INTEGER(i),Values.BOOL(b)},_)
+      equation
+        (i,r) = ModelicaExternalC.Strings_advanced_scanReal(str,i,b);
+      then Values.TUPLE({Values.INTEGER(i),Values.REAL(r)});
+
+    case ("ModelicaInternal_skipWhiteSpace",{Values.STRING(str),Values.INTEGER(i)},_)
+      equation
+        i = ModelicaExternalC.Strings_advanced_skipWhiteSpace(str,i);
+      then Values.INTEGER(i);
+
   end match;
 end cevalKnownExternalFuncs2;
 

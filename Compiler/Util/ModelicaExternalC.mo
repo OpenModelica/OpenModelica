@@ -65,4 +65,24 @@ function Streams_close
   external "C" ModelicaStreams_closeFile(fileName) annotation(Library="ModelicaExternalC");
 end Streams_close;
 
+function Strings_advanced_scanReal
+  input String string;
+  input Integer startIndex;
+  input Boolean unsigned;
+  output Integer nextIndex;
+  output Real number;
+
+  external "C" ModelicaStrings_scanReal(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
+end Strings_advanced_scanReal;
+
+
+function Strings_advanced_skipWhiteSpace
+  input String string;
+  input Integer startIndex(min = 1) = 1;
+  output Integer nextIndex;
+
+  external "C" nextIndex = ModelicaStrings_skipWhiteSpace(string,startIndex) annotation(Library = "ModelicaExternalC");
+end Strings_advanced_skipWhiteSpace;
+
+
 end ModelicaExternalC;
