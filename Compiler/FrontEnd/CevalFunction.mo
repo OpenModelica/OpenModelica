@@ -969,7 +969,10 @@ algorithm
       DAE.Exp lhs, rhs, condition;
       DAE.ComponentRef lhs_cref;
       Values.Value rhs_val;
+      list<DAE.Exp> exps;
+      list<Values.Value> vals;
       list<DAE.Statement> statements;
+      Absyn.Path path;
       LoopControl loop_ctrl;
       SymbolTable st;
       String str;
@@ -1038,12 +1041,11 @@ algorithm
       then
         (inEnv, NEXT());*/
 
-    // Special case for print for now, see comment on case above.
-    case (DAE.STMT_NORETCALL(exp = DAE.CALL(path = Absyn.IDENT("print"),
-        expLst = {rhs})), _, _, _)
+    // Special case for print, and other known calls for now, see comment on case above.
+    case (DAE.STMT_NORETCALL(exp = DAE.CALL(path = path, expLst = exps)), _, _, _)
       equation
-        (cache, Values.STRING(str), st) = cevalExp(rhs, inCache, inEnv, inST);
-        print(str);
+        (cache, vals, st) = cevalExpList(exps, inCache, inEnv, inST);
+        (cache, _) = Ceval.cevalKnownExternalFuncs(cache,inEnv,path,vals,Ceval.NO_MSG());
       then
         (cache, inEnv, NEXT(), st);
 
@@ -1403,6 +1405,19 @@ protected function cevalExp
 algorithm
   (outCache, outValue, outST) := Ceval.ceval(inCache, inEnv, inExp, true, inST, Ceval.NO_MSG());
 end cevalExp;
+
+protected function cevalExpList
+  "A wrapper for Ceval with most of the arguments filled in."
+  input list<DAE.Exp> inExpLst;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Env.Cache outCache;
+  output list<Values.Value> outValue;
+  output SymbolTable outST;
+algorithm
+  (outCache, outValue, outST) := Ceval.cevalList(inCache, inEnv, inExpLst, true, inST, Ceval.NO_MSG());
+end cevalExpList;
 
 // [EENV]  Environment extension functions (add variables).
 

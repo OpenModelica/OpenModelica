@@ -30,7 +30,7 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_g -lpthread \
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_g -lModelicaExternalC -lpthread \
   $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
   -L../../build/lib/omc @RT_LDFLAGS@ @LD_LAPACK@ @SQLITE3_LIBS@
 

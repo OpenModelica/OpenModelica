@@ -89,6 +89,7 @@ protected import InnerOuter;
 protected import Inst;
 protected import List;
 protected import Mod;
+protected import ModelicaExternalC;
 protected import Prefix;
 protected import Print;
 protected import SCode;
@@ -1503,7 +1504,7 @@ algorithm
   end match;
 end cevalIsExternalObjectConstructor;
 
-protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
+public function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   Evaluates external functions that are known, e.g. all math functions."
   input Env.Cache inCache;
   input Env.Env env;
@@ -1516,6 +1517,7 @@ protected
   SCode.Element cdef;
   list<Env.Frame> env_1;
   String fid,id;
+  Option<String> oid;
   Option<SCode.ExternalDecl> extdecl;
   Option<String> lan;
   Option<Absyn.ComponentRef> out;
@@ -1525,32 +1527,39 @@ algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(name=fid,restriction = SCode.R_FUNCTION(funcRest), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
   SCode.FR_EXTERNAL_FUNCTION() := funcRest;
-  SOME(SCode.EXTERNALDECL(SOME(id),lan,out,args,_)) := extdecl;
-  isKnownExternalFunc(fid, id);
-  res := cevalKnownExternalFuncs2(fid, id, vals, msg);
+  SOME(SCode.EXTERNALDECL(oid,lan,out,args,_)) := extdecl;
+  // oid=NONE() is more safe, but most of the functions are declared is a certain way =/
+  id := Util.getOptionOrDefault(oid,fid);
+  isKnownExternalFunc(id);
+  res := cevalKnownExternalFuncs2(id, vals, msg);
 end cevalKnownExternalFuncs;
 
 public function isKnownExternalFunc "function isKnownExternalFunc
   Succeds if external function name is
   \"known\", i.e. no compilation required."
-  input String fid;
   input String id;
 algorithm
-  _:=  match (fid,id)
-    case ("acos","acos") then ();
-    case ("asin","asin") then ();
-    case ("atan","atan") then ();
-    case ("atan2","atan2") then ();
-    case ("cos","cos") then ();
-    case ("cosh","cosh") then ();
-    case ("exp","exp") then ();
-    case ("log","log") then ();
-    case ("log10","log10") then ();
-    case ("sin","sin") then ();
-    case ("sinh","sinh") then ();
-    case ("tan","tan") then ();
-    case ("tanh","tanh") then ();
-    case ("substring","ModelicaStrings_substring") then ();
+  _:=  match (id)
+    case ("acos") then ();
+    case ("asin") then ();
+    case ("atan") then ();
+    case ("atan2") then ();
+    case ("cos") then ();
+    case ("cosh") then ();
+    case ("exp") then ();
+    case ("log") then ();
+    case ("log10") then ();
+    case ("sin") then ();
+    case ("sinh") then ();
+    case ("tan") then ();
+    case ("tanh") then ();
+    case ("print") then ();
+    case ("ModelicaStreams_closeFile") then ();
+    case ("ModelicaStrings_substring") then ();
+    case ("ModelicaInternal_print") then ();
+    case ("ModelicaInternal_countLines") then ();
+    case ("ModelicaInternal_readLine") then ();
+    case ("ModelicaError") then ();
   end match;
 end isKnownExternalFunc;
 
@@ -1624,90 +1633,88 @@ algorithm
   end match;
 end isCevaluableFunction2;
 
-protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
-  author: PA
-  Helper function to cevalKnownExternalFuncs, does the evaluation."
-  input String fid;
+protected function cevalKnownExternalFuncs2 "Helper function to cevalKnownExternalFuncs, does the evaluation."
   input String id;
   input list<Values.Value> inValuesValueLst;
   input Msg inMsg;
   output Values.Value outValue;
 algorithm
-  outValue := match (fid,id,inValuesValueLst,inMsg)
+  outValue := match (id,inValuesValueLst,inMsg)
     local 
       Real rv_1,rv,rv1,rv2,sv,cv;
-      String str;
-      Integer start, stop;
+      String str,fileName;
+      Integer start, stop, i, lineNumber;
+      Boolean b;
       
-    case ("acos","acos",{Values.REAL(real = rv)},_)
+    case ("acos",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAcos(rv);
       then
         Values.REAL(rv_1);
-    case ("asin","asin",{Values.REAL(real = rv)},_)
+    case ("asin",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAsin(rv);
       then
         Values.REAL(rv_1);
-    case ("atan","atan",{Values.REAL(real = rv)},_)
+    case ("atan",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAtan(rv);
       then
         Values.REAL(rv_1);
-    case ("atan2","atan2",{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
+    case ("atan2",{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
       equation
         rv_1 = realAtan2(rv1, rv2);
       then
         Values.REAL(rv_1);
-    case ("cos","cos",{Values.REAL(real = rv)},_)
+    case ("cos",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realCos(rv);
       then
         Values.REAL(rv_1);
-    case ("cosh","cosh",{Values.REAL(real = rv)},_)
+    case ("cosh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realCosh(rv);
       then
         Values.REAL(rv_1);
-    case ("exp","exp",{Values.REAL(real = rv)},_)
+    case ("exp",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realExp(rv);
       then
         Values.REAL(rv_1);
-    case ("log","log",{Values.REAL(real = rv)},_)
+    case ("log",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realLn(rv);
       then
         Values.REAL(rv_1);
-    case ("log10","log10",{Values.REAL(real = rv)},_)
+    case ("log10",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realLog10(rv);
       then
         Values.REAL(rv_1);
-    case ("sin","sin",{Values.REAL(real = rv)},_)
+    case ("sin",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realSin(rv);
       then
         Values.REAL(rv_1);
-    case ("sinh","sinh",{Values.REAL(real = rv)},_)
+    case ("sinh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realSinh(rv);
       then
         Values.REAL(rv_1);
-    case ("tan","tan",{Values.REAL(real = rv)},_)
+    case ("tan",{Values.REAL(real = rv)},_)
       equation
         sv = realSin(rv);
         cv = realCos(rv);
         rv_1 = sv/. cv;
       then
         Values.REAL(rv_1);
-    case ("tanh","tanh",{Values.REAL(real = rv)},_)
+    case ("tanh",{Values.REAL(real = rv)},_)
       equation
         rv_1 = realTanh(rv);
       then
         Values.REAL(rv_1);
     
-    case ("substring","ModelicaStrings_substring",
+    case ("ModelicaStrings_substring",
           {
            Values.STRING(string = str),
            Values.INTEGER(integer = start),
@@ -1717,6 +1724,28 @@ algorithm
         str = System.substring(str, start, stop);
       then
         Values.STRING(str);
+        
+    case ("print",{Values.STRING(str)},_)
+      equation
+        print(str);
+      then Values.NORETCALL();
+    case ("ModelicaStreams_closeFile",{Values.STRING(fileName)},_)
+      equation
+        ModelicaExternalC.Streams_close(fileName);
+      then Values.NORETCALL();
+    case ("ModelicaInternal_print",{Values.STRING(str),Values.STRING(fileName)},_)
+      equation
+        ModelicaExternalC.Streams_print(str,fileName);
+      then Values.NORETCALL();
+    case ("ModelicaInternal_countLines",{Values.STRING(fileName)},_)
+      equation
+        i = ModelicaExternalC.Streams_countLines(fileName);
+      then Values.INTEGER(i);
+    case ("ModelicaInternal_readLine",{Values.STRING(fileName),Values.INTEGER(lineNumber)},_)
+      equation
+        (str,b) = ModelicaExternalC.Streams_readLine(fileName,lineNumber);
+      then Values.TUPLE({Values.STRING(str),Values.BOOL(b)});
+        
   end match;
 end cevalKnownExternalFuncs2;
 
