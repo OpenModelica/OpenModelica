@@ -5546,6 +5546,7 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CLASS;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassAsCorbaString failed"}); then fail();
   end match;
 end printClassAsCorbaString;
 
@@ -5576,6 +5577,7 @@ algorithm
         printTimeStampAsCorbaString(buildTimes);
         Print.printBuf(" end Absyn.INFO;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
   end match;
 end printInfoAsCorbaString;
 
@@ -5655,6 +5657,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.PDER;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassDefAsCorbaString failed"}); then fail();
   end match;
 end printClassDefAsCorbaString;
 
@@ -5674,6 +5677,7 @@ algorithm
       equation
         Print.printBuf("record Absyn.ENUM_COLON end Absyn.ENUM_COLON;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumDefAsCorbaString failed"}); then fail();
   end match;
 end printEnumDefAsCorbaString;
 
@@ -5692,6 +5696,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.ENUMLITERAL;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumLiteralAsCorbaString failed"}); then fail();
   end match;
 end printEnumLiteralAsCorbaString;
 
@@ -5821,6 +5826,8 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_UNKNOWN end Absyn.R_UNKNOWN;");
       then ();
+    
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
   end match;
 end printRestrictionAsCorbaString;
 
@@ -5878,6 +5885,7 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNAL;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassPartAsCorbaString failed"}); then fail();
   end match;
 end printClassPartAsCorbaString;
 
@@ -5904,6 +5912,7 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNALDECL;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printExternalDeclAsCorbaString failed"}); then fail();
   end match;
 end printExternalDeclAsCorbaString;
 
@@ -5914,6 +5923,7 @@ algorithm
     local
       Absyn.Element element;
       Absyn.Annotation annotation_;
+      String cmt;
     case Absyn.ELEMENTITEM(element)
       equation
         Print.printBuf("record Absyn.ELEMENTITEM element = ");
@@ -5926,6 +5936,13 @@ algorithm
         printAnnotationAsCorbaString(annotation_);
         Print.printBuf(" end Absyn.ANNOTATIONITEM;");
       then ();
+    case Absyn.LEXER_COMMENT(cmt)
+      equation
+        Print.printBuf("record Absyn.ELEMENTITEM element = \"");
+        Print.printBuf(cmt);
+        Print.printBuf("\" end Absyn.ELEMENTITEM;");
+      then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementItemAsCorbaString failed"}); then fail();
   end match;
 end printElementItemAsCorbaString;
 
@@ -5979,6 +5996,7 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.TEXT;");
       then ();
+    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementAsCorbaString failed"}); then fail();
   end match;
 end printElementAsCorbaString;
 

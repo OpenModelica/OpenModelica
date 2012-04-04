@@ -1727,8 +1727,9 @@ algorithm
         (cache,Values.STRING(str),st);
 
     case (cache,env,"getAstAsCorbaString",_,st,msg)
-      then
-        (cache,Values.STRING("Failed to output string"),st);
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"getAstAsCorbaString failed"});
+      then (cache,Values.STRING(""),st);
         
     case (cache,env,"strtok",{Values.STRING(str),Values.STRING(token)},st,msg)
       equation
