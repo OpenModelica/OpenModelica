@@ -340,7 +340,7 @@ indexs:=
       print("\n");
       */
       p = List.position(cref,stateVarsList)+1;
-      acc_1 = listAppend(acc_1,{{p}});
+      acc_1 = listAppend(acc,{{p}});
     then computeStateRef(stateVarsList,tail,acc_1);
     case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);
   end matchcontinue;
