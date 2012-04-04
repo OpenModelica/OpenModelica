@@ -1300,57 +1300,12 @@ algorithm
       then
         (cache,simValue,st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},
-          (st as Interactive.SYMBOLTABLE(
-            ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
       equation
-        //System.startTimer();
-        //print("\nExists+Dependency");
-        
-        /* TODO: Make this one call CevalScript, not one for translateModel, checkModel, instantiateModel and Main loop... */
-        crefCName = Absyn.pathToCref(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
-        str = Absyn.pathString(className);
-        re = Absyn.restrString(restriction);
-        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) /* or Absyn.isPackageRestriction(restriction) */ ),
-          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
-        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
-        
-        ptot = Dependency.getTotalProgram(className,p);
-        
-        //System.stopTimer();
-        //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
-        
-        //System.startTimer();
-        //print("\nAbsyn->SCode");
-        
-        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
-        
-        //System.stopTimer();
-        //print("\nAbsyn->SCode: " +& realString(System.getTimerIntervalTime()));
-        
-        //System.startTimer();
-        //print("\nInst.instantiateClass");
-        
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
-        
-        //System.stopTimer();
-        //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
-        
-        // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
-        // ic_1 = ic;
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        
-        // System.startTimer();
-        // print("\nFlatModelica");
+        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
         str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
-        // System.stopTimer();
-        // print("\nFlatModelica: " +& realString(System.getTimerIntervalTime()));
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(str),st);
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
@@ -2574,6 +2529,106 @@ algorithm
   end match;
 end getIncidenceMatrix;
 
+public function runFrontEnd
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  output Env.Cache cache;
+  output Env.Env env;
+  output DAE.DAElist dae;
+  output Interactive.SymbolTable st;
+algorithm
+  (cache,env,dae,st) := runFrontEndWork(inCache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,Error.getNumErrorMessages());
+end runFrontEnd;
+
+protected function runFrontEndWork
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Integer numError;
+  output Env.Cache cache;
+  output Env.Env env;
+  output DAE.DAElist dae;
+  output Interactive.SymbolTable st;
+algorithm
+  (cache,env,dae,st) := matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,numError)
+    local
+      Absyn.Restriction restriction;
+      Absyn.Class absynClass;
+      String str,re;
+      Option<SCode.Program> fp;
+      SCode.Program scodeP;
+      list<SCode.Element> sp;
+      list<Env.Frame> env;
+      list<Interactive.InstantiatedClass> ic,ic_1;
+      Interactive.SymbolTable st;
+      Absyn.Program p,ptot;
+      list<Interactive.Variable> iv;
+      list<Interactive.CompiledCFunction> cf;
+      Ceval.Msg msg;
+      list<Interactive.LoadedFile> lf;
+      Absyn.TimeStamp ts;
+      AbsynDep.Depends aDep;
+      list<tuple<Absyn.Path,list<String>>> usedModels;
+      
+    case (cache,env,className,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),relaxedFrontEnd,_)
+      equation
+        str = Absyn.pathString(className);
+        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
+        re = Absyn.restrString(restriction);
+        Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
+          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
+        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
+        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
+        
+        ptot = Dependency.getTotalProgram(className,p);
+        
+        //System.stopTimer();
+        //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nAbsyn->SCode");
+        
+        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
+        
+        // TODO: Why not simply get the whole thing from the cached SCode? It's faster, just need to stop doing the silly Dependency stuff.
+        
+        //System.stopTimer();
+        //print("\nAbsyn->SCode: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nInst.instantiateClass");
+        
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,className);
+        
+        //System.stopTimer();
+        //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
+        
+        // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
+        // ic_1 = ic;
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+      then (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
+
+    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),_,_)
+      equation
+        str = Absyn.pathString(className);
+        failure(_ = Interactive.getPathedClassInProgram(className, p));
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+      then fail();
+        
+    case (cache,env,className,st,_,numError)
+      equation
+        str = Absyn.pathString(className);
+        true = Error.getNumErrorMessages() == numError;
+        str = "Instantiation of " +& str +& " failed with no error message.";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end runFrontEndWork;
 
 protected function translateModel "function translateModel
  author: x02lucpo
@@ -3678,20 +3733,14 @@ algorithm
     // handle normal models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
-        ptot = Dependency.getTotalProgram(className,p);
-        // non-functions
-        Absyn.CLASS(partialPrefix = _, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
-        // this case should not handle functions so here we check anything but functions!
-        false = Absyn.isFunctionRestriction(restriction);
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,false);
 
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
-        (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
         dae  = DAEUtil.transformationsBeforeBackend(cache, dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
@@ -3719,21 +3768,16 @@ algorithm
     // handle functions
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
-        ptot = Dependency.getTotalProgram(className,p);
-        
-        (c as Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,_)) = Interactive.getPathedClassInProgram(className, p);
+        (c as Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, p);
+        true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
 
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
         
-        (cache, env, _) = Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
-
-        // adrpo: do not store instantiated class as we don't use it later!
-        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr();
         // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.

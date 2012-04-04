@@ -566,7 +566,7 @@ algorithm
         Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Instantiate the program.
-        (cache, env, d_1, scode, cname) = instantiate(p);
+        (cache, env, d_1, cname) = instantiate(p);
 
         Debug.fprint(Flags.BEFORE_FIX_MOD_OUT, "Explicit part:\n");
         Debug.fcall(Flags.BEFORE_FIX_MOD_OUT, DAEDump.dumpDebug, d_1);
@@ -602,7 +602,7 @@ algorithm
         Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Run the backend.
-        optimizeDae(cache, env, scode, p, d, d, cname);
+        optimizeDae(cache, env, d, p, cname);
         // Show any errors or warnings if there are any!
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then ();
@@ -680,10 +680,9 @@ protected function instantiate
   output Env.Cache cache;
   output Env.Env env;
   output DAE.DAElist dae;
-  output list<SCode.Element> scode;
   output Absyn.Path cname;
 algorithm
-  (cache, env, dae, scode, cname) := matchcontinue(program)
+  (cache, env, dae, cname) := matchcontinue(program)
     local
       Env.Cache c;
       Env.Env e;
@@ -692,35 +691,30 @@ algorithm
       list<SCode.Element> s;
       Absyn.Path class_path;
       String class_to_instantiate;
+      Interactive.SymbolTable st;
     case (_)
       equation
         // If no class was explicitly specified, instantiate the last class in
         // the program.
         class_to_instantiate = Config.classToInstantiate();
-        true = Util.isEmptyString(class_to_instantiate);
-        p = Dependency.getTotalProgramLastClass(program);
-        s = SCodeUtil.translateAbsyn2SCode(p);
-        (c, _, d, _) = Inst.instantiate(Env.emptyCache(),
-                                        InnerOuter.emptyInstHierarchy,
-                                        s);
+        true = stringEq(class_to_instantiate,"");
+        class_path = Absyn.lastClassname(program);
+        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
-        (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
+        (c, e, d, class_path);
     
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
         // that class.
         class_to_instantiate = Config.classToInstantiate();
-        true = Util.isNotEmptyString(class_to_instantiate);
+        false = stringEq(class_to_instantiate,"");
         class_path = Absyn.stringPath(class_to_instantiate);
-        p = Dependency.getTotalProgram(class_path, program);
-        s = SCodeUtil.translateAbsyn2SCode(p);
-        (c, e, _, d) = Inst.instantiateClass(Env.emptyCache(),
-                                             InnerOuter.emptyInstHierarchy,
-                                             s,
-                                             class_path);
+        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+        (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
-        (c, e, d, s, class_path);
+        (c, e, d, class_path);
   end matchcontinue;
 end instantiate;
 
@@ -747,29 +741,24 @@ protected function optimizeDae
   Run the backend. Used for both parallization and for normal execution."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input SCode.Program inProgram1;
-  input Absyn.Program inProgram2;
-  input DAE.DAElist inDAElist3;
-  input DAE.DAElist inDAElist4;
+  input DAE.DAElist dae;
+  input Absyn.Program ap;
   input Absyn.Path inPath5;
 algorithm
   _:=
-  matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
+  matchcontinue (inCache,inEnv,dae,ap,inPath5)
     local
       BackendDAE.BackendDAE dlow,dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
-      list<SCode.Element> p;
-      Absyn.Program ap;
-      DAE.DAElist dae,daeimpl;
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs,funcs_1;
       String str;
 
-    case (cache,env,p,ap,dae,daeimpl,classname)
+    case (cache,env,dae,ap,classname)
       equation
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
@@ -777,7 +766,7 @@ algorithm
         (dlow_1,funcs_1) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,funcs_1,classname,ap,daeimpl);
+        simcodegen(dlow_1,funcs_1,classname,ap,dae);
       then
         ();
     else

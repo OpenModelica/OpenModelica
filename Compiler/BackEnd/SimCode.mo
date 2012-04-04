@@ -58,7 +58,6 @@ public import BackendDAE;
 public import BackendDAEUtil;
 public import Ceval;
 public import DAE;
-public import Dependency;
 public import Env;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
@@ -100,7 +99,6 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import InnerOuter;
-protected import Inst;
 protected import List;
 protected import Mod;
 protected import PartFn;
@@ -1012,14 +1010,12 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs,funcs1;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
+    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,addDummy, inSimSettingsOpt)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        ptot = Dependency.getTotalProgram(className,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
@@ -1236,9 +1232,7 @@ algorithm
         // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        ptot = Dependency.getTotalProgram(className,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
