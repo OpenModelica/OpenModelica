@@ -19,6 +19,7 @@ end SimpleInner;
 function AddOne
   input Integer i;
   output Real out;
+protected
   Integer one = 1;
 algorithm
   out := i+one;
