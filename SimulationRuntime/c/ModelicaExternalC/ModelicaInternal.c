@@ -109,9 +109,13 @@ void ModelicaNotExistError(const char* name) {
 #     include <direct.h>
 #     include <sys/types.h>
 #     include <sys/stat.h>
-
+      #if defined(__MINGW32__) /* mingw has dirent */
+      #include <sys/types.h>
+      #include <dirent.h>
+      #else
       /* include the opendir/readdir/closedir implementation for _WIN32 */
-#     include "win32_dirent.c"
+      #     include "win32_dirent.c"
+#endif
 #  elif defined(_POSIX_)
 #     include <dirent.h>
 #     include <unistd.h>
