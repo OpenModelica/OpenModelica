@@ -31,6 +31,10 @@
  * Contributors 2011: Abhinn Kothari
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #ifndef CORNERITEM_H
 #define CORNERITEM_H
 

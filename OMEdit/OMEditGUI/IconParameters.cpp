@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,51 +31,55 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #include "IconParameters.h"
 
 IconParameters::IconParameters(QString name, QString defaultValue)
 {
-    mName = name;
-    mDefaultValue = defaultValue;
-    mValue = defaultValue;
+  mName = name;
+  mDefaultValue = defaultValue;
+  mValue = defaultValue;
 }
 
 QString IconParameters::getName()
 {
-    return mName.trimmed();
+  return mName.trimmed();
 }
 
 QString IconParameters::getDefaultValue()
 {
-    return mDefaultValue.trimmed();
+  return mDefaultValue.trimmed();
 }
 
 QString IconParameters::getValue()
 {
-    return mValue.trimmed();
+  return mValue.trimmed();
 }
 
 QString IconParameters::getComment()
 {
-    return mComment.trimmed();
+  return mComment.trimmed();
 }
 
 void IconParameters::setName(QString name)
 {
-    mName = name;
+  mName = name;
 }
 
 void IconParameters::setDefaultValue(QString defaultValue)
 {
-    mDefaultValue = defaultValue;
+  mDefaultValue = defaultValue;
 }
 
 void IconParameters::setValue(QString value)
 {
-    mValue = value;
+  mValue = value;
 }
 
 void IconParameters::setComment(QString comment)
 {
-    mComment = comment;
+  mComment = comment;
 }

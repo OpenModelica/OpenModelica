@@ -31,196 +31,196 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #include "ComponentsProperties.h"
 #include "StringHandler.h"
 
 ComponentsProperties::ComponentsProperties(QString value)
 {
-    this->mClassName = "";
-    this->mName = "";
-    this->mComment = "";
-    this->mIsProtected = false;
-    this->mIsFinal = false;
-    this->mIsFlow = false;
-    this->mIsStream = false;
-    this->mIsReplaceable = false;
-
-    this->mVariabilityMap.insert("constant", "constant");
-    this->mVariabilityMap.insert("discrete", "discrete");
-    this->mVariabilityMap.insert("parameter", "parameter");
-    this->mVariabilityMap.insert("unspecified", "default");
-    this->mVariability.clear();
-
-    this->mIsInner = false;
-    this->mIsOuter = false;
-
-    this->mCasualityMap.insert("input", "input");
-    this->mCasualityMap.insert("output", "output");
-    this->mCasualityMap.insert("unspecified", "none");
-    this->mCasuality.clear();
-
-    this->mIndex = "";
-    this->mIndexValue = 0;
-    parseString(value);
+  mClassName = "";
+  mName = "";
+  mComment = "";
+  mIsProtected = false;
+  mIsFinal = false;
+  mIsFlow = false;
+  mIsStream = false;
+  mIsReplaceable = false;
+  mVariabilityMap.insert("constant", "constant");
+  mVariabilityMap.insert("discrete", "discrete");
+  mVariabilityMap.insert("parameter", "parameter");
+  mVariabilityMap.insert("unspecified", "default");
+  mVariability = "";
+  mIsInner = false;
+  mIsOuter = false;
+  mCasualityMap.insert("input", "input");
+  mCasualityMap.insert("output", "output");
+  mCasualityMap.insert("unspecified", "none");
+  mCasuality = "";
+  mIndex = "";
+  mIndexValue = 0;
+  parseString(value);
 }
 
 void ComponentsProperties::parseString(QString value)
 {
-    if (value.isEmpty())
-        return;
-    // retrieving the index value in case the connecting port is an array type
-    int index = 0;
-    QStringList list = StringHandler::unparseStrings(value);
-    mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
-
-    bool ok;
-    if (mIndex.isEmpty())
-        mIndexValue = -1;
-    else if (mIndex == "n")
-        mIndexValue = -2;
-    else
-        mIndexValue = mIndex.toInt(&ok,10);
-
-    if (list.size() > 0)
-        this->mClassName = list.at(0);
-    else
-        return;
-
-    if (list.size() > 1)
-        this->mName = list.at(1);
-    else
-        return;
-
-    if (list.size() > 2)
-        this->mComment = list.at(2);
-    else
-        return;
-
-    if (list.size() > 3)
-        this->mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
-    else
-        return;
-
-    if (list.size() > 4)
-        this->mIsFinal = static_cast<QString>(list.at(4)).contains("true");
-    else
-        return;
-
-    if (list.size() > 5)
-        this->mIsFlow = static_cast<QString>(list.at(5)).contains("true");
-    else
-        return;
-
-    if (list.size() > 10)
+  if (value.isEmpty())
+    return;
+  // retrieving the index value in case the connecting port is an array type
+  int index = 0;
+  QStringList list = StringHandler::unparseStrings(value);
+  mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
+  
+  bool ok;
+  if (mIndex.isEmpty())
+    mIndexValue = -1;
+  else if (mIndex == "n")
+    mIndexValue = -2;
+  else
+    mIndexValue = mIndex.toInt(&ok,10);
+  
+  if (list.size() > 0)
+    mClassName = list.at(0);
+  else
+    return;
+  
+  if (list.size() > 1)
+    mName = list.at(1);
+  else
+    return;
+  
+  if (list.size() > 2)
+    mComment = list.at(2);
+  else
+    return;
+  
+  if (list.size() > 3)
+    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
+  else
+    return;
+  
+  if (list.size() > 4)
+    mIsFinal = static_cast<QString>(list.at(4)).contains("true");
+  else
+    return;
+  
+  if (list.size() > 5)
+    mIsFlow = static_cast<QString>(list.at(5)).contains("true");
+  else
+    return;
+  
+  if (list.size() > 10)
+  {
+    mIsStream = static_cast<QString>(list.at(6)).contains("true");
+    index = 1;
+  }
+  
+  if (list.size() > 6 + index)
+    mIsReplaceable = static_cast<QString>(list.at(6 + index)).contains("true");
+  else
+    return;
+  
+  if (list.size() > 7 + index)
+  {
+    QMap<QString, QString>::iterator variability_it;
+    for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it)
     {
-        this->mIsStream = static_cast<QString>(list.at(6)).contains("true");
-        index = 1;
+      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(7 + index))) == 0)
+      {
+        mVariability = variability_it.value();
+        break;
+      }
     }
-
-    if (list.size() > 6 + index)
-        this->mIsReplaceable = static_cast<QString>(list.at(6 + index)).contains("true");
-    else
-        return;
-
-    if (list.size() > 7 + index)
+  }
+  
+  if (list.size() > 8 + index)
+    mIsInner = static_cast<QString>(list.at(8 + index)).contains("inner");
+  else
+    return;
+  
+  if (list.size() > 8 + index)
+    mIsOuter = static_cast<QString>(list.at(8 + index)).contains("outer");
+  else
+    return;
+  
+  if (list.size() > 9 + index)
+  {
+    QMap<QString, QString>::iterator casuality_it;
+    for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it)
     {
-        QMap<QString, QString>::iterator variability_it;
-        for (variability_it = this->mVariabilityMap.begin(); variability_it != this->mVariabilityMap.end(); ++variability_it)
-        {
-            if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(7 + index))) == 0)
-            {
-                this->mVariability = variability_it.value();
-                break;
-            }
-        }
+      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(9 + index))) == 0)
+      {
+        mCasuality = casuality_it.value();
+        break;
+      }
     }
-
-    if (list.size() > 8 + index)
-        this->mIsInner = static_cast<QString>(list.at(8 + index)).contains("inner");
-    else
-        return;
-
-    if (list.size() > 8 + index)
-        this->mIsOuter = static_cast<QString>(list.at(8 + index)).contains("outer");
-    else
-        return;
-
-    if (list.size() > 9 + index)
-    {
-        QMap<QString, QString>::iterator casuality_it;
-        for (casuality_it = this->mCasualityMap.begin(); casuality_it != this->mCasualityMap.end(); ++casuality_it)
-        {
-            if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(9 + index))) == 0)
-            {
-                this->mCasuality = casuality_it.value();
-                break;
-            }
-        }
-    }
+  }
 }
 
 QString ComponentsProperties::getClassName()
 {
-    return mClassName;
+  return mClassName;
 }
 
 QString ComponentsProperties::getName()
 {
-    return mName;
+  return mName;
 }
 
 QString ComponentsProperties::getComment()
 {
-    return StringHandler::removeFirstLastQuotes(mComment);
+  return StringHandler::removeFirstLastQuotes(mComment);
 }
 
 QString ComponentsProperties::getVariablity()
 {
-    return mVariability;
+  return mVariability;
 }
 
 bool ComponentsProperties::getProtected()
 {
-    return mIsProtected;
+  return mIsProtected;
 }
 
 bool ComponentsProperties::getFlow()
 {
-    return mIsFlow;
+  return mIsFlow;
 }
 
 bool ComponentsProperties::getFinal()
 {
-    return mIsFinal;
+  return mIsFinal;
 }
 
 bool ComponentsProperties::getReplaceable()
 {
-    return mIsReplaceable;
+  return mIsReplaceable;
 }
 
 QString ComponentsProperties::getCasuality()
 {
-    return mCasuality;
+  return mCasuality;
 }
 
 bool ComponentsProperties::getInner()
 {
-    return mIsInner;
+  return mIsInner;
 }
 
 bool ComponentsProperties::getOuter()
 {
-    return mIsOuter;
+  return mIsOuter;
 }
 
 
 int ComponentsProperties::getIndexValue()
 {
-    return mIndexValue;
+  return mIndexValue;
 }
 
 QString ComponentsProperties::getIndex()
 {
-    return mIndex;
+  return mIndex;
 }

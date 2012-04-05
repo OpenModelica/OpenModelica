@@ -33,16 +33,17 @@
 
 #include "Helper.h"
 
+/* Global non-translated variables */
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "Version: 1.8.1";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 /* Increment this settings number if you change something in the QMainWindow appereance
- * Otherwise OMEdit will load the old settings and Qt make a mess of your toolbars and dockwidgets.
- */
+   * Otherwise OMEdit will load the old settings and Qt make a mess of your toolbars and dockwidgets.
+   */
 int Helper::settingsVersion = 0;
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
-QString Helper::OpenModelicaHome = QString();
-QString Helper::OpenModelicaLibrary = QString();
+QString Helper::OpenModelicaHome = "";
+QString Helper::OpenModelicaLibrary = "";
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
@@ -50,235 +51,312 @@ QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
 QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::xmlFileTypes = "XML Files (*.xml)";
 QString Helper::matFileTypes = "MAT Files (*.mat)";
-QString Helper::readOnly = QString("Read-Only");
-QString Helper::writeAble = QString("Writeable");
-QString Helper::iconView = QString("Icon View");
-QString Helper::diagramView = QString("Diagram View");
-QString Helper::modelicaTextView = QString("Modelica Text View");
-QString Helper::documentationView = QString("View Documentation");
-int Helper::viewWidth = 2000;
-int Helper::viewHeight = 2000;
+int Helper::treeIndentation = 13;
+QSize Helper::iconSize = QSize(20, 20);
+QSize Helper::buttonIconSize = QSize(20, 20);
+int Helper::tabWidth = 20;
 qreal Helper::globalDiagramXScale = 1.0;
 qreal Helper::globalDiagramYScale = 1.0;
 qreal Helper::globalIconXScale = 0.12;
 qreal Helper::globalIconYScale = 0.12;
-int Helper::treeIndentation = 13;
-QSize Helper::iconSize = QSize(20, 20);
-QSize Helper::buttonIconSize = QSize(20, 20);
-int Helper::headingFontSize = 18;
-int Helper::tabWidth = 20;
 qreal Helper::shapesStrokeWidth = 5.0;
-QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
-QString Helper::noItemFound = QString("Sorry, no items found");
-/* Interactive Simulation Messages */
-QString Helper::compiling_Model = QString("Compiling Model");
-QString Helper::compiling_Model_text = QString("Compiling Model.\nPlease wait for a while.");
-QString Helper::running_Simulation = QString("Running Simulation");
-QString Helper::running_Simulation_text = QString("Running Simulation.\nPlease wait for a while.");
-QString Helper::starting_interactive_simulation_server = QString("Starting Interactive Simulation Server");
-QString Helper::omi_network_address = QString("127.0.0.1");
-quint16 Helper::omi_control_client_port = 10501;
-quint16 Helper::omi_control_server_port = 10500;
-quint16 Helper::omi_transfer_server_port = 10502;
-QString Helper::omi_initialize_button_tooltip = QString("Initializes the interactive simulation.");
-QString Helper::omi_start_button_tooltip = QString("Starts or continues the interactive simulation.");
-QString Helper::omi_pause_button_tooltip = QString("Pauses the running interactive simulation.");
-QString Helper::omi_stop_button_tooltip = QString("Stops the running interactive simulation and resets all values to the beginning.");
-QString Helper::omi_shutdown_button_tooltip = QString("Shut down the running interactive simulation.");
-QString Helper::omi_showlog_button_tooltip = QString("Shows the OMI Log Message Window.");
-// pen styles with icons
-QString Helper::solidPenIcon = QString(":/Resources/icons/solidline.png");
-QString Helper::solidPen = QString("Solid");
-Qt::PenStyle Helper::solidPenStyle = Qt::SolidLine;
-QString Helper::dashPenIcon = QString(":/Resources/icons/dashline.png");
-QString Helper::dashPen = QString("Dash");
-Qt::PenStyle Helper::dashPenStyle = Qt::DashLine;
-QString Helper::dotPenIcon = QString(":/Resources/icons/dotline.png");
-QString Helper::dotPen = QString("Dot");
-Qt::PenStyle Helper::dotPenStyle = Qt::DotLine;
-QString Helper::dashDotPenIcon = QString(":/Resources/icons/dashdotline.png");
-QString Helper::dashDotPen = QString("Dash Dot");
-Qt::PenStyle Helper::dashDotPenStyle = Qt::DashDotLine;
-QString Helper::dashDotDotPenIcon = QString(":/Resources/icons/dashdotdotline.png");
-QString Helper::dashDotDotPen = QString("Dash Dot Dot");
-Qt::PenStyle Helper::dashDotDotPenStyle = Qt::DashDotDotLine;
-// brush styles with icons
-QString Helper::solidBrushIcon = QString(":/Resources/icons/solid.png");
-QString Helper::solidBrush = QString("Solid");
-Qt::BrushStyle Helper::solidBrushStyle = Qt::SolidPattern;
-QString Helper::horizontalBrushIcon = QString(":/Resources/icons/horizontal.png");
-QString Helper::horizontalBrush = QString("Horizontal");
-Qt::BrushStyle Helper::horizontalBrushStyle = Qt::HorPattern;
-QString Helper::verticalBrushIcon = QString(":/Resources/icons/vertical.png");
-QString Helper::verticalBrush = QString("Vertical");
-Qt::BrushStyle Helper::verticalBrushStyle = Qt::VerPattern;
-QString Helper::crossBrushIcon = QString(":/Resources/icons/cross.png");
-QString Helper::crossBrush = QString("Cross");
-Qt::BrushStyle Helper::crossBrushStyle = Qt::CrossPattern;
-QString Helper::forwardBrushIcon = QString(":/Resources/icons/forward.png");
-QString Helper::forwardBrush = QString("Forward");
-Qt::BrushStyle Helper::forwardBrushStyle = Qt::CrossPattern;
-QString Helper::backwardBrushIcon = QString(":/Resources/icons/backward.png");
-QString Helper::backwardBrush = QString("Backward");
-Qt::BrushStyle Helper::backwardBrushStyle = Qt::CrossPattern;
-QString Helper::crossDiagBrushIcon = QString(":/Resources/icons/crossdiag.png");
-QString Helper::crossDiagBrush = QString("CrossDiag");
-Qt::BrushStyle Helper::crossDiagBrushStyle = Qt::DiagCrossPattern;
-QString Helper::horizontalCylinderBrushIcon = QString(":/Resources/icons/horizontalcylinder.png");
-QString Helper::horizontalCylinderBrush = QString("HorizontalCylinder");
-Qt::BrushStyle Helper::horizontalCylinderBrushStyle = Qt::LinearGradientPattern;
-QString Helper::verticalCylinderBrushIcon = QString(":/Resources/icons/verticalcylinder.png");
-QString Helper::verticalCylinderBrush = QString("VertitalCylinder");
-Qt::BrushStyle Helper::verticalCylinderBrushStyle = Qt::Dense1Pattern;
-QString Helper::sphereBrushIcon = QString(":/Resources/icons/sphere.png");
-QString Helper::sphereBrush = QString("Sphere");
-Qt::BrushStyle Helper::sphereBrushStyle = Qt::RadialGradientPattern;
-/* Export Image and Notebook Messages */
-QString Helper::exportAsImage = QString("Exporting model as an Image");
-QString Helper::exportToOMNotebook = QString("Exporting model to OMNotebook");
-QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook");
-/* Simulation Messages */
+int Helper::headingFontSize = 18;
 QString Helper::ModelicaSimulationMethods = "dassl,dassl2,euler,rungekutta,dopri5,inline-euler,inline-rungekutta";
 QString Helper::ModelicaInitializationMethods = ",none,state";
 QString Helper::ModelicaOptimizationMethods = ",nelder_mead_ex,nelder_mead_ex2,simplex,newuoa";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
+QString Helper::fontSizes = "6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72";
+QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";
+QString Helper::warningLevel = ".OpenModelica.Scripting.ErrorLevel.warning";
+QString Helper::errorLevel = ".OpenModelica.Scripting.ErrorLevel.error";
+QString Helper::syntaxKind = ".OpenModelica.Scripting.ErrorKind.syntax";
+QString Helper::grammarKind = ".OpenModelica.Scripting.ErrorKind.grammar";
+QString Helper::translationKind = ".OpenModelica.Scripting.ErrorKind.translation";
+QString Helper::symbolicKind = ".OpenModelica.Scripting.ErrorKind.symbolic";
+QString Helper::simulationKind = ".OpenModelica.Scripting.ErrorKind.simulation";
+QString Helper::scriptingKind = ".OpenModelica.Scripting.ErrorKind.scripting";
+/* Global translated variables */
+QString Helper::browse;
+QString Helper::ok;
+QString Helper::cancel;
+QString Helper::error;
+QString Helper::chooseFile;
+QString Helper::attributes;
+QString Helper::properties;
+QString Helper::connection;
+QString Helper::edit;
+QString Helper::save;
+QString Helper::importFMI;
+QString Helper::chooseDirectory;
+QString Helper::general;
+QString Helper::parameters;
+QString Helper::name;
+QString Helper::comment;
+QString Helper::type;
+QString Helper::constant;
+QString Helper::paramter;
+QString Helper::Protected;
+QString Helper::output;
+QString Helper::information;
+QString Helper::modelicaFiles;
+QString Helper::rename;
+QString Helper::checkModel;
+QString Helper::checkModelTip;
+QString Helper::instantiateModel;
+QString Helper::instantiateModelTip;
+QString Helper::Delete;
+QString Helper::copy;
+QString Helper::paste;
+QString Helper::loading;
+QString Helper::question;
+QString Helper::search;
+QString Helper::model;
+QString Helper::Class;
+QString Helper::connector;
+QString Helper::record;
+QString Helper::block;
+QString Helper::function;
+QString Helper::package;
+QString Helper::primitive;
+QString Helper::simulate;
+QString Helper::simulation;
+QString Helper::interactiveSimulation;
+QString Helper::exportToOMNotebook;
+QString Helper::options;
+QString Helper::libraries;
+QString Helper::text;
+QString Helper::penStyle;
+QString Helper::brushStyle;
+QString Helper::color;
+QString Helper::pickColor;
+QString Helper::noColor;
+QString Helper::pattern;
+QString Helper::thickness;
+QString Helper::smooth;
+QString Helper::bezierCurve;
+QString Helper::solidPen;
+QString Helper::dashPen;
+QString Helper::dotPen;
+QString Helper::dashDotPen;
+QString Helper::dashDotDotPen;
+QString Helper::noBrush;
+QString Helper::solidBrush;
+QString Helper::horizontalBrush;
+QString Helper::verticalBrush;
+QString Helper::crossBrush;
+QString Helper::forwardBrush;
+QString Helper::backwardBrush;
+QString Helper::crossDiagBrush;
+QString Helper::horizontalCylinderBrush;
+QString Helper::verticalCylinderBrush;
+QString Helper::sphereBrush;
+QString Helper::remove;
+QString Helper::location;
+QString Helper::textProperties;
+QString Helper::readOnly;
+QString Helper::writable;
+QString Helper::iconView;
+QString Helper::diagramView;
+QString Helper::modelicaTextView;
+QString Helper::documentationView;
+QString Helper::modelicaLibrarySearchText;
+QString Helper::left;
+QString Helper::center;
+QString Helper::right;
 
-QString Helper::fontSizes = QString("6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72");
-
-QString Helper::left = QString("Left");
-QString Helper::center = QString("Center");
-QString Helper::right = QString("Right");
-/* FMI Messages */
-QString Helper::exportingModelFMU = QString("Exporting model as FMI");
-QString Helper::import = QString("Import");
-QString Helper::importFMI = QString("Import FMI");
-QString Helper::fmuFileName = QString("FMU File:");
-QString Helper::browse = QString("Browse...");
-QString Helper::outputDirectory = QString("Output Directory (Optional):");
-QString Helper::outputDirectoryNote = QString("* If no Output Directory specified then the FMU files are generated in the current working directory.");
-
-QString Helper::librariesAddNote = QString("* The libraries changes will take effect after restart.");
-
-QString Helper::modifiersLabelText = QString("Add new modifiers, e.g phi(start=1),w(start=2)");
-
-QString Helper::saveContentsOneFile = QString("Save contents of package in one file");
-/* OpenModelica Error types and kinds */
-QString Helper::notificationLevel = QString(".OpenModelica.Scripting.ErrorLevel.notification");
-QString Helper::warningLevel = QString(".OpenModelica.Scripting.ErrorLevel.warning");
-QString Helper::errorLevel = QString(".OpenModelica.Scripting.ErrorLevel.error");
-QString Helper::syntaxKind = QString(".OpenModelica.Scripting.ErrorKind.syntax");
-QString Helper::grammarKind = QString(".OpenModelica.Scripting.ErrorKind.grammar");
-QString Helper::translationKind = QString(".OpenModelica.Scripting.ErrorKind.translation");
-QString Helper::symbolicKind = QString(".OpenModelica.Scripting.ErrorKind.symbolic");
-QString Helper::simulationKind = QString(".OpenModelica.Scripting.ErrorKind.simulation");
-QString Helper::scriptingKind = QString(".OpenModelica.Scripting.ErrorKind.scripting");
-/* MessageCornerWidget Messages */
-QString Helper::clearProblems = QString("Clear All Problems");
-QString Helper::clearMessages = QString("Clear All General Messages");
-QString Helper::showNotifications = QString("Only Show Notifications");
-QString Helper::showWarnings = QString("Only Show Warnings");
-QString Helper::showErrors = QString("Only Show Errors");
-QString Helper::showAllProblems = QString("Show All Problems");
+void Helper::initHelperVariables()
+{
+  /* Global translated variables */
+  Helper::browse = tr("Browse...");
+  Helper::ok = tr("OK");
+  Helper::cancel = tr("Cancel");
+  Helper::error = tr("Error");
+  Helper::chooseFile = tr("Choose File");
+  Helper::attributes = tr("Attributes");
+  Helper::properties = tr("Properties");
+  Helper::connection = tr("Connection");
+  Helper::edit = tr("Edit");
+  Helper::save = tr("Save");
+  Helper::importFMI = tr("Import FMI");
+  Helper::chooseDirectory = tr("Choose Directory");
+  Helper::general = tr("General");
+  Helper::parameters = tr("Parameters");
+  Helper::name = tr("Name:");
+  Helper::comment = tr("Comment:");
+  Helper::type = tr("Type");
+  Helper::constant = tr("Constant");
+  Helper::paramter = tr("Paramter");
+  Helper::Protected = tr("Protected");
+  Helper::output = tr("Output");
+  Helper::information = tr("Information");
+  Helper::modelicaFiles = tr("Modelica Files");
+  Helper::rename = tr("rename");
+  Helper::checkModel = tr("Check Model");
+  Helper::checkModelTip = tr("Check the Modelica model");
+  Helper::instantiateModel = tr("Instantiate Model");
+  Helper::instantiateModelTip = tr("Instantiates/Flatten the Modelica model");
+  Helper::Delete = tr("Delete");
+  Helper::copy = tr("Copy");
+  Helper::paste = tr("Paste");
+  Helper::loading = tr("Loading");
+  Helper::question = tr("Question");
+  Helper::search = tr("Search");
+  Helper::model = tr("Model");
+  Helper::Class = tr("Class");
+  Helper::connector = tr("Connector");
+  Helper::record = tr("Record");
+  Helper::block = tr("Block");
+  Helper::function = tr("Function");
+  Helper::package = tr("Package");
+  Helper::primitive = tr("Primitive");
+  Helper::simulate = tr("Simulate");
+  Helper::simulation = tr("Simulation");
+  Helper::interactiveSimulation = tr("Interactive Simulation");
+  Helper::exportToOMNotebook = tr("Export to OMNotebook");
+  Helper::options = tr("Options");
+  Helper::libraries = tr("Libraries");
+  Helper::text = tr("Text");
+  Helper::penStyle = tr("Pen Style");
+  Helper::brushStyle = tr("Brush Style");
+  Helper::color = tr("Color:");
+  Helper::pickColor = tr("Pick Color");
+  Helper::noColor = tr("No Color");
+  Helper::noColor = tr("Pattern:");
+  Helper::thickness = tr("Thickness:");
+  Helper::smooth = tr("Smooth:");
+  Helper::bezierCurve = tr("Bezier Curve");
+  Helper::solidPen = tr("Solid");
+  Helper::dashPen = tr("Dash");
+  Helper::dotPen = tr("Dot");
+  Helper::dashDotPen = tr("Dash Dot");
+  Helper::dashDotDotPen = tr("Dash Dot Dot");
+  Helper::noBrush = tr("No Brush");
+  Helper::solidBrush = tr("Solid");
+  Helper::horizontalBrush = tr("Horizontal");
+  Helper::verticalBrush = tr("Vertical");
+  Helper::crossBrush = tr("Cross");
+  Helper::forwardBrush = tr("Forward");
+  Helper::backwardBrush = tr("Backward");
+  Helper::crossDiagBrush = tr("CrossDiag");
+  Helper::horizontalCylinderBrush = tr("HorizontalCylinder");
+  Helper::verticalCylinderBrush = tr("VertitalCylinder");
+  Helper::sphereBrush = tr("Sphere");
+  Helper::remove = tr("Remove");
+  Helper::location = tr("Location");
+  Helper::textProperties = tr("Text Properties");
+  Helper::readOnly = tr("Read-Only");
+  Helper::writable = tr("Writable");
+  Helper::iconView = tr("Icon View");
+  Helper::diagramView = tr("Diagram View");
+  Helper::modelicaTextView = tr("Modelica Text View");
+  Helper::documentationView = tr("View Documentation");
+  Helper::modelicaLibrarySearchText = tr("Search Modelica Standard Library");
+  Helper::left = tr("Left");
+  Helper::center = tr("Center");
+  Helper::right = tr("Right");
+}
 
 QString GUIMessages::getMessage(int type)
 {
-    switch (type)
-    {
-        case CHECK_PROBLEMS_TAB:
-            return "Please check the Problems Tab below for more error specific details.";
-        case SAME_COMPONENT_NAME:
-            return "A Component with the same name already exists. Please choose another Name.";
-        case SAME_PORT_CONNECT:
-            return "You cannot connect a port to itself.";
-        case NO_OPEN_MODEL:
-            return "There is no open Model to %1.";
-        case NO_SIMULATION_STARTTIME:
-            return "Simulation Start Time is not defined. Default value (0.0) will be used.";
-        case NO_SIMULATION_STOPTIME:
-            return "Simulation Stop Time is not defined.";
-        case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
-            return "Simulation Start Time should be less than or equal to Stop Time.";
-        case ENTER_NAME:
-            return "Please enter %1 Name.";
-        case MODEL_ALREADY_EXISTS:
-            return "%1 %2 already exits %3.";
-        case ITEM_ALREADY_EXISTS:
-            return "An item with the same name already exists. Please try some other name.";
-        case OPEN_MODELICA_HOME_NOT_FOUND:
-            return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
-        case ERROR_OCCURRED:
-            return "Following Error has occurred. \n\n%1";
-        case ERROR_IN_MODELICA_TEXT:
-            return "Problems are found in Modelica Text. \n";
-        case UNDO_OR_FIX_ERRORS:
-            return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
-        case NO_OPEN_MODELICA_KEYWORDS:
-            return "Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)";
-        case INCOMPATIBLE_CONNECTORS:
-            return "Incompatible types for the connectors.";
-        case SAVE_CHANGES:
-            return "Do you want to save your changes before closing?";
-        case DELETE_FAIL:
-            return "Unable to delete. Server error has occurred while trying to delete.";
-        case ONLY_MODEL_ALLOWED:
-            return "This item is not a model.";
-        case UNABLE_TO_LOAD_FILE:
-            return "Error has occurred while loading the file '%1'. Unable to load the file.";
-        case UNABLE_TO_LOAD_MODEL:
-            return "Error has occurred while loading the model : \n%1.";
-        case DELETE_AND_LOAD:
-            return "Delete the existing models before loading the file.";
-        case REDEFING_EXISTING_MODELS:
-            return "Redefing models '%1' which already exists.";
-        case INVALID_COMPONENT_ANNOTATIONS:
-            return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
-        case SAVED_MODEL:
-            return "The %1 '%2' is not saved.";
-        case COMMENT_SAVE_ERROR:
-            return "Following Error has occurred while saving component comment. \n\n %1.";
-        case ATTRIBUTES_SAVE_ERROR:
-            return "Following Error has occurred while saving component attributes. \n\n %1.";
-        case CHILD_MODEL_SAVE:
-            return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
-        case SEARCH_STRING_NOT_FOUND:
-            return "The search string '%1' is not found.";
-        case FILE_REMOVED_MSG:
-            return "The file '%1' has been removed outside %2. Do you want to keep it?";
-        case FILE_MODIFIED_MSG:
-            return "The file '%1' has been modified outside %2. Do you want to reload it?";
-        case CLOSE_INTERACTIVE_SIMULATION_TAB:
-            return "Are you sure you want to close '%1' interactive simulation?";
-        case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
-            return "You cannot recover this window once its closed.";
-        case INTERACTIVE_SIMULATION_RUNNIG:
-            return "You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.";
-        case SELECT_VARIABLE_FOR_OMI:
-            return "Please select a variable to plot before starting.";
-        case DIAGRAM_VIEW_DROP_MSG:
-            return "You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.";
-        case ICON_VIEW_DROP_MSG:
-            return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
-        case PLOT_PARAMETRIC_DIFF_FILES:
-            return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
-        case FILE_FORMAT_NOT_SUPPORTED:
-            return "The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.";
-        case INCORRECT_HTML_TAGS:
-            return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
-        case ENTER_VALID_INTEGER:
-            return "Enter a valid Positive Integer";
-        case ITEM_DROPPED_ON_ITSELF:
-            return "You cannot drop an item on itself.";
-        case DELETE_PACKAGE_MSG:
-            return "Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.";
-        case DELETE_MSG:
-            return "Are you sure you want to delete '%1'?";
-        case INNER_MODEL_NAME_CHANGED:
-            return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
-        case FMI_GENERATED:
-            return "The FMI is generated at %1/%2.fmu";
-        case WRONG_MODIFIER:
-            return "The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'";
-        default:
-            return "";
-    }
+  switch (type)
+  {
+    case CHECK_PROBLEMS_TAB:
+      return tr("Please check the Problems Tab below for more error specific details.");
+    case SAME_COMPONENT_NAME:
+      return tr("A Component with the same name already exists. Please choose another Name.");
+    case SAME_PORT_CONNECT:
+      return tr("You cannot connect a port to itself.");
+    case NO_OPEN_MODEL:
+      return tr("There is no open Model to %1.");
+    case NO_SIMULATION_STARTTIME:
+      return tr("Simulation Start Time is not defined. Default value (0.0) will be used.");
+    case NO_SIMULATION_STOPTIME:
+      return tr("Simulation Stop Time is not defined.");
+    case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
+      return tr("Simulation Start Time should be less than or equal to Stop Time.");
+    case ENTER_NAME:
+      return tr("Please enter %1 Name.");
+    case MODEL_ALREADY_EXISTS:
+      return tr("%1 %2 already exits %3.");
+    case ITEM_ALREADY_EXISTS:
+      return tr("An item with the same name already exists. Please try some other name.");
+    case OPENMODELICAHOME_NOT_FOUND:
+      return tr("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
+    case ERROR_OCCURRED:
+      return tr("Following Error has occurred. \n\n%1");
+    case ERROR_IN_MODELICA_TEXT:
+      return tr("Problems are found in Modelica Text. \n");
+    case UNDO_OR_FIX_ERRORS:
+      return tr("\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.");
+    case NO_OPENMODELICA_KEYWORDS:
+      return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
+    case INCOMPATIBLE_CONNECTORS:
+      return tr("Incompatible types for the connectors.");
+    case SAVE_CHANGES:
+      return tr("Do you want to save your changes before closing?");
+    case DELETE_FAIL:
+      return tr("Unable to delete. Server error has occurred while trying to delete.");
+    case ONLY_MODEL_ALLOWED:
+      return tr("This item is not a model.");
+    case UNABLE_TO_LOAD_FILE:
+      return tr("Error has occurred while loading the file '%1'. Unable to load the file.");
+    case UNABLE_TO_LOAD_MODEL:
+      return tr("Error has occurred while loading the model : \n%1.");
+    case DELETE_AND_LOAD:
+      return tr("Delete the existing models before loading the file.");
+    case REDEFINING_EXISTING_MODELS:
+      return tr("Redefining models '%1' which already exists.");
+    case INVALID_COMPONENT_ANNOTATIONS:
+      return tr("The Annotations for the component %1 (%2) are not correct. Unable to add component.");
+    case SAVED_MODEL:
+      return tr("The %1 '%2' is not saved.");
+    case COMMENT_SAVE_ERROR:
+      return tr("Following Error has occurred while saving component comment. \n\n %1.");
+    case ATTRIBUTES_SAVE_ERROR:
+      return tr("Following Error has occurred while saving component attributes. \n\n %1.");
+    case CHILD_MODEL_SAVE:
+      return tr("The %1 '%2' is contained inside a package. It is automatically saved when you save the package.");
+    case SEARCH_STRING_NOT_FOUND:
+      return tr("The search string '%1' is not found.");
+    case FILE_REMOVED_MSG:
+      return tr("The file '%1' has been removed outside %2. Do you want to keep it?");
+    case FILE_MODIFIED_MSG:
+      return tr("The file '%1' has been modified outside %2. Do you want to reload it?");
+    case CLOSE_INTERACTIVE_SIMULATION_TAB:
+      return tr("Are you sure you want to close '%1' interactive simulation?");
+    case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
+      return tr("You cannot recover this window once its closed.");
+    case INTERACTIVE_SIMULATION_RUNNIG:
+      return tr("You already have one interactive simulation running. Only one interactive simulation session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.");
+    case SELECT_VARIABLE_FOR_OMI:
+      return tr("Please select a variable to plot before starting.");
+    case DIAGRAM_VIEW_DROP_MSG:
+      return tr("You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.");
+    case ICON_VIEW_DROP_MSG:
+      return tr("You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.");
+    case PLOT_PARAMETRIC_DIFF_FILES:
+      return tr("You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.");
+    case FILE_FORMAT_NOT_SUPPORTED:
+      return tr("The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.");
+    case INCORRECT_HTML_TAGS:
+      return tr("The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.");
+    case ENTER_VALID_INTEGER:
+      return tr("Enter a valid Positive Integer");
+    case ITEM_DROPPED_ON_ITSELF:
+      return tr("You cannot drop an item on itself.");
+    case DELETE_PACKAGE_MSG:
+      return tr("Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.");
+    case DELETE_MSG:
+      return tr("Are you sure you want to delete '%1'?");
+    case INNER_MODEL_NAME_CHANGED:
+      return tr("A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is declared as %3.");
+    case FMI_GENERATED:
+      return tr("The FMI is generated at %1/%2.fmu");
+    case WRONG_MODIFIER:
+      return tr("The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'");
+    case UNKNOWN_FILE_FORMAT:
+      return tr("Unknown file format. The supported file formats are %1.");
+    default:
+      return "";
+  }
 }

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #include "IconProperties.h"
 
 //! @class IconProperties
@@ -38,15 +42,15 @@
 
 //! Constructor
 IconProperties::IconProperties(Component *pComponent, QWidget *pParent)
-    : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent, Qt::WindowTitleHint)
 {
-    setWindowTitle(QString(Helper::applicationName).append(" - Component Properties"));
-    setAttribute(Qt::WA_DeleteOnClose);
-    setMinimumSize(400, 300);
-    setModal(true);
-    mpComponent = pComponent;
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Properties")));
+  setAttribute(Qt::WA_DeleteOnClose);
+  setMinimumSize(400, 300);
+  setModal(true);
+  mpComponent = pComponent;
 
-    setUpDialog();
+  setUpDialog();
 }
 
 //! Destructor
@@ -58,217 +62,217 @@ IconProperties::~IconProperties()
 //! Creates the Dialog and set up all the controls with default values.
 void IconProperties::setUpDialog()
 {
-    mpPropertiesHeading = new QLabel(tr("Properties"));
-    mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
-    mpPropertiesHeading->setAlignment(Qt::AlignTop);
+  mpPropertiesHeading = new QLabel(Helper::properties);
+  mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
+  mpPropertiesHeading->setAlignment(Qt::AlignTop);
 
-    mpPixmapLabel = new QLabel;
-    mpPixmapLabel->setObjectName(tr("componentPixmap"));
-    mpPixmapLabel->setMaximumSize(QSize(86, 86));
-    mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
-    mpPixmapLabel->setAlignment(Qt::AlignCenter);
+  mpPixmapLabel = new QLabel;
+  mpPixmapLabel->setObjectName("componentPixmap");
+  mpPixmapLabel->setMaximumSize(QSize(86, 86));
+  mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
+  mpPixmapLabel->setAlignment(Qt::AlignCenter);
 
-    ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
-    LibraryComponent *libraryComponent;
-    libraryComponent = pProjectTabs->mpParentMainWindow->mpLibrary->getLibraryComponentObject(mpComponent->getClassName());
+  ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
+  LibraryComponent *libraryComponent;
+  libraryComponent = pProjectTabs->mpParentMainWindow->mpLibrary->getLibraryComponentObject(mpComponent->getClassName());
 
-    if (libraryComponent)
+  if (libraryComponent)
+  {
+    mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
+  }
+
+  QHBoxLayout *horizontalLayout = new QHBoxLayout;
+  horizontalLayout->addWidget(mpPropertiesHeading);
+  horizontalLayout->addWidget(mpPixmapLabel);
+
+  mHorizontalLine = new QFrame();
+  mHorizontalLine->setFrameShape(QFrame::HLine);
+  mHorizontalLine->setFrameShadow(QFrame::Sunken);
+
+  // Create the Tab Widget and add tabs to it
+  mpPropertiesTabWidget = new QTabWidget;
+  //mpPropertiesTabWidget->setCurrentIndex(0);
+  mpGeneralTab = new QWidget(mpPropertiesTabWidget);
+  mpPropertiesTabWidget->addTab(mpGeneralTab, Helper::general);
+  mpParametersTab = new QWidget(mpPropertiesTabWidget);
+  mpParametersTabScrollArea = new QScrollArea;
+  mpParametersTabScrollArea->setFrameShape(QFrame::NoFrame);
+  mpParametersTabScrollArea->setBackgroundRole(QPalette::Base);
+  mpParametersTabScrollArea->setWidgetResizable(true);
+  mpPropertiesTabWidget->addTab(mpParametersTabScrollArea, Helper::parameters);
+  mpModifiersTab = new QWidget(mpPropertiesTabWidget);
+  mpPropertiesTabWidget->addTab(mpModifiersTab, tr("Modifiers"));
+
+  // add group boxes to General Tab
+  QVBoxLayout *vGeneralTabLayout = new QVBoxLayout;
+  // Create the Component Box
+  mpComponentGroup = new QGroupBox(tr("Component"));
+  QGridLayout *gridComponentLayout = new QGridLayout;
+  gridComponentLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  mpIconNameLabel = new QLabel(Helper::name);
+  mpIconNameTextBox = new QLineEdit(mpComponent->getName());
+  mpIconClassLabel = new QLabel(Helper::comment);
+  mpIconClassTextBox = new QLabel(mpComponent->getClassName());
+  //mpIconCommentTextBox->setText(mpIconAnnotation->getComment());
+  gridComponentLayout->addWidget(mpIconNameLabel, 0, 0);
+  gridComponentLayout->addWidget(mpIconNameTextBox, 0, 1);
+  gridComponentLayout->addWidget(mpIconClassLabel, 1, 0);
+  gridComponentLayout->addWidget(mpIconClassTextBox, 1, 1);
+  mpComponentGroup->setLayout(gridComponentLayout);
+  // set General Tab layout
+  vGeneralTabLayout->addWidget(mpComponentGroup);
+  mpGeneralTab->setLayout(vGeneralTabLayout);
+  // add items to parameters tab
+  QVBoxLayout *vParametersLayout = new QVBoxLayout;
+  vParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  QGridLayout *gridParametersLayout = new QGridLayout;
+  gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+  mpComponent->mIconParametersList.clear();
+  mpComponent->mIconParametersList.append(mpComponent->mpOMCProxy->getParameters(
+                                            mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                            mpComponent->getClassName(), mpComponent->getName()));
+
+  for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
+  {
+    IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
+    QLabel *parameterLabel = new QLabel;
+    parameterLabel->setText(iconParameter->getName());
+    QLineEdit *parameterTextBox = new QLineEdit;
+    parameterTextBox->setText(iconParameter->getValue().isEmpty() ? iconParameter->getDefaultValue() : iconParameter->getValue());
+    mParameterTextBoxesList.append(parameterTextBox);
+    if (mpComponent->mpOMCProxy->isProtected(iconParameter->getName(), mpComponent->getClassName()))
     {
-        mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
+      parameterLabel->setEnabled(false);
+      parameterTextBox->setEnabled(false);
     }
+    QLabel *parameterComment = new QLabel;
+    parameterComment->setText(iconParameter->getComment());
+    gridParametersLayout->addWidget(parameterLabel, i, 0);
+    gridParametersLayout->addWidget(parameterTextBox, i, 1);
+    gridParametersLayout->addWidget(parameterComment, i, 2);
+  }
+  vParametersLayout->addLayout(gridParametersLayout);
+  mpParametersTab->setLayout(vParametersLayout);
+  // add items to modifiers tab
+  mpModifiersLabel = new QLabel(tr("Add new modifiers, e.g phi(start=1),w(start=2)"));
+  mpModifiersTextBox = new QLineEdit;
+  QVBoxLayout *vModifiersLayout = new QVBoxLayout;
+  vModifiersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  vModifiersLayout->addWidget(mpModifiersLabel);
+  vModifiersLayout->addWidget(mpModifiersTextBox);
+  mpModifiersTab->setLayout(vModifiersLayout);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateIconProperties()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  // Add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *mainLayout = new QGridLayout;
+  mainLayout->addLayout(horizontalLayout, 0, 0);
+  mainLayout->addWidget(mHorizontalLine, 1, 0);
+  mpParametersTabScrollArea->setWidget(mpParametersTab);
+  mainLayout->addWidget(mpPropertiesTabWidget, 2, 0);
+  mainLayout->addWidget(mpButtonBox, 3, 0);
 
-    QHBoxLayout *horizontalLayout = new QHBoxLayout;
-    horizontalLayout->addWidget(mpPropertiesHeading);
-    horizontalLayout->addWidget(mpPixmapLabel);
-
-    mHorizontalLine = new QFrame();
-    mHorizontalLine->setFrameShape(QFrame::HLine);
-    mHorizontalLine->setFrameShadow(QFrame::Sunken);
-
-    // Create the Tab Widget and add tabs to it
-    mpPropertiesTabWidget = new QTabWidget;
-    //mpPropertiesTabWidget->setCurrentIndex(0);
-    mpGeneralTab = new QWidget(mpPropertiesTabWidget);
-    mpPropertiesTabWidget->addTab(mpGeneralTab, tr("General"));
-    mpParametersTab = new QWidget(mpPropertiesTabWidget);
-    mpParametersTabScrollArea = new QScrollArea;
-    mpParametersTabScrollArea->setFrameShape(QFrame::NoFrame);
-    mpParametersTabScrollArea->setBackgroundRole(QPalette::Base);
-    mpParametersTabScrollArea->setWidgetResizable(true);
-    mpPropertiesTabWidget->addTab(mpParametersTabScrollArea, tr("Parameters"));
-    mpModifiersTab = new QWidget(mpPropertiesTabWidget);
-    mpPropertiesTabWidget->addTab(mpModifiersTab, tr("Modifiers"));
-
-    // add group boxes to General Tab
-    QVBoxLayout *vGeneralTabLayout = new QVBoxLayout;
-    // Create the Component Box
-    mpComponentGroup = new QGroupBox(tr("Component"));
-    QGridLayout *gridComponentLayout = new QGridLayout;
-    gridComponentLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    mpIconNameLabel = new QLabel(tr("Name:"));
-    mpIconNameTextBox = new QLineEdit(mpComponent->getName());
-    mpIconClassLabel = new QLabel(tr("Comment:"));
-    mpIconClassTextBox = new QLabel(mpComponent->getClassName());
-    //mpIconCommentTextBox->setText(mpIconAnnotation->getComment());
-    gridComponentLayout->addWidget(mpIconNameLabel, 0, 0);
-    gridComponentLayout->addWidget(mpIconNameTextBox, 0, 1);
-    gridComponentLayout->addWidget(mpIconClassLabel, 1, 0);
-    gridComponentLayout->addWidget(mpIconClassTextBox, 1, 1);
-    mpComponentGroup->setLayout(gridComponentLayout);
-    // set General Tab layout
-    vGeneralTabLayout->addWidget(mpComponentGroup);
-    mpGeneralTab->setLayout(vGeneralTabLayout);
-    // add items to parameters tab
-    QVBoxLayout *vParametersLayout = new QVBoxLayout;
-    vParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    QGridLayout *gridParametersLayout = new QGridLayout;
-    gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-
-    mpComponent->mIconParametersList.clear();
-    mpComponent->mIconParametersList.append(mpComponent->mpOMCProxy->getParameters(
-                                                mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                mpComponent->getClassName(), mpComponent->getName()));
-
-    for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
-    {
-        IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
-        QLabel *parameterLabel = new QLabel;
-        parameterLabel->setText(iconParameter->getName());
-        QLineEdit *parameterTextBox = new QLineEdit;
-        parameterTextBox->setText(iconParameter->getValue().isEmpty() ? iconParameter->getDefaultValue() : iconParameter->getValue());
-        mParameterTextBoxesList.append(parameterTextBox);
-        if (mpComponent->mpOMCProxy->isProtected(iconParameter->getName(), mpComponent->getClassName()))
-        {
-            parameterLabel->setEnabled(false);
-            parameterTextBox->setEnabled(false);
-        }
-        QLabel *parameterComment = new QLabel;
-        parameterComment->setText(iconParameter->getComment());
-        gridParametersLayout->addWidget(parameterLabel, i, 0);
-        gridParametersLayout->addWidget(parameterTextBox, i, 1);
-        gridParametersLayout->addWidget(parameterComment, i, 2);
-    }
-    vParametersLayout->addLayout(gridParametersLayout);
-    mpParametersTab->setLayout(vParametersLayout);
-    // add items to modifiers tab
-    mpModifiersLabel = new QLabel(Helper::modifiersLabelText);
-    mpModifiersTextBox = new QLineEdit;
-    QVBoxLayout *vModifiersLayout = new QVBoxLayout;
-    vModifiersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    vModifiersLayout->addWidget(mpModifiersLabel);
-    vModifiersLayout->addWidget(mpModifiersTextBox);
-    mpModifiersTab->setLayout(vModifiersLayout);
-    // Create the buttons
-    mpOkButton = new QPushButton(tr("OK"));
-    mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateIconProperties()));
-    mpCancelButton = new QPushButton(tr("Cancel"));
-    mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-    // Add buttons
-    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
-    // Create a layout
-    QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addLayout(horizontalLayout, 0, 0);
-    mainLayout->addWidget(mHorizontalLine, 1, 0);
-    mpParametersTabScrollArea->setWidget(mpParametersTab);
-    mainLayout->addWidget(mpPropertiesTabWidget, 2, 0);
-    mainLayout->addWidget(mpButtonBox, 3, 0);
-
-    setLayout(mainLayout);
+  setLayout(mainLayout);
 }
 
 //! Slot activated when mpOkButton clicked signal is raised.
 //! Updates the component name, paramters values and add modifiers.
 void IconProperties::updateIconProperties()
 {
-    QString iconName = mpIconNameTextBox->text().trimmed();
+  QString iconName = mpIconNameTextBox->text().trimmed();
+  ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
+  MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+  bool valueChanged = false;
+  // update the component name if it is changed
+  if (mpComponent->getName() != iconName)
+  {
+    if (!mpComponent->mpGraphicsView->checkComponentName(iconName))
+    {
+      pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                  GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME),
+                                                                  Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                  pMainWindow->mpMessageWidget->mpProblem));
+    }
+    else
+    {
+      if (mpComponent->mpOMCProxy->renameComponentInClass(pProjectTab->mModelNameStructure, mpComponent->getName(),
+                                                          mpIconNameTextBox->text().trimmed()))
+      {
+        // if renameComponentInClass command is successful update the component with new name
+        mpComponent->updateName(mpIconNameTextBox->text().trimmed());
+        valueChanged = true;
+      }
+      else
+      {
+        // if renameComponentInClass command is unsuccessful print the error message
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, mpComponent->mpOMCProxy->getResult(),
+                                                                    Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                    pMainWindow->mpMessageWidget->mpProblem));
+      }
+    }
+  }
+  // update the parameter if it is changed
+  QString parameterOldValueString;
+  QString parameterNewValueString;
+  for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
+  {
+    // if the paramter value has changed only then update it
+    if (mParameterTextBoxesList.at(i)->isModified())
+    {
+      IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
+      mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
+                                                         .append(iconParameter->getName()),
+                                                         mParameterTextBoxesList.at(i)->text().trimmed().prepend("="));
+      valueChanged = true;
+      // update the gui text now
+      parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
+      parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
+      mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
+      iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
+    }
+  }
+  // add modifiers
+  if (!mpModifiersTextBox->text().isEmpty())
+  {
+    QString regexp ("([A-Za-z0-9]+)\\(([A-Za-z0-9]+)=([A-Za-z0-9]+)\\)$");
+    QRegExp modifierRegExp (regexp);
+    QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
+    foreach (QString modifier, modifiers)
+    {
+      modifier = modifier.trimmed();
+      if (modifierRegExp.exactMatch(modifier.trimmed()))
+      {
+        QString paramter = modifier.mid(0, modifier.indexOf("("));
+        QString value = modifier.mid(modifier.indexOf("("));
+        mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
+                                                           .append(paramter), value);
+        valueChanged = true;
+      }
+      else
+      {
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                    GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+                                                                    Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                    pMainWindow->mpMessageWidget->mpProblem));
+      }
+    }
+  }
+  if (valueChanged)
+  {
     ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
-    MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-    bool valueChanged = false;
-    // update the component name if it is changed
-    if (mpComponent->getName() != iconName)
-    {
-        if (!mpComponent->mpGraphicsView->checkComponentName(iconName))
-        {
-            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
-                                                                        GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME),
-                                                                        Helper::scriptingKind, Helper::errorLevel,
-                                                                        0, pMainWindow->mpMessageWidget->mpProblem));
-        }
-        else
-        {
-            if (mpComponent->mpOMCProxy->renameComponentInClass(pProjectTab->mModelNameStructure, mpComponent->getName(),
-                                                                mpIconNameTextBox->text().trimmed()))
-            {
-                // if renameComponentInClass command is successful update the component with new name
-                mpComponent->updateName(mpIconNameTextBox->text().trimmed());
-                valueChanged = true;
-            }
-            else
-            {
-                // if renameComponentInClass command is unsuccessful print the error message
-                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
-                                                                            mpComponent->mpOMCProxy->getResult(), Helper::scriptingKind,
-                                                                            Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
-            }
-        }
-    }
-    // update the parameter if it is changed
-    QString parameterOldValueString;
-    QString parameterNewValueString;
-    for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
-    {
-        // if the paramter value has changed only then update it
-        if (mParameterTextBoxesList.at(i)->isModified())
-        {
-            IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
-            mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
-                                                               .append(iconParameter->getName()),
-                                                               mParameterTextBoxesList.at(i)->text().trimmed().prepend("="));
-            valueChanged = true;
-            // update the gui text now
-            parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
-            parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
-            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
-            iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
-        }
-    }
-    // add modifiers
-    if (!mpModifiersTextBox->text().isEmpty())
-    {
-        QString regexp ("([A-Za-z0-9]+)\\(([A-Za-z0-9]+)=([A-Za-z0-9]+)\\)$");
-        QRegExp modifierRegExp (regexp);
-        QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
-        foreach (QString modifier, modifiers)
-        {
-            modifier = modifier.trimmed();
-            if (modifierRegExp.exactMatch(modifier.trimmed()))
-            {
-                QString paramter = modifier.mid(0, modifier.indexOf("("));
-                QString value = modifier.mid(modifier.indexOf("("));
-                mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
-                                                                   .append(paramter), value);
-                valueChanged = true;
-            }
-            else
-            {
-                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
-                                                                            GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
-                                                                            Helper::scriptingKind, Helper::errorLevel, 0,
-                                                                            pMainWindow->mpMessageWidget->mpProblem));
-            }
-        }
-    }
-    if (valueChanged)
-    {
-        ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
-        ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
-        pProjectTab->mpModelicaEditor->setPlainText(pProjectTabs->mpParentMainWindow->mpOMCProxy->list(pProjectTab->mModelNameStructure));
-    }
-    accept();
+    ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
+    pProjectTab->mpModelicaEditor->setPlainText(pProjectTabs->mpParentMainWindow->mpOMCProxy->list(pProjectTab->mModelNameStructure));
+  }
+  accept();
 }
 
 //! @class IconAttributes
@@ -276,220 +280,206 @@ void IconProperties::updateIconProperties()
 
 //! Constructor
 IconAttributes::IconAttributes(Component *pComponent, QWidget *pParent)
-    : QDialog(pParent, Qt::WindowTitleHint)
+  : QDialog(pParent, Qt::WindowTitleHint)
 {
-    setWindowTitle(QString(Helper::applicationName).append(" - Component Attributes"));
-    setAttribute(Qt::WA_DeleteOnClose);
-    setMinimumSize(400, 350);
-    setModal(true);
-    mpComponent = pComponent;
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Attributes")));
+  setAttribute(Qt::WA_DeleteOnClose);
+  setMinimumSize(400, 350);
+  setModal(true);
+  mpComponent = pComponent;
 
-    setUpDialog();
-    initializeDialog();
+  setUpDialog();
+  initializeDialog();
 }
 
 //! Creates the Dialog and set up all the controls with default values.
 void IconAttributes::setUpDialog()
 {
-    mpPropertiesHeading = new QLabel(tr("Attributes"));
-    mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
-    mpPropertiesHeading->setAlignment(Qt::AlignTop);
+  mpPropertiesHeading = new QLabel(Helper::attributes);
+  mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
+  mpPropertiesHeading->setAlignment(Qt::AlignTop);
 
-    mpPixmapLabel = new QLabel;
-    mpPixmapLabel->setObjectName(tr("componentPixmap"));
-    mpPixmapLabel->setMaximumSize(QSize(86, 86));
-    mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
-    mpPixmapLabel->setAlignment(Qt::AlignCenter);
+  mpPixmapLabel = new QLabel;
+  mpPixmapLabel->setObjectName("componentPixmap");
+  mpPixmapLabel->setMaximumSize(QSize(86, 86));
+  mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
+  mpPixmapLabel->setAlignment(Qt::AlignCenter);
 
-    ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
-    LibraryComponent *libraryComponent;
-    libraryComponent = pProjectTabs->mpParentMainWindow->mpLibrary->getLibraryComponentObject(mpComponent->getClassName());
+  ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
+  LibraryComponent *libraryComponent;
+  libraryComponent = pProjectTabs->mpParentMainWindow->mpLibrary->getLibraryComponentObject(mpComponent->getClassName());
 
-    if (libraryComponent)
-    {
-        mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
-    }
+  if (libraryComponent)
+  {
+    mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
+  }
 
-    QHBoxLayout *horizontalLayout = new QHBoxLayout;
-    horizontalLayout->addWidget(mpPropertiesHeading);
-    horizontalLayout->addWidget(mpPixmapLabel);
+  QHBoxLayout *horizontalLayout = new QHBoxLayout;
+  horizontalLayout->addWidget(mpPropertiesHeading);
+  horizontalLayout->addWidget(mpPixmapLabel);
 
-    mHorizontalLine = new QFrame();
-    mHorizontalLine->setFrameShape(QFrame::HLine);
-    mHorizontalLine->setFrameShadow(QFrame::Sunken);
-
-    // create Type Group Box
-    mpTypeGroup = new QGroupBox(tr("Type"));
-    QGridLayout *gridTypeLayout = new QGridLayout;
-    mpNameLabel = new QLabel(tr("Name:"));
-    mpNameTextBox = new QLabel(tr(""));
-    mpCommentLabel = new QLabel(tr("Comment:"));
-    mpCommentTextBox = new QLineEdit(tr(""));
-    gridTypeLayout->addWidget(mpNameLabel, 0, 0);
-    gridTypeLayout->addWidget(mpNameTextBox, 0, 1);
-    gridTypeLayout->addWidget(mpCommentLabel, 1, 0);
-    gridTypeLayout->addWidget(mpCommentTextBox, 1, 1);
-    mpTypeGroup->setLayout(gridTypeLayout);
-
-    // create Variablity Group Box
-    mpVariabilityGroup = new QGroupBox(tr("Variability"));
-    mpConstantRadio = new QRadioButton(tr("Constant"));
-    mpParameterRadio = new QRadioButton(tr("Paramter"));
-    mpDiscreteRadio = new QRadioButton(tr("Discrete"));
-    mpDefaultRadio = new QRadioButton(tr("Unspecified (Default)"));
-    QVBoxLayout *verticalVariabilityLayout = new QVBoxLayout;
-    verticalVariabilityLayout->addWidget(mpConstantRadio);
-    verticalVariabilityLayout->addWidget(mpParameterRadio);
-    verticalVariabilityLayout->addWidget(mpDiscreteRadio);
-    verticalVariabilityLayout->addWidget(mpDefaultRadio);
-    mpVariabilityButtonGroup = new QButtonGroup;
-    mpVariabilityButtonGroup->addButton(mpConstantRadio);
-    mpVariabilityButtonGroup->addButton(mpParameterRadio);
-    mpVariabilityButtonGroup->addButton(mpDiscreteRadio);
-    mpVariabilityButtonGroup->addButton(mpDefaultRadio);
-    mpVariabilityGroup->setLayout(verticalVariabilityLayout);
-
-    // create Variablity Group Box
-    mpPropertiesGroup = new QGroupBox(tr("Properties"));
-    mpFinalCheckBox = new QCheckBox(tr("Final"));
-    mpProtectedCheckBox = new QCheckBox(tr("Protected"));
-    mpReplaceAbleCheckBox = new QCheckBox(tr("Replaceable"));
-    QVBoxLayout *verticalPropertiesLayout = new QVBoxLayout;
-    verticalPropertiesLayout->addWidget(mpFinalCheckBox);
-    verticalPropertiesLayout->addWidget(mpProtectedCheckBox);
-    verticalPropertiesLayout->addWidget(mpReplaceAbleCheckBox);
-    mpPropertiesGroup->setLayout(verticalPropertiesLayout);
-
-    // create Variablity Group Box
-    mpCausalityGroup = new QGroupBox(tr("Causality"));
-    mpInputRadio = new QRadioButton(tr("Input"));
-    mpOutputRadio = new QRadioButton(tr("Output"));
-    mpNoneRadio = new QRadioButton(tr("None"));
-    QVBoxLayout *verticalCausalityLayout = new QVBoxLayout;
-    verticalCausalityLayout->addWidget(mpInputRadio);
-    verticalCausalityLayout->addWidget(mpOutputRadio);
-    verticalCausalityLayout->addWidget(mpNoneRadio);
-    mpCausalityButtonGroup = new QButtonGroup;
-    mpCausalityButtonGroup->addButton(mpInputRadio);
-    mpCausalityButtonGroup->addButton(mpOutputRadio);
-    mpCausalityButtonGroup->addButton(mpNoneRadio);
-    mpCausalityGroup->setLayout(verticalCausalityLayout);
-
-    // create Variablity Group Box
-    mpInnerOuterGroup = new QGroupBox(tr("Inner/Output"));
-    mpInnerCheckBox = new QCheckBox(tr("Inner"));
-    mpOuterCheckBox = new QCheckBox(tr("Outer"));
-    QVBoxLayout *verticalInnerOuterLayout = new QVBoxLayout;
-    verticalInnerOuterLayout->addWidget(mpInnerCheckBox);
-    verticalInnerOuterLayout->addWidget(mpOuterCheckBox);
-    mpInnerOuterGroup->setLayout(verticalInnerOuterLayout);
-
-    // Create the buttons
-    mpOkButton = new QPushButton(tr("OK"));
-    mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateIconAttributes()));
-    mpCancelButton = new QPushButton(tr("Cancel"));
-    mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-
-    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
-
-    // Create a layout
-    QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
-    mainLayout->addWidget(mHorizontalLine, 1, 0, 1, 2);
-    mainLayout->addWidget(mpTypeGroup, 2, 0, 1, 2);
-    mainLayout->addWidget(mpVariabilityGroup, 3, 0);
-    mainLayout->addWidget(mpPropertiesGroup, 3, 1);
-    mainLayout->addWidget(mpCausalityGroup, 4, 0);
-    mainLayout->addWidget(mpInnerOuterGroup, 4, 1);
-    mainLayout->addWidget(mpButtonBox, 5, 0, 1, 2);
-
-    setLayout(mainLayout);
+  mHorizontalLine = new QFrame();
+  mHorizontalLine->setFrameShape(QFrame::HLine);
+  mHorizontalLine->setFrameShadow(QFrame::Sunken);
+  // create Type Group Box
+  mpTypeGroup = new QGroupBox(Helper::type);
+  QGridLayout *gridTypeLayout = new QGridLayout;
+  mpNameLabel = new QLabel(Helper::name);
+  mpNameTextBox = new QLabel;
+  mpCommentLabel = new QLabel(Helper::comment);
+  mpCommentTextBox = new QLineEdit;
+  gridTypeLayout->addWidget(mpNameLabel, 0, 0);
+  gridTypeLayout->addWidget(mpNameTextBox, 0, 1);
+  gridTypeLayout->addWidget(mpCommentLabel, 1, 0);
+  gridTypeLayout->addWidget(mpCommentTextBox, 1, 1);
+  mpTypeGroup->setLayout(gridTypeLayout);
+  // create Variablity Group Box
+  mpVariabilityGroup = new QGroupBox(tr("Variability"));
+  mpConstantRadio = new QRadioButton(Helper::constant);
+  mpParameterRadio = new QRadioButton(Helper::paramter);
+  mpDiscreteRadio = new QRadioButton(tr("Discrete"));
+  mpDefaultRadio = new QRadioButton(tr("Unspecified (Default)"));
+  QVBoxLayout *verticalVariabilityLayout = new QVBoxLayout;
+  verticalVariabilityLayout->addWidget(mpConstantRadio);
+  verticalVariabilityLayout->addWidget(mpParameterRadio);
+  verticalVariabilityLayout->addWidget(mpDiscreteRadio);
+  verticalVariabilityLayout->addWidget(mpDefaultRadio);
+  mpVariabilityButtonGroup = new QButtonGroup;
+  mpVariabilityButtonGroup->addButton(mpConstantRadio);
+  mpVariabilityButtonGroup->addButton(mpParameterRadio);
+  mpVariabilityButtonGroup->addButton(mpDiscreteRadio);
+  mpVariabilityButtonGroup->addButton(mpDefaultRadio);
+  mpVariabilityGroup->setLayout(verticalVariabilityLayout);
+  // create Variablity Group Box
+  mpPropertiesGroup = new QGroupBox(Helper::properties);
+  mpFinalCheckBox = new QCheckBox(tr("Final"));
+  mpProtectedCheckBox = new QCheckBox(Helper::Protected);
+  mpReplaceAbleCheckBox = new QCheckBox(tr("Replaceable"));
+  QVBoxLayout *verticalPropertiesLayout = new QVBoxLayout;
+  verticalPropertiesLayout->addWidget(mpFinalCheckBox);
+  verticalPropertiesLayout->addWidget(mpProtectedCheckBox);
+  verticalPropertiesLayout->addWidget(mpReplaceAbleCheckBox);
+  mpPropertiesGroup->setLayout(verticalPropertiesLayout);
+  // create Variablity Group Box
+  mpCausalityGroup = new QGroupBox(tr("Causality"));
+  mpInputRadio = new QRadioButton(tr("Input"));
+  mpOutputRadio = new QRadioButton(Helper::output);
+  mpNoneRadio = new QRadioButton(tr("None"));
+  QVBoxLayout *verticalCausalityLayout = new QVBoxLayout;
+  verticalCausalityLayout->addWidget(mpInputRadio);
+  verticalCausalityLayout->addWidget(mpOutputRadio);
+  verticalCausalityLayout->addWidget(mpNoneRadio);
+  mpCausalityButtonGroup = new QButtonGroup;
+  mpCausalityButtonGroup->addButton(mpInputRadio);
+  mpCausalityButtonGroup->addButton(mpOutputRadio);
+  mpCausalityButtonGroup->addButton(mpNoneRadio);
+  mpCausalityGroup->setLayout(verticalCausalityLayout);
+  // create Variablity Group Box
+  mpInnerOuterGroup = new QGroupBox(tr("Inner/Outer"));
+  mpInnerCheckBox = new QCheckBox(tr("Inner"));
+  mpOuterCheckBox = new QCheckBox(tr("Outer"));
+  QVBoxLayout *verticalInnerOuterLayout = new QVBoxLayout;
+  verticalInnerOuterLayout->addWidget(mpInnerCheckBox);
+  verticalInnerOuterLayout->addWidget(mpOuterCheckBox);
+  mpInnerOuterGroup->setLayout(verticalInnerOuterLayout);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateIconAttributes()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *mainLayout = new QGridLayout;
+  mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
+  mainLayout->addWidget(mHorizontalLine, 1, 0, 1, 2);
+  mainLayout->addWidget(mpTypeGroup, 2, 0, 1, 2);
+  mainLayout->addWidget(mpVariabilityGroup, 3, 0);
+  mainLayout->addWidget(mpPropertiesGroup, 3, 1);
+  mainLayout->addWidget(mpCausalityGroup, 4, 0);
+  mainLayout->addWidget(mpInnerOuterGroup, 4, 1);
+  mainLayout->addWidget(mpButtonBox, 5, 0, 1, 2);
+  setLayout(mainLayout);
 }
 
 //! Initialize the fields with default values.
 void IconAttributes::initializeDialog()
 {
-    QList<ComponentsProperties*> components = mpComponent->mpOMCProxy->getComponents(mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure);
-    foreach (ComponentsProperties *componentProperties, components)
+  QList<ComponentsProperties*> components = mpComponent->mpOMCProxy->getComponents(mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure);
+  foreach (ComponentsProperties *componentProperties, components)
+  {
+    if (componentProperties->getName() == mpComponent->getName())
     {
-        if (componentProperties->getName() == mpComponent->getName())
-        {
-            // get Class Name
-            mpNameTextBox->setText(componentProperties->getClassName());
-            // get Comment
-            mpCommentTextBox->setText(componentProperties->getComment());
-
-            // get Variability
-            if (componentProperties->getVariablity() == "constant")
-                mpConstantRadio->setChecked(true);
-            else if (componentProperties->getVariablity() == "parameter")
-                mpParameterRadio->setChecked(true);
-            else if (componentProperties->getVariablity() == "discrete")
-                mpDiscreteRadio->setChecked(true);
-            else
-                mpDefaultRadio->setChecked(true);
-
-            // get Properties
-            mpFinalCheckBox->setChecked(componentProperties->getFinal());
-            mpProtectedCheckBox->setChecked(componentProperties->getProtected());
-            mpReplaceAbleCheckBox->setChecked(componentProperties->getReplaceable());
-            mIsFlow = componentProperties->getFlow() ? tr("true") : tr("false");
-
-            // get Casuality
-            if (componentProperties->getCasuality() == "input")
-                mpInputRadio->setChecked(true);
-            else if (componentProperties->getCasuality() == "output")
-                mpOutputRadio->setChecked(true);
-            else
-                mpNoneRadio->setChecked(true);
-
-            // get InnerOuter
-            mpInnerCheckBox->setChecked(componentProperties->getInner());
-            mpOuterCheckBox->setChecked(componentProperties->getOuter());
-
-            break;
-        }
+      // get Class Name
+      mpNameTextBox->setText(componentProperties->getClassName());
+      // get Comment
+      mpCommentTextBox->setText(componentProperties->getComment());
+      // get Variability
+      if (componentProperties->getVariablity() == "constant")
+        mpConstantRadio->setChecked(true);
+      else if (componentProperties->getVariablity() == "parameter")
+        mpParameterRadio->setChecked(true);
+      else if (componentProperties->getVariablity() == "discrete")
+        mpDiscreteRadio->setChecked(true);
+      else
+        mpDefaultRadio->setChecked(true);
+      // get Properties
+      mpFinalCheckBox->setChecked(componentProperties->getFinal());
+      mpProtectedCheckBox->setChecked(componentProperties->getProtected());
+      mpReplaceAbleCheckBox->setChecked(componentProperties->getReplaceable());
+      mIsFlow = componentProperties->getFlow() ? "true" : "false";
+      // get Casuality
+      if (componentProperties->getCasuality() == "input")
+        mpInputRadio->setChecked(true);
+      else if (componentProperties->getCasuality() == "output")
+        mpOutputRadio->setChecked(true);
+      else
+        mpNoneRadio->setChecked(true);
+      // get InnerOuter
+      mpInnerCheckBox->setChecked(componentProperties->getInner());
+      mpOuterCheckBox->setChecked(componentProperties->getOuter());
+      break;
     }
+  }
 }
 
 //! Slot activated when mpOkButton clicked signal is raised.
 //! Updates the component attributes.
 void IconAttributes::updateIconAttributes()
 {
-    ProjectTab *pCurrentTab = mpComponent->mpGraphicsView->mpParentProjectTab;
-    QString modelName = pCurrentTab->mModelNameStructure;
-    QString componentName = mpComponent->getName();
-    QString isFinal = mpFinalCheckBox->isChecked() ? tr("true") : tr("false");
-    QString isProtected = mpProtectedCheckBox->isChecked() ? tr("true") : tr("false");
-    QString isReplaceAble = mpReplaceAbleCheckBox->isChecked() ? tr("true") : tr("false");
-    QString variability;
-    if (mpConstantRadio->isChecked())
-        variability = tr("constant");
-    else if (mpParameterRadio->isChecked())
-        variability = tr("parameter");
-    else if (mpDiscreteRadio->isChecked())
-        variability = tr("discrete");
-    else
-        variability = tr("");
-    QString isInner = mpInnerCheckBox->isChecked() ? tr("true") : tr("false");
-    QString isOuter = mpOuterCheckBox->isChecked() ? tr("true") : tr("false");
-    QString causality;
-    if (mpInputRadio->isChecked())
-        causality = tr("input");
-    else if (mpOutputRadio->isChecked())
-        causality = tr("output");
-    else
-        causality = tr("");
+  ProjectTab *pCurrentTab = mpComponent->mpGraphicsView->mpParentProjectTab;
+  QString modelName = pCurrentTab->mModelNameStructure;
+  QString componentName = mpComponent->getName();
+  QString isFinal = mpFinalCheckBox->isChecked() ? "true" : "false";
+  QString isProtected = mpProtectedCheckBox->isChecked() ? "true" : "false";
+  QString isReplaceAble = mpReplaceAbleCheckBox->isChecked() ? "true" : "false";
+  QString variability;
+  if (mpConstantRadio->isChecked())
+    variability = "constant";
+  else if (mpParameterRadio->isChecked())
+    variability = "parameter";
+  else if (mpDiscreteRadio->isChecked())
+    variability = "discrete";
+  else
+    variability = "";
+  QString isInner = mpInnerCheckBox->isChecked() ? "true" : "false";
+  QString isOuter = mpOuterCheckBox->isChecked() ? "true" : "false";
+  QString causality;
+  if (mpInputRadio->isChecked())
+    causality = "input";
+  else if (mpOutputRadio->isChecked())
+    causality = "output";
+  else
+    causality = "";
 
-    OMCProxy *pOMCProxy = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-    // update component attributes
-    pOMCProxy->setComponentProperties(modelName, componentName, isFinal, mIsFlow, isProtected, isReplaceAble, variability, isInner, isOuter,
-                                      causality);
-    // update the component comment
-    pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed());
-    accept();
+  OMCProxy *pOMCProxy = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+  // update component attributes
+  pOMCProxy->setComponentProperties(modelName, componentName, isFinal, mIsFlow, isProtected, isReplaceAble, variability, isInner, isOuter,
+                                    causality);
+  // update the component comment
+  pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed());
+  accept();
 }

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -29,6 +29,10 @@
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
  *
+ */
+
+/*
+ * RCS: $Id$
  */
 
 #ifndef TRANSFORMATION_H
@@ -44,47 +48,47 @@ class Component;
 class Transformation
 {
 private:
-    bool mVisible;
-    qreal mPositionX;
-    qreal mPositionXIcon;
-    qreal mPositionY;
-    qreal mPositionYIcon;
-    qreal mScale;
-    qreal mScaleIcon;
-    qreal mAspectRatio;
-    qreal mAspectRatioIcon;
-    bool mFlipHorizontal;
-    bool mFlipHorizontalIcon;
-    bool mFlipVertical;
-    bool mFlipVerticalIcon;
-    qreal mRotateAngle;
-    qreal mRotateAngleIcon;
-    QPointF mOrigin;
-    QPointF mOriginIcon;
-    QPointF mExtent1;
-    QPointF mExtent1Icon;
-    QPointF mExtent2;
-    QPointF mExtent2Icon;
-    qreal mWidth;
-    qreal mHeight;
+  bool mVisible;
+  qreal mPositionX;
+  qreal mPositionXIcon;
+  qreal mPositionY;
+  qreal mPositionYIcon;
+  qreal mScale;
+  qreal mScaleIcon;
+  qreal mAspectRatio;
+  qreal mAspectRatioIcon;
+  bool mFlipHorizontal;
+  bool mFlipHorizontalIcon;
+  bool mFlipVertical;
+  bool mFlipVerticalIcon;
+  qreal mRotateAngle;
+  qreal mRotateAngleIcon;
+  QPointF mOrigin;
+  QPointF mOriginIcon;
+  QPointF mExtent1;
+  QPointF mExtent1Icon;
+  QPointF mExtent2;
+  QPointF mExtent2Icon;
+  qreal mWidth;
+  qreal mHeight;
 
-    Component *mpComponent;
+  Component *mpComponent;
 public:
-    Transformation(Component *pComponent);
-    void parseTransformationString2X(QString value);
-    void parseTransformationString3X(QString value);
-    QTransform getTransformationMatrix();
-    QTransform getLibraryTransformationMatrix();
-    qreal getRotateAngle();
-    qreal getScale();
-    qreal getPositionX();
-    qreal getPositionY();
-    qreal getRotateAngleIcon();
-    qreal getScaleIcon();
-    qreal getPositionXIcon();
-    qreal getPositionYIcon();
-    bool getFlipHorizontalIcon();
-    bool getFlipVerticalIcon();
+  Transformation(Component *pComponent);
+  void parseTransformationString2X(QString value);
+  void parseTransformationString3X(QString value);
+  QTransform getTransformationMatrix();
+  QTransform getLibraryTransformationMatrix();
+  qreal getRotateAngle();
+  qreal getScale();
+  qreal getPositionX();
+  qreal getPositionY();
+  qreal getRotateAngleIcon();
+  qreal getScaleIcon();
+  qreal getPositionXIcon();
+  qreal getPositionYIcon();
+  bool getFlipHorizontalIcon();
+  bool getFlipVerticalIcon();
 };
 
 #endif // TRANSFORMATION_H

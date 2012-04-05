@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 //! @file   StringHandler.cpp
 //! @author Syed Adeel Asghar <syeas460@student.liu.se>
 //! @date   2010-07-12
@@ -59,437 +63,404 @@ StringHandler::~StringHandler()
 
 QString StringHandler::getModelicaClassType(int type)
 {
-    switch (type)
-    {
-        case StringHandler::MODEL:
-            return "Model";
-        case StringHandler::CLASS:
-            return "Class";
-        case StringHandler::CONNECTOR:
-            return "Connector";
-        case StringHandler::RECORD:
-            return "Record";
-        case StringHandler::BLOCK:
-            return "Block";
-        case StringHandler::FUNCTION:
-            return "Function";
-        case StringHandler::PACKAGE:
-            return "Package";
-        case StringHandler::PRIMITIVE:
-            return "Primitive";
-        case StringHandler::TYPE:
-            return "Type";
-        case StringHandler::PARAMETER:
-            return "Parameter";
-        case StringHandler::CONSTANT:
-            return "Constant";
-        case StringHandler::PROTECTED:
-            return "Protected";
-        default:
-            // should never be reached
-            return "";
-    }
+  switch (type)
+  {
+    case StringHandler::MODEL:
+      return Helper::model;
+    case StringHandler::CLASS:
+      return Helper::Class;
+    case StringHandler::CONNECTOR:
+      return Helper::connector;
+    case StringHandler::RECORD:
+      return Helper::record;
+    case StringHandler::BLOCK:
+      return Helper::block;
+    case StringHandler::FUNCTION:
+      return Helper::function;
+    case StringHandler::PACKAGE:
+      return Helper::package;
+    case StringHandler::PRIMITIVE:
+      return Helper::primitive;
+    case StringHandler::TYPE:
+      return Helper::type;
+    case StringHandler::PARAMETER:
+      return Helper::paramter;
+    case StringHandler::CONSTANT:
+      return Helper::constant;
+    case StringHandler::PROTECTED:
+      return Helper::Protected;
+    default:
+      // should never be reached
+      return "";
+  }
 }
 
 QString StringHandler::getViewType(int type)
 {
-    switch (type)
-    {
-        case StringHandler::ICON:
-            return "Icon View";
-        case StringHandler::DIAGRAM:
-            return "Diagram View";
-        case StringHandler::MODELICATEXT:
-            return "Modelica Text View";
-        default:
-            // should never be reached
-            return "";
-    }
+  switch (type)
+  {
+    case StringHandler::ICON:
+      return Helper::iconView;
+    case StringHandler::DIAGRAM:
+      return Helper::diagramView;
+    case StringHandler::MODELICATEXT:
+      return Helper::documentationView;
+    default:
+      // should never be reached
+      return "";
+  }
 }
 
 QString StringHandler::getErrorKind(int kind)
 {
-    switch (kind)
-    {
-        case StringHandler::SYNTAX:
-            return "Syntax";
-        case StringHandler::GRAMMAR:
-            return "Grammar";
-        case StringHandler::TRANSLATION:
-            return "Translation";
-        case StringHandler::SYMBOLIC:
-            return "Symbolic";
-        case StringHandler::SIMULATION:
-            return "Simulation";
-        case StringHandler::SCRIPTING:
-            return "Scripting";
-        default:
-            // should never be reached
-            return "";
-    }
+  switch (kind)
+  {
+    case StringHandler::SYNTAX:
+      return "Syntax";
+    case StringHandler::GRAMMAR:
+      return "Grammar";
+    case StringHandler::TRANSLATION:
+      return "Translation";
+    case StringHandler::SYMBOLIC:
+      return "Symbolic";
+    case StringHandler::SIMULATION:
+      return "Simulation";
+    case StringHandler::SCRIPTING:
+      return "Scripting";
+    default:
+      // should never be reached
+      return "";
+  }
 }
 
 //! Removes the first and last curly brackest {} from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeFirstLastCurlBrackets(QString value)
 {
-    value = value.trimmed();
-    if (value.length() > 1 && value.at(0) == '{' && value.at(value.length() - 1) == '}')
-    {
-        value = value.mid(1, (value.length() - 2));
-    }
-    return value;
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '{' && value.at(value.length() - 1) == '}')
+  {
+    value = value.mid(1, (value.length() - 2));
+  }
+  return value;
 }
 
 //! Removes the first and last brackest () from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeFirstLastBrackets(QString value)
 {
-    value = value.trimmed();
-    if (value.length() > 1 && value.at(0) == '(' && value.at(value.length() - 1) == ')')
-    {
-        value = value.mid(1, (value.length() - 2));
-    }
-    return value;
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '(' && value.at(value.length() - 1) == ')')
+  {
+    value = value.mid(1, (value.length() - 2));
+  }
+  return value;
 }
 
 //! Removes the first and last quotes "" from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeFirstLastQuotes(QString value)
 {
-    value = value.trimmed();
-    if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"')
-    {
-        value = value.mid(1, (value.length() - 2));
-    }
-    return value;
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"')
+  {
+    value = value.mid(1, (value.length() - 2));
+  }
+  return value;
 }
 
 //! Returns the last word from a string.
 //! @param value is the string which is parsed.
 QString StringHandler::getSubStringFromDots(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
-    value = value.trimmed();
-    QStringList list = value.split(".", QString::SkipEmptyParts);
-    return list.at(list.count() - 1);
+  if (value.isEmpty())
+  {
+    return "";
+  }
+  value = value.trimmed();
+  QStringList list = value.split(".", QString::SkipEmptyParts);
+  return list.at(list.count() - 1);
 }
 
 //! Removes the last dot from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeLastDot(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
-    value = value.trimmed();
-    return value.remove((value.length() - 1), 1);
+  if (value.isEmpty())
+  {
+    return "";
+  }
+  value = value.trimmed();
+  return value.remove((value.length() - 1), 1);
 }
 
 QStringList StringHandler::getStrings(QString value)
 {
-    return getStrings(value, '{', '}');
+  return getStrings(value, '{', '}');
 }
 
 QStringList StringHandler::getStrings(QString value, char start, char end)
 {
-    QStringList list;
-    QStringList tokenizer = value.split(",", QString::SkipEmptyParts);
+  QStringList list;
+  QStringList tokenizer = value.split(",", QString::SkipEmptyParts);
 
-    QString t = "";
-    int ele = 0;
-    foreach (QString temp, tokenizer)
+  QString t = "";
+  int ele = 0;
+  foreach (QString temp, tokenizer)
+  {
+    if (ele == 0)
     {
-        if (ele == 0)
-        {
-            if (t.length() > 0)
-            {
-                list.append(t.trimmed());
-            }
-            t = temp;
-        }
-        else
-        {
-            t = t.trimmed() + ", " + temp.trimmed();
-        }
-
-        for (int i = 0 ; i < temp.length() ; i++)
-        {
-            if (temp.at(i) == start)
-            {
-                ele++;
-            }
-            else if (temp.at(i) == end)
-            {
-                ele--;
-            }
-        }
-    }
-    if (t.length() > 0)
+      if (t.length() > 0)
+      {
         list.append(t.trimmed());
+      }
+      t = temp;
+    }
+    else
+    {
+      t = t.trimmed() + ", " + temp.trimmed();
+    }
 
-    return list;
+    for (int i = 0 ; i < temp.length() ; i++)
+    {
+      if (temp.at(i) == start)
+      {
+        ele++;
+      }
+      else if (temp.at(i) == end)
+      {
+        ele--;
+      }
+    }
+  }
+  if (t.length() > 0)
+    list.append(t.trimmed());
+
+  return list;
 }
 
 QString StringHandler::getLastWordAfterDot(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
+  if (value.isEmpty())
+  {
+    return "";
+  }
 
-    int pos = value.lastIndexOf('.');
-    if (pos >= 0)
-    {
-        return value.mid((pos + 1), (value.length() - 1));
-    }
-    else
-    {
-        return value;
-    }
+  int pos = value.lastIndexOf('.');
+  if (pos >= 0)
+  {
+    return value.mid((pos + 1), (value.length() - 1));
+  }
+  else
+  {
+    return value;
+  }
 }
 
 QString StringHandler::getFirstWordBeforeDot(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
+  if (value.isEmpty())
+  {
+    return "";
+  }
 
-    int pos = value.indexOf('.');
-    if (pos >= 0)
-    {
-        return value.mid(0, (pos));
-    }
-    else
-    {
-        return value;
-    }
+  int pos = value.indexOf('.');
+  if (pos >= 0)
+  {
+    return value.mid(0, (pos));
+  }
+  else
+  {
+    return value;
+  }
 }
 
 QString StringHandler::removeLastSlashWord(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
-    value = value.trimmed();
+  if (value.isEmpty())
+  {
+    return "";
+  }
+  value = value.trimmed();
 
-    int pos = value.lastIndexOf('/');
-    if (pos >= 0)
-    {
-        return value.mid(0, (pos));
-    }
-    else
-    {
-        return value;
-    }
+  int pos = value.lastIndexOf('/');
+  if (pos >= 0)
+  {
+    return value.mid(0, (pos));
+  }
+  else
+  {
+    return value;
+  }
 }
 
 QString StringHandler::removeLastWordAfterDot(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
-    value = value.trimmed();
+  if (value.isEmpty())
+  {
+    return "";
+  }
+  value = value.trimmed();
 
-    int pos = value.lastIndexOf('.');
-    if (pos >= 0)
-    {
-        return value.mid(0, (pos));
-    }
-    else
-    {
-        return value;
-    }
+  int pos = value.lastIndexOf('.');
+  if (pos >= 0)
+  {
+    return value.mid(0, (pos));
+  }
+  else
+  {
+    return value;
+  }
 }
 
 QString StringHandler::removeComment(QString value)
 {
-    if (value.isEmpty())
-    {
-        return "";
-    }
-    value = value.trimmed();
+  if (value.isEmpty())
+  {
+    return "";
+  }
+  value = value.trimmed();
 
-    int startPos = value.indexOf("/*");
-    int endPos = value.indexOf("*/");
-    // + 2 to remove */ from the string as well.
-    return value.remove(startPos, (endPos - startPos) + 2);
+  int startPos = value.indexOf("/*");
+  int endPos = value.indexOf("*/");
+  // + 2 to remove */ from the string as well.
+  return value.remove(startPos, (endPos - startPos) + 2);
 }
 
 QList<QString> StringHandler::getSimulationResultVars(QString value)
 {
-    QList<QString> list;
-    QString str;
-    bool startReading = false;
+  QList<QString> list;
+  QString str;
+  bool startReading = false;
 
-    for (int i=0; i < value.length(); i++)
+  for (int i=0; i < value.length(); i++)
+  {
+    if(startReading)
+      str.append(value.at(i));
+
+    if (value.at(i) == '"')
     {
-        if(startReading)
-            str.append(value.at(i));
-
-        if (value.at(i) == '"')
+      if (startReading)
+      {
+        if (value.at(i+1) == ',')
         {
-            if (startReading)
-            {
-                if (value.at(i+1) == ',')
-                {
-                    startReading = false;
-                    list.append(str.remove((str.length() - 1), 1));
-                    str.clear();
-                }
-                else if (value.at(i+1) == '}')
-                {
-                    startReading = false;
-                    list.append(str.remove((str.length() - 1), 1));
-                    str.clear();
-                }
-            }
-            else
-                startReading = true;
+          startReading = false;
+          list.append(str.remove((str.length() - 1), 1));
+          str.clear();
         }
+        else if (value.at(i+1) == '}')
+        {
+          startReading = false;
+          list.append(str.remove((str.length() - 1), 1));
+          str.clear();
+        }
+      }
+      else
+        startReading = true;
     }
-    return list;
+  }
+  return list;
 }
 
 QString StringHandler::getModifierValue(QString value)
 {
-    int element = 0;
-    for(int i = 0 ; i < value.length() ; i++)
+  int element = 0;
+  for(int i = 0 ; i < value.length() ; i++)
+  {
+    if (value.at(i) == '(')
+      element++;
+    else if (value.at(i) == ')')
+      element--;
+    else if (value.at(i) == '=')
     {
-        if (value.at(i) == '(')
-            element++;
-        else if (value.at(i) == ')')
-            element--;
-        else if (value.at(i) == '=')
-        {
-            if (element == 0)
-                return value.mid(i + 1);
-        }
+      if (element == 0)
+        return value.mid(i + 1);
     }
-    return "";
+  }
+  return "";
 }
 
 #define CONSUME_CHAR(value,res,i) \
-    if (value.at(i) == '\\') { \
-    i++; \
-    switch (value[i].toAscii()) { \
-    case '\'': res.append('\''); break; \
-    case '"':  res.append('\"'); break; \
-    case '?':  res.append('\?'); break; \
-    case '\\': res.append('\\'); break; \
-    case 'a':  res.append('\a'); break; \
-    case 'b':  res.append('\b'); break; \
-    case 'f':  res.append('\f'); break; \
-    case 'n':  res.append('\n'); break; \
-    case 'r':  res.append('\r'); break; \
-    case 't':  res.append('\t'); break; \
-    case 'v':  res.append('\v'); break; \
-    } \
-    } else { \
-    res.append(value[i]); \
-    }
+  if (value.at(i) == '\\') { \
+  i++; \
+  switch (value[i].toAscii()) { \
+  case '\'': res.append('\''); break; \
+  case '"':  res.append('\"'); break; \
+  case '?':  res.append('\?'); break; \
+  case '\\': res.append('\\'); break; \
+  case 'a':  res.append('\a'); break; \
+  case 'b':  res.append('\b'); break; \
+  case 'f':  res.append('\f'); break; \
+  case 'n':  res.append('\n'); break; \
+  case 'r':  res.append('\r'); break; \
+  case 't':  res.append('\t'); break; \
+  case 'v':  res.append('\v'); break; \
+  } \
+  } else { \
+  res.append(value[i]); \
+  }
 
 
 QString StringHandler::unparse(QString value)
 {
-    QString res;
-    value = value.trimmed();
-    if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
-        value = value.mid(1, (value.length() - 2));
-        for (int i=0; i < value.length(); i++) {
-            CONSUME_CHAR(value,res,i);
-        }
-        return res;
-    } else {
-        return "";
+  QString res;
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
+    value = value.mid(1, (value.length() - 2));
+    for (int i=0; i < value.length(); i++) {
+      CONSUME_CHAR(value,res,i);
     }
+    return res;
+  } else {
+    return "";
+  }
 }
 
 QStringList StringHandler::unparseStrings(QString value)
 {
-    QStringList lst;
-    value = value.trimmed();
-    if (value[0] != '{') return lst; // ERROR?
-    int i=1;
-    QString res;
-    while (value[i] == '"') {
-        i++;
-        while (value.at(i) != '"') {
-            CONSUME_CHAR(value,res,i);
-            i++;
-            /* if we have unexpected double quotes then, however omc should return \" */
-            /* remove this block once fixed in omc */
-            if (value[i] == '"' && value[i+1] != ',') {
-                if (value[i+1] != '}') {
-                    CONSUME_CHAR(value,res,i);
-                    i++;
-                }
-            }
-            /* remove this block once fixed in omc */
+  QStringList lst;
+  value = value.trimmed();
+  if (value[0] != '{') return lst; // ERROR?
+  int i=1;
+  QString res;
+  while (value[i] == '"') {
+    i++;
+    while (value.at(i) != '"') {
+      CONSUME_CHAR(value,res,i);
+      i++;
+      /* if we have unexpected double quotes then, however omc should return \" */
+      /* remove this block once fixed in omc */
+      if (value[i] == '"' && value[i+1] != ',') {
+        if (value[i+1] != '}') {
+          CONSUME_CHAR(value,res,i);
+          i++;
         }
-        i++;
-        if (value[i] == '}') {
-            lst.append(res);
-            return lst;
-        }
-        if (value[i] == ',') {
-            lst.append(res);
-            i++;
-            res = "";
-            while (value[i] == ' ')     // if we have space before next value e.g {"x", "y", "z"}
-              i++;
-            continue;
-        }
-        while (value[i] != '"' && value[i] != '\0') {
-            i++;
-            fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
-        }
+      }
+      /* remove this block once fixed in omc */
     }
-    return lst; // ERROR?
+    i++;
+    if (value[i] == '}') {
+      lst.append(res);
+      return lst;
+    }
+    if (value[i] == ',') {
+      lst.append(res);
+      i++;
+      res = "";
+      while (value[i] == ' ')     // if we have space before next value e.g {"x", "y", "z"}
+        i++;
+      continue;
+    }
+    while (value[i] != '"' && value[i] != '\0') {
+      i++;
+      fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
+    }
+  }
+  return lst; // ERROR?
 }
 
 QStringList StringHandler::unparseArrays(QString value)
 {
-//    QStringList lst;
-//    value = value.trimmed();
-//    value = StringHandler::removeFirstLastCurlBrackets(value);
-//    int openBrackets = 0;
-//    QString res;
-//    int i = 0;
-//    foreach (QChar ch, value) {
-//      if (ch == '{')
-//      {
-//        openBrackets++;
-//        CONSUME_CHAR(value,res,i);
-//        i++;
-//      }
-//      else if (ch == '}')
-//      {
-//        openBrackets--;
-//        CONSUME_CHAR(value,res,i);
-//        i++;
-//        if (openBrackets == 0)
-//        {
-//          lst.append(res);
-//          res = "";
-//        }
-//      }
-//      else if (openBrackets != 0)
-//      {
-//        CONSUME_CHAR(value,res,i);
-//        i++;
-//      }
-//      else
-//        i++;
-//    }
-//    return lst;
   QStringList lst;
   size_t qopen = 0;
   size_t qopenindex = 0;
@@ -550,102 +521,103 @@ QStringList StringHandler::unparseArrays(QString value)
 
 bool StringHandler::unparseBool(QString value)
 {
-    value = value.trimmed();
-    return value == "true";
+  value = value.trimmed();
+  return value == "true";
 }
 
-QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix, const QString *purposedName)
+QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter,
+                                       const QString &defaultSuffix, const QString *purposedName)
 {
-    QString dir_str;
-    QString fileName;
+  QString dir_str;
+  QString fileName;
 
-    if (dir)
-    {
-        dir_str = *dir;
-    }
-    else
-    {
-        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
-    }
+  if (dir)
+  {
+    dir_str = *dir;
+  }
+  else
+  {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
 
-    if (purposedName)
-        fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(*purposedName), filter, selectedFilter);
-    else
-        fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+  if (purposedName)
+    fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(*purposedName), filter, selectedFilter);
+  else
+    fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
 
-    if (!fileName.isEmpty())
-    {
-        // Qt is not reallllyyyy platform independent :(
-        // Kind of Qt bug QfileDioalog::getsavefilename return extension on windows but not on linux. So need to hard code it here
+  if (!fileName.isEmpty())
+  {
+    // Qt is not reallllyyyy platform independent :(
+    // Kind of Qt bug QfileDialog::getsavefilename return extension on windows but not on linux. So need to hard code it here
 #ifdef Q_OS_LINUX
-        fileName.append(".").append(defaultSuffix);
+    fileName.append(".").append(defaultSuffix);
 #endif
-        QFileInfo fileInfo(fileName);
-        mLastOpenDir = fileInfo.absolutePath();
-        return fileName;
-    }
-    return QString();
+    QFileInfo fileInfo(fileName);
+    mLastOpenDir = fileInfo.absolutePath();
+    return fileName;
+  }
+  return QString();
 }
 
 QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
 {
-    QString dir_str;
+  QString dir_str;
 
-    if (dir)
-    {
-        dir_str = *dir;
-    }
-    else
-    {
-        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
-    }
+  if (dir)
+  {
+    dir_str = *dir;
+  }
+  else
+  {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
 
-    QString fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
-    if (!fileName.isEmpty())
-    {
-        QFileInfo fileInfo(fileName);
-        mLastOpenDir = fileInfo.absolutePath();
-        return fileName;
-    }
-    return QString();
+  QString fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
+  if (!fileName.isEmpty())
+  {
+    QFileInfo fileInfo(fileName);
+    mLastOpenDir = fileInfo.absolutePath();
+    return fileName;
+  }
+  return QString();
 }
 
 QString StringHandler::getExistingDirectory(QWidget *parent, const QString &caption, QString *dir)
 {
-    QString dir_str;
+  QString dir_str;
 
-    if (dir)
-    {
-        dir_str = *dir;
-    }
-    else
-    {
-        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
-    }
+  if (dir)
+  {
+    dir_str = *dir;
+  }
+  else
+  {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
 
-    QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
-    if (!dirName.isEmpty())
-    {
-        mLastOpenDir = dirName;
-        return dirName;
-    }
-    return QString();
+  QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+  if (!dirName.isEmpty())
+  {
+    mLastOpenDir = dirName;
+    return dirName;
+  }
+  return QString();
 }
 
 QString StringHandler::createTooltip(QStringList info, QString name, QString path)
 {
-    if (info.size() < 3)
-        return path;
+  if (info.size() < 3)
+    return path;
+  else
+  {
+    QString tooltip = QString(Helper::type).append(": ").append(info[0]).append("\n")
+        .append(Helper::name).append(" ").append(name).append("\n")
+        .append(tr("Description")).append(": ").append(info[1]).append("\n");
+    if (QString(info[2]).compare("<interactive>") == 0)
+      tooltip.append(Helper::location).append(": ").append("\n");
     else
-    {
-        QString tooltip = QString("Type: ").append(info[0]).append("\n")
-                          .append("Name: ").append(name).append("\n")
-                          .append("Description: ").append(info[1]).append("\n");
-        if (QString(info[2]).compare("<interactive>") == 0)
-            tooltip.append("Location: ").append("\n");
-        else
-            tooltip.append("Location: ").append(info[2]).append("\n");
-        tooltip.append("Path: ").append(path);
-        return tooltip;
-    }
+      tooltip.append(Helper::location).append(": ").append(info[2]).append("\n");
+    tooltip.append(tr("Path")).append(": ").append(path);
+    return tooltip;
+  }
 }

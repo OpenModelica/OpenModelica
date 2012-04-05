@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,6 +31,11 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
+
 #ifndef SPLASHSCREEN_H
 #define SPLASHSCREEN_H
 
@@ -41,18 +46,17 @@
 class SplashScreen : public QSplashScreen
 {
 private:
-    QStringList mMessages;
-    QList<QPointF> mPoints;
-    QList<QFont> mFonts;
-    QList<QColor> mColors;
+  QStringList mMessages;
+  QList<QPointF> mPoints;
+  QList<QFont> mFonts;
+  QList<QColor> mColors;
 public:
-    SplashScreen(QPixmap pixmap);
-    ~SplashScreen();
+  SplashScreen(QPixmap pixmap);
+  ~SplashScreen();
 
-    void setMessage();
+  void setMessage();
 protected:
-    virtual void mousePressEvent(QMouseEvent *);
-    virtual void drawContents(QPainter *painter);
+  virtual void drawContents(QPainter *painter);
 };
 
 #endif // SPLASHSCREEN_H

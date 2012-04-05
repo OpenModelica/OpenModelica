@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 //! @file   BitmapAnnotation.h
 //! @author harka011
 //! @date   2011-02-01
@@ -47,55 +51,55 @@ class OMCProxy;
 
 class  BitmapAnnotation : public ShapeAnnotation
 {
-    Q_OBJECT
+  Q_OBJECT
 public:    
-    BitmapAnnotation(QString shape, Component *pParent);
-    BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
-    BitmapAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
-    QRectF boundingRect() const;
-    QPainterPath shape() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void addPoint(QPointF point);
-    void updateEndPoint(QPointF point);
-    void drawRectangleCornerItems();
-    QString getShapeAnnotation();
-    void parseShapeAnnotation(QString shape, OMCProxy *omc);
-    void setFileName(QString fileName);    
-    void updateAnnotation();
-    void setImageSource(QString imageSource);
-    QString getFileName();
+  BitmapAnnotation(QString shape, Component *pParent);
+  BitmapAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+  BitmapAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+  QRectF boundingRect() const;
+  QPainterPath shape() const;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  void addPoint(QPointF point);
+  void updateEndPoint(QPointF point);
+  void drawRectangleCornerItems();
+  QString getShapeAnnotation();
+  void parseShapeAnnotation(QString shape, OMCProxy *omc);
+  void setFileName(QString fileName);
+  void updateAnnotation();
+  void setImageSource(QString imageSource);
+  QString getFileName();
 
-    Component *mpComponent;
+  Component *mpComponent;
 private:
-    QString mFileName;
-    QString mImageSource;
+  QString mFileName;
+  QString mImageSource;
 public slots:
-    void updatePoint(int index, QPointF point);
+  void updatePoint(int index, QPointF point);
 };
 
 //! @brief The popup when you create a bitmap shape
 
 class BitmapWidget : public QDialog
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent);
+  BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent);
 
-    void setUpForm();
-    void show();
+  void setUpForm();
+  void show();
 
-    MainWindow *mpParentMainWindow;
+  MainWindow *mpParentMainWindow;
 private:
-   QLineEdit *mpBrowseBox;
-   QPushButton *mpBrowseButton;
-   QPushButton *mpOkButton;
-   QPushButton *mpCancelButton;
-   QDialogButtonBox *mpButtonBox;
-   QCheckBox *mpCheckBox;
-   BitmapAnnotation *mpBitmapAnnotation;
+  QLineEdit *mpBrowseBox;
+  QPushButton *mpBrowseButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+  QCheckBox *mpCheckBox;
+  BitmapAnnotation *mpBitmapAnnotation;
 public slots:
-    void edit();
-    void browse();
+  void edit();
+  void browse();
 };
 
 #endif // BITMAPANNOTATION_H

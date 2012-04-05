@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #ifndef LINEANNOTATION_H
 #define LINEANNOTATION_H
 
@@ -42,26 +46,26 @@ class RectangleCornerItem;
 
 class LineAnnotation : public ShapeAnnotation
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    LineAnnotation(QString shape, Component *pParent);
-    LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
-    LineAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
-    QPainterPath getShape() const;
-    QRectF boundingRect() const;
-    QPainterPath shape() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void drawLineAnnotaion(QPainter *painter);
-    void addPoint(QPointF point);
-    void updateEndPoint(QPointF point);
-    void drawRectangleCornerItems();
-    QString getShapeAnnotation();
-    void parseShapeAnnotation(QString shape, OMCProxy *omc);
-    QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
+  LineAnnotation(QString shape, Component *pParent);
+  LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+  LineAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+  QPainterPath getShape() const;
+  QRectF boundingRect() const;
+  QPainterPath shape() const;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  void drawLineAnnotaion(QPainter *painter);
+  void addPoint(QPointF point);
+  void updateEndPoint(QPointF point);
+  void drawRectangleCornerItems();
+  QString getShapeAnnotation();
+  void parseShapeAnnotation(QString shape, OMCProxy *omc);
+  QPolygonF drawArrow(QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
 
-    Component *mpComponent;
+  Component *mpComponent;
 public slots:
-    void updatePoint(int index, QPointF point);
+  void updatePoint(int index, QPointF point);
 };
 
 #endif // LINEANNOTATION_H

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #ifndef SIMULATIONWIDGET_H
 #define SIMULATIONWIDGET_H
 
@@ -41,98 +45,99 @@ class ProgressDialog;
 
 class SimulationWidget : public QDialog
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    SimulationWidget(MainWindow *pParent = 0);
-    ~SimulationWidget();
-    void setUpForm();
-    void show(bool isInteractive);
-    bool validate();
-    void initializeFields();
-    void simulateModel(QString simulationParameters, QStringList simulationFlags);
-    void buildModel(QString simulationParameters, QStringList simulationFlags);
-    void saveSimulationOptions();
+  SimulationWidget(MainWindow *pParent = 0);
+  ~SimulationWidget();
+  void setUpForm();
+  void show(bool isInteractive);
+  bool validate();
+  void initializeFields();
+  void simulateModel(QString simulationParameters, QStringList simulationFlags);
+  void buildModel(QString simulationParameters, QStringList simulationFlags);
+  void saveSimulationOptions();
 
-    MainWindow *mpParentMainWindow;
+  MainWindow *mpParentMainWindow;
 private:
-    QLabel *mpSimulationHeading;
-    QFrame *mpHorizontalLine;
-    QTabWidget *mpSimulationTabWidget;
-    // General Tab
-    QWidget *mpGeneralTab;
-    QGroupBox *mpSimulationIntervalGroup;
-    QLabel *mpStartTimeLabel;
-    QLineEdit *mpStartTimeTextBox;
-    QLabel *mpStopTimeLabel;
-    QLineEdit *mpStopTimeTextBox;
-    QGroupBox *mpIntegrationGroup;
-    QLabel *mpMethodLabel;
-    QComboBox *mpMethodComboBox;
-    QLabel *mpToleranceLabel;
-    QLineEdit *mpToleranceTextBox;
-    QCheckBox *mpSaveSimulationCheckbox;
-    QLabel *mpCflagsLabel;
-    QLineEdit *mpCflagsTextBox;
-    // Output Tab
-    QWidget *mpOutputTab;
-    QLabel *mpNumberofIntervalLabel;
-    QLineEdit *mpNumberofIntervalsTextBox;
-    QLabel *mpOutputFormatLabel;
-    QComboBox *mpOutputFormatComboBox;
-    QLabel *mpFileNameLabel;
-    QLineEdit *mpFileNameTextBox;
-    QLabel *mpVariableFilterLabel;
-    QLineEdit *mpVariableFilterTextBox;
-    // Simulation Flags Tab
-    QWidget *mpSimulationFlagsTab;
-    QLabel *mpModelSetupFileLabel;
-    QLineEdit *mpModelSetupFileTextBox;
-    QPushButton *mpModelSetupFileBrowseButton;
-    QLabel *mpInitializationMethodLabel;
-    QComboBox *mpInitializationMethodComboBox;
-    QLabel *mpOptimizationMethodLabel;
-    QComboBox *mpOptimizationMethodComboBox;
-    QLabel *mpEquationSystemInitializationFileLabel;
-    QLineEdit *mpEquationSystemInitializationFileTextBox;
-    QPushButton *mpEquationSystemInitializationFileBrowseButton;
-    QLabel *mpEquationSystemInitializationTimeLabel;
-    QLineEdit *mpEquationSystemInitializationTimeTextBox;
-    QGroupBox *mpLoggingGroup;
-    QCheckBox *mpLogStatsCheckBox;
-    QCheckBox *mpLogInitializationCheckBox;
-    QCheckBox *mpLogResultInitializationCheckBox;
-    QCheckBox *mpLogSolverCheckBox;
-    QCheckBox *mpLogEventsCheckBox;
-    QCheckBox *mpLogNonLinearSystemsCheckBox;
-    QCheckBox *mpLogZeroCrossingsCheckBox;
-    QCheckBox *mpLogDebugCheckBox;
-    // buttons
-    QPushButton *mpCancelButton;
-    QPushButton *mpSimulateButton;
-    QDialogButtonBox *mpButtonBox;
-    ProgressDialog *mpProgressDialog;
-    QProcess *mpSimulationProcess;
-    bool mIsInteractive;
+  QLabel *mpSimulationHeading;
+  QFrame *mpHorizontalLine;
+  QTabWidget *mpSimulationTabWidget;
+  // General Tab
+  QWidget *mpGeneralTab;
+  QGroupBox *mpSimulationIntervalGroup;
+  QLabel *mpStartTimeLabel;
+  QLineEdit *mpStartTimeTextBox;
+  QLabel *mpStopTimeLabel;
+  QLineEdit *mpStopTimeTextBox;
+  QGroupBox *mpIntegrationGroup;
+  QLabel *mpMethodLabel;
+  QComboBox *mpMethodComboBox;
+  QLabel *mpToleranceLabel;
+  QLineEdit *mpToleranceTextBox;
+  QCheckBox *mpSaveSimulationCheckbox;
+  QLabel *mpCflagsLabel;
+  QLineEdit *mpCflagsTextBox;
+  // Output Tab
+  QWidget *mpOutputTab;
+  QLabel *mpNumberofIntervalLabel;
+  QLineEdit *mpNumberofIntervalsTextBox;
+  QLabel *mpOutputFormatLabel;
+  QComboBox *mpOutputFormatComboBox;
+  QLabel *mpFileNameLabel;
+  QLineEdit *mpFileNameTextBox;
+  QLabel *mpVariableFilterLabel;
+  QLineEdit *mpVariableFilterTextBox;
+  // Simulation Flags Tab
+  QWidget *mpSimulationFlagsTab;
+  QLabel *mpModelSetupFileLabel;
+  QLineEdit *mpModelSetupFileTextBox;
+  QPushButton *mpModelSetupFileBrowseButton;
+  QLabel *mpInitializationMethodLabel;
+  QComboBox *mpInitializationMethodComboBox;
+  QLabel *mpOptimizationMethodLabel;
+  QComboBox *mpOptimizationMethodComboBox;
+  QLabel *mpEquationSystemInitializationFileLabel;
+  QLineEdit *mpEquationSystemInitializationFileTextBox;
+  QPushButton *mpEquationSystemInitializationFileBrowseButton;
+  QLabel *mpEquationSystemInitializationTimeLabel;
+  QLineEdit *mpEquationSystemInitializationTimeTextBox;
+  QGroupBox *mpLoggingGroup;
+  QCheckBox *mpLogStatsCheckBox;
+  QCheckBox *mpLogInitializationCheckBox;
+  QCheckBox *mpLogResultInitializationCheckBox;
+  QCheckBox *mpLogSolverCheckBox;
+  QCheckBox *mpLogEventsCheckBox;
+  QCheckBox *mpLogNonLinearSystemsCheckBox;
+  QCheckBox *mpLogZeroCrossingsCheckBox;
+  QCheckBox *mpLogDebugCheckBox;
+  // buttons
+  QPushButton *mpCancelButton;
+  QPushButton *mpSimulateButton;
+  QDialogButtonBox *mpButtonBox;
+  ProgressDialog *mpProgressDialog;
+  QProcess *mpSimulationProcess;
+  bool mIsInteractive;
 signals:
-    void showPlottingView();
+  void showPlottingView();
 public slots:
-    void browseModelSetupFile();
-    void browseEquationSystemInitializationFile();
-    void simulate();
-    void cancelSimulation();
+  void browseModelSetupFile();
+  void browseEquationSystemInitializationFile();
+  void simulate();
+  void cancelSimulation();
 };
 
 class ProgressDialog : public QDialog
 {
+  Q_OBJECT
 public:
-    ProgressDialog(SimulationWidget *pParent = 0);
-    QProgressBar* getProgressBar();
-    QPushButton* getCancelSimulationButton();
-    void setText(QString text);
+  ProgressDialog(SimulationWidget *pParent = 0);
+  QProgressBar* getProgressBar();
+  QPushButton* getCancelSimulationButton();
+  void setText(QString text);
 private:
-    QProgressBar *mpProgressBar;
-    QLabel *mpText;
-    QPushButton *mpCancelSimulationButton;
+  QProgressBar *mpProgressBar;
+  QLabel *mpText;
+  QPushButton *mpCancelSimulationButton;
 };
 
 #endif // SIMULATIONWIDGET_H

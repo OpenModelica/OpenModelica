@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -31,6 +31,10 @@
  *
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #ifndef COMPONENTSPROPERTIES_H
 #define COMPONENTSPROPERTIES_H
 
@@ -40,38 +44,38 @@
 class ComponentsProperties
 {
 public:
-    ComponentsProperties(QString value);
-    void parseString(QString value);
-    QString getIndex();
-    QString getClassName();
-    QString getName();
-    QString getComment();
-    QString getVariablity();
-    bool getProtected();
-    bool getFlow();
-    bool getFinal();
-    bool getReplaceable();
-    int getIndexValue();
-    QString getCasuality();
-    bool getInner();
-    bool getOuter();
+  ComponentsProperties(QString value);
+  void parseString(QString value);
+  QString getIndex();
+  QString getClassName();
+  QString getName();
+  QString getComment();
+  QString getVariablity();
+  bool getProtected();
+  bool getFlow();
+  bool getFinal();
+  bool getReplaceable();
+  int getIndexValue();
+  QString getCasuality();
+  bool getInner();
+  bool getOuter();
 private:
-    QString mClassName;
-    QString mName;
-    QString mComment;
-    QString mIndex;
-    int mIndexValue;
-    bool mIsProtected;
-    bool mIsFinal;
-    bool mIsFlow;
-    bool mIsStream;
-    bool mIsReplaceable;
-    QMap<QString, QString> mVariabilityMap;
-    QString mVariability;
-    bool mIsInner;
-    bool mIsOuter;
-    QMap<QString, QString> mCasualityMap;
-    QString mCasuality;
+  QString mClassName;
+  QString mName;
+  QString mComment;
+  QString mIndex;
+  int mIndexValue;
+  bool mIsProtected;
+  bool mIsFinal;
+  bool mIsFlow;
+  bool mIsStream;
+  bool mIsReplaceable;
+  QMap<QString, QString> mVariabilityMap;
+  QString mVariability;
+  bool mIsInner;
+  bool mIsOuter;
+  QMap<QString, QString> mCasualityMap;
+  QString mCasuality;
 };
 
 #endif // COMPONENTSPROPERTIES_H
