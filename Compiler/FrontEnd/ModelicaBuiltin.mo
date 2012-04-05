@@ -1785,6 +1785,13 @@ external "builtin";
 annotation(preferredView="text");
 end setSourceFile;
 
+function isShortDefinition "returns true if the definition is a short class definition"
+  input TypeName class_;
+  output Boolean isShortCls;
+external "builtin";
+annotation(preferredView="text");
+end isShortDefinition;
+
 function setClassComment "Sets the class comment."
   input TypeName class_;
   input String filename;

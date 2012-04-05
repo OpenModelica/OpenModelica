@@ -832,6 +832,12 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache, env, "isShortDefinition", {Values.CODE(Absyn.C_TYPENAME(path))}, st as Interactive.SYMBOLTABLE(ast = p), msg)
+      equation
+        b = isShortDefinition(path, p);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
@@ -6303,5 +6309,28 @@ algorithm
     else val;    
   end matchcontinue;
 end evalCodeTypeName;
+
+public function isShortDefinition
+"@auhtor:adrpo
+  returns true if the class is derived or false otherwise"
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inPath,inProgram)
+    local
+      Absyn.Path path;
+      Absyn.Class class_;
+      Boolean res;
+      Absyn.Program p;
+    case (path,p)
+      equation
+        Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) = Interactive.getPathedClassInProgram(path, p);        
+      then
+        true;
+    case (_,_) then false;
+  end matchcontinue;
+end isShortDefinition;
 
 end CevalScript;
