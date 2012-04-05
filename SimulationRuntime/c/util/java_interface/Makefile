@@ -8,4 +8,4 @@ modelica_java.jar: $(java_sources)
 test: $(java_sources)
 	rm -rf bin-test; mkdir bin-test
 	@"$(JAVAC)" -source 5 -cp "$(antlr):$(junit)" -d bin-test $(java_sources) $(java_tests)
-	$(JAVA) -cp "bin-test:src:$(antlr):$(junit)" org.junit.runner.JUnitCore $(junit_tests)
+	OPENMODELICAHOME=$(OPENMODELICAHOME) $(JAVA) -cp "bin-test:src:$(antlr):$(junit)" org.junit.runner.JUnitCore $(junit_tests)

@@ -8,6 +8,7 @@ JAVA=java
 JAR=jar
 endif
 
+OPENMODELICAHOME=$(shell pwd)/../../../../build
 antlr = antlr-3.1.3.jar
 licenses = ptplot_license.txt antlr_license.txt
 ptplot = ptplot.jar
