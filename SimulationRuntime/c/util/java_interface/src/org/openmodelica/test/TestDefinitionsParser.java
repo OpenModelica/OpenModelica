@@ -41,6 +41,7 @@ public class TestDefinitionsParser {
         new File("test_files").getAbsolutePath(), "meta_modelica.mo");
   }
 
+  @Ignore
   @Test
   public void test_OMC_Util_mo() throws Exception {
     File jarFile = new File("test_files/OMC_Util.jar");
@@ -52,7 +53,6 @@ public class TestDefinitionsParser {
       true);
   }
 
-  @Ignore
   @Test
   /**
    *  Absyn.mo contains things like "type XXX = tuple<YYY, ZZZ>;"

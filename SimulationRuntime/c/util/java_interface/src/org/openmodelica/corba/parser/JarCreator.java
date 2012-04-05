@@ -87,7 +87,10 @@ public class JarCreator {
     }
 
     for (File sourceFile : sourceFiles) {
-      if (javac.run(null, null, null, "-classpath", System.getenv("OPENMODELICAHOME") + "/share/java/modelica_java.jar","-sourcepath", basePath.getAbsolutePath(), sourceFile.getAbsolutePath()) != 0)
+      File modelica_java = new File(System.getenv("OPENMODELICAHOME") + "/share/omc/java/modelica_java.jar");
+      if (!modelica_java.exists())
+        throw new RuntimeException("Could not find modelica_java.jar " + modelica_java);
+      if (javac.run(null, null, null, "-classpath", modelica_java.getAbsolutePath(),"-sourcepath", basePath.getAbsolutePath(), sourceFile.getAbsolutePath()) != 0)
         throw new RuntimeException("Failed to compile " + sourceFile);
     }
   }
