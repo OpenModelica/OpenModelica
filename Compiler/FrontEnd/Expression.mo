@@ -985,6 +985,93 @@ algorithm
   end matchcontinue;
 end setOpType;
 
+public function unliftOperator
+  "Unlifts the type of an operator by removing one dimension from the operator
+   type. The operator is changed to the scalar version if the type becomes a
+   scalar type."
+  input Operator inOperator;
+  output Operator outOperator;
+protected
+  Type ty;
+algorithm
+  ty := typeofOp(inOperator);
+  ty := unliftArray(ty);
+  outOperator := unliftOperator2(inOperator, ty);
+end unliftOperator;
+
+public function unliftOperatorX
+  "Unlifts the type of an operator by removing X dimensions from the operator
+   type. The operator is changed to the scalar version if the type becomes a
+   scalar type."
+  input Operator inOperator;
+  input Integer inX;
+  output Operator outOperator;
+protected
+  Type ty;
+algorithm
+  ty := typeofOp(inOperator);
+  ty := unliftArrayX(ty, inX);
+  outOperator := unliftOperator2(inOperator, ty);
+end unliftOperatorX;
+
+protected function unliftOperator2
+  "Helper function to unliftOperator. Sets the type of the given operator, and
+   changes the operator to the scalar version if the type is scalar."
+  input Operator inOperator;
+  input Type inType;
+  output Operator outOperator;
+algorithm
+  outOperator := match(inOperator, inType)
+    case (_, DAE.T_ARRAY(ty = _)) then setOpType(inOperator, inType);
+    else makeScalarOpFromArrayOp(inOperator, inType);
+  end match;
+end unliftOperator2;
+
+protected function makeScalarOpFromArrayOp
+  "Helper function to makeScalarOpFromArrayOp. Returns the scalar version of a
+   given array operator."
+  input Operator inOperator;
+  input Type inType;
+  output Operator outOperator;
+algorithm
+  outOperator := match(inOperator, inType)
+    case (DAE.MUL_ARRAY_SCALAR(ty = _), _) then DAE.MUL(inType);
+    case (DAE.ADD_ARRAY_SCALAR(ty = _), _) then DAE.ADD(inType);
+    case (DAE.SUB_SCALAR_ARRAY(ty = _), _) then DAE.SUB(inType);
+    case (DAE.DIV_ARRAY_SCALAR(ty = _), _) then DAE.DIV(inType);
+    case (DAE.DIV_SCALAR_ARRAY(ty = _), _) then DAE.DIV(inType);
+    case (DAE.POW_ARRAY_SCALAR(ty = _), _) then DAE.POW(inType);
+    case (DAE.POW_SCALAR_ARRAY(ty = _), _) then DAE.POW(inType);
+    else inOperator;
+  end match;
+end makeScalarOpFromArrayOp;
+
+public function isScalarArrayOp
+  "Returns true if the operator takes a scalar and an array as arguments."
+  input Operator inOperator;
+  output Boolean outIsScalarArrayOp;
+algorithm
+  outIsScalarArrayOp := match(inOperator)
+    case DAE.SUB_SCALAR_ARRAY(ty = _) then true;
+    case DAE.DIV_SCALAR_ARRAY(ty = _) then true;
+    case DAE.POW_SCALAR_ARRAY(ty = _) then true;
+  end match;
+end isScalarArrayOp;
+
+public function isArrayScalarOp
+  "Returns true if the operator takes an array and a scalar as arguments."
+  input Operator inOperator;
+  output Boolean outIsArrayScalarOp;
+algorithm
+  outIsArrayScalarOp := match(inOperator)
+    case DAE.MUL_ARRAY_SCALAR(ty = _) then true;
+    case DAE.ADD_ARRAY_SCALAR(ty = _) then true;
+    case DAE.DIV_ARRAY_SCALAR(ty = _) then true;
+    case DAE.POW_ARRAY_SCALAR(ty = _) then true;
+    else false;
+  end match;
+end isArrayScalarOp;
+    
 public function subscriptsAppend
 "function: subscriptsAppend
   This function takes a subscript list and adds a new subscript.

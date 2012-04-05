@@ -1105,6 +1105,44 @@ void division_alloc_real_array_scalar(const real_array_t * a,modelica_real b,rea
     division_real_array_scalar(a,b,dest,division_str);
 }
 
+void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)
+{
+    size_t nr_of_elements;
+    size_t i;
+    /* Assert that dest has correct size*/
+    /* Do we need to check for b=0? */
+    nr_of_elements = base_array_nr_of_elements(b);
+    for (i=0; i < nr_of_elements; ++i) {
+        real_set(dest, i, a / real_get(b, i));
+    }
+}
+
+void div_alloc_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest)
+{
+    clone_real_array_spec(b,dest);
+    alloc_real_array_data(dest);
+    div_scalar_real_array(a,b,dest);
+}
+
+void pow_real_array_scalar(const real_array_t *a, modelica_real b, real_array_t* dest)
+{
+  size_t nr_of_elements = base_array_nr_of_elements(a);
+  size_t i;
+
+  assert(nr_of_elements == base_array_nr_of_elements(dest));
+
+  for(i = 0; i < nr_of_elements; ++i) {
+    real_set(dest, i, pow(real_get(a, i), b));
+  }
+}
+
+void pow_alloc_real_array_scalar(const real_array_t* a, modelica_real b, real_array_t* dest)
+{
+  clone_real_array_spec(a, dest);
+  alloc_real_array_data(dest);
+  pow_real_array_scalar(a, b, dest);
+}
+
 void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest)
 {
     modelica_integer i;

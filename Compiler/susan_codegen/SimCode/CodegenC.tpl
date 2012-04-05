@@ -5048,7 +5048,20 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
-  case DIV_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for DIV_SCALAR_ARRAY'
+  case DIV_SCALAR_ARRAY(__) then
+    let type = match ty case T_ARRAY(ty = T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty = T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFD*/)
+    let &preExp += 'div_alloc_scalar_<%type%>(<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
+  case POW_ARRAY_SCALAR(__) then
+    let type = match ty case T_ARRAY(ty = T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty = T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFD*/)
+    let &preExp += 'pow_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
   case POW_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for POW_ARRAY_SCALAR'
   case POW_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for POW_SCALAR_ARRAY'
   case POW_ARR(__) then 'daeExpBinary:ERR for POW_ARR'

@@ -1098,6 +1098,44 @@ void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_inte
     division_integer_array_scalar(a,b,dest,division_str);
 }
 
+void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest)
+{
+    size_t nr_of_elements;
+    size_t i;
+    /* Assert that dest has correct size*/
+    /* Do we need to check for b=0? */
+    nr_of_elements = base_array_nr_of_elements(b);
+    for (i=0; i < nr_of_elements; ++i) {
+        integer_set(dest, i, a / integer_get(b, i));
+    }
+}
+
+void div_alloc_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest)
+{
+    clone_integer_array_spec(b,dest);
+    alloc_integer_array_data(dest);
+    div_scalar_integer_array(a,b,dest);
+}
+
+void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, integer_array_t* dest)
+{
+  size_t nr_of_elements = base_array_nr_of_elements(a);
+  size_t i;
+
+  assert(nr_of_elements == base_array_nr_of_elements(dest));
+
+  for(i = 0; i < nr_of_elements; ++i) {
+    integer_set(dest, i, (modelica_integer)pow(integer_get(a, i), b));
+  }
+}
+
+void pow_alloc_integer_array_scalar(const integer_array* a, modelica_integer b, integer_array_t* dest)
+{
+  clone_integer_array_spec(a, dest);
+  alloc_integer_array_data(dest);
+  pow_integer_array_scalar(a, b, dest);
+}
+
 void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_array_t* dest)
 {
     modelica_integer i;

@@ -206,6 +206,10 @@ extern void division_integer_array_scalar(const integer_array_t * a,modelica_int
                                           integer_array_t* dest, const char* division_str);
 extern void division_alloc_integer_array_scalar(const integer_array_t * a,modelica_integer b,
                                                 integer_array_t* dest, const char* division_str);
+extern void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest);
+extern void div_alloc_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest);
+extern void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, integer_array_t* dest);
+extern void pow_alloc_integer_array_scalar(const integer_array* a, modelica_integer b, integer_array_t* dest);
 
 extern void exp_integer_array(const integer_array_t * a, modelica_integer n,
                               integer_array_t* dest);

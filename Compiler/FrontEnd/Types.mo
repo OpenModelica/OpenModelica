@@ -1096,7 +1096,7 @@ public function arrayType "function: arrayType
 algorithm
   outBoolean := matchcontinue (inType)
     case (DAE.T_ARRAY(dims = _)) then true;
-    case (_) then false;
+    else false;
   end matchcontinue;
 end arrayType;
 

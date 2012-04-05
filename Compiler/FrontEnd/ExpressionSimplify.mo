@@ -1395,113 +1395,19 @@ algorithm
       then 
         DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
 
-    // matrix * scalar
-    case (a1 as DAE.MATRIX(ty =_),DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
+   case (a1, op, s1)
       equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(Expression.unliftArray(atp));
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.MUL_ARRAY_SCALAR(atp2),DAE.MUL(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
+        true = Expression.isArrayScalarOp(op);
+        op = unliftOperator(a1, op);
       then
-        res;
+        simplifyVectorScalar(a1, op, s1);
 
-    // array * scalar
-    case (a1,DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
+    case (s1, op, a1)
       equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.MUL_ARRAY_SCALAR(atp2),DAE.MUL(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
+        true = Expression.isScalarArrayOp(op);
+        op = unliftOperator(a1, op);
       then
-        res;
-
-    // array .+ scalar
-    case (a1,DAE.ADD_ARRAY_SCALAR(ty = tp),s1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.ADD_ARRAY_SCALAR(atp2),DAE.ADD(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // scalar .- array
-    case (s1,DAE.SUB_SCALAR_ARRAY(ty = tp),a1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.SUB_SCALAR_ARRAY(atp2),DAE.SUB(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // scalar ./ array
-    case (s1,DAE.DIV_SCALAR_ARRAY(ty = tp),a1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.DIV_SCALAR_ARRAY(atp2),DAE.DIV(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // matrix / scalar
-    case (a1 as DAE.MATRIX(ty =_),DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(Expression.unliftArray(atp));
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.DIV_ARRAY_SCALAR(atp2),DAE.DIV(tp));
-        res = simplifyVectorScalar(a1, op2, s1);
-      then
-        res;
-
-    // array / scalar
-    case (a1,DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.DIV_ARRAY_SCALAR(atp2),DAE.DIV(tp));
-        res = simplifyVectorScalar(a1, op2, s1);
-      then
-        res;
-
-    // scalar .^ array
-    case (s1,DAE.POW_SCALAR_ARRAY(ty = tp),a1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.POW_SCALAR_ARRAY(atp2),DAE.POW(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // array .+ scalar
-    case (a1,DAE.POW_ARRAY_SCALAR(ty = tp),s1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.POW_ARRAY_SCALAR(atp2),DAE.POW(tp));
-        res = simplifyVectorScalar(a1, op2, s1);
-      then
-        res;
+        simplifyVectorScalar(s1, op, a1);
 
     case (e1,DAE.MUL_SCALAR_PRODUCT(ty = tp),e2)
       equation
@@ -1693,6 +1599,17 @@ algorithm
         (exp :: res);
   end matchcontinue;
 end simplifyScalarProductVectorMatrix;
+
+protected function unliftOperator
+  input DAE.Exp inArray;
+  input Operator inOperator;
+  output Operator outOperator;
+algorithm
+  outOperator := match(inArray, inOperator)
+    case (DAE.MATRIX(ty = _), _) then Expression.unliftOperatorX(inOperator, 2);
+    else Expression.unliftOperator(inOperator);
+  end match;
+end unliftOperator;
 
 protected function simplifyVectorScalar
 "function: simplifyVectorScalar

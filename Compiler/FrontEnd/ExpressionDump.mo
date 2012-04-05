@@ -302,17 +302,17 @@ algorithm
         s = stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
-    case (DAE.POW_ARR(ty = _)) then " ^ ";
-    case (DAE.POW_ARR2(ty = _)) then " ^ ";
+    case (DAE.POW_ARR(ty = _)) then " ^<POW_ARR> ";
+    case (DAE.POW_ARR2(ty = _)) then " ^<POW_ARR2> ";
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " *<MUL_ARRAY_SCALAR> ";
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + ";
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^ ";
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^ ";
+    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " +<ADD_ARRAY_SCALAR> ";
+    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " -<SUB_SCALAR_ARRAY> ";
+    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^<POW_SCALAR_ARRAY> ";
+    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^<POW_ARRAY_SCALAR> ";
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " *<MUL_SCALAR_PRODUCT> ";
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " *<MUL_MATRIX_PRODUCT> ";
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / ";
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / ";
+    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " /<DIV_SCALAR_ARRAY> ";
+    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " /<DIV_ARRAY_SCALAR> ";
   end match;
 end binopSymbol2;
 
