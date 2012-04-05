@@ -5707,6 +5707,7 @@ algorithm
     local
       Absyn.Path path;
       Integer i;
+      Absyn.FunctionRestriction functionRestriction; 
     
     case Absyn.R_CLASS()
       equation
@@ -5753,26 +5754,13 @@ algorithm
         Print.printBuf("record Absyn.R_PACKAGE end Absyn.R_PACKAGE;");
       then ();
     
-    case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())
+    case Absyn.R_FUNCTION(functionRestriction=functionRestriction)
       equation
-        Print.printBuf("record Absyn.FR_NORMAL_FUNCTION end Absyn.FR_NORMAL_FUNCTION;");
+        Print.printBuf("record Absyn.R_FUNCTION functionRestriction = ");
+        printFunctionRestrictionAsCorbaString(functionRestriction);
+        Print.printBuf("end Absyn.R_FUNCTION;");
       then ();
 
-    case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())
-      equation
-        Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;");
-      then ();
-    
-    case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION())
-      equation
-        Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;");
-      then ();
-       
-    case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION())
-      equation
-        Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;");
-      then ();
-    
     case Absyn.R_OPERATOR()
       equation
         Print.printBuf("record Absyn.R_OPERATOR end Absyn.R_OPERATOR;");
@@ -5830,6 +5818,29 @@ algorithm
     else equation Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
   end match;
 end printRestrictionAsCorbaString;
+
+protected function printFunctionRestrictionAsCorbaString
+  input Absyn.FunctionRestriction functionRestriction;
+algorithm
+  _ := match functionRestriction
+    case Absyn.FR_NORMAL_FUNCTION()
+      equation
+        Print.printBuf("record Absyn.FR_NORMAL_FUNCTION end Absyn.FR_NORMAL_FUNCTION;"); 
+      then ();
+    case Absyn.FR_OPERATOR_FUNCTION()
+      equation
+        Print.printBuf("record Absyn.FR_OPERATOR_FUNCTION end Absyn.FR_OPERATOR_FUNCTION;"); 
+      then ();
+    case Absyn.FR_PARALLEL_FUNCTION()
+      equation
+        Print.printBuf("record Absyn.FR_PARALLEL_FUNCTION end Absyn.FR_PARALLEL_FUNCTION;"); 
+      then ();
+    case Absyn.FR_KERNEL_FUNCTION()
+      equation
+        Print.printBuf("record Absyn.FR_KERNEL_FUNCTION end Absyn.FR_KERNEL_FUNCTION;"); 
+      then ();
+  end match;
+end printFunctionRestrictionAsCorbaString;
 
 protected function printClassPartAsCorbaString
   input Absyn.ClassPart classPart;
@@ -6215,7 +6226,7 @@ algorithm
         Print.printBuf(", comment = ");
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf(", info = ");
-        printInfo(info);
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.EQUATIONITEM;");
       then ();
     case Absyn.EQUATIONITEMANN(annotation_)
@@ -6681,7 +6692,7 @@ algorithm
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Info info;
-    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment,_)
+    case Absyn.MODIFICATION(finalPrefix,eachPrefix,componentRef,modification,comment,info)
       equation
         Print.printBuf("record Absyn.MODIFICATION finalPrefix = ");
         Print.printBuf(Util.if_(finalPrefix,"true","false"));
@@ -6693,6 +6704,8 @@ algorithm
         printOption(modification, printModificationAsCorbaString);
         Print.printBuf(", comment = ");
         printStringCommentOption(comment);
+        Print.printBuf(", info = ");
+        printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.MODIFICATION;");
       then ();
     case Absyn.REDECLARATION(finalPrefix,redeclareKeywords,eachPrefix,elementSpec,constrainClass,info)
@@ -6753,11 +6766,11 @@ algorithm
       equation
         Print.printBuf("record Absyn.ITERATOR name = \"");
         Print.printBuf(id);
-        Print.printBuf("\", guard = ");
+        Print.printBuf("\", guardExp = ");
         printOption(guardExp,printExpAsCorbaString);
         Print.printBuf(", range = ");
         printOption(range,printExpAsCorbaString);
-        Print.printBuf(")");
+        Print.printBuf("end Absyn.ITERATOR;");
       then ();
   end match;
 end printForIteratorAsCorbaString;

@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.LineNumberReader;
 
 import org.openmodelica.ModelicaAny;
 import org.openmodelica.ModelicaObject;
@@ -15,6 +16,7 @@ import org.openmodelica.SimpleTypeSpec;
 import org.openmodelica.TypeSpec;
 
 public class OMCStringParser {
+  private static int sizeError = 300;
   public static ModelicaObject parse(String s) throws ParseException {
     return parse(s,SimpleTypeSpec.modelicaObject);
   }
@@ -23,20 +25,20 @@ public class OMCStringParser {
     return parse(s,new SimpleTypeSpec<T>(c));
   }
   public static <T extends ModelicaObject> T parse(String s, TypeSpec<T> spec) throws ParseException {
-    Reader input = new StringReader(s);
+    LineNumberReader input = new LineNumberReader(new StringReader(s));
     try {
       return parse(input,spec);
     } catch (ParseException ex) {
-      char[] cbuf = new char[40];
+      char[] cbuf = new char[sizeError];
       String str;
       try {
-        input.read(cbuf,0,40);
+        input.read(cbuf,0,sizeError);
         str = new String(cbuf);
         File f = File.createTempFile("OMCStringParser", ".log");
         FileWriter fw = new FileWriter(f);
         fw.write(s);
         fw.close();
-        throw new ParseException("Original string saved to file "+f+"\nNext characters in stream: " + str,ex);
+        throw new ParseException("Original string saved to file "+f+"\nFailed at line: "+input.getLineNumber()+", next characters in stream: " + str,ex);
       } catch (IOException ex2) {
         throw new ParseException(ex);
       }
@@ -66,17 +68,17 @@ public class OMCStringParser {
     return parse(f,new SimpleTypeSpec<T>(c));
   }
   public static <T extends ModelicaObject> T parse(File f, TypeSpec<T> spec) throws ParseException, FileNotFoundException {
-    Reader input;
-    input = new BufferedReader(new FileReader(f));
+    LineNumberReader input;
+    input = new LineNumberReader(new BufferedReader(new FileReader(f)));
     try {
       return parse(input,spec);
     } catch (ParseException ex) {
-      char[] cbuf = new char[40];
+      char[] cbuf = new char[sizeError];
       String str;
       try {
-        input.read(cbuf,0,40);
+        input.read(cbuf,0,sizeError);
         str = new String(cbuf);
-        throw new ParseException("Original file: "+f+"\nNext characters in stream: " + str,ex);
+        throw new ParseException("Original file: "+f+"\nFailed at line: "+input.getLineNumber()+", next characters in stream: " + str,ex);
       } catch (IOException ex2) {
         throw new ParseException(ex);
       }

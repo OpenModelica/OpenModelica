@@ -94,9 +94,9 @@ public class ModelicaRecord implements IModelicaRecord {
       Class<? extends ModelicaObject>[] fieldTypes,
       ModelicaObject... values) throws ModelicaRecordException {
     if (fieldNames.length != fieldTypes.length)
-      throw new ModelicaRecordException("Length of field names and types differ");
+      throw new ModelicaRecordException("Length of field names ("+fieldNames.length+") and types ("+fieldTypes.length+") differ";
     if (fieldNames.length != values.length)
-      throw new ModelicaRecordException("Length of field names and source record differ");
+      throw new ModelicaRecordException("Length of field names ("+fieldNames.length+") and source ("+values.length+") record differ";
 
     this.recordName = recordName;
     spec = allRecords.get(recordName);
@@ -123,9 +123,9 @@ public class ModelicaRecord implements IModelicaRecord {
       Class<? extends ModelicaObject>[] fieldTypes,
       Map<String,ModelicaObject> map) throws ModelicaRecordException {
     if (fieldNames.length != fieldTypes.length)
-      throw new ModelicaRecordException("Length of field names and types differ");
+      throw new ModelicaRecordException("Length of field names ("+fieldNames.length+")and types ("+fieldTypes.length+")differ");
     if (fieldNames.length != map.size())
-      throw new ModelicaRecordException("Length of field names and source record differ");
+      throw new ModelicaRecordException("Length of field names ("+fieldNames.length+")and source record ("+map.size()+") differ");
 
     this.recordName = recordName;
     spec = allRecords.get(recordName);
