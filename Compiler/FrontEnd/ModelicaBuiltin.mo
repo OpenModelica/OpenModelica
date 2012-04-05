@@ -2280,6 +2280,26 @@ annotation(
   preferredView="text");
 end isModel;
 
+function setInitXmlStartValue
+  input String fileName;
+  input String variableName;
+  input String startValue;
+  input String outputFile;
+  output Boolean success := false;
+protected
+  String xsltproc;
+  String command;
+  CheckSettingsResult settings;
+algorithm
+  if regularFileExists(fileName) then
+    settings := checkSettings();
+    xsltproc := if settings.OS == "Windows_NT" then getInstallationDirectoryPath() + "/lib/omc/libexec/xsltproc/xsltproc.exe" else "xsltproc";
+    command := xsltproc + " -o " + outputFile + " --stringparam variableName " + variableName + " --stringparam variableStart " + startValue + " " +
+      getInstallationDirectoryPath() + "/share/omc/scripts/replace-startValue.xsl " + fileName;
+    success := 0 == system(command);
+  end if;
+end setInitXmlStartValue;
+
 annotation(preferredView="text");
 end Scripting;
 
@@ -2679,7 +2699,7 @@ annotation(Documentation(info="<html>
 </ul>
 <h4>OpenModelica Eclipse Plug-in (MDT)</h4>
 <ul>
-<li>Small  fixes and improvements.</li>
+<li>Small fixes and improvements.</li>
 </ul>
 <h4>OpenModelica Development Environment (OMDev)</h4>
 <ul>
