@@ -1630,7 +1630,7 @@ algorithm
       Integer dims;
     
     // scalar operator array
-    case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = {})) then DAE.ARRAY(tp,sc,{DAE.BINARY(s1,op,DAE.ICONST(0))});
+    case (_, _, DAE.ARRAY(array = {})) then inExp3;
     case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = {e1})) then DAE.ARRAY(tp,sc,{DAE.BINARY(s1,op,e1)});
     
     case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = (e1 :: es)))
