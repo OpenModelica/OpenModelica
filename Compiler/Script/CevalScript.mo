@@ -1767,7 +1767,7 @@ algorithm
         platform = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
-        gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null");
+        gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null 2>&1");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),Values.STRING(omlib),
                 Values.STRING(omcpath),Values.BOOL(omcfound),
