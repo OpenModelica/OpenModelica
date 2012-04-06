@@ -31,6 +31,10 @@
  * Contributors 2011: Abhinn Kothari
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #include "Helper.h"
 
 /* Global non-translated variables */

@@ -31,6 +31,10 @@
  * Contributors 2011: Abhinn Kothari
  */
 
+/*
+ * RCS: $Id$
+ */
+
 #ifndef HELPER_H
 #define HELPER_H
 
