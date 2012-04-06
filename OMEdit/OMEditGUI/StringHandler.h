@@ -43,6 +43,7 @@
 
 class StringHandler : public QObject
 {
+  Q_OBJECT
 public:
   StringHandler();
   ~StringHandler();

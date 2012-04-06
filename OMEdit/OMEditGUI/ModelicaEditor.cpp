@@ -184,8 +184,9 @@ void ModelicaEditor::findText(const QString &text, bool forward)
 
   if (!found)
   {
-    QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow, Helper::applicationName + " - Information",
-                             GUIMessages::getMessage(GUIMessages::SEARCH_STRING_NOT_FOUND).arg(text), "OK");
+    QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow,
+                             QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::SEARCH_STRING_NOT_FOUND).arg(text), Helper::ok);
   }
 }
 

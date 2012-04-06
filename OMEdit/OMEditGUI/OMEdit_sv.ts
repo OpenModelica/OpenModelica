@@ -410,12 +410,12 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>GotoLineWidget</name>
     <message>
-        <location filename="ModelicaEditor.cpp" line="626"/>
+        <location filename="ModelicaEditor.cpp" line="627"/>
         <source>Go to Line</source>
         <translation>Gå till linje</translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="647"/>
+        <location filename="ModelicaEditor.cpp" line="648"/>
         <source>Enter line number (1 to </source>
         <translation>Ange antal rader (1 till </translation>
     </message>
@@ -423,7 +423,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="937"/>
+        <location filename="ProjectTabWidget.cpp" line="933"/>
         <source>Cancel Connection</source>
         <translation>Avbryta Anslutningen</translation>
     </message>
@@ -483,12 +483,12 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <translation>Återställ posten rotationen</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="902"/>
+        <location filename="ProjectTabWidget.cpp" line="901"/>
         <source>The class needs to be saved before you can insert a bitmap.</source>
         <translation>Class måste sparas innan du kan infoga en bitmapp.</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="1399"/>
+        <location filename="ProjectTabWidget.cpp" line="1395"/>
         <source>Error in class annotation </source>
         <translation>Fel i Class kommentaren</translation>
     </message>
@@ -1158,27 +1158,27 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>LibraryTree</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="583"/>
+        <location filename="LibraryWidget.cpp" line="586"/>
         <source>Modelica Standard Library</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="606"/>
+        <location filename="LibraryWidget.cpp" line="609"/>
         <source>Show Component</source>
         <translation>Visa Komponent</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="607"/>
+        <location filename="LibraryWidget.cpp" line="610"/>
         <source>Shows the component</source>
         <translation>Visar komponenten</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="610"/>
+        <location filename="LibraryWidget.cpp" line="613"/>
         <source>View Documentation</source>
         <translation>Visa Dokumentation</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="611"/>
+        <location filename="LibraryWidget.cpp" line="614"/>
         <source>View component documentation</source>
         <translation>Visa komponentdokumentation</translation>
     </message>
@@ -1186,7 +1186,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>LibraryWidget</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1346"/>
+        <location filename="LibraryWidget.cpp" line="1349"/>
         <source>Modelica Library</source>
         <translation>Modelica Bibliotek</translation>
     </message>
@@ -1743,7 +1743,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>ModelBrowserTree</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1611"/>
+        <location filename="LibraryWidget.cpp" line="1614"/>
         <source>Outline</source>
         <translation>Beskriva</translation>
     </message>
@@ -1804,12 +1804,12 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <translation>Start och Slut modifierare är olika</translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="207"/>
+        <location filename="ModelicaEditor.cpp" line="208"/>
         <source>Undo changes</source>
         <translation>Ångra ändringar</translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="208"/>
+        <location filename="ModelicaEditor.cpp" line="209"/>
         <source>Let me fix errors</source>
         <translation>Låt mig åtgärda fel</translation>
     </message>
@@ -1875,7 +1875,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <translation>Kontrollera Modelica model</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="430"/>
+        <location filename="LibraryWidget.cpp" line="433"/>
         <source>while deleting </source>
         <translation>vid borttagning </translation>
     </message>
@@ -2124,17 +2124,17 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>ProjectTabWidget</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3076"/>
+        <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File As</source>
         <translation>Spara filen som</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3076"/>
+        <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File</source>
         <translation>Spara filen</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3195"/>
+        <location filename="ProjectTabWidget.cpp" line="3191"/>
         <source>There are unsaved models opened. Do you still want to quit?</source>
         <translation>Det är inte sparats models öppnas. Vill du fortfarande sluta?</translation>
     </message>
@@ -2150,12 +2150,12 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
 <context>
     <name>SearchMSLWidget</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1256"/>
+        <location filename="LibraryWidget.cpp" line="1259"/>
         <source>Searched Items</source>
         <translation>Sökt Objekt</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="1314"/>
+        <location filename="LibraryWidget.cpp" line="1317"/>
         <source>Sorry, no items found</source>
         <translation>Tyvärr, du har inga objekt</translation>
     </message>
@@ -2498,22 +2498,22 @@ Vänta en stund.</translation>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2649"/>
+        <location filename="ProjectTabWidget.cpp" line="2645"/>
         <source>Recent Files</source>
         <translation>Senaste Filer</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2651"/>
+        <location filename="ProjectTabWidget.cpp" line="2647"/>
         <source>No recent files found.</source>
         <translation>Inga nya filer hittades.</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2674"/>
+        <location filename="ProjectTabWidget.cpp" line="2670"/>
         <source>Create Model</source>
         <translation>Skapa  Model</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2677"/>
+        <location filename="ProjectTabWidget.cpp" line="2673"/>
         <source>Open Model</source>
         <translation>Öppen Model</translation>
     </message>

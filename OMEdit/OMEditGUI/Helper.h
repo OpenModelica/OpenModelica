@@ -41,6 +41,7 @@
 
 class Helper : public QObject
 {
+  Q_OBJECT
 public:
   static void initHelperVariables();
   /* Global non-translated variables */
@@ -177,6 +178,7 @@ public:
 
 class GUIMessages : public QObject
 {
+  Q_OBJECT
 public:
   enum MessagesTypes
   {

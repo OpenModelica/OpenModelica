@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
   argc++;
   argv[(argc - 1)] = "-stylesheet=:/Resources/css/stylesheet.qss";
 
-  Helper::initHelperVariables();
   QApplication a(argc, argv);
   QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
   a.setAttribute(Qt::AA_DontShowIconsInMenus, false);
@@ -87,6 +86,7 @@ int main(int argc, char *argv[])
   SplashScreen splashScreen(pixmap);
   splashScreen.setMessage();
   splashScreen.show();
+  Helper::initHelperVariables();
   // MainWindow Initialization
   MainWindow mainwindow(&splashScreen);
   if (mainwindow.mExitApplication) {        // if there is some issue in running the application.

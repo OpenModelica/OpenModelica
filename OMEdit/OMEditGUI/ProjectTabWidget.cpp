@@ -896,13 +896,9 @@ void GraphicsView::createBitmapShape(QPointF point)
     //If  model doesnt exist, then alert the user...
     if(mpParentProjectTab->mModelFileName.isEmpty())
     {
-      QMessageBox *msgBox = new QMessageBox(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-      msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
-      msgBox->setIcon(QMessageBox::Warning);
-      msgBox->setText(tr("The class needs to be saved before you can insert a bitmap."));
-      msgBox->setStandardButtons(QMessageBox::Ok);
-      msgBox->setDefaultButton(QMessageBox::Ok);
-      msgBox->exec();
+      QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow,
+                               QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               tr("The class needs to be saved before you can insert a bitmap."), Helper::ok);
       mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpBitmapAction->setChecked(false);
       return;
     }
@@ -3193,17 +3189,20 @@ bool ProjectTabWidget::closeAllProjectTabs()
         msgBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
         msgBox->setIcon(QMessageBox::Question);
         msgBox->setText(tr("There are unsaved models opened. Do you still want to quit?"));
-        msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        msgBox->setDefaultButton(QMessageBox::No);
+        QPushButton *pOkButton = new QPushButton(Helper::ok);
+        QPushButton *pCancelButton = new QPushButton(Helper::cancel);
+        msgBox->addButton(pOkButton, QMessageBox::AcceptRole);
+        msgBox->addButton(pCancelButton, QMessageBox::RejectRole);
+        msgBox->setDefaultButton(pCancelButton);
 
         int answer = msgBox->exec();
         msgBox->raise();
 
         switch (answer)
         {
-          case QMessageBox::Yes:
+          case QMessageBox::AcceptRole:
             return true;
-          case QMessageBox::No:
+          case QMessageBox::RejectRole:
             return false;
           default:
             // should never be reached

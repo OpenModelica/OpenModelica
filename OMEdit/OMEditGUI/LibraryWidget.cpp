@@ -396,17 +396,20 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion,
     msgBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
     msgBox->setIcon(QMessageBox::Question);
     msgBox->setText(msg);
-    msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox->setDefaultButton(QMessageBox::Yes);
+    QPushButton *pOkButton = new QPushButton(Helper::ok);
+    QPushButton *pCancelButton = new QPushButton(Helper::cancel);
+    msgBox->addButton(pOkButton, QMessageBox::AcceptRole);
+    msgBox->addButton(pCancelButton, QMessageBox::RejectRole);
+    msgBox->setDefaultButton(pOkButton);
 
     int answer = msgBox->exec();
 
     switch (answer)
     {
-      case QMessageBox::Yes:
+      case QMessageBox::AcceptRole:
         // Yes was clicked. Don't return.
         break;
-      case QMessageBox::No:
+      case QMessageBox::RejectRole:
         // No was clicked
         return false;
       default:

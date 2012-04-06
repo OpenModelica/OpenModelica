@@ -402,12 +402,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>GotoLineWidget</name>
     <message>
-        <location filename="ModelicaEditor.cpp" line="647"/>
+        <location filename="ModelicaEditor.cpp" line="648"/>
         <source>Enter line number (1 to </source>
         <translation type="unfinished">Введите номер строки (от 1 до </translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="626"/>
+        <location filename="ModelicaEditor.cpp" line="627"/>
         <source>Go to Line</source>
         <translation type="unfinished"></translation>
     </message>
@@ -415,7 +415,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="937"/>
+        <location filename="ProjectTabWidget.cpp" line="933"/>
         <source>Cancel Connection</source>
         <translation>Отмена Соединения</translation>
     </message>
@@ -475,7 +475,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Сбросить угол поворота элемента</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="1399"/>
+        <location filename="ProjectTabWidget.cpp" line="1395"/>
         <source>Error in class annotation </source>
         <translation type="unfinished"></translation>
     </message>
@@ -485,7 +485,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Удалить элемент</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="902"/>
+        <location filename="ProjectTabWidget.cpp" line="901"/>
         <source>The class needs to be saved before you can insert a bitmap.</source>
         <translation type="unfinished">Класс требуется сохранить, прежде чем Вы сможеет вставить рисунок</translation>
     </message>
@@ -747,7 +747,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="216"/>
         <source>Options</source>
-        <translation type="unfinished">Опции</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="217"/>
@@ -1150,27 +1150,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>LibraryTree</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="583"/>
+        <location filename="LibraryWidget.cpp" line="586"/>
         <source>Modelica Standard Library</source>
         <translation>Стандартная библиотека Моделики</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="606"/>
+        <location filename="LibraryWidget.cpp" line="609"/>
         <source>Show Component</source>
         <translation>Показать компонент</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="607"/>
+        <location filename="LibraryWidget.cpp" line="610"/>
         <source>Shows the component</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="610"/>
+        <location filename="LibraryWidget.cpp" line="613"/>
         <source>View Documentation</source>
         <translation>Показать описание</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="611"/>
+        <location filename="LibraryWidget.cpp" line="614"/>
         <source>View component documentation</source>
         <translation>Показать описание компонента</translation>
     </message>
@@ -1178,7 +1178,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>LibraryWidget</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1346"/>
+        <location filename="LibraryWidget.cpp" line="1349"/>
         <source>Modelica Library</source>
         <translation type="unfinished">Библиотека Моделики</translation>
     </message>
@@ -1735,7 +1735,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>ModelBrowserTree</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1611"/>
+        <location filename="LibraryWidget.cpp" line="1614"/>
         <source>Outline</source>
         <translation>Контур</translation>
     </message>
@@ -1796,12 +1796,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Начальный и конечный модикикаторы различаются</translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="207"/>
+        <location filename="ModelicaEditor.cpp" line="208"/>
         <source>Undo changes</source>
         <translation>Отменить изменения</translation>
     </message>
     <message>
-        <location filename="ModelicaEditor.cpp" line="208"/>
+        <location filename="ModelicaEditor.cpp" line="209"/>
         <source>Let me fix errors</source>
         <translation>Позволить мне исправить ошибки</translation>
     </message>
@@ -1882,7 +1882,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Вставить модель Моделики</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="430"/>
+        <location filename="LibraryWidget.cpp" line="433"/>
         <source>while deleting </source>
         <translation type="unfinished">при удалении </translation>
     </message>
@@ -2115,17 +2115,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>ProjectTabWidget</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3076"/>
+        <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3076"/>
+        <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="3195"/>
+        <location filename="ProjectTabWidget.cpp" line="3191"/>
         <source>There are unsaved models opened. Do you still want to quit?</source>
         <translation type="unfinished">Есть открытые несохраненные модели. Вы по-прежнему хотите завершить работу?</translation>
     </message>
@@ -2141,12 +2141,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>SearchMSLWidget</name>
     <message>
-        <location filename="LibraryWidget.cpp" line="1256"/>
+        <location filename="LibraryWidget.cpp" line="1259"/>
         <source>Searched Items</source>
         <translation>Найденные элементы</translation>
     </message>
     <message>
-        <location filename="LibraryWidget.cpp" line="1314"/>
+        <location filename="LibraryWidget.cpp" line="1317"/>
         <source>Sorry, no items found</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2487,22 +2487,22 @@ Please wait for a while.</source>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2649"/>
+        <location filename="ProjectTabWidget.cpp" line="2645"/>
         <source>Recent Files</source>
         <translation>Недавние файлы</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2651"/>
+        <location filename="ProjectTabWidget.cpp" line="2647"/>
         <source>No recent files found.</source>
         <translation>Недавних файлов не обнаружено.</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2674"/>
+        <location filename="ProjectTabWidget.cpp" line="2670"/>
         <source>Create Model</source>
         <translation>Создать модель</translation>
     </message>
     <message>
-        <location filename="ProjectTabWidget.cpp" line="2677"/>
+        <location filename="ProjectTabWidget.cpp" line="2673"/>
         <source>Open Model</source>
         <translation>Открыть модель</translation>
     </message>
