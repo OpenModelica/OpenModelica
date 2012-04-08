@@ -1889,6 +1889,7 @@ public function dumpList "function: dumpList
 "
   input list<Integer> l;
   input String str;
+protected  
   list<String> s;
   String sl;
 algorithm
