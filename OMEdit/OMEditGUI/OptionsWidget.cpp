@@ -439,11 +439,16 @@ void OptionsWidget::setUpDialog()
   mpOptionsList->setViewMode(QListView::ListMode);
   mpOptionsList->setMovement(QListView::Static);
   mpOptionsList->setIconSize(Helper::iconSize);
-  mpOptionsList->setMaximumWidth(175);
   mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
   connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
   // add items to options list
   addListItems();
+  // get maximum width for options list
+  mpOptionsList->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+  int width = mpOptionsList->sizeHintForColumn(0) + mpOptionsList->frameWidth() * 2 + 5;
+  if (mpOptionsList->verticalScrollBar()->isVisible())
+      width += mpOptionsList->verticalScrollBar()->width();
+  mpOptionsList->setMaximumWidth(width);
   // create pages
   createPages();
   // Create the buttons

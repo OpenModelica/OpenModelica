@@ -225,7 +225,6 @@ void Helper::initHelperVariables()
   Helper::color = tr("Color:");
   Helper::pickColor = tr("Pick Color");
   Helper::noColor = tr("No Color");
-  Helper::noColor = tr("Pattern:");
   Helper::thickness = tr("Thickness:");
   Helper::smooth = tr("Smooth:");
   Helper::bezierCurve = tr("Bezier Curve");
