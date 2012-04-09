@@ -914,7 +914,7 @@ algorithm
         true = BackendVariable.isDummyDerVar(var);
         // because this is a self genererated var we need not check for uncertainities
         //false = BackendVariable.varHasUncertainValueRefine(var);
-        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,es,e2,syst,shared,mavars,negate,BackendEquation.equationSource(eqn));
+        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,e2,es,syst,shared,mavars,negate,BackendEquation.equationSource(eqn));
       then (cr,k,es,syst,shared,mvars,newvars,1);
     // a = der(b) 
     // a is not a state
@@ -928,7 +928,7 @@ algorithm
         ((var2::_),(j::_)) = BackendVariable.getVar(cr2,vars);
         false = BackendVariable.varHasUncertainValueRefine(var);
         replaceableAlias(var);
-        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,es,e2,syst,shared,mavars,negate,,BackendEquation.equationSource(eqn));
+        (syst,shared,newvars) = selectAlias2(cr,cr2,var,var2,e2,es,syst,shared,mavars,negate,,BackendEquation.equationSource(eqn));
       then (cr,k,es,syst,shared,mvars,newvars,1);
     */    
     // a = der(b) 

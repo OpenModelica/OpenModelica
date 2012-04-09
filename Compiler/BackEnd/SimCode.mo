@@ -7809,18 +7809,6 @@ algorithm
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
     case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
       equation
-       true = BackendVariable.isDummyDerVar(inVar);
-    then ALIAS(name);
-    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
-      equation
-       true = BackendVariable.isDummyDerVar(inVar);
-    then NEGATEDALIAS(name);
-    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)})),inVar)
-      equation
-       true = BackendVariable.isDummyDerVar(inVar);
-    then NEGATEDALIAS(name);
-    case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
-      equation
       Builtin.isDer(fname);
        name = ComponentReference.crefPrefixDer(name);
     then ALIAS(name);
