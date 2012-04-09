@@ -86,7 +86,7 @@ void PlotMainWindow::createMenus()
     //Create the File menu
     mpMenuFile = new QMenu(mpMenuBar);
     mpMenuFile->setObjectName("menuFile");
-    mpMenuFile->setTitle("&File");
+    mpMenuFile->setTitle(tr("&File"));
     //Add the actions to file menu
     mpMenuFile->addAction(mpCloseAction);
     // add file menu to menubar
@@ -94,7 +94,7 @@ void PlotMainWindow::createMenus()
     //Create the Options menu
     mpMenuOptions = new QMenu(mpMenuBar);
     mpMenuOptions->setObjectName("menuFile");
-    mpMenuOptions->setTitle("&Options");
+    mpMenuOptions->setTitle(tr("&Options"));
     //Add the actions to Options menu
     mpMenuOptions->addAction(mpTabViewAction);
     // add options menu to menubar

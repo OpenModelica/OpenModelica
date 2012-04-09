@@ -44,15 +44,15 @@ Legend::Legend(Plot *pParent)
     mpPlot = pParent;
 
     // create actions for context menu
-    mpChangeColorAction = new QAction(QString("Change Color"), this);
+    mpChangeColorAction = new QAction(QString(tr("Change Color")), this);
     connect(mpChangeColorAction, SIGNAL(triggered()), this, SLOT(selectColor()));
 
-    mpAutomaticColorAction = new QAction(QString("Automatic Color"), this);
+    mpAutomaticColorAction = new QAction(QString(tr("Automatic Color")), this);
     mpAutomaticColorAction->setCheckable(true);
     mpAutomaticColorAction->setChecked(true);
     connect(mpAutomaticColorAction, SIGNAL(triggered(bool)), this, SLOT(automaticColor(bool)));
 
-    mpHideAction = new QAction(QString("Hide"), this);
+    mpHideAction = new QAction(QString(tr("Hide")), this);
     mpHideAction->setCheckable(true);
     connect(mpHideAction, SIGNAL(triggered(bool)), this, SLOT(toggleHide(bool)));
 }

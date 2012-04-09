@@ -166,21 +166,21 @@ void PlotWindow::setupToolbar()
     setContextMenuPolicy(Qt::NoContextMenu);
     //ZOOM
     mpZoomButton = new QToolButton(toolBar);
-    mpZoomButton->setText("Zoom");
+    mpZoomButton->setText(tr("Zoom"));
     mpZoomButton->setCheckable(true);
     connect(mpZoomButton, SIGNAL(toggled(bool)), SLOT(enableZoomMode(bool)));
     toolBar->addWidget(mpZoomButton);
     toolBar->addSeparator();
     //PAN
     mpPanButton = new QToolButton(toolBar);
-    mpPanButton->setText("Pan");
+    mpPanButton->setText(tr("Pan"));
     mpPanButton->setCheckable(true);
     connect(mpPanButton, SIGNAL(toggled(bool)), SLOT(enablePanMode(bool)));
     toolBar->addWidget(mpPanButton);
     toolBar->addSeparator();
     //Fit in View
     QToolButton *fitInViewButton = new QToolButton(toolBar);
-    fitInViewButton->setText("Fit in View");
+    fitInViewButton->setText(tr("Fit in View"));
     connect(fitInViewButton, SIGNAL(clicked()), SLOT(fitInView()));
     toolBar->addWidget(fitInViewButton);
     toolBar->addSeparator();
@@ -191,31 +191,31 @@ void PlotWindow::setupToolbar()
     pViewsButtonGroup->addButton(mpPanButton);
     //EXPORT
     QToolButton *btnExport = new QToolButton(toolBar);
-    btnExport->setText("Save");
+    btnExport->setText(tr("Save"));
     //btnExport->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     connect(btnExport, SIGNAL(clicked()), SLOT(exportDocument()));
     toolBar->addWidget(btnExport);
     toolBar->addSeparator();
     //PRINT
     QToolButton *btnPrint = new QToolButton(toolBar);
-    btnPrint->setText("Print");
+    btnPrint->setText(tr("Print"));
     connect(btnPrint, SIGNAL(clicked()), SLOT(printPlot()));
     toolBar->addWidget(btnPrint);
     toolBar->addSeparator();
     //GRID
     mpGridButton = new QToolButton(toolBar);
-    mpGridButton->setText("Grid");
+    mpGridButton->setText(tr("Grid"));
     mpGridButton->setCheckable(true);
     mpGridButton->setChecked(true);
     connect(mpGridButton, SIGNAL(toggled(bool)), SLOT(setGrid(bool)));
     toolBar->addWidget(mpGridButton);
     toolBar->addSeparator();
     //LOG x LOG y
-    mpLogXCheckBox = new QCheckBox("Log X", this);
+    mpLogXCheckBox = new QCheckBox(tr("Log X"), this);
     connect(mpLogXCheckBox, SIGNAL(toggled(bool)), SLOT(setLogX(bool)));
     toolBar->addWidget(mpLogXCheckBox);
     toolBar->addSeparator();
-    mpLogYCheckBox = new QCheckBox("Log Y", this);
+    mpLogYCheckBox = new QCheckBox(tr("Log Y"), this);
     connect(mpLogYCheckBox, SIGNAL(toggled(bool)), SLOT(setLogY(bool)));
     toolBar->addWidget(mpLogYCheckBox);
     // finally add the tool bar to the mainwindow

@@ -104,7 +104,7 @@ bool PlotApplication::notify(QObject *receiver, QEvent *event)
     catch (PlotException &e)
     {
         QMessageBox *msgBox = new QMessageBox();
-        msgBox->setWindowTitle(QString("OMPlot - Error"));
+        msgBox->setWindowTitle(QString(tr("OMPlot - Error")));
         msgBox->setIcon(QMessageBox::Warning);
         msgBox->setText(QString(e.what()));
         msgBox->setStandardButtons(QMessageBox::Ok);
