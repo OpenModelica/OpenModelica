@@ -4,14 +4,14 @@
 <context>
     <name>AddLibraryWidget</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="1320"/>
+        <location filename="OptionsWidget.cpp" line="1325"/>
         <source>Add Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить библиотеку</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1328"/>
+        <location filename="OptionsWidget.cpp" line="1333"/>
         <source>Value:</source>
-        <translation type="unfinished">Значение:</translation>
+        <translation>Значение:</translation>
     </message>
 </context>
 <context>
@@ -19,12 +19,12 @@
     <message>
         <location filename="BitmapAnnotation.cpp" line="276"/>
         <source>Open Bitmap</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть изображение</translation>
     </message>
     <message>
         <location filename="BitmapAnnotation.cpp" line="294"/>
         <source>Store picture in model</source>
-        <translation type="unfinished">Хранить картинку в модели</translation>
+        <translation>Сохранить изображение в модели</translation>
     </message>
 </context>
 <context>
@@ -32,12 +32,12 @@
     <message>
         <location filename="Component.cpp" line="408"/>
         <source>Shows the item attributes</source>
-        <translation type="unfinished">Показать атрибуты элемента</translation>
+        <translation>Показать атрибуты элемента</translation>
     </message>
     <message>
         <location filename="Component.cpp" line="412"/>
         <source>Shows the item properties</source>
-        <translation type="unfinished">Показать свойства элемента</translation>
+        <translation>Показать свойства элемента</translation>
     </message>
 </context>
 <context>
@@ -45,22 +45,22 @@
     <message>
         <location filename="ConnectorWidget.cpp" line="801"/>
         <source>Enter index in the array for Start Component:</source>
-        <translation type="unfinished">Введите индекс массива для Стартового Компонента:</translation>
+        <translation>Введите индекс массива для Start Component:</translation>
     </message>
     <message>
         <location filename="ConnectorWidget.cpp" line="816"/>
         <source>Enter index in the array for End Component:</source>
-        <translation type="unfinished">Введите индекс массива для Финишного Компонента:</translation>
+        <translation>Введите индекс массива для End Component:</translation>
     </message>
     <message>
         <location filename="ConnectorWidget.cpp" line="827"/>
         <source>Connect </source>
-        <translation type="unfinished">Соединить </translation>
+        <translation>Соединить </translation>
     </message>
     <message>
         <location filename="ConnectorWidget.cpp" line="827"/>
         <source> with </source>
-        <translation type="unfinished"> с </translation>
+        <translation> с </translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="ConnectorWidget.cpp" line="671"/>
         <source>Delete Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить соединение</translation>
     </message>
 </context>
 <context>
@@ -76,327 +76,339 @@
     <message>
         <location filename="ModelWidget.cpp" line="296"/>
         <source>Instantiation of </source>
-        <translation type="unfinished"></translation>
+        <translation>Истановка</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="296"/>
         <source> failed</source>
-        <translation type="unfinished"></translation>
+        <translation>провалилась</translation>
     </message>
 </context>
 <context>
     <name>GUIMessages</name>
     <message>
-        <location filename="Helper.cpp" line="264"/>
+        <location filename="Helper.cpp" line="267"/>
         <source>Please check the Problems Tab below for more error specific details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, проверьте закладку Проблемы для получения более подробного описания ошибки.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="266"/>
+        <location filename="Helper.cpp" line="269"/>
         <source>A Component with the same name already exists. Please choose another Name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Компонент с таким же именем уже существует. Пожалуйста, выберите другое Имя.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="268"/>
+        <location filename="Helper.cpp" line="271"/>
         <source>You cannot connect a port to itself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нельзя связывать порт с самим собой.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="270"/>
+        <location filename="Helper.cpp" line="273"/>
         <source>There is no open Model to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет открытой модели для %1.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="272"/>
+        <location filename="Helper.cpp" line="275"/>
         <source>Simulation Start Time is not defined. Default value (0.0) will be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано стартовое время для расчета. Будет использовано значение по умолчанию (0,0).</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="274"/>
+        <location filename="Helper.cpp" line="277"/>
         <source>Simulation Stop Time is not defined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Время окончания расчета не задано.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="276"/>
+        <location filename="Helper.cpp" line="279"/>
         <source>Simulation Start Time should be less than or equal to Stop Time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Стартовое время расчета должно быть меньше или равно времени окончания расчета.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="278"/>
+        <location filename="Helper.cpp" line="281"/>
         <source>Please enter %1 Name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, введите имя %1.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="280"/>
+        <location filename="Helper.cpp" line="283"/>
         <source>%1 %2 already exits %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 %2 уже существует %3.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="282"/>
+        <location filename="Helper.cpp" line="285"/>
         <source>An item with the same name already exists. Please try some other name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Объект с таким именем уже существует. Пожалуйста попробуйте другое имя.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="284"/>
+        <location filename="Helper.cpp" line="287"/>
         <source>Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не найдена переменная окружения OPENMODELICAHOME.Пожалуйста, убедитесь, что OpenModelica установлена должным образом.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="286"/>
+        <location filename="Helper.cpp" line="289"/>
         <source>Following Error has occurred. 
 
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка. 
+
+%1</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="288"/>
+        <location filename="Helper.cpp" line="291"/>
         <source>Problems are found in Modelica Text. 
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Обнаружены пробмы в  Modelica Text.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="290"/>
+        <location filename="Helper.cpp" line="293"/>
         <source>
 
 For normal users it is recommended to choose &apos;Undo changes&apos;. You can also choose &apos;Let me fix errors&apos; if you want to fix them by your own.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+Для нормальных пользователей рекомендуется выбрать  &apos;Отменить изменения &apos;. Вы также можете выбрать  &apos;Позволить мне исправить ошибки &apos;, если хотите исправить их сами.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="292"/>
+        <location filename="Helper.cpp" line="295"/>
         <source>Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалйста, убедитесь, что Вы не используете никакие из зарезервированных слов OpenModelica (model, package, record, class  и пр.)</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="294"/>
+        <location filename="Helper.cpp" line="297"/>
         <source>Incompatible types for the connectors.</source>
-        <translation type="unfinished"></translation>
+        <translation>Несовместимые типы соединителей.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="296"/>
+        <location filename="Helper.cpp" line="299"/>
         <source>Do you want to save your changes before closing?</source>
-        <translation type="unfinished"></translation>
+        <translation>Хотите сохранить изменения перед закрытием?</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="298"/>
+        <location filename="Helper.cpp" line="301"/>
         <source>Unable to delete. Server error has occurred while trying to delete.</source>
-        <translation type="unfinished"></translation>
+        <translation>Невозможно удалить. Произошла серверная ошибка в ходе попытки удаления.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="300"/>
+        <location filename="Helper.cpp" line="303"/>
         <source>This item is not a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>Этот элемент не модель.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="302"/>
+        <location filename="Helper.cpp" line="305"/>
         <source>Error has occurred while loading the file &apos;%1&apos;. Unable to load the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка при загузке файла &apos;%1&apos;. Невозможно загрузить файл.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="304"/>
+        <location filename="Helper.cpp" line="307"/>
         <source>Error has occurred while loading the model : 
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка при загрузке модели:
+%1.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="306"/>
+        <location filename="Helper.cpp" line="309"/>
         <source>Delete the existing models before loading the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалите существующие модели перед загрузкой файла.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="308"/>
+        <location filename="Helper.cpp" line="311"/>
         <source>Redefining models &apos;%1&apos; which already exists.</source>
         <oldsource>Redefing models &apos;%1&apos; which already exists.</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Переопределение модели %1 которая уже существует.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="310"/>
+        <location filename="Helper.cpp" line="313"/>
         <source>The Annotations for the component %1 (%2) are not correct. Unable to add component.</source>
-        <translation type="unfinished"></translation>
+        <translation>Аннотации для компонента %1 (%2) не корректны. Невозможно добавить компонент. </translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="312"/>
+        <location filename="Helper.cpp" line="315"/>
         <source>The %1 &apos;%2&apos; is not saved.</source>
-        <translation type="unfinished"></translation>
+        <translation> %1 &apos;%2&apos; не сохранен.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="314"/>
+        <location filename="Helper.cpp" line="317"/>
         <source>Following Error has occurred while saving component comment. 
 
  %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка при сохранении комментария компонента.
+
+ %1.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="316"/>
+        <location filename="Helper.cpp" line="319"/>
         <source>Following Error has occurred while saving component attributes. 
 
  %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Произошла ошибка при сохранении атрибутов компонента.
+
+ %1.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="318"/>
+        <location filename="Helper.cpp" line="321"/>
         <source>The %1 &apos;%2&apos; is contained inside a package. It is automatically saved when you save the package.</source>
-        <translation type="unfinished"></translation>
+        <translation> %1 &apos;%2&apos; включен в Package. Он автоматически сохраняется когда Вы сохраняете Package.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="320"/>
+        <location filename="Helper.cpp" line="323"/>
         <source>The search string &apos;%1&apos; is not found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Заданная строка поиска &apos;%1&apos; не найдена.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="322"/>
+        <location filename="Helper.cpp" line="325"/>
         <source>The file &apos;%1&apos; has been removed outside %2. Do you want to keep it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл &apos;%1&apos; был вынесен из %2. Вы хотите сохранить его?</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="324"/>
+        <location filename="Helper.cpp" line="327"/>
         <source>The file &apos;%1&apos; has been modified outside %2. Do you want to reload it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл &apos;%1&apos; был модифицирован за пределами %2. Вы хотите перезагрузить его?</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="326"/>
+        <location filename="Helper.cpp" line="329"/>
         <source>Are you sure you want to close &apos;%1&apos; interactive simulation?</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы уверены, что хотите закрыть интерактивный расчет &apos;%1&apos;?</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="328"/>
+        <location filename="Helper.cpp" line="331"/>
         <source>You cannot recover this window once its closed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы не можете восстановить окно после того как оно было закрыто.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="330"/>
+        <location filename="Helper.cpp" line="333"/>
         <source>You already have one interactive simulation running. Only one interactive simulation session is allowed at a time. 
 
  Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.</source>
         <oldsource>You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. 
 
  Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>У Вас уже запущен один интерактивный расчет. Разрешен только один сеанс интерактивного расчета.
+
+Пожалуйста, завершите интерактивный расчет или закройте закладку интерактивного расчета прежде чем запускать новый.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="332"/>
+        <location filename="Helper.cpp" line="335"/>
         <source>Please select a variable to plot before starting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, выберите переменную для вывода на график до старта.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="334"/>
+        <location filename="Helper.cpp" line="337"/>
         <source>You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы не можете вставить %1, т.к. он - %2. Только модель, класс, соединитель, запись или блок разрешены на слое диаграммы.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="336"/>
+        <location filename="Helper.cpp" line="339"/>
         <source>You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы не можете вставить %1, т.к. он - %2. Только соединитель разрешен на слое иконки.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="338"/>
+        <location filename="Helper.cpp" line="341"/>
         <source>You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы не можете вывести на график переменные из выходных файлов разных расчетов. Убедитесь, что вы выбрали переменные из одного выходного файла.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="340"/>
+        <location filename="Helper.cpp" line="343"/>
         <source>The file &apos;%1&apos; is not a valid Modelica file. The file format is not supported. You can only open .mo files here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл &apos;%1&apos; не является корректным файлом Моделики. Формат файла не поддерживается. Вы можете открыть только .mo-файлы.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="342"/>
+        <location filename="Helper.cpp" line="345"/>
         <source>The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML-тэги в описании некорректны. Расставьте правильные начальные и конечные html-тэги и снова выполните сохранение.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="344"/>
+        <location filename="Helper.cpp" line="347"/>
         <source>Enter a valid Positive Integer</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите допустимое положительное целое число</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="346"/>
+        <location filename="Helper.cpp" line="349"/>
         <source>You cannot drop an item on itself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы не можете перетащить элемент сам на себя.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="348"/>
+        <location filename="Helper.cpp" line="351"/>
         <source>Are you sure you want to delete &apos;%1&apos;? Everything contained inside this Package will also be deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы уверены, что хотите удалить &apos;%1&apos;? Все содержимое этого Пакета также будет удалено.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="350"/>
+        <location filename="Helper.cpp" line="353"/>
         <source>Are you sure you want to delete &apos;%1&apos;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы уверены, что хотите удалить &apos;%1&apos;?</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="352"/>
+        <location filename="Helper.cpp" line="355"/>
         <source>A component with the name %1 already exists. The name is changed from %1 to %2.
 This is probably wrong because the component is declared as %3.</source>
         <oldsource>A component with the name %1 already exists. The name is changed from %1 to %2.
 This is probably wrong because the component is decalred as %3.</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Компонент с именем %1 уже существует. Имя было изменено с %1 на %2.
+Возможно это неправильно, т.к. компонент был декларирован как %3.</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="354"/>
+        <location filename="Helper.cpp" line="357"/>
         <source>The FMI is generated at %1/%2.fmu</source>
-        <translation type="unfinished"></translation>
+        <translation>FMI сгенерирован в %1/%2.fmu</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="356"/>
+        <location filename="Helper.cpp" line="359"/>
         <source>The Modifier &apos;%1&apos; format is invalid. The correct format is &apos;phi(start=1)&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Модификатор &apos;%1&apos; неправильного формата. Правильный формат - &apos;phi(start=1)&apos;</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="358"/>
+        <location filename="Helper.cpp" line="361"/>
         <source>Unknown file format. The supported file formats are %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестный формат файла. Поддерживаемые форматы файлов - это %1.</translation>
     </message>
 </context>
 <context>
     <name>GeneralSettingsPage</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="553"/>
-        <source>Language:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="OptionsWidget.cpp" line="555"/>
-        <source>Auto Detected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="OptionsWidget.cpp" line="556"/>
-        <source>English</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="OptionsWidget.cpp" line="557"/>
-        <source>Russian</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="OptionsWidget.cpp" line="558"/>
-        <source>Swedish</source>
-        <translation type="unfinished"></translation>
+        <source>Language:</source>
+        <translation>Язык:</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="560"/>
-        <source>Plotting View Mode:</source>
-        <translation type="unfinished"></translation>
+        <source>Auto Detected</source>
+        <translation>Автоопределение</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="561"/>
+        <source>English</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <location filename="OptionsWidget.cpp" line="562"/>
+        <source>Russian</source>
+        <translation>Russian</translation>
+    </message>
+    <message>
+        <location filename="OptionsWidget.cpp" line="563"/>
+        <source>Swedish</source>
+        <translation>Swedish</translation>
+    </message>
+    <message>
+        <location filename="OptionsWidget.cpp" line="565"/>
+        <source>Plotting View Mode:</source>
+        <translation>Режим отображение графика:</translation>
+    </message>
+    <message>
+        <location filename="OptionsWidget.cpp" line="566"/>
         <source>Tabbed View</source>
         <translation>Закладками</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="563"/>
+        <location filename="OptionsWidget.cpp" line="568"/>
         <source>SubWindow View</source>
         <translation>В дополнительном окне</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="572"/>
+        <location filename="OptionsWidget.cpp" line="577"/>
         <source>Working Directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Рабочий каталог:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="577"/>
+        <location filename="OptionsWidget.cpp" line="582"/>
         <source>Preserve User&apos;s GUI Customizations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить пользовательские настройки GUI.</translation>
     </message>
 </context>
 <context>
@@ -404,12 +416,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ModelicaEditor.cpp" line="648"/>
         <source>Enter line number (1 to </source>
-        <translation type="unfinished">Введите номер строки (от 1 до </translation>
+        <translation>Введите номер строки (от 1 до </translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="627"/>
         <source>Go to Line</source>
-        <translation type="unfinished"></translation>
+        <translation>Перейти к строке</translation>
     </message>
 </context>
 <context>
@@ -477,7 +489,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ProjectTabWidget.cpp" line="1395"/>
         <source>Error in class annotation </source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка в описании аннотации класса</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="760"/>
@@ -487,442 +499,441 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ProjectTabWidget.cpp" line="901"/>
         <source>The class needs to be saved before you can insert a bitmap.</source>
-        <translation type="unfinished">Класс требуется сохранить, прежде чем Вы сможеет вставить рисунок</translation>
+        <translation>Требуется сохранить класс, прежде чем Вы сможеет вставить рисунок.</translation>
     </message>
 </context>
 <context>
     <name>Helper</name>
     <message>
-        <location filename="Helper.cpp" line="247"/>
-        <source>Read-Only</source>
-        <translation type="unfinished">Только чтение</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="248"/>
-        <source>Writable</source>
-        <oldsource>Writeable</oldsource>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="249"/>
-        <source>Icon View</source>
-        <translation type="unfinished">Режим иконки</translation>
-    </message>
-    <message>
         <location filename="Helper.cpp" line="250"/>
-        <source>Diagram View</source>
-        <translation type="unfinished">Режим диаграммы</translation>
+        <source>Read-Only</source>
+        <translation>Только чтение</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="251"/>
-        <source>Modelica Text View</source>
-        <translation type="unfinished"></translation>
+        <source>Writable</source>
+        <oldsource>Writeable</oldsource>
+        <translation>Доступна запись</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="252"/>
-        <source>View Documentation</source>
-        <translation type="unfinished">Показать описание</translation>
+        <source>Icon View</source>
+        <translation>Редактор иконки</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="253"/>
+        <source>Diagram View</source>
+        <translation>Редактор диаграммы</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="254"/>
+        <source>Modelica Text View</source>
+        <translation>Редактор текста модели</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="255"/>
+        <source>View Documentation</source>
+        <translation>Показать описание</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="256"/>
         <source>Search Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="228"/>
-        <location filename="Helper.cpp" line="234"/>
-        <source>Solid</source>
-        <translation type="unfinished">Сплошная</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="173"/>
-        <source>Error</source>
-        <translation type="unfinished">Ошибка</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="174"/>
-        <source>Choose File</source>
-        <translation type="unfinished">Выбрать файл</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="175"/>
-        <source>Attributes</source>
-        <translation type="unfinished">Атрибуты</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="176"/>
-        <source>Properties</source>
-        <translation type="unfinished">Свойства</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="177"/>
-        <source>Connection</source>
-        <translation type="unfinished">Соединение</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="178"/>
-        <source>Edit</source>
-        <translation type="unfinished">Редактировать</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="179"/>
-        <source>Save</source>
-        <translation type="unfinished">Сохранить</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="181"/>
-        <source>Choose Directory</source>
-        <translation type="unfinished">Выбрать папку</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="182"/>
-        <source>General</source>
-        <translation type="unfinished">Основное</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="183"/>
-        <source>Parameters</source>
-        <translation type="unfinished">Параметры</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="184"/>
-        <source>Name:</source>
-        <translation type="unfinished">Имя:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="185"/>
-        <source>Comment:</source>
-        <translation type="unfinished">Комментарий:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="186"/>
-        <source>Type</source>
-        <translation type="unfinished">Тип</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="187"/>
-        <source>Constant</source>
-        <translation type="unfinished">Константа</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="188"/>
-        <source>Paramter</source>
-        <translation type="unfinished">Параметр</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="189"/>
-        <source>Protected</source>
-        <translation type="unfinished">Защищено</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="190"/>
-        <source>Output</source>
-        <translation type="unfinished">Выход</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="191"/>
-        <source>Information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="192"/>
-        <source>Modelica Files</source>
-        <translation type="unfinished">Файлы Моделики</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="193"/>
-        <source>rename</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="194"/>
-        <source>Check Model</source>
-        <translation type="unfinished">Проверить модель</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="195"/>
-        <source>Check the Modelica model</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="196"/>
-        <source>Instantiate Model</source>
-        <translation type="unfinished">Представить модель в виде кода</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="197"/>
-        <source>Instantiates/Flatten the Modelica model</source>
-        <translation type="unfinished">Представить модель в виде кода</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="198"/>
-        <source>Delete</source>
-        <translation type="unfinished">Удалить</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="199"/>
-        <source>Copy</source>
-        <translation type="unfinished">Копировать</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="200"/>
-        <source>Paste</source>
-        <translation type="unfinished">Вставить</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="201"/>
-        <source>Loading</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="202"/>
-        <source>Question</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="203"/>
-        <source>Search</source>
-        <translation type="unfinished">Поиск</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="204"/>
-        <source>Model</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="205"/>
-        <source>Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="206"/>
-        <source>Connector</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="207"/>
-        <source>Record</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="208"/>
-        <source>Block</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="209"/>
-        <source>Function</source>
-        <translation type="unfinished">Функция</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="210"/>
-        <source>Package</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="211"/>
-        <source>Primitive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="212"/>
-        <source>Simulate</source>
-        <translation type="unfinished">Рассчитать</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="213"/>
-        <source>Simulation</source>
-        <translation type="unfinished">Расчет</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="214"/>
-        <source>Interactive Simulation</source>
-        <translation type="unfinished">Интерактивный расчет</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="215"/>
-        <source>Export to OMNotebook</source>
-        <translation type="unfinished">Экспортировать в OMNotebook</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="216"/>
-        <source>Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="217"/>
-        <source>Libraries</source>
-        <translation type="unfinished">Библиотеки</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="218"/>
-        <source>Text</source>
-        <translation type="unfinished">Текст</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="219"/>
-        <source>Pen Style</source>
-        <translation type="unfinished">Стиль ручки</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="220"/>
-        <source>Brush Style</source>
-        <translation type="unfinished">Стиль кисти</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="221"/>
-        <source>Color:</source>
-        <translation type="unfinished">Цвет:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="222"/>
-        <source>Pick Color</source>
-        <translation type="unfinished">Выбрать цвет</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="223"/>
-        <source>No Color</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="224"/>
-        <source>Pattern:</source>
-        <translation type="unfinished">Шаблон:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="225"/>
-        <source>Thickness:</source>
-        <translation type="unfinished">Толщина:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="226"/>
-        <source>Smooth:</source>
-        <translation type="unfinished">Гладкость:</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="227"/>
-        <source>Bezier Curve</source>
-        <translation type="unfinished">Кривая Безье</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="229"/>
-        <source>Dash</source>
-        <translation type="unfinished">Штриховая</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="230"/>
-        <source>Dot</source>
-        <translation type="unfinished">Пунктирная</translation>
+        <translation>Поиск в Modelica Standard Library</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="231"/>
-        <source>Dash Dot</source>
-        <translation type="unfinished">Штрих-пунктирная</translation>
+        <location filename="Helper.cpp" line="237"/>
+        <source>Solid</source>
+        <translation>Сплошная</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="177"/>
+        <source>Error</source>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="178"/>
+        <source>Choose File</source>
+        <translation>Выбрать файл</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="179"/>
+        <source>Attributes</source>
+        <translation>Атрибуты</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="180"/>
+        <source>Properties</source>
+        <translation>Свойства</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="181"/>
+        <source>Connection</source>
+        <translation>Соединение</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="182"/>
+        <source>Edit</source>
+        <translation>Редактировать</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="183"/>
+        <source>Save</source>
+        <translation>Сохранить</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="185"/>
+        <source>Choose Directory</source>
+        <translation>Выбрать каталог</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="186"/>
+        <source>General</source>
+        <translation>Основное</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="187"/>
+        <source>Parameters</source>
+        <translation>Параметры</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="188"/>
+        <source>Name:</source>
+        <translation>Имя:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="189"/>
+        <source>Comment:</source>
+        <translation>Комментарий:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="190"/>
+        <source>Type</source>
+        <translation>Тип</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="191"/>
+        <source>Constant</source>
+        <translation>Constant</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="192"/>
+        <source>Paramter</source>
+        <translation>Package</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="193"/>
+        <source>Protected</source>
+        <translation>Protected</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="194"/>
+        <source>Output</source>
+        <translation>Output</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="195"/>
+        <source>Information</source>
+        <translation>Информация</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="196"/>
+        <source>Modelica Files</source>
+        <translation>Файлы Modelica</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="197"/>
+        <source>rename</source>
+        <translation>переименовать</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="198"/>
+        <source>Check Model</source>
+        <translation>Проверить модель</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="199"/>
+        <source>Check the Modelica model</source>
+        <translation>Проверить модель Modelica</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="200"/>
+        <source>Instantiate Model</source>
+        <translation>Представить модель в виде кода</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="201"/>
+        <source>Instantiates/Flatten the Modelica model</source>
+        <translation>Представить модель в виде кода</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="202"/>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="203"/>
+        <source>Copy</source>
+        <translation>Копировать</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="204"/>
+        <source>Paste</source>
+        <translation>Вставить</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="205"/>
+        <source>Loading</source>
+        <translation>Загрузка</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="206"/>
+        <source>Question</source>
+        <translation>Вопрос</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="207"/>
+        <source>Search</source>
+        <translation>Поиск</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="208"/>
+        <source>Model</source>
+        <translation>Model</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="209"/>
+        <source>Class</source>
+        <translation>Class</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="210"/>
+        <source>Connector</source>
+        <translation>Connector</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="211"/>
+        <source>Record</source>
+        <translation>Record</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="212"/>
+        <source>Block</source>
+        <translation>Block</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="213"/>
+        <source>Function</source>
+        <translation>Function</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="214"/>
+        <source>Package</source>
+        <translation>Package</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="215"/>
+        <source>Primitive</source>
+        <translation>Примитивы</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="216"/>
+        <source>Simulate</source>
+        <translation>Рассчитать</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="217"/>
+        <source>Simulation</source>
+        <translation>Расчет</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="218"/>
+        <source>Interactive Simulation</source>
+        <translation>Интерактивный расчет</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="219"/>
+        <source>Export to OMNotebook</source>
+        <translation>Экспортировать в OMNotebook</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="220"/>
+        <source>Options</source>
+        <translation>Настройки</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="221"/>
+        <source>Libraries</source>
+        <translation>Библиотеки</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="222"/>
+        <source>Text</source>
+        <translation>Текст</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="223"/>
+        <source>Pen Style</source>
+        <translation>Стиль ручки</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="224"/>
+        <source>Brush Style</source>
+        <translation>Стиль кисти</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="225"/>
+        <source>Color:</source>
+        <translation>Цвет:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="226"/>
+        <source>Pick Color</source>
+        <translation>Выбрать цвет</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="227"/>
+        <source>No Color</source>
+        <translation>Без цвета</translation>
+    </message>
+    <message>
+        <source>Pattern:</source>
+        <translation type="obsolete">Шаблон:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="228"/>
+        <source>Thickness:</source>
+        <translation>Толщина:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="229"/>
+        <source>Smooth:</source>
+        <translation>Гладкость:</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="230"/>
+        <source>Bezier Curve</source>
+        <translation>Кривая Безье</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="232"/>
-        <source>Dash Dot Dot</source>
-        <translation type="unfinished">Штрих-пунктир-пунктирная</translation>
+        <source>Dash</source>
+        <translation>Штриховая</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="233"/>
-        <source>No Brush</source>
-        <translation type="unfinished"></translation>
+        <source>Dot</source>
+        <translation>Пунктирная</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="234"/>
+        <source>Dash Dot</source>
+        <translation>Штрих-пунктирная</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="235"/>
-        <source>Horizontal</source>
-        <translation type="unfinished">Горизонтальная</translation>
+        <source>Dash Dot Dot</source>
+        <translation>Штрих-пунктир-пунктирная</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="236"/>
-        <source>Vertical</source>
-        <translation type="unfinished">Вертикальная</translation>
+        <source>No Brush</source>
+        <translation>Без кисти</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="237"/>
+        <location filename="Helper.cpp" line="238"/>
+        <source>Horizontal</source>
+        <translation>Горизонтальная</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="239"/>
+        <source>Vertical</source>
+        <translation>Вертикальная</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="240"/>
         <source>Cross</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="238"/>
+        <location filename="Helper.cpp" line="241"/>
         <source>Forward</source>
-        <translation type="unfinished">Вперед</translation>
+        <translation>Вперед</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="239"/>
+        <location filename="Helper.cpp" line="242"/>
         <source>Backward</source>
-        <translation type="unfinished">Назад</translation>
+        <translation>Назад</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="240"/>
+        <location filename="Helper.cpp" line="243"/>
         <source>CrossDiag</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="241"/>
-        <source>HorizontalCylinder</source>
-        <translation type="unfinished">Горизонтальный цилиндр</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="242"/>
-        <source>VertitalCylinder</source>
-        <translation type="unfinished">Вертикальный цилиндр</translation>
-    </message>
-    <message>
-        <location filename="Helper.cpp" line="243"/>
-        <source>Sphere</source>
-        <translation type="unfinished">Сфера</translation>
-    </message>
-    <message>
         <location filename="Helper.cpp" line="244"/>
-        <source>Remove</source>
-        <translation type="unfinished">Удалить</translation>
+        <source>HorizontalCylinder</source>
+        <translation>Горизонтальный цилиндр</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="245"/>
-        <source>Location</source>
-        <translation type="unfinished">Местоположение</translation>
+        <source>VertitalCylinder</source>
+        <translation>Вертикальный цилиндр</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="246"/>
+        <source>Sphere</source>
+        <translation>Сфера</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="247"/>
+        <source>Remove</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="248"/>
+        <source>Location</source>
+        <translation>Местоположение</translation>
+    </message>
+    <message>
+        <location filename="Helper.cpp" line="249"/>
         <source>Text Properties</source>
-        <translation type="unfinished">Свойства текста</translation>
+        <translation>Свойства текста</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="254"/>
+        <location filename="Helper.cpp" line="257"/>
         <source>Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Лево</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="255"/>
+        <location filename="Helper.cpp" line="258"/>
         <source>Center</source>
-        <translation type="unfinished">Центр</translation>
+        <translation>Центр</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="256"/>
+        <location filename="Helper.cpp" line="259"/>
         <source>Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Право</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="180"/>
+        <location filename="Helper.cpp" line="184"/>
         <source>Import FMI</source>
-        <translation type="unfinished">Импортировать FMI</translation>
+        <translation>Импортировать FMI</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="171"/>
+        <location filename="Helper.cpp" line="175"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="172"/>
+        <location filename="Helper.cpp" line="176"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Отмена</translation>
     </message>
     <message>
-        <location filename="Helper.cpp" line="170"/>
+        <location filename="Helper.cpp" line="174"/>
         <source>Browse...</source>
-        <translation type="unfinished"></translation>
+        <translation>Browse...</translation>
     </message>
 </context>
 <context>
@@ -930,63 +941,63 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="IconProperties.cpp" line="337"/>
         <source>Variability</source>
-        <translation type="unfinished">Переменная</translation>
+        <translation>Variability</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="340"/>
         <source>Discrete</source>
-        <translation type="unfinished">Дискретное значение</translation>
+        <translation>Discrete</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="341"/>
         <source>Unspecified (Default)</source>
-        <translation type="unfinished">Неопределено (по умолчанию)</translation>
+        <translation>Unspecified (Default)</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="355"/>
         <source>Final</source>
-        <translation type="unfinished">Финализировано</translation>
+        <translation>Final</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="357"/>
         <source>Replaceable</source>
-        <translation type="unfinished">Заменяемо</translation>
+        <translation>Replaceable</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="364"/>
         <source>Causality</source>
-        <translation type="unfinished">Зависимость</translation>
+        <translation>Causality</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="365"/>
         <source>Input</source>
-        <translation type="unfinished">Вход</translation>
+        <translation>Input</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="285"/>
         <source>Component Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Component Attributes</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="367"/>
         <source>None</source>
-        <translation type="unfinished">Нет</translation>
+        <translation>None</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="378"/>
         <source>Inner/Outer</source>
         <oldsource>Inner/Output</oldsource>
-        <translation type="unfinished">Внутренний/Выход</translation>
+        <translation>Inner/Outer</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="379"/>
         <source>Inner</source>
-        <translation type="unfinished">Внутренний</translation>
+        <translation>Inner</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="380"/>
         <source>Outer</source>
-        <translation type="unfinished">Внешний</translation>
+        <translation>Outer</translation>
     </message>
 </context>
 <context>
@@ -994,22 +1005,22 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="IconProperties.cpp" line="47"/>
         <source>Component Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Свойства компонента</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="104"/>
         <source>Modifiers</source>
-        <translation type="unfinished">Модификаторы</translation>
+        <translation>Модификаторы</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="109"/>
         <source>Component</source>
-        <translation type="unfinished">Компонет</translation>
+        <translation>Компонет</translation>
     </message>
     <message>
         <location filename="IconProperties.cpp" line="158"/>
         <source>Add new modifiers, e.g phi(start=1),w(start=2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить новые модификаторы, например phi(start=1),w(start=2)</translation>
     </message>
 </context>
 <context>
@@ -1017,43 +1028,43 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="FMIWidget.cpp" line="76"/>
         <source>* This feature is experimental. Most models are not yet handled by it.</source>
-        <translation type="unfinished">* Это расширение экспериментальное. Большинство моделей пока им не поддерживается.</translation>
+        <translation>* Эта функция экспериментальная. Большинство моделей пока ей не поддерживается.</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="61"/>
         <source>FMU File:</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU Файл:</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="66"/>
         <source>Output Directory (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Выходной каталог (опционально):</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="71"/>
         <source>* If no Output Directory specified then the FMU files are generated in the current working directory.</source>
-        <translation type="unfinished"></translation>
+        <translation>* если неуказан выходной каталог, тогда FMU файлы будут созданы в текущем каталоге.</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="115"/>
         <source>FMU File</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU Файл</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="127"/>
         <source>Could not open file </source>
-        <translation type="unfinished">Не удалось открыть файл </translation>
+        <translation>Не удалось открыть файл </translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="161"/>
         <location filename="FMIWidget.cpp" line="167"/>
         <source>while importing </source>
-        <translation type="unfinished"></translation>
+        <translation>в ходе импорта</translation>
     </message>
     <message>
         <location filename="FMIWidget.cpp" line="166"/>
         <source>unknown error </source>
-        <translation type="unfinished"></translation>
+        <translation>неизвестная ошибка</translation>
     </message>
 </context>
 <context>
@@ -1061,90 +1072,90 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="520"/>
         <source>Initialize</source>
-        <translation type="unfinished">Инициализировать</translation>
+        <translation>Инициализировать</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="524"/>
         <source>Initializes the interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Инициализировать интерактивный расчет.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="530"/>
         <source>Start</source>
-        <translation type="unfinished">Старт</translation>
+        <translation>Старт</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="534"/>
         <source>Starts or continues the interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Начать или продолжить интерактивный расчет.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="541"/>
         <source>Pause</source>
-        <translation type="unfinished">Пауза</translation>
+        <translation>Пауза</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="545"/>
         <source>Pauses the running interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Приостановить интерактивный расчет.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="552"/>
         <source>Stop</source>
-        <translation type="unfinished">Стоп</translation>
+        <translation>Стоп</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="556"/>
         <source>Stops the running interactive simulation and resets all values to the beginning.</source>
-        <translation type="unfinished"></translation>
+        <translation>Остановить интерактивный расчет и сбросить все значения на стартовые.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="562"/>
         <source>Shut Down</source>
-        <translation type="unfinished">Выключить</translation>
+        <translation>Выключить</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="566"/>
         <source>Shut down the running interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Прекратить интерактивный расчет.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="572"/>
         <source>Show OMI Log</source>
-        <translation type="unfinished">Показать OMI Log</translation>
+        <translation>Показать OMI Log</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="576"/>
         <source>Shows the OMI Log Message Window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать окно сообщений OMI.</translation>
     </message>
 </context>
 <context>
     <name>LibrariesPage</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="1240"/>
+        <location filename="OptionsWidget.cpp" line="1245"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1240"/>
+        <location filename="OptionsWidget.cpp" line="1245"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Значение</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1244"/>
+        <location filename="OptionsWidget.cpp" line="1249"/>
         <source>Add</source>
         <translation>Добавить</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1256"/>
+        <location filename="OptionsWidget.cpp" line="1261"/>
         <source>* The libraries changes will take effect after restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Изменение библиотек будет выполнено после перезагрузки приложения.</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1304"/>
+        <location filename="OptionsWidget.cpp" line="1309"/>
         <source>Edit Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Редактировать</translation>
     </message>
 </context>
 <context>
@@ -1162,7 +1173,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="610"/>
         <source>Shows the component</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать компоненты</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="613"/>
@@ -1180,7 +1191,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="1349"/>
         <source>Modelica Library</source>
-        <translation type="unfinished">Библиотека Моделики</translation>
+        <translation>Библиотека Modelica</translation>
     </message>
 </context>
 <context>
@@ -1188,35 +1199,35 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="62"/>
         <source>Reading Settings</source>
-        <translation type="unfinished">Настройки чтения</translation>
+        <translation>Загрузка настроек</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="65"/>
         <source>Loading Widgets</source>
-        <translation type="unfinished">Загрузка виджетов</translation>
+        <translation>Загрузка виджетов</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="84"/>
         <source>Messages</source>
         <oldsource> Messages</oldsource>
-        <translation type="unfinished">Сообщения</translation>
+        <translation>Сообщения</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="100"/>
         <source>Loading Modelica Standard Library</source>
-        <translation type="unfinished">Загрузка Стандартной Библиотеки Моделики</translation>
+        <translation>Загрузка Стандартной Библиотеки Моделики</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="103"/>
         <source>Search MSL</source>
         <oldsource> Search MSL</oldsource>
-        <translation type="unfinished">Поиск по Станартной Библиотеке Моделики</translation>
+        <translation>Поиск по Станартной Библиотеке Моделики</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="112"/>
         <source>Components</source>
         <oldsource> Components</oldsource>
-        <translation type="unfinished">Компоненты</translation>
+        <translation>Компоненты</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="119"/>
@@ -1227,18 +1238,18 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="mainwindow.cpp" line="139"/>
         <source>Plot Variables</source>
         <oldsource> Plot Variables</oldsource>
-        <translation type="unfinished">Вывод переменных</translation>
+        <translation>Вывод переменных</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="148"/>
         <source>Documentation</source>
         <oldsource> Documentation</oldsource>
-        <translation type="unfinished">Документация</translation>
+        <translation>Документация</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="157"/>
         <source>Creating Components</source>
-        <translation type="unfinished">Создание Компонентов</translation>
+        <translation>Создание компонентов</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="558"/>
@@ -1248,42 +1259,42 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="312"/>
         <source>Create New Model</source>
-        <translation type="unfinished">Создать новую модель</translation>
+        <translation>Создать новую Model</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="317"/>
         <source>Create New Class</source>
-        <translation type="unfinished">Создать новый класс</translation>
+        <translation>Создать новый Class</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="321"/>
         <source>Create New Connector</source>
-        <translation type="unfinished">Создать новый соединитель</translation>
+        <translation>Создать новый Connector</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="325"/>
         <source>Create New Record</source>
-        <translation type="unfinished">Создать новую запись</translation>
+        <translation>Создать новую Record</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="329"/>
         <source>Create New Block</source>
-        <translation type="unfinished">Создать новый блок</translation>
+        <translation>Создать новый Block</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="333"/>
         <source>Create New Function</source>
-        <translation type="unfinished">Создать новую функцию</translation>
+        <translation>Создать новую Function</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="337"/>
         <source>Create New Package</source>
-        <translation type="unfinished">Создать новый пакет</translation>
+        <translation>Создать новый Package</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="341"/>
         <source>Open</source>
-        <translation type="unfinished">Открыть</translation>
+        <translation>Открыть</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="347"/>
@@ -1383,7 +1394,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="460"/>
         <source>OMC Logger</source>
-        <translation></translation>
+        <translation>OMC Logger</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="461"/>
@@ -1393,7 +1404,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="464"/>
         <source>OMShell</source>
-        <translation></translation>
+        <translation>OMNotebook</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="465"/>
@@ -1483,7 +1494,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="495"/>
         <source>Draws a line.</source>
-        <translation>Нарисовать линию</translation>
+        <translation>Нарисовать линию.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="499"/>
@@ -1493,7 +1504,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="500"/>
         <source>Draws a polygon.</source>
-        <translation>Нарисовать многоугольник</translation>
+        <translation>Нарисовать многоугольник.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="504"/>
@@ -1503,7 +1514,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="505"/>
         <source>Draws a rectangle.</source>
-        <translation>Нарисовать прямоугольник</translation>
+        <translation>Нарисовать прямоугольник.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="509"/>
@@ -1513,33 +1524,33 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="510"/>
         <source>Draws an Ellipse.</source>
-        <translation>Нарисовать эллипс</translation>
+        <translation>Нарисовать эллипс.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="515"/>
         <source>Draws a Text.</source>
-        <translation>Написать текст</translation>
+        <translation>Написать текст.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="519"/>
         <source>Bitmap</source>
-        <translation>Точечное изображение</translation>
+        <translation>Изображение</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="520"/>
         <source>Imports a Bitmap.</source>
-        <translation>Импортировать точечное изображение</translation>
+        <translation>Импортировать точечное изображение.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="524"/>
         <source>Connect Mode</source>
         <oldsource>Connect/Unconnect Mode</oldsource>
-        <translation type="unfinished">Режим соединения/разъединения</translation>
+        <translation>Режим соединения/разъединения</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="525"/>
         <source>Changes to/from connect mode</source>
-        <translation>включить/выключить режим соединения</translation>
+        <translation>Включить/выключить режим соединения</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="388"/>
@@ -1549,12 +1560,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="58"/>
         <source>Connecting to OpenModelica Compiler</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключение к компилятору OpenModelica</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="343"/>
         <source>Opens Modelica file</source>
-        <translation type="unfinished"></translation>
+        <translation>Открытие файлов Modelica</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="389"/>
@@ -1644,7 +1655,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="645"/>
         <source>F&amp;MI</source>
-        <translation type="unfinished"></translation>
+        <translation>F&amp;MI</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="651"/>
@@ -1674,32 +1685,32 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="926"/>
         <source>Exporting model to OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Экспорт модели в OMNotebook</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1039"/>
         <source>Importing model from OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Импорт модели из OMNotebook</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1094"/>
         <source>Exporting model as an Image</source>
-        <translation type="unfinished"></translation>
+        <translation>Экспортировать модель как изображение</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1296"/>
         <source>make FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU (в процессе)</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1301"/>
         <source>Exporting model as FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>Экспортировать модель как FMI</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="743"/>
         <source>OMNotebook</source>
-        <translation></translation>
+        <translation>OMNotebook</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="749"/>
@@ -1745,27 +1756,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ModelWidget.cpp" line="53"/>
         <source>Insert in Package (optional):</source>
-        <translation>Вставить в пакет (опционально):</translation>
+        <translation>Вставить в Package (опционально):</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="63"/>
         <source>Save contents of package in one file</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить содержимое package в одном файле</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="82"/>
         <source>Create New </source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новый</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="108"/>
         <source>in Global Scope</source>
-        <translation type="unfinished"></translation>
+        <translation>в Global Scope</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="113"/>
         <source>in Package &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>в Package &apos;</translation>
     </message>
 </context>
 <context>
@@ -1809,52 +1820,52 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>ModelicaTextEditorPage</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="666"/>
+        <location filename="OptionsWidget.cpp" line="671"/>
         <source>Font and Colors</source>
         <translation>Шрифт и цвета</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="668"/>
+        <location filename="OptionsWidget.cpp" line="673"/>
         <source>Font Family:</source>
         <translation>Семейство шрифтов:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="675"/>
+        <location filename="OptionsWidget.cpp" line="680"/>
         <source>Font Size:</source>
         <translation>Размер шрифта:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="682"/>
+        <location filename="OptionsWidget.cpp" line="687"/>
         <source>Item Color:</source>
         <translation>Цвет элемента:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="683"/>
+        <location filename="OptionsWidget.cpp" line="688"/>
         <source>Pick Color</source>
         <translation>Выбрать цвет</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="686"/>
+        <location filename="OptionsWidget.cpp" line="691"/>
         <source>Items:</source>
         <translation>Элементы:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="697"/>
+        <location filename="OptionsWidget.cpp" line="702"/>
         <source>Preview:</source>
         <translation>Предпросмотр:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="740"/>
+        <location filename="OptionsWidget.cpp" line="745"/>
         <source>Number</source>
         <translation>Число</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="745"/>
+        <location filename="OptionsWidget.cpp" line="750"/>
         <source>Keyword</source>
         <translation>Ключевое слово</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="760"/>
+        <location filename="OptionsWidget.cpp" line="765"/>
         <source>Quotes</source>
         <translation>Цитаты</translation>
     </message>
@@ -1864,27 +1875,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="118"/>
         <source>Rename the modelica model</source>
-        <translation>Переименовать модель Моделики</translation>
+        <translation>Переименовать модель Modelica</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="130"/>
         <source>Delete the modelica model</source>
-        <translation>Удалить модель Моделики</translation>
+        <translation>Удалить модель Modelica</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="134"/>
         <source>Copy the modelica model</source>
-        <translation>Скопировать модель Моделики</translation>
+        <translation>Скопировать модель Modelica</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="138"/>
         <source>Paste the modelica model</source>
-        <translation>Вставить модель Моделики</translation>
+        <translation>Вставить модель Modelica</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="433"/>
         <source>while deleting </source>
-        <translation type="unfinished">при удалении </translation>
+        <translation>при удалении </translation>
     </message>
 </context>
 <context>
@@ -1892,42 +1903,42 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="OMCProxy.cpp" line="71"/>
         <source>OMC Messages Log</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC Messages Log</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="82"/>
         <source>Send</source>
-        <translation type="unfinished"></translation>
+        <translation>Отправлен</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="293"/>
         <source> will close.</source>
-        <translation type="unfinished"> будет закрыт.</translation>
+        <translation> будет закрыт.</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="303"/>
         <source>Unable to communicate with OpenModelica Compiler.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неудалось связаться с компилятором OpenModelica.</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="389"/>
         <source>Connection with the OpenModelica Compiler has been lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Связь с компилятором OpenModelica была потеряна.</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="747"/>
         <source> requires Modelica 3 annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>требуется аннотация вида Modelica 3</translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="748"/>
         <source>Modelica Standard Library version </source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Standard Library версия </translation>
     </message>
     <message>
         <location filename="OMCProxy.cpp" line="748"/>
         <source> is unsupported.</source>
-        <translation type="unfinished"></translation>
+        <translation>не поддерживается.</translation>
     </message>
 </context>
 <context>
@@ -1935,42 +1946,42 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="159"/>
         <source>OMI Messages Log</source>
-        <translation type="unfinished"></translation>
+        <translation>OMI Messages Log</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="161"/>
         <source>OMI Runtime Output</source>
-        <translation>Результаты работы программы OMI</translation>
+        <translation>OMI Runtime Output</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="170"/>
         <source>OMI Control Server</source>
-        <translation>Управляющий сервер OMI</translation>
+        <translation>OMI Control Server</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="179"/>
         <source>OMI Transfer Server</source>
-        <translation>Трансферный сервер OMI</translation>
+        <translation>OMI Transfer Server</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="188"/>
         <source>OMI Control Client</source>
-        <translation>OMI Управляющий клиент</translation>
+        <translation>OMI Control Client</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="443"/>
         <source>The OMI control server was not found.</source>
-        <translation type="unfinished">Управляющий сервер OMI не был найден.</translation>
+        <translation>OMI Control Server не был найден.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="448"/>
         <source>The OMI control server refuse the connection.</source>
-        <translation type="unfinished">Управляющий сервер OMI отклонил соединение.</translation>
+        <translation>OMI Control Server отклонил соединение.</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="454"/>
         <source>The following error occurred while communicating with OMI control server:</source>
-        <translation type="unfinished"></translation>
+        <translation>Слебующие ошибки возникли в ходе соединения с OMI Control Server:</translation>
     </message>
 </context>
 <context>
@@ -1981,7 +1992,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Без кисти</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="483"/>
+        <location filename="OptionsWidget.cpp" line="488"/>
         <source>Modelica Text Editor</source>
         <translation>Текстовый редактор Моделики</translation>
     </message>
@@ -2010,27 +2021,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="PlotWidget.cpp" line="183"/>
         <location filename="PlotWidget.cpp" line="191"/>
         <source>Failed to read variables. Could not open file </source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось прочитать значения переменных. Не удалось открыть файл</translation>
     </message>
     <message>
         <location filename="PlotWidget.cpp" line="314"/>
         <source>Variable: </source>
-        <translation type="unfinished"></translation>
+        <translation>Значение:</translation>
     </message>
     <message>
         <location filename="PlotWidget.cpp" line="224"/>
         <source>Simulation Result File: </source>
-        <translation type="unfinished">Выходной файл расчета: </translation>
+        <translation>Выходной файл расчета: </translation>
     </message>
     <message>
         <location filename="PlotWidget.cpp" line="314"/>
         <source>File: </source>
-        <translation type="unfinished">Файл: </translation>
+        <translation>Файл: </translation>
     </message>
     <message>
         <location filename="PlotWidget.cpp" line="342"/>
         <source>No plot window is active for plotting. Please select a plot window or open a new.</source>
-        <translation type="unfinished">Ни одно из окон не выбрано для вывода графика. Пожалуйста, выберите окно для вывода графика или откройте новое.</translation>
+        <translation>Ни одно из окон не выбрано для вывода графика. Пожалуйста, выберите окно для вывода графика или откройте новое.</translation>
     </message>
 </context>
 <context>
@@ -2081,27 +2092,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ProblemsWidget.cpp" line="55"/>
         <source>Only Show Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать только уведомления</translation>
     </message>
     <message>
         <location filename="ProblemsWidget.cpp" line="65"/>
         <source>Only Show Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать только предупреждения</translation>
     </message>
     <message>
         <location filename="ProblemsWidget.cpp" line="74"/>
         <source>Only Show Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать только ошибки</translation>
     </message>
     <message>
         <location filename="ProblemsWidget.cpp" line="83"/>
         <source>Show All Problems</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать все проблемы</translation>
     </message>
     <message>
         <location filename="ProblemsWidget.cpp" line="104"/>
         <source>Clear All Problems</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить все проблемы</translation>
     </message>
 </context>
 <context>
@@ -2117,17 +2128,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File As</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить файл как</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить файл</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="3191"/>
         <source>There are unsaved models opened. Do you still want to quit?</source>
-        <translation type="unfinished">Есть открытые несохраненные модели. Вы по-прежнему хотите завершить работу?</translation>
+        <translation>Есть открытые несохраненные модели. Вы по-прежнему хотите завершить работу?</translation>
     </message>
 </context>
 <context>
@@ -2148,7 +2159,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="1317"/>
         <source>Sorry, no items found</source>
-        <translation type="unfinished"></translation>
+        <translation>Извините, не найдено ни одного элемента</translation>
     </message>
 </context>
 <context>
@@ -2234,12 +2245,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="ShapeAnnotation.cpp" line="768"/>
         <source>Corner Radius:</source>
         <oldsource>CornerRadius:</oldsource>
-        <translation type="unfinished">Радиус скругления:</translation>
+        <translation>Радиус скругления:</translation>
     </message>
     <message>
         <location filename="ShapeAnnotation.cpp" line="698"/>
         <source>Shape Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Свойства формы</translation>
     </message>
 </context>
 <context>
@@ -2297,7 +2308,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="SimulationWidget.cpp" line="106"/>
         <source>Compiler Flags (Optional):</source>
-        <translation>Настройки компилятора (опционально)</translation>
+        <translation>Настройки компилятора (опционально):</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="227"/>
@@ -2307,104 +2318,109 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="SimulationWidget.cpp" line="150"/>
         <source>Model Setup File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл установок модели (опционально):</translation>
+    </message>
+    <message>
+        <location filename="SimulationWidget.cpp" line="146"/>
+        <source>Output</source>
+        <translation>Вывод</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="155"/>
         <source>Initialization Method (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Метод инициализации (опционально):</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="159"/>
         <source>Optimization Method (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Оптимизационный метод (опционально):</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="163"/>
         <source>Equation System Initialization File (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл инициализации системы (опционально):</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="168"/>
         <source>Equation System Initialization Time (Optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>Время инициализации системы (опционально):</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="171"/>
         <source>Stats</source>
-        <translation type="unfinished"></translation>
+        <translation>Статистика</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="172"/>
         <source>Initialization</source>
-        <translation type="unfinished"></translation>
+        <translation>Инициализация</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="173"/>
         <source>Result Initialization</source>
-        <translation type="unfinished"></translation>
+        <translation>Инициализация результатов</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="174"/>
         <source>Solver</source>
-        <translation type="unfinished"></translation>
+        <translation>Решение</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="175"/>
         <source>Events</source>
-        <translation type="unfinished"></translation>
+        <translation>События</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="176"/>
         <source>Non Linear Systems</source>
-        <translation type="unfinished"></translation>
+        <translation>Нелинейные системы</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="177"/>
         <source>Zero Crossings</source>
-        <translation type="unfinished"></translation>
+        <translation>Нулевые переходы</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="178"/>
         <source>Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>Отладка</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="189"/>
         <source>Logging (Optional)</source>
-        <translation type="unfinished"></translation>
+        <translation>Логгирование (опционально)</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="209"/>
         <source>Simulation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>Дополнительно</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="423"/>
         <source>Compiling Model.
 Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Модель компилируетс. Пожалуйста, подождите немного.</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="428"/>
         <source>Compiling Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Компилирование модели</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="509"/>
         <source>Running Simulation.
 Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проводится расчет. Пожалуйста, подождите немного.</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="513"/>
         <source>Running Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Проводится расчет</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="588"/>
         <source>Starting Interactive Simulation Server</source>
-        <translation type="unfinished"></translation>
+        <translation>Запускает сервер интерактивного расчета</translation>
     </message>
 </context>
 <context>
@@ -2412,12 +2428,12 @@ Please wait for a while.</source>
     <message>
         <location filename="StringHandler.cpp" line="615"/>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Описание</translation>
     </message>
     <message>
         <location filename="StringHandler.cpp" line="620"/>
         <source>Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь</translation>
     </message>
 </context>
 <context>
@@ -2425,7 +2441,7 @@ Please wait for a while.</source>
     <message>
         <location filename="TextAnnotation.cpp" line="71"/>
         <source>Text Here</source>
-        <translation type="unfinished">Пишите здесь</translation>
+        <translation>Пишите здесь</translation>
     </message>
 </context>
 <context>
@@ -2448,17 +2464,17 @@ Please wait for a while.</source>
     <message>
         <location filename="TextAnnotation.cpp" line="787"/>
         <source>Italic</source>
-        <translation type="unfinished">Курсив</translation>
+        <translation>Курсив</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="789"/>
         <source>Bold</source>
-        <translation type="unfinished">Полужирный</translation>
+        <translation>Полужирный</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="791"/>
         <source>Underline</source>
-        <translation type="unfinished">Подчеркнутый</translation>
+        <translation>Подчеркнутый</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="793"/>
@@ -2476,7 +2492,7 @@ Please wait for a while.</source>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="115"/>
         <source>Variables</source>
-        <translation type="unfinished">Переменные</translation>
+        <translation>Переменные</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="117"/>
