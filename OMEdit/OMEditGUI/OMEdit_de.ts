@@ -2421,11 +2421,6 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="SimulationWidget.cpp" line="146"/>
-        <source>Output</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="SimulationWidget.cpp" line="150"/>
         <source>Model Setup File (Optional):</source>
         <translation type="unfinished"></translation>

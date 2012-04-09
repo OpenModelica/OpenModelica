@@ -793,10 +793,6 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <translation>Ingen Färg</translation>
     </message>
     <message>
-        <source>Pattern:</source>
-        <translation type="obsolete">Mönster:</translation>
-    </message>
-    <message>
         <location filename="Helper.cpp" line="228"/>
         <source>Thickness:</source>
         <translation>Tjocklek:</translation>
@@ -1986,17 +1982,17 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="47"/>
         <source>Change Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändra Färg</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="50"/>
         <source>Automatic Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisk Färg</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="55"/>
         <source>Hide</source>
-        <translation type="unfinished"></translation>
+        <translation>Göm</translation>
     </message>
 </context>
 <context>
@@ -2004,7 +2000,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotApplication.cpp" line="107"/>
         <source>OMPlot - Error</source>
-        <translation type="unfinished"></translation>
+        <translation>OMPlot - Fel</translation>
     </message>
 </context>
 <context>
@@ -2012,27 +2008,27 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="43"/>
         <source>OMPlot - OpenModelica Plot</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="69"/>
         <source>Close</source>
-        <translation type="unfinished">Stänga</translation>
+        <translation>Stänga</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="73"/>
         <source>Tab View</source>
-        <translation type="unfinished"></translation>
+        <translation>Fliken Visa</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="89"/>
         <source>&amp;File</source>
-        <translation type="unfinished">&amp;Arkiv</translation>
+        <translation>&amp;Arkiv</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="97"/>
         <source>&amp;Options</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2040,72 +2036,72 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="70"/>
         <source>Plot by OpenModelica</source>
-        <translation type="unfinished"></translation>
+        <translation>Plot av OpenModelica</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="75"/>
         <source>time</source>
-        <translation type="unfinished"></translation>
+        <translation>tid</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="169"/>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>zoom</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="176"/>
         <source>Pan</source>
-        <translation type="unfinished"></translation>
+        <translation>Panna</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="183"/>
         <source>Fit in View</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa i Visa</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="194"/>
         <source>Save</source>
-        <translation type="unfinished">Spara</translation>
+        <translation>Spara</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="201"/>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv ut</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="207"/>
         <source>Grid</source>
-        <translation type="unfinished"></translation>
+        <translation>Rutnät</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="214"/>
         <source>Log X</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="218"/>
         <source>Log Y</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="740"/>
         <source>Save File As</source>
-        <translation type="unfinished">Spara filen som</translation>
+        <translation>Spara filen som</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="740"/>
         <source>Image Files (*.png *.svg *.bmp *.jpg)</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="748"/>
         <source>OMPlot - OpenModelica Plot</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="749"/>
         <source>Generated by OpenModelica Plot Tool</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2433,11 +2429,6 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <location filename="SimulationWidget.cpp" line="131"/>
         <source>Variable Filter (Optional):</source>
         <translation>Variabla Filter (valfritt):</translation>
-    </message>
-    <message>
-        <location filename="SimulationWidget.cpp" line="146"/>
-        <source>Output</source>
-        <translation type="unfinished">Utsignal</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="150"/>

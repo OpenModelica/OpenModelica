@@ -143,7 +143,7 @@ void SimulationWidget::setUpForm()
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpOutputTab, tr("Output"));
+  mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
   // Simulation Flags Tab
   mpSimulationFlagsTab = new QWidget;
   // Model Setup File

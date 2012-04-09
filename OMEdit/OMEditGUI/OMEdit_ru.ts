@@ -629,7 +629,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="194"/>
         <source>Output</source>
-        <translation>Output</translation>
+        <translation>Вывод</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="195"/>
@@ -795,10 +795,6 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="Helper.cpp" line="227"/>
         <source>No Color</source>
         <translation>Без цвета</translation>
-    </message>
-    <message>
-        <source>Pattern:</source>
-        <translation type="obsolete">Шаблон:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="228"/>
@@ -2048,7 +2044,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="75"/>
         <source>time</source>
-        <translation type="unfinished">время</translation>
+        <translation>время</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="169"/>
@@ -2446,11 +2442,6 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="SimulationWidget.cpp" line="150"/>
         <source>Model Setup File (Optional):</source>
         <translation>Файл установок модели (опционально):</translation>
-    </message>
-    <message>
-        <location filename="SimulationWidget.cpp" line="146"/>
-        <source>Output</source>
-        <translation>Вывод</translation>
     </message>
     <message>
         <location filename="SimulationWidget.cpp" line="155"/>
