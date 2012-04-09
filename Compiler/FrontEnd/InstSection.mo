@@ -3948,7 +3948,7 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
-      DAE.Type t1,t2,bc_tp1,bc_tp2;
+      DAE.Type t1, t2, bc_tp1, bc_tp2, equalityConstraintFunctionReturnType;
       DAE.Dimension dim1,dim2;
       DAE.DAElist dae;
       list<DAE.Var> l1,l2;
@@ -4088,10 +4088,14 @@ algorithm
         zeroVector = Expression.makeRealArrayOfZeros(idim1);
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
+        equalityConstraintFunctionReturnType = 
+          DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(idim1)},DAE.emptyTypeSource);
         breakDAEElements = 
           {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
-                                 DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
+                                 DAE.CALL_ATTR(
+                                   equalityConstraintFunctionReturnType, 
+                                   false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
                         source // set the origin of the element
                         )};
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);
