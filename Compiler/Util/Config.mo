@@ -301,6 +301,18 @@ algorithm
   Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, inString);
 end setIndexReductionMethod;
 
+public function getMatchingAlgorithm
+  output String outString;
+algorithm
+  outString := Flags.getConfigString(Flags.MATCHING_ALGORITHM);
+end getMatchingAlgorithm;
+
+public function setMatchingAlgorithm
+  input String inString;
+algorithm
+  Flags.setConfigString(Flags.MATCHING_ALGORITHM, inString);
+end setMatchingAlgorithm;
+
 public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;
 algorithm

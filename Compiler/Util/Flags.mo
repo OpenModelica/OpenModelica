@@ -507,9 +507,9 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("inlineArrayEqn", "DESCRIBE ME"),
     ("removeFinalParameters", "Structural paramters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file."),
     ("removeEqualFunctionCalls", "DESCRIBE ME"),
-    ("removeProtectedParameters", "DESCRIBE ME"),
-    ("removeUnusedParameter", "DESCRIBE ME"),
-    ("removeUnusedVariables", "DESCRIBE ME"),
+    ("removeProtectedParameters", "replace all parameters with protected=true in the system"),
+    ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
+    ("removeUnusedVariables", "strips all variables not present int the equations from the system"),
     ("partitionIndependentBlocks", "Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)"),
     ("collapseIndependentBlocks", "Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)"),
     ("expandDerOperator", "DESCRIBE ME"),
@@ -518,8 +518,8 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(13, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
-    ("dummyDerivative", "DESCRIBE ME"),
-    ("DynamicStateSelection", "DESCRIBE ME")})),
+    ("dummyDerivative", "simple index reduction method, select dummy states based on heuristics"),
+    ("DynamicStateSelection", "index reduction method based on analysation of the jacobian.")})),
     "Sets the index reduction method to use.");
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(14, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
@@ -529,12 +529,12 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(14, "postOptModules",
     "removeSimpleEquations"
   }),
   SOME(STRING_DESC_OPTION({
-    ("lateInline", "DESCRIBE ME"),
+    ("lateInline", "perform function inlining for function with annotation LateInline=true"),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeEqualFunctionCalls", "DESCRIBE ME"),
     ("inlineArrayEqn", "DESCRIBE ME"),
-    ("removeUnusedParameter", "DESCRIBE ME"),
+    ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
     ("constantLinearSystem", "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time"),
     ("dumpComponentsGraphStr", "DESCRIBE ME")})),
   "Sets the post optimisation modules to use in the back end. See +help=optmodules for more info.");
@@ -612,6 +612,11 @@ constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(37, "reductionMethod",
 constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(38, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
+constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(39, "matchingAlgorithm",
+  NONE(), EXTERNAL(), STRING_FLAG("omc"),
+  SOME(STRING_DESC_OPTION({
+    ("omc", "Depth First Search based Algorithm with simple Look Ahead Feature")})),
+    "Sets the matching algorithm to use.");  
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -654,7 +659,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT
+  PLOT_SILENT,
+  MATCHING_ALGORITHM
 };
 
 public function new
