@@ -378,7 +378,8 @@ extern std::string ErrorImpl__printMessagesStr()
   // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);
   std::string res("");
   while(!errorMessageQueue.empty()) {
-    res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+    if (errorMessageQueue.top()->getSeverity() == ErrorLevel_error)
+      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
     pop_message(false);
   }
   return res;
