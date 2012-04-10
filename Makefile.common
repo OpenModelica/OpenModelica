@@ -164,7 +164,6 @@ install-dirs:
 	mkdir -p ${INSTALL_LIBDIR}
 	mkdir -p ${INSTALL_INCLUDEDIR}
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
-	mkdir -p ${INSTALL_DOCDIR}/ompython
 	mkdir -p ${INSTALL_MANDIR}/man1/
 	test ! -d ${builddir_doc}/omedit/ || mkdir -p ${INSTALL_DOCDIR}/omedit/
 	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
@@ -187,7 +186,6 @@ install: install-dirs install-python
 	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}/omc/
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	test ! -d ${builddir_doc}/omedit/ || cp -p ${builddir_doc}/omedit/* ${INSTALL_DOCDIR}/omedit/
-	cp -p ${builddir_doc}/ompython/* ${INSTALL_DOCDIR}/ompython/
 	# man pages
 	cp -p ${builddir_man}/man1/*.gz ${INSTALL_MANDIR}/man1/
 	# Shared data
