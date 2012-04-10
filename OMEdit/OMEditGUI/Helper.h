@@ -105,12 +105,6 @@ public:
   static QString name;
   static QString comment;
   static QString type;
-  static QString constant;
-  static QString paramter;
-  static QString final;
-  static QString Protected;
-  static QString input;
-  static QString output;
   static QString information;
   static QString modelicaFiles;
   static QString rename;
@@ -131,8 +125,6 @@ public:
   static QString block;
   static QString function;
   static QString functionTip;
-  static QString package;
-  static QString primitive;
   static QString simulate;
   static QString simulation;
   static QString interactiveSimulation;

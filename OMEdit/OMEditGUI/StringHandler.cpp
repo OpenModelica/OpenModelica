@@ -66,29 +66,29 @@ QString StringHandler::getModelicaClassType(int type)
   switch (type)
   {
     case StringHandler::MODEL:
-      return Helper::model;
+      return "Model";
     case StringHandler::CLASS:
-      return Helper::Class;
+      return "Class";
     case StringHandler::CONNECTOR:
-      return Helper::connector;
+      return "Connector";
     case StringHandler::RECORD:
-      return Helper::record;
+      return "Record";
     case StringHandler::BLOCK:
-      return Helper::block;
+      return "Block";
     case StringHandler::FUNCTION:
-      return Helper::function;
+      return "Function";
     case StringHandler::PACKAGE:
-      return Helper::package;
-    case StringHandler::PRIMITIVE:
-      return Helper::primitive;
+      return "Package";
     case StringHandler::TYPE:
-      return Helper::type;
+      return "Type";
+    case StringHandler::PRIMITIVE:
+      return "Primitive";
     case StringHandler::PARAMETER:
-      return Helper::paramter;
+      return "Parameter";
     case StringHandler::CONSTANT:
-      return Helper::constant;
+      return "Constant";
     case StringHandler::PROTECTED:
-      return Helper::Protected;
+      return "Protected";
     default:
       // should never be reached
       return "";

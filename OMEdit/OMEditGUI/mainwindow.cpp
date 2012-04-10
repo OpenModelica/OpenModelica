@@ -308,32 +308,32 @@ void MainWindow::createActions()
 {
   // File Menu
   // New Model Action
-  mpNewModelAction = new QAction(Helper::model, this);
+  mpNewModelAction = new QAction(StringHandler::getModelicaClassType(StringHandler::MODEL), this);
   mpNewModelAction->setStatusTip(tr("Create New Model"));
   mpNewModelAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
   // New Class Action
-  mpNewClassAction = new QAction(Helper::Class, this);
+  mpNewClassAction = new QAction(StringHandler::getModelicaClassType(StringHandler::CLASS), this);
   mpNewClassAction->setStatusTip(tr("Create New Class"));
   connect(mpNewClassAction, SIGNAL(triggered()), SLOT(openNewClass()));
   // New Connector Action
-  mpNewConnectorAction = new QAction(Helper::connector, this);
+  mpNewConnectorAction = new QAction(StringHandler::getModelicaClassType(StringHandler::CONNECTOR), this);
   mpNewConnectorAction->setStatusTip(tr("Create New Connector"));
   connect(mpNewConnectorAction, SIGNAL(triggered()), SLOT(openNewConnector()));
   // New Record Action
-  mpNewRecordAction = new QAction(Helper::record, this);
+  mpNewRecordAction = new QAction(StringHandler::getModelicaClassType(StringHandler::RECORD), this);
   mpNewRecordAction->setStatusTip(tr("Create New Record"));
   connect(mpNewRecordAction, SIGNAL(triggered()), SLOT(openNewRecord()));
   // New Block Action
-  mpNewBlockAction = new QAction(Helper::block, this);
+  mpNewBlockAction = new QAction(StringHandler::getModelicaClassType(StringHandler::BLOCK), this);
   mpNewBlockAction->setStatusTip(tr("Create New Block"));
   connect(mpNewBlockAction, SIGNAL(triggered()), SLOT(openNewBlock()));
   // New Function Action
-  mpNewFunctionAction = new QAction(Helper::function, this);
+  mpNewFunctionAction = new QAction(StringHandler::getModelicaClassType(StringHandler::FUNCTION), this);
   mpNewFunctionAction->setStatusTip(tr("Create New Function"));
   connect(mpNewFunctionAction, SIGNAL(triggered()), SLOT(openNewFunction()));
   // New Package Action
-  mpNewPackageAction = new QAction(Helper::package, this);
+  mpNewPackageAction = new QAction(StringHandler::getModelicaClassType(StringHandler::PACKAGE), this);
   mpNewPackageAction->setStatusTip(tr("Create New Package"));
   mpNewPackageAction->setShortcut(QKeySequence("Ctrl+p"));
   connect(mpNewPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));

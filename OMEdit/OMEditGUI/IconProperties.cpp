@@ -334,11 +334,11 @@ void IconAttributes::setUpDialog()
   gridTypeLayout->addWidget(mpCommentTextBox, 1, 1);
   mpTypeGroup->setLayout(gridTypeLayout);
   // create Variablity Group Box
-  mpVariabilityGroup = new QGroupBox(tr("Variability"));
-  mpConstantRadio = new QRadioButton(Helper::constant);
-  mpParameterRadio = new QRadioButton(Helper::paramter);
-  mpDiscreteRadio = new QRadioButton(tr("Discrete"));
-  mpDefaultRadio = new QRadioButton(tr("Unspecified (Default)"));
+  mpVariabilityGroup = new QGroupBox("Variability");
+  mpConstantRadio = new QRadioButton("Constant");
+  mpParameterRadio = new QRadioButton("Parameter");
+  mpDiscreteRadio = new QRadioButton("Discrete");
+  mpDefaultRadio = new QRadioButton("Unspecified (Default)");
   QVBoxLayout *verticalVariabilityLayout = new QVBoxLayout;
   verticalVariabilityLayout->addWidget(mpConstantRadio);
   verticalVariabilityLayout->addWidget(mpParameterRadio);
@@ -351,20 +351,20 @@ void IconAttributes::setUpDialog()
   mpVariabilityButtonGroup->addButton(mpDefaultRadio);
   mpVariabilityGroup->setLayout(verticalVariabilityLayout);
   // create Variablity Group Box
-  mpPropertiesGroup = new QGroupBox(Helper::properties);
-  mpFinalCheckBox = new QCheckBox(tr("Final"));
-  mpProtectedCheckBox = new QCheckBox(Helper::Protected);
-  mpReplaceAbleCheckBox = new QCheckBox(tr("Replaceable"));
+  mpPropertiesGroup = new QGroupBox("Properties");
+  mpFinalCheckBox = new QCheckBox("Final");
+  mpProtectedCheckBox = new QCheckBox("Protected");
+  mpReplaceAbleCheckBox = new QCheckBox("Replaceable");
   QVBoxLayout *verticalPropertiesLayout = new QVBoxLayout;
   verticalPropertiesLayout->addWidget(mpFinalCheckBox);
   verticalPropertiesLayout->addWidget(mpProtectedCheckBox);
   verticalPropertiesLayout->addWidget(mpReplaceAbleCheckBox);
   mpPropertiesGroup->setLayout(verticalPropertiesLayout);
   // create Variablity Group Box
-  mpCausalityGroup = new QGroupBox(tr("Causality"));
-  mpInputRadio = new QRadioButton(tr("Input"));
-  mpOutputRadio = new QRadioButton(Helper::output);
-  mpNoneRadio = new QRadioButton(tr("None"));
+  mpCausalityGroup = new QGroupBox("Causality");
+  mpInputRadio = new QRadioButton("Input");
+  mpOutputRadio = new QRadioButton("Output");
+  mpNoneRadio = new QRadioButton("None");
   QVBoxLayout *verticalCausalityLayout = new QVBoxLayout;
   verticalCausalityLayout->addWidget(mpInputRadio);
   verticalCausalityLayout->addWidget(mpOutputRadio);
@@ -375,9 +375,9 @@ void IconAttributes::setUpDialog()
   mpCausalityButtonGroup->addButton(mpNoneRadio);
   mpCausalityGroup->setLayout(verticalCausalityLayout);
   // create Variablity Group Box
-  mpInnerOuterGroup = new QGroupBox(tr("Inner/Outer"));
-  mpInnerCheckBox = new QCheckBox(tr("Inner"));
-  mpOuterCheckBox = new QCheckBox(tr("Outer"));
+  mpInnerOuterGroup = new QGroupBox("Inner/Outer");
+  mpInnerCheckBox = new QCheckBox("Inner");
+  mpOuterCheckBox = new QCheckBox("Outer");
   QVBoxLayout *verticalInnerOuterLayout = new QVBoxLayout;
   verticalInnerOuterLayout->addWidget(mpInnerCheckBox);
   verticalInnerOuterLayout->addWidget(mpOuterCheckBox);

@@ -757,7 +757,7 @@ void ModelicaTextEditorPage::addListItems()
   mpTypeItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getTypeRuleColor());
 
   mpFunctionItem = new QListWidgetItem(mpItemsList);
-  mpFunctionItem->setText(Helper::function);
+  mpFunctionItem->setText(tr("Function"));
   mpFunctionItem->setData(Qt::UserRole, "Function");
   mpFunctionItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getFunctionRuleColor());
 
