@@ -515,13 +515,18 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", "DESCRIBE ME"),
     ("residualForm", "Transforms simple equations x=y to zero-sum equations 0=y-x")})),
   "Sets the pre optimisation modules to use in the back end. See +help=optmodules for more info.");
-constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(13, "indexReductionMethod",
+constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(13, "matchingAlgorithm",
+  NONE(), EXTERNAL(), STRING_FLAG("omc"),
+  SOME(STRING_DESC_OPTION({
+    ("omc", "Depth First Search based Algorithm with simple Look Ahead Feature")})),
+    "Sets the matching algorithm to use.");  
+constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(14, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", "simple index reduction method, select dummy states based on heuristics"),
     ("DynamicStateSelection", "index reduction method based on analysation of the jacobian.")})),
     "Sets the index reduction method to use.");
-constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(14, "postOptModules",
+constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInline",
     "inlineArrayEqn",
@@ -538,85 +543,80 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(14, "postOptModules",
     ("constantLinearSystem", "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time"),
     ("dumpComponentsGraphStr", "DESCRIBE ME")})),
   "Sets the post optimisation modules to use in the back end. See +help=optmodules for more info.");
-constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(15, "simCodeTarget",
+constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(16, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 
   SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump"})),
   "Sets the target language for the code generation");
-constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(16, "orderConnections", 
+constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(17, "orderConnections", 
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Orders connect equations alphabetically if set.");
-constant ConfigFlag TYPE_INFO = CONFIG_FLAG(17, "typeinfo",
+constant ConfigFlag TYPE_INFO = CONFIG_FLAG(18, "typeinfo",
   SOME("t"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Prints out extra type information if set.");
-constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(18, "keepArrays",
+constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(19, "keepArrays",
   SOME("a"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to split arrays or not.");
-constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(19, "modelicaOutput",
+constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(20, "modelicaOutput",
   SOME("m"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag PARAMS_STRUCT = CONFIG_FLAG(20, "paramsStruct",
+constant ConfigFlag PARAMS_STRUCT = CONFIG_FLAG(21, "paramsStruct",
   SOME("p"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag SILENT = CONFIG_FLAG(21, "silent",
+constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on silent mode.");
-constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(22, "corbaSessionName",
+constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Sets the name of the corba session if +d=interactiveCorba is used.");
-constant ConfigFlag NUM_PROC = CONFIG_FLAG(23, "numProcs",
+constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the number of processors to use.");
-constant ConfigFlag LATENCY = CONFIG_FLAG(24, "latency",
+constant ConfigFlag LATENCY = CONFIG_FLAG(25, "latency",
   SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the latency for parallel execution.");
-constant ConfigFlag BANDWIDTH = CONFIG_FLAG(25, "bandwidth",
+constant ConfigFlag BANDWIDTH = CONFIG_FLAG(26, "bandwidth",
   SOME("b"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the bandwidth for parallel execution.");
-constant ConfigFlag INST_CLASS = CONFIG_FLAG(26, "instClass",
+constant ConfigFlag INST_CLASS = CONFIG_FLAG(27, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Instantiate the class given by the fully qualified path.");
-constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(27, "vectorizationLimit",
+constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(28, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized.");
-constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(28, "simulationCg",
+constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(29, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on simulation code generation.");
-constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(29,
+constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(30,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to evaluate parameters in annotations or not.");
-constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(30,
+constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(31,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Set when checkModel is used to turn on specific features for checking.");
-constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(31,
+constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(32,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   "");
-constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(32,
+constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(33,
   "unitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(33,
+constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(34,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   "");
-constant ConfigFlag ENV_CACHE = CONFIG_FLAG(34,
+constant ConfigFlag ENV_CACHE = CONFIG_FLAG(35,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(35,
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(36,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on labeled SimCode generation for reduction algorithms.");
-constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(36,
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(37,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on reducing terms for reduction algorithms.");
-constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(37, "reductionMethod",
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(38, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     "Sets the reduction method to be used.");
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(38, "plotSilent", 
+constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
-constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(39, "matchingAlgorithm",
-  NONE(), EXTERNAL(), STRING_FLAG("omc"),
-  SOME(STRING_DESC_OPTION({
-    ("omc", "Depth First Search based Algorithm with simple Look Ahead Feature")})),
-    "Sets the matching algorithm to use.");  
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -634,6 +634,7 @@ constant list<ConfigFlag> allConfigFlags = {
   SHOW_ANNOTATIONS,
   NO_SIMPLIFY,
   PRE_OPT_MODULES,
+  MATCHING_ALGORITHM,
   INDEX_REDUCTION_METHOD,
   POST_OPT_MODULES,
   SIMCODE_TARGET,
@@ -659,8 +660,7 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT,
-  MATCHING_ALGORITHM
+  PLOT_SILENT
 };
 
 public function new
@@ -1063,7 +1063,7 @@ algorithm
   CONFIG_FLAG(name = name, shortname = opt_shortname) := inFlag;
   shortname := Util.getOptionOrDefault(opt_shortname, "");
   outMatches := stringEq(inFlagName, shortname) or
-                stringEq(inFlagName, name);
+                stringEq(System.tolower(inFlagName), System.tolower(name));
 end matchConfigFlag;
 
 protected function setConfigFlag
@@ -1388,11 +1388,12 @@ protected function printHelp
   "Prints out help for the given list of topics."
   input list<String> inTopics;
 algorithm
-  _ := match(inTopics)
+  _ := matchcontinue (inTopics)
     local
       list<String> debug_flags, rest_topics;
       list<tuple<String, String>> options;
-      String str;
+      String str,name;
+      ConfigFlag config_flag;
 
     case {}
       equation
@@ -1417,6 +1418,9 @@ algorithm
         print("matching and index reduction in the back end. These modules are specified as a\n");
         print("comma-separated list, where the valid modules are:\n\n");
         print(printFlagValidOptionsDesc(PRE_OPT_MODULES));
+        print("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\n");
+        print("after the pre optimisation modules. Valid options are:\n\n");
+        print(printFlagValidOptionsDesc(MATCHING_ALGORITHM));
         print("\nThe +indexReductionMethod sets the method that is used for the index reduction,\n");
         print("after the pre optimisation modules. Valid options are:\n\n");
         print(printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD));
@@ -1429,11 +1433,21 @@ algorithm
 
     case {str}
       equation
+        (config_flag as CONFIG_FLAG(name=name,description=str)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+        str = "    +" +& name +& " " +& str +& "\n";
+        str = stringAppendList(Util.stringWrap(str, 80, descriptionIndent));
+        print(str);
+        print("\n");
+        print(printFlagValidOptionsDesc(config_flag));
+      then ();
+
+    case {str}
+      equation
         print("I'm sorry, I don't know what " +& str +& " is.\n");
       then
         fail();
 
-    case str :: rest_topics
+    case (str :: (rest_topics as _::_))
       equation
         printHelp({str});
         print("\n");
@@ -1441,7 +1455,7 @@ algorithm
       then
         ();
 
-  end match;
+  end matchcontinue;
 end printHelp;
 
 public function printUsage
