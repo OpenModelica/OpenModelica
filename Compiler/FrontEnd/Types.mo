@@ -4276,28 +4276,28 @@ algorithm
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(varLst = _),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(varLst = _),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(varLst = _),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then
         (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
@@ -5293,6 +5293,7 @@ algorithm
     case (e,e_type,expected_type,printFailtrace)
       equation
         true = subtype(e_type, expected_type);
+        /* TODO: Don't return ANY as type here; use the most restrictive... Else we get issues... */
       then
         (e,e_type);
     case (e,e_type,expected_type,printFailtrace)

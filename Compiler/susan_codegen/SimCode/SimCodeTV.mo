@@ -2322,6 +2322,10 @@ package Types
     input DAE.Type inType;
     output list<Integer> outIntegerLst;
   end getDimensionSizes;
+  function unparseType
+    input DAE.Type inType;
+    output String str;
+  end unparseType;
 end Types;
 
 end SimCodeTV;

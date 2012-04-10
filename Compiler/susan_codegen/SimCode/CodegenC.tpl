@@ -3026,7 +3026,8 @@ case FUNCTION(__) then
   <% if inFunc then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar) {
-    void* states = push_memory_states(1);  
+    void* states = push_memory_states(1);
+    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
@@ -3094,7 +3095,8 @@ case efn as EXTERNAL_FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    void* states = push_memory_states(1);  
+    void* states = push_memory_states(1);
+    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
@@ -6116,7 +6118,7 @@ match exp
 case exp as UNBOX(__) then
   let ty = expTypeShort(exp.ty)
   let res = daeExp(exp.exp,context,&preExp,&varDecls)
-  'mmc_unbox_<%ty%>(<%res%>) /* DAE.UNBOX */'
+  'mmc_unbox_<%ty%>(<%res%>) /* DAE.UNBOX <%unparseType(exp.ty) %> */'
 end daeExpUnbox;
 
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
