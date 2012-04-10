@@ -351,27 +351,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="OptionsWidget.cpp" line="558"/>
         <source>Language:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprache:</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="560"/>
         <source>Auto Detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisch</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="561"/>
         <source>English</source>
-        <translation type="unfinished"></translation>
+        <translation>Englisch</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="562"/>
         <source>Russian</source>
-        <translation type="unfinished"></translation>
+        <translation>Russisch</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="563"/>
         <source>Swedish</source>
-        <translation type="unfinished"></translation>
+        <translation>Schwedisch</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="565"/>
@@ -391,7 +391,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="OptionsWidget.cpp" line="577"/>
         <source>Working Directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Arbeitsverzeichnis:</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="582"/>
@@ -501,27 +501,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="Helper.cpp" line="227"/>
         <source>Writable</source>
         <oldsource>Writeable</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Beschreibbar</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="228"/>
         <source>Icon View</source>
-        <translation type="unfinished"></translation>
+        <translation>Ikon Ansicht</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="229"/>
         <source>Diagram View</source>
-        <translation type="unfinished"></translation>
+        <translation>Schema Ansicht</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="230"/>
         <source>Modelica Text View</source>
-        <translation type="unfinished"></translation>
+        <translation>Text Ansicht</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="231"/>
         <source>View Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokumentation</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="232"/>
@@ -562,12 +562,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="170"/>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Bearbeiten</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="171"/>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichern</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="173"/>
@@ -577,7 +577,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="174"/>
         <source>General</source>
-        <translation type="unfinished"></translation>
+        <translation>Allgemeine</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="175"/>
@@ -602,7 +602,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="179"/>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Information</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="180"/>
@@ -642,12 +642,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="187"/>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopieren</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="188"/>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Inhalte einfügen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="189"/>
@@ -687,7 +687,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="196"/>
         <source>Options</source>
-        <translation type="unfinished"></translation>
+        <translation>Optionen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="197"/>
@@ -827,17 +827,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="233"/>
         <source>Left</source>
-        <translation type="unfinished"></translation>
+        <translation>Linksbündig</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="234"/>
         <source>Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Zentriert</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="235"/>
         <source>Right</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechtsbündig</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="172"/>
@@ -1137,7 +1137,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="341"/>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="343"/>
@@ -1152,7 +1152,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="349"/>
         <source>Save As</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichern unter</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="351"/>
@@ -1172,7 +1172,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="363"/>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="364"/>
@@ -1182,7 +1182,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="369"/>
         <source>Undo</source>
-        <translation type="unfinished"></translation>
+        <translation>Rückgängig</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="371"/>
@@ -1192,7 +1192,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="373"/>
         <source>Redo</source>
-        <translation type="unfinished"></translation>
+        <translation>Wiederstellen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="375"/>
@@ -1202,7 +1202,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="377"/>
         <source>Cut</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="388"/>
@@ -1342,7 +1342,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="482"/>
         <source>User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>OMEdit Hilfe</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="483"/>
@@ -1352,7 +1352,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="487"/>
         <source>About OMEdit</source>
-        <translation type="unfinished"></translation>
+        <translation>Info über OMEdit</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="488"/>
@@ -1493,22 +1493,22 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="554"/>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Datei</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="558"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Neu</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="579"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="589"/>
         <source>&amp;View</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ansicht</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="593"/>
@@ -1533,7 +1533,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="645"/>
         <source>F&amp;MI</source>
-        <translation type="unfinished"></translation>
+        <translation>F&amp;MI</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="651"/>
@@ -1543,7 +1543,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="663"/>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hilfe</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="683"/>
@@ -1585,7 +1585,12 @@ Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</source>
 Distributed under OSMC-PL and GPL, see www.openmodelica.org.
 
 Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsource>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Copyright © Linköping University.
+Lizensiert unter OSMC PL und GPL, siehe www.openmodelica.org.
+
+Erstellt von Adeel Asghar und Sonia Tariq als Teil ihrer Masterarbeit.
+
+Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodelica.org.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1295"/>
@@ -1920,12 +1925,12 @@ Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsourc
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="89"/>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Datei</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="97"/>
         <source>&amp;Options</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Optionen</translation>
     </message>
 </context>
 <context>

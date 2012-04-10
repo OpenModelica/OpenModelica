@@ -12,11 +12,11 @@ QMAKE=@QMAKE@
 QM=OMEdit_sv.qm OMEdit_ru.qm OMEdit_de.qm
 
 install: build $(QM)
-	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 	mkdir -p ../../build/share/doc/omedit/
 	cp -p ../../doc/OMEdit/*.pdf ../../build/share/doc/omedit/
 	mkdir -p ../../build/share/omedit/nls/
 	cp -p ./*.qm ../../build/share/omedit/nls/
+	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 
 %.qm: %.ts
 	lrelease $<
