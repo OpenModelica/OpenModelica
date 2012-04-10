@@ -92,7 +92,6 @@ protected import BackendDAETransform;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
-protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
@@ -2748,7 +2747,7 @@ algorithm
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE());
+      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2771,7 +2770,7 @@ algorithm
     then ();
   case (false,true,dlow)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE());
+      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);

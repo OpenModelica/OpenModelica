@@ -1841,6 +1841,16 @@ end getNominalAssert;
  * =======================================================
  */
 
+public function daenumVariables
+  input BackendDAE.EqSystem syst;
+  output Integer n;
+protected
+ BackendDAE.Variables vars; 
+algorithm
+  vars := daeVars(syst);
+  n := numVariables(vars);
+end daenumVariables;
+
 public function numVariables
   input BackendDAE.Variables vars;
   output Integer n;

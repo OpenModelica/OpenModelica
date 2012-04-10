@@ -3999,7 +3999,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
-        dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE());
+        dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
@@ -4025,7 +4025,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        (indexed_dlow,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
+        (indexed_dlow,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs1);
         Print.clearBuf();

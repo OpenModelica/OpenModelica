@@ -273,8 +273,8 @@ end EqSystem;
 uniontype Matching
   record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
   record MATCHING "not yet used"
-    array<Integer> ass1;
-    array<Integer> ass2;
+    array<Integer> ass1 "ass[varindx]=eqnindx";
+    array<Integer> ass2 "ass[eqnindx]=varindx";
     StrongComponents comps;
   end MATCHING;
 end Matching;

@@ -5018,7 +5018,7 @@ algorithm
         dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
         dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
         // try causalisation
-        (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2),matching=BackendDAE.MATCHING(v1_1,v2_1,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+        (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2),matching=BackendDAE.MATCHING(v1_1,v2_1,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         comps_1 = List.map(comps,getEqnIndxFromComp);
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
         (morecomps,onecomp) = splitComps(comps_1);
@@ -5444,7 +5444,7 @@ algorithm
 
           //Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
-          (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=matching as BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+          (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=matching as BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
           Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",dlow));
           Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, matching);
           //Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );

@@ -98,12 +98,10 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
-protected import InnerOuter;
 protected import List;
 protected import Mod;
 protected import PartFn;
 protected import PriorityQueue;
-protected import SCodeUtil;
 protected import Settings;
 protected import SimCodeDump;
 protected import System;
@@ -1023,7 +1021,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), NONE(), NONE());
+          NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCodeFMU(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt);
@@ -1240,7 +1238,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), NONE(), NONE());
+          NONE(), NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates, timeJacobians) = 
           generateModelCode(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
         resultValues = 
@@ -2587,7 +2585,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
         dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
-        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),SOME("dummyDerivative"));
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
         res = createJacobianCC(functions,dlow);
@@ -2793,7 +2791,7 @@ BackendDAE.SHARED(knownVars = kv)))
         newVars = BackendDAEUtil.emptyVars();
         (newEqns, newVars) = splitoutEquationAndVars(blt_states,e,v,newEqns,newVars);
         dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
-        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),SOME("dummyDerivative"));
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
          
         // Prepare all needed variables
         varlst_tmp = BackendDAEUtil.varList(v);
@@ -4995,7 +4993,7 @@ algorithm
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,SOME(m),SOME(mt),BackendDAE.NO_MATCHING());
         subsystem_dae = BackendDAE.DAE({syst},shared);
-        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(m=SOME(m_3),mT=SOME(mT_3))}),v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -5314,7 +5312,7 @@ algorithm
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,ae,algorithms,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM() ));
-        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -6053,7 +6051,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM());
         subsystem_dae = BackendDAE.DAE({syst},shared);
-        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE());
+        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         equations_ = createEquations(false, true, genDiscrete, false, false, syst, shared, offset, comps, helpVarInfo);
       then
         equations_;

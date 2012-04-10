@@ -143,7 +143,7 @@ algorithm
         print("* Lower ok\n");
         
         
-        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeFinalParameters", "removeEqualFunctionCalls","partitionIndependentBlocks", "expandDerOperator"}), NONE(), NONE());
+        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeFinalParameters", "removeEqualFunctionCalls","partitionIndependentBlocks", "expandDerOperator"}), NONE(), NONE(), NONE());
         print("*** Lowered: \n");
         BackendDump.dump(dlow_1);
         print("*** end Lowered: \n");

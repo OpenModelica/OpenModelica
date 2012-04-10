@@ -1073,26 +1073,21 @@ end equationAdd;
 
 public function equationAddDAE
 "function: equationAddDAE
-  author: Frenkel TUD 2011-05
-  Incidence Matrix is lost"
+  author: Frenkel TUD 2011-05"
   input BackendDAE.Equation inEquation;
   input BackendDAE.EqSystem syst;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst := match (inEquation,syst)
     local
-      BackendDAE.Variables ordvars,knvars,exobj;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
-      array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.Shared shared;
-    case (inEquation,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns))
+      BackendDAE.Variables ordvars;
+      BackendDAE.EquationArray eqns,eqns1;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+    case (inEquation,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
   end match;
 end equationAddDAE;
 
