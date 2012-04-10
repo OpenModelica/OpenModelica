@@ -5271,16 +5271,16 @@ algorithm
     local 
       DAE.Exp cond,t,f,e;
     
-    case(DAE.IFEXP(cond,t,f),repl) 
+    case(DAE.IFEXP(cond,t,f),_) 
       equation
         t = ifBranchesFreeFromVar2(t,repl);
         f = ifBranchesFreeFromVar2(f,repl);
       then 
         DAE.IFEXP(cond,t,f);
     
-    case(e,repl) 
+    case(_,_) 
       equation
-        (e,_) = VarTransform.replaceExp(e,repl,NONE());
+        (e,_) = VarTransform.replaceExp(ifBranch,repl,NONE());
       then e;
   end matchcontinue;
 end ifBranchesFreeFromVar2;
@@ -5311,7 +5311,7 @@ algorithm
         repl1 = VarTransform.addReplacement(repl,cr,DAE.RCONST(0.0));
       then
         ((var,repl1));
-    case inTpl then inTpl;
+    else then inTpl;
   end matchcontinue;
 end makeZeroReplacement;
 
@@ -5345,7 +5345,7 @@ algorithm
       array<BackendDAE.ComplexEquation> complEqs;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7,ext_arg_8;
       list<BackendDAE.EqSystem> systs;
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs, complEqs= complEqs)),func,inTypeA)
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs, complEqs= complEqs)),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
@@ -5389,7 +5389,7 @@ algorithm
       array<BackendDAE.ComplexEquation> complEqs;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7,ext_arg_8;
       list<BackendDAE.EqSystem> systs;
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs,complEqs = complEqs)),func,inTypeA)
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs,complEqs = complEqs)),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVarsWithUpdate(vars2,func,ext_arg_1);
@@ -5478,12 +5478,12 @@ algorithm
     local
       array<Option<BackendDAE.Var>> varOptArr;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),_,_)
       equation
         ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
       then
         ext_arg_1;
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVars failed");
       then
@@ -5511,12 +5511,12 @@ algorithm
     local
       array<Option<BackendDAE.Var>> varOptArr;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),_,_)
       equation
         (_,ext_arg_1) = traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
       then
         ext_arg_1;
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVarsWithUpdate failed");
       then
@@ -5530,7 +5530,7 @@ public function traverseBackendDAEArrayNoCopy "
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-  input array<Type_a> array;
+  input array<Type_a> inArray;
   input FuncExpType func;
   input FuncArrayType arrayfunc;
   input Integer pos "iterated 1..len";
@@ -5552,16 +5552,16 @@ public function traverseBackendDAEArrayNoCopy "
     end FuncExpType;
   end FuncArrayType;
 algorithm
-  outTypeB := matchcontinue(array,func,arrayfunc,pos,len,inTypeB)
+  outTypeB := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
     local 
       Type_b ext_arg_1,ext_arg_2;
-    case(_,_,_,pos,len,inTypeB) equation 
+    case(_,_,_,_,_,_) equation 
       true = pos > len;
     then inTypeB;
     
-    case(array,func,arrayfunc,pos,len,inTypeB) equation
-      ext_arg_1 = arrayfunc(array[pos],func,inTypeB);
-      ext_arg_2 = traverseBackendDAEArrayNoCopy(array,func,arrayfunc,pos+1,len,ext_arg_1);
+    case(_,_,_,_,_,_) equation
+      ext_arg_1 = arrayfunc(inArray[pos],func,inTypeB);
+      ext_arg_2 = traverseBackendDAEArrayNoCopy(inArray,func,arrayfunc,pos+1,len,ext_arg_1);
     then ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEArrayNoCopy;
@@ -5574,7 +5574,7 @@ public function traverseBackendDAEArrayNoCopyWithStop "
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-  input array<Type_a> array;
+  input array<Type_a> inArray;
   input FuncExpTypeWithStop func;
   input FuncArrayTypeWithStop arrayfunc;
   input Integer pos "iterated 1..len";
@@ -5597,19 +5597,18 @@ public function traverseBackendDAEArrayNoCopyWithStop "
     end FuncExpTypeWithStop;
   end FuncArrayTypeWithStop;
 algorithm
-  outTypeB := matchcontinue(array,func,arrayfunc,pos,len,inTypeB)
+  outTypeB := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
     local 
       Type_b ext_arg_1,ext_arg_2;
-    case(_,_,_,pos,len,inTypeB) equation 
+    case(_,_,_,_,_,_) equation 
       true = pos > len;
-    then inTypeB;
-    
-    case(array,func,arrayfunc,pos,len,inTypeB) equation
-      (true,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
-      ext_arg_2 = traverseBackendDAEArrayNoCopyWithStop(array,func,arrayfunc,pos+1,len,ext_arg_1);
+    then inTypeB;    
+    case(_,_,_,_,_,_) equation
+      (true,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
+      ext_arg_2 = traverseBackendDAEArrayNoCopyWithStop(inArray,func,arrayfunc,pos+1,len,ext_arg_1);
     then ext_arg_2;
-    case(array,func,arrayfunc,pos,len,inTypeB) equation
-      (false,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
+    case(_,_,_,_,_,_) equation
+      (false,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
     then ext_arg_1;
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithStop;
@@ -5646,19 +5645,19 @@ public function traverseBackendDAEArrayNoCopyWithUpdate "
 algorithm
   (outArray,outTypeB) := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
     local 
-      array<Type_a> array;
+      array<Type_a> newarray;
       Type_a a,new_a;
       Type_b ext_arg_1,ext_arg_2;
-    case(array,_,_,pos,len,inTypeB) equation 
+    case(_,_,_,_,_,_) equation 
       true = pos > len;
-    then (array,inTypeB);
+    then (inArray,inTypeB);
     
-    case(array,func,arrayfunc,pos,len,inTypeB) equation
-      a = array[pos];
+    case(_,_,_,_,_,_) equation
+      a = inArray[pos];
       (new_a,ext_arg_1) = arrayfunc(a,func,inTypeB);
-      array = arrayUpdateCond(referenceEq(a,new_a),array,pos,new_a);
-      (array,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdate(array,func,arrayfunc,pos+1,len,ext_arg_1);
-    then (array,ext_arg_2);
+      newarray = arrayUpdateCond(referenceEq(a,new_a),inArray,pos,new_a);
+      (newarray,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdate(newarray,func,arrayfunc,pos+1,len,ext_arg_1);
+    then (newarray,ext_arg_2);
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithUpdate;
 
@@ -5671,9 +5670,9 @@ protected function arrayUpdateCond
   replaceable type Type_a subtypeof Any;
 algorithm
   outArray := match(b,inArray,pos,a)
-    case(true,inArray,_,_) // equation print("equal\n"); 
+    case(true,_,_,_) // equation print("equal\n"); 
       then inArray; 
-    case(false,inArray,pos,a) // equation print("not equal\n"); 
+    case(false,_,_,_) // equation print("not equal\n"); 
       then arrayUpdate(inArray,pos,a);
   end match;
 end arrayUpdateCond;  
@@ -5734,9 +5733,9 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
     
-    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
+    case (NONE(),_,_) then (NONE(),inTypeA);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),_,_)
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);
@@ -5753,7 +5752,7 @@ algorithm
       then
         (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),_,_)
       equation
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);
         //expCref = Expression.crefExp(cref);
@@ -5769,7 +5768,7 @@ algorithm
       then
         (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVar failed");
       then
@@ -5795,12 +5794,12 @@ algorithm
     local
       DAE.Exp e;
       Type_a ext_arg_1;
-    case (DAE.WHOLEDIM(),_,inTypeA) then inTypeA;
-    case (DAE.SLICE(exp = e),func,inTypeA)
+    case (DAE.WHOLEDIM(),_,_) then inTypeA;
+    case (DAE.SLICE(exp = e),_,_)
       equation
         ((_,ext_arg_1)) = func((e,inTypeA));
       then ext_arg_1;
-    case (DAE.INDEX(exp = e),func,inTypeA)
+    case (DAE.INDEX(exp = e),_,_)
       equation
         ((_,ext_arg_1)) = func((e,inTypeA));
       then ext_arg_1;
@@ -5826,12 +5825,12 @@ algorithm
     local
       DAE.Exp e;
       Type_a ext_arg_1;
-    case (DAE.WHOLEDIM(),_,inTypeA) then (DAE.WHOLEDIM(),inTypeA);
-    case (DAE.SLICE(exp = e),func,inTypeA)
+    case (DAE.WHOLEDIM(),_,_) then (DAE.WHOLEDIM(),inTypeA);
+    case (DAE.SLICE(exp = e),_,_)
       equation
         ((e,ext_arg_1)) = func((e,inTypeA));
       then (DAE.SLICE(e),ext_arg_1);
-    case (DAE.INDEX(exp = e),func,inTypeA)
+    case (DAE.INDEX(exp = e),_,_)
       equation
         ((e,ext_arg_1)) = func((e,inTypeA));
       then (DAE.INDEX(e),ext_arg_1);
@@ -5857,9 +5856,9 @@ algorithm
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
       then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
       then
@@ -5886,11 +5885,11 @@ algorithm
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
       equation
         (_,outTypeA) = traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
       then outTypeA;
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
       then
@@ -5932,8 +5931,8 @@ algorithm
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg_1;
-    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
-    case (SOME(eqn),func,inTypeA)
+    case (NONE(),_,_) then (NONE(),inTypeA);
+    case (SOME(eqn),_,_)
       equation
         (eqn,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
       then
@@ -5961,7 +5960,7 @@ algorithm
     local 
       DAE.Exp e1,e2;
       Type_a ext_arg_1,ext_arg_2;
-    case (BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2),func,inTypeA)
+    case (BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2),_,_)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
         ((_,ext_arg_2)) = func((e2,ext_arg_1));
@@ -5993,7 +5992,7 @@ algorithm
       DAE.Exp e1,e2;
       Type_a ext_arg_1,ext_arg_2;
       DAE.ElementSource source;
-    case (BackendDAE.MULTIDIM_EQUATION(dimSize,e1,e2,source),func,inTypeA)
+    case (BackendDAE.MULTIDIM_EQUATION(dimSize,e1,e2,source),_,_)
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         ((e2,ext_arg_2)) = func((e2,ext_arg_1));
@@ -6021,7 +6020,7 @@ algorithm
     local
       list<DAE.Statement> stmts;
       Type_a ext_arg_1;
-    case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts),_,_)
       equation
         (_,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
@@ -6049,7 +6048,7 @@ algorithm
     local
       list<DAE.Statement> stmts,stmts1;
       Type_a ext_arg_1;
-    case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts),_,_)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
@@ -6077,7 +6076,7 @@ algorithm
     local 
       DAE.Exp e1,e2;
       Type_a ext_arg_1,ext_arg_2;
-    case (BackendDAE.COMPLEXEQUATION(left = e1,right = e2),func,inTypeA)
+    case (BackendDAE.COMPLEXEQUATION(left = e1,right = e2),_,_)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
         ((_,ext_arg_2)) = func((e2,ext_arg_1));
@@ -6109,7 +6108,7 @@ algorithm
       DAE.Exp e1,e2;
       Type_a ext_arg_1,ext_arg_2;
       DAE.ElementSource source;
-    case (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),func,inTypeA)
+    case (BackendDAE.COMPLEXEQUATION(size,e1,e2,source),_,_)
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         ((e2,ext_arg_2)) = func((e2,ext_arg_1));
@@ -6260,26 +6259,26 @@ protected function preoptimiseDAE
 algorithm
   (outDAE,status) := matchcontinue (inDAE,functionTree,optModules)
     local 
-      BackendDAE.BackendDAE dae,dae1,dae2;
+      BackendDAE.BackendDAE dae,dae1;
       preoptimiseDAEModule optModule;
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean b;
-    case (dae,_,{}) then (dae,Util.SUCCESS());
-    case (dae,_,(optModule,moduleStr,_)::rest)
+    case (_,_,{}) then (inDAE,Util.SUCCESS());
+    case (_,_,(optModule,moduleStr,_)::rest)
       equation
-        dae1 = optModule(dae,functionTree);
+        dae = optModule(inDAE,functionTree);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae1);
-        (dae2,status) = preoptimiseDAE(dae1,functionTree,rest);
-      then (dae2,status);
-    case (dae,_,(optModule,moduleStr,b)::rest)
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
+        (dae1,status) = preoptimiseDAE(dae,functionTree,rest);
+      then (dae1,status);
+    case (_,_,(optModule,moduleStr,b)::rest)
       equation
         Debug.execStat("<failed> preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-        (dae,status) = preoptimiseDAE(dae,functionTree,rest);
+        (dae,status) = preoptimiseDAE(inDAE,functionTree,rest);
       then (dae,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
 end preoptimiseDAE;
@@ -6375,9 +6374,8 @@ algorithm
       matchingAlgorithmFunc matchingAlgorithmfunc;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      Real t;
       
-    case (_,_,_,inMatchingOptions,(matchingAlgorithmfunc,mAmethodstr),(daeHandlerfunc,methodstr))
+    case (_,_,_,_,(matchingAlgorithmfunc,mAmethodstr),(daeHandlerfunc,methodstr))
       equation
         (syst,_,_) = getIncidenceMatrix(isyst,ishared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
@@ -6587,22 +6585,22 @@ algorithm
   outIndexReductionMethod:=
   matchcontinue (strIndexReductionMethod,inIndexReductionMethods)
     local 
-      String name,name1,str;
+      String name,str;
       tuple<Type_a,String> method;
       list<tuple<Type_a,String>> methods;
-    case (name,(method as (_,name1))::methods)
+    case (_,(method as (_,name))::methods)
       equation
-        true = stringEqual(name,name1);
+        true = stringEqual(strIndexReductionMethod,name);
       then
         method;
-    case (name,_::methods)
+    case (_,_::methods)
       equation
-        method = selectIndexReductionMethod(name,methods);
+        method = selectIndexReductionMethod(strIndexReductionMethod,methods);
       then
         method;
-    case (name,_)
+    else
       equation
-        str = stringAppendList({"Selection of Index Reduction Method ",name," failed."});
+        str = stringAppendList({"Selection of Index Reduction Method ",strIndexReductionMethod," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then   
         fail();
@@ -6644,22 +6642,22 @@ algorithm
   outMatchingAlgorithm:=
   matchcontinue (strMatchingAlgorithm,inMatchingAlgorithms)
     local 
-      String name,name1,str;
+      String name,str;
       tuple<Type_a,String> method;
       list<tuple<Type_a,String>> methods;
-    case (name,(method as (_,name1))::methods)
+    case (_,(method as (_,name))::methods)
       equation
-        true = stringEqual(name,name1);
+        true = stringEqual(strMatchingAlgorithm,name);
       then
         method;
-    case (name,_::methods)
+    case (_,_::methods)
       equation
-        method = selectMatchingAlgorithm(name,methods);
+        method = selectMatchingAlgorithm(strMatchingAlgorithm,methods);
       then
         method;
-    case (name,_)
+    else
       equation
-        str = stringAppendList({"Selection of Matching Algorithm ",name," failed."});
+        str = stringAppendList({"Selection of Matching Algorithm ",strMatchingAlgorithm," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then   
         fail();
@@ -6752,25 +6750,25 @@ algorithm
       list<tuple<Type_a,String,Boolean>> optModules,optModules1;
     case ({},_,_) then {};
     case (_,{},_) then {};
-    case (strOptModul::{},optModules,accumulator)
+    case (strOptModul::{},_,_)
       equation
-        optModule = selectOptModules1(strOptModul,optModules);
+        optModule = selectOptModules1(strOptModul,inOptModules);
       then   
         (optModule::accumulator);
-    case (strOptModul::{},optModules,accumulator)
+    case (strOptModul::{},optModules,_)
       then   
         accumulator;
-    case (strOptModul::restStr,optModules,accumulator)
+    case (strOptModul::restStr,_,_)
       equation
-        optModule = selectOptModules1(strOptModul,optModules);
+        optModule = selectOptModules1(strOptModul,inOptModules);
       then   
-        selectOptModules(restStr,optModules,optModule::accumulator);
-    case (strOptModul::restStr,optModules,accumulator)
+        selectOptModules(restStr,inOptModules,optModule::accumulator);
+    case (strOptModul::restStr,_,_)
       equation
         str = stringAppendList({"Selection of Optimisation Module ",strOptModul," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then   
-        selectOptModules(restStr,optModules,accumulator);
+        selectOptModules(restStr,inOptModules,accumulator);
   end matchcontinue;
 end selectOptModules;
 
@@ -6787,12 +6785,12 @@ algorithm
       String name;
       tuple<Type_a,String,Boolean> module;
       list<tuple<Type_a,String,Boolean>> rest;
-    case(strOptModule,(module as (a,name,_))::rest)
+    case(_,(module as (a,name,_))::rest)
       equation
         true = stringEqual(name,strOptModule);
       then
         module;
-    case(strOptModule,(module as (a,name,_))::rest)
+    case(_,(module as (a,name,_))::rest)
       equation
         false = stringEqual(name,strOptModule);
       then
