@@ -1183,11 +1183,10 @@ void MainWindow::openAbout()
   QString OMCVersion = mpOMCProxy->getVersion();
   QString aboutText = QString("OMEdit - ").append(Helper::applicationIntroText).append(" ")
       .append(Helper::applicationVersion).append("\n")
-      .append("Connected to OpenModelica ").append(OMCVersion).append("\n\n")
-      .append("Copyright ").append(dateStr + 7)
-      .append(" Link").append(QChar(246, 0)).append("ping University.\n")
-      .append("Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n")
-      .append("Created by Adeel Asghar and Sonia Tariq as part of their final thesis.");
+      .append(tr("Connected to OpenModelica ")).append(OMCVersion).append("\n\n")
+      .append(trUtf8("Copyright Linköping University.\n"
+              "Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n"
+              "Created by Adeel Asghar and Sonia Tariq as part of their final thesis."));
 
   QMessageBox::about(this, QString("About ").append(Helper::applicationName), aboutText);
 }

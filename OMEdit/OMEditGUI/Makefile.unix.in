@@ -9,7 +9,7 @@ runtimedir=$(top_builddir)/Compiler/runtime/
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@
-QM=$(echo *.qm)
+QM=OMEdit_sv.qm OMEdit_ru.qm OMEdit_de.qm
 
 install: build $(QM)
 	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi

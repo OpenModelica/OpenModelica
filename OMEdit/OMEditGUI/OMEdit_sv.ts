@@ -514,17 +514,17 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="Helper.cpp" line="228"/>
         <source>Icon View</source>
-        <translation>Ikon Visa</translation>
+        <translation>Ikonvy</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="229"/>
         <source>Diagram View</source>
-        <translation>Diagrammet Visa</translation>
+        <translation>Diagramvy</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="230"/>
         <source>Modelica Text View</source>
-        <translation>Modelica Text Visa</translation>
+        <translation>Textuell Vy</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="231"/>
@@ -545,7 +545,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="Helper.cpp" line="165"/>
         <source>Error</source>
-        <translation>fel</translation>
+        <translation>Fel</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="166"/>
@@ -625,7 +625,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="Helper.cpp" line="182"/>
         <source>Check Model</source>
-        <translation>Ta Model</translation>
+        <translation>Kontrollera Modell</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="183"/>
@@ -650,12 +650,12 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="Helper.cpp" line="187"/>
         <source>Copy</source>
-        <translation>Kopiera</translation>
+        <translation>K&amp;opiera</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="188"/>
         <source>Paste</source>
-        <translation>klistra in</translation>
+        <translation>K&amp;listra in</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="189"/>
@@ -1093,7 +1093,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="mainwindow.cpp" line="119"/>
         <source>Model Browser</source>
-        <translation>Modell Webbläsare</translation>
+        <translation>Modellbläddrare</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="139"/>
@@ -1205,7 +1205,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="mainwindow.cpp" line="377"/>
         <source>Cut</source>
-        <translation>Skära</translation>
+        <translation>&amp;Klipp ut</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="388"/>
@@ -1402,15 +1402,30 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <source>Draws an Ellipse.</source>
         <translation>Drar en ellips.</translation>
     </message>
+    <message utf8="true">
+        <location filename="mainwindow.cpp" line="1187"/>
+        <source>Copyright Linköping University.
+Distributed under OSMC-PL and GPL, see www.openmodelica.org.
+
+Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</source>
+        <oldsource>Copyright LinkÃ¶ping University.
+Distributed under OSMC-PL and GPL, see www.openmodelica.org.
+
+Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsource>
+        <translation>Copyright Linköpings universitet.
+Distribueras under OSMC-PL och GPL, se www.openmodelica.org.
+
+Skapad av Adeel Asghar och Sonia Tariq som en del av deras examensarbete.</translation>
+    </message>
     <message>
         <location filename="mainwindow.cpp" line="58"/>
         <source>Connecting to OpenModelica Compiler</source>
-        <translation>Ansluta till OpenModelica Compiler</translation>
+        <translation>Ansluter till OpenModelica Compiler</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="62"/>
         <source>Reading Settings</source>
-        <translation>Läsa Inställningar</translation>
+        <translation>Läser Inställningar</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="65"/>
@@ -1425,7 +1440,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="mainwindow.cpp" line="157"/>
         <source>Creating Components</source>
-        <translation>Skapa Komponenter</translation>
+        <translation>Skapar Komponenter</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="343"/>
@@ -1435,7 +1450,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="mainwindow.cpp" line="515"/>
         <source>Draws a Text.</source>
-        <translation>Drar en text.</translation>
+        <translation>Ritar en text.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="519"/>
@@ -1461,27 +1476,27 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="mainwindow.cpp" line="530"/>
         <source>New Plot Window</source>
-        <translation>Ny Tomt fönster</translation>
+        <translation>Nytt diagram</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="531"/>
         <source>Inserts new plot window</source>
-        <translation>Infogar nytt tomt fönster</translation>
+        <translation>Infogar nytt diagram</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="533"/>
         <source>New Plot Parametric Window</source>
-        <translation>Ny Tomt Parametrisk Fönster</translation>
+        <translation>Nytt parametriskt diagram</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="534"/>
         <source>Inserts new plot parametric window</source>
-        <translation>Infogar nytt tomt parametrisk fönster</translation>
+        <translation>Infogar nytt parametriskt diagram</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="538"/>
         <source>Export as an Image</source>
-        <translation>Exportera som en Bild</translation>
+        <translation>Exportera som en bild</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="539"/>
@@ -1574,12 +1589,17 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
         <translation>Exportera model som en Bild</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1296"/>
+        <location filename="mainwindow.cpp" line="1186"/>
+        <source>Connected to OpenModelica </source>
+        <translation>Ansluten till OpenModelica </translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1295"/>
         <source>make FMU</source>
         <translation>göra FMU</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1301"/>
+        <location filename="mainwindow.cpp" line="1300"/>
         <source>Exporting model as FMI</source>
         <translation>Exportera model som FMI</translation>
     </message>
@@ -1624,7 +1644,7 @@ Detta är förmodligen fel eftersom komponenten deklarerade%3.</translation>
     <message>
         <location filename="LibraryWidget.cpp" line="1614"/>
         <source>Outline</source>
-        <translation>Beskriva</translation>
+        <translation>Översikt</translation>
     </message>
 </context>
 <context>

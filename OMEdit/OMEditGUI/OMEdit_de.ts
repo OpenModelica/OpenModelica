@@ -1400,7 +1400,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1301"/>
+        <location filename="mainwindow.cpp" line="1186"/>
+        <source>Connected to OpenModelica </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1300"/>
         <source>Exporting model as FMI</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1570,8 +1575,20 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <source>Exporting model as an Image</source>
         <translation type="unfinished"></translation>
     </message>
+    <message utf8="true">
+        <location filename="mainwindow.cpp" line="1187"/>
+        <source>Copyright Linköping University.
+Distributed under OSMC-PL and GPL, see www.openmodelica.org.
+
+Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</source>
+        <oldsource>Copyright LinkÃ¶ping University.
+Distributed under OSMC-PL and GPL, see www.openmodelica.org.
+
+Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsource>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
-        <location filename="mainwindow.cpp" line="1296"/>
+        <location filename="mainwindow.cpp" line="1295"/>
         <source>make FMU</source>
         <translation type="unfinished"></translation>
     </message>
