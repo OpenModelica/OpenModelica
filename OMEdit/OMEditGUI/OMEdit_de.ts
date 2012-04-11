@@ -11,7 +11,7 @@
     <message>
         <location filename="OptionsWidget.cpp" line="1333"/>
         <source>Value:</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert:</translation>
     </message>
 </context>
 <context>
@@ -32,12 +32,12 @@
     <message>
         <location filename="Component.cpp" line="408"/>
         <source>Shows the item attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Objektattribute</translation>
     </message>
     <message>
         <location filename="Component.cpp" line="412"/>
         <source>Shows the item properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Objekteigenschaften</translation>
     </message>
 </context>
 <context>
@@ -68,7 +68,7 @@
     <message>
         <location filename="ConnectorWidget.cpp" line="671"/>
         <source>Delete Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösche Verbindung</translation>
     </message>
 </context>
 <context>
@@ -404,12 +404,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ModelicaEditor.cpp" line="627"/>
         <source>Go to Line</source>
-        <translation type="unfinished"></translation>
+        <translation>Gehe zu Zeile</translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="648"/>
         <source>Enter line number (1 to </source>
-        <translation type="unfinished"></translation>
+        <translation>Zeile eingeben (1 bis </translation>
     </message>
 </context>
 <context>
@@ -417,77 +417,77 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="ProjectTabWidget.cpp" line="933"/>
         <source>Cancel Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindung abbrechen</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="738"/>
         <source>Cancels the current connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Bricht aktuelle Verbindung ab</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="741"/>
         <source>Rotate Clockwise</source>
-        <translation type="unfinished"></translation>
+        <translation>Drehe im Uhrzeigersinn</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="742"/>
         <source>Rotate the item clockwise</source>
-        <translation type="unfinished"></translation>
+        <translation>Dreht Objekt im Uhrzeigersinn</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="745"/>
         <source>Horizontal Flip</source>
-        <translation type="unfinished"></translation>
+        <translation>Horizontal spiegeln</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="747"/>
         <source>Flip the item horizontally</source>
-        <translation type="unfinished"></translation>
+        <translation>Spiegelt Objekt horizontal</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="749"/>
         <source>Vertical Flip</source>
-        <translation type="unfinished"></translation>
+        <translation>Vertikal spiegeln</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="750"/>
         <source>Flip the item vertically</source>
-        <translation type="unfinished"></translation>
+        <translation>Spiegelt Objekt vertikal</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="752"/>
         <source>Rotate Anticlockwise</source>
-        <translation type="unfinished"></translation>
+        <translation>Drehe gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="753"/>
         <source>Rotate the item anticlockwise</source>
-        <translation type="unfinished"></translation>
+        <translation>Dreht Objekt gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="756"/>
         <source>Reset Rotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Drehung rückgängig machen</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="757"/>
         <source>Reset the item rotation</source>
-        <translation type="unfinished"></translation>
+        <translation>Macht Drehung des Objekts rückgängig</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="901"/>
         <source>The class needs to be saved before you can insert a bitmap.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Klasse muss gespeichert werden bevor eine Bitmap eingefügt werden kann.</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="1395"/>
         <source>Error in class annotation </source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler in Klassenanmerkung</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="760"/>
         <source>Delete the item</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösche Objekt</translation>
     </message>
 </context>
 <context>
@@ -532,32 +532,32 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="Helper.cpp" line="207"/>
         <location filename="Helper.cpp" line="213"/>
         <source>Solid</source>
-        <translation type="unfinished"></translation>
+        <translation>durchgezogen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="165"/>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="166"/>
         <source>Choose File</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle Datei</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="167"/>
         <source>Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Attribute</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="168"/>
         <source>Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Eigenschaften</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="169"/>
         <source>Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbindung</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="170"/>
@@ -572,7 +572,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="173"/>
         <source>Choose Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle Verzeichnis</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="174"/>
@@ -582,22 +582,22 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="175"/>
         <source>Parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>Parameter</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="176"/>
         <source>Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Name:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="177"/>
         <source>Comment:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommentar:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="178"/>
         <source>Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="179"/>
@@ -612,17 +612,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="181"/>
         <source>rename</source>
-        <translation type="unfinished"></translation>
+        <translation>umbenennen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="182"/>
         <source>Check Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell prüfen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="183"/>
         <source>Check the Modelica model</source>
-        <translation type="unfinished"></translation>
+        <translation>Prüft das Modelica Modell</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="184"/>
@@ -637,7 +637,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="186"/>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>löschen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="187"/>
@@ -657,32 +657,32 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="190"/>
         <source>Question</source>
-        <translation type="unfinished"></translation>
+        <translation>Frage</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="191"/>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Suchen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="192"/>
         <source>Simulate</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulieren</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="193"/>
         <source>Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulation</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="194"/>
         <source>Interactive Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktive Simulation</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="195"/>
         <source>Export to OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportiere nach OMNotebook</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="196"/>
@@ -692,87 +692,87 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="197"/>
         <source>Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliotheken</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="198"/>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation>Text</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="199"/>
         <source>Pen Style</source>
-        <translation type="unfinished"></translation>
+        <translation>Stiftstil</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="200"/>
         <source>Brush Style</source>
-        <translation type="unfinished"></translation>
+        <translation>Pinselstil</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="201"/>
         <source>Color:</source>
-        <translation type="unfinished"></translation>
+        <translation>Farbe:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="202"/>
         <source>Pick Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle Farbe</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="203"/>
         <source>No Color</source>
-        <translation type="unfinished"></translation>
+        <translation>keine Farbe</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="204"/>
         <source>Thickness:</source>
-        <translation type="unfinished"></translation>
+        <translation>Stärke:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="205"/>
         <source>Smooth:</source>
-        <translation type="unfinished"></translation>
+        <translation>Glätten:</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="206"/>
         <source>Bezier Curve</source>
-        <translation type="unfinished"></translation>
+        <translation>Bezier Kurve</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="208"/>
         <source>Dash</source>
-        <translation type="unfinished"></translation>
+        <translation>gestrichelt</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="209"/>
         <source>Dot</source>
-        <translation type="unfinished"></translation>
+        <translation>gepunktet</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="210"/>
         <source>Dash Dot</source>
-        <translation type="unfinished"></translation>
+        <translation>Strich-Punkt</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="211"/>
         <source>Dash Dot Dot</source>
-        <translation type="unfinished"></translation>
+        <translation>Strich-Punkt-Punkt</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="212"/>
         <source>No Brush</source>
-        <translation type="unfinished"></translation>
+        <translation>kein Pinsel</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="214"/>
         <source>Horizontal</source>
-        <translation type="unfinished"></translation>
+        <translation>Horizontal</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="215"/>
         <source>Vertical</source>
-        <translation type="unfinished"></translation>
+        <translation>Vertikal</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="216"/>
@@ -822,7 +822,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="225"/>
         <source>Text Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>Texteigenschaften</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="233"/>
@@ -842,17 +842,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="172"/>
         <source>Import FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>Importiere FMI</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="163"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="164"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="162"/>
@@ -1003,27 +1003,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="OptionsWidget.cpp" line="1245"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Name</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="1245"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Wert</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="1249"/>
         <source>Add</source>
-        <translation type="unfinished"></translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="1261"/>
         <source>* The libraries changes will take effect after restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>* Änderungen an den Bibliotheken erfordern Neustart.</translation>
     </message>
     <message>
         <location filename="OptionsWidget.cpp" line="1309"/>
         <source>Edit Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Bibliothek bearbeiten</translation>
     </message>
 </context>
 <context>
@@ -1031,27 +1031,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="586"/>
         <source>Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Standardbibliothek</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="609"/>
         <source>Show Component</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige Komponente</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="610"/>
         <source>Shows the component</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Komponente an</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="613"/>
         <source>View Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige Dokumentation</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="614"/>
         <source>View component documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die Dokumentation an</translation>
     </message>
 </context>
 <context>
@@ -1059,7 +1059,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="LibraryWidget.cpp" line="1349"/>
         <source>Modelica Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Bibliothek</translation>
     </message>
 </context>
 <context>
@@ -1068,71 +1068,71 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <location filename="mainwindow.cpp" line="84"/>
         <source>Messages</source>
         <oldsource> Messages</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Meldungen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="103"/>
         <source>Search MSL</source>
         <oldsource> Search MSL</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Suche MSL</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="112"/>
         <source>Components</source>
         <oldsource> Components</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Komponenten</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="119"/>
         <source>Model Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellbrowser</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="139"/>
         <source>Plot Variables</source>
         <oldsource> Plot Variables</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Variablen anzeigen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="148"/>
         <source>Documentation</source>
         <oldsource> Documentation</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Dokumentation</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="312"/>
         <source>Create New Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neues Model</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="317"/>
         <source>Create New Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neue Class</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="321"/>
         <source>Create New Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neuen Connector</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="325"/>
         <source>Create New Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neuen Record</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="329"/>
         <source>Create New Block</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neuen Block</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="333"/>
         <source>Create New Function</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neue Function</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="337"/>
         <source>Create New Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neues Package</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="341"/>
@@ -1177,7 +1177,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="364"/>
         <source>Exits the </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Beendet die</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="369"/>
@@ -1187,17 +1187,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="371"/>
         <source>Undo last activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Letzte Aktion rückgängig machen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="373"/>
         <source>Redo</source>
-        <translation>Wiederstellen</translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="375"/>
         <source>Redo last activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Letzte Aktion wiederholen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="377"/>
@@ -1217,7 +1217,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="397"/>
         <source>Modeling</source>
-        <translation type="unfinished"></translation>
+        <translation>Modellieren</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="398"/>
@@ -1227,7 +1227,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="403"/>
         <source>Plotting</source>
-        <translation type="unfinished"></translation>
+        <translation>Plotten</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="404"/>
@@ -1237,7 +1237,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="410"/>
         <source>Interactive Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktive Simulation</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="411"/>
@@ -1247,7 +1247,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="417"/>
         <source>Grid Lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Gitternetzlinien</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="418"/>
@@ -1267,12 +1267,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="425"/>
         <source>Zoom In</source>
-        <translation type="unfinished"></translation>
+        <translation>Reinzoomen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="428"/>
         <source>Zoom Out</source>
-        <translation type="unfinished"></translation>
+        <translation>Rauszoomen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="433"/>
@@ -1287,17 +1287,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="450"/>
         <source>Export FMI</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportiere FMI</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="451"/>
         <source>Exports the model as Functional Mockup Interface (FMI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportiert das Modell als Functional Mockup Interface (FMI)</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="456"/>
         <source>Imports the model from Functional Mockup Interface (FMI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Importiert das Modell vom Functional Mockup Interface (FMI)</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="460"/>
@@ -1317,7 +1317,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="465"/>
         <source>Opens OpenModelica Shell (OMShell)</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet OpenModelica Shell (OMShell)</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="469"/>
@@ -1362,42 +1362,42 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="494"/>
         <source>Line</source>
-        <translation type="unfinished"></translation>
+        <translation>Linie</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="495"/>
         <source>Draws a line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeichnet eine Linie.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="499"/>
         <source>Polygon</source>
-        <translation type="unfinished"></translation>
+        <translation>Polygon</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="500"/>
         <source>Draws a polygon.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeichnet ein Polygon.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="504"/>
         <source>Rectangle</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechteck</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="505"/>
         <source>Draws a rectangle.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeichnet ein Rechteck.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="509"/>
         <source>Ellipse</source>
-        <translation type="unfinished"></translation>
+        <translation>Ellipse</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="510"/>
         <source>Draws an Ellipse.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeichnet eine Ellipse.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="1186"/>
@@ -1437,7 +1437,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="515"/>
         <source>Draws a Text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeichnet einen Text.</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="519"/>
@@ -1463,7 +1463,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="530"/>
         <source>New Plot Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Neues Plot Fenster</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="531"/>
@@ -1638,7 +1638,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="LibraryWidget.cpp" line="1614"/>
         <source>Outline</source>
-        <translation type="unfinished"></translation>
+        <translation>Gliederung</translation>
     </message>
 </context>
 <context>
@@ -1884,17 +1884,17 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="47"/>
         <source>Change Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Farbe wechseln</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="50"/>
         <source>Automatic Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatische Farbe</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/Legend.cpp" line="55"/>
         <source>Hide</source>
-        <translation type="unfinished"></translation>
+        <translation>verstecken</translation>
     </message>
 </context>
 <context>
@@ -1902,7 +1902,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotApplication.cpp" line="107"/>
         <source>OMPlot - Error</source>
-        <translation type="unfinished"></translation>
+        <translation>OMPlot - Fehler</translation>
     </message>
 </context>
 <context>
@@ -1943,52 +1943,52 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="75"/>
         <source>time</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeit</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="169"/>
         <source>Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>zoomen</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="176"/>
         <source>Pan</source>
-        <translation type="unfinished"></translation>
+        <translation>verschieben</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="183"/>
         <source>Fit in View</source>
-        <translation type="unfinished"></translation>
+        <translation>einpassen</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="194"/>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichern</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="201"/>
         <source>Print</source>
-        <translation type="unfinished"></translation>
+        <translation>Drucken</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="207"/>
         <source>Grid</source>
-        <translation type="unfinished"></translation>
+        <translation>Gitternetzlinien</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="214"/>
         <source>Log X</source>
-        <translation type="unfinished"></translation>
+        <translation>Log X</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="218"/>
         <source>Log Y</source>
-        <translation type="unfinished"></translation>
+        <translation>Log Y</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="740"/>
         <source>Save File As</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichern als</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="740"/>
@@ -1998,7 +1998,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="748"/>
         <source>OMPlot - OpenModelica Plot</source>
-        <translation type="unfinished"></translation>
+        <translation>OMPlot - OpenModelica Plot</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="749"/>
@@ -2142,7 +2142,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="SimulationWidget.cpp" line="648"/>
         <source>Cancel Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulation abbrechen</translation>
     </message>
 </context>
 <context>
@@ -2150,17 +2150,17 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File As</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei Speichern als</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="3072"/>
         <source>Save File</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei Speichern</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="3191"/>
         <source>There are unsaved models opened. Do you still want to quit?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungespeicherte Modelle offen. Wirklich beenden?</translation>
     </message>
 </context>
 <context>
@@ -2168,7 +2168,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="ModelWidget.cpp" line="192"/>
         <source>New Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Neuer Name:</translation>
     </message>
 </context>
 <context>
@@ -2450,12 +2450,12 @@ Please wait for a while.</source>
     <message>
         <location filename="StringHandler.cpp" line="615"/>
         <source>Description</source>
-        <translation type="unfinished"></translation>
+        <translation>Beschreibung</translation>
     </message>
     <message>
         <location filename="StringHandler.cpp" line="620"/>
         <source>Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Pfad</translation>
     </message>
 </context>
 <context>
@@ -2463,7 +2463,7 @@ Please wait for a while.</source>
     <message>
         <location filename="TextAnnotation.cpp" line="71"/>
         <source>Text Here</source>
-        <translation type="unfinished"></translation>
+        <translation>Text hier</translation>
     </message>
 </context>
 <context>
@@ -2476,37 +2476,37 @@ Please wait for a while.</source>
     <message>
         <location filename="TextAnnotation.cpp" line="772"/>
         <source>Font Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftart:</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="778"/>
         <source>Font Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Schriftgröße:</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="787"/>
         <source>Italic</source>
-        <translation type="unfinished"></translation>
+        <translation>kursiv</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="789"/>
         <source>Bold</source>
-        <translation type="unfinished"></translation>
+        <translation>fett</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="791"/>
         <source>Underline</source>
-        <translation type="unfinished"></translation>
+        <translation>unterstrichen</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="793"/>
         <source>Styles</source>
-        <translation type="unfinished"></translation>
+        <translation>Schreibstile</translation>
     </message>
     <message>
         <location filename="TextAnnotation.cpp" line="800"/>
         <source>Alignment:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausrichtung:</translation>
     </message>
 </context>
 <context>
@@ -2514,12 +2514,13 @@ Please wait for a while.</source>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="115"/>
         <source>Variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Variablen</translation>
     </message>
     <message>
         <location filename="InteractiveSimulationTabWidget.cpp" line="117"/>
         <source>* Select the variable to plot it.</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>* Wähle Variablen zum Plotten.</translatorcomment>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -2527,22 +2528,22 @@ Please wait for a while.</source>
     <message>
         <location filename="ProjectTabWidget.cpp" line="2645"/>
         <source>Recent Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Zuletzt benutzte Dateien</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="2647"/>
         <source>No recent files found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine zuletzt benutzten Dateien gefunden.</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="2670"/>
         <source>Create Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle Modell</translation>
     </message>
     <message>
         <location filename="ProjectTabWidget.cpp" line="2673"/>
         <source>Open Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffne Modell</translation>
     </message>
 </context>
 </TS>
