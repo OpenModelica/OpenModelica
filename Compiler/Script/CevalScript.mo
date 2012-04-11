@@ -6218,10 +6218,15 @@ algorithm
         vals = unparseNthImport(import_);
       then
         vals;
-    case ((_ :: els),n)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: els), n)
       equation
         newn = n - 1;
         vals = getNthImportInElementItems(els, newn);
+      then
+        vals;
+    case ((_ :: els),n)
+      equation
+        vals = getNthImportInElementItems(els, n);
       then
         vals;
     case ({},_) then fail();
