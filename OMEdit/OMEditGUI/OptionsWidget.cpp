@@ -558,9 +558,18 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   mpLanguageLabel = new QLabel(tr("Language:"));
   mpLanguageComboBox = new QComboBox;
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
-  mpLanguageComboBox->addItem(tr("English"), "en");
-  mpLanguageComboBox->addItem(tr("Russian"), "ru");
-  mpLanguageComboBox->addItem(tr("Swedish"), "sv");
+  /* Slow sorting, but works using regular Qt functions */
+  QMap<QString,QString> map;
+  map.insert(tr("English"), "en");
+  map.insert(tr("German"), "de");
+  map.insert(tr("Russian"), "ru");
+  map.insert(tr("Swedish"), "sv");
+  QStringList keys(map.keys());
+  keys.sort();
+  foreach (const QString &key, keys) {
+    mpLanguageComboBox->addItem(key,map[key]);
+  }
+
   // Plotting View Mode
   mpPlottingViewModeLabel = new QLabel(tr("Plotting View Mode:"));
   mpTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
