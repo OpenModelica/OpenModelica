@@ -618,7 +618,7 @@ algorithm
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
         initialFunctionStrMM = Debug.bcallret1(b, System.readFile, fileMetaModelica, "");
-        initialProgram = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM, fileModelica);
+        initialProgram = Parser.parsebuiltinstring(initialFunctionStr +& initialFunctionStrMM, fileModelica);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (b,initialProgram)::assocLst);
       then initialProgram;

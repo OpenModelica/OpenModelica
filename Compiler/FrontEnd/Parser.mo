@@ -43,6 +43,7 @@ public import Absyn;
 public import Interactive;
 protected import Config;
 protected import ParserExt;
+protected import SCodeUtil;
 
 public function parse "Parse a mo-file"
   input String filename;
@@ -50,6 +51,8 @@ public function parse "Parse a mo-file"
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parse(filename, Config.acceptedGrammar(), encoding, Config.getRunningTestsuite());
+  /* Check that the program is not totally off the charts */
+  _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -63,11 +66,22 @@ end parseexp;
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
+  input Boolean skipScodeCheck "Would cause ModelicaBuiltin.mo to run into an infinite loop";
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parsestring(str,infoFilename,
-    Config.acceptedGrammar(), Config.getRunningTestsuite());
+  outProgram := parsebuiltinstring(str,infoFilename);
+  /* Check that the program is not totally off the charts */
+  _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parsestring;
+
+public function parsebuiltinstring "Parse a string as if it were a stored definition. Skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
+  input String str;
+  input String infoFilename := "<interactive>";
+  output Absyn.Program outProgram;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  outProgram := ParserExt.parsestring(str,infoFilename, Config.acceptedGrammar(), Config.getRunningTestsuite());
+end parsebuiltinstring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
