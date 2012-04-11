@@ -128,7 +128,7 @@
     </message>
     <message>
         <location filename="Helper.cpp" line="259"/>
-        <source>%1 %2 already exits %3.</source>
+        <source>%1 %2 already exists %3.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

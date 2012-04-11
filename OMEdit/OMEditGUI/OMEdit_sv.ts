@@ -128,8 +128,8 @@
     </message>
     <message>
         <location filename="Helper.cpp" line="259"/>
-        <source>%1 %2 already exits %3.</source>
-        <translation>%1 %2 redan lämnar %3.</translation>
+        <source>%1 %2 already exists %3.</source>
+        <translation>%1 %2 redan finns %3.</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="261"/>
