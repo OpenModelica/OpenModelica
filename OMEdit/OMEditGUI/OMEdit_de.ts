@@ -495,7 +495,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="226"/>
         <source>Read-Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Nur-Lesen</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="227"/>
@@ -526,7 +526,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="232"/>
         <source>Search Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Suche Modelica Standardbibliothek</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="207"/>
@@ -652,7 +652,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="Helper.cpp" line="189"/>
         <source>Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>Lade</translation>
     </message>
     <message>
         <location filename="Helper.cpp" line="190"/>
@@ -1142,12 +1142,12 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="343"/>
         <source>Opens Modelica file</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet Modelica Datei</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="347"/>
         <source>Save a file</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichert Datei</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="349"/>
@@ -1157,17 +1157,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="351"/>
         <source>Save As a File</source>
-        <translation type="unfinished"></translation>
+        <translation>Speichert die Datei unter neuem Namen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="353"/>
         <source>Save All</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicher alles</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="354"/>
         <source>Save All Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicher alle Dateien</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="363"/>
@@ -1177,7 +1177,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="364"/>
         <source>Exits the </source>
-        <translation type="unfinished">Beendet die</translation>
+        <translation>Beendet </translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="369"/>
@@ -1252,17 +1252,17 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="418"/>
         <source>Show/Hide the grid lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige/Verberge Gitternetzlinien</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="421"/>
         <source>Reset Zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>Zoom rücksetzen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="422"/>
         <source>Resets the zoom</source>
-        <translation type="unfinished"></translation>
+        <translation>Setzt den Zoomfaktor zurück</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="425"/>
@@ -1312,7 +1312,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="464"/>
         <source>OMShell</source>
-        <translation type="unfinished"></translation>
+        <translation>OMShell</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="465"/>
@@ -1417,22 +1417,22 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="62"/>
         <source>Reading Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Lese Einstellungen</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="65"/>
         <source>Loading Widgets</source>
-        <translation type="unfinished"></translation>
+        <translation>Lade Widgets</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="100"/>
         <source>Loading Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Lade Modelica Standardbibliothek</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="157"/>
         <source>Creating Components</source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle Komponenten</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="515"/>
@@ -1528,7 +1528,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="636"/>
         <source>&amp;Simulation</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Simulation</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="645"/>
@@ -1538,7 +1538,7 @@ This is probably wrong because the component is decalred as %3.</oldsource>
     <message>
         <location filename="mainwindow.cpp" line="651"/>
         <source>&amp;Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tools</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="663"/>
@@ -1585,7 +1585,7 @@ Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</source>
 Distributed under OSMC-PL and GPL, see www.openmodelica.org.
 
 Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsource>
-        <translation type="unfinished">Copyright © Linköping University.
+        <translation>Copyright © Linköping University.
 Lizensiert unter OSMC PL und GPL, siehe www.openmodelica.org.
 
 Erstellt von Adeel Asghar und Sonia Tariq als Teil ihrer Masterarbeit.
@@ -1600,7 +1600,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="mainwindow.cpp" line="743"/>
         <source>OMNotebook</source>
-        <translation type="unfinished"></translation>
+        <translation>OMNotebook</translation>
     </message>
     <message>
         <location filename="mainwindow.cpp" line="749"/>
@@ -1646,17 +1646,17 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="ModelWidget.cpp" line="53"/>
         <source>Insert in Package (optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>In Package einfügen (optional):</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="63"/>
         <source>Save contents of package in one file</source>
-        <translation type="unfinished"></translation>
+        <translation>Inhalt des Packages in einer Datei speichern</translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="82"/>
         <source>Create New </source>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle neue </translation>
     </message>
     <message>
         <location filename="ModelWidget.cpp" line="108"/>
@@ -1666,7 +1666,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="ModelWidget.cpp" line="113"/>
         <source>in Package &apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>in Package &apos;</translation>
     </message>
 </context>
 <context>
@@ -1674,22 +1674,22 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="ModelicaEditor.cpp" line="72"/>
         <source>Previous</source>
-        <translation type="unfinished"></translation>
+        <translation>Vorheriges</translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="79"/>
         <source>Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Nächstes</translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="84"/>
         <source>Match case</source>
-        <translation type="unfinished"></translation>
+        <translation>Beachte GROSS-/kleinschreibung</translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="85"/>
         <source>Match whole word</source>
-        <translation type="unfinished"></translation>
+        <translation>ganzes Wort</translation>
     </message>
     <message>
         <location filename="ModelicaEditor.cpp" line="110"/>
@@ -1770,7 +1770,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="LibraryWidget.cpp" line="118"/>
         <source>Rename the modelica model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Modell umbenennen</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="433"/>
@@ -1780,17 +1780,17 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="LibraryWidget.cpp" line="130"/>
         <source>Delete the modelica model</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösche Modelica Modell</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="134"/>
         <source>Copy the modelica model</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiere Modelica Modell</translation>
     </message>
     <message>
         <location filename="LibraryWidget.cpp" line="138"/>
         <source>Paste the modelica model</source>
-        <translation type="unfinished"></translation>
+        <translation>Einfügen Modelica Modell</translation>
     </message>
 </context>
 <context>
@@ -1910,17 +1910,17 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="43"/>
         <source>OMPlot - OpenModelica Plot</source>
-        <translation type="unfinished"></translation>
+        <translation>OMPlot - OpenModelica Plot</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="69"/>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="73"/>
         <source>Tab View</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab Ansicht</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotMainWindow.cpp" line="89"/>
@@ -1993,7 +1993,7 @@ Möchten Sie OpenModelica übersetzen? Kontaktieren Sie uns unter www.openmodeli
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="740"/>
         <source>Image Files (*.png *.svg *.bmp *.jpg)</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilddateien (*.png *.svg *.bmp *.jpg)</translation>
     </message>
     <message>
         <location filename="../../OMPlot/OMPlotGUI/PlotWindow.cpp" line="748"/>
