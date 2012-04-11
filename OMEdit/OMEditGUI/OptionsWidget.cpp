@@ -562,6 +562,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   QMap<QString,QString> map;
   map.insert(tr("English"), "en");
   map.insert(tr("German"), "de");
+  map.insert(tr("Japanese"), "ja");
   map.insert(tr("Russian"), "ru");
   map.insert(tr("Swedish"), "sv");
   QStringList keys(map.keys());

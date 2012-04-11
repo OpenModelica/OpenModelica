@@ -4,12 +4,12 @@
 <context>
     <name>AddLibraryWidget</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="1325"/>
+        <location filename="OptionsWidget.cpp" line="1334"/>
         <source>Add Library</source>
         <translation>Добавить библиотеку</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1333"/>
+        <location filename="OptionsWidget.cpp" line="1342"/>
         <source>Value:</source>
         <translation>Значение:</translation>
     </message>
@@ -371,42 +371,47 @@ This is probably wrong because the component is decalred as %3.</oldsource>
         <translation>Автоопределение</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="561"/>
+        <location filename="OptionsWidget.cpp" line="563"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="562"/>
+        <location filename="OptionsWidget.cpp" line="564"/>
+        <source>German</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="OptionsWidget.cpp" line="565"/>
         <source>Russian</source>
         <translation>Russian</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="563"/>
+        <location filename="OptionsWidget.cpp" line="566"/>
         <source>Swedish</source>
         <translation>Swedish</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="565"/>
+        <location filename="OptionsWidget.cpp" line="574"/>
         <source>Plotting View Mode:</source>
         <translation>Режим отображение графика:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="566"/>
+        <location filename="OptionsWidget.cpp" line="575"/>
         <source>Tabbed View</source>
         <translation>Закладками</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="568"/>
+        <location filename="OptionsWidget.cpp" line="577"/>
         <source>SubWindow View</source>
         <translation>В дополнительном окне</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="577"/>
+        <location filename="OptionsWidget.cpp" line="586"/>
         <source>Working Directory:</source>
         <translation>Рабочий каталог:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="582"/>
+        <location filename="OptionsWidget.cpp" line="591"/>
         <source>Preserve User&apos;s GUI Customizations.</source>
         <translation>Сохранить пользовательские настройки GUI.</translation>
     </message>
@@ -1013,27 +1018,27 @@ This is probably wrong because the component is decalred as %3.</oldsource>
 <context>
     <name>LibrariesPage</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="1245"/>
+        <location filename="OptionsWidget.cpp" line="1254"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1245"/>
+        <location filename="OptionsWidget.cpp" line="1254"/>
         <source>Value</source>
         <translation>Значение</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1249"/>
+        <location filename="OptionsWidget.cpp" line="1258"/>
         <source>Add</source>
         <translation>Добавить</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1261"/>
+        <location filename="OptionsWidget.cpp" line="1270"/>
         <source>* The libraries changes will take effect after restart.</source>
         <translation>* Изменение библиотек будет выполнено после перезагрузки приложения.</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="1309"/>
+        <location filename="OptionsWidget.cpp" line="1318"/>
         <source>Edit Library</source>
         <translation>Редактировать</translation>
     </message>
@@ -1717,57 +1722,57 @@ Created by Adeel Asghar and Sonia Tariq as part of their final thesis.</oldsourc
 <context>
     <name>ModelicaTextEditorPage</name>
     <message>
-        <location filename="OptionsWidget.cpp" line="671"/>
+        <location filename="OptionsWidget.cpp" line="680"/>
         <source>Font and Colors</source>
         <translation>Шрифт и цвета</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="673"/>
+        <location filename="OptionsWidget.cpp" line="682"/>
         <source>Font Family:</source>
         <translation>Семейство шрифтов:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="680"/>
+        <location filename="OptionsWidget.cpp" line="689"/>
         <source>Font Size:</source>
         <translation>Размер шрифта:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="687"/>
+        <location filename="OptionsWidget.cpp" line="696"/>
         <source>Item Color:</source>
         <translation>Цвет элемента:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="688"/>
+        <location filename="OptionsWidget.cpp" line="697"/>
         <source>Pick Color</source>
         <translation>Выбрать цвет</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="691"/>
+        <location filename="OptionsWidget.cpp" line="700"/>
         <source>Items:</source>
         <translation>Элементы:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="702"/>
+        <location filename="OptionsWidget.cpp" line="711"/>
         <source>Preview:</source>
         <translation>Предпросмотр:</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="745"/>
+        <location filename="OptionsWidget.cpp" line="754"/>
         <source>Number</source>
         <translation>Число</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="750"/>
+        <location filename="OptionsWidget.cpp" line="759"/>
         <source>Keyword</source>
         <translation>Ключевое слово</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="760"/>
+        <location filename="OptionsWidget.cpp" line="769"/>
         <source>Function</source>
         <translation>функция</translation>
     </message>
     <message>
-        <location filename="OptionsWidget.cpp" line="765"/>
+        <location filename="OptionsWidget.cpp" line="774"/>
         <source>Quotes</source>
         <translation>Цитаты</translation>
     </message>
