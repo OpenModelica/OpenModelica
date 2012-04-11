@@ -395,6 +395,7 @@ algorithm
     case (name,encoding)
       equation
         true = System.regularFileExists(name);
+        false = stringEq(name,"package.mo");
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
         p1 = Parser.parse(name,encoding);
       then
