@@ -7,6 +7,7 @@
 QT += network core gui webkit xml svg
 
 TRANSLATIONS = \
+  OMEdit_fr.ts \
   OMEdit_de.ts \
   OMEdit_ja.ts \
   OMEdit_sv.ts \
