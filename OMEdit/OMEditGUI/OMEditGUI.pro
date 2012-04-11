@@ -7,11 +7,12 @@
 QT += network core gui webkit xml svg
 
 TRANSLATIONS = \
-  OMEdit_fr.ts \
-  OMEdit_de.ts \
-  OMEdit_ja.ts \
-  OMEdit_sv.ts \
-  OMEdit_ru.ts
+  Resources/nls/OMEdit_de.ts \
+  Resources/nls/OMEdit_fr.ts \
+  Resources/nls/OMEdit_ja.ts \
+  Resources/nls/OMEdit_ro.ts \
+  Resources/nls/OMEdit_ru.ts \
+  Resources/nls/OMEdit_sv.ts
 
 TARGET = OMEdit
 TEMPLATE = app

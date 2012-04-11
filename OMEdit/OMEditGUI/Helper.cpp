@@ -256,7 +256,7 @@ QString GUIMessages::getMessage(int type)
     case ENTER_NAME:
       return tr("Please enter %1 Name.");
     case MODEL_ALREADY_EXISTS:
-      return tr("%1 %2 already exits %3.");
+      return tr("%1 %2 already exists %3.");
     case ITEM_ALREADY_EXISTS:
       return tr("An item with the same name already exists. Please try some other name.");
     case OPENMODELICAHOME_NOT_FOUND:
