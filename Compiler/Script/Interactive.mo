@@ -8942,51 +8942,31 @@ protected function isReplaceableInElements
 algorithm
   outBoolean := matchcontinue (inAbsynElementItemLst, inString)
     local
-      String str;
+      String str, id;
       Boolean res;
       Absyn.ElementItem current;
       list<Absyn.ElementItem> rest;
+      Option<Absyn.RedeclareKeywords> r;
     case ({}, _) then false;
-    case ((current :: {}), str) /* deal with the last element */
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)))) :: rest), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       equation
-        res = isReplaceableInElement(current, str);
+        true = stringEq(id,str);
+        res = keywordReplaceable(r);
       then
         res;
-    case ((current :: rest), str)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,name = id)) :: rest), str)
+      equation
+        true = stringEq(id,str);
+        res = keywordReplaceable(r);
+      then
+        res;
+    case ((_ :: rest), str)
       equation
         res = isReplaceableInElements(rest, str);
       then
         res;
   end matchcontinue;
 end isReplaceableInElements;
-
-protected function isReplaceableInElement
-"function: isReplaceableInElement
-  Helper function to isReplaceable."
-  input Absyn.ElementItem inElementItem;
-  input String inString;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inElementItem, inString)
-    local
-      Boolean res;
-      String str,id;
-      Option<Absyn.RedeclareKeywords> r;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id))))), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
-      equation
-        true = stringEq(id,str);
-        res = keywordReplaceable(r);
-      then
-        res;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,name = id))), str)
-      equation
-        true = stringEq(id,str);
-        res = keywordReplaceable(r);
-      then
-        res;
-    case (_,_) then false;  /* for annotations we don\'t care */
-  end matchcontinue;
-end isReplaceableInElement;
 
 protected function getEnumLiterals
 "function: getEnumLiterals
@@ -9006,7 +8986,7 @@ algorithm
         str = stringAppendList({"{",str,"}"});
       then
         str;
-    case (_) then "";
+    case (_) then "{}";
   end match;
 end getEnumLiterals;
 
