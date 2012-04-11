@@ -6,7 +6,7 @@
     <message>
         <location filename="oms.cpp" line="268"/>
         <source>OMShell - OpenModelica Shell</source>
-        <translation type="unfinished"></translation>
+        <translation>OMShell - OpenModelica Shell</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="374"/>
@@ -17,34 +17,28 @@
         <location filename="oms.cpp" line="369"/>
         <source>Open mo-file</source>
         <oldsource>Load mo-file</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Öffne .mo Datei</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="373"/>
         <source>Load &amp;Modelica Library</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="374"/>
-        <source>Ctrl+L</source>
-        <oldsource>Ctrl+Shift+L</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>Modelica Bibliothek &amp;laden</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="367"/>
         <source>&amp;Open</source>
         <oldsource>&amp;Load</oldsource>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Öffnen</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="375"/>
         <source>Load the Modelica Standard Library</source>
-        <translation type="unfinished"></translation>
+        <translation>Lädt die Modelica Standardbibliothek</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="379"/>
         <source>&amp;Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Beenden</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="380"/>
@@ -54,12 +48,12 @@
     <message>
         <location filename="oms.cpp" line="381"/>
         <source>Quit the application</source>
-        <translation type="unfinished"></translation>
+        <translation>Programm beenden</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="385"/>
         <source>Cu&amp;t</source>
-        <translation type="unfinished"></translation>
+        <translation>Aus&amp;schneiden</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="386"/>
@@ -69,7 +63,7 @@
     <message>
         <location filename="oms.cpp" line="391"/>
         <source>&amp;Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopieren</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="392"/>
@@ -79,7 +73,7 @@
     <message>
         <location filename="oms.cpp" line="397"/>
         <source>&amp;Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einfügen</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="398"/>
@@ -89,47 +83,47 @@
     <message>
         <location filename="oms.cpp" line="404"/>
         <source>&amp;FontSize</source>
-        <translation type="unfinished"></translation>
+        <translation>Schrift&amp;größe</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="409"/>
         <source>&amp;About OMShell</source>
-        <translation type="unfinished"></translation>
+        <translation>Über &amp;OMShell</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="415"/>
         <source>About &amp;Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>Über &amp;Qt</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="387"/>
         <source>Cut the selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Auswahl ausschneiden</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="393"/>
         <source>Copy the selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiert die Auswahl</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="399"/>
         <source>Insert from clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Einfügen aus Zwischenablage</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="410"/>
         <source>About this application</source>
-        <translation type="unfinished"></translation>
+        <translation>Über dieses Programm</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="416"/>
         <source>About Qt</source>
-        <translation type="unfinished"></translation>
+        <translation>Über Qt</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="420"/>
         <source>Cl&amp;ear</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Löschen</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="421"/>
@@ -139,22 +133,22 @@
     <message>
         <location filename="oms.cpp" line="422"/>
         <source>Clear the input window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgabe löschen</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="430"/>
         <source>&amp;File</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Datei</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="431"/>
         <source>&amp;Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="432"/>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hilfe</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="589"/>
@@ -174,7 +168,7 @@
     <message>
         <location filename="oms.cpp" line="816"/>
         <source>Close OMC</source>
-        <translation type="unfinished"></translation>
+        <translation>OMC schließen</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="865"/>
