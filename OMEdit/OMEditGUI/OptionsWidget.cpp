@@ -568,7 +568,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   QStringList keys(map.keys());
   keys.sort();
   foreach (const QString &key, keys) {
-    mpLanguageComboBox->addItem(key,map[key]);
+    QString val = map[key];
+    mpLanguageComboBox->addItem(key + " ("+val+")",val);
   }
 
   // Plotting View Mode
