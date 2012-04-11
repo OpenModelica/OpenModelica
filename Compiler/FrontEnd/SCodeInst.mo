@@ -129,9 +129,9 @@ algorithm
         cls = Typing.typeSections(cls, symtab);
 
         System.stopTimer();
-        print("\nclass " +& name +& "\n");
-        print(InstUtil.printClass(cls));
-        print("\nend " +& name +& "\n");
+        //print("\nclass " +& name +& "\n");
+        //print(InstUtil.printClass(cls));
+        //print("\nend " +& name +& "\n");
 
         _ = SCodeExpand.expand(name, cls);
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
@@ -140,7 +140,6 @@ algorithm
 
     else
       equation
-        print("SCodeInst.instClass failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
         name = Absyn.pathString(inClassPath);
         Debug.traceln("SCodeInst.instClass failed on " +& name);
@@ -2130,7 +2129,7 @@ algorithm
       SOME(cond_exp), info = info), mod, prefs, env, prefix), st)
       equation
         inst_exp = instExp(cond_exp, env, prefix);
-        (inst_exp, ty, st) = Typing.typeExp(inst_exp, st);
+        (inst_exp, ty, st) = Typing.typeExp(inst_exp, Typing.EVAL_CONST_PARAM(), st);
         (inst_exp, _) = ExpressionSimplify.simplify(inst_exp);
         cond = evaluateConditionalExp(inst_exp, ty, name, info);
         (el, st) = instConditionalComponent2(cond, sel, mod, prefs, env, prefix, st);

@@ -45,6 +45,7 @@ public import SCode;
 public import SCodeEnv;
 public import InstTypes;
 
+protected import Dump;
 protected import Error;
 protected import InstUtil;
 protected import List;
@@ -285,7 +286,7 @@ algorithm
       SCode.Each ep;
       list<Modifier> submods1, submods2;
       Binding binding;
-      Absyn.Info info;
+      Absyn.Info info1, info2;
       String name;
 
     // One of the modifiers is NOMOD, return the other.
@@ -293,34 +294,34 @@ algorithm
     case (_, InstTypes.NOMOD()) then inOuterMod;
 
     // Neither of the modifiers have a binding, just merge the submods.
-    case (InstTypes.MODIFIER(subModifiers = submods1, binding = InstTypes.UNBOUND(), info = info),
+    case (InstTypes.MODIFIER(subModifiers = submods1, binding = InstTypes.UNBOUND(), info = info1),
           InstTypes.MODIFIER(name = name, subModifiers = submods2, binding = InstTypes.UNBOUND()))
       equation
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
         InstTypes.MODIFIER(name, SCode.NOT_FINAL(), SCode.NOT_EACH(),
-          InstTypes.UNBOUND(), submods1, info);
+          InstTypes.UNBOUND(), submods1, info1);
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
     case (InstTypes.MODIFIER(name, fp, ep, binding as InstTypes.RAW_BINDING(bindingExp = _),
-            submods1, info),
-        InstTypes.MODIFIER(subModifiers = submods2))
+            submods1, info1),
+          InstTypes.MODIFIER(subModifiers = submods2, info = info2))
       equation
-        checkModifierFinalOverride(inOuterMod, inInnerMod);
+        checkModifierFinalOverride(inOuterMod, info1, inInnerMod, info2);
         submods1 = List.fold(submods1, mergeSubMod, submods2);
       then
-        InstTypes.MODIFIER(name, fp, ep, binding, submods1, info);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
 
     // The inner modifier has a binding, but not the outer, so keep it.
-    case (InstTypes.MODIFIER(subModifiers = submods1),
+    case (InstTypes.MODIFIER(subModifiers = submods1, info = info1),
           InstTypes.MODIFIER(name, fp, ep, binding as InstTypes.RAW_BINDING(bindingExp = _),
-            submods2, info))
+            submods2, info2))
       equation
-        checkModifierFinalOverride(inOuterMod, inInnerMod);
+        checkModifierFinalOverride(inOuterMod, info1, inInnerMod, info2);
         submods2 = List.fold(submods1, mergeSubMod, submods2);
       then
-        InstTypes.MODIFIER(name, fp, ep, binding, submods2, info);
+        InstTypes.MODIFIER(name, fp, ep, binding, submods2, info1);
 
     case (InstTypes.MODIFIER(name = _), InstTypes.REDECLARE(element = _))
       then inOuterMod;
@@ -337,14 +338,27 @@ algorithm
 end mergeMod;
 
 protected function checkModifierFinalOverride
+  "Checks that a modifier is not trying to override a final modifier. In that
+   case it prints an error and fails, otherwise it does nothing."
   input Modifier inOuterMod;
+  input Absyn.Info inOuterInfo;
   input Modifier inInnerMod;
+  input Absyn.Info inInnerInfo;
 algorithm
-  _ := match(inOuterMod, inInnerMod)
-    case (_, InstTypes.MODIFIER(finalPrefix = SCode.FINAL()))
+  _ := match(inOuterMod, inOuterInfo, inInnerMod, inInnerInfo)
+    local
+      Absyn.Exp oexp, iexp;
+      String oexp_str, iexp_str;
+
+    case (_, _, InstTypes.MODIFIER(finalPrefix = SCode.FINAL()), _)
       equation
-        print("Trying to override final modifier " +& printMod(inInnerMod) +& 
-          " with modifier " +& printMod(inOuterMod) +& "\n");
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOuterInfo);
+        InstTypes.RAW_BINDING(bindingExp = oexp) = getModifierBinding(inOuterMod);
+        InstTypes.RAW_BINDING(bindingExp = iexp) = getModifierBinding(inInnerMod);
+        oexp_str = Dump.printExpStr(oexp);
+        iexp_str = Dump.printExpStr(iexp);
+        Error.addSourceMessage(Error.FINAL_MODIFIER_OVERRIDE,
+          {oexp_str, iexp_str}, inInnerInfo);
       then
         fail();
 
@@ -353,39 +367,73 @@ algorithm
 end checkModifierFinalOverride;
 
 protected function mergeSubMod
-  "Merges a sub modifier into a list of sub modifiers."
+  "Merges a sub modifier into a list of sub modifier."
   input Modifier inSubMod;
   input list<Modifier> inSubMods;
   output list<Modifier> outSubMods;
 algorithm
-  outSubMods := matchcontinue(inSubMod, inSubMods)
+  outSubMods := mergeSubMod_tail(inSubMod, inSubMods, {});
+end mergeSubMod;
+
+protected function mergeSubMod_tail
+  "Tail-recursive implementation of mergeSubMod."
+  input Modifier inSubMod;
+  input list<Modifier> inSubMods;
+  input list<Modifier> inAccumMods;
+  output list<Modifier> outSubMods;
+algorithm
+  outSubMods := match(inSubMod, inSubMods, inAccumMods)
     local
       SCode.Ident id1, id2;
       Modifier mod;
-      list<Modifier> rest_mods;
+      list<Modifier> rest_mods, accum;
+      Boolean is_equal;
 
-    // No matching sub modifier found, add the given sub modifier as it is.
-    case (_, {}) then {inSubMod};
-
-    // Check if the sub modifier matches the first in the list.
-    case (InstTypes.MODIFIER(name = id1), 
-        (mod as InstTypes.MODIFIER(name = id2)) :: rest_mods)
+    case (InstTypes.MODIFIER(name = id1),
+        (mod as InstTypes.MODIFIER(name = id2)) :: rest_mods, _)
       equation
-        true = stringEq(id1, id2);
-        // Match found, merge the sub modifiers.
-        mod = mergeMod(inSubMod, mod);
+        is_equal = stringEq(id1, id2);
       then
-        mod :: rest_mods;
+        mergeSubMod_tail2(inSubMod, mod, is_equal, rest_mods, inAccumMods);
 
-    // No match found, search the rest of the list.
-    case (_, mod :: rest_mods)
+    case (_, {}, _)
       equation
-        rest_mods = mergeSubMod(inSubMod, rest_mods);
-      then 
-        mod :: rest_mods;
+        accum = inSubMod :: inAccumMods;
+      then
+        listReverse(accum);
 
-  end matchcontinue;
-end mergeSubMod;
+  end match;
+end mergeSubMod_tail;
+
+protected function mergeSubMod_tail2
+  "Helper function to mergeSubMod_tail."
+  input Modifier inSubMod1;
+  input Modifier inSubMod2;
+  input Boolean inIsEqual;
+  input list<Modifier> inSubMods;
+  input list<Modifier> inAccumMods;
+  output list<Modifier> outSubMods;
+algorithm
+  outSubMods := match(inSubMod1, inSubMod2, inIsEqual, inSubMods, inAccumMods)
+    local
+      Modifier mod;
+      list<Modifier> accum;
+
+    // If both sub modifiers have the same identifier, merge them and return the
+    // list of modifiers with the new modifier in it.
+    case (_, _, true, _, _)
+      equation
+        mod = mergeMod(inSubMod1, inSubMod2);
+        accum = mod :: inAccumMods;
+        accum = listReverse(accum);
+      then
+        listAppend(accum, inSubMods);
+
+    // Otherwise, continue to search for a matching modifier.
+    else mergeSubMod_tail(inSubMod1, inSubMods, inSubMod2 :: inAccumMods);
+
+  end match;
+end mergeSubMod_tail2;
 
 protected function splitMod
   "Splits a modifier that contains sub modifiers info a list of tuples of

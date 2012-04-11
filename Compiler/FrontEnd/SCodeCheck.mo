@@ -333,22 +333,22 @@ algorithm
           SCode.CLASS(restriction = res), _)
       equation
         ty = SCodeDump.restrictionStringPP(res);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-          {ty, name, "a component"}, info);
-      then
-        ();
-
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
-          SCode.COMPONENT(name = name), _)
-      equation
-        ty = SCodeDump.restrictionStringPP(res);
         ty = "a " +& ty;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
           {"component", name, ty}, info);
       then
-        ();
+        fail();
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
+          SCode.COMPONENT(name = name), _)
+      equation
+        ty = SCodeDump.restrictionStringPP(res);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
+        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
+          {ty, name, "a component"}, info);
+      then
+        fail();
 
     else ();
   end match;

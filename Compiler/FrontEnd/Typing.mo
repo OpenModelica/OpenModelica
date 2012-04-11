@@ -67,6 +67,12 @@ public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
+public uniontype EvalPolicy
+  record NO_EVAL end NO_EVAL;
+  record EVAL_CONST end EVAL_CONST;
+  record EVAL_CONST_PARAM end EVAL_CONST_PARAM;
+end EvalPolicy;
+
 public function typeClass
   input Class inClass;
   input SymbolTable inSymbolTable;
@@ -320,7 +326,7 @@ algorithm
     case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
-        (dim_exp, _, st) = typeExp(dim_exp, st);
+        (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), st);
         dim = InstUtil.makeDimension(dim_exp);
         typed_dim = InstTypes.TYPED_DIMENSION(dim);
         _ = arrayUpdate(inDimensions, inIndex, typed_dim);
@@ -474,7 +480,7 @@ algorithm
     case (InstTypes.UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd,
         info = info), st)
       equation
-        (binding, ty, st) = typeExp(binding, st);
+        (binding, ty, st) = typeExp(binding, EVAL_CONST(), st);
       then
         (InstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
@@ -488,24 +494,27 @@ end typeBinding;
 
 protected function typeExpList
   input list<DAE.Exp> inExpList;
+  input EvalPolicy inEvalPolicy;
   input SymbolTable inSymbolTable;
   output list<DAE.Exp> outExpList;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExpList, outType, outSymbolTable) := match(inExpList, inSymbolTable)
+  (outExpList, outType, outSymbolTable) :=
+  match(inExpList, inEvalPolicy, inSymbolTable)
     local
       DAE.Exp exp;
       list<DAE.Exp> rest_expl;
+      EvalPolicy ep;
       SymbolTable st;
       DAE.Type ty;
 
-    case ({}, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
+    case ({}, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
 
-    case (exp :: rest_expl, st)
+    case (exp :: rest_expl, ep, st)
       equation
-        (exp, ty, st) = typeExp(exp, st);
-        (rest_expl, _, st) = typeExpList(rest_expl, st);
+        (exp, ty, st) = typeExp(exp, ep, st);
+        (rest_expl, _, st) = typeExpList(rest_expl, ep, st);
       then
         (exp :: rest_expl, ty, st);
 
@@ -514,12 +523,13 @@ end typeExpList;
 
 public function typeExp
   input DAE.Exp inExp;
+  input EvalPolicy inEvalPolicy;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) := match(inExp, inSymbolTable)
+  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inSymbolTable)
     local
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cref;
@@ -530,48 +540,49 @@ algorithm
       Integer dim_int;
       DAE.Dimension dim;
       list<DAE.Exp> expl;
+      EvalPolicy ep;
 
-    case (DAE.ICONST(integer = _), st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
-    case (DAE.RCONST(real = _), st) then (inExp, DAE.T_REAL_DEFAULT, st);
-    case (DAE.SCONST(string = _), st) then (inExp, DAE.T_STRING_DEFAULT, st);
-    case (DAE.BCONST(bool = _), st) then (inExp, DAE.T_BOOL_DEFAULT, st);
-    case (DAE.CREF(componentRef = cref), st)
+    case (DAE.ICONST(integer = _), _, st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
+    case (DAE.RCONST(real = _), _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
+    case (DAE.SCONST(string = _), _, st) then (inExp, DAE.T_STRING_DEFAULT, st);
+    case (DAE.BCONST(bool = _), _, st) then (inExp, DAE.T_BOOL_DEFAULT, st);
+    case (DAE.CREF(componentRef = cref), ep, st)
       equation
-        (e1, ty, st) = typeCref(cref, st);
+        (e1, ty, st) = typeCref(cref, ep, st);
       then
         (e1, ty, st);
         
-    case (DAE.ARRAY(array = expl), st)
+    case (DAE.ARRAY(array = expl), ep, st)
       equation
-        (expl, ty, st) = typeExpList(expl, st);
+        (expl, ty, st) = typeExpList(expl, ep, st);
         dim_int = listLength(expl);
         ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
       then
         (DAE.ARRAY(ty, true, expl), ty, st);
 
-    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), st)
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, st)
       equation
-        (e1, ty, st) = typeExp(e1, st);
-        (e2, ty, st) = typeExp(e2, st);
+        (e1, ty, st) = typeExp(e1, ep, st);
+        (e2, ty, st) = typeExp(e2, ep, st);
       then
         (DAE.BINARY(e1, op, e2), ty, st);
 
-    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), st)
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, st)
       equation
-        (e1, ty, st) = typeExp(e1, st);
-        (e2, ty, st) = typeExp(e2, st);
+        (e1, ty, st) = typeExp(e1, ep, st);
+        (e2, ty, st) = typeExp(e2, ep, st);
       then
         (DAE.LBINARY(e1, op, e2), ty, st);
 
-    case (DAE.LUNARY(operator = op, exp = e1), st)
+    case (DAE.LUNARY(operator = op, exp = e1), ep, st)
       equation
-        (e1, ty, st) = typeExp(e1, st);
+        (e1, ty, st) = typeExp(e1, ep, st);
       then
         (DAE.LUNARY(op, e1), ty, st);
 
-    case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), st)
+    case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, st)
       equation
-        (DAE.ICONST(dim_int), _, st) = typeExp(e2, st);
+        (DAE.ICONST(dim_int), _, st) = typeExp(e2, ep, st);
         comp = InstSymbolTable.lookupCref(cref, st);
         (dim, st) = typeComponentDim(comp, dim_int, st);
         e1 = dimensionExp(dim);
@@ -606,12 +617,14 @@ end dimensionExp;
   
 protected function typeCref
   input DAE.ComponentRef inCref;
+  input EvalPolicy inEvalPolicy;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) := matchcontinue(inCref, inSymbolTable)
+  (outExp, outType, outSymbolTable) :=
+  matchcontinue(inCref, inEvalPolicy, inSymbolTable)
     local
       Absyn.Path path;
       SymbolTable st;
@@ -619,23 +632,24 @@ algorithm
       DAE.Type ty;
       DAE.Exp exp;
       DAE.VarKind var;
-      Boolean param_or_const;
+      Boolean eval;
       DAE.ComponentRef cref;
+      EvalPolicy ep;
 
-    case (_, st)
+    case (_, ep, st)
       equation
         comp = InstSymbolTable.lookupCref(inCref, st);
         var = InstUtil.getComponentVariability(comp);
         //param_or_const = DAEUtil.isParamOrConstVarKind(var);
-        param_or_const = false;
-        (exp, ty, st) = typeCref2(inCref, comp, param_or_const, st);
+        eval = shouldEvaluate(var, ep);
+        (exp, ty, st) = typeCref2(inCref, comp, eval, ep, st);
       then
         (exp, ty, st);
 
-    case (_, st)
+    case (_, ep, st)
       equation
         (cref, st) = InstUtil.replaceCrefOuterPrefix(inCref, st);
-        (exp, ty, st) = typeCref(cref, st);
+        (exp, ty, st) = typeCref(cref, ep, st);
       then
         (exp, ty, st);
 
@@ -649,17 +663,31 @@ algorithm
   end matchcontinue;
 end typeCref;
        
+protected function shouldEvaluate
+  input DAE.VarKind inVarKind;
+  input EvalPolicy inEvalPolicy;
+  output Boolean outShouldEval;
+algorithm
+  outShouldEval := match(inVarKind, inEvalPolicy)
+    case (DAE.PARAM(), EVAL_CONST_PARAM()) then true;
+    case (_, NO_EVAL()) then false;
+    case (DAE.CONST(), _) then true;
+    else false;
+  end match;
+end shouldEvaluate;
+
 protected function typeCref2
   input DAE.ComponentRef inCref;
   input Component inComponent;
-  input Boolean inIsParamOrConst;
+  input Boolean inShouldEvaluate;
+  input EvalPolicy inEvalPolicy;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  match(inCref, inComponent, inIsParamOrConst, inSymbolTable)
+  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
     local
       DAE.Type ty;
       Binding binding;
@@ -668,20 +696,22 @@ algorithm
       Absyn.Path inner_name;
       Component inner_comp;
       DAE.ComponentRef inner_cref;
+      EvalPolicy ep;
+      Boolean se;
 
-    case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, st)
+    case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, _, st)
       equation
         exp = InstUtil.getBindingExp(binding);
       then
         (exp, ty, st);
 
-    case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, st)
+    case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, _, st)
       equation
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, st)
+    case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, st)
       equation
         (InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
           typeComponent(inComponent, st);
@@ -689,19 +719,19 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, st)
+    case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, _, st)
       equation
         (ty, st) = typeComponentDims(inComponent, st);
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, InstTypes.OUTER_COMPONENT(name = _), _, st)
+    case (_, InstTypes.OUTER_COMPONENT(name = _), se, ep, st)
       equation
         (inner_comp, st) = typeComponent(inComponent, st);
         inner_name = InstUtil.getComponentName(inner_comp);
         inner_cref = InstUtil.removeCrefOuterPrefix(inner_name, inCref);
-        (exp, ty, st) = typeCref2(inner_cref, inner_comp, inIsParamOrConst, st);
+        (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, st);
       then
         (exp, ty, st);
 
@@ -882,8 +912,8 @@ algorithm
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st)
       equation
-        (rhs, _, _) = typeExp(rhs, st);
-        (lhs, _, _) = typeExp(lhs, st);
+        (rhs, _, _) = typeExp(rhs, NO_EVAL(), st);
+        (lhs, _, _) = typeExp(lhs, NO_EVAL(), st);
       then
         InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
 
@@ -897,7 +927,7 @@ algorithm
 
     case (InstTypes.FOR_EQUATION(index, _, exp1, eql, info), st)
       equation
-        (exp1, ty, _) = typeExp(exp1, st);
+        (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
         eql = typeEquations(eql, st);
       then
