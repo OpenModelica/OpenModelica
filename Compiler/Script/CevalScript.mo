@@ -565,28 +565,32 @@ protected function loadModel
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
+  input Boolean notifyLoad;
   output Absyn.Program pnew;
   output Boolean success;
 algorithm
-  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad)
+  (pnew,success) := matchcontinue (imodelsToLoad,modelicaPath,ip,forceLoad,notifyLoad)
     local
       Absyn.Path path;
-      String pathStr,versions;
+      String pathStr,versions,className,version;
       list<String> strings;
       Boolean b,b1,b2;
       Absyn.Program p;
       list<tuple<Absyn.Path,list<String>>> modelsToLoad;
       
-    case ({},_,p,_) then (p,true);
-    case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad)
+    case ({},_,p,_,_) then (p,true);
+    case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad,notifyLoad)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
         pnew = Debug.bcallret3(not b, ClassLoader.loadClass, path, strings, modelicaPath, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
+        className = Absyn.pathString(path);
+        version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
+        Error.assertionOrAddSourceMessage(b or not notifyLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false);
-        (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad);
+        (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false,notifyLoad);
+        (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
       then (p,b1 and b2);
-    case ((path,strings)::_,modelicaPath,p,_)
+    case ((path,strings)::_,modelicaPath,p,_,_)
       equation
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
@@ -1429,9 +1433,7 @@ algorithm
         
     case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
-        Config.setEvaluateParametersInAnnotations(true);
-        Absyn.STRING(str_1) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-        Config.setEvaluateParametersInAnnotations(false);
+        str_1 = getPackageVersion(path,p);
       then
         (cache,Values.STRING(str_1),st);
         
@@ -1572,7 +1574,7 @@ algorithm
     case (cache,env,"generateSeparateCode",{},st,msg)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars)},
+    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
@@ -1582,7 +1584,7 @@ algorithm
       equation
         mp = Settings.getModelicaPath();
         strings = List.map(cvars, ValuesUtil.extractValueString);
-        (p,b) = loadModel({(path,strings)},mp,p,true);
+        (p,b) = loadModel({(path,strings)},mp,p,true,b);
         str = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
@@ -2589,8 +2591,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
-        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(),p,false,true);
         
         ptot = Dependency.getTotalProgram(className,p);
         
@@ -2672,14 +2673,6 @@ algorithm
     
     case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,addDummy,inSimSettingsOpt)
       equation
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
-        str = Absyn.pathString(className);
-        re = Absyn.restrString(restriction);
-        Error.assertionOrAddSourceMessage(not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
-          Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        usedModels = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
-        _ = List.map3(usedModels, checkModelLoaded, p, false, SOME(str));
-
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
           SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
       then
@@ -6337,5 +6330,21 @@ algorithm
     case (_,_) then false;
   end matchcontinue;
 end isShortDefinition;
+
+protected function getPackageVersion
+  input Absyn.Path path;
+  input Absyn.Program p;
+  output String version;
+algorithm
+  version := matchcontinue (path,p)
+    case (path,p)
+      equation
+        Config.setEvaluateParametersInAnnotations(true);
+        Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+        Config.setEvaluateParametersInAnnotations(false);
+      then version;
+    else "(version unknown)";
+  end matchcontinue;
+end getPackageVersion;
 
 end CevalScript;

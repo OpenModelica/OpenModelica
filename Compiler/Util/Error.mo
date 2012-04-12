@@ -589,6 +589,8 @@ public constant Message CONNECT_IN_INITIAL_EQUATION = MESSAGE(221, TRANSLATION()
   "Connect equations are not allowed in initial equation sections.");
 public constant Message FINAL_COMPONENT_OVERRIDE = MESSAGE(222, TRANSLATION(), ERROR(),
   "Trying to override final component %s with modifier %s\n");
+public constant Message NOTIFY_NOT_LOADED = MESSAGE(223, SCRIPTING(), NOTIFICATION(),
+  "Automatically loaded package %s %s due to uses annotation.");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

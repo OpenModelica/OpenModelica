@@ -1571,6 +1571,7 @@ end generateCode;
 function loadModel "Loads the Modelica Standard Library."
   input TypeName className;
   input String[:] priorityVersion := {"default"};
+  input Boolean notify := false "Give a notification of the libraries and versions that were loaded";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
