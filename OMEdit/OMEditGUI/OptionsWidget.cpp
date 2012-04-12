@@ -560,9 +560,11 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
   /* Slow sorting, but works using regular Qt functions */
   QMap<QString,QString> map;
+  map.insert(tr("Chinese"), "zh");
   map.insert(tr("English"), "en");
   map.insert(tr("French"), "fr");
   map.insert(tr("German"), "de");
+  map.insert(tr("Italian"), "it");
   map.insert(tr("Japanese"), "ja");
   map.insert(tr("Romanian"), "ro");
   map.insert(tr("Russian"), "ru");

@@ -146,6 +146,7 @@ public:
   void unsetComponentFlags();
   bool getIsConnector();
   QString getTransformationString();
+  bool canDrawRedBox(Component *pComponent);
 signals:
   void componentClicked(Component*);
   void connectorComponentClicked(Component*);

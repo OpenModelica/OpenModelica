@@ -43,7 +43,7 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     mIsConnector(connector), mpOMCProxy(omc), mpGraphicsView(graphicsView)
 {
   mIsLibraryComponent = false;
-  mpComponentProperties=0;
+  mpComponentProperties = 0;
   //QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
   mpParentComponent = pParent;
   mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure, mClassName, mName));
@@ -52,7 +52,7 @@ Component::Component(QString value, QString name, QString className, QPointF pos
   mpTransformation = new Transformation(this);
   setTransform(mpTransformation->getTransformationMatrix());
   // if component is an icon
-  if ((mType == StringHandler::ICON))
+  if (mType == StringHandler::ICON)
   {
     setPos(position);
     if (mpGraphicsView->mpParentProjectTab->isReadOnly())
@@ -376,6 +376,8 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
 
 QRectF Component::boundingRect() const
 {
+  if (mRectangle.isEmpty())
+    return QRectF(-100.0, -100.0, 200.0, 200.0);      // needed for empty annotations. We draw red boxes for them.
   return mRectangle;
 }
 
@@ -418,6 +420,19 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
   Q_UNUSED(painter);
   Q_UNUSED(option);
   Q_UNUSED(widget);
+
+  if (!mpParentComponent)     // only check for root components i.e the one that doesn't have a parent.
+  {
+    if (canDrawRedBox(this))
+    {
+      QPen pen(Qt::red);
+      pen.setCosmetic(true);
+      painter->setPen(pen);
+      painter->drawRect(boundingRect());
+      painter->drawLine(QPointF(-100, -100), QPointF(100,100));
+      painter->drawLine(QPointF(-100, 100), QPointF(100,-100));
+    }
+  }
 }
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -732,6 +747,31 @@ QString Component::getTransformationString()
   annotationString.append("rotation=").append(QString::number(rotation())).append(")");
 
   return annotationString;
+}
+
+bool Component::canDrawRedBox(Component *pComponent)
+{
+  bool draw = false;
+  if (pComponent->mpShapesList.isEmpty())
+    draw = true;
+  else
+    return false;
+
+  foreach (Component *pChildComponent, mpComponentsList)
+  {
+    draw = canDrawRedBox(pChildComponent);
+    if (!draw)
+      break;
+  }
+
+  foreach (Component *pInheritedComponent, mpInheritanceList)
+  {
+    draw = canDrawRedBox(pInheritedComponent);
+    if (!draw)
+      break;
+  }
+
+  return draw;
 }
 
 void Component::updateAnnotationString(bool updateBothViews)

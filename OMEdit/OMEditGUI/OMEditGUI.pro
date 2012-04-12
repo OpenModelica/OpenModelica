@@ -7,12 +7,14 @@
 QT += network core gui webkit xml svg
 
 TRANSLATIONS = \
-  Resources/nls/OMEdit_de.ts \
-  Resources/nls/OMEdit_fr.ts \
-  Resources/nls/OMEdit_ja.ts \
-  Resources/nls/OMEdit_ro.ts \
-  Resources/nls/OMEdit_ru.ts \
-  Resources/nls/OMEdit_sv.ts
+    Resources/nls/OMEdit_de.ts \
+    Resources/nls/OMEdit_fr.ts \
+    Resources/nls/OMEdit_it.ts \
+    Resources/nls/OMEdit_ja.ts \
+    Resources/nls/OMEdit_ro.ts \
+    Resources/nls/OMEdit_ru.ts \
+    Resources/nls/OMEdit_sv.ts \
+    Resources/nls/OMEdit_zh.ts
 
 TARGET = OMEdit
 TEMPLATE = app
@@ -24,7 +26,12 @@ win32 {
     }
 }
 
-SOURCES += main.cpp\
+# This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
+evil_hack_to_fool_lupdate {
+    SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
+}
+
+SOURCES += main.cpp \
     mainwindow.cpp \
     ProjectTabWidget.cpp \
     LibraryWidget.cpp \
