@@ -614,9 +614,9 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
         .append(Helper::name).append(" ").append(name).append("\n")
         .append(tr("Description")).append(": ").append(info[1]).append("\n");
     if (QString(info[2]).compare("<interactive>") == 0)
-      tooltip.append(Helper::location).append(": ").append("\n");
+      tooltip.append(Helper::errorLocation).append(": ").append("\n");
     else
-      tooltip.append(Helper::location).append(": ").append(info[2]).append("\n");
+      tooltip.append(Helper::errorLocation).append(": ").append(info[2]).append("\n");
     tooltip.append(tr("Path")).append(": ").append(path);
     return tooltip;
   }

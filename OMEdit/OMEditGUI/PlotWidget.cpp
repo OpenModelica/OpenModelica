@@ -221,7 +221,7 @@ void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVar
   }
 
   // insert the top level item in tree
-  QString toolTip = tr("Simulation Result File: ").append(fileName).append("\n").append(Helper::location).append(": ")
+  QString toolTip = tr("Simulation Result File: ").append(fileName).append("\n").append(Helper::fileLocation).append(": ")
       .append(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(fileName);
   PlotTreeItem *newTreePost = new PlotTreeItem(fileName, "", fileName, fileName, toolTip, (QTreeWidget*)0);
   mpPlotTree->insertTopLevelItem(0, newTreePost);

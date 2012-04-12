@@ -238,7 +238,7 @@ Problem::Problem(ProblemsWidget *pParent)
   setIconSize(QSize(12, 12));
   setContentsMargins(0, 0, 0, 0);
   QStringList labels;
-  labels << tr("Kind") << tr("Time") << tr("Resource") << Helper::location << tr("Message");
+  labels << tr("Kind") << tr("Time") << tr("Resource") << Helper::errorLocation << tr("Message");
   setHeaderLabels(labels);
   setContextMenuPolicy(Qt::CustomContextMenu);
   // create actions

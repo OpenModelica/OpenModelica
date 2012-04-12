@@ -158,7 +158,8 @@ public:
   static QString verticalCylinderBrush;
   static QString sphereBrush;
   static QString remove;
-  static QString location;
+  static QString errorLocation;
+  static QString fileLocation;
   static QString textProperties;
   static QString readOnly;
   static QString writable;
