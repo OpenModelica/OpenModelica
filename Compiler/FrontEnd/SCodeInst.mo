@@ -587,7 +587,7 @@ protected function instElement
   output Element outElement;
 algorithm
   outElement := 
-  matchcontinue(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
+  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -684,7 +684,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end instElement;
 
 protected function instExtends
@@ -1962,7 +1962,7 @@ algorithm
         // TODO: Check this, should it really be 1?
         binding = InstTypes.TYPED_BINDING(bind_exp, arr_ty, 1, info);
       then
-        InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty, InstTypes.DEFAULT_CONST_PREFIXES, InstTypes.UNBOUND(), info),
+        InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty, InstTypes.DEFAULT_CONST_PREFIXES, binding, info),
           InstTypes.COMPLEX_CLASS(enum_el, {}, {}, {}, {}));
 
     else

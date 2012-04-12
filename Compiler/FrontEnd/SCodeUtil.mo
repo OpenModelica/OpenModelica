@@ -1792,8 +1792,7 @@ end translateElementAddinfo;
 /* Modification management */
 public function translateMod
 "function: translateMod
-  Builds an SCode.Mod from an Absyn.Modification.
-  The boolean argument flags whether the modification is final."
+  Builds an SCode.Mod from an Absyn.Modification."
   input Option<Absyn.Modification> inAbsynModificationOption;
   input SCode.Final inFinalPrefix;
   input SCode.Each inEachPrefix;
@@ -1808,7 +1807,9 @@ algorithm
       list<SCode.SubMod> subs;
       list<Absyn.ElementArg> l;
 
-    case (NONE(),_,_,_) then SCode.NOMOD();  /* final */
+    case (NONE(), SCode.FINAL(), _, _)
+      then SCode.MOD(inFinalPrefix, inEachPrefix, {}, NONE(), inInfo);
+    case (NONE(),_,_,_) then SCode.NOMOD();
     case (SOME(Absyn.CLASSMOD({},(Absyn.EQMOD(exp=e)))),finalPrefix,eachPrefix,_) 
       then SCode.MOD(finalPrefix,eachPrefix,{},SOME((e,false)), inInfo);
     case (SOME(Absyn.CLASSMOD({},(Absyn.NOMOD()))),finalPrefix,eachPrefix,_) 
@@ -1817,67 +1818,71 @@ algorithm
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,eachPrefix,subs,SOME((e,false)),inInfo);
+        SCode.MOD(finalPrefix, eachPrefix, subs, SOME((e, false)), inInfo);
 
     case (SOME(Absyn.CLASSMOD(l,Absyn.NOMOD())),finalPrefix,eachPrefix,inInfo)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,eachPrefix,subs,NONE(), inInfo);
+        SCode.MOD(finalPrefix, eachPrefix, subs, NONE(), inInfo);
   end match;
 end translateMod;
 
 protected function translateArgs
-"function: translateArgs
-  author: LS
-  Adding translate for the elementspec in the redeclaration"
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  output list<SCode.SubMod> outSubModLst;
+  input list<Absyn.ElementArg> inArgs;
+  output list<SCode.SubMod> outSubMods;
 algorithm
-  outSubModLst := match (inAbsynElementArgLst)
+  outSubMods := translateArgs_tail(inArgs, {});
+end translateArgs;
+
+protected function translateArgs_tail
+  input list<Absyn.ElementArg> inArgs;
+  input list<SCode.SubMod> inAccumSubs;
+  output list<SCode.SubMod> outSubMods;
+algorithm
+  outSubMods := match(inArgs, inAccumSubs)
     local
-      list<SCode.SubMod> subs;
-      SCode.Mod mod_1;
-      SCode.SubMod sub;
-      Boolean finalPrefix;
-      Absyn.Each each_;
+      Boolean fp;
+      Absyn.Each ep;
       Absyn.ComponentRef cref;
       Option<Absyn.Modification> mod;
-      Option<String> cmt;
-      list<Absyn.ElementArg> xs;
+      Absyn.Info info;
+      list<Absyn.ElementArg> rest_args;
+      list<SCode.SubMod> subs;
+      SCode.Mod smod;
+      Absyn.ElementSpec spec;
       String n;
       SCode.Element elem;
-      Absyn.RedeclareKeywords keywords;
-      Absyn.ElementSpec spec;
-      Option<Absyn.ConstrainClass> constropt;
-      Absyn.Info info;
-      SCode.Final scodeFinalPrefix;
-      SCode.Each scodeEachPrefix;
+      Absyn.RedeclareKeywords rk;
+      Option<Absyn.ConstrainClass> cc;
+      SCode.Final sfp;
+      SCode.Each sep;
+      SCode.SubMod sub;
 
-    case {} then {};
-    
-    case (Absyn.MODIFICATION(finalPrefix = finalPrefix,eachPrefix = each_,componentRef = cref,modification = mod,comment = cmt, info = info) :: xs)
+    case (Absyn.MODIFICATION(finalPrefix = fp, eachPrefix = ep,
+        componentRef = cref, modification = mod, info = info) :: rest_args, _)
       equation
-        subs = translateArgs(xs);
-        mod_1 = translateMod(mod, SCode.boolFinal(finalPrefix), translateEach(each_), info);
-        sub = translateSub(cref, mod_1);
+        smod = translateMod(mod, SCode.boolFinal(fp), translateEach(ep), info);
+        sub = translateSub(cref, smod);
       then
-        (sub :: subs);
+        translateArgs_tail(rest_args, sub :: inAccumSubs);
 
-    case (Absyn.REDECLARATION(finalPrefix = finalPrefix,redeclareKeywords = keywords,eachPrefix = each_,elementSpec = spec,constrainClass = constropt, info = info) :: xs)
+    case (Absyn.REDECLARATION(finalPrefix = fp, redeclareKeywords = rk, eachPrefix = ep,
+        elementSpec = spec, constrainClass = cc, info = info) :: rest_args, _)
       equation
-        subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        {elem} = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), SOME(keywords), SCode.PUBLIC(), spec, info)
-        "LS:: do not know what to use for *protected*, so using false
-         LS:: do not know what to use for *replaceable*, so using false";
-        scodeFinalPrefix = SCode.boolFinal(finalPrefix);
-        scodeEachPrefix = translateEach(each_);
+        {elem} = translateElementspec(cc, fp, Absyn.NOT_INNER_OUTER(),
+          SOME(rk), SCode.PUBLIC(), spec, info);
+        sfp = SCode.boolFinal(fp);
+        sep = translateEach(ep);
+        sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
       then
-        (SCode.NAMEMOD(n,SCode.REDECL(scodeFinalPrefix,scodeEachPrefix,elem)) :: subs);
+        translateArgs_tail(rest_args, sub :: inAccumSubs);
+        
+    case ({}, _) then listReverse(inAccumSubs);
 
   end match;
-end translateArgs;
+end translateArgs_tail;
 
 protected function translateSub
 "function: translateSub

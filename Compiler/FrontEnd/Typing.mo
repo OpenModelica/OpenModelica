@@ -582,7 +582,7 @@ algorithm
 
     case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, st)
       equation
-        (DAE.ICONST(dim_int), _, st) = typeExp(e2, ep, st);
+        (DAE.ICONST(dim_int), _, st) = typeExp(e2, EVAL_CONST_PARAM(), st);
         comp = InstSymbolTable.lookupCref(cref, st);
         (dim, st) = typeComponentDim(comp, dim_int, st);
         e1 = dimensionExp(dim);

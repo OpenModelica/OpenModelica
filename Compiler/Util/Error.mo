@@ -587,8 +587,8 @@ public constant Message INVALID_CLASS_RESTRICTION = MESSAGE(220, TRANSLATION(), 
   "Invalid specialized class type '%s' for component %s.");
 public constant Message CONNECT_IN_INITIAL_EQUATION = MESSAGE(221, TRANSLATION(), ERROR(),
   "Connect equations are not allowed in initial equation sections.");
-public constant Message FINAL_MODIFIER_OVERRIDE = MESSAGE(222, TRANSLATION(), ERROR(),
-  "Trying to override final modifier %s with modifier %s\n");
+public constant Message FINAL_COMPONENT_OVERRIDE = MESSAGE(222, TRANSLATION(), ERROR(),
+  "Trying to override final component %s with modifier %s\n");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

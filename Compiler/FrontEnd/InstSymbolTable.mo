@@ -689,7 +689,9 @@ algorithm
         dep_str = 
           stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
         dep_str = "{" +& dep_str +& "}";
-        Error.addMessage(Error.CIRCULAR_COMPONENTS, {"FIX ME", dep_str});
+        // TODO: The "in scope" part of this error message should be removed, since
+        // we check for global cycles and not scope-local cycles like the old Inst.
+        Error.addMessage(Error.CIRCULAR_COMPONENTS, {"", dep_str});
       then
         ();
 
