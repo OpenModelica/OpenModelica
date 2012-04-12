@@ -9748,6 +9748,11 @@ algorithm
         path = Absyn.makeNotFullyQualified(path);
         false = List.isMemberOnTrue(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
+    case ((e as DAE.PARTEVALFUNCTION(path = path),(acc,filter)))
+      equation
+        path = Absyn.makeNotFullyQualified(path);
+        false = List.isMemberOnTrue(path,filter,Absyn.pathEqual);
+      then ((e,(path::acc,filter)));
     case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
       equation
         path = Absyn.crefToPath(getCrefFromExp(e));

@@ -66,8 +66,6 @@ end parseexp;
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
-  /* What ??? */
-  /*input Boolean skipScodeCheck "Would cause ModelicaBuiltin.mo to run into an infinite loop";*/
   output Absyn.Program outProgram;
 algorithm
   outProgram := parsebuiltinstring(str,infoFilename);
