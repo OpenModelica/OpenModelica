@@ -79,12 +79,14 @@ int main(int argc, char *argv[])
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
   QString language = settings.value("language").toString();
   QString dir = omhome + QString("/share/omedit/nls");
+  QString locale = language.isEmpty() ? QLocale::system().name() : language;
+  // install Qt's default translations
   QTranslator qtTranslator;
-  qtTranslator.load("qt_" + (language.isEmpty() ? QLocale::system().name() : language),
-                    QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+  qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
   a.installTranslator(&qtTranslator);
+  // install application translations
   QTranslator translator;
-  translator.load("OMEdit_" + (language.isEmpty() ? QLocale::system().name() : language), dir);
+  translator.load("OMEdit_" + locale, dir);
   a.installTranslator(&translator);
   // Splash Screen
   QPixmap pixmap(":/Resources/icons/omeditor_splash.png");

@@ -3189,20 +3189,17 @@ bool ProjectTabWidget::closeAllProjectTabs()
         msgBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
         msgBox->setIcon(QMessageBox::Question);
         msgBox->setText(tr("There are unsaved models opened. Do you still want to quit?"));
-        QPushButton *pOkButton = new QPushButton(Helper::ok);
-        QPushButton *pCancelButton = new QPushButton(Helper::cancel);
-        msgBox->addButton(pOkButton, QMessageBox::AcceptRole);
-        msgBox->addButton(pCancelButton, QMessageBox::RejectRole);
-        msgBox->setDefaultButton(pCancelButton);
+        msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox->setDefaultButton(QMessageBox::No);
 
         int answer = msgBox->exec();
         msgBox->raise();
 
         switch (answer)
         {
-          case QMessageBox::AcceptRole:
+          case QMessageBox::Yes:
             return true;
-          case QMessageBox::RejectRole:
+          case QMessageBox::No:
             return false;
           default:
             // should never be reached

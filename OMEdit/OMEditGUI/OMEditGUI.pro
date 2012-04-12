@@ -14,7 +14,7 @@ TRANSLATIONS = \
     Resources/nls/OMEdit_ro.ts \
     Resources/nls/OMEdit_ru.ts \
     Resources/nls/OMEdit_sv.ts \
-    Resources/nls/OMEdit_zh.ts
+    Resources/nls/OMEdit_zh_CN.ts
 
 TARGET = OMEdit
 TEMPLATE = app
