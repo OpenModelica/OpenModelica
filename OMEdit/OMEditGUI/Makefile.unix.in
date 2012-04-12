@@ -10,7 +10,7 @@ resourcedir=./Resources/nls/
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@
-QM=$(resourcedir)/OMEdit_sv.qm $(resourcedir)/OMEdit_ru.qm $(resourcedir)/OMEdit_de.qm $(resourcedir)/OMEdit_ja.qm
+QM=$(resourcedir)/OMEdit_sv.qm $(resourcedir)/OMEdit_ru.qm $(resourcedir)/OMEdit_de.qm $(resourcedir)/OMEdit_ja.qm $(resourcedir)/OMEdit_ro.qm $(resourcedir)/OMEdit_fr.qm
 
 install: build $(QM)
 	mkdir -p ../../build/share/doc/omedit/
