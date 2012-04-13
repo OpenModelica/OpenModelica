@@ -756,21 +756,20 @@ bool Component::canDrawRedBox(Component *pComponent)
     draw = true;
   else
     return false;
-
-  foreach (Component *pChildComponent, mpComponentsList)
+  // check components list
+  foreach (Component *pChildComponent, pComponent->mpComponentsList)
   {
     draw = canDrawRedBox(pChildComponent);
     if (!draw)
-      break;
+      return draw;    // return whenever we get false
   }
-
-  foreach (Component *pInheritedComponent, mpInheritanceList)
+  // check inherited components list
+  foreach (Component *pInheritedComponent, pComponent->mpInheritanceList)
   {
     draw = canDrawRedBox(pInheritedComponent);
     if (!draw)
-      break;
+      return draw;    // return whenever we get false
   }
-
   return draw;
 }
 

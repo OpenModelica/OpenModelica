@@ -93,6 +93,8 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
   }
 
   mEndComponentConnected = true;
+  mStartConnectorIsArray = false;
+  mEndConnectorIsArray = false;
   emit endComponentConnected();
   setPassive();
   if (mpEndComponent->mpParentComponent)
