@@ -65,6 +65,7 @@ public:
   static QString getLastWordAfterDot(QString value);
   static QString getFirstWordBeforeDot(QString value);
   static QString removeLastSlashWord(QString value);
+  /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
   static QString removeLastWordAfterDot(QString value);
   static QString removeComment(QString value);
   static QString getModifierValue(QString value);

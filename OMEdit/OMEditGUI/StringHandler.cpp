@@ -239,22 +239,45 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
   return list;
 }
 
-QString StringHandler::getLastWordAfterDot(QString value)
+static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
 {
   if (value.isEmpty())
   {
     return "";
   }
+  value = value.trimmed();
+  int pos;
+  if (value.endsWith('\'')) {
+    int i = value.size()-2;
+    while (value[i] != '\'' && i>1 && value[i-1] != '\\') {
+      i--;
+    }
+    pos = i-1 + (lastWord ? -1 : 0);
+  } else {
+    pos = value.lastIndexOf('.');
+  }
 
-  int pos = value.lastIndexOf('.');
   if (pos >= 0)
   {
-    return value.mid((pos + 1), (value.length() - 1));
+    if (lastWord)
+      return value.mid((pos + 1), (value.length() - 1));
+    else
+      return value.mid(0, (pos));
   }
   else
   {
     return value;
   }
+}
+
+QString StringHandler::getLastWordAfterDot(QString value)
+{
+  return wordsBeforeAfterLastDot(value,true);
+}
+
+QString StringHandler::removeLastWordAfterDot(QString value)
+{
+  return wordsBeforeAfterLastDot(value,false);
 }
 
 QString StringHandler::getFirstWordBeforeDot(QString value)
@@ -284,25 +307,6 @@ QString StringHandler::removeLastSlashWord(QString value)
   value = value.trimmed();
 
   int pos = value.lastIndexOf('/');
-  if (pos >= 0)
-  {
-    return value.mid(0, (pos));
-  }
-  else
-  {
-    return value;
-  }
-}
-
-QString StringHandler::removeLastWordAfterDot(QString value)
-{
-  if (value.isEmpty())
-  {
-    return "";
-  }
-  value = value.trimmed();
-
-  int pos = value.lastIndexOf('.');
   if (pos >= 0)
   {
     return value.mid(0, (pos));
