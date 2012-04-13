@@ -1012,6 +1012,9 @@ static int none_initialization(DATA *data, int updateStartValues)
   long i;
   INIT_DATA *initData = initializeInitData(data);
 
+  /* start with the real initialization */
+  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
   setAllParamsToStart(data);
@@ -1030,9 +1033,6 @@ static int none_initialization(DATA *data, int updateStartValues)
   restoreExtrapolationDataOld(data);
   resetAllHelpVars(data);
   storePreValues(data);
-
-  /* start with the real initialization */
-  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
   for(i=0; i<initData->nStates; ++i)
@@ -1071,6 +1071,9 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
 {
   int retVal = 0, i;
 
+  /* start with the real initialization */
+  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
   setAllParamsToStart(data);
@@ -1095,8 +1098,6 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
     for(i=0; i<3;i++)
       printAllVars(data, i);
 
-  /* start with the real initialization */
-  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
   retVal = initialize(data, optiMethod);
 
   /* debug print */
