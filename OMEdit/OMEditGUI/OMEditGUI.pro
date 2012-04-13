@@ -8,6 +8,7 @@ QT += network core gui webkit xml svg
 
 TRANSLATIONS = \
     Resources/nls/OMEdit_de.ts \
+    Resources/nls/OMEdit_es.ts \
     Resources/nls/OMEdit_fr.ts \
     Resources/nls/OMEdit_it.ts \
     Resources/nls/OMEdit_ja.ts \

@@ -568,6 +568,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   map.insert(tr("Japanese"), "ja");
   map.insert(tr("Romanian"), "ro");
   map.insert(tr("Russian"), "ru");
+  map.insert(tr("Spanish"), "es");
   map.insert(tr("Swedish"), "sv");
   QStringList keys(map.keys());
   keys.sort();
