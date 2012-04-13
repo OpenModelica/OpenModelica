@@ -1,5 +1,4 @@
-.PHONY: install build $(NAME) always
-.SUFFIXES: qm ts
+.PHONY: install build $(NAME) always qm
 
 top_builddir=../../
 builddir_bin=$(top_builddir)/build/bin/
@@ -10,17 +9,16 @@ resourcedir=./Resources/nls/
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@
-QM=$(resourcedir)/OMEdit_sv.qm $(resourcedir)/OMEdit_ru.qm $(resourcedir)/OMEdit_de.qm $(resourcedir)/OMEdit_ja.qm $(resourcedir)/OMEdit_ro.qm $(resourcedir)/OMEdit_fr.qm
 
-install: build $(QM)
+install: build qm
 	mkdir -p ../../build/share/doc/omedit/
 	cp -p ../../doc/OMEdit/*.pdf ../../build/share/doc/omedit/
 	mkdir -p ../../build/share/omedit/nls/
 	cp -p $(resourcedir)/*.qm ../../build/share/omedit/nls/
 	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 
-%.qm: %.ts
-	lrelease $<
+qm:
+	for TS in Resources/nls/*.ts; do QM=`echo $$TS | sed s/ts/qm/`; test -f $$QM -a $$QM -nt $$TS || lrelease $$TS ; done
 
 always:
 
