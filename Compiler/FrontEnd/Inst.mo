@@ -971,8 +971,8 @@ algorithm
       DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets;
-      String n;
-      Boolean impl,callscope_1,isFn,notIsPartial,isPartialFn;
+      String n,scopeName;
+      Boolean impl,callscope_1,isFn,notIsPartial,isPartialFn,recursionDepthReached;
       SCode.Partial partialPrefix;
       SCode.Encapsulated encflag;
       ClassInf.State ci_state,ci_state_1;
@@ -1011,9 +1011,12 @@ algorithm
      *  Then generate equations from connects.
      */
     case (cache,env,ih,store,mod,pre,
-          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = partialPrefix)),
+          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = partialPrefix, info = info)),
           inst_dims,impl,callscope,graph,_)
       equation
+        recursionDepthReached = listLength(env) < 100;
+        scopeName = Debug.bcallret1(not recursionDepthReached,Env.printEnvPathStr,env,"");
+        Error.assertionOrAddSourceMessage(recursionDepthReached,Error.RECURSION_DEPTH_REACHED,{scopeName},info);
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCodeDump.printClassStr(c)); //Print out the input SCode class
         //str = SCodeDump.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
 

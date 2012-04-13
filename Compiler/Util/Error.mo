@@ -651,6 +651,8 @@ public constant Message INST_INVALID_RESTRICTION = MESSAGE(525, TRANSLATION(), E
   "Cannot instantiate %s due to restriction %s.");
 public constant Message INST_NON_LOADED = MESSAGE(525, TRANSLATION(), WARNING(),
   "Library %s was not loaded but is marked as used by model %s.");
+public constant Message RECURSION_DEPTH_REACHED = MESSAGE(526, TRANSLATION(), ERROR(),
+  "The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s.");
 
 public constant Message INDEX_REDUCTION_NOTIFICATION = MESSAGE(1000, SYMBOLIC(), NOTIFICATION(),
   "Differentiated equation %s to %s for index reduction");
