@@ -17,8 +17,8 @@ install: build qm
 	cp -p $(resourcedir)/*.qm ../../build/share/omedit/nls/
 	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 
-qm:
-	for TS in Resources/nls/*.ts; do QM=`echo $$TS | sed s/ts/qm/`; test -f $$QM -a $$QM -nt $$TS || lrelease $$TS ; done
+qm: OMEditGUI.pro
+	lrelease $<
 
 always:
 
