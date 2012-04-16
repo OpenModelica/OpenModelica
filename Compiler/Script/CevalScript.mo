@@ -1841,29 +1841,6 @@ algorithm
         b = Config.getPlotSilent();
       then
         (cache,Values.BOOL(b),st);
-
-    case (cache,env,"plot2",{Values.ARRAY(valueLst = cvars),Values.STRING(filename)},st,msg)
-      equation
-        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        vars_2 = List.unionElt("time", vars_1);
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        value = ValuesUtil.readDataset(filename, vars_2, 0);
-        pwd = System.pwd();
-        cit = winCitation();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.trim(omhome, "\"");
-        pd = System.pathDelimiter();
-        plotCmd = stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
-        uniqueStr = intString(tick());
-        tmpPlotFile = stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        resI = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
-        call = stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
-        
-        _ = System.systemCall(call);
-      then (cache,Values.BOOL(true),st);
-        
-        // plot error
-    case (cache,env,"plot2",_,st,msg) then (cache,Values.BOOL(false),st);
         
     //plotAll(model)
     case (cache,env,"plotAll",
@@ -2266,32 +2243,6 @@ algorithm
         (cache,ValuesUtil.makeArray(vals),st);
     
     case (cache,env,"getNthImport",_,st,msg) then (cache,ValuesUtil.makeArray({}),st);
-                
-        /* plotparametric This rule represents the normal case when an array of at least two elements
-         *  is given as an argument
-         */
-    case (cache,env,"plotParametric2",{cvar,Values.ARRAY(valueLst=cvars),Values.STRING(filename)},st,msg)
-      equation
-        vars_1 = List.map(cvar::cvars, ValuesUtil.printCodeVariableName);
-        length = listLength(vars_1);
-        (length > 1) = true;
-        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
-        value = ValuesUtil.readDataset(filename, vars_1, 0);
-        pwd = System.pwd();
-        cit = winCitation();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.trim(omhome, "\"");
-        pd = System.pathDelimiter();
-        plotCmd = stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
-        uniqueStr = intString(tick());
-        tmpPlotFile = stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        resI = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
-        call = stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
-        _ = System.systemCall(call);
-      then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,"plotParametric2",_,st,msg) then (cache,Values.BOOL(false),st);
         
     // plotParametric
     case (cache,env,"plotParametric",

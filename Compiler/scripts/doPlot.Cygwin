@@ -1,2 +1,0 @@
-#!/bin/sh
-exec java -cp "`cygpath -w ${OPENMODELICAHOME}/share/omc/java/ptplot.jar`" ptolemy.plot.plotml.EditablePlotMLApplication "`cygpath -w $1`" &

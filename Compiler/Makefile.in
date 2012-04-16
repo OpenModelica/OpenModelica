@@ -1,7 +1,7 @@
 #
 # Makefile for omc
 #
-# David Kågedal <x97davka@ida.liu.se>
+# David KÃ¥gedal <x97davka@ida.liu.se>
 #
 # $Id$
 #
@@ -34,7 +34,7 @@ PROG = omc
 PROGD = omcd
 PROGP = omcp
 
-SCRIPT_FILES = doPlot openmodelica.lefty convert_lines.pl default_profiling.xsl replace-startValue.sh replace-startValue.xsl
+SCRIPT_FILES = openmodelica.lefty convert_lines.pl default_profiling.xsl replace-startValue.sh replace-startValue.xsl
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime modpar

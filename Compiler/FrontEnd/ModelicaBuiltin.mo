@@ -1907,21 +1907,6 @@ external "builtin";
 annotation(preferredView="text");
 end plotAll;
 
-function plot2 "Uses the Java-based plot window (ptplot.jar) to launch a plot,
-  similar to the plot() command. This command accepts fewer options, but works
-  even when OpenModelica was not compiled with sendData support.
-  
-  Example command sequences:
-  simulate(A);plot2({x,y});
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plot2(x,\"B.mat\");
-  "
-  input VariableNames vars;
-  input String fileName := "<default>";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end plot2;
-
 function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
   System Documentation for more details.
@@ -1938,20 +1923,6 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   external "builtin";
 annotation(preferredView="text");
 end visualize;
-
-function plotParametric2 "Plots the y-variables as a function of the x-variable.
-
-  Example command sequences:
-  simulate(A);plotParametric2(x,y);
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plotParametric2(x,{y1,y2,y3},\"B.mat\");
-  "
-  input VariableName xVariable;
-  input VariableNames yVariables;
-  input String fileName := "<default>";
-  output Boolean success "Returns true on success";
-external "builtin";
-annotation(preferredView="text");
-end plotParametric2;
 
 function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
   Don't require sendData support.

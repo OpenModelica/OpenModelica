@@ -1,2 +1,0 @@
-#!/bin/sh
-exec java -cp "${OPENMODELICAHOME}/share/omc/java/ptplot.jar" ptolemy.plot.plotml.EditablePlotMLApplication "$1" &
