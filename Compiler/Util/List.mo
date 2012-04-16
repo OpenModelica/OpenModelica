@@ -101,10 +101,7 @@ protected import Flags;
 protected import Error;
 protected import Util;
 
-public
-
-// Input types:
-replaceable type ValueType subtypeof Any;
+public replaceable type ValueType subtypeof Any;
 
 replaceable type ElementType subtypeof Any;
 replaceable type ElementType1 subtypeof Any;
@@ -1574,7 +1571,7 @@ algorithm
     case(i :: irest, _, _) 
       equation
         arr = arrayUpdate(inArray, i, inIndex);
-        arr = setPos(inList, inArray, inIndex);
+        arr = setPos(irest, inArray, inIndex);
       then 
         arr;
 
@@ -2318,7 +2315,7 @@ algorithm
   outList := listReverse(map1r_tail(inList, inFunc, inArg1, {}));
 end map1r;
 
-protected function map1r_tail
+public function map1r_tail
   "Tail-recursive implementation of map1r"
   input list<ElementInType> inList;
   input MapFunc inFunc;
