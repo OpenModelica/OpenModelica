@@ -182,7 +182,7 @@ void ShapeAnnotation::createActions()
   mpOpenEndArrowAction = new QAction(tr("OpenArrow(End)"), mpGraphicsView);
   mpOpenEndArrowAction->setStatusTip(tr("Open Arrow on the line"));
   connect(mpOpenEndArrowAction, SIGNAL(triggered()), SLOT(openEndArrowLine()));
-  mpFilledEndArrowAction = new QAction(tr("FilledArrow(End"), mpGraphicsView);
+  mpFilledEndArrowAction = new QAction(tr("FilledArrow(End)"), mpGraphicsView);
   mpFilledEndArrowAction->setStatusTip(tr("Filled Arrow for the line"));
   connect(mpFilledEndArrowAction, SIGNAL(triggered()), SLOT(filledEndArrowLine()));
 }
