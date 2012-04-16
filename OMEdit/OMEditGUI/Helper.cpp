@@ -219,7 +219,7 @@ void Helper::initHelperVariables()
   Helper::backwardBrush = tr("Backward");
   Helper::crossDiagBrush = tr("CrossDiag");
   Helper::horizontalCylinderBrush = tr("HorizontalCylinder");
-  Helper::verticalCylinderBrush = tr("VertitalCylinder");
+  Helper::verticalCylinderBrush = tr("VerticalCylinder");
   Helper::sphereBrush = tr("Sphere");
   Helper::remove = tr("Remove");
   Helper::fileLocation = tr("Location", "For files");
