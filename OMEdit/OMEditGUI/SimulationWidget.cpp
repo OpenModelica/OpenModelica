@@ -170,7 +170,7 @@ void SimulationWidget::setUpForm()
   // Logging
   mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
   mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
-  mpLogResultInitializationCheckBox = new QCheckBox(tr("Result Initialization"));
+  mpLogResultInitializationCheckBox = new QCheckBox(tr("Initialization Result"));
   mpLogSolverCheckBox = new QCheckBox(tr("Solver"));
   mpLogEventsCheckBox = new QCheckBox(tr("Events"));
   mpLogNonLinearSystemsCheckBox = new QCheckBox(tr("Non Linear Systems"));

@@ -183,7 +183,7 @@ void Helper::initHelperVariables()
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica model");
   Helper::instantiateModel = tr("Instantiate Model");
-  Helper::instantiateModelTip = tr("Instantiates/Flatten the Modelica model");
+  Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica model");
   Helper::Delete = tr("Delete");
   Helper::copy = tr("Copy");
   Helper::paste = tr("Paste");
@@ -306,7 +306,7 @@ QString GUIMessages::getMessage(int type)
     case CLOSE_INTERACTIVE_SIMULATION_TAB:
       return tr("Are you sure you want to close '%1' interactive simulation?");
     case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
-      return tr("You cannot recover this window once its closed.");
+      return tr("You cannot recover this window once it is closed.");
     case INTERACTIVE_SIMULATION_RUNNIG:
       return tr("You already have one interactive simulation running. Only one interactive simulation session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.");
     case SELECT_VARIABLE_FOR_OMI:
