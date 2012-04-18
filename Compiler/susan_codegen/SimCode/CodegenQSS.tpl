@@ -59,26 +59,23 @@ template translateModel(SimCode simCode,QSSinfo qssInfo)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let guid = getUUIDStr()
-  let()= textFile(generateQsmModel(simCode,guid,qssInfo), 'model.umo')
-  if simulationSettingsOpt then //tests the Option<> for SOME()
-     let()= textFile(simulationInitFile(simCode,guid), 'model_init.xml')
-     "" //empty result for true case 
-  //else "" //the else is automatically empty, too
-  //this top-level template always returns an empty result 
-  //since generated texts are written to files directly
+  let()= textFile(generateQsmModel(simCode,qssInfo), 'model.mo')
+  ""
 end translateModel;
 
-template generateQsmModel(SimCode simCode, String guid, QSSinfo qssInfo)
+template generateQsmModel(SimCode simCode, QSSinfo qssInfo)
  "Generates a QSM model for simulation ."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-  <% generateModelInfo(modelInfo) %>
+  <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo)) %>
   <% generateAnnotation(simulationSettingsOpt) %>
   equation 
-    <% odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo));separator="\n" %>
+    <% odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo));separator="\n" %>
+  algorithm
+  <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
+                     whenClauses,allEquations) %>
   end <% getName(modelInfo) %>;
 
   >>
@@ -94,7 +91,7 @@ case MODELINFO(__) then
   >>
 end getName;
 
-template generateModelInfo(ModelInfo modelInfo)
+template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
  "Generates the first part a QSM model for simulation ."
 ::=
 match modelInfo
@@ -103,27 +100,103 @@ case MODELINFO(varInfo=varInfo as  VARINFO(__), name=name as IDENT(__)) then
   model <% getName(modelInfo) %> 
     constant Integer N = <%varInfo.numStateVars%>;
     Real x[N](start=xinit());
-    //Real d[<%varInfo.numIntAlgVars%>];
-    //Real a[<%varInfo.numAlgVars%>];
-    <% generateInitFunction() %>
+    discrete Real d[<% intAdd(varInfo.numIntAlgVars,varInfo.numBoolAlgVars) %>](start=dinit());
+    Real a[<% varInfo.numAlgVars %>](start=ainit()); 
+    <% generateExtraVars(modelInfo) %>
+    <% generateInitFunction(modelInfo,states,disc,algs) %>
   >>
 end generateModelInfo;
 
+template OptionInitial(Option<DAE.Exp> initialValue)
+ "generates code for start attribute"
+::=
+match initialValue
+  case SOME(DAE.BCONST(bool=true)) then '1.0'
+  case SOME(DAE.BCONST(bool=false)) then '0.0'
+  case SOME(exp) then '<%initValXml(exp)%>' 
+  case NONE() then '0.0'
+end OptionInitial;
+
+template InitStateVariable(SimVar simVar, list<DAE.ComponentRef> vars)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+  match simVar
+  case SIMVAR(__) then
+  <<
+  x[<% intAdd(List.position(name,vars),1) %>]:= <% OptionInitial(initialValue) %> /* <% crefStr(name) %> */;
+  >>
+
+end InitStateVariable;
+
+template InitAlgVariable(SimVar simVar, list<DAE.ComponentRef> vars)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+  match simVar
+  case SIMVAR(__) then
+  <<
+  a[<% intAdd(List.position(name,vars),1) %>]:= <% OptionInitial(initialValue) %> /* <% crefStr(name) %> */;
+  >>
+end InitAlgVariable;
+
+template InitDiscVariable(SimVar simVar, list<DAE.ComponentRef> vars)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+  match simVar
+  case SIMVAR(__) then
+  <<
+  d[<% intAdd(List.position(name,vars),1) %>]:= <% OptionInitial(initialValue) %> /* <% crefStr(name) %> */;
+  >>
+end InitDiscVariable;
 
 
-template generateInitFunction()
+
+template generateVarDefinition(SimVar var)
+ "Generates the code for extra variables"
+::=
+match var
+case SIMVAR(__) then
+  <<
+  parameter Real <% System.stringReplace(crefStr(name),".", "_") %> = <% OptionInitial(initialValue) %>;
+  >>
+end generateVarDefinition;
+
+template generateExtraVars(ModelInfo modelInfo)
+ "Generates the code for extra variables"
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  <% vars.paramVars |> v => generateVarDefinition(v);separator="\n" %>
+  <% vars.intParamVars |> v => generateVarDefinition(v);separator="\n" %>
+  <% vars.boolParamVars |> v => generateVarDefinition(v);separator="\n" %>
+  >>
+end generateExtraVars;
+
+template generateInitFunction(ModelInfo modelInfo, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
  "Generates the initial functions(s)"
 ::=
-<<
-  function xinit()
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  function xinit
     output Real x[N];
   algorithm
-    x(1):=0;
-    x(2):=0;
-    x(3):=0;
-    x(4):=0;
+    <% vars.stateVars |> var hasindex i0 => InitStateVariable(var,states);separator="\n"%>
   end xinit;
->>
+  function dinit
+    output Real d[<% intAdd(listLength(vars.intAlgVars),listLength(vars.boolAlgVars)) %>];
+  algorithm
+    <%vars.intAlgVars |> var hasindex i0 => InitDiscVariable(var,disc);separator="\n"%>
+    <%vars.boolAlgVars |> var hasindex i0 => InitDiscVariable(var,disc);separator="\n"%>
+  end dinit;
+  function ainit
+    output Real a[<% listLength(vars.algVars) %>];
+  algorithm
+    <%vars.algVars |> var hasindex i0 => InitAlgVariable(var,algs);separator="\n"%>
+  end ainit;
+ 
+ 
+  >>
 end generateInitFunction;
 
 template generateAnnotation(Option<SimCode.SimulationSettings> simulationSettingsOpt)
@@ -132,28 +205,118 @@ template generateAnnotation(Option<SimCode.SimulationSettings> simulationSetting
 match simulationSettingsOpt
 case SOME(s as SIMULATION_SETTINGS(__)) then
   <<
-  annotation(experiment(StartTime = <%s.startTime%>, StopTime = <%s.stopTime%>, Tolerance = <%s.tolerance%>, Solver = <%s.method%>, OutputFormat = <%s.outputFormat%>, VariableFilter = <%s.variableFilter%>));
+    annotation(experiment(StartTime = <%s.startTime%>, StopTime = <%s.stopTime%>, Tolerance = <%s.tolerance%>, AbsTolerance = <%s.tolerance %>, Solver = QSS3, Output = {x[1]},  OutputFormat = <%s.outputFormat%>, VariableFilter = "<%s.variableFilter%>"));
   >>
 end generateAnnotation;
 
-template generateOdeEqs(list<SimEqSystem> odeEquations,list<list<Integer>> indexs, list<DAE.ComponentRef> states)
+template generateOdeEqs(list<SimEqSystem> odeEquations,list<list<Integer>> indexs, list<DAE.ComponentRef> states,list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs)
  "Generates the ODE equations of the model"
 ::=
 <<
-<% (odeEquations |> eq hasindex i0 => generateOdeEq(eq,listNth(indexs,i0),states); separator="\n")  %>
+<% (odeEquations |> eq hasindex i0 => generateOdeEq(eq,listNth(indexs,0),states,disc,algs); separator="\n")  %>
 >>
 end generateOdeEqs;
 
-template generateOdeEq(SimEqSystem odeEquation,list<Integer> indexEq, list<DAE.ComponentRef> states)
- "Generates one  ODE equation of the model"
+template generateAlgorithm(SimEqSystem algEquation, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+ "Generates one algorithm equation of the model"
+::=
+match algEquation
+case SES_ALGORITHM(statements={DAE.STMT_WHEN(exp=exp)}) then 
+<<
+  when <% ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %> then
+    blahh;
+  end when;
+>>
+  else
+    "NOT IMPLEMENTED EQUATION"
+end generateAlgorithm;
+
+template generateOdeEq(SimEqSystem odeEquation,list<Integer> indexEq, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+ "Generates one  ODE equation of the model
+  der(x[ indexEq ]) = "
 ::=
 match odeEquation
 case SES_SIMPLE_ASSIGN(__) then 
-<<
-  der(x[<% indexEq %>]) = <% ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states)) %>;
->>
+  <<
+  <% BackendQSS.replaceCref(cref,states,disc,algs) %> = <% ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %>;
+  >>
 end generateOdeEq;
 
+template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states, 
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenClause> whens, list<SimCode.SimEqSystem> eqs)
+ "Generates one zc equation of the model"
+::=
+  <<
+  <% (zcs |> zc => generateOneZC(zc,states,disc,algs,eqs);separator="\n") %>
+  >>
+end generateZC;
 
+template generateAssigment(SimCode.SimEqSystem eq,list<DAE.ComponentRef> states,
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+"gnereates an assigment"
+::=
+  match eq
+  case SimCode.SES_SIMPLE_ASSIGN(__) then
+<<
+  <% BackendQSS.replaceCref(cref,states,disc,algs) %> = <% ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %>;
+>>
+end generateAssigment;
+
+template generateOneZC(BackendDAE.ZeroCrossing zc,list<DAE.ComponentRef> states,
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimEqSystem> eqs)
+"generates one "
+::=
+  match zc
+  case BackendDAE.ZERO_CROSSING(__) then
+<<
+  when <% ExpressionDump.printExpStr(BackendQSS.replaceVars(relation_,states,disc,algs)) %> then
+    /* In Eq <% listNth(occurEquLst,0) %> out of <% listLength(occurEquLst) %> */
+    <% generateAssigment(listNth(eqs,listNth(occurEquLst,0)),states,disc,algs) %>
+    
+  end when;
+>>
+end generateOneZC;
+
+/*
+template generateWhen(SimCode.SimWhenClause when, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+::=
+match when
+case SIM_WHEN_CLAUSE(conditions=conditions,whenEq= SOME(WHEN_EQ(left=left,right=right,elsewhenPart=NONE()))) then
+  <<
+  when <% generateCond(conditions,states,disc) %> then 
+    d[<% intAdd(List.position(left,disc),1) %>] := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
+  end when;
+  >>
+case SIM_WHEN_CLAUSE(whenEq= SOME(WHEN_EQ(left=left,right=right,elsewhenPart=SOME(WHEN_EQ(left=left_w,right=right_w))))) then 
+  <<
+  when <% generateCond(conditions,states,disc) %> then 
+    d[<% intAdd(List.position(left,disc),1) %>] := <% ExpressionDump.printExpStr(BackendQSS.replaceVars(right,states,disc,algs)) %>;
+  end when;
+  >>
+else
+  <<
+    NOT MATCHED WHEN
+  >>
+end generateWhen;
+*/
+
+template generateCond(list<tuple<DAE.Exp, Integer>> conds, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs)
+::=
+  match conds
+  case ({(e,_)}) then
+  <<
+  <% ExpressionDump.printExpStr(BackendQSS.replaceVars(e,states,disc,algs)) %>
+  >>
+  else 'initial()'
+end generateCond;
+
+template generateDiscont(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states,
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenClause> whens, list<SimCode.SimEqSystem> eqs)
+::=
+  <<
+  /* Got <% listLength(eqs) %> equations */
+  <% generateZC(zcs,states,disc,algs,whens,eqs) %>
+  >>
+end generateDiscont;
 
 end CodegenQSS;

@@ -607,6 +607,8 @@ package BackendDAE
   uniontype ZeroCrossing
     record ZERO_CROSSING
       DAE.Exp relation_;
+      list<Integer> occurEquLst;
+      list<Integer> occurWhenLst;
     end ZERO_CROSSING;
   end ZeroCrossing;
   
@@ -2255,6 +2257,8 @@ package BackendQSS
     record QSSINFO
       list<list<Integer>> stateVarIndex;
       list<DAE.ComponentRef> stateVars;
+      list<DAE.ComponentRef> discreteAlgVars;
+      list<DAE.ComponentRef> algVars;
     end QSSINFO;
   end QSSinfo;
 
@@ -2268,11 +2272,30 @@ package BackendQSS
     output list<DAE.ComponentRef> refs;
   end getStates;
 
+  function getDisc
+    input QSSinfo qssInfo;
+    output list<DAE.ComponentRef> refs;
+  end getDisc;
   function replaceVars
     input DAE.Exp exp;
     input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
     output DAE.Exp expout;
   end replaceVars;
+
+  function replaceCref
+    input DAE.ComponentRef cr;
+    input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
+    output String out;
+  end replaceCref;
+
+  function getAlgs
+    input QSSinfo qssInfo;
+    output list<DAE.ComponentRef> refs;
+  end getAlgs;
 end BackendQSS;
 
 package BackendVariable

@@ -40,6 +40,7 @@ encapsulated package BackendQSS
 "
 
 public import SimCode;
+public import System;
 public import BackendDAE;
 public import DAE;
 public import Absyn;
@@ -60,6 +61,8 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
   record QSSINFO
     list<list<Integer>> stateVarIndex;
     list<DAE.ComponentRef> stateVars;
+    list<DAE.ComponentRef> discreteVars;
+    list<DAE.ComponentRef> algVars;
   end QSSINFO;
 end QSSinfo;
 
@@ -80,14 +83,14 @@ algorithm
     local
        QSSinfo qssInfo;
        BackendDAE.BackendDAE dlow;
-       list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList;
+       list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst,algVarsList;
        BackendDAE.StrongComponents comps;
        BackendDAE.IncidenceMatrix m, mt;
        array<Integer> ass1, ass2;
        BackendDAE.EqSystem syst;
        list<SimCode.SimEqSystem> eqs;
        list<list<Integer>> s;
-       list<DAE.ComponentRef> states;
+       list<DAE.ComponentRef> states,disc,algs;
     case (dlow, ass1, ass2, m, mt, comps,SimCode.SIMCODE(odeEquations={eqs}))
       equation
         print("\n ----------------------------\n");
@@ -95,10 +98,14 @@ algorithm
         print("\n ----------------------------\n");
         (allVarsList, stateVarsList,orderedVarsList) = getAllVars(dlow);
         stateVarsList = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
+        algVarsList = List.filterOnTrue(orderedVarsList,BackendVariable.isVarAlg);
+        discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
+        disc = List.map(discVarsLst,getCref);
+        algs = List.map(algVarsList,getCref);
         states = List.map(stateVarsList,getCref);
         s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
       then
-        (QSSINFO(s,states),simCode);
+        (QSSINFO(s,states,disc,algs),simCode);
     else
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
@@ -268,27 +275,103 @@ refs := match qssInfo
   end match;
 end getStates;
 
+public function getAlgs
+  input QSSinfo qssInfo;
+  output list<DAE.ComponentRef> refs;
+algorithm
+refs := match qssInfo 
+  local 
+    list<DAE.ComponentRef> s;
+  case (QSSINFO(algVars=s))
+  then s;
+  end match;
+end getAlgs;
+
+
+
+public function getDisc
+  input QSSinfo qssInfo;
+  output list<DAE.ComponentRef> refs;
+algorithm
+refs := match qssInfo 
+  local 
+    list<DAE.ComponentRef> s;
+  case (QSSINFO(discreteVars=s))
+  then s;
+  end match;
+end getDisc;
+
+
 function replaceInExp
-  input tuple<DAE.Exp, list<DAE.ComponentRef>> tplExpStates;
-  output tuple<DAE.Exp, list<DAE.ComponentRef>> tplExpStatesOut;
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef> > > tplExpStates;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef> > > tplExpStatesOut;
 algorithm
   tplExpStatesOut:=
   matchcontinue (tplExpStates)
     local 
-      DAE.Exp e;
+      DAE.Exp e,e2,expCond,expThen,expElse;
       list<DAE.ComponentRef> states;
+      list<DAE.ComponentRef> disc;
+      list<DAE.ComponentRef> algs;
       DAE.ComponentRef cr;
       DAE.Type t,t1;
       list<DAE.Subscript> subs;
       Integer p;
       String ident;
-    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),states)) 
+
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
       equation
       p = List.position(cr,states);
       ident = stringAppend(stringAppend("x[",intString(p+1)),"]");
-      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),states));
-    case ((e,states)) 
-      then ((e,states));
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+      equation
+      p = List.position(cr,states);
+      ident = stringAppend(stringAppend("x[",intString(p+1)),"]");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
+      equation
+      p = List.position(cr,disc);
+      ident = stringAppend(stringAppend("d[",intString(p+1)),"]");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+      equation
+      p = List.position(cr,disc);
+      ident = stringAppend(stringAppend("d[",intString(p+1)),"]");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs)))
+      equation
+      p = List.position(cr,algs);
+      ident = stringAppend(stringAppend("a[",intString(p+1)),"]");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
+      equation
+      p = List.position(cr,algs);
+      ident = stringAppend(stringAppend("a[",intString(p+1)),"]");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(cr as DAE.CREF_IDENT(_,t1,subs),t),(states,disc,algs)))
+      equation
+      ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.CREF(cr as DAE.CREF_QUAL(_,t1,subs,_),t),(states,disc,algs)))
+      equation
+      ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.IFEXP(expCond=expCond, expThen=expThen,expElse=expElse),(states,disc,algs)))
+      then ((DAE.BINARY(DAE.BINARY(expCond,DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
+             DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),expCond),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
+    case ((DAE.CALL(Absyn.IDENT("noEvent"),{e},_),(states,disc,algs)))
+      then ((e,(states,disc,algs)));
+    case ((DAE.CALL(Absyn.IDENT("smooth"),{_,e},_),(states,disc,algs)))
+      then ((e,(states,disc,algs)));
+    case ((DAE.CALL(Absyn.IDENT("DIVISION"),{e,e2,_},_),(states,disc,algs)))
+      then ((DAE.BINARY(e,DAE.DIV(DAE.T_REAL_DEFAULT),e2),(states,disc,algs)));
+    case ((e,(states,disc,algs))) 
+      equation
+        print("****** NOT REPLACING *********\n");
+        print(ExpressionDump.dumpExpStr(e,0));
+        print("*********\n");
+      then ((e,(states,disc,algs)));
 
     end matchcontinue;
 end replaceInExp;
@@ -296,14 +379,16 @@ end replaceInExp;
 public function replaceVars
   input DAE.Exp exp;
   input list<DAE.ComponentRef> states;
+  input list<DAE.ComponentRef> disc;
+  input list<DAE.ComponentRef> algs;
   output DAE.Exp expout;
 algorithm
-expout := matchcontinue (exp,states)
+expout := matchcontinue (exp,states,disc,algs)
   local
     DAE.Exp e;
-  case (_,_) 
+  case (_,_,_,_) 
   equation 
-    ((e,_))=Expression.traverseExp(exp,replaceInExp,states);
+    ((e,_))=Expression.traverseExp(exp,replaceInExp,(states,disc,algs));
   then e;
   end matchcontinue;
 end replaceVars;
@@ -345,6 +430,56 @@ indexs:=
     case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);
   end matchcontinue;
 end computeStateRef;
+
+function isDiscreteVar
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm 
+result := 
+          BackendVariable.isVarDiscrete(var) or
+          BackendVariable.isVarIntAlg(var) or
+          BackendVariable.isVarBoolAlg(var) ;
+end isDiscreteVar;
+  
+public function replaceCref
+  input DAE.ComponentRef cr;
+  input list<DAE.ComponentRef> states;
+  input list<DAE.ComponentRef> disc;
+  input list<DAE.ComponentRef> algs;
+  output String out;
+algorithm
+  out:=matchcontinue (cr,states,disc,algs)
+      local 
+        Integer p;
+        DAE.ComponentRef r;
+        DAE.Ident ident;
+        DAE.Type identType;
+        list<DAE.Subscript> subscriptLst;
+      case (_,_,_,_)
+      equation
+        p=List.position(cr,states);
+        then stringAppend(stringAppend("x[",intString(p+1)),"]");
+      case (DAE.CREF_QUAL(ident,identType,subscriptLst,r),_,_,_)
+      equation
+        ident=DAE.derivativeNamePrefix;
+        identType=DAE.T_REAL_DEFAULT;
+        subscriptLst={};
+        p=List.position(r,states);
+        then stringAppend(stringAppend("der(x[",intString(p+1)),"])");
+      case (_,_,_,_)
+      equation
+        p=List.position(cr,disc);
+        then stringAppend(stringAppend("d[",intString(p+1)),"]");
+      case (_,_,_,_)
+      equation
+        p=List.position(cr,algs);
+        then stringAppend(stringAppend("a[",intString(p+1)),"]");
+ 
+    end matchcontinue;
+end replaceCref;
+
+  
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
