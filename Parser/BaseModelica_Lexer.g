@@ -298,34 +298,41 @@ IMPURE : 'impure';
 STRING : '"' STRING_GUTS '"'
        {
          pANTLR3_STRING text = $STRING_GUTS.text;
-         if (*text->chars && !*SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0)) {
-           const char *strs[2];
-           signed char *buf  = (signed char*) strdup((char*)text->chars);
-           int len = strlen((const char*)buf), i;
-           /* Avoid printing huge strings */
-           if (len > 75) {
-             len = 75;
-             buf[len] = 0;
-             buf[len-1] = '.';
-             buf[len-2] = '.';
-             buf[len-3] = '.';
+         char *res = 0;
+         if (*text->chars) {
+           res = SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0);
+           if (!res) {
+             const char *strs[2];
+             signed char *buf  = (signed char*) strdup((char*)text->chars);
+             int len = strlen((const char*)buf), i;
+             /* Avoid printing huge strings */
+             if (len > 75) {
+               len = 75;
+               buf[len] = 0;
+               buf[len-1] = '.';
+               buf[len-2] = '.';
+               buf[len-3] = '.';
+             }
+             for (i=0;i<len;i++) {
+               if (buf[i] < 0)
+                 buf[i] = '?';
+               /* Don't break lines in the printed error-message */
+               if (buf[i] == '\n' || buf[i] == '\r')
+                 buf[i] = ' ';
+             }
+             strs[0] = (const char*) buf;
+             strs[1] = ModelicaParser_encoding;
+             c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in \%s:\n  \"\%s\".\n"
+  "  To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n"
+  "  To change it in a package: add a file package.encoding at the top-level.",
+                  strs, 2, $line, $pos+1, $line, $pos+len+1,
+                  ModelicaParser_readonly, ModelicaParser_filename_C);
+             free(buf);
+             ModelicaParser_lexerError = ANTLR3_TRUE;
            }
-           for (i=0;i<len;i++) {
-             if (buf[i] < 0)
-               buf[i] = '?';
-             /* Don't break lines in the printed error-message */
-             if (buf[i] == '\n' || buf[i] == '\r')
-               buf[i] = ' ';
+           if (strcmp(ModelicaParser_encoding,"UTF-8")!=0) {
+             text->set8(text,res);
            }
-           strs[0] = (const char*) buf;
-           strs[1] = ModelicaParser_encoding;
-           c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in \%s:\n  \"\%s\".\n"
-"  To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n"
-"  To change it in a package: add a file package.encoding at the top-level.",
-                strs, 2, $line, $pos+1, $line, $pos+len+1,
-                ModelicaParser_readonly, ModelicaParser_filename_C);
-           free(buf);
-           ModelicaParser_lexerError = ANTLR3_TRUE;
          }
          SETTEXT(text);
        };
