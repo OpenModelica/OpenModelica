@@ -103,6 +103,7 @@ package SimCode
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
+      list<DAE.Constraint> constraints;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<SampleCondition> sampleConditions;

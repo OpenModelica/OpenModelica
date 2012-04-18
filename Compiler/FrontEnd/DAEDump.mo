@@ -2731,6 +2731,26 @@ algorithm
 end dumpAlgorithmsStr;
 
 
+public function dumpConstraintsStr "function: dumpConstraintsStr
+  This function prints the constraints to a string."
+  input list<DAE.Element> constrs;
+  output String outString;
+algorithm
+  outString := match (constrs)
+    local      
+      IOStream.IOStream myStream;
+      String str;
+
+    case (constrs)
+      equation
+        myStream = IOStream.create("constrs", IOStream.LIST());
+        myStream = dumpConstraintStream(constrs, myStream);
+        str = IOStream.string(myStream);
+      then
+        str;
+  end match;
+end dumpConstraintsStr;
+
 /************ IOStream based implementation ***************/
 /************ IOStream based implementation ***************/
 /************ IOStream based implementation ***************/
@@ -2800,12 +2820,12 @@ algorithm
   outStream := match(l, inStream)
     local  
       IOStream.IOStream str;
-      list<DAE.Element> v,o,ie,ia,e,a;
+      list<DAE.Element> v,o,ie,ia,e,a,co;
       
     case (l, str)
      equation
        // classify DAE 
-       (v,ie,ia,e,a,o) = DAEUtil.splitElements(l);
+       (v,ie,ia,e,a,co,o) = DAEUtil.splitElements(l);
 
        // dump variables
        str = dumpVarsStream(v, false, str);
@@ -2821,6 +2841,9 @@ algorithm
 
        str = IOStream.append(str, Util.if_(List.isEmpty(a), "", "algorithm\n"));
        str = dumpAlgorithmsStream(a, str);
+       
+       str = IOStream.append(str, Util.if_(List.isEmpty(co), "", "constraint\n"));
+       str = dumpConstraintStream(co, str);
      then
        str;
   end match;
@@ -3145,6 +3168,40 @@ algorithm
         str;
   end matchcontinue;
 end dumpInitialEquationsStream;
+
+public function dumpConstraintStream "function: dumpConstraintStream
+  Dump constraints to a stream."
+  input list<DAE.Element> inElementLst;
+  input IOStream.IOStream inStream;
+  output IOStream.IOStream outStream;
+algorithm
+  outStream := matchcontinue (inElementLst, inStream)
+    local
+      IOStream.IOStream str;
+      list<DAE.Exp> exps;
+      list<DAE.Element> xs;
+
+    case ({}, str) then str;
+
+    case (DAE.CONSTRAINT(constraints = DAE.CONSTRAINT_EXPS(constraintLst = exps)) :: xs, str)
+      equation
+        // initial indenttion.
+        str = IOStream.append(str, "  ");
+          
+        str = IOStream.append(str, stringDelimitList(List.map(exps, ExpressionDump.printExpStr),";\n  " ));
+        //add the delimiter to the last element too. also if there is just 1 element in the 'exps' list.
+        str = IOStream.append(str, ";\n");  
+        str = dumpConstraintStream(xs, str);
+      then
+        str;
+
+    case (_ :: xs, str)
+      equation
+        str = dumpConstraintStream(xs, str);
+      then
+        str;
+  end matchcontinue;
+end dumpConstraintStream;
 
 public function dumpDAEElementsStr "
 Author BZ

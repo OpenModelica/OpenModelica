@@ -183,6 +183,7 @@ uniontype ClassDef
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
+    list<ConstraintSection>    constraintLst       "the list of constraints";
     Option<ExternalDecl>       externalDecl        "used by external functions";
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
@@ -346,6 +347,12 @@ public uniontype AlgorithmSection "- Algorithms
   end ALGORITHM;
 
 end AlgorithmSection;
+
+public uniontype ConstraintSection 
+  record CONSTRAINTS
+    list<Absyn.Exp> constraints;
+  end CONSTRAINTS;
+end ConstraintSection;
 
 public uniontype Statement "The Statement type describes one algorithm statement in an algorithm section."
   record ALG_ASSIGN
@@ -1184,6 +1191,7 @@ protected function classDefEqual
        list<Equation> ieqns1,ieqns2;
        list<AlgorithmSection> algs1,algs2;
        list<AlgorithmSection> ialgs1,ialgs2;
+       list<ConstraintSection> cons1,cons2;
        Attributes attr1,attr2;
        Absyn.TypeSpec tySpec1, tySpec2;
        Absyn.Path p1, p2;
@@ -1192,8 +1200,8 @@ protected function classDefEqual
        list<Ident> ilst1,ilst2;
        String bcName1, bcName2;
        
-     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
+     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,_,anns1,_),
+          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,_,anns2,_))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1220,8 +1228,8 @@ protected function classDefEqual
        then 
          true;
          
-     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_)),
-           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_)))
+     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,_,anns1,_)),
+           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,_,anns2,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -3142,12 +3150,13 @@ protected
   list<Element> el;
   list<Equation> nel, iel;
   list<AlgorithmSection> nal, ial;
+  list<ConstraintSection> nco;
   Option<ExternalDecl> ed;
   list<Annotation> annl;
   Option<Comment> c;
 algorithm
-  PARTS(el, nel, iel, nal, ial, ed, annl, c) := inClassDef;
-  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, ed, annl, c);
+  PARTS(el, nel, iel, nal, ial, nco, ed, annl, c) := inClassDef;
+  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, nco, ed, annl, c);
 end addElementToCompositeClassDef;
 
 public function setElementClassDefinition

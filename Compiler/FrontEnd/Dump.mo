@@ -1084,6 +1084,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
       // list<Absyn.ConstraintItem> constr;
       list<Absyn.AlgorithmItem> algs;
+      list<Absyn.Exp> exps;
       Absyn.ExternalDecl edecl;
     case (Absyn.PUBLIC(contents = el))
       equation
@@ -1106,10 +1107,10 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    case (Absyn.CONSTRAINTS(contents = eqs))
+    case (Absyn.CONSTRAINTS(contents = exps))
       equation
         Print.printBuf("Absyn.CONSTRAINTS([");
-        printList(eqs, printEquationitem, ", ");
+        printList(exps, printExp, "; ");
         Print.printBuf("])");
       then
         ();
@@ -1221,6 +1222,7 @@ algorithm
       list<Absyn.Exp> expl;
       Option<Absyn.Annotation> ann,ann2;
       list<Absyn.AlgorithmItem> als;
+      list<Absyn.Exp> exps;
     
     case (i,Absyn.PUBLIC(contents = {}),_) then "";
     case (i,Absyn.PROTECTED(contents = {}),_) then "";
@@ -1255,9 +1257,10 @@ algorithm
       then
         str;
 
-    case (i,Absyn.CONSTRAINTS(contents = eqs),_)
+    case (i,Absyn.CONSTRAINTS(contents = exps),_)
       equation
-        s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        // s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        s1 = stringDelimitList(List.map(exps,printExpStr),"; ");
         i_1 = i - 1;
         is = indentStr(i_1);
         str = stringAppendList({is,"constraint\n",s1});

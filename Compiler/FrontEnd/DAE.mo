@@ -297,6 +297,12 @@ public uniontype Element
     list<Exp> functionArgs;
     ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
+  
+  record CONSTRAINT " constraint section"
+    Constraint constraints;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end CONSTRAINT;  
+  
 end Element;
 
 public uniontype Function
@@ -512,6 +518,15 @@ uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm sect
   end ALGORITHM_STMTS;
 
 end Algorithm;
+
+public
+uniontype Constraint "The `Constraints\' type corresponds to a whole Constraint section.
+  It is simple a list of expressions."
+  record CONSTRAINT_EXPS
+    list<Exp> constraintLst;
+  end CONSTRAINT_EXPS;
+
+end Constraint;
 
 public
 uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),

@@ -5630,12 +5630,14 @@ algorithm
         c2 = getAnnotationsInClassParts(xs);
       then
         c1 + c2;
+/*        
     case (Absyn.CONSTRAINTS(contents = eqs) :: xs)
       equation
         c1 = getAnnotationsInEquationsItems(eqs);
         c2 = getAnnotationsInClassParts(xs);
       then
         c1 + c2;
+*/        
     case (Absyn.EQUATIONS(contents = eqs) :: xs)
       equation
         c1 = getAnnotationsInEquationsItems(eqs);
@@ -5806,18 +5808,20 @@ algorithm
         str = getNthAnnotationStringInClassParts(xs, newn);
       then
         str;
+/*        
     case ((Absyn.CONSTRAINTS(contents = eqs) :: xs),n)
       equation
         str = getNthAnnotationStringInEquations(eqs, n);
       then
         str;
-    case ((Absyn.CONSTRAINTS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts */
+    case ((Absyn.CONSTRAINTS(contents = eqs) :: xs),n) // The rule above failed, subtract the number of annotations in the first section and try with the rest of the classparts 
       equation
         c1 = getAnnotationsInEquationsItems(eqs);
         newn = n - c1;
         str = getNthAnnotationStringInClassParts(xs, newn);
       then
         str;
+*/        
     case ((Absyn.EQUATIONS(contents = eqs) :: xs),n)
       equation
         str = getNthAnnotationStringInEquations(eqs, n);

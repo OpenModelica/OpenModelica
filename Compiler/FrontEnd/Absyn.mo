@@ -262,7 +262,7 @@ uniontype ClassPart "A class definition contains several parts.  There are publi
   end PROTECTED;
 
   record CONSTRAINTS
-    list<EquationItem> contents;
+    list<Exp> contents;
   end CONSTRAINTS;
 
   record EQUATIONS

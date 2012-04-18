@@ -92,6 +92,7 @@ algorithm
       list<BackendDAE.MultiDimEquation> mdelst;
       array<Algorithm.Algorithm> algorithms;
       list<Algorithm.Algorithm> alglst;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> ce,ce1;
       list<BackendDAE.ComplexEquation> celst;
       BackendDAE.EventInfo eventInfo;
@@ -99,7 +100,7 @@ algorithm
       Functiontuple tpl;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,ce,eventInfo,extObjClasses,btp)))
+    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce,eventInfo,extObjClasses,btp)))
       equation
         tpl = (ftree,itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
@@ -115,7 +116,7 @@ algorithm
         ce1 = listArray(celst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then  
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,ce1,eventInfo,extObjClasses,btp));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,eventInfo,extObjClasses,btp));
     case(_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");

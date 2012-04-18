@@ -212,6 +212,10 @@ class_specifier2 returns [void* ast, const char *s2] @init {
         $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
       }
     }
+| LPAR ( as=argument_list )? RPAR cmt=string_comment c=composition id=END_IDENT
+    {
+      $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
+    }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {
       $ast = Absyn__DERIVED($path.ast, attr, or_nil(cm), mk_some_or_none(cmt));
@@ -624,8 +628,8 @@ equation_clause returns [void* ast] :
     ;
 
 constraint_clause returns [void* ast] :
-  CONSTRAINT es=constraint_annotation_list {ast = Absyn__CONSTRAINTS(es);}
-    ;
+  CONSTRAINT cs=constraint_annotation_list {ast = Absyn__CONSTRAINTS(cs);}
+  ;
 
 equation_annotation_list returns [void* ast] :
   { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
@@ -636,7 +640,7 @@ equation_annotation_list returns [void* ast] :
 constraint_annotation_list returns [void* ast] :
   { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
-  ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=constraint_annotation_list {ast = mk_cons(e,es);}
+  ( co=constraint SEMICOLON {c = co;} | c=annotation SEMICOLON {c = Absyn__ALGORITHMITEMANN(c);}) cs=constraint_annotation_list {ast = mk_cons(c,cs);}
   ;
 
 algorithm_clause returns [void* ast] :
@@ -672,20 +676,22 @@ equation returns [void* ast] :
   ;
 
 constraint returns [void* ast] :
-  ( ee=equality_or_noretcall_equation {e=ee.ast;}
-  | e=conditional_equation_e
-  | e=for_clause_e
-  | e=parfor_clause_e
-  | e=connect_clause
-  | e=when_clause_e   
-  | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
-  | EQUALITY LPAR e1=expression EQUALS e2=expression RPAR
+  ( a = simple_expr
+  | a=conditional_equation_a
+  | a=for_clause_a
+  | a=parfor_clause_a
+  | a=while_clause
+  | a=when_clause_a
+  | BREAK {a = Absyn__ALG_5fBREAK;}
+  | RETURN {a = Absyn__ALG_5fRETURN;}
+  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil()));}
+  | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
     {
-      e = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
     }
   )
   cmt=comment
-    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start));}
+    {$ast = a;}
   ;
 
 

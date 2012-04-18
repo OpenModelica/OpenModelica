@@ -119,6 +119,7 @@ algorithm
       list<SCode.Element> el, ex, cl, im, co, ud;
       list<SCode.Equation> neql, ieql;
       list<SCode.AlgorithmSection> nal, ial;
+      list<SCode.ConstraintSection> nco;
       Option<SCode.ExternalDecl> extdecl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
@@ -129,7 +130,7 @@ algorithm
       SCode.Ident bc;
       SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
+    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, extdecl, annl, cmt), _, _)
       equation
         // Lookup elements.
         el = List.filter(el, isNotImport);
@@ -140,8 +141,9 @@ algorithm
         ieql = List.map1(ieql, flattenEquation, env);
         nal = List.map1(nal, flattenAlgorithm, env);
         ial = List.map1(ial, flattenAlgorithm, env);
+        nco = List.map2(nco, flattenConstraints, env, inInfo);
       then
-        (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env);
+        (SCode.PARTS(el, neql, ieql, nal, ial, nco, extdecl, annl, cmt), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
       equation
@@ -397,6 +399,19 @@ algorithm
     (flattenExpTraverserEnter, flattenExpTraverserExit, (env, info)));
   outTuple := (exp, (env, info));
 end traverseExp;
+
+protected function flattenConstraints
+  input SCode.ConstraintSection inConstraints;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output SCode.ConstraintSection outConstraints;
+protected
+  list<Absyn.Exp> exps;
+algorithm
+  SCode.CONSTRAINTS(exps) := inConstraints;
+  exps := List.map2(exps, flattenExp, inEnv, inInfo);
+  outConstraints := SCode.CONSTRAINTS(exps);
+end flattenConstraints;
 
 protected function flattenAlgorithm
   input SCode.AlgorithmSection inAlgorithm;

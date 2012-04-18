@@ -89,11 +89,13 @@ protected
   list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1,ceeqns,iceeqns;
   list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
   list<DAE.Algorithm> algs,ialgs;
+  list<DAE.Constraint> constrs;
   list<BackendDAE.ComplexEquation> ce,ice;
   list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
   BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
   array<BackendDAE.MultiDimEquation> arr_md_eqns;
   array<DAE.Algorithm> algarr;
+  array<DAE.Constraint> constrarra;
   array<BackendDAE.ComplexEquation> complEqs;
   BackendDAE.ExternalObjectClasses extObjCls;
   Boolean daeContainsNoStates, shouldAddDummyDerivative;
@@ -107,7 +109,7 @@ algorithm
   vars := BackendDAEUtil.emptyVars();
   knvars := BackendDAEUtil.emptyVars();
   extVars := BackendDAEUtil.emptyVars();
-  (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,s) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
+  (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,s) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, s);
 
   daeContainsNoStates := hasNoStates(s); // check if the DAE has states
   // adrpo: add the dummy derivative state ONLY IF the DAE contains
@@ -140,10 +142,11 @@ algorithm
   ieqnarr := BackendDAEUtil.listEquation(ieqns);
   arr_md_eqns := listArray(aeqns);
   algarr := listArray(algs);
+  constrarra := listArray(constrs);
   complEqs := listArray(ce);
   einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
   aliasVars := BackendDAEUtil.emptyAliasVariables();
-  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,complEqs,einfo,extObjCls,BackendDAE.SIMULATION()));
+  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,constrarra,complEqs,einfo,extObjCls,BackendDAE.SIMULATION()));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(listLength(eqns_1)) +& " No. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
 end lower;
@@ -162,6 +165,7 @@ protected function lower2
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst7;
   input list<DAE.Algorithm> inAlgorithmAlgorithmLst8;
   input list<DAE.Algorithm> inAlgorithmAlgorithmLst9;
+  input list<DAE.Constraint> inConstraintLst;
   input list<BackendDAE.ComplexEquation> inComplexEqnsLst;
   input list<BackendDAE.ComplexEquation> inIComplexEqnsLst;
   input list<BackendDAE.WhenClause> inWhenClauseLst10;
@@ -177,6 +181,7 @@ protected function lower2
   output list<BackendDAE.MultiDimEquation> outMultiDimEquationLst7;
   output list<DAE.Algorithm> outAlgorithmAlgorithmLst8;
   output list<DAE.Algorithm> outAlgorithmAlgorithmLst9;
+  output list<DAE.Constraint> outConstraintLst;
   output list<BackendDAE.ComplexEquation> outComplexEqnsLst;
   output list<BackendDAE.ComplexEquation> outIComplexEqnsLst;
   output list<BackendDAE.WhenClause> outWhenClauseLst10;
@@ -184,15 +189,16 @@ protected function lower2
   output BackendDAE.BinTree outStatesBinTree;
 algorithm
   (outVariables,outKnownVariables,outExternalVariables,outEquationLst3,outEquationLst4,outEquationLst5,
-   outMultiDimEquationLst6,outMultiDimEquationLst7,outAlgorithmAlgorithmLst8,outAlgorithmAlgorithmLst9,outComplexEqnsLst,outIComplexEqnsLst,outWhenClauseLst10,outExtObjClasses,outStatesBinTree):=
+   outMultiDimEquationLst6,outMultiDimEquationLst7,outAlgorithmAlgorithmLst8,outAlgorithmAlgorithmLst9,outConstraintLst,outComplexEqnsLst,outIComplexEqnsLst,outWhenClauseLst10,outExtObjClasses,outStatesBinTree):=
    match (inElements,functionTree,inVariables,inKnownVariables,inExternalVariables,inEquationLst3,inEquationLst4,inEquationLst5,
-      inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inComplexEqnsLst,inIComplexEqnsLst,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
+      inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inConstraintLst,inComplexEqnsLst,inIComplexEqnsLst,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
     local
       BackendDAE.Variables vars,knvars,extVars;
       list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> aeqns,iaeqns;
       list<DAE.Algorithm> algs,ialgs;
+      list<DAE.Constraint> constrs;
       list<BackendDAE.ComplexEquation> ce,ice;
       BackendDAE.ExternalObjectClasses extObjCls;
       DAE.Element daeEl;
@@ -200,19 +206,19 @@ algorithm
       BackendDAE.BinTree states;
       
     // the empty case 
-    case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states)
+    case ({},functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states)
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
 
-    case (daeEl::daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states)
+    case (daeEl::daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states)
       equation
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states) =
-        lower3(daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states) =
+        lower3(daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
 
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states) =
-        lower2(daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states) =
+        lower2(daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
   end match;
 end lower2;
 
@@ -230,6 +236,7 @@ protected function lower3
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst7;
   input list<DAE.Algorithm> inAlgorithmAlgorithmLst8;
   input list<DAE.Algorithm> inAlgorithmAlgorithmLst9;
+  input list<DAE.Constraint> inConstraintLst;
   input list<BackendDAE.ComplexEquation> inComplexEqnsLst;
   input list<BackendDAE.ComplexEquation> inIComplexEqnsLst;  
   input list<BackendDAE.WhenClause> inWhenClauseLst10;
@@ -246,6 +253,7 @@ protected function lower3
   output list<BackendDAE.MultiDimEquation> outMultiDimEquationLst7;
   output list<DAE.Algorithm> outAlgorithmAlgorithmLst8;
   output list<DAE.Algorithm> outAlgorithmAlgorithmLst9;
+  output list<DAE.Constraint> outConstraintLst;
   output list<BackendDAE.ComplexEquation> outComplexEqnsLst;
   output list<BackendDAE.ComplexEquation> outIComplexEqnsLst;  
   output list<BackendDAE.WhenClause> outWhenClauseLst10;
@@ -253,15 +261,16 @@ protected function lower3
   output BackendDAE.BinTree outStatesBinTree;
 algorithm
   (outVariables,outKnownVariables,outExternalVariables,outEquationLst3,outEquationLst4,outEquationLst5,
-   outMultiDimEquationLst6,outMultiDimEquationLst7,outAlgorithmAlgorithmLst8,outAlgorithmAlgorithmLst9,outComplexEqnsLst,outIComplexEqnsLst,outWhenClauseLst10,outExtObjClasses,outStatesBinTree):=
+   outMultiDimEquationLst6,outMultiDimEquationLst7,outAlgorithmAlgorithmLst8,outAlgorithmAlgorithmLst9,outConstraintLst,outComplexEqnsLst,outIComplexEqnsLst,outWhenClauseLst10,outExtObjClasses,outStatesBinTree):=
    matchcontinue (inElement,functionTree,inVariables,inKnownVariables,inExternalVariables,inEquationLst3,inEquationLst4,inEquationLst5,
-   inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inComplexEqnsLst,inIComplexEqnsLst,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
+   inMultiDimEquationLst6,inMultiDimEquationLst7,inAlgorithmAlgorithmLst8,inAlgorithmAlgorithmLst9,inConstraintLst,inComplexEqnsLst,inIComplexEqnsLst,inWhenClauseLst10,inExtObjClasses,inStatesBinTree)
     local
       BackendDAE.Variables vars,knvars,extVars;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1,whenclauses_2;
       list<BackendDAE.Equation> eqns,reqns,ieqns,eqns2,re;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,aeqns2,iaeqns,iaeqns1,iaeqns2;
       list<DAE.Algorithm> algs,ialgs,algs1,ialgs1;
+      list<DAE.Constraint> constrs;
       list<BackendDAE.ComplexEquation> ce,ice,ce1,ice1;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.ExternalObjectClass extObjCl;
@@ -271,6 +280,7 @@ algorithm
       DAE.Exp e1,e2,c;
       BackendDAE.Value count,count_1;
       DAE.Algorithm a,a1,a2;
+      DAE.Constraint cons_1;
       DAE.ComponentRef cr;
       DAE.ElementSource source,eq_source;
       list<DAE.Element> daeElts;
@@ -303,23 +313,23 @@ algorithm
 
     
     // external object variables
-    case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendVar1 = lowerExtObjVar(daeEl);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         extVars = BackendVariable.addVar(backendVar2, extVars);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
 
     // class for external object
-    case (DAE.EXTOBJECTCLASS(path,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.EXTOBJECTCLASS(path,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         extObjCl = BackendDAE.EXTOBJCLASS(path,source);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCl::extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCl::extObjCls,states);
     
     // variables: states and algebraic variables with binding equation
-    case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         // adrpo 2009-09-07 - according to MathCore
         // add the binding as an equation and remove the binding from variable!
@@ -330,105 +340,105 @@ algorithm
         vars = BackendVariable.addVar(backendVar2, vars);
         e1 = Expression.crefExp(cr);
       then
-        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // variables: states and algebraic variables with NO binding equation
-    case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.VAR(componentRef = cr, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         true = isStateOrAlgvar(daeEl);
         (backendVar1,NONE(),states) = lowerVar(daeEl, states);
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // known variables: parameters and constants
-    case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.VAR(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendVar1 = lowerKnownVar(daeEl) "in previous rule, lower_var failed." ;
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         knvars = BackendVariable.addVar(backendVar2, knvars);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // tuple equations are rewritten to algorithm tuple assign.
-    case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         a = lowerTupleEquation(daeEl);
         a1 = Inline.inlineAlgorithm(a,(SOME(functionTree),{DAE.NORM_INLINE()}));
         a2 = extendAlgorithm(a1,SOME(functionTree));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a2::algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a2::algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // tuple-tuple assignments are split into one equation for each tuple
     // element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6;
-    case (DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         eqns2 = lowerTupleAssignment(targets, sources, eq_source, functionTree);
         eqns = listAppend(eqns2, eqns);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // scalar equations
-    case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.EQUATION(exp = e1,scalar = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendEq1 = lowerEqn(daeEl);
         SOME(backendEq2) = Inline.inlineEqOpt(SOME(backendEq1),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // effort variable equality equations
-    case (daeEl as DAE.EQUEQUATION(cr1 = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.EQUEQUATION(cr1 = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendEq1 = lowerEqn(daeEl);
         SOME(backendEq2) = Inline.inlineEqOpt(SOME(backendEq1),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // a solved equation 
-    case (daeEl as DAE.DEFINE(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.DEFINE(componentRef = _),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendEq1 = lowerEqn(daeEl);
         SOME(backendEq2) = Inline.inlineEqOpt(SOME(backendEq1),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,backendEq2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // complex equations
-    case (daeEl as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         (eqns2,ce1,aeqns1) = lowerComplexEqn(daeEl, functionTree);
         eqns = listAppend(eqns2, eqns);
         ce = listAppend(ce1, ce);
         aeqns2 = listAppend(aeqns, aeqns1);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns2,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns2,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // complex initial equations
-    case (daeEl as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         (eqns2,ice1,iaeqns1) = lowerComplexEqn(daeEl, functionTree);
         ieqns = listAppend(eqns2, ieqns);
         ice = listAppend(ice1, ice);
         iaeqns2 = listAppend(iaeqns, iaeqns1);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns2,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns2,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
        
     // array equations
-    case (daeEl as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendMultiDimEq = lowerArrEqn(daeEl,functionTree);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,backendMultiDimEq :: aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,backendMultiDimEq :: aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
         
     // initial array equations
-    case (daeEl as DAE.INITIAL_ARRAY_EQUATION(dimension = _, exp = e1, array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIAL_ARRAY_EQUATION(dimension = _, exp = e1, array = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendMultiDimEq = lowerArrEqn(daeEl,functionTree);
       then
-        (vars, knvars, extVars, eqns, reqns, ieqns, aeqns,backendMultiDimEq :: iaeqns, algs,ialgs,ce,ice, whenclauses_1, extObjCls,states);
+        (vars, knvars, extVars, eqns, reqns, ieqns, aeqns,backendMultiDimEq :: iaeqns, algs,ialgs,constrs,ce,ice, whenclauses_1, extObjCls,states);
     
     // when equations
-    case (daeEl as DAE.WHEN_EQUATION(condition = c),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.WHEN_EQUATION(condition = c),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         count = listLength(whenclauses_1);
         (eqns2,count_1,whenclauses_2) = lowerWhenEqn(daeEl, count, whenclauses_1);
@@ -437,47 +447,47 @@ algorithm
         eqns2 = List.map(opteqlst,Util.getOption);
         eqns = listAppend(eqns, eqns2);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_2,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_2,extObjCls,states);
     
     // initial equations
-    case (daeEl as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         backendEq1 = lowerEqn(daeEl);
         SOME(backendEq2) = Inline.inlineEqOpt(SOME(backendEq1),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,eqns,reqns,backendEq2 :: ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,backendEq2 :: ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // algorithm
-    case (DAE.ALGORITHM(algorithm_ = a),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.ALGORITHM(algorithm_ = a),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         a1 = Inline.inlineAlgorithm(a,(SOME(functionTree),{DAE.NORM_INLINE()}));
         a2 = extendAlgorithm(a1,SOME(functionTree));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a1 :: algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a1 :: algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // flat class / COMP
-    case (DAE.COMP(dAElist = daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states)
+    case (DAE.COMP(dAElist = daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states)
       equation
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states) = lower2(listReverse(daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states) = lower2(listReverse(daeElts),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses,extObjCls,states);
     
     // assert in equation section is converted to ALGORITHM
-    case (DAE.ASSERT(cond,msg,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.ASSERT(cond,msg,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         BackendDAEUtil.checkAssertCondition(cond,msg);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // terminate in equation section is converted to ALGORITHM
-    case (DAE.TERMINATE(message = msg, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.TERMINATE(message = msg, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
-    case (DAE.NORETCALL(functionName = func_name, functionArgs = args, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (DAE.NORETCALL(functionName = func_name, functionArgs = args, source = source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         // make sure is not constrain as we don't support it, see below.
         b1 = boolNot(Util.isEqual(func_name, Absyn.IDENT("constrain")));
@@ -488,37 +498,42 @@ algorithm
         s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
 
     // initial algorithm
-    case (daeEl as DAE.INITIALALGORITHM(algorithm_ = a, source = DAE.SOURCE(info=info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIALALGORITHM(algorithm_ = a, source = DAE.SOURCE(info=info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
        a1 = Inline.inlineAlgorithm(a,(SOME(functionTree),{DAE.NORM_INLINE()}));
        a2 = extendAlgorithm(a1,SOME(functionTree));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,a2 ::ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,a2 ::ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
+        
+    // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
+    case (DAE.CONSTRAINT(constraints = cons_1),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
+      then
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,cons_1::constrs,ce,ice,whenclauses_1,extObjCls,states);
 
     // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
     // if equation that cannot be translated to if expression but have initial() as condition
-    case (daeEl as DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
     // initial if equation that cannot be translated to if expression 
-    case (daeEl as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states);
     
     // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
     // error reporting from now on
     
     // if equation that cannot be translated to if expression
-    case (daeEl as DAE.IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         str = DAEDump.dumpElementsStr({daeEl});
         str = stringAppend("rewrite equations using if-expressions: ",str);
@@ -527,7 +542,7 @@ algorithm
         fail();
     
     // initial if equation that cannot be translated to if expression 
-    case (daeEl as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         str = DAEDump.dumpElementsStr({daeEl});
         str = stringAppend("rewrite equations using if-expressions: ",str);
@@ -539,7 +554,7 @@ algorithm
     // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
     // To get a meaningful error message when constrain is used we catch it here, instead of silently failing. 
     // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.        
-    case (daeEl as DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl as DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         str = DAEDump.dumpElementsStr({daeEl});
         str = stringAppend("rewrite code without using constrain",str);
@@ -547,7 +562,7 @@ algorithm
       then
         fail();
         
-    case (daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,ce,ice,whenclauses_1,extObjCls,states)
+    case (daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,constrs,ce,ice,whenclauses_1,extObjCls,states)
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
@@ -2794,12 +2809,13 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
       equation
         (eqns1,(vars1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared,funcs));
         (inieqns1,(vars2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared,funcs));
@@ -2807,7 +2823,7 @@ algorithm
         (algorithms1,(vars4,_,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,shared,{},funcs));
         (complEqs1,(vars5,_,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(complEqs,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsComplexWithUpdate,1,arrayLength(complEqs),(vars4,shared,{},funcs));
       then
-        (BackendDAE.EQSYSTEM(vars5,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,complEqs,einfo,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars5,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,constrs,complEqs,einfo,eoc,btp));
   end match;
 end expandDerOperatorWork;
 
@@ -3054,6 +3070,7 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
       array<DAE.Algorithm> algorithms,algorithms1;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs,complEqs1;
       BackendDAE.EventInfo einfo,einfo1;
       BackendDAE.ExternalObjectClasses eoc;
@@ -3067,7 +3084,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,complEqs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         arreqns_lst = arrayList(arreqns);
@@ -3080,7 +3097,7 @@ algorithm
         complEqs1 = listArray(complEqs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,complEqs1,einfo1,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,constrs,complEqs1,einfo1,eoc,btp));
   end match;
 end findZeroCrossings1;
 

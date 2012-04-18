@@ -251,6 +251,7 @@ uniontype Shared "Data shared for all equation-systems"
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array< .DAE.Constraint> constraints "constraints (Optimica extension)";
     array<ComplexEquation> complEqs "array for complex equations";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";

@@ -194,6 +194,7 @@ algorithm
       list<SCode.Equation> ie "the list of initial equations";
       list<SCode.AlgorithmSection> na "the list of algorithms";
       list<SCode.AlgorithmSection> ia "the list of initial algorithms";
+      list<SCode.ConstraintSection> co "the list of contrints for optimizations";
       Option<SCode.ExternalDecl> ed "used by external functions";
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
@@ -205,11 +206,11 @@ algorithm
       Option<SCode.Comment> cmt;
     
     // handle parts
-    case (SCode.PARTS(els, ne, ie, na, ia, ed, al, c), env, info)
+    case (SCode.PARTS(els, ne, ie, na, ia, co, ed, al, c), env, info)
       equation
         els = flattenElements(els, env, inInfo);
       then 
-        SCode.PARTS(els, ne, ie, na, ia, ed, al, c);
+        SCode.PARTS(els, ne, ie, na, ia, co, ed, al, c);
     
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef), env, info)

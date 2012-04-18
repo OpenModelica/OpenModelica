@@ -732,12 +732,13 @@ algorithm
       BackendDAE.EquationArray reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.ZeroCrossing> zc;
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.BackendDAEType btp;
-    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,complEqs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
+    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);
@@ -805,6 +806,10 @@ algorithm
         print("Algorithms:\n");
         print("===============\n");
         dumpAlgorithms(arrayList(algs),0);
+        
+        print("Constraints:\n");
+        print("===============\n");
+        dumpConstraints(arrayList(constrs),0);
 
         print("Complex Equations:\n");
         print("===============\n");
@@ -849,6 +854,30 @@ algorithm
     then ();
   end match;
 end dumpAlgorithms;
+
+public function dumpConstraints "Help function to dump, prints constraints to stdout"
+  input list<DAE.Constraint> ionstrs;
+  input Integer indx;
+algorithm
+  _ := match(ionstrs,indx)
+    local 
+      list<DAE.Exp> exps;
+      IOStream.IOStream myStream;
+      String is;
+      list<DAE.Constraint> constrs;
+      
+    case({},_) then ();
+    case(DAE.CONSTRAINT_EXPS(exps)::constrs,indx) 
+      equation
+        is = intString(indx);
+        myStream = IOStream.create("", IOStream.LIST());
+        myStream = IOStream.append(myStream,stringAppend(is,". "));
+        myStream = DAEDump.dumpConstraintStream({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)}, myStream);
+        IOStream.print(myStream, IOStream.stdOutput);
+        dumpConstraints(constrs,indx+1);
+    then ();
+  end match;
+end dumpConstraints;
 
 
 public function dumpSparsePattern

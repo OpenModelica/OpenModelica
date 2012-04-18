@@ -231,7 +231,7 @@ algorithm
         anns = translateClassdefAnnotations(parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.PARTS(els,{},{},{},{},NONE(),anns,scodeCmt);
+        SCode.PARTS(els,{},{},{},{},{},NONE(),anns,scodeCmt);
   end match;
 end translateOperatorDef;
 
@@ -433,6 +433,7 @@ algorithm
       list<SCode.Annotation> anns;
       list<SCode.Equation> eqs,initeqs;
       list<SCode.AlgorithmSection> als,initals;
+      list<SCode.ConstraintSection> cos;
       Option<SCode.ExternalDecl> decl;
       list<Absyn.ClassPart> parts;
       list<String> vars;
@@ -465,11 +466,12 @@ algorithm
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
+        cos = translateClassdefConstraints(parts);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
+        SCode.PARTS(els,eqs,initeqs,als,initals,cos,decl,anns,scodeCmt);
 
     case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
@@ -502,12 +504,13 @@ algorithm
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
+        cos = translateClassdefConstraints(parts);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt));
+        SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,decl,anns,scodeCmt));
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
@@ -798,6 +801,38 @@ algorithm
       then fail();
   end match;
 end translateClassdefAlgorithms;
+
+protected function translateClassdefConstraints
+"function: translateClassdefConstraints
+  Convert an Absyn.ClassPart list to an Constraint list."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<SCode.ConstraintSection> outConstraintLst;
+algorithm
+  outConstraintLst := match (inAbsynClassPartLst)
+    local
+      list<SCode.ConstraintSection> cos,cos_1;
+      list<Absyn.Exp> consts;
+      list<Absyn.ClassPart> rest;
+      Absyn.ClassPart cp;
+    case {} then {};
+    case ((Absyn.CONSTRAINTS(contents = consts) :: rest))
+      equation
+        cos = translateClassdefConstraints(rest);
+        cos_1 = (SCode.CONSTRAINTS(consts) :: cos);
+      then
+        cos_1;
+    case (cp :: rest) /* ignore everthing other than Constraints */
+      equation
+        failure(Absyn.CONSTRAINTS(contents = _) = cp);
+        cos = translateClassdefConstraints(rest);
+      then
+        cos;
+    case _
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- SCodeUtil.translateClassdefConstraints failed");
+      then fail();
+  end match;
+end translateClassdefConstraints;
 
 protected function translateClassdefInitialalgorithms
 "function: translateClassdefInitialalgorithms

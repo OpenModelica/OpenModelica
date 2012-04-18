@@ -3241,14 +3241,15 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
-      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae;
-      ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,new_ci_state,ci_state_1;
+      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae;
+      ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,ci_state7,new_ci_state,ci_state_1;
       list<DAE.Var> vars;
       Option<DAE.Type> bc;
       DAE.Mod mods,emods,mod_1,mods_1,checkMods;
       Prefix.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1,expandableEqs, expandableEqsInit;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
+      list<SCode.ConstraintSection> constrs;
       SCode.Restriction re,r;
       Boolean impl, valid_connector;
       SCode.Visibility vis;
@@ -3343,7 +3344,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg,
-                      externalDecl = ed
+                      constraintLst = constrs, externalDecl = ed
                       ),
         re,vis,_,_,inst_dims,impl,callscope,graph,csets,instSingleCref,info,stopInst)
       equation
@@ -3489,8 +3490,13 @@ algorithm
         (cache,env5,ih,dae5,csets5,ci_state6,graph) =
           instList(cache,env5,ih, mods, pre, csets4, ci_state5, InstSection.instInitialAlgorithm, initalg_1, impl, unrollForLoops, graph);
 
+        //Instantiate Constraints  (see function "instConstraints")
+        (cache,env5,dae6,ci_state7) =
+          instConstraints(cache,env5, pre, ci_state6, constrs, impl);
+        
+
         //Collect the DAE's
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5});
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6});
 
         //Change outer references to corresponding inner reference
         // adrpo: TODO! FIXME! very very very expensive function, try to get rid of it!
@@ -3628,7 +3634,7 @@ algorithm
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className, 
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},NONE(),{},cmt), 
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},NONE(),{},cmt), 
            re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
            callscope, graph, inSets, instSingleCref,info,stopInst);
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -4912,7 +4918,7 @@ algorithm
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, ci_state) = 
         partialInstClassdef(cache, env, ih, mods_1, pre, ci_state,  
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},NONE(),{}, cmt), 
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},NONE(),{}, cmt), 
            re, partialPrefix, vis, inst_dims, className, info);
       then
         (cache, env, ih, ci_state);
@@ -12109,7 +12115,7 @@ algorithm
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info)) 
       equation
         stripped_elts = List.map(elts,stripFuncOutputsMod);
-        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},extDecl,annotationLst,NONE()),info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {},true);
         /* Only external functions are valid without an algorithm section... */
         cache = Env.addDaeExtFunction(cache, funs);
@@ -12295,7 +12301,7 @@ protected function checkFunctionInputUsed
 protected
   list<DAE.Element> invars,vars,algs;
 algorithm
-  (vars,_,_,_,algs,_) := DAEUtil.splitElements(elts);
+  (vars,_,_,_,algs,_,_) := DAEUtil.splitElements(elts);
   invars := List.filter(vars,DAEUtil.isInputVar);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
@@ -12994,7 +13000,7 @@ algorithm
      SCode.NOT_ENCAPSULATED(),
      SCode.NOT_PARTIAL(),
      SCode.R_ENUMERATION(),
-     SCode.PARTS(comp,{},{},{},{},NONE(),{},cmt),
+     SCode.PARTS(comp,{},{},{},{},{},NONE(),{},cmt),
      info);
 end instEnumeration;
 
@@ -13717,6 +13723,42 @@ algorithm
         (cache,env_2,ih,dae,csets_2,ci_state_2,graph);
   end match;
 end instList;
+
+protected function instConstraints
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input list<SCode.ConstraintSection> inConstraints;
+  input Boolean inImpl;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.DAElist outDae;
+  output ClassInf.State outState;
+algorithm
+  (outCache,outEnv,outDae,outState) := match(inCache,inEnv,inPrefix,inState,inConstraints,inImpl)
+    local
+      list<Env.Frame> env1,env2;
+      DAE.DAElist constraints_1,constraints_2;
+      ClassInf.State ci_state;
+      list<SCode.ConstraintSection> rest;
+      SCode.ConstraintSection constr;
+      Env.Cache cache;
+      DAE.DAElist dae;
+      
+    case (_,_,_,_,{},_) 
+      then (inCache,inEnv,DAEUtil.emptyDae,inState);
+      
+    case (_,_,_,_,(constr::rest),_)
+      equation
+        (cache,env1,constraints_1,ci_state) = InstSection.instConstraint(inCache,inEnv,inPrefix,inState,constr,inImpl);
+        (cache,env2,constraints_2,ci_state) = instConstraints(cache,env1,inPrefix,ci_state,rest,inImpl);
+        dae = DAEUtil.joinDaes(constraints_1, constraints_2);
+      then
+        (cache,env2,dae,ci_state);
+  
+  end match;
+end instConstraints;
 
 protected function instBinding
 "function: instBinding

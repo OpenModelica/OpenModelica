@@ -294,6 +294,10 @@ protected import ClassInf;
   */
   protected constant String ALGORITHM_REF          = "algorithm_ref";
 
+
+  protected constant String CONSTRAINT              = "constraint";
+  protected constant String CONSTRAINT_REF          = "constraint_ref";
+
   /*
   This String constant represents the single equation of an array of
   equations and it is used in:
@@ -304,6 +308,7 @@ protected import ClassInf;
   protected constant String ARRAY_EQUATION         = "arrayEquation";
 
   protected constant String ALGORITHMS              = "algorithms";
+  protected constant String CONSTRAINTS             = "constraints";
   protected constant String FUNCTIONS               = "functions";
   protected constant String FUNCTION                = "function";
   protected constant String FUNCTION_NAME           = "name";
@@ -515,7 +520,6 @@ algorithm
   end matchcontinue;
 end dumpAlgorithms;
 
-
 public function dumpAlgorithms2 "
 This function dumps a list of DAE.Algorithm in
 XML format. The output is something like:
@@ -548,6 +552,69 @@ algorithm
   end match;
 end dumpAlgorithms2;
 
+
+public function dumpConstraints "
+This function dumps the list of DAE.Constraint
+within using a XML format. If at least one Algorithm
+is present the output is:
+<CONSTRAINT DIMENSION=...>
+  ...
+</CONSTRAINT>
+"
+  input list<DAE.Constraint> constrs;
+algorithm
+  _:= matchcontinue(constrs)
+    local
+      Integer len;
+    case {} then ();
+    case constrs
+      equation
+        len = listLength(constrs);
+        len >= 1 = false;
+    then();
+    case constrs
+      equation
+        len = listLength(constrs);
+        len >= 1 = true;
+        dumpStrOpenTagAttr(CONSTRAINTS,DIMENSION,intString(len));
+        dumpConstraints2(constrs,0);
+        dumpStrCloseTag(CONSTRAINTS);
+    then();
+  end matchcontinue;
+end dumpConstraints;
+
+
+public function dumpConstraints2 "
+This function dumps a list of DAE.Algorithm in
+XML format. The output is something like:
+<CONSTRAINT LABEL=Constraint_ID>
+  ...
+</CONSTRAINT>
+<CONSTRAINT LABEL=Constraint_ID+1>
+  ...
+</CONSTRAINT>
+  ...
+"
+  input list<DAE.Constraint> iConstrs;
+  input Integer inConsNo;
+algorithm
+  _ := match(iConstrs,inConsNo)
+    local
+      list<DAE.Exp> exps;
+      Integer conNo,conNo_1;
+      list<DAE.Constraint> constrs;
+      
+    case({},_) then ();
+    case(DAE.CONSTRAINT_EXPS(exps)::constrs,conNo)
+      equation
+        dumpStrOpenTagAttr(CONSTRAINT, LABEL, stringAppend(stringAppend(CONSTRAINT_REF,"_"),intString(conNo)));
+        Print.printBuf(DAEDump.dumpConstraintsStr({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)}));
+        dumpStrCloseTag(CONSTRAINT);
+        conNo_1=conNo+1;
+        dumpConstraints2(constrs,conNo_1);
+      then ();
+  end match;
+end dumpConstraints2;
 
 public function dumpArrayEqns "
 This function dumps an array of Equation using an XML format.
@@ -1083,6 +1150,7 @@ algorithm
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
+      array<DAE.Constraint> constrs;
       list<BackendDAE.ZeroCrossing> zc;
 
       list<DAE.Function> inFunctions;
@@ -1094,7 +1162,7 @@ algorithm
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,ae,algs,_,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,ieqns,reqns,ae,algs,constrs,_,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendDAEUtil.varList(vars_knownVars);
@@ -1119,6 +1187,7 @@ algorithm
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
+        dumpConstraints(arrayList(constrs));
         dumpFunctions(inFunctions);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);

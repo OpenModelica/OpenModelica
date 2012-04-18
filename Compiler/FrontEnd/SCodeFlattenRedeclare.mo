@@ -132,6 +132,7 @@ algorithm
       Option<SCode.Comment> cmt;
       list<SCode.Equation> nel, iel;
       list<SCode.AlgorithmSection> nal, ial;
+      list<SCode.ConstraintSection> nco;
       Option<Absyn.ConstrainClass> cc;
       SCode.ClassDef cdef;
       SCode.Element cls, ext;
@@ -160,13 +161,14 @@ algorithm
             initialEquationLst = iel,
             normalAlgorithmLst = nal,
             initialAlgorithmLst = ial,
+            constraintLst =  nco,
             externalDecl = ext_decl,
             annotationLst = annl,
             comment = cmt)),
         info = info), _)
       equation
         // Construct a PARTS from the CLASS_EXTENDS.
-        cdef = SCode.PARTS(el, nel, iel, nal, ial, ext_decl, annl, cmt);
+        cdef = SCode.PARTS(el, nel, iel, nal, ial, nco, ext_decl, annl, cmt);
         cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, info);
 
         // Construct the class environment and add the new extends to it.

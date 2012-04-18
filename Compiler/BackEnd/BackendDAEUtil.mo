@@ -445,16 +445,17 @@ algorithm
   BackendDAE.EquationArray eqns,remeqns,inieqns;
   array<BackendDAE.MultiDimEquation> arreqns;
   array<DAE.Algorithm> algorithms;
+  array<DAE.Constraint> constrs;
   array<BackendDAE.ComplexEquation> complEqs;
   BackendDAE.EventInfo einfo;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.EqSystem eqs;
   BackendDAE.BackendDAEType btp;  
    case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=ordeqns),
-        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
+        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
    equation
      ((algs,_,_)) = BackendEquation.traverseBackendDAEEqns(ordeqns,expandAlgorithmsbyInitStmtsHelper,(algorithms,ordvars,{}));
-   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,complEqs,einfo,eoc,btp));    
+   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,constrs,complEqs,einfo,eoc,btp));    
    end match;
 end expandAlgorithmsbyInitStmts1;
 
@@ -574,6 +575,7 @@ algorithm
       list<BackendDAE.Var> knvarlst,extvarlst;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.WhenClause> wc;
       list<BackendDAE.ZeroCrossing> zc;
@@ -586,7 +588,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.EqSystems systs;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,complEqs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
         varlst = List.mapMap(systs,BackendVariable.daeVars,varList);
         knvarlst = varList(knvars);
@@ -599,7 +601,7 @@ algorithm
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,complEqs,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
   end match;
 end translateDae;
 
@@ -865,13 +867,14 @@ algorithm
       BackendDAE.EquationArray eqns,seqns,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
     case (cache,env,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars = knvars,externalObjects=extVars,aliasVars = av,
-                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al,complEqs=complEqs,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
+                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al, constraints = constrs, complEqs=complEqs,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
       equation
         knvarlst = varList(knvars);
         (varlst1,varlst2) = List.splitOnTrue(knvarlst,BackendVariable.isParam);
@@ -879,7 +882,7 @@ algorithm
         knvarlst = List.map3(varlst1, calculateValue, cache, env, paramvars);
         knvars = listVar(listAppend(knvarlst,varlst2));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,complEqs,wc,extObjCls,btp));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,constrs,complEqs,wc,extObjCls,btp));
   end match;
 end calculateValues;
 
@@ -1076,15 +1079,16 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp))
+    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
       equation
         aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,complEqs,einfo,eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp);
   end match;
 end updateAliasVariablesDAE;
 
@@ -2680,16 +2684,17 @@ algorithm
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<BackendDAE.MultiDimEquation> arreqns;
       array<DAE.Algorithm> algorithms;
+      array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
+    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,complEqs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
   end match;
 end whenClauseAddDAE;
 

@@ -1924,6 +1924,7 @@ algorithm
       list<SCode.Element> el;
       list<SCode.Equation> neq, ieq;
       list<SCode.AlgorithmSection> nal, ial;
+      list<SCode.ConstraintSection> nco;
       Option<SCode.ExternalDecl> ext_decl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
@@ -1932,21 +1933,21 @@ algorithm
       Env env;
       list<Absyn.Path> consts;
 
-    case (SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), _, _, _, _, consts)
+    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, ext_decl, annl, cmt), _, _, _, _, consts)
       equation
         (el, env, consts) = 
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath, consts);
       then
-        (SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt), env, consts);
+        (SCode.PARTS(el, neq, ieq, nal, ial, nco, ext_decl, annl, cmt), env, consts);
 
     case (SCode.CLASS_EXTENDS(bc, mods, 
-        SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt)), _, _, _, _, consts)
+        SCode.PARTS(el, neq, ieq, nal, ial, nco, ext_decl, annl, cmt)), _, _, _, _, consts)
       equation
         (el, env, consts) = 
           collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath, consts);
       then
         (SCode.CLASS_EXTENDS(bc, mods, 
-          SCode.PARTS(el, neq, ieq, nal, ial, ext_decl, annl, cmt)), env, consts);
+          SCode.PARTS(el, neq, ieq, nal, ial, nco, ext_decl, annl, cmt)), env, consts);
 
     case (SCode.ENUMERATION(enumLst = _), _, _, _, _, _)
       then (inClassDef, {inClassEnv}, inAccumPath :: inGlobalConstants);

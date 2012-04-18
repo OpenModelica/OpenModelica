@@ -1705,7 +1705,7 @@ protected
   SCode.Element cls;
 algorithm
   cls := SCode.CLASS(inName, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
   outTree := avlTreeAdd(inTree, inName, CLASS(cls, emptyEnv, BUILTIN()));
 end addDummyClassToTree;
 

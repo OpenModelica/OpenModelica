@@ -2329,6 +2329,63 @@ algorithm
   end matchcontinue;
 end instInitialAlgorithm;
 
+public function instConstraint
+"function: instConstraint
+  Constraints are elaborated and converted to DAE"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input SCode.ConstraintSection inConstraints;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.DAElist outDae;
+  output ClassInf.State outState;
+algorithm 
+  (outCache,outEnv,outDae,outState) := 
+  matchcontinue (inCache,inEnv,inPrefix,inState,inConstraints,inBoolean)
+    local
+      list<Env.Frame> env;
+      list<DAE.Exp> constraints_1;
+      ClassInf.State ci_state;
+      list<Absyn.Exp> constraints;
+      Absyn.Exp exp;
+      Boolean impl;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      DAE.ElementSource source "the origin of the element";
+      DAE.DAElist dae;
+      String s;
+      
+    case (cache,env,pre,ci_state,SCode.CONSTRAINTS(constraints = constraints),impl) 
+      equation 
+        // set the source of this element
+        ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
+        source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+
+        (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
+        // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
+        
+        dae = DAE.DAE({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(constraints_1),source)});
+      then
+        (cache,env,dae,ci_state);
+/*
+    case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(constraints = exp::_),_,_,_)
+      equation
+        failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s = ClassInf.printStateStr(ci_state);
+        Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
+      then fail();
+*/
+    case (_,_,_,_,inConstraints,_)
+      equation 
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instConstraints failed");
+      then
+        fail();
+  end matchcontinue;
+end instConstraint;
+
 public function instStatements 
 "function: instStatements 
   This function converts a list of algorithm statements."
