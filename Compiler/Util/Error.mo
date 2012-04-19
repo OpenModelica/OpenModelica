@@ -669,7 +669,7 @@ public constant Message META_FUNCTION_TYPE_NO_PARTIAL_PREFIX = MESSAGE(5003, TRA
 public constant Message META_MATCH_EQUATION_FORBIDDEN = MESSAGE(5004, TRANSLATION(), ERROR(),
   "Match expression equation sections forbid the use of %s-equations.");
 public constant Message META_UNIONTYPE_ALIAS_MODS = MESSAGE(5005, TRANSLATION(), ERROR(),
-  "Uniontype was not generated correctly. One possible cause is modifications, which are not allowed.");
+  "Uniontype %s was not generated correctly. One possible cause is modifications, which are not allowed.");
 public constant Message META_COMPLEX_TYPE_MOD = MESSAGE(5006, TRANSLATION(), ERROR(),
   "MetaModelica complex types may not have modifiers.");
 public constant Message META_MATCHEXP_RESULT_NUM_ARGS = MESSAGE(5007, TRANSLATION(), ERROR(),

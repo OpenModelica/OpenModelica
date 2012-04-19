@@ -13420,6 +13420,7 @@ algorithm
       DAE.EqualityConstraint equalityConstraint;
       DAE.FunctionAttributes funcattr;
       DAE.TypeSource ts;
+      String pstr;
     
     case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation
@@ -13486,7 +13487,8 @@ algorithm
     case (p,ClassInf.META_UNIONTYPE(_),_,SOME(bc2),_,_) then bc2;
     case (p,ClassInf.META_UNIONTYPE(_),_,_,_,_)
       equation
-        Error.addMessage(Error.META_UNIONTYPE_ALIAS_MODS, {});
+        pstr = Absyn.pathString(p);
+        Error.addMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr});
       then fail();
     /*------------------------*/
 

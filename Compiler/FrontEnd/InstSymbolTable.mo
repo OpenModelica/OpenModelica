@@ -549,7 +549,7 @@ public function lookupCrefResolveOuter
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
-  outComponent := matchcontinue(inCref, inSymbolTable)
+  (outComponent, outSymbolTable) := matchcontinue(inCref, inSymbolTable)
     local
       Component comp;
       SymbolTable st;
