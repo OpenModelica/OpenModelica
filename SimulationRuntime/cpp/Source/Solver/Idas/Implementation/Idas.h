@@ -138,8 +138,8 @@ private:
   // Callback der Nullstellenfunktion
   static int IDA_ZerofCallback(double t, N_Vector y, N_Vector yp, double *zeroval, void *user_data);
 
-							// Recorden für dense-out
-							void writeIDAOutput(const double &time,const double &h,const int &stp);
+  						// Recorden für dense-out
+  						void writeIDAOutput(const double &time,const double &h,const int &stp);
 
   IIdasSettings
     *_idasSettings;              ///< Input      - Solver settings
@@ -153,32 +153,32 @@ private:
     _idid,                    ///< Input, Output  - Status Flag
     _locStps;                  ///< Output      - Number of Steps between two events
 
-							int
-								_outStps,									///< Output			- Total number of output-steps
-								_dimIndex0,									///< Temp			- Dimensions
-								_dimIndex1,	
-								_dimIndex2,	
-								_dimDEq,
-								_dimAEq,
-								_dimDiffIndex3,
-								_updateCalls,
-								 *_zeroSign;
-								
-	
-							double
-								*_z,										///< Output			- (Current) State vector
-								*_z0,										///< Temp			- (Old) state vector at left border of intervall (last step)
-								*_zp0,										///< Temp			- Initial derivative Vector
-								*_z1,										///< Temp			- (New) state vector at right border of intervall (last step)
-								*_zInit,									///< Temp			- Initial state vector
-								*_fHelp,									///< Temp			- Initial state vector
-								*_zLastSucess,								///< Temp			- State vector of last successfull step 
-								*_zLargeStep,								///< Temp			- State vector of "large step" (used by "coupling step size controller" of SimManger)
-								*_zWrite,									///< Temp			- Zustand den das System rausschreibt
-								*_f0,
-								*_f1,
-								*_id;
-								
+  						int
+  							_outStps,									///< Output			- Total number of output-steps
+  							_dimIndex0,									///< Temp			- Dimensions
+  							_dimIndex1,	
+  							_dimIndex2,	
+  							_dimDEq,
+  							_dimAEq,
+  							_dimDiffIndex3,
+  							_updateCalls,
+  							 *_zeroSign;
+  							
+  
+  						double
+  							*_z,										///< Output			- (Current) State vector
+  							*_z0,										///< Temp			- (Old) state vector at left border of intervall (last step)
+  							*_zp0,										///< Temp			- Initial derivative Vector
+  							*_z1,										///< Temp			- (New) state vector at right border of intervall (last step)
+  							*_zInit,									///< Temp			- Initial state vector
+  							*_fHelp,									///< Temp			- Initial state vector
+  							*_zLastSucess,								///< Temp			- State vector of last successfull step 
+  							*_zLargeStep,								///< Temp			- State vector of "large step" (used by "coupling step size controller" of SimManger)
+  							*_zWrite,									///< Temp			- Zustand den das System rausschreibt
+  							*_f0,
+  							*_f1,
+  							*_id;
+  							
 
   double
     _hOut,                    ///< Temp      - Ouput step size for dense output
@@ -200,8 +200,8 @@ private:
 
 
   bool
-		_zeroFound,								///< Temp			- Flag to denote two zeros in intervall
-		_bWritten;
+  	_zeroFound,								///< Temp			- Flag to denote two zeros in intervall
+  	_bWritten;
 
 
   N_Vector 
@@ -209,7 +209,7 @@ private:
     _IDA_zp0,                ///< Temp      - Initial values in the CVode Format
     _IDA_z,                  ///< Temp      - State in CVode Format 
     _IDA_zp,                ///< Temp      - State in CVode Format 
-	_ID,									///< Temp			- Algebraic/ differential variable;
-	_IDA_zWrite;
+  _ID,									///< Temp			- Algebraic/ differential variable;
+  _IDA_zWrite;
 
 };

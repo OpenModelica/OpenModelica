@@ -27,19 +27,19 @@ void SolverSettings::sethInit(double h)
 }
   double SolverSettings::getATol()
   {
-	  return _dAtol;
+    return _dAtol;
   }
    void SolverSettings::setATol(double atol)
    {
-	 _dAtol=  atol;
+   _dAtol=  atol;
    }
     double SolverSettings::getRTol()
-	{
-		return _dRtol;
-	}
+  {
+  	return _dRtol;
+  }
    void SolverSettings::setRTol(double rtol )
    {
-	   _dRtol = rtol;
+     _dRtol = rtol;
    }
 double SolverSettings::getLowerLimit()
 {
