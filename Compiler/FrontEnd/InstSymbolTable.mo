@@ -543,6 +543,34 @@ algorithm
   outComponent := get(path, inSymbolTable);
 end lookupCref;
 
+public function lookupCrefResolveOuter
+  input DAE.ComponentRef inCref;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+  output SymbolTable outSymbolTable;
+algorithm
+  outComponent := matchcontinue(inCref, inSymbolTable)
+    local
+      Component comp;
+      SymbolTable st;
+      DAE.ComponentRef cref;
+
+    case (_, st)
+      equation
+        comp = lookupCref(inCref, st);
+      then
+        (comp, st);
+
+    else 
+      equation
+        (cref, st) = InstUtil.replaceCrefOuterPrefix(inCref, inSymbolTable);
+        comp = lookupCref(cref, st);
+      then
+        (comp, st);
+
+  end matchcontinue;
+end lookupCrefResolveOuter;
+
 public function lookupName
   input Absyn.Path inName;
   input SymbolTable inSymbolTable;
@@ -569,6 +597,22 @@ algorithm
     else NONE();
   end matchcontinue;
 end lookupNameOpt;
+
+public function resolveOuterRef
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inSymbolTable)
+    local
+      Absyn.Path path;
+
+    case (InstTypes.OUTER_COMPONENT(innerName = SOME(path)), _)
+      then lookupName(path, inSymbolTable);
+
+    else inComponent;
+  end match;
+end resolveOuterRef;
 
 public function updateInnerReference
   input Component inOuterComponent;

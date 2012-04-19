@@ -66,6 +66,7 @@ protected import SCodeMod;
 protected import System;
 protected import Types;
 protected import Typing;
+protected import Util;
 
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
@@ -75,6 +76,7 @@ public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
 public type Equation = InstTypes.Equation;
 public type Modifier = InstTypes.Modifier;
+public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 
@@ -122,6 +124,7 @@ algorithm
 
         //print(InstUtil.printClass(cls));
         (cls, symtab) = InstSymbolTable.build(cls);
+        (cls, symtab) = assignParamTypes(cls, symtab);
         (cls, symtab) = Typing.typeClass(cls, symtab);
 
         (cls, symtab) = instConditionalComponents(cls, symtab);
@@ -612,6 +615,9 @@ algorithm
       Prefixes prefs;
       Integer dim_count;
       InstPolicy ip;
+      Absyn.Exp cond_exp;
+      DAE.Exp inst_exp;
+      ParamType pty;
 
     case (SCode.COMPONENT(name = name, 
         prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _)
@@ -647,6 +653,7 @@ algorithm
         // Merge prefixes from the instance hierarchy.
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
         prefs = InstUtil.mergePrefixes(path, pf, attr, inPrefixes, info);
+        pty = InstUtil.paramTypeFromPrefixes(prefs);
 
         // Apply redeclarations to the class definition and instantiate it.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
@@ -665,15 +672,18 @@ algorithm
         binding = instBinding(binding, dim_count);
 
         // Create the component and add it to the program.
-        comp = InstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, binding, info);
+        comp = InstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
       then
         InstTypes.ELEMENT(comp, cls);
 
     // A conditional component, save it for later.
-    case (SCode.COMPONENT(name = name, condition = SOME(_)), _, _, _, _, _)
+    case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
+        _, _, _, _, _)
       equation
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        comp = InstTypes.CONDITIONAL_COMPONENT(path, inElement, inClassMod, inPrefixes, inEnv, inPrefix);
+        inst_exp = instExp(cond_exp, inEnv, inPrefix);
+        comp = InstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
+          inClassMod, inPrefixes, inEnv, inPrefix, info);
       then
         InstTypes.CONDITIONAL_ELEMENT(comp);
 
@@ -1651,6 +1661,216 @@ algorithm
   end match;
 end instFunctionName2;
 
+protected function assignParamTypes
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  output Class outClass;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outClass, outSymbolTable) :=
+    InstUtil.traverseClassComponents(inClass, inSymbolTable, assignParamTypesToComp);
+end assignParamTypes;
+
+protected function assignParamTypesToComp
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outComponent, outSymbolTable) := match(inComponent, inSymbolTable)
+    local
+      array<Dimension> dims;
+      DAE.Exp cond;
+      SymbolTable st;
+
+    case (InstTypes.UNTYPED_COMPONENT(dimensions = dims), st)
+      equation
+        st = Util.arrayFold(dims, assignParamTypesToDim, st);
+      then
+        (inComponent, st);
+
+    case (InstTypes.CONDITIONAL_COMPONENT(condition = cond), st)
+      equation
+        st = markExpAsStructural(cond, st);
+      then
+        (inComponent, st);
+
+    else (inComponent, inSymbolTable);
+
+  end match;
+end assignParamTypesToComp;
+
+protected function assignParamTypesToDim
+  input Dimension inDimension;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inDimension, inSymbolTable)
+    local
+      DAE.Exp dim_exp;
+      SymbolTable st;
+
+    case (InstTypes.UNTYPED_DIMENSION(dimension = DAE.DIM_EXP(exp = dim_exp)), st)
+      equation
+        ((_, st)) = Expression.traverseExpTopDown(dim_exp,
+          markDimExpAsStructuralTraverser, st);
+      then
+        st;
+
+    else inSymbolTable;
+
+  end match;
+end assignParamTypesToDim;
+
+protected function markDimExpAsStructuralTraverser
+  input tuple<DAE.Exp, SymbolTable> inTuple;
+  output tuple<DAE.Exp, Boolean, SymbolTable> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.Exp exp, index_exp;
+      SymbolTable st;
+      DAE.ComponentRef cref;
+
+    case (((exp as DAE.CREF(componentRef = cref)), st))
+      equation
+        st = markParamAsStructural(cref, st);
+        // TODO: Mark cref subscripts too.
+      then
+        ((exp, true, st));
+
+    case (((exp as DAE.SIZE(sz = SOME(index_exp))), st))
+      equation
+        st = markExpAsStructural(index_exp, st);
+      then
+        ((exp, false, st));
+
+    case ((exp, st)) then ((exp, true, st));
+
+  end match;
+end markDimExpAsStructuralTraverser;
+
+protected function markExpAsStructural
+  input DAE.Exp inExp;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  ((_, outSymbolTable)) := Expression.traverseExp(inExp,
+    markExpAsStructuralTraverser, inSymbolTable);
+end markExpAsStructural;
+
+protected function markExpAsStructuralTraverser
+  input tuple<DAE.Exp, SymbolTable> inTuple;
+  output tuple<DAE.Exp, SymbolTable> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.ComponentRef cref;
+      DAE.Exp exp;
+      SymbolTable st;
+
+    case (((exp as DAE.CREF(componentRef = cref)), st))
+      equation
+        st = markParamAsStructural(cref, st);
+      then
+        ((exp, st));
+
+    else inTuple;
+
+  end match;
+end markExpAsStructuralTraverser;
+
+protected function markParamAsStructural
+  input DAE.ComponentRef inCref;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := matchcontinue(inCref, inSymbolTable)
+    local
+      SymbolTable st;
+      Component comp;
+      DAE.ComponentRef cref;
+
+    case (_, st)
+      equation
+        (comp, st) = InstSymbolTable.lookupCrefResolveOuter(inCref, st);
+        st = markComponentAsStructural(comp, st);
+      then
+        st;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeInst.markParamAsStructural failed on " +&
+          ComponentReference.printComponentRefStr(inCref) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end markParamAsStructural;
+        
+protected function markComponentAsStructural
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inComponent, inSymbolTable)
+    local
+      Absyn.Path name;
+      DAE.Type ty;
+      array<Dimension> dims;
+      Prefixes prefs;
+      Binding binding;
+      Absyn.Info info;
+      SymbolTable st;
+      Component comp;
+
+    // Already marked as structural.
+    case (InstTypes.UNTYPED_COMPONENT(paramType = InstTypes.STRUCT_PARAM()), _)
+      then inSymbolTable;
+
+    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, _, binding, info), st)
+      equation
+        st = markBindingAsStructural(binding, st);
+        comp = InstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs,
+          InstTypes.STRUCT_PARAM(), binding, info);
+        st = InstSymbolTable.updateComponent(comp, st);
+      then
+        st;
+        
+    case (InstTypes.OUTER_COMPONENT(name = _), _)
+      equation
+        print("SCodeInst.markComponentAsStructural: IMPLEMENT ME!\n");
+      then
+        fail();
+
+    case (InstTypes.CONDITIONAL_COMPONENT(name = _), _)
+      equation
+        print("SCodeInst.markComponentAsStructural: conditional component used as structural parameter!\n");
+      then
+        fail();
+
+    else inSymbolTable;
+  end match;
+end markComponentAsStructural;
+
+protected function markBindingAsStructural
+  input Binding inBinding;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inBinding, inSymbolTable)
+    local
+      DAE.Exp bind_exp;
+
+    case (InstTypes.UNTYPED_BINDING(bindingExp = bind_exp), _)
+      then markExpAsStructural(bind_exp, inSymbolTable);
+
+    else inSymbolTable;
+
+  end match;
+end markBindingAsStructural;
+
 protected function instSections
   input SCode.ClassDef inClassDef;
   input Env inEnv;
@@ -2021,7 +2241,6 @@ algorithm
       list<Element> rest_el, accum_el;
       SymbolTable st;
       Option<Element> oel;
-      Component comp;
       Absyn.Path bc;
       Class cls;
       DAE.Type ty;
@@ -2112,11 +2331,10 @@ algorithm
   (outElement, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
     local
       SCode.Element sel;
-      Absyn.Exp cond_exp;
       Env env;
       Prefix prefix;
       SymbolTable st;
-      DAE.Exp inst_exp;
+      DAE.Exp cond_exp;
       DAE.Type ty;
       Boolean cond;
       Absyn.Info info;
@@ -2125,13 +2343,12 @@ algorithm
       Option<Element> el;
       Prefixes prefs;
 
-    case (InstTypes.CONDITIONAL_COMPONENT(name, sel as SCode.COMPONENT(condition = 
-      SOME(cond_exp), info = info), mod, prefs, env, prefix), st)
+    case (InstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
+        prefix, info), st)
       equation
-        inst_exp = instExp(cond_exp, env, prefix);
-        (inst_exp, ty, st) = Typing.typeExp(inst_exp, Typing.EVAL_CONST_PARAM(), st);
-        (inst_exp, _) = ExpressionSimplify.simplify(inst_exp);
-        cond = evaluateConditionalExp(inst_exp, ty, name, info);
+        (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(), st);
+        (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
+        cond = evaluateConditionalExp(cond_exp, ty, name, info);
         (el, st) = instConditionalComponent2(cond, sel, mod, prefs, env, prefix, st);
       then
         (el, st);

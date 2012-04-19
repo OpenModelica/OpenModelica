@@ -71,6 +71,7 @@ public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
 public type Equation = InstTypes.Equation;
 public type Modifier = InstTypes.Modifier;
+public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 public type SymbolTable = InstSymbolTable.SymbolTable;
@@ -163,6 +164,7 @@ algorithm
       DAE.Type ty;
       array<Dimension> dims;
       Prefixes prefs;
+      ParamType pty;
       Binding binding;
       Absyn.Info info;
       SCode.Element elem;
@@ -170,15 +172,16 @@ algorithm
       Env env;
       Prefix prefix;
       Option<Absyn.Path> inner_name;
+      DAE.Exp cond;
 
-    case (InstTypes.UNTYPED_COMPONENT(_, ty, dims, prefs, binding, info), _)
-      then InstTypes.UNTYPED_COMPONENT(inName, ty, dims, prefs, binding, info);
+    case (InstTypes.UNTYPED_COMPONENT(_, ty, dims, prefs, pty, binding, info), _)
+      then InstTypes.UNTYPED_COMPONENT(inName, ty, dims, prefs, pty, binding, info);
 
     case (InstTypes.TYPED_COMPONENT(_, ty, prefs, binding, info), _)
       then InstTypes.TYPED_COMPONENT(inName, ty, prefs, binding, info);
 
-    case (InstTypes.CONDITIONAL_COMPONENT(_, elem, mod, prefs, env, prefix), _)
-      then InstTypes.CONDITIONAL_COMPONENT(inName, elem, mod, prefs, env, prefix);
+    case (InstTypes.CONDITIONAL_COMPONENT(_, cond, elem, mod, prefs, env, prefix, info), _)
+      then InstTypes.CONDITIONAL_COMPONENT(inName, cond, elem, mod, prefs, env, prefix, info);
 
     case (InstTypes.OUTER_COMPONENT(_, inner_name), _)
       then InstTypes.OUTER_COMPONENT(inName, inner_name);
@@ -189,6 +192,28 @@ algorithm
   end match;
 end setComponentName;
     
+public function setComponentParamType
+  input Component inComponent;
+  input ParamType inParamType;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inParamType)
+    local
+      Absyn.Path name;
+      DAE.Type ty;
+      array<Dimension> dims;
+      Prefixes prefs;
+      Binding binding;
+      Absyn.Info info;
+
+    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, _, binding, info), _)
+      then InstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, inParamType, binding, info);
+
+    else inComponent;
+
+  end match;
+end setComponentParamType;
+
 public function getComponentType
   input Component inComponent;
   output DAE.Type outType;
@@ -239,6 +264,19 @@ algorithm
 
   end match;
 end getComponentVariability;
+
+public function getEffectiveComponentVariability
+  input Component inComponent;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inComponent)
+    case InstTypes.UNTYPED_COMPONENT(paramType = InstTypes.STRUCT_PARAM())
+      then DAE.CONST();
+
+    else getComponentVariability(inComponent);
+
+  end match;
+end getEffectiveComponentVariability;
 
 protected function getSpecialExtends
   input list<Element> inElements;
@@ -1103,6 +1141,116 @@ algorithm
 
   end match;
 end isConnectorComponent;
+
+replaceable type TraverseArgType subtypeof Any;
+
+partial function TraverseFuncType
+  input Component inComponent;
+  input TraverseArgType inArg;
+  output Component outComponent;
+  output TraverseArgType outArg;
+end TraverseFuncType;
+
+public function traverseClassComponents
+  input Class inClass;
+  input TraverseArgType inArg;
+  input TraverseFuncType inFunc;
+  output Class outClass;
+  output TraverseArgType outArg;
+algorithm
+  (outClass, outArg) := match(inClass, inArg, inFunc)
+    local
+      TraverseArgType arg;
+      list<Element> comps;
+      list<Equation> eq, ieq;
+      list<SCode.AlgorithmSection> al, ial;
+
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), arg, _)
+      equation
+        (comps, arg) = traverseClassComponents2(comps, arg, inFunc, {});
+      then
+        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), arg);
+
+    else (inClass, inArg);
+
+  end match;
+end traverseClassComponents;
+
+protected function traverseClassComponents2
+  input list<Element> inElements;
+  input TraverseArgType inArg;
+  input TraverseFuncType inFunc;
+  input list<Element> inAccumEl;
+  output list<Element> outElements;
+  output TraverseArgType outArg;
+algorithm
+  (outElements, outArg) := match(inElements, inArg, inFunc, inAccumEl)
+    local
+      Element el;
+      list<Element> rest_el;
+      TraverseArgType arg;
+
+    case (el :: rest_el, arg, _, _)
+      equation
+        (el, arg) = traverseClassElement(el, inArg, inFunc);
+        (rest_el, arg) = traverseClassComponents2(rest_el, arg, inFunc, el :: inAccumEl);
+      then
+        (rest_el, arg);
+
+    else (listReverse(inAccumEl), inArg);
+
+  end match;
+end traverseClassComponents2;
+  
+protected function traverseClassElement
+  input Element inElement;
+  input TraverseArgType inArg;
+  input TraverseFuncType inFunc;
+  output Element outElement;
+  output TraverseArgType outArg;
+algorithm
+  (outElement, outArg) := match(inElement, inArg, inFunc)
+    local
+      Component comp;
+      Class cls;
+      Absyn.Path bc;
+      DAE.Type ty;
+      TraverseArgType arg;
+
+    case (InstTypes.ELEMENT(comp, cls), arg, _)
+      equation
+        (comp, arg) = inFunc(comp, arg);
+        (cls, arg) = traverseClassComponents(cls, arg, inFunc);
+      then
+        (InstTypes.ELEMENT(comp, cls), arg);
+
+    case (InstTypes.CONDITIONAL_ELEMENT(comp), arg, _)
+      equation
+        (comp, arg) = inFunc(comp, arg);
+      then
+        (InstTypes.CONDITIONAL_ELEMENT(comp), arg);
+
+    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), arg, _)
+      equation
+        (cls, arg) = traverseClassComponents(cls, arg, inFunc);
+      then
+        (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), arg);
+
+  end match;
+end traverseClassElement;
+
+public function paramTypeFromPrefixes
+  input Prefixes inPrefixes;
+  output ParamType outParamType;
+algorithm
+  outParamType := match(inPrefixes)
+    case InstTypes.PREFIXES(variability = DAE.PARAM())
+      then InstTypes.NON_STRUCT_PARAM();
+
+    else InstTypes.NON_PARAM();
+
+  end match;
+end paramTypeFromPrefixes;
 
 public function printBinding
   input Binding inBinding;

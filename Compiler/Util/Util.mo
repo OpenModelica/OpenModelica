@@ -482,6 +482,68 @@ algorithm
   end match;
 end arrayMap0work;
 
+public function arrayFold
+  "Takes an array, a function, and a start value. The function is applied to
+   each array element, and the start value is passed to the function and
+   updated."
+  input array<ElementType> inArray;
+  input FoldFunc inFoldFunc;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  replaceable type ElementType subtypeof Any;
+  replaceable type FoldType subtypeof Any;
+
+  partial function FoldFunc
+    input ElementType inElement;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult := arrayFold_impl(inArray, inFoldFunc, inStartValue, 1,
+    arrayLength(inArray));
+end arrayFold;
+
+public function arrayFold_impl
+  "Implementation of arrayFold."
+  input array<ElementType> inArray;
+  input FoldFunc inFoldFunc;
+  input FoldType inFoldValue;
+  input Integer inIndex;
+  input Integer inArraySize;
+  output FoldType outResult;
+
+  replaceable type ElementType subtypeof Any;
+  replaceable type FoldType subtypeof Any;
+
+  partial function FoldFunc
+    input ElementType inElement;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult :=
+  matchcontinue(inArray, inFoldFunc, inFoldValue, inIndex, inArraySize)
+    local
+      ElementType e;
+      FoldType res;
+
+    case (_, _, _, _, _)
+      equation
+        true = inIndex > inArraySize;
+      then
+        inFoldValue;
+
+    else
+      equation
+        e = arrayGet(inArray, inIndex);
+        res = inFoldFunc(e, inFoldValue);
+      then
+        arrayFold_impl(inArray, inFoldFunc, res, inIndex + 1, inArraySize);
+
+  end matchcontinue;
+end arrayFold_impl;
+
 public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
 If all strings a empty or empty list return empty string.
 "

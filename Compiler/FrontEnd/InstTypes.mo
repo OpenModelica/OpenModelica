@@ -120,6 +120,7 @@ public uniontype Component
     DAE.Type baseType;
     array<Dimension> dimensions;
     Prefixes prefixes;
+    ParamType paramType;
     Binding binding;
     Absyn.Info info;
   end UNTYPED_COMPONENT;
@@ -134,11 +135,13 @@ public uniontype Component
     
   record CONDITIONAL_COMPONENT
     Absyn.Path name;
+    DAE.Exp condition;
     SCode.Element element;
     Modifier modifier;
     Prefixes prefixes;
     SCodeEnv.Env env;
     Prefix prefix;
+    Absyn.Info info;
   end CONDITIONAL_COMPONENT; 
 
   record OUTER_COMPONENT
@@ -150,6 +153,12 @@ public uniontype Component
     Absyn.Path name;
   end PACKAGE;
 end Component;
+
+public uniontype ParamType
+  record NON_PARAM "Not a parameter." end NON_PARAM;
+  record NON_STRUCT_PARAM "A non-structural parameter." end NON_STRUCT_PARAM;
+  record STRUCT_PARAM "A structural parameter." end STRUCT_PARAM;
+end ParamType;
 
 public uniontype Modifier
   record MODIFIER

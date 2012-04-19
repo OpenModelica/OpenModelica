@@ -63,6 +63,7 @@ public type Dimension = InstTypes.Dimension;
 public type Binding = InstTypes.Binding;
 public type Component = InstTypes.Component;
 public type Modifier = InstTypes.Modifier;
+public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 public type SymbolTable = InstSymbolTable.SymbolTable;
@@ -374,11 +375,13 @@ algorithm
       Binding binding;
       SymbolTable st;
       Component comp;
+      EvalPolicy ep;
 
     case (InstTypes.UNTYPED_COMPONENT(binding = binding), _, st)
       equation
         st = markComponentBindingAsProcessing(inComponent, st);
-        (binding, st) = typeBinding(binding, st);
+        ep = getEvalPolicyForBinding(inComponent);
+        (binding, st) = typeBinding(binding, ep, st);
         comp = updateComponentBinding(inComponent, binding, inType);
         st = InstSymbolTable.updateComponent(comp, st);
       then
@@ -388,6 +391,18 @@ algorithm
 
   end match;
 end typeComponentBinding;
+
+protected function getEvalPolicyForBinding
+  input Component inComponent;
+  output EvalPolicy outEvalPolicy;
+algorithm
+  outEvalPolicy := match(inComponent)
+    case InstTypes.UNTYPED_COMPONENT(paramType = InstTypes.STRUCT_PARAM())
+      then EVAL_CONST_PARAM();
+
+    else EVAL_CONST();
+  end match;
+end getEvalPolicyForBinding;
 
 protected function updateComponentBinding
   input Component inComponent;
@@ -400,6 +415,7 @@ algorithm
       Absyn.Path name;
       DAE.Type ty;
       Prefixes pf;
+      ParamType pty;
       SCode.Element el;
       array<Dimension> dims;
       Absyn.Info info;
@@ -407,8 +423,8 @@ algorithm
     case (InstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info), _, SOME(ty))
       then InstTypes.TYPED_COMPONENT(name, ty, pf, inBinding, info);
 
-    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, _, info), _, NONE())
-      then InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, inBinding, info);
+    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, _, info), _, NONE())
+      then InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, inBinding, info);
 
   end match;
 end updateComponentBinding;
@@ -430,6 +446,7 @@ algorithm
       DAE.Exp binding_exp;
       Integer pl;
       Prefixes pf;
+      ParamType pty;
       Absyn.Info info1, info2;
 
     case (InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(variability = var)), _)
@@ -438,10 +455,10 @@ algorithm
       then
         inSymbolTable;
 
-    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf,
+    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty,
         InstTypes.UNTYPED_BINDING(binding_exp, _, pl, info1), info2), _)
       equation
-        comp = InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf,
+        comp = InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty,
           InstTypes.UNTYPED_BINDING(binding_exp, true, pl, info1), info2);
       then
         InstSymbolTable.updateComponent(comp, inSymbolTable);
@@ -459,11 +476,12 @@ end markComponentBindingAsProcessing;
       
 protected function typeBinding
   input Binding inBinding;
+  input EvalPolicy inEvalPolicy;
   input SymbolTable inSymbolTable;
   output Binding outBinding;
   output SymbolTable outSymbolTable;
 algorithm
-  (outBinding, outSymbolTable) := match(inBinding, inSymbolTable)
+  (outBinding, outSymbolTable) := match(inBinding, inEvalPolicy, inSymbolTable)
     local
       DAE.Exp binding;
       SymbolTable st;
@@ -471,20 +489,20 @@ algorithm
       Integer pd;
       Absyn.Info info;
 
-    case (InstTypes.UNTYPED_BINDING(isProcessing = true), st)
+    case (InstTypes.UNTYPED_BINDING(isProcessing = true), _, st)
       equation
         InstSymbolTable.showCyclicDepError(st);
       then
         fail();
 
     case (InstTypes.UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd,
-        info = info), st)
+        info = info), _, st)
       equation
-        (binding, ty, st) = typeExp(binding, EVAL_CONST(), st);
+        (binding, ty, st) = typeExp(binding, inEvalPolicy, st);
       then
         (InstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
-    case (InstTypes.TYPED_BINDING(bindingExp = _), st)
+    case (InstTypes.TYPED_BINDING(bindingExp = _), _, st)
       then (inBinding, st);
 
     else (InstTypes.UNBOUND(), inSymbolTable);
@@ -639,8 +657,7 @@ algorithm
     case (_, ep, st)
       equation
         comp = InstSymbolTable.lookupCref(inCref, st);
-        var = InstUtil.getComponentVariability(comp);
-        //param_or_const = DAEUtil.isParamOrConstVarKind(var);
+        var = InstUtil.getEffectiveComponentVariability(comp);
         eval = shouldEvaluate(var, ep);
         (exp, ty, st) = typeCref2(inCref, comp, eval, ep, st);
       then
@@ -687,7 +704,7 @@ protected function typeCref2
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
+  matchcontinue(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
     local
       DAE.Type ty;
       Binding binding;
@@ -702,6 +719,7 @@ algorithm
     case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, _, st)
       equation
         exp = InstUtil.getBindingExp(binding);
+        // TODO: Apply cref subscripts to the expression.
       then
         (exp, ty, st);
 
@@ -716,6 +734,7 @@ algorithm
         (InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
           typeComponent(inComponent, st);
         exp = InstUtil.getBindingExp(binding);
+        // TODO: Apply cref subscripts to the expression.
       then
         (exp, ty, st);
 
@@ -735,7 +754,7 @@ algorithm
       then
         (exp, ty, st);
 
-  end match;
+  end matchcontinue;
 end typeCref2;
 
 protected function propagateCrefSubsToType
