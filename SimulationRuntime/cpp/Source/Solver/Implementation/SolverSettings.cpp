@@ -11,6 +11,8 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   , _zeroTol    (1e-6)
   , _zeroTimeTol  (1e-10)
   ,_zeroRatio(1.0)
+  ,_dRtol(1e-4)
+  ,_dAtol(_dRtol)
 
 {  
   _globalSettings = globalSettings ;
@@ -23,7 +25,22 @@ void SolverSettings::sethInit(double h)
 {
   _hInit=h;
 }
-
+  double SolverSettings::getATol()
+  {
+	  return _dAtol;
+  }
+   void SolverSettings::setATol(double atol)
+   {
+	 _dAtol=  atol;
+   }
+    double SolverSettings::getRTol()
+	{
+		return _dRtol;
+	}
+   void SolverSettings::setRTol(double rtol )
+   {
+	   _dRtol = rtol;
+   }
 double SolverSettings::getLowerLimit()
 {
   return _hLowerLimit;

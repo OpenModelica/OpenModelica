@@ -31,6 +31,11 @@ public:
   /// Tolerance to reach _endTime (default: 1e-6)
   virtual double getEndTimeTol() = 0;
   virtual void setEndTimeTol(double) = 0;
+
+   virtual double getATol() = 0;
+  virtual void setATol(double) = 0;
+   virtual double getRTol() = 0;
+  virtual void setRTol(double) = 0;
   /// Tolerance to find a zero search (abs(f(t))<_zeroTol) (default: 1e-5)
   virtual double getZeroTol() = 0;
   virtual void setZeroTol(double) = 0;

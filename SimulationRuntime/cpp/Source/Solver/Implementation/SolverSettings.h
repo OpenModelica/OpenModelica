@@ -44,6 +44,10 @@ public:
   
       virtual double getZeroRatio();
     virtual void setZeroRatio(double) ;
+	 virtual double getATol();
+  virtual void setATol(double);
+   virtual double getRTol();
+  virtual void setRTol(double);
 
    ///  Global simulation settings
   virtual IGlobalSettings* getGlobalSettings();
@@ -56,10 +60,12 @@ private:
     _endTimeTol,      ///< Tolerance to reach _endTime (default: 1e-6)
     _zeroTol,      ///< Tolerance to find a zero search (abs(f(t))<_zeroTol) (default: 1e-5)
     _zeroTimeTol,    ///< Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
-    _zeroRatio;    ///< = Hinit_{afterZero} / Hinit_{orig} Verhältnis zwischen Originaler Initialschrittweite und Anfangsschrittweite nach Neustart des Solvers
-   IGlobalSettings*  
+    _zeroRatio,    ///< = Hinit_{afterZero} / Hinit_{orig} Verhältnis zwischen Originaler Initialschrittweite und Anfangsschrittweite nach Neustart des Solvers
+	_dRtol,
+   _dAtol;
+    IGlobalSettings*  
     _globalSettings;  ///< Global simulation settings
-
+ 	
 
    //Serialization of settings class
   friend class boost::serialization::access;
