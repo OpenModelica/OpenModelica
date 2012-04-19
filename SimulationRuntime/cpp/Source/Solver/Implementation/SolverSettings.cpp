@@ -35,7 +35,7 @@ void SolverSettings::sethInit(double h)
    }
     double SolverSettings::getRTol()
   {
-  	return _dRtol;
+    return _dRtol;
   }
    void SolverSettings::setRTol(double rtol )
    {

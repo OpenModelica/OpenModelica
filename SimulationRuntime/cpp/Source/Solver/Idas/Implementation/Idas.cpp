@@ -9,30 +9,30 @@
 Idas::Idas(IDAESystem* system, ISolverSettings* settings)
   : SolverDefaultImplementation( system, settings)
   , _idasSettings    (dynamic_cast<IIdasSettings*>(_settings))
-    , _z					(NULL)
-  , _zp0					(NULL)
-  , _z0					(NULL)
-  , _zInit				(NULL)
-  , _fHelp				(NULL)
-  , _zLastSucess			(NULL)
-  , _zLargeStep			(NULL)
-  , _zWrite				(NULL)
-  , _id					(NULL)
-  , _dimSys				(0)
-  , _outStps				(0)
-  , _locStps				(0)
-  , _idid					(0)
-  , _hOut					(0.0)	
-  , _hZero				(0.0)	
-  , _hUpLim				(0.0)
-  , _hZeroCrossing		(0.0)
-  , _hUpLimZeroCrossing	(0.0)
-  , _tOut					(0.0)	
-  , _tLastZero			(0.0)
-  , _tRealInitZero		(0.0)
-  , _doubleZeroDistance	(0.0)
-  , _f0					(NULL)
-  , _f1					(NULL)
+    , _z          (NULL)
+  , _zp0          (NULL)
+  , _z0          (NULL)
+  , _zInit        (NULL)
+  , _fHelp        (NULL)
+  , _zLastSucess      (NULL)
+  , _zLargeStep      (NULL)
+  , _zWrite        (NULL)
+  , _id          (NULL)
+  , _dimSys        (0)
+  , _outStps        (0)
+  , _locStps        (0)
+  , _idid          (0)
+  , _hOut          (0.0)  
+  , _hZero        (0.0)  
+  , _hUpLim        (0.0)
+  , _hZeroCrossing    (0.0)
+  , _hUpLimZeroCrossing  (0.0)
+  , _tOut          (0.0)  
+  , _tLastZero      (0.0)
+  , _tRealInitZero    (0.0)
+  , _doubleZeroDistance  (0.0)
+  , _f0          (NULL)
+  , _f1          (NULL)
   , _zeroSign        (NULL)
 
 {
@@ -41,35 +41,35 @@ Idas::Idas(IDAESystem* system, ISolverSettings* settings)
 
 Idas::~Idas()
 {  
-  if(_z)						
-  	delete [] _z;
-  if(_zp0)						
-  	delete [] _zp0;
-  if(_z0)						
-  	delete [] _z0;
-  if(_fHelp)						
-  	delete [] _fHelp;
-  if(_zInit)					
-  	delete [] _zInit;
-  if(_zWrite)					
-  	delete [] _zWrite;
-  if(_id)					
-  	delete [] _id;
-  if(_zLastSucess)			
-  	delete [] _zLastSucess;
-  if(_zLargeStep)				
-  	delete [] _zLargeStep;
+  if(_z)            
+    delete [] _z;
+  if(_zp0)            
+    delete [] _zp0;
+  if(_z0)            
+    delete [] _z0;
+  if(_fHelp)            
+    delete [] _fHelp;
+  if(_zInit)          
+    delete [] _zInit;
+  if(_zWrite)          
+    delete [] _zWrite;
+  if(_id)          
+    delete [] _id;
+  if(_zLastSucess)      
+    delete [] _zLastSucess;
+  if(_zLargeStep)        
+    delete [] _zLargeStep;
   if(_f0)
-  	delete [] _f0;
+    delete [] _f0;
   if(_f1)
-  	delete [] _f1;
+    delete [] _f1;
  if(_zeroSign)
-  	delete [] _zeroSign;
+    delete [] _zeroSign;
   N_VDestroy_Serial(_IDA_z0);
-  N_VDestroy_Serial(_IDA_zp0);	
-  N_VDestroy_Serial(_IDA_z);		
+  N_VDestroy_Serial(_IDA_zp0);  
+  N_VDestroy_Serial(_IDA_z);    
   N_VDestroy_Serial(_IDA_zp);
-  N_VDestroy_Serial(_ID);	
+  N_VDestroy_Serial(_ID);  
   N_VDestroy_Serial(_IDA_zWrite);
 
   IDAFree(&_idaMem);
@@ -90,13 +90,13 @@ void Idas::init()
   // 3) Zustandsvektor anlegen
   SolverDefaultImplementation::init();
 
-  _dimIndex0		= continous_system->getDimVars(IContinous::VAR_INDEX0);
-  _dimIndex1		= continous_system->getDimVars(IContinous::VAR_INDEX1);
-  _dimIndex2		= continous_system->getDimVars(IContinous::VAR_INDEX2);
-    _dimDEq  		= _dimIndex0 + _dimIndex1 + _dimIndex2;
-  _dimSys			= continous_system->getDimVars(IContinous::ALL_STATES);
-  _dimAEq			= continous_system->getDimVars(IContinous::DIFF_INDEX3);
-  _dimDiffIndex3	= 0;
+  _dimIndex0    = continous_system->getDimVars(IContinous::VAR_INDEX0);
+  _dimIndex1    = continous_system->getDimVars(IContinous::VAR_INDEX1);
+  _dimIndex2    = continous_system->getDimVars(IContinous::VAR_INDEX2);
+    _dimDEq      = _dimIndex0 + _dimIndex1 + _dimIndex2;
+  _dimSys      = continous_system->getDimVars(IContinous::ALL_STATES);
+  _dimAEq      = continous_system->getDimVars(IContinous::DIFF_INDEX3);
+  _dimDiffIndex3  = 0;
    _dimZeroFunc = event_system->getDimZeroFunc();
   if(_dimSys <= 0 )
   {
@@ -106,47 +106,47 @@ void Idas::init()
   else
   {
       // Allocate state vectors, stages and temporary arrays
-  	if(_z)				delete [] _z;
-  	if(_zp0)			delete [] _zp0;
-  	if(_fHelp)			delete [] _fHelp;
-  	if(_zInit)			delete [] _zInit;
-  	if(_zLastSucess)	delete [] _zLastSucess;
-  	if(_zLargeStep)		delete [] _zLargeStep;
-  	if(_zWrite)			delete [] _zWrite;
-  	if(_id)				delete [] _id;
-  	 if(_zeroSign)    delete [] _zeroSign;
-  	_z				= new double[_dimSys];
-  	_zp0			= new double[_dimSys];
-  	_zInit			= new double[_dimSys];
-  	_fHelp			= new double[_dimSys];
-  	_zLastSucess	= new double[_dimSys];
-  	_zLargeStep		= new double[_dimSys];
-  	_zWrite		    = new double[_dimSys];
-  	_f0				= new double[_dimSys];
-  	_f1				= new double[_dimSys];
-  	_id				= new double[_dimSys];
-  	_zeroSign    = new int[_dimZeroFunc];
-  	memset(_z,0,_dimSys*sizeof(double));
-  	memset(_zp0,0,_dimSys*sizeof(double));
-  	memset(_zInit,0,_dimSys*sizeof(double));
-  	memset(_fHelp,0,_dimSys*sizeof(double));
-  	memset(_zWrite,0,_dimSys*sizeof(double));
-  	memset(_zLastSucess,0,_dimSys*sizeof(double));
-  	memset(_zLargeStep,0,_dimSys*sizeof(double));
-  	memset(_id,0,_dimSys*sizeof(double));
-  	// Arrays für Zustandswerte an den Berechnungsintervallgrenzen
+    if(_z)        delete [] _z;
+    if(_zp0)      delete [] _zp0;
+    if(_fHelp)      delete [] _fHelp;
+    if(_zInit)      delete [] _zInit;
+    if(_zLastSucess)  delete [] _zLastSucess;
+    if(_zLargeStep)    delete [] _zLargeStep;
+    if(_zWrite)      delete [] _zWrite;
+    if(_id)        delete [] _id;
+     if(_zeroSign)    delete [] _zeroSign;
+    _z        = new double[_dimSys];
+    _zp0      = new double[_dimSys];
+    _zInit      = new double[_dimSys];
+    _fHelp      = new double[_dimSys];
+    _zLastSucess  = new double[_dimSys];
+    _zLargeStep    = new double[_dimSys];
+    _zWrite        = new double[_dimSys];
+    _f0        = new double[_dimSys];
+    _f1        = new double[_dimSys];
+    _id        = new double[_dimSys];
+    _zeroSign    = new int[_dimZeroFunc];
+    memset(_z,0,_dimSys*sizeof(double));
+    memset(_zp0,0,_dimSys*sizeof(double));
+    memset(_zInit,0,_dimSys*sizeof(double));
+    memset(_fHelp,0,_dimSys*sizeof(double));
+    memset(_zWrite,0,_dimSys*sizeof(double));
+    memset(_zLastSucess,0,_dimSys*sizeof(double));
+    memset(_zLargeStep,0,_dimSys*sizeof(double));
+    memset(_id,0,_dimSys*sizeof(double));
+    // Arrays für Zustandswerte an den Berechnungsintervallgrenzen
 
-  	if(_z0)		delete [] _z0;
-  	
-  	_z0 = new double[_dimSys];
-  	
-  	memset(_z0,0,_dimSys*sizeof(double));
-  	
-  	
-  	for(int i=0;i<_dimSys-_dimAEq;i++)
-  		_id[i] = 1;
-  	// Counter initialisieren
-  	_outStps	= 0;
+    if(_z0)    delete [] _z0;
+    
+    _z0 = new double[_dimSys];
+    
+    memset(_z0,0,_dimSys*sizeof(double));
+    
+    
+    for(int i=0;i<_dimSys-_dimAEq;i++)
+      _id[i] = 1;
+    // Counter initialisieren
+    _outStps  = 0;
 
     if(_idasSettings->getDenseOutput())
     {
@@ -162,27 +162,27 @@ void Idas::init()
 
     _idaMem = IDACreate();
 
-  	// System und Events aktualisieren
-  	continous_system->update();
-  	_updateCalls++;
-  	// giveVars (Zustand holen)
-  	continous_system->giveVars(_zInit);
-  	continous_system->giveRHS(_zp0,IContinous::ALL_STATES);
-  	memcpy(_z,_zInit,_dimSys*sizeof(double));
+    // System und Events aktualisieren
+    continous_system->update();
+    _updateCalls++;
+    // giveVars (Zustand holen)
+    continous_system->giveVars(_zInit);
+    continous_system->giveRHS(_zp0,IContinous::ALL_STATES);
+    memcpy(_z,_zInit,_dimSys*sizeof(double));
 
-  	_IDA_z0 = N_VMake_Serial(_dimSys, _zInit);
-  	_IDA_zp0 = N_VMake_Serial(_dimSys, _zp0);
-  	_IDA_z = N_VMake_Serial(_dimSys, _z);
-  	_IDA_zp = N_VMake_Serial(_dimSys, _zp0);
-  	_ID = N_VMake_Serial(_dimSys, _id);
-  	_IDA_zWrite = N_VMake_Serial(_dimSys, _zWrite);
-  	
-  	if(check_flag((void*)_IDA_z0, "N_VMake_Serial", 0))
-  	{
-  		_idid = -5; 
-  		//throw SimIdasException(_idid,_tCurrent,"Idas::assemble()");
-  		throw std::invalid_argument("Idas::init()");
-  	}
+    _IDA_z0 = N_VMake_Serial(_dimSys, _zInit);
+    _IDA_zp0 = N_VMake_Serial(_dimSys, _zp0);
+    _IDA_z = N_VMake_Serial(_dimSys, _z);
+    _IDA_zp = N_VMake_Serial(_dimSys, _zp0);
+    _ID = N_VMake_Serial(_dimSys, _id);
+    _IDA_zWrite = N_VMake_Serial(_dimSys, _zWrite);
+    
+    if(check_flag((void*)_IDA_z0, "N_VMake_Serial", 0))
+    {
+      _idid = -5; 
+      //throw SimIdasException(_idid,_tCurrent,"Idas::assemble()");
+      throw std::invalid_argument("Idas::init()");
+    }
 
     // Allocate memory for the solver
     _idid = IDAInit(_idaMem,IDA_fCallback, _tCurrent, _IDA_z0, _IDA_zp0);
@@ -194,7 +194,7 @@ void Idas::init()
 
 
     // Set Tolerances
-     _idid = IDASStolerances(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->getRTol(), dynamic_cast<ISolverSettings*>(_idasSettings)->getATol());					// RTOL and ATOL
+     _idid = IDASStolerances(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->getRTol(), dynamic_cast<ISolverSettings*>(_idasSettings)->getATol());          // RTOL and ATOL
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
@@ -203,15 +203,15 @@ void Idas::init()
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
-      _idid = IDASetInitStep(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->gethInit());							// INITIAL STEPSIZE
+      _idid = IDASetInitStep(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->gethInit());              // INITIAL STEPSIZE
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
-   _idid = IDASetMaxStep(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->getUpperLimit());  						// MAXIMUM STEPSIZE
+   _idid = IDASetMaxStep(_idaMem, dynamic_cast<ISolverSettings*>(_idasSettings)->getUpperLimit());              // MAXIMUM STEPSIZE
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
-      _idid = IDASetMaxNonlinIters(_idaMem, 15);											// Max number of iterations
+      _idid = IDASetMaxNonlinIters(_idaMem, 15);                      // Max number of iterations
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
@@ -219,22 +219,22 @@ void Idas::init()
     if(_idid < 0)
       throw std::invalid_argument(/*_idid,_tCurrent,*/"Idas::init()");
 
-  	_idid = IDADense(_idaMem, _dimSys);
+    _idid = IDADense(_idaMem, _dimSys);
 
-  	_idid = IDARootInit(_idaMem,_dimZeroFunc, IDA_ZerofCallback);
+    _idid = IDARootInit(_idaMem,_dimZeroFunc, IDA_ZerofCallback);
 
-  	// ID initialisieren
-  	_idid = IDASetId(_idaMem, _ID);
-  	_idid = IDACalcIC(_idaMem, IDA_YA_YDP_INIT,  dynamic_cast<ISolverSettings*>(_idasSettings)->gethInit());
-  	
-  	if(_idid < 0)
-  		throw std::invalid_argument("Idas::init()");
-  		//throw SimIdasException(_idid,_tCurrent,"Idas::assemble()");
+    // ID initialisieren
+    _idid = IDASetId(_idaMem, _ID);
+    _idid = IDACalcIC(_idaMem, IDA_YA_YDP_INIT,  dynamic_cast<ISolverSettings*>(_idasSettings)->gethInit());
+    
+    if(_idid < 0)
+      throw std::invalid_argument("Idas::init()");
+      //throw SimIdasException(_idid,_tCurrent,"Idas::assemble()");
 
 
-  	//
-  	// IDA is ready for integration
-  	//
+    //
+    // IDA is ready for integration
+    //
 
   }
 }
@@ -349,51 +349,51 @@ void Idas::callIDA()
       break;
     }
 
-  	_accStps++;
-  	_locStps++;
+    _accStps++;
+    _locStps++;
 
-  	// A root is found
-  	if(_idid == 2)
-  	{
-  		_zeroFound = true;
-  		continous_system->setTime(_tHelp);
-  		continous_system->setVars(NV_DATA_S(_IDA_z));
-  		continous_system->update(IContinous::ALL);
-  		_updateCalls++;
-  	}
+    // A root is found
+    if(_idid == 2)
+    {
+      _zeroFound = true;
+      continous_system->setTime(_tHelp);
+      continous_system->setVars(NV_DATA_S(_IDA_z));
+      continous_system->update(IContinous::ALL);
+      _updateCalls++;
+    }
 
-  	// Falls über tEnd hinaus. Zustand bei tEnd holen
-  	if(_tHelp <= _tEnd)
-  	{
-  		_tCurrent = _tHelp;
-  		continous_system->giveVars(_z);
-  	}
-  	else
-  	{
-  		_idid = IDAGetDky(_idaMem, _tEnd, 0, _IDA_z);
-  		_idid = IDAGetDky(_idaMem, _tEnd, 1, _IDA_zp);
-  		_tCurrent = _tEnd;
-  		_zeroFound = false;
-  	}
+    // Falls über tEnd hinaus. Zustand bei tEnd holen
+    if(_tHelp <= _tEnd)
+    {
+      _tCurrent = _tHelp;
+      continous_system->giveVars(_z);
+    }
+    else
+    {
+      _idid = IDAGetDky(_idaMem, _tEnd, 0, _IDA_z);
+      _idid = IDAGetDky(_idaMem, _tEnd, 1, _IDA_zp);
+      _tCurrent = _tEnd;
+      _zeroFound = false;
+    }
 
-  	if(_zeroFound)
-  	{
-  		// Falls getEventOutput, den Zustand vor Eventbehandlung recorden
-  		if (_idasSettings->getDenseOutput() && abs(_tLastWrite - _tCurrent) > dynamic_cast<ISolverSettings*>(_idasSettings)->getZeroTimeTol())
-  		{
-  			if(_idasSettings->getEventOutput())
-  			{
-  				SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
-  			}
-  		}else
-  		{
-  			SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
-  		}
+    if(_zeroFound)
+    {
+      // Falls getEventOutput, den Zustand vor Eventbehandlung recorden
+      if (_idasSettings->getDenseOutput() && abs(_tLastWrite - _tCurrent) > dynamic_cast<ISolverSettings*>(_idasSettings)->getZeroTimeTol())
+      {
+        if(_idasSettings->getEventOutput())
+        {
+          SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+        }
+      }else
+      {
+        SolverDefaultImplementation::writeToFile(_locStps, _tCurrent, _h);
+      }
 
-  		_idid = IDAGetRootInfo(_idaMem, _zeroSign);
-  		for(int i=0;i<_dimZeroFunc;i++)
-  			_events[i] = bool(_zeroSign[i]);
-  		event_system->giveZeroFunc(_zeroVal);
+      _idid = IDAGetRootInfo(_idaMem, _zeroSign);
+      for(int i=0;i<_dimZeroFunc;i++)
+        _events[i] = bool(_zeroSign[i]);
+      event_system->giveZeroFunc(_zeroVal);
 
       //Event Iteration starten
       //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
@@ -406,22 +406,22 @@ void Idas::callIDA()
     _idid = IDAGetLastStep(_idaMem,&_h);
     //_idid = CVodeGetNumSteps(_cvodeMem,&_locStps);
 
-  	//_z = NV_DATA_S(_CV_y);
+    //_z = NV_DATA_S(_CV_y);
 
-  	// Zustand aus dem System holen
-  	continous_system->giveVars(_z);
-  	
-  	if(!_zeroFound)
-  	{
-  		writeIDAOutput(_tCurrent,_h,_locStps);
-  	}
-  	else
-  	{
-  		_idid = IDAReInit(_idaMem, _tCurrent, _IDA_z, _IDA_zp);
-  	}
-  	
-  	// Zähler für die Anzahl der ausgegebenen Schritte erhöhen
-  	++ _outStps;
+    // Zustand aus dem System holen
+    continous_system->giveVars(_z);
+    
+    if(!_zeroFound)
+    {
+      writeIDAOutput(_tCurrent,_h,_locStps);
+    }
+    else
+    {
+      _idid = IDAReInit(_idaMem, _tCurrent, _IDA_z, _IDA_zp);
+    }
+    
+    // Zähler für die Anzahl der ausgegebenen Schritte erhöhen
+    ++ _outStps;
 
    
 
@@ -439,30 +439,30 @@ void Idas::writeIDAOutput(const double &time,const double &h,const int &stp)
   IContinous* continous_system = dynamic_cast<IContinous*>(_system);
   if (stp > 0)
   {
-  	if (_idasSettings->getDenseOutput())
-  	{
-  		_bWritten = false;
-  		while (_tLastWrite + dynamic_cast<ISolverSettings*>(_idasSettings)->getGlobalSettings()->gethOutput()  <= time + dynamic_cast<ISolverSettings*>(_idasSettings)->getEndTimeTol())
-  		{
-  			_bWritten = true;
-  			_tLastWrite = _tLastWrite + dynamic_cast<ISolverSettings*>(_idasSettings)->getGlobalSettings()->gethOutput();
-  			_idid = IDAGetDky(_idaMem, _tLastWrite, 0, _IDA_zWrite);
-  			continous_system->setTime(_tLastWrite);
-  			continous_system->setVars(NV_DATA_S(_IDA_zWrite));
-  			continous_system->update(IContinous::ALL);
-  			_updateCalls++;
-  			SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
-  		}//end if time -_tLastWritten
-  		if (_bWritten)
-  		{
-  			continous_system->setTime(time);
-  			continous_system->setVars(_z,IContinous::VAR_INDEX0);
-  			continous_system->update(IContinous::ALL);
-  			_updateCalls++;
-  		}
-  	}
-  	else
-  		SolverDefaultImplementation::writeToFile(stp, time, h);
+    if (_idasSettings->getDenseOutput())
+    {
+      _bWritten = false;
+      while (_tLastWrite + dynamic_cast<ISolverSettings*>(_idasSettings)->getGlobalSettings()->gethOutput()  <= time + dynamic_cast<ISolverSettings*>(_idasSettings)->getEndTimeTol())
+      {
+        _bWritten = true;
+        _tLastWrite = _tLastWrite + dynamic_cast<ISolverSettings*>(_idasSettings)->getGlobalSettings()->gethOutput();
+        _idid = IDAGetDky(_idaMem, _tLastWrite, 0, _IDA_zWrite);
+        continous_system->setTime(_tLastWrite);
+        continous_system->setVars(NV_DATA_S(_IDA_zWrite));
+        continous_system->update(IContinous::ALL);
+        _updateCalls++;
+        SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
+      }//end if time -_tLastWritten
+      if (_bWritten)
+      {
+        continous_system->setTime(time);
+        continous_system->setVars(_z,IContinous::VAR_INDEX0);
+        continous_system->update(IContinous::ALL);
+        _updateCalls++;
+      }
+    }
+    else
+      SolverDefaultImplementation::writeToFile(stp, time, h);
   }
 }
 
@@ -481,7 +481,7 @@ int Idas::IDA_fCallback(double t, N_Vector y, N_Vector ydot, N_Vector resval, vo
     ((Idas*) user_data)->calcFunction(t, NV_DATA_S(y), NV_DATA_S(resval));
 
   for(int i=0; i<((Idas*) user_data)->_dimDEq; ++i)
-  	NV_Ith_S(resval,i) = NV_Ith_S(resval,i) - NV_Ith_S(ydot,i);
+    NV_Ith_S(resval,i) = NV_Ith_S(resval,i) - NV_Ith_S(ydot,i);
   
   
   //double *y1 = NV_DATA_S(resval);
