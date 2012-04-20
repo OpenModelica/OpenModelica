@@ -63,6 +63,7 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
     list<DAE.ComponentRef> stateVars;
     list<DAE.ComponentRef> discreteVars;
     list<DAE.ComponentRef> algVars;
+    BackendDAE.EquationArray eqs;
   end QSSINFO;
 end QSSinfo;
 
@@ -91,7 +92,9 @@ algorithm
        list<SimCode.SimEqSystem> eqs;
        list<list<Integer>> s;
        list<DAE.ComponentRef> states,disc,algs;
-    case (dlow, ass1, ass2, m, mt, comps,SimCode.SIMCODE(odeEquations={eqs}))
+        BackendDAE.EquationArray eqsdae;
+        BackendDAE.Shared shared;
+    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(_,eqsdae,_,_,_)},shared), ass1, ass2, m, mt, comps,SimCode.SIMCODE(odeEquations={eqs}))
       equation
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
@@ -105,7 +108,7 @@ algorithm
         states = List.map(stateVarsList,getCref);
         s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
       then
-        (QSSINFO(s,states,disc,algs),simCode);
+        (QSSINFO(s,states,disc,algs,eqsdae),simCode);
     else
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
@@ -275,6 +278,19 @@ refs := match qssInfo
   end match;
 end getStates;
 
+public function getEqs
+  input QSSinfo qssInfo;
+  output BackendDAE.EquationArray eqs;
+algorithm
+refs := match qssInfo 
+  local 
+    BackendDAE.EquationArray s;
+  case (QSSINFO(eqs=s))
+  then s;
+  end match;
+end getEqs;
+
+
 public function getAlgs
   input QSSinfo qssInfo;
   output list<DAE.ComponentRef> refs;
@@ -357,6 +373,9 @@ algorithm
       equation
       ident=System.stringReplace(ComponentReference.crefStr(cr),".","_");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
+    case ((e as DAE.IFEXP(expCond=expCond as DAE.RELATION(_,_,_,_,_), expThen=expThen,expElse=expElse),(states,disc,algs))) 
+      then ((DAE.BINARY(DAE.BINARY(DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal),DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
+             DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{expCond},DAE.callAttrBuiltinReal)),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
     case ((e as DAE.IFEXP(expCond=expCond, expThen=expThen,expElse=expElse),(states,disc,algs)))
       then ((DAE.BINARY(DAE.BINARY(expCond,DAE.MUL(DAE.T_REAL_DEFAULT),expThen),DAE.ADD(DAE.T_REAL_DEFAULT),
              DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),expCond),DAE.MUL(DAE.T_REAL_DEFAULT),expElse)),(states,disc,algs)));
@@ -368,9 +387,11 @@ algorithm
       then ((DAE.BINARY(e,DAE.DIV(DAE.T_REAL_DEFAULT),e2),(states,disc,algs)));
     case ((e,(states,disc,algs))) 
       equation
+        /*
         print("****** NOT REPLACING *********\n");
         print(ExpressionDump.dumpExpStr(e,0));
         print("*********\n");
+        */
       then ((e,(states,disc,algs)));
 
     end matchcontinue;
@@ -478,7 +499,67 @@ algorithm
     end matchcontinue;
 end replaceCref;
 
+public function negate
+  input DAE.Exp exp;
+  output DAE.Exp exp_out;
+algorithm
+  exp_out:=
+    matchcontinue (exp)
+    local 
+      DAE.Exp e1,e2;
+      DAE.Operator op;
+      Integer i;
+      DAE.Type t;
+      Option<tuple<DAE.Exp,Integer,Integer>> o;
+    case (DAE.RELATION(e1,DAE.LESS(t),e2,i,o)) then DAE.RELATION(e1,DAE.GREATER(t),e2,i,o);
+    case (DAE.RELATION(e1,DAE.LESSEQ(t),e2,i,o)) then DAE.RELATION(e1,DAE.GREATER(t),e2,i,o);
+    case (DAE.RELATION(e1,DAE.GREATER(t),e2,i,o)) then DAE.RELATION(e1,DAE.LESS(t),e2,i,o);
+    case (DAE.RELATION(e1,DAE.GREATEREQ(t),e2,i,o)) then DAE.RELATION(e1,DAE.LESS(t),e2,i,o);
+    case (e1) then e1;
+  end matchcontinue;
+end negate;
   
+public  function generateHandler
+    input BackendDAE.EquationArray eqs;
+    input list<Integer> handlers;
+    input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
+    input DAE.Exp condition;
+    input Boolean v;
+    output String out;
+algorithm
+  out:=
+    matchcontinue (eqs,handlers,states,disc,algs,condition,v) 
+      local 
+        Integer h;
+        Boolean b;
+        BackendDAE.Equation eq;
+        DAE.Exp exp,e1;
+        DAE.Exp scalar "scalar" ;
+        String s;
+       case (_,{h},_,_,_,_,true) 
+       equation
+         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
+         s = stringAppend(s," := ");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
+         s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
+         s= stringAppend(s,";");
+       then s;
+       case (_,{h},_,_,_,_,false) 
+       equation
+         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
+         s= stringAppend(s," := ");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+         s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
+         s= stringAppend(s,";");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+       then s;
+    end matchcontinue;
+end generateHandler;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

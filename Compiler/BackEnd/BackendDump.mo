@@ -620,7 +620,7 @@ algorithm
     case (BackendDAE.DAE(eqs,shared))
       equation
         List.map_0(eqs,dumpEqSystem);
-        print("\n"); 
+        print("**************************************************\n"); 
         dumpShared(shared);
       then
         ();

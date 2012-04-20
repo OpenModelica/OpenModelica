@@ -2259,6 +2259,7 @@ package BackendQSS
       list<DAE.ComponentRef> stateVars;
       list<DAE.ComponentRef> discreteAlgVars;
       list<DAE.ComponentRef> algVars;
+      BackendDAE.EqSystems eqs;
     end QSSINFO;
   end QSSinfo;
 
@@ -2296,6 +2297,29 @@ package BackendQSS
     input QSSinfo qssInfo;
     output list<DAE.ComponentRef> refs;
   end getAlgs;
+
+  function negate
+    input DAE.Exp exp;
+    output DAE.Exp exp_out;
+  end negate;
+
+  function getEqs
+    input QSSinfo qssInfo;
+    output BackendDAE.EquationArray eqs;
+  end getEqs;
+  
+  function generateHandler
+    input BackendDAE.EquationArray eqs;
+    input list<Integer> handlers;
+    input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
+    input DAE.Exp condition;
+    input Boolean v;
+    output String out;
+  end generateHandler;
+
+
 end BackendQSS;
 
 package BackendVariable
