@@ -1386,7 +1386,7 @@ public function splitMixedEquations "function: splitMixedEquations
   output list<Integer> indxdiscVarLst;
 algorithm
   (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst):=
-  match (eqnLst,indxEqnLst,varLst,indxVarLst)
+  match (eqnLst, indxEqnLst, varLst, indxVarLst)
     local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
     case (eqnLst,indxEqnLst,varLst,indxVarLst) equation
       (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
@@ -1507,6 +1507,10 @@ algorithm
       BackendDAE.Equation eqn;
       list<Integer> ilst;
       list<BackendDAE.Equation> eqnLst;
+      list<DAE.Exp> outExps;
+      list<Expression.ComponentRef> outCrefs;
+      list<Boolean> boollst;
+      String errstr;
     case (v,(((eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_),i::_)) equation
       cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
@@ -1518,11 +1522,18 @@ algorithm
     case(v,(_::eqnLst,_::ilst)) equation
       ((eqn,i)) = findDiscreteEquation(v,(eqnLst,ilst));
     then ((eqn,i));
-    case(v,_) equation
-      print("findDiscreteEquation failed, searching for ");
-      print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
-      print("\n");
-    then fail();
+	  else
+	  equation
+	    Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAETransform.findDiscreteEquation failed.\n
+Your model contains a mixed system involving algorithms or other complex-equations.\n
+Sorry. Currently are supported only mixed system involving simple equations and boolean variables.\n
+Try to break the loop by using the pre operator."});
+	    true = Flags.isSet(Flags.FAILTRACE);
+	    Debug.trace("findDiscreteEquation failed, searching for variables:  ");
+	    errstr = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
+	    Debug.traceln(errstr);
+	  then
+	    fail();
   end matchcontinue;
 end findDiscreteEquation;
 

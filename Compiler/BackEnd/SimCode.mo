@@ -5200,6 +5200,12 @@ algorithm
         restEqs = extractDiscEqs(eqns, vs);
       then
         SES_SIMPLE_ASSIGN(cr, expr, source) :: restEqs;
+    // failure
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractDiscEqs failed!"});
+      then
+        fail();
   end match;
 end extractDiscEqs;
 
@@ -5229,6 +5235,12 @@ algorithm
         valuesRet = values_2;
       then
         (valuesRet, value_dims);
+    // failure
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractValuesAndDims failed!"});
+      then
+        fail();        
   end match;
 end extractValuesAndDims;
 
