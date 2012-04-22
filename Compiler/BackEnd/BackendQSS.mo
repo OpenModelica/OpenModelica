@@ -282,7 +282,7 @@ public function getEqs
   input QSSinfo qssInfo;
   output BackendDAE.EquationArray eqs;
 algorithm
-refs := match qssInfo 
+eqs := match qssInfo 
   local 
     BackendDAE.EquationArray s;
   case (QSSINFO(eqs=s))
