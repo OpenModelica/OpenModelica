@@ -2317,9 +2317,34 @@ package BackendQSS
     input DAE.Exp condition;
     input Boolean v;
     output String out;
-  end generateHandler;
+    end generateHandler;
 
 
+  function getRHSVars
+    input list<DAE.Exp> beqs;
+    input list<SimCode.SimVar> vars;
+    input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+    input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
+    output list<DAE.ComponentRef> out;
+  end getRHSVars;
+
+  function generateDInit
+    input  list<DAE.ComponentRef> disc;
+    input  list<SimCode.SampleCondition> sample;
+    input  SimCode.SimVars vars;
+    input  Integer acc;
+    input  Integer total;
+    input  Integer nWhenClause;
+    output String out;
+  end generateDInit;
+
+  function generateExtraParams
+    input SimCode.SimEqSystem eq;
+    input SimCode.SimVars vars;
+    output String s;
+  end generateExtraParams;
 end BackendQSS;
 
 package BackendVariable
