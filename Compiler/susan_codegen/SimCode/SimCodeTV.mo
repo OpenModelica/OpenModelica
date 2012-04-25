@@ -2345,6 +2345,12 @@ package BackendQSS
     input SimCode.SimVars vars;
     output String s;
   end generateExtraParams;
+
+  function replaceVarsInputs
+    input DAE.Exp exp;
+    input list<DAE.ComponentRef> inp;
+    output DAE.Exp exp_out;
+  end replaceVarsInputs;
 end BackendQSS;
 
 package BackendVariable

@@ -396,15 +396,7 @@ algorithm
     case ((DAE.LBINARY(e as DAE.RELATION(_,_,_,_,_),DAE.AND(_),e2 as DAE.RCONST(_)),(states,disc,algs)))
       then ((DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{e},DAE.callAttrBuiltinReal)),(states,disc,algs)));
 
-    case ((e,(states,disc,algs))) 
-      equation
-        /*
-        print("****** NOT REPLACING *********\n");
-        print(ExpressionDump.dumpExpStr(e,0));
-        print("*********\n");
-        */
-      then ((e,(states,disc,algs)));
-
+    case ((e,(states,disc,algs))) then ((e,(states,disc,algs)));
     end matchcontinue;
 end replaceInExp;
 
@@ -792,6 +784,50 @@ algorithm
   then t;
   end matchcontinue;
 end generateExtraParams;
+
+public function replaceVarsInputs
+  input DAE.Exp exp;
+  input list<DAE.ComponentRef> inp;
+  output DAE.Exp exp_out;
+algorithm
+  exp_out:=
+    match (exp,inp)
+    local 
+      DAE.Exp e;
+    case (_,_)
+    equation
+      ((e,_))=Expression.traverseExp(exp,replaceInExpInputs,inp);
+      then replaceVars(e,{},{},{});
+    end match;
+end replaceVarsInputs;
+
+function replaceInExpInputs
+  input tuple<DAE.Exp, list<DAE.ComponentRef> > tplExp;
+  output tuple<DAE.Exp, list<DAE.ComponentRef>> tplExpOut;
+algorithm
+  tplExpOut:=
+    matchcontinue (tplExp)
+     local
+       DAE.ComponentRef cr;
+       DAE.Type t,t1;
+       list<DAE.Subscript> subs;
+       list<DAE.ComponentRef> inputs;
+       Integer p;
+       String ident;
+       DAE.Exp e;
+     case ((e as DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),inputs))
+      equation
+      p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual);
+      ident = stringAppend("i",intString(p));
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),inputs));
+    case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),inputs))
+      equation
+      p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual);
+      ident = stringAppend("i",intString(p));
+      then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),inputs));
+    case ((e,inputs)) then ((e,inputs));
+  end matchcontinue;
+end replaceInExpInputs;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
 ////////////////////////////////////////////////////////////////////////////////////////////////////

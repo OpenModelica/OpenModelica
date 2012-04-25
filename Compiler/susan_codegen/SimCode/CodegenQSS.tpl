@@ -175,6 +175,7 @@ template generateParameters(ModelInfo modelInfo,list<SimEqSystem> parameterEquat
 ::=
 match modelInfo
 case MODELINFO(vars=vars as SIMVARS(__)) then
+let () = textFile(generateHeader(modelInfo,parameterEquations),"model.h")
   <<
   <% vars.paramVars |> v => generateVarDefinition(v);separator="\n" %>
   <% vars.intParamVars |> v => generateVarDefinition(v);separator="\n" %>
@@ -243,10 +244,11 @@ case SES_SIMPLE_ASSIGN(__) then
 <<
   <% BackendQSS.replaceCref(cref,states,disc,algs) %> = <% ExpressionDump.printExpStr(BackendQSS.replaceVars(exp,states,disc,algs)) %>;
 >>
-case SES_LINEAR(vars=vars,index=index) then 
+case e as SES_LINEAR(vars=vars,index=index) then 
   let out_vars = (vars |> v => match v case SIMVAR(name=name) then BackendQSS.replaceCref(name,states,disc,algs);separator=",")
   let in_vars =  (BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> cref =>
        BackendQSS.replaceCref(cref,states,disc,algs);separator="," ) 
+  let()= textFile(generateLinear(e,states,disc,algs), 'model.c')
   let &funDecls += 
 <<
   function fsolve<%index%>
@@ -365,4 +367,75 @@ list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenCl
   >>
 end generateDiscont;
 
+template generateLinear(SimEqSystem eq,list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs)
+::=
+match eq
+case SES_LINEAR(__) then
+let &preExp = buffer "" /*BUFD*/
+let &varDecls = buffer "" /*BUFD*/
+<<
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_linalg.h>
+#include "model.h" // Parameters
+
+void fsolve<%index%>(<%
+(BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",") 
+%>,<%vars |> SIMVAR(__) hasindex i0 => 'double *o<%i0%>' ;separator=","%>)
+{
+  gsl_matrix *A;
+  gsl_vector *b,*x;
+  gsl_permutation *p;
+  const int DIM = <% listLength(beqs) %>;
+
+  /* Alloc space */
+  A = gsl_matrix_alloc(DIM, DIM);
+  b = gsl_vector_alloc(DIM);
+  x = gsl_vector_alloc(DIM);
+  p = gsl_permutation_alloc(DIM); 
+  
+  /* Fill A and B */
+  <%beqs |> exp hasindex i0 => 
+    'gsl_vector_set(b,<%i0%>,<% 
+      System.stringReplace(CodegenC.daeExp(
+        BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+        contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
+
+  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+     'gsl_matrix_set(A, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
+        BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
+        contextOther,&preExp,&varDecls),"$P","") %>);'
+  ;separator="\n"%>
+
+  /* Solve system */ 
+  gsl_linalg_LU_solve(A,p,b,x);
+
+  /* Get x values out */
+  <%vars |> SIMVAR(__) hasindex i0 => '*o<%i0%> = gsl_vector_get(x, <%i0%>);' ;separator="\n"%>
+
+  /* Free structures */
+  gsl_vector_free(x);
+  gsl_vector_free(b);
+  gsl_permutation_free(p);
+  gsl_matrix_free(A);
+  
+}
+>>
+end generateLinear;
+
+template generateHeader(ModelInfo modelInfo,list<SimEqSystem> parameterEquations)
+::=
+match modelInfo
+case MODELINFO(vars=vars as SIMVARS(__)) then
+<<
+<% vars.paramVars |> v => match v case SIMVAR(__) then 'extern double <%System.stringReplace(crefStr(name),".", "_")%>;'
+  ;separator="\n" %>
+<% vars.intParamVars |> v => match v case SIMVAR(__) then 'extern double <%System.stringReplace(crefStr(name),".", "_")%>;'
+  ;separator="\n" %>
+<% vars.boolParamVars |> v => match v case SIMVAR(__) then 'extern double <%System.stringReplace(crefStr(name),".", "_")%>;'
+  ;separator="\n" %>
+>>
+end generateHeader;
 end CodegenQSS;
