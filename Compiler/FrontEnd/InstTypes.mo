@@ -128,7 +128,7 @@ public uniontype Component
   record TYPED_COMPONENT
     Absyn.Path name;
     DAE.Type ty;
-    Prefixes prefixes;
+    DaePrefixes prefixes;
     Binding binding;
     Absyn.Info info;
   end TYPED_COMPONENT;
@@ -143,6 +143,10 @@ public uniontype Component
     Prefix prefix;
     Absyn.Info info;
   end CONDITIONAL_COMPONENT; 
+
+  record DELETED_COMPONENT
+    Absyn.Path name;
+  end DELETED_COMPONENT;
 
   record OUTER_COMPONENT
     Absyn.Path name;
@@ -183,20 +187,33 @@ public uniontype Prefixes
   record NO_PREFIXES end NO_PREFIXES;
 
   record PREFIXES
+    SCode.Visibility visibility;
+    SCode.Variability variability;
+    SCode.Final finalPrefix;
+    Absyn.InnerOuter innerOuter;
+    tuple<Absyn.Direction, Absyn.Info> direction;
+    tuple<SCode.Flow, Absyn.Info> flowPrefix;
+    tuple<SCode.Stream, Absyn.Info> streamPrefix;
+  end PREFIXES;
+end Prefixes;
+
+public uniontype DaePrefixes
+  record NO_DAE_PREFIXES end NO_DAE_PREFIXES;
+
+  record DAE_PREFIXES
     DAE.VarVisibility visibility;
     DAE.VarKind variability;
     SCode.Final finalPrefix;
     Absyn.InnerOuter innerOuter;
-    tuple<DAE.VarDirection, Absyn.Info> direction;
-    tuple<DAE.Flow, Absyn.Info> flowPrefix;
-    tuple<DAE.Stream, Absyn.Info> streamPrefix;
-  end PREFIXES;
-end Prefixes;
+    DAE.VarDirection direction;
+    DAE.Flow flowPrefix;
+    DAE.Stream streamPrefix;
+  end DAE_PREFIXES;
+end DaePrefixes;
 
-public constant Prefixes DEFAULT_CONST_PREFIXES = PREFIXES(
+public constant DaePrefixes DEFAULT_CONST_DAE_PREFIXES = DAE_PREFIXES(
   DAE.PUBLIC(), DAE.CONST(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
-  (DAE.BIDIR(), Absyn.dummyInfo), (DAE.NON_CONNECTOR(), Absyn.dummyInfo),
-  (DAE.NON_STREAM_CONNECTOR(), Absyn.dummyInfo));
+  DAE.BIDIR(), DAE.NON_CONNECTOR(), DAE.NON_STREAM_CONNECTOR());
 
 public uniontype Equation
   record EQUALITY_EQUATION
@@ -250,6 +267,12 @@ public uniontype Equation
     DAE.Exp reinitExp "The new value of the variable.";
     Absyn.Info info;
   end REINIT_EQUATION;
+
+  record NORETCALL_EQUATION
+    Absyn.Path funcName;
+    list<DAE.Exp> funcArgs;
+    Absyn.Info info;
+  end NORETCALL_EQUATION;
 end Equation;
 
 end InstTypes;

@@ -331,6 +331,7 @@ public function isComplexConnector ""
 algorithm
   b := matchcontinue(t)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
     else false;
   end matchcontinue;
 end isComplexConnector;

@@ -884,4 +884,24 @@ algorithm
   end matchcontinue;
 end dumpSymbolTableKeys;
   
+public function dumpSymbolTable
+  input SymbolTable inSymbolTable;
+algorithm
+  _ := match(inSymbolTable)
+    local
+      HashTable ht;
+      SymbolTable rest_st;
+
+    case (ht :: rest_st)
+      equation
+        print("SymbolTable: ");
+        BaseHashTable.dumpHashTable(ht);
+        dumpSymbolTable(rest_st);
+      then
+        ();
+
+    else ();
+  end match;
+end dumpSymbolTable;
+
 end InstSymbolTable;

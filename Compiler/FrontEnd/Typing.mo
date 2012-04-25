@@ -51,6 +51,7 @@ protected import DAEUtil;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import InstUtil;
 protected import List;
 protected import Types;
@@ -59,6 +60,7 @@ protected import Util;
 public type Element = InstTypes.Element;
 public type Equation = InstTypes.Equation;
 public type Class = InstTypes.Class;
+public type DaePrefixes = InstTypes.DaePrefixes;
 public type Dimension = InstTypes.Dimension;
 public type Binding = InstTypes.Binding;
 public type Component = InstTypes.Component;
@@ -328,6 +330,7 @@ algorithm
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
         (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), st);
+        (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = InstUtil.makeDimension(dim_exp);
         typed_dim = InstTypes.TYPED_DIMENSION(dim);
         _ = arrayUpdate(inDimensions, inIndex, typed_dim);
@@ -415,13 +418,17 @@ algorithm
       Absyn.Path name;
       DAE.Type ty;
       Prefixes pf;
+      DaePrefixes dpf;
       ParamType pty;
       SCode.Element el;
       array<Dimension> dims;
       Absyn.Info info;
      
     case (InstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info), _, SOME(ty))
-      then InstTypes.TYPED_COMPONENT(name, ty, pf, inBinding, info);
+      equation
+        dpf = InstUtil.translatePrefixes(pf);
+      then 
+        InstTypes.TYPED_COMPONENT(name, ty, dpf, inBinding, info);
 
     case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, _, info), _, NONE())
       then InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, inBinding, info);
@@ -442,7 +449,7 @@ algorithm
       array<Dimension> dims;
       Binding binding;
       Component comp;
-      DAE.VarKind var;
+      SCode.Variability var;
       DAE.Exp binding_exp;
       Integer pl;
       Prefixes pf;
@@ -451,7 +458,7 @@ algorithm
 
     case (InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(variability = var)), _)
       equation
-        false = DAEUtil.isParamOrConstVarKind(var);
+        false = SCode.isParameterOrConst(var);
       then
         inSymbolTable;
 
@@ -539,6 +546,31 @@ algorithm
   end match;
 end typeExpList;
 
+public function typeExpOpt
+  input Option<DAE.Exp> inExp;
+  input EvalPolicy inEvalPolicy;
+  input SymbolTable inSymbolTable;
+  output Option<DAE.Exp> outExp;
+  output Option<DAE.Type> outType;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inSymbolTable)
+    local
+      DAE.Exp exp;
+      SymbolTable st;
+      DAE.Type ty;
+
+    case (SOME(exp), _, st)
+      equation
+        (exp, ty, st) = typeExp(exp, inEvalPolicy, st);
+      then
+        (SOME(exp), SOME(ty), st);
+
+    else (NONE(), NONE(), inSymbolTable);
+
+  end match;
+end typeExpOpt;
+
 public function typeExp
   input DAE.Exp inExp;
   input EvalPolicy inEvalPolicy;
@@ -559,6 +591,7 @@ algorithm
       DAE.Dimension dim;
       list<DAE.Exp> expl;
       EvalPolicy ep;
+      Option<DAE.Exp> oe;
 
     case (DAE.ICONST(integer = _), _, st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
     case (DAE.RCONST(real = _), _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
@@ -607,6 +640,15 @@ algorithm
       then
         (e1, DAE.T_INTEGER_DEFAULT, st);
 
+    case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, st)
+      equation
+        (e1, ty, st) = typeExp(e1, ep, st);
+        (oe, _, st) = typeExpOpt(oe, ep, st);
+        (e2, _, st) = typeExp(e2, ep, st);
+        ty = Expression.liftArrayLeft(ty, DAE.DIM_UNKNOWN());
+      then
+        (DAE.RANGE(ty, e1, oe, e2), ty, st);
+
     else (inExp, DAE.T_UNKNOWN_DEFAULT, inSymbolTable);
     //else
     //  equation
@@ -649,7 +691,7 @@ algorithm
       Component comp;
       DAE.Type ty;
       DAE.Exp exp;
-      DAE.VarKind var;
+      SCode.Variability var;
       Boolean eval;
       DAE.ComponentRef cref;
       EvalPolicy ep;
@@ -681,14 +723,14 @@ algorithm
 end typeCref;
        
 protected function shouldEvaluate
-  input DAE.VarKind inVarKind;
+  input SCode.Variability inVarKind;
   input EvalPolicy inEvalPolicy;
   output Boolean outShouldEval;
 algorithm
   outShouldEval := match(inVarKind, inEvalPolicy)
-    case (DAE.PARAM(), EVAL_CONST_PARAM()) then true;
+    case (SCode.PARAM(), EVAL_CONST_PARAM()) then true;
     case (_, NO_EVAL()) then false;
-    case (DAE.CONST(), _) then true;
+    case (SCode.CONST(), _) then true;
     else false;
   end match;
 end shouldEvaluate;
@@ -905,19 +947,22 @@ algorithm
 end typeSectionsInElement;
 
 protected function typeEquations
-  input list<Equation> inEquation;
+  input list<Equation> inEquations;
   input SymbolTable inSymbolTable;
-  output list<Equation> outEquation;
+  output list<Equation> outEquations;
 algorithm
-  outEquation := List.map1(inEquation, typeEquation, inSymbolTable);
+  outEquations := List.fold1(inEquations, typeEquation, inSymbolTable, {});
+  outEquations := listReverse(outEquations);
+  //outEquation := List.map1(inEquation, typeEquation, inSymbolTable);
 end typeEquations;
 
 protected function typeEquation
   input Equation inEquation;
   input SymbolTable inSymbolTable;
-  output Equation outEquation;
+  input list<Equation> inAccumEql;
+  output list<Equation> outAccumEql;
 algorithm
-  outEquation := match(inEquation, inSymbolTable)
+  outAccumEql := match(inEquation, inSymbolTable, inAccumEql)
     local
       DAE.Exp rhs, lhs, exp1, exp2;
       SymbolTable st;
@@ -928,30 +973,72 @@ algorithm
       String index;
       list<Equation> eql;
       DAE.Type ty;
+      list<tuple<DAE.Exp, list<Equation>>> branches;
+      list<Equation> acc_el;
 
-    case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st)
+    case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el)
       equation
         (rhs, _, _) = typeExp(rhs, NO_EVAL(), st);
         (lhs, _, _) = typeExp(lhs, NO_EVAL(), st);
       then
-        InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
+        InstTypes.EQUALITY_EQUATION(lhs, rhs, info) :: acc_el;
 
-    case (InstTypes.CONNECT_EQUATION(cref1, _, cref2, _, prefix, info), st)
+    case (InstTypes.CONNECT_EQUATION(cref1, _, cref2, _, prefix, info), st, acc_el)
       equation
-        (cref1, face1) = lookupConnector(cref1, prefix, st, info);
-        (cref2, face2) = lookupConnector(cref2, prefix, st, info);
+        acc_el = typeConnection(cref1, cref2, prefix, st, info, acc_el);
+        //(cref1, face1) = lookupConnector(cref1, prefix, st, info);
+        //(cref2, face2) = lookupConnector(cref2, prefix, st, info);
       then
-        InstTypes.CONNECT_EQUATION(cref1, face1, cref2, face2,
-          InstTypes.emptyPrefix, info);
+        acc_el;
 
-    case (InstTypes.FOR_EQUATION(index, _, exp1, eql, info), st)
+    case (InstTypes.FOR_EQUATION(index, _, exp1, eql, info), st, acc_el)
       equation
         (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
         eql = typeEquations(eql, st);
       then
-        InstTypes.FOR_EQUATION(index, ty, exp1, eql, info);
+        InstTypes.FOR_EQUATION(index, ty, exp1, eql, info) :: acc_el;
 
+    case (InstTypes.IF_EQUATION(branches, info), st, acc_el)
+      equation
+        branches = List.map1(branches, typeBranch, st);
+      then
+        InstTypes.IF_EQUATION(branches, info) :: acc_el;
+
+    case (InstTypes.WHEN_EQUATION(branches, info), st, acc_el)
+      equation
+        branches = List.map1(branches, typeBranch, st);
+      then
+        InstTypes.WHEN_EQUATION(branches, info) :: acc_el;
+
+    // TODO: Remove equation if condition = false.
+    case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el)
+      equation
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        (exp2, _, _) = typeExp(exp2, EVAL_CONST(), st);
+      then
+        InstTypes.ASSERT_EQUATION(exp1, exp2, info) :: acc_el;
+
+    // TODO: Remove equation if condition = false.
+    case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el)
+      equation
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+      then
+        InstTypes.TERMINATE_EQUATION(exp1, info) :: acc_el;
+
+    case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el)
+      equation
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+      then
+        InstTypes.REINIT_EQUATION(cref1, exp1, info) :: acc_el;
+
+    case (InstTypes.NORETCALL_EQUATION(funcName = _), st, acc_el)
+      equation
+        print("Typing.typeEquation: IMPLEMENT NORETCALL_EQUATION\n");
+      then
+        acc_el;
+        
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -962,64 +1049,134 @@ algorithm
   end match;
 end typeEquation;
 
-protected function lookupConnector
+protected function typeConnection
+  input DAE.ComponentRef inRhs;
+  input DAE.ComponentRef inLhs;
+  input Prefix inPrefix;
+  input SymbolTable inSymbolTable;
+  input Absyn.Info inInfo;
+  input list<Equation> inAccumEql;
+  output list<Equation> outAccumEql;
+algorithm
+  outAccumEql := match(inRhs, inLhs, inPrefix, inSymbolTable, inInfo, inAccumEql)
+    local
+      DAE.ComponentRef rhs, lhs;
+      Connect.Face rhs_face, lhs_face;
+      Boolean rhs_id, lhs_id, is_deleted;
+
+    case (_, _, _, _, _, _)
+      equation
+        (rhs, rhs_face, rhs_id) =
+          typeConnectorCref(inRhs, inPrefix, inSymbolTable, inInfo);
+        (lhs, lhs_face, lhs_id) =
+          typeConnectorCref(inLhs, inPrefix, inSymbolTable, inInfo);
+        is_deleted = rhs_id or lhs_id;
+      then
+        makeConnection(rhs, rhs_face, lhs, lhs_face, is_deleted, inInfo, inAccumEql);
+
+  end match;
+end typeConnection;
+
+protected function makeConnection
+  input DAE.ComponentRef inRhs;
+  input Connect.Face inRhsFace;
+  input DAE.ComponentRef inLhs;
+  input Connect.Face inLhsFace;
+  input Boolean inIsDeleted;
+  input Absyn.Info inInfo;
+  input list<Equation> inAccumEql;
+  output list<Equation> outAccumEql;
+algorithm
+  outAccumEql :=
+  match(inRhs, inRhsFace, inLhs, inLhsFace, inIsDeleted, inInfo, inAccumEql)
+    case (_, _, _, _, true, _, _) then inAccumEql;
+
+    else InstTypes.CONNECT_EQUATION(inRhs, inRhsFace, inLhs, inLhsFace,
+      InstTypes.emptyPrefix, inInfo) :: inAccumEql;
+
+  end match;
+end makeConnection;
+
+protected function typeConnectorCref
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
   output Connect.Face outFace;
+  output Boolean outIsDeleted;
 algorithm
-  (outCref, outFace) := matchcontinue(inCref, inPrefix, inSymbolTable, inInfo)
+  (outCref, outFace, outIsDeleted) := match(inCref, inPrefix, inSymbolTable, inInfo)
     local
-      DAE.ComponentRef cref, cref2;
+      DAE.ComponentRef cref;
       Component comp;
-      DAE.Type ty;
-      String cref_str;
-      Boolean is_conn;
+      Option<Component> pre_comp;
+      Connect.Face face;
+      Boolean is_deleted;
+
+    case (_, _, _, _)
+      equation
+        (cref, comp, pre_comp) =
+          lookupConnectorCref(inCref, inPrefix, inSymbolTable, inInfo);
+        (face, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
+      then
+        (cref, face, is_deleted);
+  
+  end match;
+end typeConnectorCref;
+
+protected function typeConnectorCref2
+  input DAE.ComponentRef inCref;
+  input Component inComponent;
+  input Option<Component> inPrefixComponent;
+  input Absyn.Info inInfo;
+  output Connect.Face outFace;
+  output Boolean outIsDeleted;
+algorithm
+  (outFace, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
+    local
+      Absyn.Path name;
       Connect.Face face;
 
-    // A simple identifier is always outside if it's a valid connector.
-    case (DAE.CREF_IDENT(ident = _), _, _, _)
+    case (_, InstTypes.DELETED_COMPONENT(name = name), _, _)
       equation
-        cref = InstUtil.prefixCref(inCref, inPrefix);
-        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
-        checkComponentIsConnector(comp, cref, inInfo);
+        print(Absyn.pathString(name) +& " is deleted\n");
       then
-        (cref, Connect.OUTSIDE());
+        (Connect.NO_FACE(), true);
 
-    case (DAE.CREF_QUAL(ident = _), _, _, _)
+    else
       equation
-        (cref, cref2) = ComponentReference.splitCrefFirst(inCref);
-        cref = InstUtil.prefixCref(cref, inPrefix);
-        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
-        is_conn = InstUtil.isConnectorComponent(comp);
-        face = Util.if_(is_conn, Connect.OUTSIDE(), Connect.INSIDE());
-        cref = ComponentReference.joinCrefs(cref, cref2);
-        comp = lookupConnectorCref(cref, inSymbolTable, inInfo);
-        checkComponentIsConnector(comp, cref, inInfo);
+        checkComponentIsConnector(inComponent, inCref, inInfo);
+        face = getConnectorFace(inPrefixComponent);
       then
-        (cref, face);
+        (face, false);
 
-  end matchcontinue;
-end lookupConnector;
+  end match;
+end typeConnectorCref2;
 
 protected function lookupConnectorCref
   input DAE.ComponentRef inCref;
+  input Prefix inPrefix;
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
+  output DAE.ComponentRef outCref;
   output Component outComponent;
+  output Option<Component> outPrefixComponent;
 algorithm
-  outComponent := matchcontinue(inCref, inSymbolTable, inInfo)
+  (outCref, outComponent, outPrefixComponent) :=
+  matchcontinue(inCref, inPrefix, inSymbolTable, inInfo)
     local
+      DAE.ComponentRef cref;
       Component comp;
-      String cref_str;
+      Option<Component> opt_comp;
+      String cref_str; 
 
-    case (inCref, inSymbolTable, inInfo)
+    case (_, _, _, _)
       equation
-        comp = InstSymbolTable.lookupCref(inCref, inSymbolTable);
+        (cref, comp, opt_comp) = 
+          lookupConnectorCref2(inCref, inPrefix, inSymbolTable);
       then
-        comp;
+        (cref, comp, opt_comp);
 
     else
       equation
@@ -1032,14 +1189,98 @@ algorithm
   end matchcontinue;
 end lookupConnectorCref;
 
+protected function lookupConnectorCref2
+  "Looks up a cref used by a connect equation in the symbol table and returns
+   the found component. In the case of a qualified cref it also returns the
+   component corresponding to the first identifier in the cref, i.e. for a.b.c it
+   returns the component for a, since this is needed to determine the face of the
+   connection element."
+  input DAE.ComponentRef inCref;
+  input Prefix inPrefix;
+  input SymbolTable inSymbolTable;
+  output DAE.ComponentRef outCref;
+  output Component outComponent;
+  output Option<Component> outPrefixComponent;
+algorithm
+  (outCref, outComponent, outPrefixComponent) :=
+  matchcontinue(inCref, inPrefix, inSymbolTable)
+    local
+      Component comp, pre_comp;
+      DAE.ComponentRef cref, cref2;
+      Option<Component> opt_comp;
+      
+    case (DAE.CREF_IDENT(ident = _), _, _)
+      equation
+        cref = InstUtil.prefixCref(inCref, inPrefix);
+        comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
+      then
+        (cref, comp, NONE());
+
+    case (DAE.CREF_QUAL(ident = _), _, _)
+      equation
+        (cref, cref2) = ComponentReference.splitCrefFirst(inCref);
+        cref = InstUtil.prefixCref(cref, inPrefix);
+        pre_comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
+        cref = ComponentReference.joinCrefs(cref, cref2);
+        comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
+      then
+        (cref, comp, SOME(pre_comp));
+
+    // If the cref is qualified but we couldn't find it, it might be part of a
+    // deleted conditional component (i.e. it hasn't been instantiated). In that
+    // case, strip the last identifier and look again to see if we can find a
+    // deleted component that is a prefix of the given cref.
+    case (DAE.CREF_QUAL(ident = _), _, _)
+      equation
+        cref = ComponentReference.crefStripLastIdent(inCref);
+        cref = InstUtil.prefixCref(cref, inPrefix);
+        (_, comp as InstTypes.DELETED_COMPONENT(name = _), opt_comp) = 
+          lookupConnectorCref2(cref, InstTypes.emptyPrefix, inSymbolTable);
+      then
+        (cref, comp, opt_comp);
+
+  end matchcontinue;
+end lookupConnectorCref2;
+
+protected function getConnectorFace
+  "Determines the face of a connector element, i.e. inside or outside. A
+   connector element is outside if the first identifier in the cref is a
+   connector, otherwise inside. This function takes the optional component
+   returned from lookupConnectorCref instead of a cref though."
+  input Option<Component> inPrefixComponent;
+  output Connect.Face outFace;
+algorithm
+  outFace := matchcontinue(inPrefixComponent)
+    local
+      Component comp;
+      Boolean is_conn;
+      Connect.Face face;
+
+    // No prefix component means a simple identifier, i.e. the connector element
+    // itself is the first identifier.
+    case NONE() then Connect.OUTSIDE();
+
+    // A prefix component, face depends on if it's a connector or not.
+    case SOME(comp)
+      equation
+        is_conn = InstUtil.isConnectorComponent(comp);
+        // Connector => outside, not connector => inside.
+        face = Util.if_(is_conn, Connect.OUTSIDE(), Connect.INSIDE());
+      then
+        face;
+
+  end matchcontinue;
+end getConnectorFace;
+
 protected function checkComponentIsConnector
-  input InstTypes.Component inComponent;
+  input Component inComponent;
   input DAE.ComponentRef inCref;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inComponent, inCref, inInfo)
     local
-      String cref_str;
+      String cref_str, ty_str;
+      DAE.Type ty;
 
     case (_, _, _)
       equation
@@ -1049,11 +1290,13 @@ algorithm
 
     else
       equation
+        ty = InstUtil.getComponentType(inComponent);
+        ty_str = Types.unparseType(ty);
         cref_str = ComponentReference.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
-          {cref_str}, inInfo);
+          {cref_str, ty_str}, inInfo);
       then
-        fail();
+        ();
 
   end matchcontinue;
 end checkComponentIsConnector;
@@ -1078,9 +1321,29 @@ algorithm
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR,
           {exp_str, ty_str}, inInfo);
       then
-        fail();
+        DAE.T_UNKNOWN_DEFAULT;
 
   end matchcontinue;
 end rangeToIteratorType;
+
+protected function typeBranch
+  input tuple<DAE.Exp, list<Equation>> inBranch;
+  input SymbolTable inSymbolTable;
+  output tuple<DAE.Exp, list<Equation>> outBranch;
+algorithm
+  outBranch := match(inBranch, inSymbolTable)
+    local
+      DAE.Exp cond_exp;
+      list<Equation> branch_body;
+
+    case ((cond_exp, branch_body), _)
+      equation
+        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), inSymbolTable);
+        branch_body = typeEquations(branch_body, inSymbolTable);
+      then
+        ((cond_exp, branch_body));
+
+  end match;
+end typeBranch;
 
 end Typing;

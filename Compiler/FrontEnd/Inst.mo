@@ -10253,7 +10253,7 @@ algorithm
         s2 = ComponentReference.printComponentRefStr(inCref);
         s3 = DAEDump.dumpFlow(inVarFlow);
         Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {s1, s2, s3}, inInfo);
+          {s1, "variable", s2, s3}, inInfo);
       then
         fail();
 

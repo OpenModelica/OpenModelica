@@ -494,7 +494,7 @@ public constant Message EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE = MESSAGE(177, TRANS
 public constant Message INVALID_REDECLARE = MESSAGE(178, TRANSLATION(), ERROR(),
   "Redeclaration of %s %s %s is not allowed.");
 public constant Message INVALID_TYPE_PREFIX = MESSAGE(179, TRANSLATION(), ERROR(),
-  "Invalid type prefix '%s' on variable %s, due to existing type prefix '%s'.");
+  "Invalid type prefix '%s' on %s %s, due to existing type prefix '%s'.");
 public constant Message LINEAR_SYSTEM_INVALID = MESSAGE(180, SYMBOLIC(), ERROR(),
   "Linear solver (%s) returned invalid input for linear system %s.");
 public constant Message LINEAR_SYSTEM_SINGULAR = MESSAGE(181, SYMBOLIC(), ERROR(),

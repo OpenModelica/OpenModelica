@@ -378,10 +378,10 @@ algorithm
       DAE.Stream sp;
       InstTypes.Binding binding;
       Option<DAE.Exp> bind_exp;
-      InstTypes.Prefixes prefs;
+      InstTypes.DaePrefixes prefs;
 
     case (InstTypes.TYPED_COMPONENT(prefixes = 
-        InstTypes.PREFIXES(variability = DAE.CONST())), _, _)
+        InstTypes.DAE_PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
     case (InstTypes.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
@@ -571,7 +571,7 @@ protected function unliftComponentType
 protected
   Absyn.Path name;
   DAE.Type ty;
-  InstTypes.Prefixes prefs;
+  InstTypes.DaePrefixes prefs;
   InstTypes.Binding binding;
   Absyn.Info info;
 algorithm
@@ -580,7 +580,7 @@ algorithm
 end unliftComponentType;
 
 protected function getPrefixes
-  input InstTypes.Prefixes inPrefixes;
+  input InstTypes.DaePrefixes inPrefixes;
   output DAE.VarKind outVarKind;
   output DAE.VarDirection outDirection;
   output DAE.VarVisibility outVisibility;
@@ -596,10 +596,10 @@ algorithm
       DAE.Flow fp;
       DAE.Stream sp;
 
-    case InstTypes.PREFIXES(vis, kind, _, _, (dir, _), (fp, _), (sp, _))
+    case InstTypes.DAE_PREFIXES(vis, kind, _, _, dir, fp, sp)
       then (kind, dir, vis, fp, sp);
     
-    case InstTypes.NO_PREFIXES()
+    case InstTypes.NO_DAE_PREFIXES()
       then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR(),
           DAE.NON_STREAM_CONNECTOR());
 

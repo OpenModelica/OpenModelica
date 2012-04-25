@@ -117,7 +117,7 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
-        (cls, _) = instClassItem(item, InstTypes.NOMOD(), 
+        (cls, _, _) = instClassItem(item, InstTypes.NOMOD(), 
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
         const_el = instGlobalConstants(inGlobalConstants, inClassPath, inEnv);
         cls = InstUtil.addElementsToClass(const_el, cls);
@@ -161,8 +161,9 @@ protected function instClassItem
   input InstPolicy inInstPolicy;
   output Class outClass;
   output DAE.Type outType;
+  output Prefixes outPrefixes;
 algorithm
-  (outClass, outType) :=
+  (outClass, outType, outPrefixes) :=
   match(inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
     local
       list<SCode.Element> el;
@@ -193,6 +194,8 @@ algorithm
       SCode.Restriction res;
       ClassInf.State state;
       InstPolicy ip;
+      SCode.Attributes attr;
+      Prefixes prefs;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _) 
@@ -200,38 +203,57 @@ algorithm
         vars = instBasicTypeAttributes(inMod, env);
         ty = instBasicType(name, inMod, vars);
       then 
-        (InstTypes.BASIC_TYPE(), ty);
+        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES());
 
     // A class with parts, instantiate all elements in it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, restriction = res,
         classDef = cdef as SCode.PARTS(elementLst = el), info = info),
         env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip)
       equation
+        // Enter the class scope and look up all class elements.
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
+
+        // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
         (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix, ip);
+
+        // Instantiate all equation and algorithm sections.
         (eq, ieq) = instSections(cdef, env, inPrefix, ip);
+
+        // Create the class.
         state = ClassInf.start(res, Absyn.IDENT(name));
         (cls, ty) = InstUtil.makeClass(elems, eq, ieq, {}, {}, state, cse);
       then
-        (cls, ty);
+        (cls, ty, InstTypes.NO_PREFIXES());
 
     // A derived class, look up the inherited class and instantiate it.
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.DERIVED(modifications = smod, typeSpec = dty), info = info)),
-        _, _, _, _, ip)
+    case (SCodeEnv.CLASS(cls = scls as SCode.CLASS(name = name, classDef =
+        SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
+        restriction = res, info = info)), _, _, _, _, ip)
       equation
+        // Look up the inherited class.
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        path = Absyn.typeSpecPath(dty);
+
+        // Merge the modifiers and instantiate the inherited class.
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
-        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
+        (cls, ty, prefs) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
+
+        // Merge the attributes of this class with the prefixes of the inherited
+        // class.
+        prefs = InstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
+        // Add any dimensions from this class to the resulting type.
         ty = liftArrayType(dims, ty, inEnv, inPrefix);
+
+        state = ClassInf.start(res, Absyn.IDENT(name));
+        ty = InstUtil.makeDerivedClassType(ty, state);
       then
-        (cls, ty);
+        (cls, ty, prefs);
         
     case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env),
         _, _, _, _, ip)
@@ -239,7 +261,7 @@ algorithm
         (cls, ty) =
           instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip);
       then
-        (cls, ty);
+        (cls, ty, InstTypes.NO_PREFIXES());
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
         SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _)
@@ -247,7 +269,7 @@ algorithm
         path = InstUtil.prefixToPath(inPrefix);
         ty = InstUtil.makeEnumType(enums, path);
       then
-        (InstTypes.BASIC_TYPE(), ty);
+        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES());
 
     else
       equation
@@ -294,7 +316,7 @@ algorithm
         cdef = SCode.addElementToCompositeClassDef(ext, cdef);
         scls = SCode.setElementClassDefinition(cdef, inClassExtends);
         item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.USERDEFINED());
-        (cls, ty) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip);
+        (cls, ty, _) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip);
       then
         (cls, ty);
 
@@ -610,9 +632,7 @@ algorithm
       array<Dimension> dim_arr;
       Class cls;
       Element el;
-      SCode.Prefixes pf;
-      SCode.Attributes attr;
-      Prefixes prefs;
+      Prefixes prefs, cls_prefs;
       Integer dim_count;
       InstPolicy ip;
       Absyn.Exp cond_exp;
@@ -629,8 +649,7 @@ algorithm
         InstTypes.ELEMENT(comp, InstTypes.BASIC_TYPE());
 
     // A component, look up it's type and instantiate that class.
-    case (SCode.COMPONENT(name = name, prefixes = pf, 
-        attributes = attr as SCode.ATTR(arrayDims = ad),
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = path), modifications = smod,
         condition = NONE(), info = info), _, _, _, _, ip)
       equation
@@ -652,18 +671,19 @@ algorithm
 
         // Merge prefixes from the instance hierarchy.
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        prefs = InstUtil.mergePrefixes(path, pf, attr, inPrefixes, info);
+        prefs = InstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
         pty = InstUtil.paramTypeFromPrefixes(prefs);
 
         // Apply redeclarations to the class definition and instantiate it.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
-        (cls, ty) = instClassItem(item, mod, prefs, env, prefix, ip);
+        (cls, ty, cls_prefs) = instClassItem(item, mod, prefs, env, prefix, ip);
+        prefs = InstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
 
         // Add dimensions from the class type.
         (dims, dim_count) = addDimensionsFromType(dims, ty);
-        ty = Types.arrayElementType(ty);
+        ty = InstUtil.arrayElementType(ty);
         dim_arr = InstUtil.makeDimensionArray(dims);
 
         // Instantiate the binding.
@@ -738,7 +758,7 @@ algorithm
         // Instantiate the class.
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
+        (cls, ty, _) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
         cse = InstUtil.isSpecialExtends(ty);
       then
         (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse);
@@ -780,7 +800,7 @@ algorithm
       equation
         item = SCodeLookup.lookupInClass(name, inEnv);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
+        (cls, _, _) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
           prefix, INST_ONLY_CONST());
         oel = makeConstantsPackage(prefix, cls);
       then
@@ -1014,7 +1034,7 @@ algorithm
     case (_, DAE.T_ARRAY(dims = dims))
       equation
         added_dims = listLength(dims);
-        dims = listAppend(dims, inDimensions);
+        dims = listAppend(inDimensions, dims);
       then
         (dims, added_dims);
 
@@ -1945,11 +1965,15 @@ algorithm
       String for_index;
       list<SCode.EEquation> eql;
       list<Equation> ieql;
-      list<Absyn.Exp> if_condition;
+      list<Absyn.Exp> if_condition, expl;
       list<list<SCode.EEquation>> if_branches;
       list<tuple<DAE.Exp, list<Equation>>> inst_branches;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> when_branches;
+      list<DAE.Exp> iexpl;
       Env env;
+      Absyn.Path func_path;
+      Item item;
+      Class cls;
 
     case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _)
       equation
@@ -2021,11 +2045,17 @@ algorithm
       then
         InstTypes.REINIT_EQUATION(dcref1, dexp1, info);
         
-    case (SCode.EQ_NORETCALL(functionName = _), _, _)
+    case (SCode.EQ_NORETCALL(functionName = cref1, functionArgs =
+        Absyn.FUNCTIONARGS(args = expl, argNames = {}), info = info), _, _)
       equation
-        print("SCodeInst.instEEquation: implement EQ_NORETCALL!\n");
+        func_path = Absyn.crefToPathIgnoreSubs(cref1);
+        //(item, _, env, _) =
+        //  SCodeLookup.lookupFunctionName(func_path, inEnv, info);
+        //(cls, _) = instClassItem(item, InstTypes.NOMOD(),
+        //  InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
+        iexpl = instExpList(expl, inEnv, inPrefix);
       then
-        fail();
+        InstTypes.NORETCALL_EQUATION(func_path, iexpl, info);
 
     else
       equation
@@ -2182,7 +2212,8 @@ algorithm
         // TODO: Check this, should it really be 1?
         binding = InstTypes.TYPED_BINDING(bind_exp, arr_ty, 1, info);
       then
-        InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty, InstTypes.DEFAULT_CONST_PREFIXES, binding, info),
+        InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty,
+            InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info),
           InstTypes.COMPLEX_CLASS(enum_el, {}, {}, {}, {}));
 
     else
@@ -2349,7 +2380,7 @@ algorithm
         (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);
-        (el, st) = instConditionalComponent2(cond, sel, mod, prefs, env, prefix, st);
+        (el, st) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st);
       then
         (el, st);
          
@@ -2366,6 +2397,7 @@ end instConditionalComponent;
 
 protected function instConditionalComponent2
   input Boolean inCondition;
+  input Absyn.Path inName;
   input SCode.Element inElement;
   input Modifier inMod;
   input Prefixes inPrefixes;
@@ -2376,15 +2408,16 @@ protected function instConditionalComponent2
   output SymbolTable outSymbolTable;
 algorithm
   (outElement, outSymbolTable) := 
-  match(inCondition, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable)
+  match(inCondition, inName, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable)
     local
       SCode.Element sel;
       Element el;
       SymbolTable st;
       Boolean added;
       Option<Element> oel;
+      Component comp;
 
-    case (true, _, _, _, _, _, st)
+    case (true, _, _, _, _, _, _, st)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
@@ -2397,7 +2430,13 @@ algorithm
       then
         (oel, st);
 
-    else (NONE(), inSymbolTable);
+    else
+      equation
+        comp = InstTypes.DELETED_COMPONENT(inName);
+        st = InstSymbolTable.updateComponent(comp, inSymbolTable);
+      then
+        (NONE(), st);
+
   end match;
 end instConditionalComponent2;
 

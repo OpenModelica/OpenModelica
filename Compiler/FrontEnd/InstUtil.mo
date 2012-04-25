@@ -66,6 +66,7 @@ protected import Util;
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
+public type DaePrefixes = InstTypes.DaePrefixes;
 public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
@@ -110,6 +111,48 @@ algorithm
   end match;
 end makeClass;
 
+public function makeDerivedClassType
+  input DAE.Type inType;
+  input ClassInf.State inState;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType, inState)
+    local
+      list<DAE.Var> vars;
+      DAE.EqualityConstraint ec;
+      DAE.TypeSource src;
+
+    // TODO: Check type restrictions.
+    case (DAE.T_COMPLEX(_, vars, ec, src), _)
+      then DAE.T_COMPLEX(inState, vars, ec, src);
+
+    else DAE.T_SUBTYPE_BASIC(inState, {}, inType, NONE(), DAE.emptyTypeSource);
+
+  end match;
+end makeDerivedClassType;
+
+public function arrayElementType
+  input DAE.Type inType;
+  output DAE.Type outType;
+algorithm
+  outType := match(inType)
+    local
+      DAE.Type ty;
+      ClassInf.State state;
+      DAE.EqualityConstraint ec;
+      DAE.TypeSource src;
+
+    case DAE.T_ARRAY(ty = ty) then arrayElementType(ty);
+    case DAE.T_SUBTYPE_BASIC(state, _, ty, ec, src)
+      equation
+        ty = arrayElementType(ty);
+      then
+        DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
+
+    else inType;
+  end match;
+end arrayElementType;
+
 public function addElementsToClass
   input list<Element> inElements;
   input Class inClass;
@@ -148,6 +191,7 @@ algorithm
     case InstTypes.UNTYPED_COMPONENT(name = name) then name;
     case InstTypes.TYPED_COMPONENT(name = name) then name;
     case InstTypes.CONDITIONAL_COMPONENT(name = name) then name;
+    case InstTypes.DELETED_COMPONENT(name = name) then name;
     case InstTypes.OUTER_COMPONENT(name = name) then name;
     case InstTypes.PACKAGE(name = name) then name;
 
@@ -164,6 +208,7 @@ algorithm
       DAE.Type ty;
       array<Dimension> dims;
       Prefixes prefs;
+      DaePrefixes dprefs;
       ParamType pty;
       Binding binding;
       Absyn.Info info;
@@ -177,11 +222,14 @@ algorithm
     case (InstTypes.UNTYPED_COMPONENT(_, ty, dims, prefs, pty, binding, info), _)
       then InstTypes.UNTYPED_COMPONENT(inName, ty, dims, prefs, pty, binding, info);
 
-    case (InstTypes.TYPED_COMPONENT(_, ty, prefs, binding, info), _)
-      then InstTypes.TYPED_COMPONENT(inName, ty, prefs, binding, info);
+    case (InstTypes.TYPED_COMPONENT(_, ty, dprefs, binding, info), _)
+      then InstTypes.TYPED_COMPONENT(inName, ty, dprefs, binding, info);
 
     case (InstTypes.CONDITIONAL_COMPONENT(_, cond, elem, mod, prefs, env, prefix, info), _)
       then InstTypes.CONDITIONAL_COMPONENT(inName, cond, elem, mod, prefs, env, prefix, info);
+
+    case (InstTypes.DELETED_COMPONENT(_), _)
+      then InstTypes.DELETED_COMPONENT(inName);
 
     case (InstTypes.OUTER_COMPONENT(_, inner_name), _)
       then InstTypes.OUTER_COMPONENT(inName, inner_name);
@@ -252,26 +300,33 @@ end getComponentBindingExp;
 
 public function getComponentVariability
   input Component inComponent;
-  output DAE.VarKind outVariability;
+  output SCode.Variability outVariability;
 algorithm
   outVariability := match(inComponent)
     local
-      DAE.VarKind var;
+      SCode.Variability var;
 
-    case InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(variability = var)) then var;
-    case InstTypes.TYPED_COMPONENT(prefixes = InstTypes.PREFIXES(variability = var)) then var;
-    else DAE.VARIABLE();
+    case InstTypes.UNTYPED_COMPONENT(prefixes = 
+      InstTypes.PREFIXES(variability = var)) then var;
+
+    case InstTypes.TYPED_COMPONENT(prefixes = 
+      InstTypes.DAE_PREFIXES(variability = DAE.CONST())) then SCode.CONST();
+
+    case InstTypes.TYPED_COMPONENT(prefixes = 
+      InstTypes.DAE_PREFIXES(variability = DAE.PARAM())) then SCode.PARAM();
+
+    else SCode.VAR();
 
   end match;
 end getComponentVariability;
 
 public function getEffectiveComponentVariability
   input Component inComponent;
-  output DAE.VarKind outVariability;
+  output SCode.Variability outVariability;
 algorithm
   outVariability := match(inComponent)
     case InstTypes.UNTYPED_COMPONENT(paramType = InstTypes.STRUCT_PARAM())
-      then DAE.CONST();
+      then SCode.CONST();
 
     else getComponentVariability(inComponent);
 
@@ -428,7 +483,7 @@ algorithm
   binding := InstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(inName, inIndex), inType,
     0, Absyn.dummyInfo);
   outComponent := InstTypes.TYPED_COMPONENT(inName, inType,
-    InstTypes.DEFAULT_CONST_PREFIXES, binding, Absyn.dummyInfo);
+    InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, Absyn.dummyInfo);
 end makeEnumLiteralComp;
 
 public function makeDimension
@@ -461,290 +516,242 @@ algorithm
   outDimension := InstTypes.UNTYPED_DIMENSION(inDimension, false);
 end wrapDimension;
   
-public function mergePrefixes
+public function mergePrefixesFromComponent
+  "Merges a component's prefixes with the given prefixes, with the component's
+   prefixes having priority."
   input Absyn.Path inComponentName;
-  input SCode.Prefixes inInnerPrefixes;
-  input SCode.Attributes inAttributes;
-  input Prefixes inOuterPrefixes;
-  input Absyn.Info inInfo;
+  input SCode.Element inComponent;
+  input Prefixes inPrefixes;
   output Prefixes outPrefixes;
 algorithm
-  outPrefixes :=
-  match(inComponentName, inInnerPrefixes, inAttributes, inOuterPrefixes, inInfo)
+  outPrefixes := match(inComponentName, inComponent, inPrefixes)
     local
-      SCode.Visibility vis1;
-      DAE.VarVisibility vis2;
-      SCode.Variability var1;
-      DAE.VarKind var2;
-      SCode.Final fp1, fp2;
-      Absyn.InnerOuter io;
-      Absyn.Direction dir1;
-      tuple<DAE.VarDirection, Absyn.Info> dir2;
-      SCode.Flow flp1;
-      tuple<DAE.Flow, Absyn.Info> flp2;
-      SCode.Stream sp1;
-      tuple<DAE.Stream, Absyn.Info> sp2;
+      SCode.Prefixes pf;
+      SCode.Attributes attr;
+      Prefixes prefs;
+      Absyn.Info info;
 
-    case (_, SCode.PREFIXES(SCode.PUBLIC(), _, SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(), _), 
-        SCode.ATTR(_, SCode.NOT_FLOW(), SCode.NOT_STREAM(), _, SCode.VAR(), Absyn.BIDIR()), _, _)
-      then inOuterPrefixes;
-
-    case (_, _, _, InstTypes.NO_PREFIXES(), _) 
-      then makePrefixes(inInnerPrefixes, inAttributes, inInfo);
-
-    case (_, SCode.PREFIXES(vis1, _, fp1, io, _), SCode.ATTR(_, flp1, sp1, _, var1, dir1),
-        InstTypes.PREFIXES(vis2, var2, fp2, _, dir2, flp2, sp2), _)
+    case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, info = info), _)
       equation
-        vis2 = mergeVisibility(vis1, vis2);
-        var2 = mergeVariability(var1, var2);
-        fp2 = mergeFinal(fp1, fp2);
-        dir2 = mergeDirection(dir1, dir2, inComponentName, inInfo);
-        (flp2, sp2) = mergeFlowStream(flp1, sp1, flp2, sp2, inComponentName, inInfo);
+        prefs = makePrefixes(pf, attr, info);
+        prefs = mergePrefixes(prefs, inPrefixes, inComponentName, "variable");
       then
-        InstTypes.PREFIXES(vis2, var2, fp2, io, dir2, flp2, sp2);
+        prefs;
 
   end match;
-end mergePrefixes;
+end mergePrefixesFromComponent;
 
 protected function makePrefixes
+  "Creates an InstTypes.Prefixes record from SCode.Prefixes and SCode.Attributes."
   input SCode.Prefixes inPrefixes;
   input SCode.Attributes inAttributes;
   input Absyn.Info inInfo;
   output Prefixes outPrefixes;
-protected
-  SCode.Visibility vis;
-  DAE.VarVisibility dvis;
-  SCode.Variability var;
-  DAE.VarKind vkind;
-  SCode.Final fp;
-  Absyn.InnerOuter io;
-  Absyn.Direction dir;
-  DAE.VarDirection ddir;
-  SCode.Flow flp;
-  DAE.Flow dflp;
-  SCode.Stream sp;
-  DAE.Stream dsp;
 algorithm
-  SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io) := inPrefixes;
-  SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
-    direction = dir) := inAttributes;
-  dvis := makeVarVisibility(vis);
-  vkind := makeVarKind(var);
-  ddir := makeVarDirection(dir);
-  dflp := makeVarFlow(flp);
-  dsp := makeVarStream(sp);
-  outPrefixes := InstTypes.PREFIXES(dvis, vkind, fp, io, 
-    (ddir, inInfo), (dflp, inInfo), (dsp, inInfo));
+  outPrefixes := match(inPrefixes, inAttributes, inInfo)
+    local
+      SCode.Visibility vis;
+      SCode.Variability var;
+      SCode.Final fp;
+      Absyn.InnerOuter io;
+      Absyn.Direction dir;
+      SCode.Flow flp;
+      SCode.Stream sp;
+      Absyn.Info info;
+
+    // All prefixes are the default ones, same as having no prefixes.
+    case (SCode.PREFIXES(visibility = SCode.PUBLIC(), finalPrefix =
+        SCode.NOT_FINAL(), innerOuter = Absyn.NOT_INNER_OUTER()), SCode.ATTR(
+        flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM(),
+        variability = SCode.VAR(), direction = Absyn.BIDIR()), _)
+      then InstTypes.NO_PREFIXES();
+
+    // Otherwise, select the prefixes we are interested in and build a PREFIXES
+    // record.
+    case (SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io),
+          SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
+        direction = dir), info)
+      then InstTypes.PREFIXES(vis, var, fp, io, (dir, info), (flp, info), (sp, info));
+
+  end match;
 end makePrefixes;
 
-protected function makeVarVisibility
-  input SCode.Visibility inVisibility;
-  output DAE.VarVisibility outVisibility;
+public function mergePrefixesWithDerivedClass
+  "Merges the attributes of a derived class with the given prefixes."
+  input Absyn.Path inClassName;
+  input SCode.Element inClass;
+  input Prefixes inPrefixes;
+  output Prefixes outPrefixes;
 algorithm
-  outVisibility := match(inVisibility)
-    case SCode.PUBLIC() then DAE.PUBLIC();
-    else DAE.PROTECTED();
-  end match;
-end makeVarVisibility;
+  outPrefixes := match(inClassName, inClass, inPrefixes)
+    local
+      SCode.Attributes attr;
+      Absyn.Info info;
+      Prefixes prefs;
 
-protected function makeVarKind
-  input SCode.Variability inVariability;
-  output DAE.VarKind outVariability;
-algorithm
-  outVariability := match(inVariability)
-    case SCode.VAR() then DAE.VARIABLE();
-    case SCode.PARAM() then DAE.PARAM();
-    case SCode.CONST() then DAE.CONST();
-    case SCode.DISCRETE() then DAE.DISCRETE();
-  end match;
-end makeVarKind;
+    case (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = attr), info = info), _)
+      equation
+        prefs = makePrefixesFromAttributes(attr, info);
+        prefs = mergePrefixes(prefs, inPrefixes, inClassName, "class");
+      then
+        prefs;
 
-protected function makeVarDirection
-  input Absyn.Direction inDirection;
-  output DAE.VarDirection outDirection;
-algorithm
-  outDirection := match(inDirection)
-    case Absyn.BIDIR() then DAE.BIDIR();
-    case Absyn.OUTPUT() then DAE.OUTPUT();
-    case Absyn.INPUT() then DAE.INPUT();
   end match;
-end makeVarDirection;
+end mergePrefixesWithDerivedClass;
 
-protected function makeVarFlow
-  input SCode.Flow inFlow;
-  output DAE.Flow outFlow;
+protected function makePrefixesFromAttributes
+  "Creates an InstTypes.Prefixes record from an SCode.Attributes."
+  input SCode.Attributes inAttributes;
+  input Absyn.Info inInfo;
+  output Prefixes outPrefixes;
 algorithm
-  outFlow := match(inFlow)
-    case SCode.NOT_FLOW() then DAE.NON_CONNECTOR();
-    else DAE.FLOW();
-  end match;
-end makeVarFlow;
+  outPrefixes := match(inAttributes, inInfo)
+    local
+      SCode.Flow flp;
+      SCode.Stream sp;
+      SCode.Variability var;
+      Absyn.Direction dir;
+      Absyn.Info info;
 
-protected function makeVarStream
-  input SCode.Stream inStream;
-  output DAE.Stream outStream;
-algorithm
-  outStream := match(inStream)
-    case SCode.NOT_STREAM() then DAE.NON_STREAM_CONNECTOR();
-    else DAE.STREAM();
+    // All attributes are the default ones, same as having no prefixes.
+    case (SCode.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix =
+        SCode.NOT_STREAM(), variability = SCode.VAR(), direction = Absyn.BIDIR()), _)
+      then InstTypes.NO_PREFIXES();
+
+    // Otherwise, select the attributes we are interested in and build a
+    // PREFIXES record with the parts not covered by SCode.Attributes set to the
+    // default values.
+    case (SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
+        direction = dir), _)
+      then InstTypes.PREFIXES(SCode.PUBLIC(), var, SCode.NOT_FINAL(),
+        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (flp, inInfo), (sp, inInfo));
+
   end match;
-end makeVarStream;
+end makePrefixesFromAttributes;
+
+public function mergePrefixes
+  "Merges two InstTypes.Prefixes records, with the outer having priority over
+   the inner. inElementName and inElementType are used for error reporting, where
+   inElementName is the name of the element that the outer prefixes comes from
+   and inElementType the type of that element as a string (variable or class)."
+  input Prefixes inOuterPrefixes;
+  input Prefixes inInnerPrefixes;
+  input Absyn.Path inElementName;
+  input String inElementType;
+  output Prefixes outPrefixes;
+algorithm
+  outPrefixes :=
+  match(inOuterPrefixes, inInnerPrefixes, inElementName, inElementType)
+    local
+      SCode.Visibility vis1, vis2;
+      SCode.Variability var1, var2;
+      SCode.Final fp1, fp2;
+      Absyn.InnerOuter io1, io2;
+      tuple<Absyn.Direction, Absyn.Info> dir1, dir2;
+      tuple<SCode.Flow, Absyn.Info> flp1, flp2;
+      tuple<SCode.Stream, Absyn.Info> sp1, sp2;
+
+    // No outer prefixes => no change.
+    case (InstTypes.NO_PREFIXES(), _, _, _) then inInnerPrefixes;
+    // No inner prefixes => overwrite with outer prefixes.
+    case (_, InstTypes.NO_PREFIXES(), _, _) then inOuterPrefixes;
+
+    // Both outer and inner prefixes => merge them.
+    case (InstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, flp1, sp1),
+          InstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, flp2, sp2), _, _)
+      equation
+        vis2 = mergeVisibility(vis1, vis2);
+        var2 = mergeVariability(var1, var2);
+        fp2 = mergeFinal(fp1, fp2);
+        dir2 = mergeDirection(dir1, dir2, inElementName, inElementType);
+        (flp2, sp2) =
+          mergeFlowStream(flp1, sp1, flp2, sp2, inElementName, inElementType);
+      then
+        InstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, flp2, sp2);
+
+  end match;
+end mergePrefixes;
 
 protected function mergeVisibility
+  "Merges an outer and inner visibility prefix."
+  input SCode.Visibility inOuterVisibility;
   input SCode.Visibility inInnerVisibility;
-  input DAE.VarVisibility inOuterVisibility;
-  output DAE.VarVisibility outVisibility;
+  output SCode.Visibility outVisibility;
 algorithm
-  outVisibility := match(inInnerVisibility, inOuterVisibility)
-    case (_, DAE.PROTECTED()) then DAE.PROTECTED();
-    else makeVarVisibility(inInnerVisibility);
+  outVisibility := match(inOuterVisibility, inInnerVisibility)
+    // If the outer is protected, return protected.
+    case (SCode.PROTECTED(), _) then inOuterVisibility;
+    // Otherwise, no change.
+    else inInnerVisibility;
   end match;
 end mergeVisibility;
 
 protected function mergeVariability
+  "Merges an outer and inner variability prefix. The most restrictive
+   variability is returned (with constant most restrictive, variable least)."
+  input SCode.Variability inOuterVariability;
   input SCode.Variability inInnerVariability;
-  input DAE.VarKind inOuterVariability;
-  output DAE.VarKind outVariability;
+  output SCode.Variability outVariability;
 algorithm
-  outVariability := match(inInnerVariability, inOuterVariability)
-    case (_, DAE.CONST()) then DAE.CONST();
-    case (SCode.CONST(), _) then DAE.CONST();
-    case (_, DAE.PARAM()) then DAE.PARAM();
-    case (SCode.PARAM(), _) then DAE.PARAM();
-    case (_, DAE.DISCRETE()) then DAE.DISCRETE();
-    case (SCode.DISCRETE(), _) then DAE.DISCRETE();
-    else DAE.VARIABLE();
+  outVariability := match(inOuterVariability, inInnerVariability)
+    case (SCode.CONST(), _) then inOuterVariability;
+    case (_, SCode.CONST()) then inInnerVariability;
+    case (SCode.PARAM(), _) then inOuterVariability;
+    case (_, SCode.PARAM()) then inInnerVariability;
+    case (SCode.DISCRETE(), _) then inOuterVariability;
+    case (_, SCode.DISCRETE()) then inInnerVariability;
+    else inInnerVariability;
   end match;
 end mergeVariability;
 
 protected function mergeFinal
-  input SCode.Final inInnerFinal;
+  "Merges an outer and inner final prefix."
   input SCode.Final inOuterFinal;
+  input SCode.Final inInnerFinal;
   output SCode.Final outFinal;
 algorithm
-  outFinal := match(inInnerFinal, inOuterFinal)
-    case (_, SCode.FINAL()) then SCode.FINAL();
+  outFinal := match(inOuterFinal, inInnerFinal)
+    // If the outer prefix is final, return final.
+    case (SCode.FINAL(), _) then inOuterFinal;
+    // Otherwise, no change.
     else inInnerFinal;
   end match;
 end mergeFinal;
 
 protected function mergeDirection
-  input Absyn.Direction inInnerDirection;
-  input tuple<DAE.VarDirection, Absyn.Info> inOuterDirection;
-  input Absyn.Path inComponentName;
-  input Absyn.Info inInfo;
-  output tuple<DAE.VarDirection, Absyn.Info> outDirection;
+  "Merges an outer and inner direction prefix."
+  input tuple<Absyn.Direction, Absyn.Info> inOuterDirection;
+  input tuple<Absyn.Direction, Absyn.Info> inInnerDirection;
+  input Absyn.Path inElementName;
+  input String inElementType;
+  output tuple<Absyn.Direction, Absyn.Info> outDirection;
 algorithm
-  outDirection := match(inInnerDirection, inOuterDirection, inComponentName, inInfo)
+  outDirection :=
+  match(inOuterDirection, inInnerDirection, inElementName, inElementType)
     local
-      DAE.VarDirection dir;
-      Absyn.Info info;
-      String dir_str1, dir_str2, comp_name;
+      Absyn.Direction dir1, dir2;
+      Absyn.Info info1, info2;
+      String dir_str1, dir_str2, el_name;
 
-    case (Absyn.BIDIR(), _, _, _) then inOuterDirection;
+    // If either prefix is unset, return the other.
+    case (_, (Absyn.BIDIR(), _), _, _) then inOuterDirection;
+    case ((Absyn.BIDIR(), _), _, _, _) then inInnerDirection;
 
-    case (_, (DAE.BIDIR(), _), _, _)
+    // Otherwise we have an error, since it's not allowed to overwrite
+    // input/output prefixes.
+    case ((dir1, info1), (dir2, info2), _, _)
       equation
-        dir = makeVarDirection(inInnerDirection);
-      then
-        ((dir, inInfo));
-
-    case (_, (dir, info), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        dir_str1 = varDirectionString(dir);
-        dir_str2 = directionString(inInnerDirection);
-        comp_name = Absyn.pathString(inComponentName);
-        Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,
-          {dir_str1, comp_name, dir_str2}, info);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
+        dir_str1 = directionString(dir1);
+        dir_str2 = directionString(dir2);
+        el_name = Absyn.pathString(inElementName);
+        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {dir_str1, inElementType, el_name, dir_str2}, info1);
       then
         fail();
 
   end match;
 end mergeDirection;
-
-protected function mergeFlowStream
-  input SCode.Flow inInnerFlow;
-  input SCode.Stream inInnerStream;
-  input tuple<DAE.Flow, Absyn.Info> inOuterFlow;
-  input tuple<DAE.Stream, Absyn.Info> inOuterStream;
-  input Absyn.Path inComponentName;
-  input Absyn.Info inInfo;
-  output tuple<DAE.Flow, Absyn.Info> outFlow;
-  output tuple<DAE.Stream, Absyn.Info> outStream;
-algorithm
-  (outFlow, outStream) := matchcontinue(inInnerFlow, inInnerStream, inOuterFlow,
-      inOuterStream, inComponentName, inInfo)
-    local
-      DAE.Flow fp;
-      DAE.Stream sp;
-      Absyn.Info info;
-      String fp_str, sp_str, pf_str, comp_name;
-      tuple<DAE.Flow, Absyn.Info> new_fp;
-      tuple<DAE.Stream, Absyn.Info> new_sp;
-
-    case (SCode.NOT_FLOW(), SCode.NOT_STREAM(), _, _, _, _) 
-      then (inOuterFlow, inOuterStream);
-
-    case (_, _, (fp, _), (sp, _), _, _)
-      equation
-        false = ((SCode.flowBool(inInnerFlow) or SCode.streamBool(inInnerStream)) and
-                 (DAEUtil.isFlow(fp) or DAEUtil.isStream(sp)));
-        new_fp = mergeFlow(inInnerFlow, inOuterFlow, inInfo);
-        new_sp = mergeStream(inInnerStream, inOuterStream, inInfo);
-      then
-        (new_fp, new_sp);
-        
-    case (_, _, (DAE.FLOW(), info), _, _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        fp_str = SCodeDump.flowStr(inInnerFlow);
-        sp_str = SCodeDump.streamStr(inInnerStream);
-        pf_str = fp_str +& sp_str;
-        comp_name = Absyn.pathString(inComponentName);
-        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {"flow", comp_name, pf_str}, info);
-      then
-        fail();
-
-    case (_, _, _, (DAE.STREAM(), info), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        fp_str = SCodeDump.flowStr(inInnerFlow);
-        sp_str = SCodeDump.streamStr(inInnerStream);
-        pf_str = fp_str +& sp_str;
-        comp_name = Absyn.pathString(inComponentName);
-        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {"stream", comp_name, pf_str}, info);
-      then
-        fail();
-
-  end matchcontinue;
-end mergeFlowStream;
-
-protected function mergeFlow
-  input SCode.Flow inInnerFlow;
-  input tuple<DAE.Flow, Absyn.Info> inOuterFlow;
-  input Absyn.Info inInfo;
-  output tuple<DAE.Flow, Absyn.Info> outFlow;
-algorithm
-  outFlow := match(inInnerFlow, inOuterFlow, inInfo)
-    case (SCode.NOT_FLOW(), _, _) then inOuterFlow;
-    else ((DAE.FLOW(), inInfo));
-  end match;
-end mergeFlow;
-
-protected function mergeStream
-  input SCode.Stream inInnerStream;
-  input tuple<DAE.Stream, Absyn.Info> inOuterStream;
-  input Absyn.Info inInfo;
-  output tuple<DAE.Stream, Absyn.Info> outStream;
-algorithm
-  outStream := match(inInnerStream, inOuterStream, inInfo)
-    case (SCode.NOT_STREAM(), _, _) then inOuterStream;
-    else ((DAE.STREAM(), inInfo));
-  end match;
-end mergeStream;
    
 protected function directionString
   input Absyn.Direction inDirection;
@@ -757,16 +764,61 @@ algorithm
   end match;
 end directionString;
 
-protected function varDirectionString
-  input DAE.VarDirection inDirection;
-  output String outString;
+protected function mergeFlowStream
+  "Merges outer and inner flow and stream prefixes."
+  input tuple<SCode.Flow, Absyn.Info> inOuterFlow;
+  input tuple<SCode.Stream, Absyn.Info> inOuterStream;
+  input tuple<SCode.Flow, Absyn.Info> inInnerFlow;
+  input tuple<SCode.Stream, Absyn.Info> inInnerStream;
+  input Absyn.Path inElementName;
+  input String inElementType;
+  output tuple<SCode.Flow, Absyn.Info> outFlow;
+  output tuple<SCode.Stream, Absyn.Info> outStream;
 algorithm
-  outString := match(inDirection)
-    case DAE.INPUT() then "input";
-    case DAE.OUTPUT() then "output";
-    else "";
-  end match;
-end varDirectionString;
+  (outFlow, outStream) := matchcontinue(inOuterFlow, inOuterStream, inInnerFlow,
+      inInnerStream, inElementName, inElementType)
+    local
+      SCode.Flow fp1, fp2;
+      SCode.Stream sp1, sp2;
+      Absyn.Info info1, info2;
+      String fp_str, sp_str, pf_str, el_name;
+      tuple<SCode.Flow, Absyn.Info> new_fp;
+      tuple<SCode.Stream, Absyn.Info> new_sp;
+
+    // If either of the prefixes are unset, return the others.
+    case ((SCode.NOT_FLOW(), _), (SCode.NOT_STREAM(), _), _, _, _, _)
+      then (inInnerFlow, inInnerStream);
+    case (_, _, (SCode.NOT_FLOW(), _), (SCode.NOT_STREAM(), _), _, _)
+      then (inOuterFlow, inOuterStream);
+
+    // Trying to overwrite a flow prefix => show error.
+    case ((fp1, info1), (sp1, _), (SCode.FLOW(), info2), _, _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
+        fp_str = SCodeDump.flowStr(fp1);
+        sp_str = SCodeDump.streamStr(sp1);
+        pf_str = fp_str +& sp_str;
+        el_name = Absyn.pathString(inElementName);
+        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {"flow", inElementType, el_name, pf_str}, info2);
+      then
+        fail();
+
+    // Trying to overwrite a stream prefix => show error.
+    case ((fp1, info1), (sp1, _), _, (SCode.STREAM(), info2), _, _)
+      equation
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
+        fp_str = SCodeDump.flowStr(fp1);
+        sp_str = SCodeDump.streamStr(sp1);
+        pf_str = fp_str +& sp_str;
+        el_name = Absyn.pathString(inElementName);
+        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
+          {"stream", inElementType, el_name, pf_str}, info2);
+      then
+        fail();
+
+  end matchcontinue;
+end mergeFlowStream;
 
 public function addPrefix
   input String inName;
@@ -1106,7 +1158,7 @@ algorithm
     case InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(innerOuter = io))
       then Absyn.isInner(io);
 
-    case InstTypes.TYPED_COMPONENT(prefixes = InstTypes.PREFIXES(innerOuter = io))
+    case InstTypes.TYPED_COMPONENT(prefixes = InstTypes.DAE_PREFIXES(innerOuter = io))
       then Absyn.isInner(io);
 
     case InstTypes.CONDITIONAL_COMPONENT(element = el)
@@ -1123,10 +1175,11 @@ algorithm
   outIsConnector := match(inComponent)
     local
       DAE.Type ty;
+      Absyn.Path name;
 
     case InstTypes.TYPED_COMPONENT(ty = ty)
       equation
-        ty = Types.arrayElementType(ty);
+        ty = arrayElementType(ty);
       then
         Types.isComplexConnector(ty);
 
@@ -1135,7 +1188,8 @@ algorithm
 
     else
       equation
-        print("InstUtil.isConnectorComponent: IMPLEMENT ME\n");
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"InstUtil.isConnectorComponent: Unknown component\n"});
       then
         fail();
 
@@ -1244,13 +1298,99 @@ public function paramTypeFromPrefixes
   output ParamType outParamType;
 algorithm
   outParamType := match(inPrefixes)
-    case InstTypes.PREFIXES(variability = DAE.PARAM())
+    case InstTypes.PREFIXES(variability = SCode.PARAM())
       then InstTypes.NON_STRUCT_PARAM();
 
     else InstTypes.NON_PARAM();
 
   end match;
 end paramTypeFromPrefixes;
+
+public function translatePrefixes
+  input Prefixes inPrefixes;
+  output DaePrefixes outPrefixes;
+algorithm
+  outPrefixes := match(inPrefixes)
+    local
+      SCode.Visibility vis1;
+      DAE.VarVisibility vis2;
+      SCode.Variability var1;
+      DAE.VarKind var2;
+      SCode.Final fp;
+      Absyn.InnerOuter io;
+      Absyn.Direction dir1;
+      DAE.VarDirection dir2;
+      SCode.Flow flp1;
+      DAE.Flow flp2;
+      SCode.Stream sp1;
+      DAE.Stream sp2;
+
+    case InstTypes.NO_PREFIXES() then InstTypes.NO_DAE_PREFIXES();
+    case InstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (flp1, _), (sp1, _))
+      equation
+        vis2 = translateVisibility(vis1);
+        var2 = translateVariability(var1);
+        dir2 = translateDirection(dir1);
+        flp2 = translateFlow(flp1);
+        sp2 = translateStream(sp1);
+      then
+        InstTypes.DAE_PREFIXES(vis2, var2, fp, io, dir2, flp2, sp2);
+
+  end match;
+end translatePrefixes;
+
+protected function translateVisibility
+  input SCode.Visibility inVisibility;
+  output DAE.VarVisibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case SCode.PUBLIC() then DAE.PUBLIC();
+    else DAE.PROTECTED();
+  end match;
+end translateVisibility;
+
+protected function translateVariability
+  input SCode.Variability inVariability;
+  output DAE.VarKind outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case SCode.VAR() then DAE.VARIABLE();
+    case SCode.PARAM() then DAE.PARAM();
+    case SCode.CONST() then DAE.CONST();
+    case SCode.DISCRETE() then DAE.DISCRETE();
+  end match;
+end translateVariability;
+
+protected function translateDirection
+  input Absyn.Direction inDirection;
+  output DAE.VarDirection outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case Absyn.BIDIR() then DAE.BIDIR();
+    case Absyn.OUTPUT() then DAE.OUTPUT();
+    case Absyn.INPUT() then DAE.INPUT();
+  end match;
+end translateDirection;
+
+protected function translateFlow
+  input SCode.Flow inFlow;
+  output DAE.Flow outFlow;
+algorithm
+  outFlow := match(inFlow)
+    case SCode.NOT_FLOW() then DAE.NON_CONNECTOR();
+    else DAE.FLOW();
+  end match;
+end translateFlow;
+
+protected function translateStream
+  input SCode.Stream inStream;
+  output DAE.Stream outStream;
+algorithm
+  outStream := match(inStream)
+    case SCode.NOT_STREAM() then DAE.NON_STREAM_CONNECTOR();
+    else DAE.STREAM();
+  end match;
+end translateStream;
 
 public function printBinding
   input Binding inBinding;
@@ -1295,6 +1435,9 @@ algorithm
 
     case InstTypes.CONDITIONAL_COMPONENT(name = path) 
       then "  conditional " +& Absyn.pathString(path);
+
+    case InstTypes.DELETED_COMPONENT(name = path)
+      then "  deleted " +& Absyn.pathString(path);
 
     case InstTypes.OUTER_COMPONENT(name = path, innerName = SOME(inner_path))
       then "  outer " +& Absyn.pathString(path) +& " -> " +& Absyn.pathString(inner_path);
