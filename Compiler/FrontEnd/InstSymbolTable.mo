@@ -128,7 +128,7 @@ protected constant DAE.Var BUILTIN_TIME_UNIT = DAE.TYPES_VAR(
 
 protected constant Component BUILTIN_TIME_COMP = InstTypes.TYPED_COMPONENT(
   Absyn.IDENT("time"), DAE.T_REAL({BUILTIN_TIME_QUANTITY, BUILTIN_TIME_UNIT},
-  DAE.emptyTypeSource), InstTypes.NO_PREFIXES(), InstTypes.UNBOUND(),
+  DAE.emptyTypeSource), InstTypes.NO_DAE_PREFIXES(), InstTypes.UNBOUND(),
   Absyn.dummyInfo);
 
 public function create
