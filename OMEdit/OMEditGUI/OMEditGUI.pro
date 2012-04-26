@@ -23,7 +23,7 @@ TEMPLATE = app
 # Generate the CORBA stub files for windows. On Linux we generate them in the makefile.
 win32 {
     !exists(omc_communication.cc || omc_communication.h) {
-        system($$(OMDEV)/lib/omniORB-4.1.4-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
+        system($$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
     }
 }
 
@@ -110,23 +110,23 @@ DEFINES += __x86__ \
     __OSVERSION__=4 \
     __WIN32__
 CONFIG(debug, debug|release){
-LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
-    -lomniORB414_rtd \
+LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
+    -lomniORB416_rtd \
     -lomnithread34_rtd \
     -L../../OMPlot/bin \
     -lOMPlot \
     -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib \
     -lqwtd5
 } else {
-LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
-    -lomniORB414_rt \
+LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
+    -lomniORB416_rt \
     -lomnithread34_rt \
     -L../../OMPlot/bin \
     -lOMPlot \
     -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib \
     -lqwt5
 }
-INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include \
+INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
                $$(OMDEV)/lib/qwt-5.2.1-mingw/include \
                ../../OMPlot/OMPlotGUI \
                ../../
