@@ -1691,11 +1691,11 @@ algorithm
       then ();
     case (DAE.RCONST(real = rval))
       equation
-        dumpStrMathMLNumberAttr(Util.xmlEscape(s),MathMLType,MathMLConstant);
+        dumpStrMathMLNumberAttr(realString(rval),MathMLType,MathMLReal);
       then ();
     case (DAE.SCONST(string = s))
       equation
-        dumpStrMathMLNumberAttr(s,MathMLType,MathMLConstant);
+        dumpStrMathMLNumberAttr(Util.xmlEscape(s),MathMLType,MathMLConstant);
       then ();
     case (DAE.BCONST(bool = false))
       equation
