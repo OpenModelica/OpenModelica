@@ -544,7 +544,7 @@ algorithm
     case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)}));
+        Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)})));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
@@ -1691,7 +1691,7 @@ algorithm
       then ();
     case (DAE.RCONST(real = rval))
       equation
-        dumpStrMathMLNumberAttr(realString(rval),MathMLType,MathMLReal);
+        dumpStrMathMLNumberAttr(Util.xmlEscape(s),MathMLType,MathMLConstant);
       then ();
     case (DAE.SCONST(string = s))
       equation
@@ -1966,6 +1966,10 @@ algorithm
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
+    case (DAE.ENUM_LITERAL(name = fcn))
+      equation
+        dumpStrMathMLVariable(Absyn.pathStringNoQual(fcn));
+      then ();
     case (DAE.SIZE(exp = cr,sz = SOME(dim)))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
@@ -2140,16 +2144,14 @@ Help function to dumpFunctions2
   input DAE.Function fun;
 algorithm
   _:= matchcontinue (fun)
-    local
-      Absyn.Path name;
     case DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_)))) then ();
     case(fun)
       equation
-        name = DAEUtil.functionName(fun);
-        Print.printBuf("\n<");Print.printBuf(FUNCTION);
-        Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathStringNoQual(name));Print.printBuf("\"");
-        Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEDump.dumpFunctionStr(fun));
-        Print.printBuf("\"/>");
+        dumpStrOpenTagAttr(FUNCTION, FUNCTION_NAME, Util.xmlEscape(Absyn.pathStringNoQual(DAEUtil.functionName(fun))));
+        dumpStrOpenTag(MODELICA_IMPLEMENTATION);
+        Print.printBuf(Util.xmlEscape(DAEDump.dumpFunctionStr(fun)));
+        dumpStrCloseTag(MODELICA_IMPLEMENTATION);
+        dumpStrCloseTag(FUNCTION);
       then();
     case (_) then();
 /*
@@ -2700,7 +2702,7 @@ algorithm
     case (NONE(),_,_) then ();
     case (SOME(e),_,addMathMLCode)
       equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
+        dumpStrOpenTagAttr(Content,EXP_STRING,Util.xmlEscape(printExpStr(e)));
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(Content);
       then ();
@@ -3527,7 +3529,7 @@ algorithm
     case ({},_) then ();
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
-        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,ExpressionDump.printExpStr(e));
+        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,Util.xmlEscape(ExpressionDump.printExpStr(e)));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
         dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
