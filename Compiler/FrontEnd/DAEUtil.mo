@@ -240,6 +240,7 @@ end getBoundStartEquation;
 
 protected import Algorithm;
 protected import BaseHashTable;
+protected import BackendDAEUtil;
 protected import Ceval;
 protected import ComponentReference;
 protected import Config;
@@ -2545,23 +2546,26 @@ end transformIfEqToExpr2;
 public function evaluateAnnotation
 "function: evaluateAnnotation
   evaluates the annotation Evaluate"
+  input Env.Cache inCache;
+  input list<Env.Frame> env;  
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 algorithm
-  (outDAElist) := matchcontinue (inDAElist)
+  (outDAElist) := matchcontinue (inCache,env,inDAElist)
     local
       DAE.DAElist dae;
       HashTable2.HashTable ht,pv,ht1;
       list<DAE.Element> elts,elts1,elts2;
-    case (dae as DAE.DAE(elts))
+      Env.Cache cache;
+    case (_,_,dae as DAE.DAE(elts))
       equation
         pv = getParameterVars(dae,HashTable2.emptyHashTable());
         (ht,true) = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
-        (elts1,ht1) = evaluateAnnotation2(dae,ht);
+        (elts1,ht1,cache) = evaluateAnnotation2_loop(inCache,env,dae,ht,BaseHashTable.hashTableCurrentSize(ht));
         (elts2,(_,_,_)) = traverseDAE2(elts, evaluateAnnotationVisitor, (ht1,0,0));
       then
         DAE.DAE(elts2);
-    case (dae) then dae;
+    case (_,_,dae) then dae;
   end matchcontinue;
 end evaluateAnnotation;
 
@@ -2588,7 +2592,25 @@ algorithm
       DAE.ComponentRef cr;
       HashTable2.HashTable ht;
       DAE.Exp exp,e1;
-      Integer i,j;
+      Integer i,j,k;
+      list<DAE.Var> varLst;
+      
+    // Special Case for Records
+    case ((exp as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((exp,(NONE(),false)));
+        ((e1,(ht,i,k))) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        true = intGt(k,j);
+      then
+        ((e1,(ht,i,k)));
+    // Special Case for Arrays
+    case ((exp as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(ht,i,j)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((exp,(NONE(),false)));
+        ((e1,(ht,i,k))) = Expression.traverseExp(e1,evaluateAnnotationTraverse,(ht,i,j));
+        true = intGt(k,j);
+      then
+        ((e1,(ht,i,k)));
     
     case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
       equation
@@ -2746,24 +2768,70 @@ algorithm
   end matchcontinue;
 end evaluateParameter;
 
+protected function evaluateAnnotation2_loop
+  input Env.Cache cache;
+  input list<Env.Frame> env;
+  input DAE.DAElist inDAElist;
+  input HashTable2.HashTable inHt;
+  input Integer sizeBefore;
+  output list<DAE.Element> outDAElist;
+  output HashTable2.HashTable outHt;
+  output Env.Cache outCache;
+protected
+  Integer newsize;
+algorithm
+  (outDAElist,outHt,outCache) := evaluateAnnotation2(cache,env,inDAElist,inHt);
+  newsize := BaseHashTable.hashTableCurrentSize(outHt);  
+  (outDAElist,outHt,outCache) := evaluateAnnotation2_loop1(intEq(newsize,sizeBefore),outCache,env,DAE.DAE(outDAElist),outHt,newsize); 
+end evaluateAnnotation2_loop;
+
+protected function evaluateAnnotation2_loop1
+  input Boolean finish;
+  input Env.Cache inCache;
+  input list<Env.Frame> env;  
+  input DAE.DAElist inDAElist;
+  input HashTable2.HashTable inHt;
+  input Integer sizeBefore;
+  output list<DAE.Element> outDAElist;
+  output HashTable2.HashTable outHt;
+  output Env.Cache outCache;
+algorithm
+  (outDAElist,outHt,outCache) := match (finish,inCache,env,inDAElist,inHt,sizeBefore)
+    local 
+      HashTable2.HashTable ht;
+      list<DAE.Element> elst;
+      Env.Cache cache;
+    case(true,_,_,DAE.DAE(elst),_,_) then (elst,inHt,inCache);
+    else
+      equation
+        (elst,ht,cache) = evaluateAnnotation2_loop(inCache,env,inDAElist,inHt,sizeBefore);
+      then
+        (elst,ht,cache);
+  end match;
+end evaluateAnnotation2_loop1;
+
 protected function evaluateAnnotation2
 "function: evaluateAnnotation2
   evaluates the parameters with bindings parameters with annotation Evaluate"
+  input Env.Cache inCache;
+  input list<Env.Frame> env;  
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   output list<DAE.Element> outDAElist;
   output HashTable2.HashTable outHt;
+  output Env.Cache outCache;
 algorithm
-  (outDAElist,outHt) := matchcontinue (inDAElist,inHt)
+  (outDAElist,outHt,outCache) := matchcontinue (inCache,env,inDAElist,inHt)
     local
       list<DAE.Element> elementLst,elementLst1;
       HashTable2.HashTable ht,ht1;
-    case (DAE.DAE({}),ht) then ({},ht);
-    case (DAE.DAE(elementLst=elementLst),ht)
+      Env.Cache cache;
+    case (_,_,DAE.DAE({}),ht) then ({},ht,inCache);
+    case (_,_,DAE.DAE(elementLst=elementLst),ht)
       equation
-        (elementLst1,ht1) = List.mapFold(elementLst,evaluateAnnotation3,ht);
+        (elementLst1,(ht1,cache,_)) = List.mapFold(elementLst,evaluateAnnotation3,(ht,inCache,env));
       then
-        (elementLst1,ht1);
+        (elementLst1,ht1,cache);
   end matchcontinue;
 end evaluateAnnotation2;
 
@@ -2771,12 +2839,15 @@ protected function evaluateAnnotation3
 "function: evaluateAnnotation3
   evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.Element iel;
-  input HashTable2.HashTable inHt;
+  input tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> inHt;
   output DAE.Element oel;
-  output HashTable2.HashTable outHt;
+  output tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> outHt;
 algorithm
   (oel,outHt) := matchcontinue (iel,inHt)
     local
+      tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> httpl;
+      Env.Cache cache;
+      list<Env.Frame> env;      
       list<DAE.Element> rest,sublist,sublist1,newlst;
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
@@ -2800,21 +2871,21 @@ algorithm
       Absyn.InnerOuter innerOuter;
       Integer i,j;      
       
-    case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),ht)
+    case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),_)
       equation
-        (sublist1,ht1) = List.mapFold(sublist,evaluateAnnotation3,ht);
+        (sublist1,httpl) = List.mapFold(sublist,evaluateAnnotation3,inHt);
       then
-        (DAE.COMP(ident,sublist1,source,comment),ht1);
+        (DAE.COMP(ident,sublist1,source,comment),httpl);
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
                   protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,
                   streamPrefix=streamPrefix,source=source,variableAttributesOption=variableAttributesOption,
-                  absynCommentOption=absynCommentOption,innerOuter=innerOuter),ht)
+                  absynCommentOption=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
       equation
         ((e1,(_,i,j))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
-        (e2,ht1) = evaluateAnnotation4(cr,e1,i,j,ht);
+        (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,flowPrefix,streamPrefix,
-            source,variableAttributesOption,absynCommentOption,innerOuter),ht1);
+            source,variableAttributesOption,absynCommentOption,innerOuter),(ht1,cache,env));
     else (iel,inHt);
   end matchcontinue;
 end evaluateAnnotation3;
@@ -2822,6 +2893,8 @@ end evaluateAnnotation3;
 protected function evaluateAnnotation4
 "function: evaluateAnnotation4
   evaluates the parameters with bindings parameters with annotation Evaluate"
+  input Env.Cache inCache;
+  input list<Env.Frame> env;  
   input DAE.ComponentRef inCr;
   input DAE.Exp inExp;
   input Integer inInteger1;
@@ -2829,27 +2902,30 @@ protected function evaluateAnnotation4
   input HashTable2.HashTable inHt;
   output DAE.Exp outExp;
   output HashTable2.HashTable outHt;
+  output Env.Cache outCache;
 algorithm
-  (outExp,outHt) := matchcontinue (inCr,inExp,inInteger1,inInteger2,inHt)
+  (outExp,outHt,outCache) := matchcontinue (inCache,env,inCr,inExp,inInteger1,inInteger2,inHt)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
       Integer i,j;
       HashTable2.HashTable ht,ht1;
-      //Values.Value value;
-    case (cr,e,i,j,ht)
+      Env.Cache cache;
+      Values.Value value;
+    case (_,_,cr,e,i,j,ht)
       equation
         // there is a paramter with evaluate=true
         true = intGt(j,0);
         // there are no other crefs
         true = intEq(i,0);
         // evalute expression
-        //(cache, value,_) = Ceval.ceval(cache, env, e, impl,NONE(), NONE(), Ceval.MSG());
-        // e1 = ValuesUtil.valueExp(value);
-        e1 = e;
+        ((e1,(ht,_,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
+        (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Ceval.NO_MSG());
+         e1 = ValuesUtil.valueExp(value);
+        // e1 = e;
         ht1 = BaseHashTable.add((cr,e1),ht);
-      then (e1,ht1);
-    case (_,e,_,_,ht) then (e,ht);
+      then (e1,ht1,cache);
+    case (_,_,_,e,_,_,ht) then (e,ht,inCache);
   end matchcontinue;
 end evaluateAnnotation4;
 
@@ -5532,6 +5608,7 @@ end simpleInlineDerEuler;
 
 public function transformationsBeforeBackend
   input Env.Cache cache;
+  input list<Env.Frame> env;
   input DAE.DAElist dae;
   output DAE.DAElist d;
 protected
@@ -5541,7 +5618,7 @@ algorithm
   elts := List.map1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
   d := DAE.DAE(elts);
   // Transform if equations to if expression before going into code generation.
-  d := evaluateAnnotation(d);
+  d := evaluateAnnotation(cache,env,d);
   d := transformIfEqToExpr(d,false);
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);

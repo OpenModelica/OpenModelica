@@ -1162,14 +1162,14 @@ algorithm
 annotation(preferredView="text");
 end setPreOptModules;
 
-function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
-  input String modules;
+function setMatchingAlgorithm "example input: omc"
+  input String matchingAlgorithm;
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  success := setCommandLineOptions("+pastOptModules=" + modules);
+  success := setCommandLineOptions("+matchingAlgorithm=" + matchingAlgorithm);
 annotation(preferredView="text");
-end setPastOptModules;
+end setMatchingAlgorithm;
 
 function setIndexReductionMethod "example input: dummyDerivative"
   input String method;
@@ -1179,6 +1179,15 @@ algorithm
   success := setCommandLineOptions("+indexReductionMethod=" + method);
 annotation(preferredView="text");
 end setIndexReductionMethod;
+
+function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
+  input String modules;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+pastOptModules=" + modules);
+annotation(preferredView="text");
+end setPastOptModules;
 
 function setCommandLineOptions
   "The input is a regular command-line flag given to OMC, e.g. +d=failtrace or +g=MetaModelica"

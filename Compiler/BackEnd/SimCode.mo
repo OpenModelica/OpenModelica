@@ -1018,7 +1018,7 @@ algorithm
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
@@ -1235,7 +1235,7 @@ algorithm
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,

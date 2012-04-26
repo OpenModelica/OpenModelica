@@ -134,7 +134,7 @@ algorithm
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         
         print("* Flatten ok\n");

@@ -573,7 +573,7 @@ algorithm
 
         d = fixModelicaOutput(d_1);
 
-        d = Debug.bcallret2(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,d,d);
+        d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
 
         funcs = Env.getFunctionTree(cache);
 
@@ -593,7 +593,7 @@ algorithm
         Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = Debug.bcallret2(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,d,d);
+        d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
         
         str = Print.getString();
         silent = Config.silent();

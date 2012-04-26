@@ -3977,7 +3977,7 @@ algorithm
     list<BackendDAE.Equation> normaleqs,normaleqs1,normaleqs2;
     list<BackendDAE.ComplexEquation> complexEqs,complexEqs1;
     DAE.ElementSource source;
-    Absyn.Path path,fname;
+    Absyn.Path path,fname,path1;
     list<DAE.Exp> expLst;
     list<tuple<DAE.Exp,DAE.Exp>> exptpllst;
   // a=b
@@ -4033,6 +4033,32 @@ algorithm
       normaleqs2 = listAppend(normaleqs,normaleqs1);
     then
       ((normaleqs2,complexEqs1,multiEqs2));
+    
+  // Record()=Record()
+  case (BackendDAE.COMPLEXEQUATION(size=i,left = DAE.CALL(path=path,expLst=expLst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))), right = DAE.CALL(path=path1,expLst=e1lst),source = source),funcs)
+    equation
+      SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
+      // create as many equations as the dimension of the record
+      exptpllst = List.threadTuple(expLst,e1lst);
+      compeqnmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
+      normaleqslst = List.map(compeqnmultilistlst,Util.tuple31);
+      complexEqsLst = List.map(compeqnmultilistlst,Util.tuple32);
+      multiEqsLst = List.map(compeqnmultilistlst,Util.tuple33);
+      complexEqs = List.flatten(complexEqsLst);
+      multiEqs = List.flatten(multiEqsLst);
+      normaleqs = List.flatten(normaleqslst);
+      // nested Records
+      compeqnmultilistlst = List.map1(complexEqs,extendRecordEqns,funcs);
+      normaleqslst1 = List.map(compeqnmultilistlst,Util.tuple31);
+      complexEqsLst1 = List.map(compeqnmultilistlst,Util.tuple32);
+      multiEqsLst1 = List.map(compeqnmultilistlst,Util.tuple33);
+      complexEqs1 = List.flatten(complexEqsLst1);
+      normaleqs1 = List.flatten(normaleqslst1);
+      multiEqs1 = List.flatten(multiEqsLst1);
+      multiEqs2 = listAppend(multiEqs,multiEqs1);
+      normaleqs2 = listAppend(normaleqs,normaleqs1);
+    then
+      ((normaleqs2,complexEqs1,multiEqs2));
       
 end match;
 end extendRecordEqns;
@@ -4050,10 +4076,16 @@ algorithm
     DAE.ElementSource source;
     DAE.ComponentRef cr1;
     BackendDAE.Equation eqn;
+    list<BackendDAE.Equation> eqns;
     Expression.Type tp;
     DAE.Dimensions ad;
     list<Integer> ds;
     Integer size;
+    list<DAE.Exp> a1,a2;
+    list<tuple<DAE.Exp,DAE.Exp>> ealst;
+    list<list<DAE.Exp>> al1,al2;
+    list<Boolean> blst;
+    list<DAE.Type> tlst;
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.T_ARRAY(dims=ad)),e2),source,inFuncs)
     equation 
@@ -4074,6 +4106,54 @@ algorithm
       eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
     then
       (({eqn},{},{}));
+  // Matrix of crefs 
+    case ((e1 as DAE.ARRAY(array=a1),e2 as DAE.ARRAY(array=a2)),source,inFuncs)
+      equation
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        ((eqns,{},{}));   
+    case ((e1 as DAE.ARRAY(array=a1),e2 as DAE.UNARY(exp=DAE.ARRAY(array=a2))),source,inFuncs)
+      equation
+        a2 = List.map(a2,Expression.negate);
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        ((eqns,{},{})); 
+    case ((e1 as DAE.ARRAY(array=a1,ty=DAE.T_ARRAY(dims=ad)),e2),source,inFuncs)
+      equation
+        tlst = List.map(a1, Expression.typeof);
+        blst = List.map(tlst, Expression.isRecordType);
+        false = Util.boolOrList(blst);        
+         ds = List.map(ad, Expression.dimensionSize);
+      then
+        (({},{},{BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source)}));       
+    case ((e1 as DAE.MATRIX(matrix=al1),e2 as DAE.MATRIX(matrix=al2)),source,inFuncs)
+      equation
+        a1 = List.flatten(al1);
+        a2 = List.flatten(al2);
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        ((eqns,{},{}));   
+    case ((e1 as DAE.MATRIX(matrix=al1),e2 as DAE.UNARY(exp=DAE.MATRIX(matrix=al2))),source,inFuncs)
+      equation
+        a1 = List.flatten(al1);
+        a2 = List.flatten(al2);
+        a2 = List.map(a2,Expression.negate);
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
+      then
+        ((eqns,{},{}));            
+    case ((e1 as DAE.MATRIX(matrix=al1,ty=DAE.T_ARRAY(dims=ad)),e2),source,inFuncs)
+      equation
+        a1 = List.flatten(al1);
+        tlst = List.map(a1, Expression.typeof);
+        blst = List.map(tlst, Expression.isRecordType);
+        false = Util.boolOrList(blst);          
+        ds = List.map(ad, Expression.dimensionSize);
+      then
+        (({},{},{BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source)}));        
   // complex type
   case ((e1,e2),source,inFuncs)
     equation 

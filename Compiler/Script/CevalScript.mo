@@ -1020,7 +1020,7 @@ algorithm
         ptot = Dependency.getTotalProgram(path,p);
         scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache, env, _, dae) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, scodeP, path);
-        dae  = DAEUtil.transformationsBeforeBackend(cache,dae);
+        dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
@@ -2471,7 +2471,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        dae  = DAEUtil.transformationsBeforeBackend(cache,dae_1);
+        dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
@@ -3689,7 +3689,7 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
-        dae  = DAEUtil.transformationsBeforeBackend(cache, dae);
+        dae  = DAEUtil.transformationsBeforeBackend(cache,env, dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         funcs = Env.getFunctionTree(cache);
@@ -3910,7 +3910,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
@@ -3936,7 +3936,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
@@ -3963,7 +3963,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
         (indexed_dlow,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE(), NONE());
