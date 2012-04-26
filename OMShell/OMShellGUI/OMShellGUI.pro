@@ -10,7 +10,7 @@ TEMPLATE = app
 # Generate the CORBA stub files for windows. On Linux we generate them in the makefile.
 win32 {
     !exists(omc_communication.cc || omc_communication.h) {
-        system($$(OMDEV)/lib/omniORB-4.1.4-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
+        system($$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
     }
 }
 
@@ -34,8 +34,8 @@ win32 {
              __NT__ \
              __OSVERSION__=4 \
              __WIN32__
-  CORBAINC = $$(OMDEV)/lib/omniORB-4.1.4-mingw/include
-  CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 -lomniORB414_rt -lomnithread34_rt
+  CORBAINC = $$(OMDEV)/lib/omniORB-4.1.6-mingw/include
+  CORBALIBS = -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rt -lomnithread34_rt
   INCLUDEPATH += ../../
 } else {
   include(OMShell.config)

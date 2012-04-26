@@ -16,7 +16,7 @@ Windows
   ------------------------------
   - Load the file OMShellGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
   - Build and run the project.
-  - Copy omniORB414_rt.dll, omniORB414_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+  - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
 
 Linux
 ------------------------------
