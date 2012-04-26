@@ -1875,7 +1875,7 @@ algorithm
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
         str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow);
-        call = str2 +& " " +& str3;
+        call = stringAppendList({"\"",str2,"\""," ",str3});
         
         0 = System.spawnCall(str2, call);
       then
@@ -1961,7 +1961,7 @@ algorithm
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
         str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " \"" +& str +& "\"";
-        call = str2 +& " " +& str3;
+        call = stringAppendList({"\"",str2,"\""," ",str3});
         
         0 = System.spawnCall(str2, call);
       then
@@ -2041,7 +2041,7 @@ algorithm
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMVisualize",s1});
         // create the list of arguments for OMVisualize
         str3 = "--visualizationfile=\"" +& str1 +& "\" --simulationfile=\"" +& filename +& "\"" +& " --new-window=" +& boolString(externalWindow);
-        call = str2 +& " " +& str3;
+        call = stringAppendList({"\"",str2,"\""," ",str3});
         
         0 = System.spawnCall(str2, call);
       then
@@ -2280,7 +2280,7 @@ algorithm
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
         str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " \"" +& str +& "\"";
-        call = str2 +& " " +& str3;
+        call = stringAppendList({"\"",str2,"\""," ",str3});
         
         0 = System.spawnCall(str2, call);
       then
@@ -3076,12 +3076,10 @@ algorithm
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
-        win_call = stringAppendList({omhome,
-          omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
+        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",noClean});
         make = System.getMakeCommand();
         make_call = stringAppendList({make," -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);
-        
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
         
         // remove .exe .dll .log!
@@ -3094,11 +3092,10 @@ algorithm
         
         // call the system command to compile the model!
         0 = System.systemCall(s_call);
-                
+        
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
       then
         ();
-
     case (fileprefix,libs,file_dir,_,_) /* compilation failed */
       equation
         filename = stringAppendList({fileprefix,".log"});
