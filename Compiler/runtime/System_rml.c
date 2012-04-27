@@ -2056,3 +2056,11 @@ RML_BEGIN_LABEL(System__snprintff)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__rand)
+{
+  rmlA0 = mk_icon(rand());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

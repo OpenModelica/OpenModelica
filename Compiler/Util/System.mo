@@ -915,4 +915,13 @@ function snprintff "sprintf format string that takes one double as argument"
 external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcruntime"});
 end snprintff;
 
+public function rand
+"function: rand
+  author: Frenkel TUD 2012-04
+  "
+  output Real r;
+
+  external "C" r = System_rand();
+end rand;
+
 end System;
