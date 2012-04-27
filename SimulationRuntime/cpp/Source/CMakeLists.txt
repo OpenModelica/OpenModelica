@@ -174,7 +174,7 @@ if(INSTALL_OMDEV_LIBS)
   #install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 endif()
 
-install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION bin)
+install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 install (FILES "DataExchange/Interfaces/IHistory.h" 
   DESTINATION include/omc/cpp/DataExchange/Interfaces)
   
