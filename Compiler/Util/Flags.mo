@@ -493,7 +493,7 @@ constant ConfigFlag SHOW_ANNOTATIONS = CONFIG_FLAG(10, "showAnnotations",
 constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Do not simplify expressions if set.");
-protected constant String removeSimpleEquationDesc = "Performs alias eliminiation and removes constant variables from the DAE, replacing all occurances of the old variable reference with the new value (constants) or variable reference (alias elimination).";
+protected constant String removeSimpleEquationDesc = "Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).";
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "removeFinalParameters", 
@@ -505,7 +505,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", "DESCRIBE ME"),
-    ("removeFinalParameters", "Structural paramters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file."),
+    ("removeFinalParameters", "Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file."),
     ("removeEqualFunctionCalls", "DESCRIBE ME"),
     ("removeProtectedParameters", "replace all parameters with protected=true in the system"),
     ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
