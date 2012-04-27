@@ -22,7 +22,7 @@ install (TARGETS Modelica DESTINATION bin)
 install (FILES 
 				
 				${PROJECT_BINARY_DIR}/ModelicaConfic.inc
-				DESTINATION bin)
+				DESTINATION include/omc/cpp)
 				
 				
 install (FILES HistoryImpl.h Modelica.h DESTINATION include/omc/cpp)
