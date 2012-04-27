@@ -82,6 +82,7 @@ protected import Util;
 protected import Values;
 protected import VarTransform;
 
+
 /*************************************************
  * checkBackendDAE and stuff 
  ************************************************/
@@ -6147,6 +6148,7 @@ partial function daeHandlerFunc
 "function daeHandlerFunc 
   This is the interface for the index reduction handler."
   input list<Integer> eqns;
+  input Integer actualEqn;
   input BackendDAE.DAEHandlerJop inJop;
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -6157,6 +6159,7 @@ partial function daeHandlerFunc
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   input BackendDAE.DAEHandlerArg inArg;
   output list<Integer> changedEqns;
+  output Integer continueEqn;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output BackendDAE.Assignments outAssignments1;
@@ -6395,7 +6398,6 @@ algorithm
         (syst,shared) = restartMatching(not checkCompsMatching(comps,arrayList(v1)),syst, shared, match_opts, matchingAlgorithmfunc, daeHandlerfunc, functionTree);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared);
-        
     else
       equation
         str = "Transformation Module failed!";
@@ -6826,6 +6828,7 @@ algorithm
   print("Time all: "); print(realString(tg)); print("\n");
   print("Time t1: "); print(realString(t1)); print("\n");
   print("Time t2: "); print(realString(t2)); print("\n");
+  print("Time all-t1: "); print(realString(realSub(tg,t1))); print("\n");
 end profilerresults;
 
 public function profilerstart1

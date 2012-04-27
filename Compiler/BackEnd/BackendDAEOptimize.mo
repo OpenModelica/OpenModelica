@@ -117,30 +117,19 @@ autor: Frenkel TUD 2011-5"
 algorithm
   (osyst,osharedOptimized) := match (isyst,inFunctionTree,sharedOptimized)
     local
-      DAE.FunctionTree funcs;
-      BackendDAE.IncidenceMatrix m,mT,m1,mT1;
-      BackendDAE.Variables vars,knvars,exobj;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
       array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      list<DAE.Algorithm> algs;
       array<list<BackendDAE.Equation>> arraylisteqns;
       list<Integer> updateeqns;
-      BackendDAE.BackendDAE dae,dae1;
       Boolean b1,b2,b;
       BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst; 
-      
-    case (syst,funcs,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1))
+      BackendDAE.EqSystem syst;       
+    case (_,_,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1))
       equation
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(isyst,shared,BackendDAE.NORMAL());
         // get scalar array eqs list
         arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
         // replace them
-        (syst,shared,updateeqns,b2) = doReplaceScalarArrayEqns(arraylisteqns,syst,shared);
+        (syst,shared,updateeqns,b2) = doReplaceScalarArrayEqns(arraylisteqns,replaceScalarArrayEqns,intGt(arrayLength(arraylisteqns),0),syst,shared);
         b = b1 or b2;
         // update Incidence matrix
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,updateeqns);
@@ -153,16 +142,23 @@ public function doReplaceScalarArrayEqns
 "function: doReplaceScalarArrayEqns
 autor: Frenkel TUD 2011-5.
   Destroys the incidence matrix: it needs to be updated afterwards..."
-  input array<list<BackendDAE.Equation>> iarraylisteqns;
+  replaceable type Type_a subtypeof Any;
+  input Type_a inArg;
+  input doReplaceScalarArrayEqnsFunc func;
+  input Boolean run;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<Integer> outupdateeqns;
   output Boolean optimized;
+  partial function doReplaceScalarArrayEqnsFunc
+    input tuple<BackendDAE.Equation,tuple<Type_a,Integer,list<Integer>>> tpl;
+    output tuple<BackendDAE.Equation,tuple<Type_a,Integer,list<Integer>>> outTpl;
+  end doReplaceScalarArrayEqnsFunc;
 algorithm
   (osyst,oshared,outupdateeqns,optimized):=
-  matchcontinue (iarraylisteqns,isyst,ishared)
+  matchcontinue (inArg,func,run,isyst,ishared)
     local
       Integer len;
       BackendDAE.Variables vars,knvars,exobj;
@@ -176,30 +172,24 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       list<DAE.Algorithm> algs;
       list<Integer> updateeqns;
-      BackendDAE.BackendDAE dae;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-      array<list<BackendDAE.Equation>> arraylisteqns;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      Type_a arg,arg1;
       
-    case (arraylisteqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
+    case (_,_,true,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
       equation
-        len = arrayLength(arraylisteqns);
-        true = intGt(len,0);
         // replace them
-        (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
+        (eqns1,(arg,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,func,(inArg,1,{}));
+        (remeqns1,(arg1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,func,(arg,1,{}));
+        (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,func,(arg1,1,{}));
         syst = BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching);
         shared = BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns1,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp);
       then
         (syst,shared,updateeqns,true);
-    case (arraylisteqns,syst,shared)
-      equation      
-        len = arrayLength(arraylisteqns);
-        false = intGt(len,0);
+    case (_,_,false,syst,shared)
       then
         (syst,shared,{},false);
   end matchcontinue;
@@ -267,13 +257,10 @@ algorithm
   eqns := List.map1(ealst,BackendEquation.generateEQUATION,source);
 end generateScalarArrayEqns;
 
-protected function replaceScalarArrayEqns
+public function replaceScalarArrayEqns
   "Help function to e.g. inlineArrayEqn"
   input tuple<BackendDAE.Equation,tuple<array<list<BackendDAE.Equation>>,Integer,list<Integer>>> tpl;
   output tuple<BackendDAE.Equation,tuple<array<list<BackendDAE.Equation>>,Integer,list<Integer>>> outTpl;
-protected
-   BackendDAE.Equation e,e1;
-   tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
 algorithm
   outTpl := 
   matchcontinue (tpl)
