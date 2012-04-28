@@ -49,6 +49,7 @@ protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
+protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashTable2;
@@ -1760,12 +1761,13 @@ algorithm
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Variable ",str," out of limit"});
-        msg = DAE.SCONST(str);
+        str = stringAppendList({"Variable ",str," out of limit: "});
         e = Expression.crefExp(name);
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
+        str = str +& ExpressionDump.printExpStr(cond);
+        msg = DAE.SCONST(str);
         // do not add if const true
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg);
@@ -1819,11 +1821,12 @@ algorithm
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Nominal ",str," out of limit"});
-        msg = DAE.SCONST(str);
+        str = stringAppendList({"Nominal ",str," out of limit: "});
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
+        str = str +& ExpressionDump.printExpStr(cond);
+        msg = DAE.SCONST(str);
         // do not add if const true
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg);

@@ -59,7 +59,7 @@ RML_BEGIN_LABEL(ModelicaExternalC__Streams_5freadLine)
   char* fileName = RML_STRINGDATA(rmlA0);
   long line = RML_UNTAGFIXNUM(rmlA1);
   int endOfFile = 0;
-  char* res = ModelicaInternal_readLine(fileName,line,&endOfFile);
+  char* res = (char*)ModelicaInternal_readLine(fileName,line,&endOfFile);
   rmlA0 = mk_scon(res);
   rmlA1 = mk_icon(endOfFile);
   restore_memory_state(mem_state);

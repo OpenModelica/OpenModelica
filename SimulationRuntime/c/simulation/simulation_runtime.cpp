@@ -88,10 +88,10 @@ static int sim_communication_port_open = 0;
 #endif
 
 
-int modelTermination; /* Becomes non-zero when simulation terminates. */
-int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
-int terminationAssert; /* Becomes non-zero when model call assert simulation. */
-int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
+int modelTermination = 0; /* Becomes non-zero when simulation terminates. */
+int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
+int terminationAssert = 0; /* Becomes non-zero when model call assert simulation. */
+int warningLevelAssert = 0; /* Becomes non-zero when model call assert with warning level. */
 FILE_INFO TermInfo; /* message for termination. */
 
 char* TermMsg; /* message for termination. */
@@ -141,6 +141,8 @@ void setTermMsg(const char *msg)
       }
       for (i=0;i<length;i++)
         TermMsg[i] = msg[i];
+      /* set the terminating 0 */
+      TermMsg[i] = '\0';
   }
 }
 
@@ -530,7 +532,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     cout << "usage: " << argv[0]
          << " <-f initfile> <-r result file> <-m solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta}> <-interactive> <-port value>"
          << " <-iim init method:{none,state}> <-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> <-iif init file> <iit init time>"
-         << " -lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
+         << " -lv [LOG_STATS][,LOG_INIT][,LOG_RES_INIT][,LOG_SOLVER][,LOG_EVENTS][,LOG_NONLIN_SYS][,LOG_ZEROCROSSINGS][,LOG_DEBUG]"
          << endl;
     EXIT(0);
   }
