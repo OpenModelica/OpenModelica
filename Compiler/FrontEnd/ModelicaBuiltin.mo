@@ -1185,7 +1185,7 @@ function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpl
   output Boolean success;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  success := setCommandLineOptions("+pastOptModules=" + modules);
+  success := setCommandLineOptions("+postOptModules=" + modules);
 annotation(preferredView="text");
 end setPastOptModules;
 

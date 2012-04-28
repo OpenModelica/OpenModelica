@@ -69,6 +69,14 @@ modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
   return mmc_unbox_integer(a) > mmc_unbox_integer(b) ? a : b;
 }
 
+
+modelica_metatype boxptr_intMin(modelica_metatype a,modelica_metatype b)
+{
+  /* We need to unbox because pointers may be unsigned */
+  return mmc_unbox_integer(a) < mmc_unbox_integer(b) ? a : b;
+}
+
+
 /* String Character Conversion */
 
 modelica_integer stringCharInt(metamodelica_string chr)
@@ -395,7 +403,7 @@ modelica_metatype stringUpdateStringChar(metamodelica_string str, metamodelica_s
   unsigned nwords = MMC_HDRSLOTS(header) + 1;
   struct mmc_string *p = NULL;
   void *res = NULL;
-  
+
   mmc_GC_add_roots((void*)&str, 1, 0, "");
   mmc_GC_add_roots((void*)&c, 1, 0, "");
 
@@ -451,10 +459,10 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
 modelica_metatype listReverse(modelica_metatype lst)
 {
   modelica_metatype res = NULL;
-  
+
   mmc_GC_add_roots(&lst, 1, 0, "");
   mmc_GC_add_roots(&res, 1, 0, "");
-  
+
   res = mmc_mk_nil();
   while (!MMC_NILTEST(lst))
   {
@@ -466,10 +474,10 @@ modelica_metatype listReverse(modelica_metatype lst)
 
 modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
-  
+
   mmc_GC_add_roots(&lst1, 1, 0, "listAppend");
   mmc_GC_add_roots(&lst2, 1, 0, "listAppend");
-  
+
   {
   int length = 0, i = 0;
   struct mmc_cons_struct *res = NULL;

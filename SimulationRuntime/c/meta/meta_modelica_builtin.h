@@ -50,6 +50,7 @@ typedef const modelica_metatype metamodelica_string_const;
 
 extern metamodelica_string intString(modelica_integer);
 extern modelica_metatype boxptr_intMax(modelica_metatype,modelica_metatype);
+extern modelica_metatype boxptr_intMin(modelica_metatype,modelica_metatype);
 
 /* String Character Conversion */
 
