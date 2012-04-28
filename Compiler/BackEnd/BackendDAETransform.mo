@@ -6046,15 +6046,15 @@ algorithm
     case(_,e::eqnLst,_,_,_)
       equation
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        true = isStateAssignEquation(cr,eqn,vars,knvars);
-      then -0.5;
-    case(_,e::eqnLst,_,_,_)
-      equation
-        eqn = BackendDAEUtil.equationNth(eqns,e-1);
         (_,dcr,_,_,_) = BackendEquation.derivativeEquation(eqn);
         false = ComponentReference.crefEqualNoStringCompare(cr,dcr);
         true = BackendVariable.isState(dcr,vars);
       then +0.5;
+    case(_,e::eqnLst,_,_,_)
+      equation
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        true = isStateAssignEquation(cr,eqn,vars,knvars);
+      then -0.05;
     case(_,_::eqnLst,_,_,_) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,knvars,eqns);
  end matchcontinue;
 end varStateSelectHeuristicPrio1;
