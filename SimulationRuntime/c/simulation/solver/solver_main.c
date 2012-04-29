@@ -221,7 +221,6 @@ int solver_main(DATA* simData, double start, double stop, double step,
   /* debug print */
   if (DEBUG_FLAG(LOG_DEBUG)){
     for (i=0; i<3;i++){
-      INFO1("Print values for buffer segment = %d",i);
       printAllVars(simData,i);
     }
   }
@@ -441,11 +440,10 @@ int solver_main(DATA* simData, double start, double stop, double step,
     /* debug print */
     if (DEBUG_FLAG(LOG_DEBUG)){
       for (i=0; i<3;i++){
-        INFO1("Print values for buffer segment = %d",i);
         printAllVars(simData,i);
       }
     }
-  }
+  } /* end while solver */
 
 
   /* Last step with terminal()=true */
@@ -609,5 +607,6 @@ void checkTermination(DATA* simData)
     WARNING2("Simulation call terminate() at time %f\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
     /* THROW1("timeValue = %f", simData->localData[0]->timeValue); */
   }
+  fflush(NULL);
 }
 

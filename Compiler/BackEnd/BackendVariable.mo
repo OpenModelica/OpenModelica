@@ -1762,7 +1762,7 @@ algorithm
     case (attr,name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
-        str = ComponentReference.crefStr(name);
+        str = ComponentReference.printComponentRefStr(name);
         str = stringAppendList({"Variable ",str," out of [min, max] interval: "});
         e = Expression.crefExp(name);
         tp = BackendDAEUtil.makeExpType(vartype);
@@ -1829,7 +1829,7 @@ algorithm
     case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
-        str = ComponentReference.crefStr(name);
+        str = ComponentReference.printComponentRefStr(name);
         str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
