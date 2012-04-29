@@ -56,6 +56,7 @@ protected import HashTable2;
 protected import List;
 protected import SCode;
 protected import Util;
+protected import Types;
 
 /* =======================================================
  *
@@ -1754,20 +1755,27 @@ algorithm
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
-      String str;
+      String str, format;
       DAE.Type tp;
+    
     case(_,_,_,BackendDAE.CONST(),_) then {};
     case (attr,name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Variable ",str," out of limit: "});
+        str = stringAppendList({"Variable ",str," out of [min, max] interval: "});
         e = Expression.crefExp(name);
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
-        str = str +& ExpressionDump.printExpStr(cond);
-        msg = DAE.SCONST(str);
+        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        // if is real use %g otherwise use %d (ints and enums)
+        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        msg = DAE.BINARY(
+              DAE.SCONST(str), 
+              DAE.ADD(DAE.T_STRING_DEFAULT),
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              );
         // do not add if const true
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg);
@@ -1813,20 +1821,27 @@ algorithm
     local
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
-      String str;
+      String str, format;
       DAE.Type tp;
       Boolean b;
+    
     case(_,_,_,BackendDAE.CONST(),_) then {};
     case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.crefStr(name);
-        str = stringAppendList({"Nominal ",str," out of limit: "});
+        str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
         tp = BackendDAEUtil.makeExpType(vartype);
         cond = getMinMaxAsserts1(ominmax,e,tp);
         (cond,_) = ExpressionSimplify.simplify(cond);
-        str = str +& ExpressionDump.printExpStr(cond);
-        msg = DAE.SCONST(str);
+        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        // if is real use %g otherwise use %d (ints and enums)
+        format = Util.if_(Types.isRealOrSubTypeReal(tp), "g", "d");
+        msg = DAE.BINARY(
+              DAE.SCONST(str), 
+              DAE.ADD(DAE.T_STRING_DEFAULT),
+              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString) 
+              );
         // do not add if const true
         false = Expression.isConstTrue(cond);
         BackendDAEUtil.checkAssertCondition(cond,msg);
