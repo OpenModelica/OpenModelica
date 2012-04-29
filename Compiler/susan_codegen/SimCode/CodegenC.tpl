@@ -2298,12 +2298,15 @@ template functionsFile(String filePrefix,
   <<
   #include "<%filePrefix%>.h"
   #include "modelica.h"
-  #if !defined(MODELICA_ASSERT) 
+  /* undefine them if they are defined */
+  #if defined(MODELICA_ASSERT)
+  #undef MODELICA_ASSERT
+  #endif
+  #if defined(MODELICA_TERMINATE)
+  #undef MODELICA_TERMINATE
+  #endif 
   #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); fflush(NULL); }
-  #endif
-  #if !defined(MODELICA_TERMINATE)
-  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(NULL); }
-  #endif
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(NULL); }  
 
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
