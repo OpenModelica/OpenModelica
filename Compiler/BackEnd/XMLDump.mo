@@ -1108,13 +1108,12 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<DAE.Function> functions;
   input Boolean addOriginalIncidenceMatrix;
   input Boolean addSolvingInfo;
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
 algorithm
-  _ := matchcontinue (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inBackendDAE,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
 
@@ -1153,16 +1152,17 @@ algorithm
       array<DAE.Constraint> constrs;
       list<BackendDAE.ZeroCrossing> zc;
 
-      list<DAE.Function> inFunctions;
+      list<DAE.Function> functionsElems;
 
       Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
+      DAE.FunctionTree funcs;
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,ae,algs,constrs,_,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,ieqns,reqns,ae,algs,constrs,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendDAEUtil.varList(vars_knownVars);
@@ -1188,7 +1188,8 @@ algorithm
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
         dumpConstraints(arrayList(constrs));
-        dumpFunctions(inFunctions);
+        functionsElems = DAEUtil.getFunctionList(funcs);
+        dumpFunctions(functionsElems);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
@@ -2818,7 +2819,7 @@ algorithm
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE());
+      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2841,7 +2842,7 @@ algorithm
     then ();
   case (false,true,dlow)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE());
+      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);

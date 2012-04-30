@@ -1024,7 +1024,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE());
+        (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,NONE());
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
@@ -3891,7 +3891,6 @@ algorithm
       Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       Interactive.SymbolTable st,st_1;
       Ceval.Msg msg;
-      list<DAE.Function> funcelems;
       array<Integer> ass1,ass2;
       DAE.DAElist dae_1,dae;
       BackendDAE.IncidenceMatrix m,mT;
@@ -3913,12 +3912,11 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
+        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3939,13 +3937,12 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
-        dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE(),NONE());
+        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
+        dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3966,11 +3963,10 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        (indexed_dlow,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE(), NONE());
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(cache, env, dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(funcs1);
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(indexed_dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);

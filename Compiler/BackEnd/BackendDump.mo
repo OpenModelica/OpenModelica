@@ -738,7 +738,8 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.BackendDAEType btp;
-    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
+      DAE.FunctionTree funcs;
+    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);
@@ -1858,7 +1859,6 @@ public function dumpComponentsGraphStr
 "Dumps the assignment graph used to determine strong
  components to format suitable for Mathematica"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
   output Boolean outRunMatching;
 protected

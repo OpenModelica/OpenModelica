@@ -531,7 +531,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     "lateInline",
     "inlineArrayEqn",
     "constantLinearSystem",
-    "removeSimpleEquations"
+    "removeSimpleEquations",
+    "removeUnusedFunctions"
   }),
   SOME(STRING_DESC_OPTION({
     ("lateInline", "perform function inlining for function with annotation LateInline=true"),
@@ -541,7 +542,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     ("inlineArrayEqn", "DESCRIBE ME"),
     ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
     ("constantLinearSystem", "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time"),
-    ("dumpComponentsGraphStr", "DESCRIBE ME")})),
+    ("dumpComponentsGraphStr", "DESCRIBE ME"),
+    ("removeUnusedFunctions", "removed all unused functions from functionTree")})),
   "Sets the post optimisation modules to use in the back end. See +help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(16, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 

@@ -73,7 +73,6 @@ public function differentiateEquationTime "function: differentiateEquationTime
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctions;
   input array<DAE.Algorithm> al;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input array<BackendDAE.MultiDimEquation> inMultiEqn;
@@ -85,7 +84,7 @@ public function differentiateEquationTime "function: differentiateEquationTime
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
   output Boolean outAdd;
 algorithm
-  (outEquation,outal,outDerivedAlgs,outArrayEqs,outDerivedMultiEqn,outAdd) := matchcontinue (inEquation,inVariables,shared,inFunctions,al,inDerivedAlgs,inMultiEqn,inDerivedMultiEqn)
+  (outEquation,outal,outDerivedAlgs,outArrayEqs,outDerivedMultiEqn,outAdd) := matchcontinue (inEquation,inVariables,shared,al,inDerivedAlgs,inMultiEqn,inDerivedMultiEqn)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       BackendDAE.Variables timevars;
@@ -101,12 +100,13 @@ algorithm
       list<Integer> dimSize;
       String msg,se1,se2;
       DAE.SymbolicOperation op1,op2;
+      DAE.FunctionTree funcs;
     
     // equations
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
       equation
-        e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
-        e2_1 = differentiateExpTime(e2, (timevars,shared,inFunctions));
+        e1_1 = differentiateExpTime(e1, (timevars,shared));
+        e2_1 = differentiateExpTime(e2, (timevars,shared));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
@@ -116,7 +116,7 @@ algorithm
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         true = intEq(index,-1);
         //e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
@@ -129,13 +129,13 @@ algorithm
         fail();
    
     // Array Equations    
-    case (BackendDAE.ARRAY_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.ARRAY_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Equation
         i_1 = index+1;
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
-        e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
-        e2_1 = differentiateExpTime(e2, (timevars,shared,inFunctions));
+        e1_1 = differentiateExpTime(e1, (timevars,shared));
+        e2_1 = differentiateExpTime(e2, (timevars,shared));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         ((_,(crefOrDerCref1,derCref1,_))) = Expression.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
@@ -154,17 +154,17 @@ algorithm
         (BackendDAE.ARRAY_EQUATION(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
     
     // diverivative of function with multiple outputs
-    case (BackendDAE.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,shared as BackendDAE.SHARED(functionTree=funcs),al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
-        e1_1 = differentiateFunctionTime(e1,(timevars,shared,inFunctions));
-        (e1_2,source) = Inline.inlineExp(e1_1,(SOME(inFunctions),{DAE.NORM_INLINE()}),source);
+        e1_1 = differentiateFunctionTime(e1,(timevars,shared));
+        (e1_2,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (e2,_) = ExpressionSimplify.simplify(e1_2);
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e2);
         source = DAEUtil.addSymbolicTransformation(source,op1);
         // outputs
-        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,shared,inFunctions));
+        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,shared));
         // inputs
         ((in_1,_)) = BackendDAECreate.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}));
         // only add algorithm if it is not already derived 
@@ -172,7 +172,7 @@ algorithm
        then
         (BackendDAE.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     
-    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_)
       equation
         se1 = intString(index);
         //se1 = ExpressionDump.printExpStr(e1);
@@ -182,7 +182,7 @@ algorithm
       then
         fail();
 
-    case (inEquation,_,_,_,_,_,_,_)
+    case (inEquation,_,_,_,_,_,_)
       equation
         msg = "- Derive.differentiateEquationTime failed.";
         source = BackendEquation.equationSource(inEquation);
@@ -329,7 +329,7 @@ public function differentiateExpTime "function: differentiateExpTime
   gives
   differentiate_exp_time(\'x+y=5PI\', {x,y}) => der(x)+der(y)=0"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVariables;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVariables;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp,inVariables)
@@ -365,7 +365,7 @@ algorithm
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) 
       then DAE.RCONST(1.0);
     
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_,_)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
         ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = BackendVariable.getVar(cr, timevars);
         cr = ComponentReference.crefPrefixDer(cr);
@@ -373,27 +373,27 @@ algorithm
       then
         e;
   // case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(a)))),inVariables as (timevars,_,_))
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(a)))),inVariables as (timevars,_))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         e1 = DAE.CALL(a,expl,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       then
         differentiateExpTime(e1,inVariables);
     // case for arrays
-    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_ARRAY(dims=_))),inVariables as (_,_,functions))
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_ARRAY(dims=_))),inVariables as (_,BackendDAE.SHARED(functionTree=functions)))
       equation
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(SOME(functions),false)));
       then
         differentiateExpTime(e1,inVariables);
 
     // Constants, known variables, parameters and discrete variables have a 0-derivative 
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(_,BackendDAE.SHARED(knownVars=knvars),_)) 
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(_,BackendDAE.SHARED(knownVars=knvars))) 
       equation
         (_,_) = BackendVariable.getVar(cr, knvars);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then zero;
     
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_,_))
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
         ({BackendDAE.VAR(varKind = kind)},_) = BackendVariable.getVar(cr, timevars);
         true = listMember(kind,{BackendDAE.DISCRETE(),BackendDAE.PARAM(),BackendDAE.CONST()}); 
@@ -401,7 +401,7 @@ algorithm
       then zero;
 
     // Continuous-time variables (and for shared eq-systems, also unknown variables: keep them as-is)
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_,_))
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
         // ({BackendDAE.VAR(varKind = BackendDAE.STATE())},_) = BackendVariable.getVar(cr, timevars);
       then DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
@@ -607,7 +607,7 @@ algorithm
       then
         DAE.CALL(a,expl_1,attr);
     
-    case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables as (timevars,_,_))
+    case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables as (timevars,_))
       equation
         // if only parameters or discrete no derivative needed
         crefslstls = List.map(expl,Expression.extractCrefsFromExp);
@@ -618,7 +618,7 @@ algorithm
       then
         e1;
     
-    case (e as DAE.CALL(path = a,expLst = expl),inVariables as (_,_,functions))
+    case (e as DAE.CALL(path = a,expLst = expl),inVariables as (_,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get Derivative function
         e1 = differentiateFunctionTime(e,inVariables);
@@ -626,7 +626,7 @@ algorithm
       then
         e2;
     
-    case (e as DAE.CALL(path = a,expLst = expl),inVariables as (_,_,functions))
+    case (e as DAE.CALL(path = a,expLst = expl),inVariables as (_,BackendDAE.SHARED(functionTree=functions)))
       equation
         // try to inline
         (e1,_,true) = Inline.forceInlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
@@ -750,7 +750,7 @@ protected function differentiateMatrixTime
   author: Frenkel TUD
    Helper function to differentiateExpTime, differentiate matrix expressions."
   input list<list<DAE.Exp>> inTplExpBooleanLstLst;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVariables;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVariables;
   output list<list<DAE.Exp>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst := match (inTplExpBooleanLstLst,inVariables)
@@ -775,7 +775,7 @@ Author: Frenkel TUD"
   input DAE.Exp inDExp;
   input list<DAE.Exp> inExpLst;
   input list<DAE.Exp> inExpLst1;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVarsandFuncs;
   output list<DAE.Exp> outExpLst;
   output list<DAE.Exp> outExpLst1;
 algorithm    
@@ -793,7 +793,7 @@ algorithm
       String typstring,dastring;
     
     // order=1  
-    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
@@ -814,7 +814,7 @@ algorithm
       then
         (dexplst_1,dexplst1_1);
     
-    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
@@ -836,7 +836,7 @@ algorithm
         fail();
     
     // order>1  
-    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
@@ -852,7 +852,7 @@ algorithm
       then
         (dexplst_1,dexplst1_1);
     
-    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
@@ -890,7 +890,7 @@ end getFunctionResultTypes;
 protected function differentiateFunctionTime"
 Author: Frenkel TUD"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVarsandFuncs;
   output DAE.Exp outExp;
 algorithm    
   (outExp) := matchcontinue (inExp,inVarsandFuncs)
@@ -910,7 +910,7 @@ algorithm
       String typstring,dastring;
       DAE.TailCall tc;
     
-    case (DAE.CALL(path=a,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,ty=ty,tailCall=tc)),inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,ty=ty,tailCall=tc)),inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
@@ -924,7 +924,7 @@ algorithm
       then
         DAE.CALL(da,expl1,DAE.CALL_ATTR(ty,b,c,dinl,tc));
     
-    case (DAE.CALL(path=a,expLst=expl),inVarsandFuncs as (timevars,_,functions))
+    case (DAE.CALL(path=a,expLst=expl),inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
@@ -980,7 +980,7 @@ Author: Frenkel TUD"
   input DAE.FunctionDefinition inMapper;
   input DAE.Type inTp;
   input list<DAE.Exp> expl;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVarsandFuncs;
   output Absyn.Path outFuncName;
   output list<Boolean> blst;
 algorithm    
@@ -1008,7 +1008,7 @@ algorithm
       then
         (inDFuncName,bl1);
     // check conditions, order>1  
-    case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,expl,inVarsandFuncs as (timevars,_,functions))
+    case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,expl,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
          failure(true = intEq(1,derivativeOrder));
          // get n-1 func name
@@ -1038,7 +1038,7 @@ Author: Frenkel TUD"
   input list<Boolean> inblst;
   input list<tuple<Integer,DAE.derivativeCond>> icrlst;
   input list<DAE.Exp> expl;
-  input tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree> inVarsandFuncs;
+  input tuple<BackendDAE.Variables,BackendDAE.Shared> inVarsandFuncs;
   output list<Boolean> outblst;
 algorithm
   outblst := matchcontinue(inblst,icrlst,expl,inVarsandFuncs)

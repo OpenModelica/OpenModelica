@@ -763,10 +763,10 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,funcs_1) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE(),NONE());
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache,env,dlow,NONE(),NONE(),NONE(),NONE());
         modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,funcs_1,classname,ap,dae);
+        simcodegen(dlow_1,classname,ap,dae);
       then
         ();
     else
@@ -831,13 +831,12 @@ protected function simcodegen
 "function simcodegen
   Genereates simulation code using the SimCode module"
   input BackendDAE.BackendDAE inBackendDAE5;
-  input DAE.FunctionTree inFunctionTree;
   input Absyn.Path inPath;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
 algorithm
   _:=
-  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4)
+  matchcontinue (inBackendDAE5,inPath,inProgram3,inDAElist4)
     local
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree functionTree;
@@ -854,14 +853,14 @@ algorithm
       String methodbyflag;
       Boolean methodflag;
 
-    case (dlow,functionTree,classname,ap,dae) /* classname ass1 ass2 blocks */
+    case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
         true = Config.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        (_,_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();

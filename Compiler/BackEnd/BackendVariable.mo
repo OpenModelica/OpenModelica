@@ -3448,14 +3448,15 @@ algorithm
       array<DAE.Algorithm> algorithms;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp);
   end match;
 end addKnVarDAE;
 

@@ -103,7 +103,6 @@ public function matchingAlgorithm
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input daeHandlerFunc daeHandler;
-  input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   partial function daeHandlerFunc
@@ -112,7 +111,6 @@ public function matchingAlgorithm
     input BackendDAE.DAEHandlerJop inJop;
     input BackendDAE.EqSystem syst;
     input BackendDAE.Shared shared;
-    input DAE.FunctionTree inFunctions;
     input BackendDAE.Assignments inAssignments1;
     input BackendDAE.Assignments inAssignments2;    
     input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -130,7 +128,7 @@ public function matchingAlgorithm
   end daeHandlerFunc; 
 algorithm
   (osyst,oshared) :=
-  matchcontinue (isyst,ishared,inMatchingOptions,daeHandler,inFunctions)
+  matchcontinue (isyst,ishared,inMatchingOptions,daeHandler)
     local
       BackendDAE.Value nvars,neqns,memsize;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
@@ -146,7 +144,7 @@ algorithm
       BackendDAE.Shared shared;
 
     // fail case if daelow is empty
-    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -156,7 +154,7 @@ algorithm
         vec2 = listArray({});
       then
         (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{})),ishared);
-    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_)
       equation
         BackendDAEEXT.clearDifferentiated();
         checkMatching(syst, inMatchingOptions);
@@ -168,9 +166,9 @@ algorithm
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
         arg = emptyDAEHandlerArg();
-        (_,_,syst,shared,assign1, assign2,_,_,arg1) = daeHandler({},0,BackendDAE.STARTSTEP(),syst,ishared,inFunctions, assign1, assign2,{},{},arg);
-        (ass1,ass2,syst,shared,_,_,arg2) = matchingAlgorithm2(syst,shared,nvars, neqns, 1, assign1, assign2, inMatchingOptions, daeHandler, arg1, inFunctions, {}, {});
-        (_,_,syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,ass1,ass2,_,_,_) = daeHandler({},0,BackendDAE.ENDSTEP(),syst,shared,inFunctions,ass1,ass2,{},{},arg2);
+        (_,_,syst,shared,assign1, assign2,_,_,arg1) = daeHandler({},0,BackendDAE.STARTSTEP(),syst,ishared, assign1, assign2,{},{},arg);
+        (ass1,ass2,syst,shared,_,_,arg2) = matchingAlgorithm2(syst,shared,nvars, neqns, 1, assign1, assign2, inMatchingOptions, daeHandler, arg1, {}, {});
+        (_,_,syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,ass1,ass2,_,_,_) = daeHandler({},0,BackendDAE.ENDSTEP(),syst,shared,ass1,ass2,{},{},arg2);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
@@ -414,7 +412,6 @@ public function matchingAlgorithm2
   input BackendDAE.MatchingOptions inMatchingOptions9;
   input daeHandlerFunc daeHandler;
   input BackendDAE.DAEHandlerArg inArg;
-  input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output BackendDAE.Assignments outAssignments1;
@@ -430,7 +427,6 @@ public function matchingAlgorithm2
     input BackendDAE.DAEHandlerJop inJop;
     input BackendDAE.EqSystem syst;
     input BackendDAE.Shared shared;
-    input DAE.FunctionTree inFunctions;
     input BackendDAE.Assignments inAssignments1;
     input BackendDAE.Assignments inAssignments2;    
     input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -448,7 +444,7 @@ public function matchingAlgorithm2
   end daeHandlerFunc;
 algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (isyst,ishared,nv,nf,i,ass1,ass2,inMatchingOptions9,daeHandler,inArg,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  matchcontinue (isyst,ishared,nv,nf,i,ass1,ass2,inMatchingOptions9,daeHandler,inArg,inDerivedAlgs,inDerivedMultiEqn)
     local
       BackendDAE.Assignments ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3;
       BackendDAE.BackendDAE dae;
@@ -467,7 +463,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;      
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intGe(i,nv);
         BackendDAEEXT.initMarks(nv, nf);
@@ -475,19 +471,19 @@ algorithm
       then
         (ass1_1,ass2_1,syst,ishared,inDerivedAlgs,inDerivedMultiEqn,inArg);
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
         BackendDAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-        (ass1_2,ass2_2,syst,shared,derivedAlgs,derivedMultiEqn,arg) = matchingAlgorithm2(syst, ishared, nv, nf, i_1, ass1_1, ass2_1, inMatchingOptions9, daeHandler, inArg, inFunctions,inDerivedAlgs,inDerivedMultiEqn);
+        (ass1_2,ass2_2,syst,shared,derivedAlgs,derivedMultiEqn,arg) = matchingAlgorithm2(syst, ishared, nv, nf, i_1, ass1_1, ass2_1, inMatchingOptions9, daeHandler, inArg,inDerivedAlgs,inDerivedMultiEqn);
       then
         (ass1_2,ass2_2,syst,shared,derivedAlgs,derivedMultiEqn,arg);
 
-    case (_,_,_,_,_,_,_,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),_,_,_,_,_)
+    case (_,_,_,_,_,_,_,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),_,_,_,_)
       equation
         meqns = BackendDAEEXT.getMarkedEqns();
-        (_,i_1,syst,shared,ass1_1,ass2_1,derivedAlgs,derivedMultiEqn,arg) = daeHandler(meqns,i,BackendDAE.REDUCE_INDEX(),isyst,ishared,inFunctions,ass1,ass2,inDerivedAlgs,inDerivedMultiEqn,inArg) 
+        (_,i_1,syst,shared,ass1_1,ass2_1,derivedAlgs,derivedMultiEqn,arg) = daeHandler(meqns,i,BackendDAE.REDUCE_INDEX(),isyst,ishared,ass1,ass2,inDerivedAlgs,inDerivedMultiEqn,inArg) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -512,7 +508,7 @@ algorithm
         nvd = nv_1 - nv;
         ass1_2 = assignmentsExpand(ass1_1, nvd);
         ass2_2 = assignmentsExpand(ass2_1, nvd);
-        (ass1_3,ass2_3,syst,shared,derivedAlgs1,derivedMultiEqn1,arg1) = matchingAlgorithm2(syst,shared,nv_1,nf_1,i_1,ass1_2,ass2_2,match_opts,daeHandler,arg,inFunctions,derivedAlgs,derivedMultiEqn);
+        (ass1_3,ass2_3,syst,shared,derivedAlgs1,derivedMultiEqn1,arg1) = matchingAlgorithm2(syst,shared,nv_1,nf_1,i_1,ass1_2,ass2_2,match_opts,daeHandler,arg,derivedAlgs,derivedMultiEqn);
       then
         (ass1_3,ass2_3,syst,shared,derivedAlgs1,derivedMultiEqn1,arg1);
 
@@ -902,6 +898,7 @@ algorithm
       array<DAE.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       BackendDAE.StrongComponent sc;
@@ -959,8 +956,9 @@ algorithm
         av = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar({});
+        funcs = DAEUtil.emptyFuncTree;
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,constrs,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM());
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         subsystem_dae = BackendDAE.DAE({syst},shared);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -2127,6 +2125,7 @@ algorithm
       array<DAE.Algorithm> al,al1;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs, complEqs1;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses eoc;
       list<BackendDAE.WhenClause> wclst,wclst1;
@@ -2135,13 +2134,13 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
     case ({},dae,inStateOrd) then (dae);
-    case ((e :: es),(dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,om,omT,matching)::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))),inStateOrd)
+    case ((e :: es),(dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,om,omT,matching)::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))),inStateOrd)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         (eqn_1,al1,ae1, complEqs1,wclst1,_) = traverseBackendDAEExpsEqn(eqn, al, ae, complEqs, wclst, replaceStateOrderExp,(inStateOrd,v));
         eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
-        dae = replaceStateOrder(es,BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns_1,om,omT,matching)::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs1,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp)),inStateOrd);
+        dae = replaceStateOrder(es,BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns_1,om,omT,matching)::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs1,funcs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp)),inStateOrd);
       then
         (dae);
     else
@@ -2202,7 +2201,6 @@ public function reduceIndexDynamicStateSelection
   input BackendDAE.DAEHandlerJop inJop;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree inFunctions;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -2219,7 +2217,7 @@ public function reduceIndexDynamicStateSelection
   output BackendDAE.DAEHandlerArg outArg;
 algorithm
   (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (eqns,actualEqn,inJop,isyst,ishared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
+  matchcontinue (eqns,actualEqn,inJop,isyst,ishared,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> diff_eqns,eqns_1,deqns,reqns,changedeqns,eqnsindxs;
       BackendDAE.BackendDAE dae;
@@ -2239,6 +2237,7 @@ algorithm
       BackendDAE.AliasVariables av;
       array<BackendDAE.MultiDimEquation> ae,ae1;
       array<DAE.Algorithm> al,al1;
+      DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;    
@@ -2248,7 +2247,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared as BackendDAE.SHARED(arrayEqs=ae),inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared as BackendDAE.SHARED(arrayEqs=ae),ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
@@ -2267,7 +2266,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, dumpEqnsX, (orgEqnsLst,ae));
       then
         fail();      
-    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
@@ -2279,19 +2278,19 @@ algorithm
         smeqs = Debug.fcallret2(Flags.BLT_DUMP,BackendDump.dumpMarkedEqns,syst, eqns_1,"");
         Debug.fcall(Flags.BLT_DUMP, print, smeqs);
         true = intGt(listLength(eqns),0);
-        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst1,changedeqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn,so,orgEqnsLst,{},ass1,ass2);
+        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst1,changedeqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared,eqns_1,derivedAlgs,derivedMultiEqn,so,orgEqnsLst,{},ass1,ass2);
         delta = List.fold(changedeqns,intMin,actualEqn);
       then
         (changedeqns,delta,syst,shared,ass1,ass2,derivedAlgs1,derivedMultiEqn1,(so1,orgEqnsLst1));
 
-    case (eqns,_,BackendDAE.STARTSTEP(),syst,shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.STARTSTEP(),syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index Startstep\n");
         ((so,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.daeEqns(syst),traverseStateOrderFinder,(so,BackendVariable.daeVars(syst)));
         Debug.fcall(Flags.BLT_DUMP, dumpStateOrder, so); 
       then ({},actualEqn,syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
-    case (eqns,_,BackendDAE.ENDSTEP(),syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared as BackendDAE.SHARED(arrayEqs=ae),inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.ENDSTEP(),syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared as BackendDAE.SHARED(arrayEqs=ae),ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
@@ -2303,15 +2302,15 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{}));
         Debug.fcall(Flags.BLT_DUMP, print, "reduced ODE:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
-        (syst,shared,orgEqnsLst_1) = addOrgEqntoDAE(orgEqnsLst,syst,shared,so,inFunctions);
-        (syst,shared) = replaceScalarArrayEqns(orgEqnsLst_1,syst,shared,inFunctions);
+        (syst,shared,orgEqnsLst_1) = addOrgEqntoDAE(orgEqnsLst,syst,shared,so);
+        (syst,shared) = replaceScalarArrayEqns(orgEqnsLst_1,syst,shared);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
         Debug.fcall(Flags.BLT_DUMP, print, "reduced full ODE:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
         Debug.fcall(Flags.BLT_DUMP, dumpEqns1X, (orgEqnsLst_1,syst,shared));
         Debug.fcall(Flags.BLT_DUMP, dumpStateOrder, so);        
         Debug.fcall(Flags.BLT_DUMP, print, "Select dummy States\n");
-        (syst,shared,ass1,ass2) = processOrgEnqs(orgEqnsLst_1,so,syst,shared,inFunctions,ass1,ass2);  
+        (syst,shared,ass1,ass2) = processOrgEnqs(orgEqnsLst_1,so,syst,shared,ass1,ass2);  
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
@@ -2319,7 +2318,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
      then ({},actualEqn,syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
-    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,_,_,_,_,_,_)
+    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,_,_,_,_,_)
       equation
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
@@ -2353,12 +2352,11 @@ public function replaceScalarArrayEqns
   input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
   (osyst,oshared) :=
-  matchcontinue (inOrgEqns,isyst,ishared,inFunctions)
+  matchcontinue (inOrgEqns,isyst,ishared)
     local
       BackendDAE.BackendDAE dae,dae1;
       BackendDAE.IncidenceMatrix m,m1;
@@ -2369,9 +2367,9 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;      
       
-    case ({},syst,shared,_)
+    case ({},syst,shared)
        then (syst,shared);
-    case (inOrgEqns,syst,shared as BackendDAE.SHARED(arrayEqs=ae),inFunctions)
+    case (inOrgEqns,syst,shared as BackendDAE.SHARED(arrayEqs=ae))
       equation
         arrayListeqns = arrayCreate(arrayLength(ae), {});
         arrayListeqns = getScalarArrayEqns(inOrgEqns,syst,ae,arrayListeqns);
@@ -2486,7 +2484,6 @@ protected function differentiateEqnsDynamicState
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> inIntegerLst6;
-  input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   input BackendDAE.StateOrder inStateOrd;
@@ -2505,7 +2502,7 @@ protected function differentiateEqnsDynamicState
   output BackendDAE.Assignments outAssignments2;  
 algorithm
   (osyst,oshared,outDerivedAlgs,outDerivedMultiEqn,outStateOrd,outOrgEqnsLst,outchangedEqns,outAssignments1,outAssignments2):=
-  matchcontinue (isyst,ishared,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2)
+  matchcontinue (isyst,ishared,inIntegerLst6,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2)
     local
       BackendDAE.Value e_1,e,e1,i,l,newvar,stateno,assarg,i1,sl,eqnss,eqnss1;
       BackendDAE.Equation eqn,eqn_1;
@@ -2517,6 +2514,7 @@ algorithm
       array<DAE.Algorithm> al,al1;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
@@ -2539,22 +2537,22 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.Assignments ass1,ass2;
-    case (_,_,{},_,_,_,_,_,_,_,_) then (isyst,ishared,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2);
-    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),_,_,_,_,_,_,_,_)
+    case (_,_,{},_,_,_,_,_,_,_) then (isyst,ishared,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2);
+    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v,BackendDAEUtil.emptyVars());
         false = BackendVariable.hasContinousVar(BackendDAEUtil.varList(ev));
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared, es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2);
+        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared, es, inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst,inchangedEqns,inAssignments1,inAssignments2);
       then
         (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2);
-    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs, funcs, BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, shared, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, shared, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         (eqn_1,al1,ae1,complEqs,wclst,(so,_)) = traverseBackendDAEExpsEqn(eqn_1, al1, ae1, complEqs, wclst, replaceStateOrderExp,(inStateOrd,v));
         eqnss = BackendDAEUtil.equationSize(eqns);
         (eqn_1,al1,ae1, complEqs,wclst1,(v1,eqns,so,ilst)) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1, complEqs,wclst,changeDerVariablestoStates,(v,eqns,so,{}));
@@ -2570,11 +2568,11 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," "));
         Debug.fcall(Flags.BLT_DUMP, print, "\n");        
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
-        shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
+        shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs, complEqs, funcs, BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, eqnslst1);
         orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn,false);
         changedEqns = listAppend(inchangedEqns,eqnslst);
-        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared, es, inFunctions,derivedAlgs,derivedMultiEqn,so,orgEqnsLst,e::changedEqns,ass1,ass2);
+        (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2) = differentiateEqnsDynamicState(syst,shared, es,derivedAlgs,derivedMultiEqn,so,orgEqnsLst,e::changedEqns,ass1,ass2);
       then
         (syst,shared,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns,ass1,ass2);
     else
@@ -2775,12 +2773,11 @@ public function addOrgEqntoDAE
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StateOrder inStateOrd; 
-  input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> outOrgEqns;
 algorithm
-  (osyst,oshared,outOrgEqns) := matchcontinue (inOrgEqns,isyst,ishared,inStateOrd,inFunctions)
+  (osyst,oshared,outOrgEqns) := matchcontinue (inOrgEqns,isyst,ishared,inStateOrd)
     local
       list<tuple<BackendDAE.Equation,Boolean>> eqns;
       BackendDAE.ConstraintEquations rest;
@@ -2794,12 +2791,12 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case ({},syst,shared,_,_)
+    case ({},syst,shared,_)
        then (syst,shared,{});
-    case ((e,eqns)::rest,syst,shared,so,inFunctions)
+    case ((e,eqns)::rest,syst,shared,so)
       equation
-        (syst,shared,eqns_1) = addOrgEqntoDAE1(eqns,syst,shared,so,inFunctions,e);
-        (syst,shared,orgeqns) =  addOrgEqntoDAE(rest,syst,shared,so,inFunctions);
+        (syst,shared,eqns_1) = addOrgEqntoDAE1(eqns,syst,shared,so,e);
+        (syst,shared,orgeqns) =  addOrgEqntoDAE(rest,syst,shared,so);
       then
         (syst,shared,(e,eqns_1)::orgeqns);
   end matchcontinue;
@@ -2813,14 +2810,13 @@ protected function addOrgEqntoDAE1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StateOrder inStateOrd;  
-  input DAE.FunctionTree inFunctions;
   input Integer e;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output list<tuple<Integer,Integer,Boolean>> outOrgEqns;
 algorithm
   (osyst,oshared,outOrgEqns):=
-  matchcontinue (inOrgEqns,isyst,ishared,inStateOrd,inFunctions,e)
+  matchcontinue (inOrgEqns,isyst,ishared,inStateOrd,e)
     local
       Integer ep,l;
       BackendDAE.Equation orgeqn;
@@ -2838,6 +2834,7 @@ algorithm
       array<DAE.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;
@@ -2846,27 +2843,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case ({},syst,shared,_,_,_) 
+    case ({},syst,shared,_,_) 
       then (syst,shared,{});
-    case ((orgeqn,false)::rest,syst as BackendDAE.EQSYSTEM(v,eqnsarr,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),so,inFunctions,e)
+    case ((orgeqn,false)::rest,syst as BackendDAE.EQSYSTEM(v,eqnsarr,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),so,e)
       equation
         (orgeqn,al,ae,complEqs,wclst,(so,_)) = traverseBackendDAEExpsEqn(orgeqn, al, ae, complEqs, wclst, replaceStateOrderExp,(so,v));
         // add the equations     
-        (eqnsarr,ae) = addOrgEqntoDAE2(orgeqn,eqnsarr,ae,inFunctions); 
+        (eqnsarr,ae) = addOrgEqntoDAE2(orgeqn,eqnsarr,ae,funcs); 
         ep = arrayLength(m)+1;
         syst = BackendDAE.EQSYSTEM(v,eqnsarr,SOME(m),SOME(mt),matching);
-        shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp);
+        shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, {ep});
         states = BackendEquation.equationsStates({orgeqn},v);
         l = listLength(states);
         // next 
-        (syst,shared,orgEqnslst) = addOrgEqntoDAE1(rest,syst,shared,so,inFunctions,e);
+        (syst,shared,orgEqnslst) = addOrgEqntoDAE1(rest,syst,shared,so,e);
       then
         (syst,shared,(ep,l,false)::orgEqnslst);
-    case ((orgeqn,true)::rest,syst,shared,so,inFunctions,e)
+    case ((orgeqn,true)::rest,syst,shared,so,e)
       equation
         // next 
-        (syst,shared,orgEqnslst) = addOrgEqntoDAE1(rest,syst,shared,so,inFunctions,e);
+        (syst,shared,orgEqnslst) = addOrgEqntoDAE1(rest,syst,shared,so,e);
       then
         (syst,shared,(e,0,true)::orgEqnslst);
 
@@ -2976,7 +2973,6 @@ protected function processOrgEnqs
   input BackendDAE.StateOrder inStateOrd;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree inFunctionTree;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;  
   output BackendDAE.EqSystem osyst;
@@ -2985,7 +2981,7 @@ protected function processOrgEnqs
   output BackendDAE.Assignments outAssignments2;  
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2):=
-  matchcontinue (inOrgEqns,inStateOrd,isyst,ishared,inFunctionTree,inAssignments1,inAssignments2)
+  matchcontinue (inOrgEqns,inStateOrd,isyst,ishared,inAssignments1,inAssignments2)
     local
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgEqns,orgEqns1;
       list<tuple<Integer,Integer,Integer>> orgEqnLevel;
@@ -3002,9 +2998,9 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case ({},_,syst,shared,inFunctionTree,ass1,ass2)
+    case ({},_,syst,shared,ass1,ass2)
       then (syst,shared,ass1,ass2);
-    case (orgEqns,inStateOrd,syst,shared as BackendDAE.SHARED(arrayEqs=ae),inFunctionTree,ass1,ass2)
+    case (orgEqns,inStateOrd,syst,shared as BackendDAE.SHARED(arrayEqs=ae),ass1,ass2)
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Get OrgEqn Level\n");
         (orgEqns1,orgEqnLevel) = getOrgEqn(orgEqns,{});
@@ -3013,9 +3009,9 @@ algorithm
         states1 = sortStateCandidates(states1,syst,shared);
         Debug.fcall(Flags.BLT_DUMP, print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& stringDelimitList(List.map(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
         (sysjac,orgEqnLevel) = calculateJacobianSystem(orgEqnLevel,syst,shared,states1);
-        (syst,shared,ass1,ass2,states1) = processEqnsLevel(orgEqnLevel,sysjac,so,syst,shared,ass1,ass2,inFunctionTree,states1);
+        (syst,shared,ass1,ass2,states1) = processEqnsLevel(orgEqnLevel,sysjac,so,syst,shared,ass1,ass2,states1);
         Debug.fcall(Flags.BLT_DUMP, print, "processOrgEnqs next\n");
-        (syst,shared,ass1,ass2) = processOrgEnqs(orgEqns1,so,syst,shared,inFunctionTree,ass1,ass2);
+        (syst,shared,ass1,ass2) = processOrgEnqs(orgEqns1,so,syst,shared,ass1,ass2);
       then
         (syst,shared,ass1,ass2);
   end matchcontinue;
@@ -3270,7 +3266,6 @@ protected function processEqnsLevel
   input BackendDAE.Shared ishared;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;   
-  input DAE.FunctionTree inFunctionTree;  
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -3279,7 +3274,7 @@ protected function processEqnsLevel
   output list<tuple<DAE.ComponentRef,Integer>> outStates; 
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outStates):=
-  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inStates)
     local
       Integer e,ep,i,stateno,ast,ev,l;
       list<tuple<Integer,Integer,Integer>> rest,orgeqns;
@@ -3297,17 +3292,17 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+    case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inStates)
       then (syst,shared,inAssignments1,inAssignments2,inStates);
-    case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
+    case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inStates)
       equation
-        (orgeqns,sysjac,syst,shared,ass1,ass2,states1,rs) = processOneStateEqns(inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates);
+        (orgeqns,sysjac,syst,shared,ass1,ass2,states1,rs) = processOneStateEqns(inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inStates);
         true = intGt(listLength(rs),0);
         (sysjac1,orgeqns) = removeVarsfromSysJac(rs,sysjac,orgeqns);
-        (syst,shared,ass1,ass2,states2) = processEqnsLevel(orgeqns,sysjac1,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,states1);
+        (syst,shared,ass1,ass2,states2) = processEqnsLevel(orgeqns,sysjac1,inStateOrd,syst,shared,ass1,ass2,states1);
       then
         (syst,shared,ass1,ass2,states2);   
-     case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
+     case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inStates)
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Sort OrgEqn Level\n");
         orgeqnssysjac = List.threadTuple(inOrgEqns,inSysjac);
@@ -3316,19 +3311,19 @@ algorithm
         //dumpEqns2((orgeqns,inBackendDAE));
         Debug.fcall(Flags.BLT_DUMP, print, "\nCandidates:\n" +& stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n");
         states = removeFixedfromStates(inStates,BackendVariable.daeVars(syst));
-        dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inFunctionTree,states,{});
+        dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,states,{});
         Debug.fcall(Flags.BLT_DUMP, print, "add dummy derivatives\n");
         (syst,shared,ass1,ass2,states2) = makeDummyStates(dummystates,syst,shared,ass1,ass2,inStates);        
       then
         (syst,shared,ass1,ass2,states2); 
-     case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
+     case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inStates)
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Sort OrgEqn Level\n");
         orgeqnssysjac = List.threadTuple(inOrgEqns,inSysjac);
         orgeqnssysjac = List.sort(orgeqnssysjac,sortOrgEqnLevel);
         orgeqns = List.map(orgeqnssysjac,Util.tuple21);
         //dumpEqns2((orgeqns,inBackendDAE));
-        dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inFunctionTree,inStates,{});
+        dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inStates,{});
         Debug.fcall(Flags.BLT_DUMP, print, "add dummy derivatives\n");
         (syst,shared,ass1,ass2,states2) = makeDummyStates(dummystates,syst,shared,ass1,ass2,inStates);
       then
@@ -3380,7 +3375,6 @@ protected function processOneStateEqns
   input BackendDAE.Shared ishared;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;   
-  input DAE.FunctionTree inFunctionTree;  
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   output list<tuple<Integer,Integer,Integer>> outOrgEqns;
   output list<list<tuple<Integer,Option<DAE.Exp>>>> outSysjac;  
@@ -3392,7 +3386,7 @@ protected function processOneStateEqns
   output list<Integer> removedStates;
 algorithm
   (outOrgEqns,outSysjac,osyst,oshared,outAssignments1,outAssignments2,outStates,removedStates):=
-  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+  matchcontinue (inOrgEqns,inSysjac,inStateOrd,isyst,ishared,inAssignments1,inAssignments2,inStates)
     local
       Integer e,ep,stateno,ast,ev,l;
       list<tuple<Integer,Integer,Integer>> rest,orgeqns;
@@ -3410,9 +3404,9 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inFunctionTree,inStates)
+    case ({},inSysjac,inStateOrd,syst,shared,inAssignments1,inAssignments2,inStates)
       then ({},inSysjac,syst,shared,inAssignments1,inAssignments2,inStates,{});
-    case ((e,ep,l)::rest,((stateno,_)::{})::sysjac,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedVars=v),shared,ass1,ass2,inFunctionTree,inStates)
+    case ((e,ep,l)::rest,((stateno,_)::{})::sysjac,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedVars=v),shared,ass1,ass2,inStates)
       equation
         var = BackendVariable.getVarAt(v,stateno);
         cr = BackendVariable.varCref(var);
@@ -3425,13 +3419,13 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Assign: ",ev," ",ast,"\n"));
         (ass1,ass2) = assignWithExpand(ev, ast, ass1, ass2);   
         // next 
-        (orgeqns,sysjac1,syst,shared,ass1,ass2,states,rs) = processOneStateEqns(rest,sysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates);
+        (orgeqns,sysjac1,syst,shared,ass1,ass2,states,rs) = processOneStateEqns(rest,sysjac,inStateOrd,syst,shared,ass1,ass2,inStates);
         states1 = removeStatefromCandidates(stateno,states);      
       then
         (orgeqns,sysjac1,syst,shared,ass1,ass2,states1,stateno::rs);   
-     case ((e,ep,l)::rest,eqnjac::sysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
+     case ((e,ep,l)::rest,eqnjac::sysjac,inStateOrd,syst,shared,ass1,ass2,inStates)
       equation
-        (orgeqns,sysjac1,syst,shared,ass1,ass2,states,rs) = processOneStateEqns(rest,sysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates);
+        (orgeqns,sysjac1,syst,shared,ass1,ass2,states,rs) = processOneStateEqns(rest,sysjac,inStateOrd,syst,shared,ass1,ass2,inStates);
       then
         ((e,ep,l)::orgeqns,eqnjac::sysjac1,syst,shared,ass1,ass2,states,rs); 
   end matchcontinue;
@@ -3765,14 +3759,13 @@ protected function selectDummyStates
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
   input BackendDAE.StateOrder inStateOrd;
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctionTree;  
+  input BackendDAE.Shared shared; 
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   input list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> inDummyStates; 
   output list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> outDummyStates; 
 algorithm
   outDummyStates:=
-  matchcontinue (inOrgEqns,inStateOrd,syst,shared,inFunctionTree,inStates,inDummyStates)
+  matchcontinue (inOrgEqns,inStateOrd,syst,shared,inStates,inDummyStates)
     local
       Integer e,ep,e_1;
       list<tuple<Integer,Integer,Integer>> rest;
@@ -3789,11 +3782,11 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> dummydercand,dyndummydercand;
       list<DAE.Exp> jac;
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates,dummystates1;
-    case ({},inStateOrd,syst,shared,inFunctionTree,inStates,dummystates)
+    case ({},inStateOrd,syst,shared,inStates,dummystates)
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "\nselected States (" +& intString(listLength(inStates)) +& "): " +& stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n"); 
       then dummystates;
-    case ((e,ep,_)::rest,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared as BackendDAE.SHARED(knownVars=knvars,arrayEqs=ae,algorithms=al),inFunctionTree,inStates,dummystates)
+    case ((e,ep,_)::rest,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared as BackendDAE.SHARED(knownVars=knvars,arrayEqs=ae,algorithms=al),inStates,dummystates)
       equation
         e_1 = ep - 1;
         orgeqn = BackendDAEUtil.equationNth(eqns, e_1); 
@@ -3810,7 +3803,7 @@ algorithm
         str = stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
         Debug.fcall(Flags.BLT_DUMP, print, "Dynamic DummyDer Candidates: " +& str +& "\n");
         // select dummy derivatives 
-        dummystates1 = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,rest,dummystates,ep);
+        dummystates1 = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,inStates,inStateOrd,rest,dummystates,ep);
       then
         dummystates1;       
   end matchcontinue;
@@ -3822,8 +3815,7 @@ protected function selectDummyDerivatives
   input list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> inDummyDer;
   input list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> inDynDummyDer;
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctionTree;   
+  input BackendDAE.Shared shared; 
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   input BackendDAE.StateOrder inStateOrd;
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
@@ -3832,7 +3824,7 @@ protected function selectDummyDerivatives
   output list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> outDummyStates;  
 algorithm
    outDummyStates := 
-   matchcontinue (inDummyDer,inDynDummyDer,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
+   matchcontinue (inDummyDer,inDynDummyDer,syst,shared,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
     local
       list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> dummyder,dyndummyder;
       list<DAE.ComponentRef> dummystates;
@@ -3850,33 +3842,33 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>> accdummystate;
       list<BackendDAE.Var> vlst;
       list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> dummydercomps;
-    case (dummyder as (_::_),dyndummyder,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case (dummyder as (_::_),dyndummyder,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         dummystates = List.map(dummyder,Util.tuple31);
         stateindx = List.map(dummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
         ((_,_,dse1)) = List.getMemberOnTrue(stateno,dummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
-        accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,dummyder,dyndummyder,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
+        accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,dummyder,dyndummyder,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         (accdummystates);
-    case ({},dyndummyder as (_::{}),syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case ({},dyndummyder as (_::{}),syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         dummystates = List.map(dyndummyder,Util.tuple31);
         stateindx = List.map(dyndummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
         ((_,_,dse1)) = List.getMemberOnTrue(stateno,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
-        accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,{},{},syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
+        accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,{},{},syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         (accdummystates);       
-    case ({},dyndummyder as (_::_::_),syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case ({},dyndummyder as (_::_::_),syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         dummydercomps = alldummyCompinations(dyndummyder,dyndummyder);
-        accdummystates = selectDummyDerivatives3(dummydercomps,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
+        accdummystates = selectDummyDerivatives3(dummydercomps,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         (accdummystates);
-    case ({},{},_,_,_,_,_,_,_,_)
+    case ({},{},_,_,_,_,_,_,_)
       equation
          Debug.fcall(Flags.BLT_DUMP,print,"no states found in equation\n");
       then fail();
@@ -3887,8 +3879,7 @@ protected function selectDummyDerivatives3 "function: selectDummyDerivatives3
   author: Frenkel TUD 20-11"
   input list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> inDynDummyDer;
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctionTree;   
+  input BackendDAE.Shared shared;  
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   input BackendDAE.StateOrder inStateOrd;
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
@@ -3897,7 +3888,7 @@ protected function selectDummyDerivatives3 "function: selectDummyDerivatives3
   output list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> outDummyStates;  
 algorithm
    outDummyStates := 
-   matchcontinue (inDynDummyDer,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
+   matchcontinue (inDynDummyDer,syst,shared,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
     local
       list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> dyndummyder;
       list<DAE.ComponentRef> dummystates;
@@ -3914,17 +3905,17 @@ algorithm
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> accdummystates;
       list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>> accdummystate;
       list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> rest;
-    case ((dyndummyder as (_::{}))::rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case ((dyndummyder as (_::{}))::rest,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         dummystates = List.map(dyndummyder,Util.tuple31);
         stateindx = List.map(dyndummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
         ((_,_,dse1)) = List.getMemberOnTrue(stateno,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
-        accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inFunctionTree,states,inDummyStates);
+        accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,states,inDummyStates);
       then
         (accdummystate::accdummystates);           
-    case ((dyndummyder as (_::_::_))::rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case ((dyndummyder as (_::_::_))::rest,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         // select dummy
         dummystates = List.map(dyndummyder,Util.tuple31);
@@ -3936,12 +3927,12 @@ algorithm
         (states,dummystate1,stateno1) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
         ((_,_,dse2)) = List.getMemberOnTrue(stateno1,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep),(dummystate1,dse2,stateno1,ep)};
-        accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inFunctionTree,states,inDummyStates);
+        accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,states,inDummyStates);
       then
         (accdummystate::accdummystates);  
-   case (dyndummyder::rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
+   case (dyndummyder::rest,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
-        accdummystates = selectDummyDerivatives3(rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
+        accdummystates = selectDummyDerivatives3(rest,syst,shared,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         accdummystates;
   end matchcontinue;
@@ -3989,7 +3980,6 @@ protected function selectDummyDerivatives2 "function: selectDummyDerivatives
   input list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> inDynDummyDer;
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctionTree;  
   input list<tuple<DAE.ComponentRef,Integer>> inStates; 
   input BackendDAE.StateOrder inStateOrd;
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
@@ -3998,7 +3988,7 @@ protected function selectDummyDerivatives2 "function: selectDummyDerivatives
   output list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> outDummyStates;  
 algorithm
   outDummyStates := 
-   matchcontinue (stateNo,accdummystate,inDummyDer,inDynDummyDer,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
+   matchcontinue (stateNo,accdummystate,inDummyDer,inDynDummyDer,syst,shared,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
     local
       list<tuple<DAE.ComponentRef,Integer,DAE.Exp>> dummydercand,dyndummydercand;
       list<Integer> stateno;
@@ -4008,12 +3998,12 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer>> states,states1;
       String str;
 
-    case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
-        dummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inFunctionTree,inStates,inDummyStates);
+        dummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inStates,inDummyStates);
       then
         (accdummystate::dummystates);
-    case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
+    case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "removeDummyStateCandidate in eqn " +& intString(ep) +& " from list try next\n"); 
         str = stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
@@ -4022,7 +4012,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "Dummy Dynamic DerCandidates: " +& str +& "\n");        
         (dummydercand,dyndummydercand,states) = removeDummyStateCandidate(stateNo,dummydercand,dyndummydercand);
         states1 = listAppend(states,inStates);
-        dummystates = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,inFunctionTree,states1,inStateOrd,inOrgEqns,inDummyStates,ep);
+        dummystates = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,states1,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         dummystates;
   end matchcontinue;
@@ -4770,7 +4760,6 @@ public function reduceIndexDummyDer
   input BackendDAE.DAEHandlerJop inJop;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree inFunctions;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -4787,7 +4776,7 @@ public function reduceIndexDummyDer
   output BackendDAE.DAEHandlerArg outArg;
 algorithm
   (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outDerivedAlgs,outDerivedMultiEqn,outArg):=
-  matchcontinue (eqns,actualEqn,inJop,isyst,ishared,inFunctions,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
+  matchcontinue (eqns,actualEqn,inJop,isyst,ishared,inAssignments1,inAssignments2,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<BackendDAE.Key> states;
@@ -4807,7 +4796,7 @@ algorithm
       BackendDAE.StateOrder so,so1;
       BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1;   
 
-    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
         // print("marked equations:");print(stringDelimitList(List.map(eqns,intString),","));print("\n");
@@ -4819,7 +4808,7 @@ algorithm
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, syst,{},{});
-        (syst,shared,deqns,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst1) = differentiateEqns(syst,shared,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn,so,orgEqnsLst);
+        (syst,shared,deqns,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst1) = differentiateEqns(syst,shared,eqns_1,derivedAlgs,derivedMultiEqn,so,orgEqnsLst);
         (state,stateno) = selectDummyState(states, stateindx, syst, shared);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates: ");print(stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
@@ -4845,16 +4834,16 @@ algorithm
       then
         (changedeqns,actualEqn,syst,shared,ass1,ass2,derivedAlgs1,derivedMultiEqn1,(so1,orgEqnsLst1));
 
-    case (eqns,_,BackendDAE.STARTSTEP(),syst,shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (eqns,_,BackendDAE.STARTSTEP(),syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         ((so,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.daeEqns(syst),traverseStateOrderFinder,(so,BackendVariable.daeVars(syst)));
         Debug.fcall(Flags.BLT_DUMP, dumpStateOrder, so); 
       then ({},actualEqn,syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
-    case (eqns,_,BackendDAE.ENDSTEP(),syst,shared,inFunctions,_,_,derivedAlgs,derivedMultiEqn,inArg)
+    case (eqns,_,BackendDAE.ENDSTEP(),syst,shared,_,_,derivedAlgs,derivedMultiEqn,inArg)
       then ({},actualEqn,syst,shared,inAssignments1,inAssignments2,derivedAlgs,derivedMultiEqn,inArg);
 
-    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,_,_,_,_,_,_)
+    case (eqns,_,BackendDAE.REDUCE_INDEX(),syst,shared,_,_,_,_,_)
       equation
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
@@ -5110,6 +5099,7 @@ algorithm
       array<DAE.Algorithm> al,al1,al2;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs,complEqs1,complEqs2;
+      DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       list<BackendDAE.Value> rest;
@@ -5120,14 +5110,14 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;      
       
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp),{})
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp),{})
       equation
         ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
         (ie1,(al1,ae1,complEqs1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, complEqs, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(al2,ae2,complEqs2,wclst2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, complEqs1, wclst1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,ae2,al2,constrs,complEqs2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc,btp));
+       then (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,ae2,al2,constrs,complEqs2,funcs,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc,btp));
 
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp),(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp),(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -5137,7 +5127,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae2,al2,constrs,complEqs2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc,btp), rest);
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae2,al2,constrs,complEqs2,funcs,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc,btp), rest);
       then
         (syst,shared);
 
@@ -6333,7 +6323,6 @@ protected function differentiateEqns
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> inIntegerLst6;
-  input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   input BackendDAE.StateOrder inStateOrd;
@@ -6347,7 +6336,7 @@ protected function differentiateEqns
   output BackendDAE.ConstraintEquations outOrgEqnsLst;  
 algorithm
   (osyst,oshared,outIntegerLst6,outDerivedAlgs,outDerivedMultiEqn,outStateOrd,outOrgEqnsLst):=
-  matchcontinue (isyst,ishared,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst)
+  matchcontinue (isyst,ishared,inIntegerLst6,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst)
     local
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
@@ -6361,6 +6350,7 @@ algorithm
       array<DAE.Algorithm> al,al1;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
@@ -6374,25 +6364,25 @@ algorithm
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
 
-    case (syst,shared,{},_,inDerivedAlgs,inDerivedMultiEqn,_,_) then (syst,shared,{},inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
+    case (syst,shared,{},inDerivedAlgs,inDerivedMultiEqn,_,_) then (syst,shared,{},inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
 
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),inDerivedAlgs,inDerivedMultiEqn,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v,BackendDAEUtil.emptyVars());
         false = BackendVariable.hasContinousVar(BackendDAEUtil.varList(ev));
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(e :: reqns),derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst);
         
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp),(e :: es),inDerivedAlgs,inDerivedMultiEqn,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, shared, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, shared, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n to \n");
         (eqn_1,al1,ae1,complEqs,wclst,(so,_)) = traverseBackendDAEExpsEqn(eqn_1, al1, ae1, complEqs, wclst, replaceStateOrderExp,(inStateOrd,v));
@@ -6402,18 +6392,18 @@ algorithm
         leneqns = BackendDAEUtil.equationSize(eqns_1);
         // print("New Equation: " +& intString(leneqns) +& "\n");
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp), es,derivedAlgs,derivedMultiEqn,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst);
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,wc,eoc,btp),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,constrs,complEqs,funcs,wc,eoc,btp),(e :: es),inDerivedAlgs,inDerivedMultiEqn,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn,v,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn,v,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,wc,eoc,btp), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,funcs,wc,eoc,btp), es,derivedAlgs,derivedMultiEqn,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(e :: reqns),derivedAlgs1,derivedMultiEqn1,so,orgEqnsLst);
     else

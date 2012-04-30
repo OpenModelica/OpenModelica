@@ -72,14 +72,12 @@ protected import Types;
 public function inlineCalls
 "function: inlineCalls
   searches for calls where the inline flag is true, and inlines them"
-  input Option<DAE.FunctionTree> inFTree "functions";
   input list<DAE.InlineType> inITLst;
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue(inFTree,inITLst,inBackendDAE)
+  outBackendDAE := matchcontinue(inITLst,inBackendDAE)
     local
-      Option<DAE.FunctionTree> ftree;
       list<DAE.InlineType> itlst;
       BackendDAE.Variables orderedVars;
       BackendDAE.Variables knownVars;
@@ -100,9 +98,10 @@ algorithm
       Functiontuple tpl;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce,eventInfo,extObjClasses,btp)))
+      DAE.FunctionTree functionTree;
+    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=ce,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)))
       equation
-        tpl = (ftree,itlst);
+        tpl = (SOME(functionTree),itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
         knownVars = inlineVariables(knownVars,tpl);
         externalObjects = inlineVariables(externalObjects,tpl);
@@ -116,8 +115,8 @@ algorithm
         ce1 = listArray(celst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then  
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,eventInfo,extObjClasses,btp));
-    case(_,_,_)
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,functionTree,eventInfo,extObjClasses,btp));
+    case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
       then

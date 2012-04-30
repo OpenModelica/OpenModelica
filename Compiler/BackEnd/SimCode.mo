@@ -934,7 +934,6 @@ public function generateModelCodeFMU
   "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
-  input DAE.FunctionTree functionTree;
   input Absyn.Program p;
   input DAE.DAElist dae;
   input Absyn.Path className;
@@ -962,8 +961,8 @@ algorithm
   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  createFunctions(dae, inBackendDAE, functionTree, className);
-  simCode := createSimCode(functionTree, outIndexedBackendDAE,
+  createFunctions(dae, inBackendDAE, className);
+  simCode := createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
@@ -1021,11 +1020,11 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow,
           NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCodeFMU(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt);
+          generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1052,7 +1051,6 @@ public function generateModelCode
    template-based code generator on it."
    
   input BackendDAE.BackendDAE inBackendDAE;
-  input DAE.FunctionTree functionTree;
   input Absyn.Program p;
   input DAE.DAElist dae;
   input Absyn.Path className;
@@ -1085,15 +1083,15 @@ algorithm
   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  createFunctions(dae, inBackendDAE, functionTree, className);
-  simCode := createSimCode(functionTree, outIndexedBackendDAE, 
+  createFunctions(dae, inBackendDAE, className);
+  simCode := createSimCode(outIndexedBackendDAE, 
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
   System.realtimeTick(CevalScript.RT_CLOCK_LINEARIZE);
   
-  LinearMatrices := createJacobianLinearCode(functionTree,outIndexedBackendDAE);
+  LinearMatrices := createJacobianLinearCode(outIndexedBackendDAE);
   simCode := addJacobianstoSimCode(simCode, LinearMatrices);
   timeJacobian := System.realtimeTock(CevalScript.RT_CLOCK_LINEARIZE);
   Debug.execStat("Linearization",CevalScript.RT_CLOCK_LINEARIZE);
@@ -1238,10 +1236,10 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow,
           NONE(), NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates, timeJacobians) = 
-          generateModelCode(dlow_1,funcs1,p, dae,  className, filenameprefix, inSimSettingsOpt, args);
+          generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1641,7 +1639,6 @@ end isBoxedArg;
 public function createFunctions
   input DAE.DAElist inDAElist;
   input BackendDAE.BackendDAE inBackendDAE;
-  input DAE.FunctionTree functionTree;
   input Absyn.Path inPath;
   output list<String> libs;
   output list<String> includes;
@@ -1653,17 +1650,18 @@ public function createFunctions
   output tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   (libs, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE, literals) :=
-  matchcontinue (inDAElist,inBackendDAE,functionTree,inPath)
+  matchcontinue (inDAElist,inBackendDAE,inPath)
     local
       list<String> libs1,libs2,includes1,includes2,includeDirs1,includeDirs2;
       list<DAE.Function> funcelems,part_func_elems;
       DAE.DAElist dae;
       BackendDAE.BackendDAE dlow;
+      DAE.FunctionTree functionTree;
       Absyn.Path path;
       list<Function> fns;
       list<DAE.Exp> lits;
       
-    case (dae,dlow,functionTree,path)
+    case (dae,dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)),path)
       equation
         // get all the used functions from the function tree
         funcelems = DAEUtil.getFunctionList(functionTree);
@@ -2131,8 +2129,7 @@ end elaborateStatement;
 
 // Copied from SimCodegen.generateSimulationCode.
 protected function createSimCode
-  input DAE.FunctionTree functionTree;
-  input BackendDAE.BackendDAE inBackendDAE2;
+  input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
@@ -2147,7 +2144,7 @@ protected function createSimCode
   output SimCode simCode;
 algorithm
   simCode :=
-  matchcontinue (functionTree,inBackendDAE2,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
+  matchcontinue (inBackendDAE,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
@@ -2155,6 +2152,7 @@ algorithm
       Integer numberOfInitialEquations, numberOfInitialResiduals;
       list<HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
+      DAE.FunctionTree functionTree;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
       Absyn.Path class_;
@@ -2414,7 +2412,7 @@ algorithm
         Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
         simCode; */
-    case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
+    case (dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
       equation
         System.tmpTickReset(0);
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
@@ -2422,7 +2420,7 @@ algorithm
         cname = Absyn.pathStringNoQual(class_);
        
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
-        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs, constraints = constrsarr)) = dlow2;
+        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, algorithms=algs, constraints = constrsarr, functionTree=functionTree)) = dlow2;
         
         (residualEquations, numberOfInitialEquations, numberOfInitialResiduals) = createInitialResiduals(dlow2);
         
@@ -2580,22 +2578,21 @@ algorithm
 end createEquationsForSystems;
 
 protected function createJacobianLinearCode
-  input DAE.FunctionTree functions;
   input BackendDAE.BackendDAE idlow;
   output list<JacobianMatrix> res;
 algorithm
-  res := matchcontinue (functions,idlow)
+  res := matchcontinue (idlow)
     local BackendDAE.BackendDAE dlow;
     
-    case (functions,dlow)
+    case (dlow)
       equation
         true = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
-        dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
-        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
+        dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow);
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
-        res = createJacobianCC(functions,dlow);
-        res = createLinearModelMatrixes(functions,dlow,res);
+        res = createJacobianCC(dlow);
+        res = createLinearModelMatrixes(dlow,res);
       then res;
     else
       equation
@@ -2651,13 +2648,12 @@ end addJacobianstoSimCode;
 protected function createLinearModelMatrixes
 "fuction creates the linear model matrices column-wise
  author: wbraun"
-  input DAE.FunctionTree functions;
   input BackendDAE.BackendDAE inBackendDAE2;
   input list<JacobianMatrix> injacobianMatrixes;
   output list<JacobianMatrix> outJacobianMatrixes;
 algorithm
   outJacobianMatrixes :=
-  matchcontinue (functions,inBackendDAE2,injacobianMatrixes)
+  matchcontinue (inBackendDAE2,injacobianMatrixes)
     local
       BackendDAE.BackendDAE dlow;
       
@@ -2670,7 +2666,7 @@ algorithm
       list<JacobianMatrix> linearModelMatrices;
       JacobianMatrix linearModelMatrix;
       
-    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)::{},BackendDAE.SHARED(knownVars = kv)),_)
+    case (dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)::{},BackendDAE.SHARED(knownVars = kv)),_)
       equation
         true = Flags.isSet(Flags.LINEARIZATION);
         
@@ -2700,7 +2696,7 @@ algorithm
         
         // Differentiate the System w.r.t states for matrices A
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrix = createJacobianFunction(dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         linearModelMatrices = {linearModelMatrix};
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         Debug.execStat("analytical Jacobians -> generated system for matrix A: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2708,7 +2704,7 @@ algorithm
         
         // Differentiate the System w.r.t inputs for matrices B
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
+        linearModelMatrix = createJacobianFunction(dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         Debug.execStat("analytical Jacobians -> generated system for matrix B: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2716,7 +2712,7 @@ algorithm
 
         // Differentiate the System w.r.t states for matrices C
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
+        linearModelMatrix = createJacobianFunction(dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         Debug.execStat("analytical Jacobians -> generated system for matrix C: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2724,7 +2720,7 @@ algorithm
         
         // Differentiate the System w.r.t inputs for matrices D
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        linearModelMatrix = createJacobianFunction(functions,dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
+        linearModelMatrix = createJacobianFunction(dlow,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         Debug.execStat("analytical Jacobians -> generated system for matrix D: ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2732,21 +2728,21 @@ algorithm
         
       then
         linearModelMatrices;
-    case (_,dlow,linearModelMatrices)
+    case (dlow,linearModelMatrices)
       equation
         false = Flags.isSet(Flags.LINEARIZATION);
         true = Flags.isSet(Flags.JACOBIAN);
       then
         linearModelMatrices;
 
-    case (_,dlow,_)
+    case (dlow,_)
       equation
         false = Flags.isSet(Flags.LINEARIZATION);
         false = Flags.isSet(Flags.JACOBIAN);
         linearModelMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
       then
         linearModelMatrices;
-    case (_, _, _)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of LinearModel Matrixes code (SimCode.createLinearModelMatrixes) failed"});
       then
@@ -2757,12 +2753,11 @@ end createLinearModelMatrixes;
 protected function createJacobianCC
 "fuction creates the jacobian column-wise
  author: wbraun"
-  input DAE.FunctionTree functions;
   input BackendDAE.BackendDAE inBackendDAE2;
   output list<JacobianMatrix> outjacobianMatrixes;
 algorithm
   outjacobianMatrixes :=
-  matchcontinue (functions,inBackendDAE2)
+  matchcontinue (inBackendDAE2)
     local
       BackendDAE.BackendDAE dlow;
       array<Integer> ass1,ass2;
@@ -2783,7 +2778,7 @@ algorithm
       BackendDAE.IncidenceMatrix adjMatrix;
       BackendDAE.IncidenceMatrixT adjMatrixT;
       BackendDAE.Matching bdaeMatching;
-    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},shared as 
+    case (dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},shared as 
 BackendDAE.SHARED(knownVars = kv)))      
       equation
         true = Flags.isSet(Flags.JACOBIAN);
@@ -2798,7 +2793,7 @@ BackendDAE.SHARED(knownVars = kv)))
         newVars = BackendDAEUtil.emptyVars();
         (newEqns, newVars) = splitoutEquationAndVars(blt_states,e,v,newEqns,newVars);
         dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
-        dlow = BackendDAEUtil.transformBackendDAE(dlow,functions,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
+        dlow = BackendDAEUtil.transformBackendDAE(dlow,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
          
         // Prepare all needed variables
         varlst_tmp = BackendDAEUtil.varList(v);
@@ -2814,7 +2809,7 @@ BackendDAE.SHARED(knownVars = kv)))
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         paramvars = List.sort(paramvars,  BackendVariable.varIndexComparer);
 
-        linearModelMatrix = createJacobianFunction(functions,dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrix = createJacobianFunction(dlow,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         // add empty matrices B,C,D
         linearModelMatrices = {linearModelMatrix,({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2822,7 +2817,7 @@ BackendDAE.SHARED(knownVars = kv)))
         
       then
         linearModelMatrices;
-    case (_,dlow)
+    case (dlow)
       equation
         false = Flags.isSet(Flags.JACOBIAN);
         linearModelMatrices = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
@@ -2871,7 +2866,6 @@ end splitoutEquationAndVars;
 protected function createJacobianFunction
 " helper fuction of createJacobianCC
  author: wbraun"
-  input DAE.FunctionTree inFunctions;
   input BackendDAE.BackendDAE inBackendDAE;
   input list<BackendDAE.Var> inDiffVars;
   input BackendDAE.Variables inStateVars;
@@ -2884,7 +2878,7 @@ protected function createJacobianFunction
   output JacobianMatrix outColumnn;
 algorithm
   outColumnn :=
-  matchcontinue (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inOrigTuple,inName)
+  matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inOrigTuple,inName)
     local
       BackendDAE.BackendDAE backendDAE;
       array<Integer> ass1,ass2;
@@ -2908,7 +2902,7 @@ algorithm
       list<Integer> colsColors;
       Integer maxColor,nonZeroElements;
       
-    case (inFunctions,inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
+    case (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,(inOrigVars,inOrigKnVars),inName)
       equation
 
         diffedVars = BackendDAEUtil.varList(inDifferentiatedVars);
@@ -2926,7 +2920,7 @@ algorithm
                        
         // Differentiate the ODE system w.r.t states for jacobian
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
-        (backendDAE as BackendDAE.DAE(shared=shared)) = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=shared)) = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         Debug.execStat("analytical Jacobians -> generated equations for Jacobian " +& inName +& " : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         
@@ -2935,7 +2929,7 @@ algorithm
         knvarsTmp = BackendDAEUtil.varList(knvars1);
         
         // create equations and variables
-        (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,inFunctions,comref_differentiatedVars,comref_vars,inVars,0);
+        (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,comref_differentiatedVars,comref_vars,inVars,0);
         columnEquations = createEquations(false, false, false, false, true, syst, shared, 0, comps, {});
         
         vars = BackendVariable.daeVars(syst);
@@ -4870,6 +4864,7 @@ algorithm
       array<Algorithm.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo ev;
       array<Integer> ass1,ass2;
       list<Integer> ieqns,ivars,disc_eqns,disc_vars;
@@ -4935,9 +4930,10 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         ave = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
+        funcs = DAEUtil.avlTreeNew();
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,constrs,complEqs,ev,eoc,BackendDAE.ALGEQSYSTEM());
+        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,constrs,complEqs,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         subsystem_dae = BackendDAE.DAE({syst},shared);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, complEqs, m, mt,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
@@ -4995,13 +4991,14 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         ave = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
+        funcs = DAEUtil.avlTreeNew();
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,constrs,complEqs,ev,eoc,BackendDAE.ALGEQSYSTEM());
+        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,constrs,complEqs,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,SOME(m),SOME(mt),BackendDAE.NO_MATCHING());
         subsystem_dae = BackendDAE.DAE({syst},shared);
-        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
+        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(m=SOME(m_3),mT=SOME(mT_3))}),v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -5275,6 +5272,7 @@ algorithm
       list<DAE.ComponentRef> crefs;
       array<BackendDAE.MultiDimEquation> ae;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo ev;
       list<SimEqSystem> resEqs;
       SimEqSystem equation_;
@@ -5333,8 +5331,9 @@ algorithm
         ave = BackendDAEUtil.emptyAliasVariables();
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,ae,algorithms,constrs,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM() ));
-        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
+        funcs = DAEUtil.avlTreeNew();
+        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,ae,algorithms,constrs,complEqs,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM() ));
+        (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -6028,6 +6027,7 @@ algorithm
       array<Algorithm.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       array<list<Integer>> m,mt;
       DAE.ElementSource source;
       BackendDAE.AliasVariables av;
@@ -6072,10 +6072,11 @@ algorithm
         ae1 = listArray({});
         constrs = listArray({});
         complEqs = listArray({});
+        funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(vars,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,constrs,complEqs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM());
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,constrs,complEqs,funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM());
         subsystem_dae = BackendDAE.DAE({syst},shared);
-        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
+        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         equations_ = createEquations(false, true, genDiscrete, false, false, syst, shared, offset, comps, helpVarInfo);
       then
         equations_;
@@ -6534,6 +6535,7 @@ algorithm
       BackendDAE.BackendDAE paramdlow,paramdlow1;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.AliasVariables alisvars;
       BackendDAE.IncidenceMatrix m;
@@ -6558,8 +6560,9 @@ algorithm
         alisvars = BackendDAEUtil.emptyAliasVariables();
         v = BackendDAEUtil.listVar(lv);
         kn = BackendDAEUtil.listVar(lkn);
+        funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,arrayEqs,algs,constrs,complEqs,BackendDAE.EVENT_INFO({},{}),extObjClasses,BackendDAE.PARAMETERSYSTEM());
+        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,arrayEqs,algs,constrs,complEqs,funcs,BackendDAE.EVENT_INFO({},{}),extObjClasses,BackendDAE.PARAMETERSYSTEM());
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
@@ -7899,16 +7902,17 @@ algorithm
       array<Algorithm.Algorithm> algorithms,algorithms2;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
     case  (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
-      removedEqs,arrayEqs,algorithms,constrs,complEqs,eventInfo,extObjClasses,btp)))
+      removedEqs,arrayEqs,algorithms,constrs,complEqs,funcs,eventInfo,extObjClasses,btp)))
       equation
         (helpvars1,algorithms2,_) = generateHelpVarsInAlgorithms(listLength(helpvars),algorithms);
       then (listAppend(helpvars,helpvars1),BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
-        removedEqs,arrayEqs,algorithms2,constrs,complEqs,eventInfo,extObjClasses,btp)));
+        removedEqs,arrayEqs,algorithms2,constrs,complEqs,funcs,eventInfo,extObjClasses,btp)));
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,

@@ -253,6 +253,7 @@ uniontype Shared "Data shared for all equation-systems"
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     array< .DAE.Constraint> constraints "constraints (Optimica extension)";
     array<ComplexEquation> complEqs "array for complex equations";
+    .DAE.FunctionTree functionTree "functions for Backend";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType "indicate for what the BackendDAE is used";   

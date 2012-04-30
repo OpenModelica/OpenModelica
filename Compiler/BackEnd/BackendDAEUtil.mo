@@ -428,10 +428,10 @@ protected function expandAlgorithmsbyInitStmts1
   - A discrete variable v is initialized with pre(v).
   Helper function to expandAlgorithmsbyInitStmts.
 "
-    input BackendDAE.EqSystem syst;
-    input BackendDAE.Shared shared;
-    output BackendDAE.EqSystem osyst;
-    output BackendDAE.Shared oshared;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
 algorithm
   (osyst,oshared) := match (syst,shared)
  local
@@ -451,12 +451,13 @@ algorithm
   BackendDAE.EventInfo einfo;
   BackendDAE.ExternalObjectClasses eoc;
   BackendDAE.EqSystem eqs;
-  BackendDAE.BackendDAEType btp;  
+  BackendDAE.BackendDAEType btp;
+  DAE.FunctionTree funcs;  
    case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=ordeqns),
-        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
+        BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp))
    equation
      ((algs,_,_)) = BackendEquation.traverseBackendDAEEqns(ordeqns,expandAlgorithmsbyInitStmtsHelper,(algorithms,ordvars,{}));
-   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,constrs,complEqs,einfo,eoc,btp));    
+   then(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algs,constrs,complEqs,funcs,einfo,eoc,btp));    
    end match;
 end expandAlgorithmsbyInitStmts1;
 
@@ -578,6 +579,7 @@ algorithm
       array<DAE.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wc;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.Variables vars, knvars, extVars;
@@ -589,7 +591,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.EqSystems systs;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs, funcs, BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
         varlst = List.mapMap(systs,BackendVariable.daeVars,varList);
         knvarlst = varList(knvars);
@@ -602,7 +604,7 @@ algorithm
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs, funcs, BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
   end match;
 end translateDae;
 
@@ -870,12 +872,13 @@ algorithm
       array<DAE.Algorithm> al;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
     case (cache,env,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars = knvars,externalObjects=extVars,aliasVars = av,
-                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al, constraints = constrs, complEqs=complEqs,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
+                 initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al, constraints = constrs, complEqs=complEqs, functionTree = funcs, eventInfo = wc, extObjClasses=extObjCls, backendDAEType=btp)))
       equation
         knvarlst = varList(knvars);
         (varlst1,varlst2) = List.splitOnTrue(knvarlst,BackendVariable.isParam);
@@ -883,7 +886,7 @@ algorithm
         knvarlst = List.map3(varlst1, calculateValue, cache, env, paramvars);
         knvars = listVar(listAppend(knvarlst,varlst2));
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,constrs,complEqs,wc,extObjCls,btp));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,constrs,complEqs,funcs,wc,extObjCls,btp));
   end match;
 end calculateValues;
 
@@ -1082,14 +1085,15 @@ algorithm
       array<DAE.Algorithm> algorithms;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp))
+    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp))
       equation
         aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,einfo,eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp);
   end match;
 end updateAliasVariablesDAE;
 
@@ -1816,6 +1820,8 @@ algorithm
         ((_,(_,res))) = Expression.traverseExpTopDown(e1, traversingstatesAndVarsExpFinder, (vars,expl));
       then
         ((e,true,(vars,res)));
+    // Special Case for time variable
+    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time"))),(vars,expl)))  then ((e,false,(vars,e::expl)));       
     case (((e as DAE.CREF(componentRef = cr)),(vars,expl)))
       equation
         (_,_) = BackendVariable.getVar(cr, vars);
@@ -2687,15 +2693,16 @@ algorithm
       array<DAE.Algorithm> algorithms;
       array<DAE.Constraint> constrs;
       array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
+    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp);
   end match;
 end whenClauseAddDAE;
 
@@ -6131,7 +6138,6 @@ partial function preoptimiseDAEModule
 "function preoptimiseDAEModule 
   This is the interface for pre optimisation modules."
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
 end preoptimiseDAEModule;
 
@@ -6139,7 +6145,6 @@ partial function pastoptimiseDAEModule
 "function pastoptimiseDAEModule 
   This is the interface for past optimisation modules."
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
   output Boolean outRunMatching;
 end pastoptimiseDAEModule;
@@ -6152,7 +6157,6 @@ partial function daeHandlerFunc
   input BackendDAE.DAEHandlerJop inJop;
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input DAE.FunctionTree inFunctions;
   input BackendDAE.Assignments inAssignments1;
   input BackendDAE.Assignments inAssignments2;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
@@ -6176,7 +6180,6 @@ partial function matchingAlgorithmFunc
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input daeHandlerFunc daeHandler;
-  input DAE.FunctionTree inFunctions;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 end matchingAlgorithmFunc;
@@ -6187,13 +6190,11 @@ public function getSolvedSystem
   input Env.Cache inCache;
   input Env.Env inEnv;
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strdaeHandler;
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
-  output DAE.FunctionTree outFunctionTree;
 protected
   BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -6217,16 +6218,16 @@ algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
+  (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := transformDAE(optdae,functionTree,NONE(),matchingAlgorithm,daeHandler);
+  sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
-  (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,matchingAlgorithm,daeHandler);
-  (_,outFunctionTree) := BackendDAEOptimize.removeUnusedFunctions(optsode, functionTree);
-  Debug.execStat("pastOpt removeUnusedFunctions",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);  
+  (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
+  //(optsode) := BackendDAEOptimize.removeUnusedFunctions(optsode);
+  //Debug.execStat("pastOpt removeUnusedFunctions",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);  
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
@@ -6246,47 +6247,45 @@ public function preOptimiseBackendDAE
 "function preOptimiseBackendDAE 
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
   list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  (outDAE,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
+  (outDAE,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 end preOptimiseBackendDAE;
 
 protected function preoptimiseDAE
 "function preoptimiseDAE 
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input list<tuple<preoptimiseDAEModule,String,Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
-  (outDAE,status) := matchcontinue (inDAE,functionTree,optModules)
+  (outDAE,status) := matchcontinue (inDAE,optModules)
     local 
       BackendDAE.BackendDAE dae,dae1;
       preoptimiseDAEModule optModule;
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean b;
-    case (_,_,{}) then (inDAE,Util.SUCCESS());
-    case (_,_,(optModule,moduleStr,_)::rest)
+    case (_,{}) then (inDAE,Util.SUCCESS());
+    case (_,(optModule,moduleStr,_)::rest)
       equation
-        dae = optModule(inDAE,functionTree);
+        dae = optModule(inDAE);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
-        (dae1,status) = preoptimiseDAE(dae,functionTree,rest);
+        (dae1,status) = preoptimiseDAE(dae,rest);
       then (dae1,status);
-    case (_,_,(optModule,moduleStr,b)::rest)
+    case (_,(optModule,moduleStr,b)::rest)
       equation
         Debug.execStat("<failed> preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-        (dae,status) = preoptimiseDAE(inDAE,functionTree,rest);
+        (dae,status) = preoptimiseDAE(inDAE,rest);
       then (dae,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
 end preoptimiseDAE;
@@ -6295,7 +6294,6 @@ public function transformBackendDAE
 "function transformBackendDAE 
   Run the matching and index reduction algorithm"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strindexReductionMethod;
@@ -6306,7 +6304,7 @@ protected
 algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  outDAE := transformDAE(inDAE,functionTree,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
+  outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
 end transformBackendDAE;
 
 protected function transformDAE
@@ -6315,7 +6313,6 @@ protected function transformDAE
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
@@ -6325,7 +6322,7 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
-  (systs,shared) := mapTransformDAE(systs,shared,functionTree,inMatchingOptions,matchingAlgorithm,daeHandler,{});
+  (systs,shared) := mapTransformDAE(systs,shared,inMatchingOptions,matchingAlgorithm,daeHandler,{});
   outDAE := BackendDAE.DAE(systs,shared);
 end transformDAE;
 
@@ -6336,7 +6333,6 @@ protected function mapTransformDAE
   the index of the dae."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
@@ -6344,16 +6340,16 @@ protected function mapTransformDAE
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
 algorithm
-  (osysts,oshared) := matchcontinue (isysts,ishared,functionTree,inMatchingOptions,matchingAlgorithm,daeHandler,acc)
+  (osysts,oshared) := matchcontinue (isysts,ishared,inMatchingOptions,matchingAlgorithm,daeHandler,acc)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-    case ({},_,_,_,_,_,_) then (listReverse(acc),ishared);
-    case (syst::systs,_,_,_,_,_,_)
+    case ({},_,_,_,_,_) then (listReverse(acc),ishared);
+    case (syst::systs,_,_,_,_,_)
       equation
-        (syst,shared) = transformDAEWork(syst,ishared,functionTree,inMatchingOptions,matchingAlgorithm,daeHandler);
-        (systs,shared) = mapTransformDAE(systs,shared,functionTree,inMatchingOptions,matchingAlgorithm,daeHandler,syst::acc);
+        (syst,shared) = transformDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,daeHandler);
+        (systs,shared) = mapTransformDAE(systs,shared,inMatchingOptions,matchingAlgorithm,daeHandler,syst::acc);
       then (systs,shared);
   end matchcontinue;
 end mapTransformDAE;
@@ -6365,14 +6361,13 @@ protected function transformDAEWork
   the index of the dae."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input DAE.FunctionTree functionTree;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (isyst,ishared,functionTree,inMatchingOptions,matchingAlgorithm,daeHandler)
+  (osyst,oshared) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,daeHandler)
     local 
       String str,methodstr,mAmethodstr;
       array<Integer> v1;
@@ -6383,19 +6378,19 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (_,_,_,_,(matchingAlgorithmfunc,mAmethodstr),(daeHandlerfunc,methodstr))
+    case (_,_,_,(matchingAlgorithmfunc,mAmethodstr),(daeHandlerfunc,methodstr))
       equation
         (syst,_,_) = getIncidenceMatrix(isyst,ishared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
-        (syst,shared) = matchingAlgorithmfunc(syst,ishared, match_opts, daeHandlerfunc, functionTree);
+        (syst,shared) = matchingAlgorithmfunc(syst, ishared, match_opts, daeHandlerfunc);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
         (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
-        (syst,shared) = restartMatching(not checkCompsMatching(comps,arrayList(v1)),syst, shared, match_opts, matchingAlgorithmfunc, daeHandlerfunc, functionTree);
+        (syst,shared) = restartMatching(not checkCompsMatching(comps,arrayList(v1)),syst, shared, match_opts, matchingAlgorithmfunc, daeHandlerfunc);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared);
     else
@@ -6414,17 +6409,16 @@ protected function restartMatching
   input BackendDAE.MatchingOptions opts;
   input matchingAlgorithmFunc matchingAlgorithm;
   input daeHandlerFunc daeHandler;
-  input DAE.FunctionTree funcs;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := match (cond,isyst,ishared,opts,matchingAlgorithm,daeHandler,funcs)
+  (osyst,oshared) := match (cond,isyst,ishared,opts,matchingAlgorithm,daeHandler)
     local BackendDAE.EqSystem syst; BackendDAE.Shared shared;
-    case (false,_,_,_,_,_,_) then (isyst,ishared);
-    case (true,_,_,_,_,_,_)
+    case (false,_,_,_,_,_) then (isyst,ishared);
+    case (true,_,_,_,_,_)
       equation
         (syst,_,_) = getIncidenceMatrix(isyst,ishared,BackendDAE.SOLVABLE());
-        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, ishared, opts, daeHandler, funcs);
+        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, ishared, opts, daeHandler);
         (syst,_,_) = getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
         (syst,_) = BackendDAETransform.strongComponents(syst,shared);
       then (syst,shared);
@@ -6435,7 +6429,6 @@ protected function pastoptimiseDAE
 "function optimiseDAE 
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input list<tuple<pastoptimiseDAEModule,String,Boolean>> optModules;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
@@ -6443,30 +6436,30 @@ protected function pastoptimiseDAE
   output Util.Status status;
 algorithm
   (outDAE,status):=
-  matchcontinue (inDAE,functionTree,optModules,matchingAlgorithm,daeHandler)
+  matchcontinue (inDAE,optModules,matchingAlgorithm,daeHandler)
     local 
       BackendDAE.BackendDAE dae,dae1,dae2;
       pastoptimiseDAEModule optModule;
       list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean runMatching,b;
-    case (_,_,{},_,_) then (inDAE,Util.SUCCESS());
-    case (_,_,(optModule,moduleStr,_)::rest,_,_)
+    case (_,{},_,_) then (inDAE,Util.SUCCESS());
+    case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
-        (dae,runMatching) = optModule(inDAE,functionTree);
+        (dae,runMatching) = optModule(inDAE);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
-        dae1 = checktransformDAE(runMatching,dae,functionTree,matchingAlgorithm,daeHandler);
-        (dae2,status) = pastoptimiseDAE(dae1,functionTree,rest,matchingAlgorithm,daeHandler);
+        dae1 = checktransformDAE(runMatching,dae,matchingAlgorithm,daeHandler);
+        (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
       then
         (dae2,status);
-    case (_,_,(optModule,moduleStr,b)::rest,_,_)
+    case (_,(optModule,moduleStr,b)::rest,_,_)
       equation
         Debug.execStat("pastOpt <failed> " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-        (dae,status) = pastoptimiseDAE(inDAE,functionTree,rest,matchingAlgorithm,daeHandler);
+        (dae,status) = pastoptimiseDAE(inDAE,rest,matchingAlgorithm,daeHandler);
       then   
         (dae,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
@@ -6477,22 +6470,21 @@ protected function checktransformDAE
   check if the matching and sorting algorithm should be performed"
   input Boolean inRunMatching;
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree functionTree;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE :=
-  match (inRunMatching,inDAE,functionTree,matchingAlgorithm,daeHandler)
+  match (inRunMatching,inDAE,matchingAlgorithm,daeHandler)
     local 
       BackendDAE.BackendDAE sode;
-    case (true,_,_,_,_)
+    case (true,_,_,_)
       equation
 //        sode = transformDAE(inDAE,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),matchingAlgorithm,daeHandler);
-        sode = transformDAE(inDAE,functionTree,NONE(),matchingAlgorithm,daeHandler);
+        sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
-    case (false,_,_,_,_)
+    case (false,_,_,_)
       then inDAE;
   end match;
 end checktransformDAE;
@@ -6733,7 +6725,8 @@ algorithm
   (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter",false),
   (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables",false),
   (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
-  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false)};
+  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
+  (BackendDAEOptimize.removeUnusedFunctionsPast,"removeUnusedFunctions",false)};
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{});
