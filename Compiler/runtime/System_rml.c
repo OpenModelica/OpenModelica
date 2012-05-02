@@ -2058,9 +2058,17 @@ RML_BEGIN_LABEL(System__snprintff)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__rand)
+RML_BEGIN_LABEL(System__intRand)
 {
-  rmlA0 = mk_icon(rand());
+  rmlA0 = mk_icon(SystemImpl__intRand(RML_UNTAGFIXNUM(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__realRand)
+{
+  rmlA0 = mk_rcon(SystemImpl__realRand());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

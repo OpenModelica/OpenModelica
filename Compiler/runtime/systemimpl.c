@@ -1694,6 +1694,58 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   return buf;
 }
 
+/* NOTES: Randomness provided by random() is guaranteed to be uniform
+ * (high and low bits are the same).
+ * rand() does not produce good results and should be avoided. */
+static void seed(void)
+{
+  static int init = 0;
+  if (!init) {
+    /* /dev/random is usually a good seed; abuse it! */
+    const char *devrandom = "/dev/random";
+    if (SystemImpl__regularFileExists(devrandom)) {
+      int seed=0;
+      FILE *f = fopen(devrandom, "r");
+      if (f && (sizeof(int)==fread(&seed,1,sizeof(int),f))) {
+        srandom(seed);
+        init = 1;
+      }
+      if (f) {
+        fclose(f);
+      }
+    }
+    if (!init) /* /dev/random failed; use crappy seed */ {
+      srandom(time(NULL));
+      init = 1;
+    }
+  }
+}
+
+/* Returns a value (0,1] */
+double SystemImpl__realRand()
+{
+  seed();
+  return random() / (((double)RAND_MAX)+1);
+}
+
+/* Returns an integer (0,n] (i.e. the highest value is n-1) */
+int SystemImpl__intRand(int n)
+{
+  unsigned int r;
+  int m = RAND_MAX % n;
+  if (n<0 || n>RAND_MAX) return -1 /* Garbage in, garbage out */;
+  seed();
+  /*
+   * Loop until we get something in a uniform range.
+   * Otherwise some values are more probable than others
+   */
+  while (1) {
+    r = random();
+    if (RAND_MAX-(long)r >= m) break;
+  }
+  return r % n;
+}
+
 #ifdef __cplusplus
 }
 #endif

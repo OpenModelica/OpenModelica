@@ -691,9 +691,4 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   return buf;
 }
 
-int System_rand()
-{
-  return rand();
-}
-
 }

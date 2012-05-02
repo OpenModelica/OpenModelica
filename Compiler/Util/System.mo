@@ -915,13 +915,20 @@ function snprintff "sprintf format string that takes one double as argument"
 external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcruntime"});
 end snprintff;
 
-public function rand
-"function: rand
-  author: Frenkel TUD 2012-04
-  "
+public function realRand
+  "Returns a value in the intervals (0,1]"
   output Real r;
 
-  external "C" r = System_rand();
-end rand;
+  external "C" r = SystemImpl_realRand();
+end realRand;
+
+public function intRand
+  "Returns a integer value in the interval (0,n].
+  The number of possible values is n, the maximum value n-1."
+  input Integer n;
+  output Integer i;
+
+  external "C" i = SystemImpl_intRand(n);
+end intRand;
 
 end System;
