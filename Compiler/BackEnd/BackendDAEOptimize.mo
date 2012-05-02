@@ -6093,9 +6093,6 @@ algorithm
       
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms, functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, matrixName) equation
       System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES); 
-      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
-      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, bDAE);
-      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump:    input #####################\n\n");
       
       // Generate tmp varibales
       diffvars = BackendDAEUtil.varList(orderedVars);
@@ -6138,15 +6135,9 @@ algorithm
       
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, constrs, complEqs, functions, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}));
       
-      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
-      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, jacobian);
-      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump: jacobian #####################\n");
     then jacobian;
 
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms, functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, inMatrixName) equation
-      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
-      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, bDAE);
-      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump:    input #####################\n\n");
       
       diffvars = BackendDAEUtil.varList(orderedVars);
       (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, vars, inMatrixName);
@@ -7270,6 +7261,7 @@ algorithm
       Absyn.Path fname,derFname;
       
       list<DAE.Exp> expList1, expList2;
+      list<list<DAE.Exp>> expListLst;
       Boolean tuple_, builtin,b;
       DAE.InlineType inlineType;
       BackendDAE.Variables inputVars, paramVars, stateVars, knownVars, allVars;
@@ -7368,25 +7360,29 @@ algorithm
       dxlist = List.threadMap1(dxlist1,dxlist2,mergeIf,e);
     then dxlist;
 
-    /*  
-    case (DAE.ARRAY(ty = et,scalar = b,array = expList1), x, functions, inputVars, paramVars, stateVars, knownVars, diffVars)
+      
+    case (e as DAE.ARRAY(ty = et,scalar = b,array = expList1), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName)
       equation
-        expList2 = List.map7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
+        expListLst = List.map9(expList1, differentiateWithRespectToXVec, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
+        expListLst = List.transposeList(expListLst);
+        dxlist = List.map2(expListLst, mergeArray, et, b);
       then
-        DAE.ARRAY(et,b,expList2);
+        dxlist;
     
-    case (DAE.TUPLE(PR = expList1), x, functions, inputVars, paramVars, stateVars, knownVars, diffVars)
+    case (DAE.TUPLE(PR = expList1), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars,diffVars, inMatrixName)
       equation
-        expList2 = List.map7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
+        expListLst = List.map9(expList1, differentiateWithRespectToXVec, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
+        expListLst = List.transposeList(expListLst);
+        dxlist = List.map(expListLst, mergeTuple);
       then
-        DAE.TUPLE(expList2);
-    
-    case (DAE.ASUB(exp = e,sub = expList1), x, functions, inputVars, paramVars, stateVars, knownVars, diffVars)
+        dxlist;
+    /*
+    case (DAE.ASUB(exp = e,sub = expList1), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName)
       equation
-        e1_ = differentiateWithRespectToX(e, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
+        e1_ = differentiateWithRespectToXVec(e, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
       then
        e1_;
-  */         
+    */       
     case(e, xlist, _, _, _, _, _, _,_, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE_JAC);
@@ -7591,10 +7587,14 @@ algorithm
     case ((e as DAE.CALL(path=fname, expLst=expList1), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName))))
       equation
         //(SOME((functions, inputVars, paramVars, stateVars, knownVars, diffVars))) = inTpl;
+        Debug.fcall(Flags.JAC_DUMP,print,"differentiate function call " +& Absyn.pathString(fname) +& "(" +& ExpressionDump.printExpListStr(expList1) +& ") numerical.\n");
         nArgs = listLength(expList1);
         expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
+        Debug.fcall(Flags.JAC_DUMP,print,"derived ExpList args: (" +& ExpressionDump.printExpListStr(expList2) +& "\n");
         e1 = partialNumericalDifferentiation(expList1, expList2, x, e);
+        Debug.fcall(Flags.JAC_DUMP,print,"derived exp : (" +& ExpressionDump.printExpStr(e1) +& "\n");
         (e1,_) = ExpressionSimplify.simplify(e1);
+        Debug.fcall(Flags.JAC_DUMP,print,"derived exp simplify: (" +& ExpressionDump.printExpStr(e1) +& "\n");
       then e1;
  end matchcontinue;
 end diffNumCall;
@@ -7784,6 +7784,22 @@ algorithm
     then e;
  end matchcontinue;
 end mergeRelation;
+
+protected function mergeArray
+  input list<DAE.Exp> inExplst;
+  input DAE.Type inType;
+  input Boolean inScalar;
+  output DAE.Exp outExp;
+algorithm
+  outExp :=  DAE.ARRAY(inType, inScalar, inExplst); 
+end mergeArray;
+
+protected function mergeTuple
+  input list<DAE.Exp> inExplst;
+  output DAE.Exp outExp;
+algorithm
+  outExp :=  DAE.TUPLE(inExplst); 
+end mergeTuple;
 
 /* Parallel backend stuff  */
 
