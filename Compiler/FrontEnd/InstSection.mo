@@ -739,6 +739,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph)
       equation 
         (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
+        checkReinitType(t, cr_1, info);
         (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl, info);
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl, info);
@@ -851,6 +852,37 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommonWork;
+
+protected function checkReinitType
+  "Checks that the base type of the given type is Real, otherwise it prints an
+   error message that the first argument to reinit must be a subtype of Real."
+  input DAE.Type inType;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inType, inCref, inInfo)
+    local
+      DAE.Type ty;
+      String cref_str;
+
+    case (_, _, _)
+      equation
+        ty = Types.arrayElementType(inType);
+        true = Types.isReal(ty);
+      then
+        ();
+
+    else
+      equation
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
+          {cref_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkReinitType;
+
 
 /*protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call.
 Returns the error on failure."
