@@ -1374,18 +1374,7 @@ public function subscriptIndexExp
   input Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  match (inSubscript)
-    local DAE.Exp e;
-    case (DAE.INDEX(exp = e)) then e;
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Expression.subscriptIndexExp failed on subscript: [" +&
-          ExpressionDump.printSubscriptStr(inSubscript) +& "]");
-      then
-        fail();
-  end match;
+  DAE.INDEX(exp = outExp) := inSubscript;
 end subscriptIndexExp;
 
 public function subscriptExp
