@@ -935,16 +935,16 @@ algorithm
     then L;
     case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
       equation
-        L = listAppend(L,{node});
+        L = List.union(L,{node});
         false = intGe(node,inMaxGraphNode);
         ((_,edges)) = arrayGet(inGraph, node);
         edges = List.filter1OnTrue(edges, List.notMember, L);
-        M = listAppend(M,edges);
+        M = List.union(M,edges);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;       
     case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
       equation
-        L = listAppend(L,{node});
+        L = List.union(L,{node});
         true = intGe(node,inMaxGraphNode);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;             

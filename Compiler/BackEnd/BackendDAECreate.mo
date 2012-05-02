@@ -98,6 +98,7 @@ protected
   array<DAE.Constraint> constrarra;
   array<BackendDAE.ComplexEquation> complEqs;
   BackendDAE.ExternalObjectClasses extObjCls;
+  BackendDAE.SymbolicJacobians symjacs;
   Boolean daeContainsNoStates, shouldAddDummyDerivative;
   BackendDAE.EventInfo einfo;
   list<DAE.Element> elems;
@@ -146,7 +147,7 @@ algorithm
   complEqs := listArray(ce);
   einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
   aliasVars := BackendDAEUtil.emptyAliasVariables();
-  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,constrarra,complEqs,functionTree,einfo,extObjCls,BackendDAE.SIMULATION()));
+  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,constrarra,complEqs,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(listLength(eqns_1)) +& " No. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
 end lower;
@@ -2814,7 +2815,8 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp))
+      BackendDAE.SymbolicJacobians symjacs;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp,symjacs))
       equation
         (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared));
         (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared));
@@ -2822,7 +2824,7 @@ algorithm
         (algorithms1,(vars4,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,shared,{}));
         (complEqs1,(vars5,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(complEqs,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsComplexWithUpdate,1,arrayLength(complEqs),(vars4,shared,{}));
       then
-        (BackendDAE.EQSYSTEM(vars5,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,constrs,complEqs,funcs,einfo,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars5,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,constrs,complEqs,funcs,einfo,eoc,btp,symjacs));
   end match;
 end expandDerOperatorWork;
 
@@ -3084,7 +3086,8 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp))
+      BackendDAE.SymbolicJacobians symjacs;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp,symjacs))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         arreqns_lst = arrayList(arreqns);
@@ -3097,7 +3100,7 @@ algorithm
         complEqs1 = listArray(complEqs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,constrs,complEqs1,funcs,einfo1,eoc,btp));
+        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,constrs,complEqs1,funcs,einfo1,eoc,btp,symjacs));
   end match;
 end findZeroCrossings1;
 

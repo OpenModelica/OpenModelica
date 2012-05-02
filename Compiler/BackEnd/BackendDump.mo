@@ -738,8 +738,9 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.BackendDAEType btp;
+      BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
-    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
+    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp,symjacs))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);
@@ -2248,26 +2249,34 @@ algorithm
         print("\n");
       then
         ();        
-    case BackendDAE.SINGLEARRAY(arrayIndx=i,vars=vlst)
+    case BackendDAE.SINGLEARRAY(arrayIndx=i,eqns=ilst,vars=vlst)
       equation
         print("Array ");
         print(intString(i));
-        print(" {");
+        print(" {{");
+        ls = List.map(ilst, intString);
+        s = stringDelimitList(ls, ", ");
+        print(s);
+        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
         print(s);
-        print("}\n");
+        print("}}\n");
       then
         ();        
-    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,vars=vlst)
+    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,eqns=ilst,vars=vlst)
       equation
         print("Algorithm ");
         print(intString(i));
-        print(" {");
+        print(" {{");
+        ls = List.map(ilst, intString);
+        s = stringDelimitList(ls, ", ");
+        print(s);
+        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
         print(s);
-        print("}\n");
+        print("}}\n");
       then
         ();    
     case BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=i,vars=vlst)

@@ -1922,6 +1922,39 @@ algorithm
   end match;
 end union_tail;
 
+
+public function unionAppendonUnion
+  "As union but this function assume that List1 is already union.
+   i.e. a list of all elements combined without duplicates.
+   Example:
+     union({0, 1}, {2, 1}) => {0, 1, 2}"
+  input list<ElementType> inList1;
+  input list<ElementType> inList2;
+  output list<ElementType> outUnion;
+algorithm
+  outUnion := unionAppendonUnion_tail(inList2, inList1);
+end unionAppendonUnion;
+
+public function unionAppendonUnion_tail
+  "Tail recursive implementation of unionAppendNonUnion."
+  input list<ElementType> inList2;
+  input list<ElementType> inAccumList;
+  output list<ElementType> outUnion;
+algorithm
+  outUnion := match(inList2, inAccumList)
+    local
+      ElementType e;
+      list<ElementType> rest, accum;
+
+    case ({}, _) then listReverse(inAccumList);
+    case (e :: rest, _) 
+      equation
+        accum = unionElt(e, inAccumList);
+      then
+        unionAppendonUnion_tail(rest, accum);
+  end match;
+end unionAppendonUnion_tail;
+
 public function unionOnTrue
   "Takes two lists an a comparison function over two elements of the lists. It
    returns the union of the two lists, using the comparison function passed as
@@ -3840,6 +3873,25 @@ public function mapList1_0
 algorithm
   map2_0(inListList, map1_0, inFunc, inArg1);
 end mapList1_0;
+
+public function mapList2_0
+  "Takes a list of lists and a functions, and applying 
+  the function to all elements in  the list of lists.
+     Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1, inArg2)"
+     
+  input list<list<ElementInType>> inListList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType1 inArg2;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType1 inArg2;
+  end MapFunc;
+algorithm
+  map3_0(inListList, map2_0, inFunc, inArg1, inArg2);
+end mapList2_0;
 
 public function mapListReverse
   "Takes a list of lists and a functions, and creates a new list of lists by
@@ -6558,12 +6610,28 @@ public function lengthListElements
   input list<list<Type_a>> inListList;
   output Integer outLength;
   replaceable type Type_a subtypeof Any;
-protected 
-  list<Type_a> flattenList;
 algorithm
-  flattenList := flatten(inListList);
-  outLength := listLength(flattenList);
+  outLength := lengthListElementsHelp(inListList, 0);
 end lengthListElements;
 
+public function lengthListElementsHelp
+  input list<list<Type_a>> inListList;
+  input Integer inLength;
+  output Integer outLength;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLength := match(inListList, inLength)
+  local
+    list<list<Type_a>> rest;
+    list<Type_a> a;
+    Integer i;
+    case({}, inLength) then inLength;
+    case(a::rest, inLength) 
+      equation
+        i = inLength+listLength(a);
+        outLength = lengthListElementsHelp(rest, i);
+      then outLength;
+  end match;
+end lengthListElementsHelp;
 
 end List;

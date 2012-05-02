@@ -143,6 +143,22 @@ algorithm
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause2;
 
+
+public function copyEquationArray
+"function: copyEquationArray
+  author: wbraun"
+  input BackendDAE.EquationArray inEquations;
+  output BackendDAE.EquationArray outEquations;
+protected
+  BackendDAE.Value n,size;
+  array<Option<BackendDAE.Equation>> arr,arr_1;
+algorithm
+	BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) := inEquations;
+	arr_1 := arrayCreate(size, NONE());
+	arr_1 := Util.arrayCopy(arr, arr_1);
+	outEquations := BackendDAE.EQUATION_ARRAY(n,size,arr_1);
+end copyEquationArray;
+
 public function equationsLstVarsWithoutRelations
 "function: equationsLstVarsWithoutRelations
   author: Frenkel TUD 2012-03

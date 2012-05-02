@@ -1157,12 +1157,13 @@ algorithm
       Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
+      BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,ae,algs,constrs,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,ieqns,reqns,ae,algs,constrs,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendDAEUtil.varList(vars_knownVars);

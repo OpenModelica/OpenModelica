@@ -312,6 +312,40 @@ algorithm
   end matchcontinue;
 end fcallret2;
 
+public function fcallret3
+"function: fcallret3
+  Flag controlled calling of given function (3nd arg).
+  The passed function gets 3 arguments.
+  The last parameter is returned if the given flag is not set."
+  input Flags.DebugFlag inFlag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c arg3;
+  input Type_d default;
+  output Type_d res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeD;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  res := matchcontinue (inFlag,func,arg1,arg2,arg3,default)
+    case (_,func,arg1,arg2,arg3,_)
+      equation
+        true = Flags.isSet(inFlag);
+        res = func(arg1,arg2,arg3);
+      then
+        res;
+    case (_,_,_,_,_,default) then default;
+  end matchcontinue;
+end fcallret3;
+
 public function bcallret1
 "function: bcallret1
   Boolean-controlled calling of given function (2nd arg).

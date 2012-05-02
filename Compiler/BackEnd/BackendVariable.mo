@@ -1859,6 +1859,24 @@ end getNominalAssert;
  * =======================================================
  */
 
+public function copyVariables
+  input BackendDAE.Variables inVarArray;
+  output BackendDAE.Variables outVarArray;
+protected
+	array<list<BackendDAE.CrefIndex>> crefIdxLstArr,crefIdxLstArr1;
+	BackendDAE.VariableArray varArr;
+	Integer bucketSize, numberOfVars, n1, size1;
+	array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
+algorithm
+	BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
+	BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
+	crefIdxLstArr1 := arrayCreate(size1, {});
+	crefIdxLstArr1 := Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
+	varOptArr1 := arrayCreate(size1, NONE());
+	varOptArr1 := Util.arrayCopy(varOptArr, varOptArr1);
+	outVarArray := BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
+end copyVariables;
+
 public function daenumVariables
   input BackendDAE.EqSystem syst;
   output Integer n;
@@ -3451,12 +3469,13 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp,symjacs))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addKnVarDAE;
 
@@ -3841,15 +3860,51 @@ algorithm
       list<Integer> v_lst;
       DAE.ComponentRef cr;
       list<Integer> indxlst;
+      String res1;
     case ((v,(vars,v_lst)))
       equation   
         cr = varCref(v);
        (_,indxlst) = getVar(cr, vars);
-        v_lst = listAppend(v_lst,indxlst);
+       v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
     case inTpl then inTpl;
   end matchcontinue;
 end traversingisVarIndexVarFinder;
+
+
+public function getVarIndexFromVar
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inVariables2;
+  output list<Integer> v_lst;
+algorithm
+  ((_,v_lst)) := traverseBackendDAEVars(inVariables,traversingVarIndexFinder,(inVariables2,{}));
+end getVarIndexFromVar;
+
+protected function traversingVarIndexFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vlst;
+      BackendDAE.Variables vars;
+      list<Integer> v_lst;
+      DAE.ComponentRef cr;
+      list<Integer> indxlst;
+      String res1;
+    case ((v,(vars,v_lst)))
+      equation   
+        cr = varCref(v);
+       (vlst,indxlst) = getVar(cr, vars);
+       indxlst = List.map(vlst,varIndex);
+       v_lst = listAppend(v_lst,indxlst);
+      then ((v,(vars,v_lst)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end traversingVarIndexFinder;
 
 public function mergeVariables
 "function: mergeVariables

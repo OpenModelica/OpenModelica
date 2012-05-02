@@ -98,8 +98,9 @@ algorithm
       Functiontuple tpl;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
+      BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree functionTree;
-    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=ce,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)))
+    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=ce,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
       equation
         tpl = (SOME(functionTree),itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
@@ -115,7 +116,7 @@ algorithm
         ce1 = listArray(celst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then  
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,functionTree,eventInfo,extObjClasses,btp));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,functionTree,eventInfo,extObjClasses,btp,symjacs));
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");

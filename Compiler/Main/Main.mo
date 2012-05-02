@@ -860,7 +860,7 @@ algorithm
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();

@@ -256,7 +256,8 @@ uniontype Shared "Data shared for all equation-systems"
     .DAE.FunctionTree functionTree "functions for Backend";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAEType backendDAEType "indicate for what the BackendDAE is used";   
+    BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
+    SymbolicJacobians symjacs "Symbolic Jacobians";   
   end SHARED;
 end Shared;
 
@@ -547,5 +548,17 @@ uniontype DivZeroExpReplace "- Should the division operator replaced by a operat
 end DivZeroExpReplace;
 
 public constant BinTree emptyBintree=TREENODE(NONE(),NONE(),NONE()) " Empty binary tree " ;
+
+
+public 
+type SymbolicJacobian = tuple< BackendDAE,              // symbolic equation system 
+                                String,                 // Matrix name
+                                list<Var>,              // diff vars
+                                list<Var>,              // result diffed equation
+                                list<Var>              // all diffed equation
+                                >;
+
+public
+type SymbolicJacobians = list<SymbolicJacobian>;
 
 end BackendDAE;

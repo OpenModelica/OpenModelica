@@ -366,9 +366,9 @@ algorithm
     case(_,{},inArray,_) then inArray;
     case(array,pos::rest,inArray,i) equation 
       elmt = array[pos];
-      inArray = arrayUpdate(inArray,i,elmt);
-      inArray = arraySelectHelp(array,rest,inArray,i+1);
-    then inArray;
+      outArray = arrayUpdate(inArray,i,elmt);
+      outArray = arraySelectHelp(array,rest,inArray,i+1);
+    then outArray;
     case(_,_,_,i) equation
       print("arraySelectHelp failed\n for i : " +& intString(i));
     then fail();
@@ -543,6 +543,117 @@ algorithm
 
   end matchcontinue;
 end arrayFold_impl;
+
+public function arrayUpdateIndexFirst
+" author: wbraun 
+Perfoms an array update with arrayUpdate,
+but index is the first argument so it's 
+usable with List.map..."
+  input Integer inIndex;
+  input ElementType value;
+  input array<ElementType> inArrayA;
+  //output array<ElementType> outArrayA;
+  replaceable type ElementType subtypeof Any;
+  
+algorithm
+  _ := arrayUpdate(inArrayA, inIndex, value);
+end arrayUpdateIndexFirst;
+
+public function arrayUpdatewithArrayIndexFirst
+" author: wbraun 
+Perfoms an array update with arrayUpdate,
+but index is the first argument so it's 
+usable with List.map..."
+  input Integer inIndex;
+  input array<ElementType> inArrayA;
+  input array<ElementType> inArrayB;
+  //output array<ElementType> outArrayA;
+  replaceable type ElementType subtypeof Any;
+  
+protected 
+  ElementType value;
+algorithm
+  value := arrayGet(inArrayA, inIndex);
+  _ := arrayUpdate(inArrayB, inIndex, value);
+end arrayUpdatewithArrayIndexFirst;
+
+public function arrayUpdatewithListIndexFirst
+" author: wbraun 
+Perfoms an array update with arrayUpdate,
+but index is the first argument so it's 
+usable with List.map..."
+  input list<Integer> inListA;
+  input Integer inStartListLength;
+  input array<ElementType> inArrayA;
+  input array<ElementType> inArrayB;
+  //output array<ElementType> outArrayA;
+  replaceable type ElementType subtypeof Any;
+  
+algorithm
+  _ := match(inListA, inStartListLength, inArrayA, inArrayB)
+  local
+    ElementType a;
+    list<ElementType> rest;
+    case ({}, _, _, _) then ();
+    case (a::rest, inStartListLength, inArrayA, inArrayB)
+      equation
+        arrayUpdatewithArrayIndexFirst(inStartListLength, inArrayA, inArrayB);
+        arrayUpdatewithListIndexFirst(rest, inStartListLength+1, inArrayA, inArrayB);
+    then ();
+   end match;
+end arrayUpdatewithListIndexFirst;
+
+public function arrayUpdateElementListUnion
+" author: wbraun 
+Perfoms an array update with arrayUpdate,
+but index is the first argument so it's 
+usable with List.map..."
+  input Integer inIndex;
+  input list<ElementType> inValue;
+  input array<list<ElementType>> inArrayA;
+  //output array<ElementType> outArrayA;
+  replaceable type ElementType subtypeof Any;
+  
+protected 
+ list<ElementType> value;
+algorithm
+  value := arrayGet(inArrayA, inIndex);
+  value := List.unionAppendonUnion(value, inValue);
+  _ := arrayUpdate(inArrayA, inIndex, value);
+end arrayUpdateElementListUnion;
+
+public function arrayUpdateElementListAppend
+" author: wbraun 
+Perfoms an array update with arrayUpdate,
+but index is the first argument so it's 
+usable with List.map..."
+  input Integer inIndex;
+  input list<ElementType> inValue;
+  input array<list<ElementType>> inArrayA;
+  //output array<ElementType> outArrayA;
+  replaceable type ElementType subtypeof Any;
+  
+protected 
+ list<ElementType> value;
+algorithm
+  value := arrayGet(inArrayA, inIndex);
+  value := listAppend(value, inValue);
+  _ := arrayUpdate(inArrayA, inIndex, value);
+end arrayUpdateElementListAppend;
+
+public function arrayGetIndexFirst
+" author: wbraun 
+Perfoms an array get with arrayGet,
+but index is the first argument so it's 
+usable with List.map..."
+  input Integer inIndex;
+  input array<ElementType> inArrayA;
+  output ElementType outElement;
+  
+  replaceable type ElementType subtypeof Any;
+algorithm
+  outElement := arrayGet(inArrayA, inIndex);
+end arrayGetIndexFirst;
 
 public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
 If all strings a empty or empty list return empty string.
@@ -731,6 +842,40 @@ algorithm
         dst_2;
   end match;
 end arrayCopy2;
+
+public function compareTuple2IntGt
+" function: comparePosTupleList
+  Function could used with List.sort to sort a
+  List as list< tuple<Type_a,Integer> > by second argument.
+  "
+  input tuple<Type_a,Integer> inTplA;
+  input tuple<Type_a,Integer> inTplB;
+  output Boolean res;
+  replaceable type Type_a subtypeof Any;
+protected 
+  Integer a,b;
+algorithm
+  (_, a) := inTplA;
+  (_, b) := inTplB;
+  res := intGt(a,b);
+end compareTuple2IntGt;
+
+public function compareTuple2IntLt
+" function: comparePosTupleList
+  Function could used with List.sort to sort a
+  List as list< tuple<Type_a,Integer> > by second argument.
+  "
+  input tuple<Type_a,Integer> inTplA;
+  input tuple<Type_a,Integer> inTplB;
+  output Boolean res;
+  replaceable type Type_a subtypeof Any;
+protected 
+  Integer a,b;
+algorithm
+  (_, a) := inTplA;
+  (_, b) := inTplB;
+  res := intLt(a,b);
+end compareTuple2IntLt;
 
 public function tuple21 "function: tuple21
   Takes a tuple of two values and returns the first value.
