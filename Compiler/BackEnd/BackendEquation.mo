@@ -153,10 +153,10 @@ protected
   BackendDAE.Value n,size;
   array<Option<BackendDAE.Equation>> arr,arr_1;
 algorithm
-	BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) := inEquations;
-	arr_1 := arrayCreate(size, NONE());
-	arr_1 := Util.arrayCopy(arr, arr_1);
-	outEquations := BackendDAE.EQUATION_ARRAY(n,size,arr_1);
+  BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) := inEquations;
+  arr_1 := arrayCreate(size, NONE());
+  arr_1 := Util.arrayCopy(arr, arr_1);
+  outEquations := BackendDAE.EQUATION_ARRAY(n,size,arr_1);
 end copyEquationArray;
 
 public function equationsLstVarsWithoutRelations

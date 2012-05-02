@@ -1863,18 +1863,18 @@ public function copyVariables
   input BackendDAE.Variables inVarArray;
   output BackendDAE.Variables outVarArray;
 protected
-	array<list<BackendDAE.CrefIndex>> crefIdxLstArr,crefIdxLstArr1;
-	BackendDAE.VariableArray varArr;
-	Integer bucketSize, numberOfVars, n1, size1;
-	array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
+  array<list<BackendDAE.CrefIndex>> crefIdxLstArr,crefIdxLstArr1;
+  BackendDAE.VariableArray varArr;
+  Integer bucketSize, numberOfVars, n1, size1;
+  array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
 algorithm
-	BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
-	BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
-	crefIdxLstArr1 := arrayCreate(size1, {});
-	crefIdxLstArr1 := Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
-	varOptArr1 := arrayCreate(size1, NONE());
-	varOptArr1 := Util.arrayCopy(varOptArr, varOptArr1);
-	outVarArray := BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
+  BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
+  BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
+  crefIdxLstArr1 := arrayCreate(size1, {});
+  crefIdxLstArr1 := Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
+  varOptArr1 := arrayCreate(size1, NONE());
+  varOptArr1 := Util.arrayCopy(varOptArr, varOptArr1);
+  outVarArray := BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
 end copyVariables;
 
 public function daenumVariables
