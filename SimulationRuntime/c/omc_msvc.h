@@ -51,20 +51,19 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
  * (Things that MinGW has but MSVC does not)
  */
 #if defined(_MSC_VER)
+
 #ifndef WIN32
 #define WIN32
 #endif
+
+#define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
+#define geteuid(void) (-1)
+
 #if defined(_WIN32) || defined(_WIN64)
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)
 #define snprintf sprintf_s
-#define srandom srand
-#define random rand
 #endif
-
-#define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
-
-#define geteuid(void) (-1)
 
 #endif
 

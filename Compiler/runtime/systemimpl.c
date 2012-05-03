@@ -1707,7 +1707,7 @@ static void seed(void)
       int seed=0;
       FILE *f = fopen(devrandom, "r");
       if (f && (sizeof(int)==fread(&seed,1,sizeof(int),f))) {
-        srandom(seed);
+        _OMC_srandom(seed);
         init = 1;
       }
       if (f) {
@@ -1715,7 +1715,7 @@ static void seed(void)
       }
     }
     if (!init) /* /dev/random failed; use crappy seed */ {
-      srandom(time(NULL));
+      _OMC_srandom(time(NULL));
       init = 1;
     }
   }
@@ -1725,7 +1725,7 @@ static void seed(void)
 double SystemImpl__realRand()
 {
   seed();
-  return random() / (((double)RAND_MAX)+1);
+  return _OMC_random() / (((double)RAND_MAX)+1);
 }
 
 /* Returns an integer (0,n] (i.e. the highest value is n-1) */
@@ -1740,7 +1740,7 @@ int SystemImpl__intRand(int n)
    * Otherwise some values are more probable than others
    */
   while (1) {
-    r = random();
+    r = _OMC_random();
     if (RAND_MAX-(long)r >= m) break;
   }
   return r % n;
