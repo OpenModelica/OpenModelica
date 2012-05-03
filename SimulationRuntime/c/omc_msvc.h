@@ -47,7 +47,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define NAN (__NAN.Value)
 #endif
 
-/* Compatibility header for MSVC compiler */
+/* Compatibility header for MSVC compiler.
+ * (Things that MinGW has but MSVC does not)
+ */
 #if defined(_MSC_VER)
 #ifndef WIN32
 #define WIN32
@@ -56,6 +58,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)
 #define snprintf sprintf_s
+#define srandom srand
+#define random rand
 #endif
 
 #define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
