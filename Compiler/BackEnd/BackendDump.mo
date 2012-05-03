@@ -1809,7 +1809,7 @@ public function dumpMarkedEqns
 algorithm
   outString := match (syst,inIntegerLst)
     local
-      String s1,s2,res;
+      String s1,s2,s3,res;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
       BackendDAE.BackendDAE dae;
@@ -1822,7 +1822,8 @@ algorithm
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         s2 = equationStr(eqn);
-        res = stringAppendList({s2,";\n",s1});
+        s3 = intString(e);
+        res = stringAppendList({s3,": ",s2,";\n",s1});
       then
         res;
   end match;
@@ -2751,6 +2752,15 @@ algorithm
   print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e +& ExpressionDump.printExpStr(f) +& g);
 end debugStrExpStrExpStrExpStr;
 
+public function debugStrEqnStr
+  input tuple<String,BackendDAE.Equation,String> inTpl;
+protected
+  String a,c,e;
+  BackendDAE.Equation b,d;
+algorithm
+  (a,b,c) := inTpl;
+  print(a +& equationStr(b) +& c);
+end debugStrEqnStr;
 
 public function debugStrEqnStrEqnStr
   input tuple<String,BackendDAE.Equation,String,BackendDAE.Equation,String> inTpl;

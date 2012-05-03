@@ -81,7 +81,6 @@ encapsulated package XMLDump
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import BackendDAEEXT;
 public import Values;
 public import SCode;
 
@@ -89,6 +88,7 @@ protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDAETransform;
+protected import BackendEquation;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
@@ -757,21 +757,22 @@ end dumpArrayEqns2;
 protected function dumpBltInvolvedEquations
 "function: dumpBltInvolvedEquations"
   input BackendDAE.StrongComponent inComp;
+  input Integer offset;
 algorithm
   _:=
-  match (inComp)
+  match (inComp,offset)
     local
       Integer e;
       list<Integer> elst,disc_eqns;
-    case (BackendDAE.SINGLEEQUATION(eqn=e))
+    case (BackendDAE.SINGLEEQUATION(eqn=e),_)
       equation
-         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e));
+         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e+offset));
       then
         ();
-    case (inComp)
+    case (inComp,_)
       equation
         (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
-        dumpBltInvolvedEquations1(elst);        
+        dumpBltInvolvedEquations1(elst,offset);        
       then
         ();                
   end match;
@@ -784,17 +785,18 @@ using an xml representation:
 ...
 "
   input list<Integer> inList;
+  input Integer offset;
 algorithm
   _:=
-  match(inList)
+  match(inList,offset)
       local
         BackendDAE.Value el;
         list<Integer> remList;
-    case {} then ();
-    case(el :: remList)
+    case ({},_) then ();
+    case(el :: remList,_)
       equation
-        dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el));
-        dumpBltInvolvedEquations1(remList);
+        dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el+offset));
+        dumpBltInvolvedEquations1(remList,offset);
       then();
   end match;
 end dumpBltInvolvedEquations1;
@@ -844,8 +846,7 @@ printed.
   end matchcontinue;
 end dumpBindValueExpression;
 
-
-public function dumpComment "
+protected function dumpComment "
 Function for adding comments using the XML tag.
 "
   input String inComment;
@@ -855,9 +856,45 @@ algorithm
   Print.printBuf("-->");
 end dumpComment;
 
+protected function dumpComponents
+"function: dumpComponents
+  autor: Frenkel TUD 2011-05
+  This function is used to print BLT information using xml format.
+The output is something like:
+<bltBlock id=\"\">
+  <InvolvedEquation equationID=\"\"/>
+  ....
+</bltBlock>"
+  input BackendDAE.BackendDAE dae;
+algorithm
+  dumpStrOpenTag(BLT_REPRESENTATION);
+  _ := BackendDAEUtil.foldEqSystem(dae,dumpComponentsWork,(0,0));
+  dumpStrCloseTag(BLT_REPRESENTATION);
+end dumpComponents;
 
-public function dumpComponents "
-function: dumpComponents
+protected function dumpComponentsWork
+"function: dumpComponentsWork
+  autor: Frenkel TUD 2011-05
+  wrapper for calling dumpComponents for each equation system"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input tuple<Integer,Integer> inOffset;
+  output tuple<Integer,Integer> outOffset;
+protected
+ array<Integer> v1,v2;
+ BackendDAE.StrongComponents comps;
+ Integer voffset,eoffset;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps)) := syst;
+  (voffset,eoffset) := inOffset;
+  dumpStrOpenTag(BLT_REPRESENTATION);
+  dumpComponents1(comps,voffset,eoffset);
+  dumpStrCloseTag(BLT_REPRESENTATION);
+  outOffset := ((voffset + arrayLength(v2),eoffset + arrayLength(v1)));
+end dumpComponentsWork;
+
+protected function dumpComponents1 "
+function: dumpComponents1
 This function is used to print BLT information using xml format.
 The output is something like:
 <bltBlock id=\"\">
@@ -866,22 +903,19 @@ The output is something like:
 </bltBlock>
 "
   input BackendDAE.StrongComponents l;
+  input Integer voffset;
+  input Integer eoffset;
 algorithm
   _:=
-  matchcontinue(l)
-    case(l)
-      equation
-        listLength(l) >=1 = false;
+  matchcontinue(l,voffset,eoffset)
+    case({},_,_)
         then();
-    case(l)
+    case(_,_,_)
       equation
-        listLength(l)>=1 = true;
-        dumpStrOpenTag(BLT_REPRESENTATION);
-        dumpComponents2(l, 1);
-        dumpStrCloseTag(BLT_REPRESENTATION);
-        then();
+        dumpComponents2(l,1+voffset,eoffset);
+      then();
   end matchcontinue;
-end dumpComponents;
+end dumpComponents1;
 
 
 protected function dumpComponents2 "
@@ -889,23 +923,21 @@ function: dumpComponents2
   Helper function to dump_components.
 "
   input BackendDAE.StrongComponents inIntegerLstLst;
-  input Integer inInteger;
+  input Integer i;
+  input Integer offset;
 algorithm
   _:=
-  match (inIntegerLstLst,inInteger)
+  match (inIntegerLstLst,i,offset)
     local
-      BackendDAE.Value ni,i_1,i;
       BackendDAE.StrongComponent l;
       BackendDAE.StrongComponents lst;
-    case ({},_) then ();
-    case ((l :: lst),i)
+    case ({},_,_) then ();
+    case ((l :: lst),_,_)
       equation
-        ni = BackendDAEEXT.getLowLink(i);
         dumpStrOpenTagAttr(BLT_BLOCK, ID, intString(i));
-        dumpBltInvolvedEquations(l);
+        dumpBltInvolvedEquations(l,offset);
         dumpStrCloseTag(BLT_BLOCK);
-        i_1 = i + 1;
-        dumpComponents2(lst, i_1);
+        dumpComponents2(lst,i+1,offset);
       then
         ();
   end match;
@@ -1174,12 +1206,14 @@ algorithm
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)));
         //Bucket size info is no longer present.
         
-        List.map1_0(systs,dumpOrderedVars,addMML);
+        vars = List.fold(systs,getOrderedVars,{});
+        dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
-        List.map2_0(systs,dumpOrderedEqs,addMML,dumpRes);
+        eqnsl = List.fold(systs,getOrderedEqs,{});
+        dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
         reqnsl = BackendDAEUtil.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
         ieqnsl = BackendDAEUtil.equationList(ieqns);
@@ -1202,6 +1236,18 @@ algorithm
   end matchcontinue;
 end dumpBackendDAE;
 
+
+protected function getOrderedVars
+  input BackendDAE.EqSystem syst;
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Var> outVars;
+protected
+  list<BackendDAE.Var> vars;
+algorithm
+  vars := BackendDAEUtil.varList(BackendVariable.daeVars(syst));
+  outVars := listAppend(inVars,vars);
+end getOrderedVars;
+
 protected function dumpOrderedVars
   input BackendDAE.EqSystem syst;
   input Boolean addMML;
@@ -1214,6 +1260,17 @@ algorithm
   vars := BackendDAEUtil.varList(vars_orderedVars);
   dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
 end dumpOrderedVars;
+
+protected function getOrderedEqs
+  input BackendDAE.EqSystem syst;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+protected
+  list<BackendDAE.Equation> eqnsl;
+algorithm
+  eqnsl := BackendDAEUtil.equationList(BackendEquation.daeEqns(syst));
+  outEqns := listAppend(inEqns,eqnsl);
+end getOrderedEqs;
 
 protected function dumpOrderedEqs
   input BackendDAE.EqSystem syst;
@@ -2234,10 +2291,10 @@ algorithm
   end matchcontinue;
 end dumpFunctionsStr;
 
-
-
-public function dumpIncidenceMatrix "
-This function dumps a matrix using an xml representation.
+protected function dumpIncidenceMatrix
+"function: dumpIncidenceMatrix
+  autor: Frenkel TUD 2011-05
+  This function dumps a matrix using an xml representation.
 <matrix>
      <matrixrow>
           <cn> 0 </cn>
@@ -2246,55 +2303,43 @@ This function dumps a matrix using an xml representation.
      </matrixrow>
      <matrixrow>
      ...
-</matrix>
-"
-  input BackendDAE.IncidenceMatrix m;
-protected
-  list<list<BackendDAE.Value>> m_1;
+</matrix>"
+  input BackendDAE.BackendDAE dae;
 algorithm
-/*  _:=
-  matchcontinue(m)
-    case (m)
-      equation
-        listLength(m)>=1 = false;
-    then ();
-    case (m)
-        local list<list<Value>> m_1;
-      equation*/
-        //listLength(m)>=1 = true;
-        dumpStrOpenTag(MathML);
-        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
-        dumpStrOpenTag(MathMLMatrix);
-        m_1 := arrayList(m);
-        dumpIncidenceMatrix2(m_1,1);
-        dumpStrCloseTag(MathMLMatrix);
-        dumpStrCloseTag(MATH);
-        dumpStrCloseTag(MathML);
-/*    then ();
-  end matchcontinue;*/
+  dumpStrOpenTag(MathML);
+  dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+  dumpStrOpenTag(MathMLMatrix);
+  _ := BackendDAEUtil.foldEqSystem(dae,dumpIncidenceMatrixWork,0);
+  dumpStrCloseTag(MathMLMatrix);
+  dumpStrCloseTag(MATH);
+  dumpStrCloseTag(MathML);
 end dumpIncidenceMatrix;
 
+protected function dumpIncidenceMatrixWork
+"function: dumpIncidenceMatrixWork
+  autor: Frenkel TUD 2011-05
+  wrapper for calling dumpIncidenceMatrix for each equation system"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input Integer inOffset;
+  output Integer outOffset;
+protected
+ BackendDAE.IncidenceMatrix m;
+algorithm
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+  List.map1_0(arrayList(m),dumpIncidenceMatrix2,inOffset);
+  outOffset := inOffset + arrayLength(m);
+end dumpIncidenceMatrixWork;
 
 protected function dumpIncidenceMatrix2 "
 Help function to dumpMatrix
 "
-  input list<list<Integer>> m;
-  input Integer rowIndex;
+  input list<Integer> row;
+  input Integer offset;
 algorithm
-  _:=
-  match(m,rowIndex)
-    local
-      list<BackendDAE.Value> row;
-      list<list<BackendDAE.Value>> rows;
-    case ({},_) then ();
-    case ((row :: rows),rowIndex)
-      equation
-        dumpStrOpenTag(MathMLMatrixrow);
-        dumpMatrixIntegerRow(row);
-        dumpStrCloseTag(MathMLMatrixrow);
-        dumpIncidenceMatrix2(rows,rowIndex+1);
-      then ();
-  end match;
+  dumpStrOpenTag(MathMLMatrixrow);
+  List.map1_0(row,dumpMatrixIntegerRow,offset);
+  dumpStrCloseTag(MathMLMatrixrow);
 end dumpIncidenceMatrix2;
 
 
@@ -2315,32 +2360,24 @@ algorithm
 end dumpLibs;
 
 
-public function dumpMatrixIntegerRow "
+protected function dumpMatrixIntegerRow "
 Function to print a matrix row of integer elements
 using an xml representation, as:
  <cn> integerValue </cn>
  ...
 "
-  input list<Integer> inIntegerLst;
+  input Integer x;
+  input Integer offset;
+protected
+  Integer e;
+  String s;
 algorithm
-  _:=
-  match (inIntegerLst)
-    local
-      String s;
-      BackendDAE.Value x;
-      list<BackendDAE.Value> xs;
-    case ({}) then ();
-    case ((x :: xs))
-      equation
-        s = intString(x);
-        dumpStrOpenTag(MathMLVariable);
-        Print.printBuf(s);
-        dumpStrCloseTag(MathMLVariable);
-        dumpMatrixIntegerRow(xs);
-      then ();
-  end match;
+  e := Util.if_(intGt(x,0),x+offset,x-offset);
+  s := intString(e);
+  dumpStrOpenTag(MathMLVariable);
+  Print.printBuf(s);
+  dumpStrCloseTag(MathMLVariable); 
 end dumpMatrixIntegerRow;
-
 
 public function dumpKind "
 This function returns a string containing
@@ -2613,75 +2650,73 @@ algorithm
   end matchcontinue;
 end dumpLstStr;
 
+protected function dumpMatching
+"function: dumpMatchingWork
+  autor: Frenkel TUD 2011-05
+  prints the matching information on stdout."
+  input BackendDAE.BackendDAE dae;
+algorithm
+  dumpStrOpenTag(MATCHING_ALGORITHM);
+  _ := BackendDAEUtil.foldEqSystem(dae,dumpMatchingWork,(0,0));
+  dumpStrCloseTag(MATCHING_ALGORITHM);
+end dumpMatching;
 
-public function dumpMatching
+protected function dumpMatchingWork
+"function: dumpMatchingWork
+  autor: Frenkel TUD 2011-05
+  wrapper for calling dumpMatching for each equation system"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input tuple<Integer,Integer> inOffset;
+  output tuple<Integer,Integer> outOffset;
+protected
+ array<Integer> v1,v2;
+ Integer voffset,eoffset;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,_)) := syst;
+  (voffset,eoffset) := inOffset;
+  dumpMatching1(v1,voffset,eoffset);
+  outOffset := ((voffset + arrayLength(v1),eoffset + arrayLength(v2)));
+end dumpMatchingWork;
+
+public function dumpMatching1
 "function: dumpMatching
   author: PA
   prints the matching information on stdout."
   input array<Integer> v;
-protected
-  BackendDAE.Value len;
-  String len_str;
+  input Integer voffset;
+  input Integer eoffset;
 algorithm
    _:=
-  matchcontinue(v)
-  case(v)
+  matchcontinue(v,voffset,eoffset)
+  case(_,_,_)
     equation
-      arrayLength(v) >= 1  = false;
+      false = intGt(arrayLength(v),0);
     then();
-  case(v)
+  case(_,_,_)
     equation
-      arrayLength(v) >= 1  = true;
-      dumpStrOpenTag(MATCHING_ALGORITHM);
-      dumpMatching2(v, 0);
-      dumpStrCloseTag(MATCHING_ALGORITHM);
+      true = intGt(arrayLength(v),0);
+      _ = Util.arrayFold(v,dumpMatching2,(1,voffset,eoffset));
   then();
     end matchcontinue;
-end dumpMatching;
+end dumpMatching1;
 
 
 protected function dumpMatching2
 "function: dumpMatching2
   Helper function to dumpMatching."
-  input array<Integer> inIntegerArray;
-  input Integer inInteger;
+  input Integer eqn;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+protected
+  Integer v,voffset,eoffset;
+  String s,s2;
 algorithm
-  _:=
-  matchcontinue (inIntegerArray,inInteger)
-    local
-      BackendDAE.Value len,i_1,eqn,i;
-      String s,s2;
-      array<BackendDAE.Value> v;
-    case (v,i)
-      equation
-        len = arrayLength(v);
-        i_1 = i + 1;
-        (len == i_1) = true;
-        s = intString(i_1);
-        eqn = v[i + 1];
-        s2 = intString(eqn);
-        Print.printBuf("\n<");Print.printBuf(SOLVED_IN);Print.printBuf(" ");
-        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");
-        Print.printBuf(stringAppend(EQUATION,ID_));Print.printBuf("=\"");Print.printBuf(s2);Print.printBuf("\" ");
-        Print.printBuf("/>");
-      then
-        ();
-    case (v,i)
-      equation
-        len = arrayLength(v);
-        i_1 = i + 1;
-        (len == i_1) = false;
-        s = intString(i_1);
-        eqn = v[i + 1];
-        s2 = intString(eqn);
-        Print.printBuf("\n<");Print.printBuf(SOLVED_IN);Print.printBuf(" ");
-        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");
-        Print.printBuf(stringAppend(EQUATION,ID_));Print.printBuf("=\"");Print.printBuf(s2);Print.printBuf("\" ");
-        Print.printBuf("/>");
-        dumpMatching2(v, i_1);
-      then
-        ();
-  end matchcontinue;
+  (v,voffset,eoffset) := inTpl;
+  s := intString(v+voffset);
+  s2 := intString(eqn+eoffset);
+  Print.printBuf(stringAppendList({"\n<",SOLVED_IN," ",VARIABLE,ID_,"=\"",s,"\" ",EQUATION,ID_,"=\"",s2,"\" ","/>"}));
+  outTpl := ((v+1,voffset,eoffset));
 end dumpMatching2;
 
 
@@ -2812,42 +2847,35 @@ algorithm
   match (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
     local
       BackendDAE.BackendDAE dlow;
-      array<list<Integer>> m,mT;
-      array<Integer> v1,v2;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
   case (false,false,_) then ();
-  case (true,true,dlow)
+  case (true,true,_)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,NONE(),NONE(),NONE());
+      dlow = BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
-      dumpIncidenceMatrix(m);
+      dumpIncidenceMatrix(dlow);
       dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpStrOpenTag(SOLVING_INFO);
-      dumpMatching(v1);
-      dumpComponents(comps);
+      dumpMatching(dlow);
+      dumpComponents(dlow);
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (true,false,BackendDAE.DAE({syst},shared))
+  case (true,false,_)
     equation
-      (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-      //mT = BackendDAEUtil.transposeMatrix(m);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
-      dumpIncidenceMatrix(m);
+      dumpIncidenceMatrix(inBackendDAE);
       dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (false,true,dlow)
+  case (false,true,_)
     equation
-      (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow,NONE(),NONE(),NONE());
+      dlow = BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
-      dumpMatching(v1);
-      dumpComponents(comps);
+      dumpMatching(dlow);
+      dumpComponents(dlow);
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
