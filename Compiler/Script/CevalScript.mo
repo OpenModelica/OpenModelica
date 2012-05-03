@@ -1828,13 +1828,14 @@ algorithm
         filename_1 = stringAppendList({pwd,pd,filename_1});
         filename2 = stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.valString);
-        {str} = SimulationResults.cmpSimulationResults(filename,filename_1,filename2,x1,x2,vars_1);
-        v = Values.STRING(str);
+        strings = SimulationResults.cmpSimulationResults(filename,filename_1,filename2,x1,x2,vars_1);
+        cvars = List.map(strings,ValuesUtil.makeString);
+        v = Util.if_(intGt(listLength(cvars),1),Values.LIST(cvars),listNth(cvars,0));
       then
         (cache,v,st);
         
     case (cache,env,"compareSimulationResults",_,st,msg)
-      then (cache,Values.STRING(""),st);
+      then (cache,Values.STRING("Error in compareSimulationResults"),st);
         
     case (cache,env,"getPlotSilent",{},st,msg)
       equation

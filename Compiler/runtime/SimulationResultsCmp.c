@@ -537,7 +537,11 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     /* fprintf(stderr, "diff: %d\n",ddf.n); */
     /* for (i=0;i<vardiffindx;i++)
       fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
-    res = mk_cons(mk_scon("Files not Equal!"),mk_nil());
+	res = mk_nil();
+    for (i=0;i<vardiffindx;i++){
+    	res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
+    }
+    res = mk_cons(mk_scon("Files not Equal!"),res);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Files not Equal\n", msg, 0);
   }
   else
