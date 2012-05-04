@@ -1236,7 +1236,7 @@ algorithm
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
-          };
+          };          
         resstr = Util.if_(Flags.isSet(Flags.FAILTRACE),Absyn.pathStringNoQual(className),"");
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
         //        resstr = "SimCode: The model has been translated";
@@ -2473,13 +2473,8 @@ algorithm
         // variables.
         allEquations = List.map(allEquations,applyResidualReplacements);
 
-        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         // generate jacobian or linear model matrices
         LinearMatrices = createJacobianLinearCode(dlow2);
-        // if optModule is not activated add dummy matrices
-        LinearMatrices = addLinearizationMatrixes(LinearMatrices);
-        Debug.execStat("generated analytical Jacobians SimCode. : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
@@ -2628,15 +2623,22 @@ algorithm
     local 
       BackendDAE.BackendDAE bDAE;
       BackendDAE.SymbolicJacobians symjacs;
-    
+      Boolean b;
     case (inBDAE)
       equation
         true = Flags.isSet(Flags.JACOBIAN);
+        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
         bDAE = BackendDAEOptimize.collapseIndependentBlocks(inBDAE);
         (bDAE as BackendDAE.DAE(shared=BackendDAE.SHARED(symjacs=symjacs))) = BackendDAEUtil.transformBackendDAE(bDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
         res = createSymbolicJacobianssSimCode(symjacs,bDAE);
+        // if optModule is not activated add dummy matrices
+        res = addLinearizationMatrixes(res);
+        _ = Flags.set(Flags.EXEC_STAT, b);
+        Debug.execStat("generated analytical Jacobians SimCode. : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
       then res;
     else
       equation
@@ -2686,7 +2688,7 @@ algorithm
       
       list<list<Integer>> sparsepattern;
       list<Integer> colsColors, varsIndexes;
-      Integer maxColor, nonZeroElements;
+      Integer maxColor, nonZeroElements, maxdegree;
       
       DAE.ComponentRef x;
       String dummyVarName;
@@ -2699,11 +2701,10 @@ algorithm
                                     diffVars, diffedVars, alldiffedVars))::rest,
                                     inBackendDAE as BackendDAE.DAE(eqs=systs))
       equation
-        System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
         
-        Debug.execStat("analytical Jacobians -> creating SimCode equations for Matrix " +& name +& ": ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         columnEquations = createEquations(false, false, false, false, true, syst, shared, 0, comps, {});
-        Debug.execStat("analytical Jacobians -> created all SimCode equations for Matrix " +& name +& ": ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         origVars = BackendDAEUtil.listVar(origVarslst);
@@ -2733,7 +2734,7 @@ algorithm
         diffedVars = List.map(sortdiffvars,Util.tuple21);
 
 
-        Debug.execStat("analytical Jacobians -> create all SimCode vars for Matrix " +& name +& ": ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, name);
@@ -2749,15 +2750,16 @@ algorithm
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.execStat("analytical Jacobians -> transformed to SimCode for Matrix " +& name +& ": ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         
         // generate sparse pattern
         (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
         maxColor = List.fold(colsColors, intMax, 0);
         nonZeroElements = List.lengthListElements(sparsepattern);
+        (_, maxdegree) = List.mapFold(sparsepattern, BackendDAEOptimize.findDegrees, 1);
         Debug.execStat("analytical Jacobians -> generated sparse pattern. Number of nonZeroElements " 
-                       +& intString(nonZeroElements) +& ".\n" +&
-                       "Graph colored with  " +& intString(maxColor) +& " color.",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS_MODULES);
+                       +& intString(nonZeroElements) +& " with max vertex degree: " +& intString(maxdegree) +& ".\n" +&
+                       "Graph colored with  " +& intString(maxColor) +& " color.", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
 
         linearModelMatrices = createSymbolicJacobianssSimCode(rest, inBackendDAE);
         linearModelMatrices = listAppend({(({((columnEquations,columnVars,s))},seedVars,name,sparsepattern,colsColors,maxColor))},linearModelMatrices);
