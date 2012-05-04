@@ -72,7 +72,6 @@ case SIMCODE(__) then
   let eqs = (odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),&funDecls);separator="\n")
   <<
   <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),sampleConditions,parameterEquations) %>
-  
   <% funDecls %>
 
   <% generateAnnotation(simulationSettingsOpt) %>
@@ -94,7 +93,7 @@ template getName(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(__) then
   << 
-  <%dotPath(name) %>
+  <%System.stringReplace(dotPath(name),".","_") %>
   >>
 end getName;
 
@@ -104,7 +103,7 @@ template generateModelInfo(ModelInfo modelInfo,  list<DAE.ComponentRef> states,
  "Generates the first part a QSM model for simulation ."
 ::=
 match modelInfo
-case MODELINFO(varInfo=varInfo as  VARINFO(__), name=name as IDENT(__)) then
+case MODELINFO(varInfo=varInfo as  VARINFO(__)) then
   <<
   model <% getName(modelInfo) %> 
     constant Integer N = <%varInfo.numStateVars%>;
@@ -175,7 +174,7 @@ template generateParameters(ModelInfo modelInfo,list<SimEqSystem> parameterEquat
 ::=
 match modelInfo
 case MODELINFO(vars=vars as SIMVARS(__)) then
-let () = textFile(generateHeader(modelInfo,parameterEquations),"model.h")
+let () = textFile(generateHeader(modelInfo,parameterEquations),"parameters.h")
   <<
   <% vars.paramVars |> v => generateVarDefinition(v);separator="\n" %>
   <% vars.intParamVars |> v => generateVarDefinition(v);separator="\n" %>
@@ -248,14 +247,16 @@ case e as SES_LINEAR(vars=vars,index=index) then
   let out_vars = (vars |> v => match v case SIMVAR(name=name) then BackendQSS.replaceCref(name,states,disc,algs);separator=",")
   let in_vars =  (BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> cref =>
        BackendQSS.replaceCref(cref,states,disc,algs);separator="," ) 
-  let()= textFile(generateLinear(e,states,disc,algs), 'model.c')
+  let()= textFile(generateLinear(e,states,disc,algs), 'external_function_<%index%>.c')
   let &funDecls += 
 <<
+  
   function fsolve<%index%>
     <% BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'input Real i<%i0%>;' ;separator="\n" %>
     <% vars |> v hasindex i0 => 'output Real o<%i0%>;' ;separator="\n" %>
-  external "C" annotation(Include="#include \"model.c\"");
+  external "C" annotation(Include="#include \"external_function_<%index%>.c\"");
   end fsolve<%index%>;
+
 >>
 <<
   (<% out_vars %>)=fsolve<%index%>(<% in_vars %>);
@@ -363,7 +364,7 @@ list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenCl
 ::=
   <<
   <% generateZC(zcs,states,disc,algs,eqs) %>
-  <% whens |> w hasindex i0 => generateWhen(w,states,disc,algs,intSub(i0,listLength(whens))) %>
+  <% whens |> w hasindex i0 => generateWhen(w,states,disc,algs,intSub(i0,listLength(whens)));separator="\n" %>
   >>
 end generateDiscont;
 
@@ -379,47 +380,44 @@ let &varDecls = buffer "" /*BUFD*/
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
-#include "model.h" // Parameters
+#include "parameters.h" // Parameters
 
 void fsolve<%index%>(<%
 (BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'double i<%i0%>';separator=",") 
 %>,<%vars |> SIMVAR(__) hasindex i0 => 'double *o<%i0%>' ;separator=","%>)
 {
-  gsl_matrix *A;
-  gsl_vector *b,*x;
-  gsl_permutation *p;
+  gsl_matrix *A<%index%>;
+  gsl_vector *b<%index%>,*x<%index%>;
   const int DIM = <% listLength(beqs) %>;
 
   /* Alloc space */
-  A = gsl_matrix_alloc(DIM, DIM);
-  b = gsl_vector_alloc(DIM);
-  x = gsl_vector_alloc(DIM);
-  p = gsl_permutation_alloc(DIM); 
+  A<%index%> = gsl_matrix_alloc(DIM, DIM);
+  b<%index%> = gsl_vector_alloc(DIM);
+  x<%index%> = gsl_vector_alloc(DIM);
   
   /* Fill A and B */
   <%beqs |> exp hasindex i0 => 
-    'gsl_vector_set(b,<%i0%>,<% 
+    'gsl_vector_set(b<%index%>,<%i0%>,<% 
       System.stringReplace(CodegenC.daeExp(
         BackendQSS.replaceVarsInputs(exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls),"$P","") %>);';separator=\n%>
 
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-     'gsl_matrix_set(A, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
+     'gsl_matrix_set(A<%index%>, <%row%>, <%col%>,<%  System.stringReplace(CodegenC.daeExp(
         BackendQSS.replaceVarsInputs(eq.exp,BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs)),
         contextOther,&preExp,&varDecls),"$P","") %>);'
   ;separator="\n"%>
 
   /* Solve system */ 
-  gsl_linalg_LU_solve(A,p,b,x);
+  gsl_linalg_HH_solve(A<%index%>,b<%index%>,x<%index%>);
 
   /* Get x values out */
-  <%vars |> SIMVAR(__) hasindex i0 => '*o<%i0%> = gsl_vector_get(x, <%i0%>);' ;separator="\n"%>
+  <%vars |> v hasindex i0 => '*o<%i0%> = gsl_vector_get(x<%index%>, <%i0%>);' ;separator="\n"%>
 
   /* Free structures */
-  gsl_vector_free(x);
-  gsl_vector_free(b);
-  gsl_permutation_free(p);
-  gsl_matrix_free(A);
+  gsl_vector_free(x<%index%>);
+  gsl_vector_free(b<%index%>);
+  gsl_matrix_free(A<%index%>);
   
 }
 >>
