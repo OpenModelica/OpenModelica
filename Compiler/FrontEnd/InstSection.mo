@@ -4055,6 +4055,7 @@ algorithm
       list<DAE.Element>  breakDAEElements;
       SCode.Element equalityConstraintFunction;
       DAE.Dimensions dims,dims2;
+      list<DAE.ComponentRef> crefs1, crefs2;
 
     // connections to outer components
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,SCode.NOT_STREAM(),io1,io2,graph,info)
@@ -4130,7 +4131,11 @@ algorithm
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         dim_int = Expression.dimensionSize(dim1);
 
-        (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim_int,1,graph,info);
+        crefs1 = ComponentReference.expandCref(c1);
+        crefs2 = ComponentReference.expandCref(c2);
+        (cache, _, ih, sets_1, dae, graph) = connectArrayComponents(cache, env,
+          ih, sets, pre, crefs1, f1, t1, vt1, io1, crefs2, f2, t2, vt2, io2,
+          flowPrefix, streamPrefix, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4244,30 +4249,26 @@ algorithm
   end matchcontinue;
 end connectComponents;
 
-protected function connectArrayComponents 
- "Help function to connectComponents
-  Traverses arrays of complex connectors and calls connectComponents for each index"
+protected function connectArrayComponents
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix3;
-  input DAE.ComponentRef cr1;
-  input Connect.Face inFace5;
-  input DAE.Type inType6;
-  input SCode.Variability vt1;
-  input DAE.ComponentRef cr2;
-  input Connect.Face inFace8;
-  input DAE.Type inType9;
-  input SCode.Variability vt2;
-  input SCode.Flow inFlowPrefix;
-  input SCode.Stream inStreamPrefix;
-  input Absyn.InnerOuter io1;
-  input Absyn.InnerOuter io2;
-  input Integer dim1;
-  input Integer i "current index";
+  input Prefix.Prefix inPrefix;
+  input list<DAE.ComponentRef> inLhsCrefs;
+  input Connect.Face inLhsFace;
+  input DAE.Type inLhsType;
+  input SCode.Variability inLhsVar;
+  input Absyn.InnerOuter inLhsIO;
+  input list<DAE.ComponentRef> inRhsCrefs;
+  input Connect.Face inRhsFace;
+  input DAE.Type inRhsType;
+  input SCode.Variability inRhsVar;
+  input Absyn.InnerOuter inRhsIO;
+  input SCode.Flow inFlow;
+  input SCode.Stream inStream;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
@@ -4275,39 +4276,39 @@ protected function connectArrayComponents
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inFlowPrefix,inStreamPrefix,io1,io2,dim1,i,inGraph,info)
+  (outCache, outEnv, outIH, outSets, outDae, outGraph) :=
+  match(inCache, inEnv, inIH, inSets, inPrefix, 
+      inLhsCrefs, inLhsFace, inLhsType, inLhsVar, inLhsIO, 
+      inRhsCrefs, inRhsFace, inRhsType, inRhsVar, inRhsIO, 
+      inFlow, inStream, inGraph, inInfo)
     local
-      DAE.ComponentRef c1,c2,c21,c11;
-      Connect.Sets sets_1,sets;
-      list<Env.Frame> env;
-      Prefix.Prefix pre;
-      Connect.Face f1,f2;
-      DAE.Type t1,t2;
-      DAE.DAElist dae,dae1,dae2;
-      SCode.Flow flowPrefix;
-      SCode.Stream streamPrefix;
+      DAE.ComponentRef lhs, rhs;
+      list<DAE.ComponentRef> rest_lhs, rest_rhs;
       Env.Cache cache;
-      ConnectionGraph.ConnectionGraph graph;
+      Env.Env env;
       InstanceHierarchy ih;
+      Connect.Sets sets;
+      DAE.DAElist dae1, dae2;
+      ConnectionGraph.ConnectionGraph graph;
 
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
+    case (_, _, _, _, _, lhs :: rest_lhs, _, _, _, _, rhs :: rest_rhs, _, _, _,
+        _, _, _, _, _)
       equation
-        true = (dim1 == i);
-        c1 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c2 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
-        (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
-      then (cache,env,ih,sets_1,dae,graph);
+        (cache, env, ih, sets, dae1, graph) = connectComponents(inCache, inEnv,
+          inIH, inSets, inPrefix, lhs, inLhsFace, inLhsType, inLhsVar, rhs,
+          inRhsFace, inRhsType, inRhsVar, inFlow, inStream, inLhsIO, inRhsIO,
+          inGraph, inInfo);
+        (cache, env, ih, sets, dae2, graph) = connectArrayComponents(cache,
+          env, ih, sets, inPrefix, rest_lhs, inLhsFace, inLhsType, inLhsVar,
+          inLhsIO, rest_rhs, inRhsFace, inRhsType, inRhsVar, inRhsIO, inFlow,
+          inStream, graph, inInfo);
+        dae1 = DAEUtil.joinDaes(dae1, dae2);
+      then
+        (cache, env, ih, sets, dae1, graph);
 
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
-      equation
-        c11 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c21 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
-        (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
-        (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i+1,graph,info);
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then (cache,env,ih,sets_1,dae,graph);
-  end matchcontinue;
+    else (inCache, inEnv, inIH, inSets, DAEUtil.emptyDae, inGraph);
+
+  end match;
 end connectArrayComponents;
 
 protected function connectVars
