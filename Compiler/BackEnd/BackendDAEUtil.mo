@@ -6609,7 +6609,11 @@ algorithm
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean b;
-    case (_,{}) then (inDAE,Util.SUCCESS());
+    case (_,{}) 
+      equation
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, "Pre optimisation done.\n");
+      then 
+        (inDAE,Util.SUCCESS());
     case (_,(optModule,moduleStr,_)::rest)
       equation
         dae = optModule(inDAE);
@@ -6781,7 +6785,11 @@ algorithm
       list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Boolean runMatching,b;
-    case (_,{},_,_) then (inDAE,Util.SUCCESS());
+    case (_,{},_,_) 
+      equation
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post optimisation done.\n");
+      then 
+        (inDAE,Util.SUCCESS());
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
         (dae,runMatching) = optModule(inDAE);

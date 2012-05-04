@@ -10158,9 +10158,7 @@ protected
   Integer sz;
   DAE.Type ety;
 algorithm
-  enum_lit_names := List.map(enumLiterals, Absyn.makeIdentPathFromString);
-  enum_lit_names := List.map1r(enum_lit_names, Absyn.joinPaths, enumTypeName);
-  (enum_lit_expl, _) := List.mapFold(enum_lit_names, makeEnumLiteral, 1);
+  enum_lit_expl := Expression.makeEnumLiterals(enumTypeName, enumLiterals);
   sz := listLength(enumLiterals);
   ety := DAE.T_ARRAY(DAE.T_ENUMERATION(NONE(), enumTypeName, enumLiterals, {}, {}, DAE.emptyTypeSource), 
                      {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)}, 
@@ -10168,17 +10166,6 @@ algorithm
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
   enumArrayType := ety;
 end makeEnumerationArray;
-
-protected function makeEnumLiteral
-  "Creates a new enumeration literal. For use with listMapAndFold."
-  input Absyn.Path name;
-  input Integer index;
-  output DAE.Exp enumExp;
-  output Integer newIndex;
-algorithm
-  enumExp := DAE.ENUM_LITERAL(name, index);
-  newIndex := index + 1;
-end makeEnumLiteral;
 
 protected function makeASUBArrayAdressing
 "function makeASUBArrayAdressing

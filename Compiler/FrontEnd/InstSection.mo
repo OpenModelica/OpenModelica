@@ -4147,8 +4147,8 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
 
-        sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, dims, c2, f2, dims2,
-          source, flowPrefix, streamPrefix);
+        sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source,
+          flowPrefix, streamPrefix);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 

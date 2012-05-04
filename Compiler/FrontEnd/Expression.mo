@@ -7684,5 +7684,30 @@ algorithm
   end match;
 end opComplexity;
 
+public function makeEnumLiterals
+  "Construct a list of enumeration literal expression given the type name of an
+   enumeration an a list of literal names."
+  input Absyn.Path inTypeName;
+  input list<String> inLiterals;
+  output list<DAE.Exp> outLiterals;
+protected
+  list<Absyn.Path> enum_lit_names;
+  list<DAE.Exp> enum_lit_expl;
+algorithm
+  enum_lit_names := List.map1r(inLiterals, Absyn.suffixPath, inTypeName);
+  (outLiterals, _) := List.mapFold(enum_lit_names, makeEnumLiteral, 1); 
+end makeEnumLiterals;
+  
+protected function makeEnumLiteral
+  "Creates a new enumeration literal. For use with listMapAndFold."
+  input Absyn.Path name;
+  input Integer index;
+  output DAE.Exp enumExp;
+  output Integer newIndex;
+algorithm
+  enumExp := DAE.ENUM_LITERAL(name, index);
+  newIndex := index + 1;
+end makeEnumLiteral;    
+
 end Expression;
 

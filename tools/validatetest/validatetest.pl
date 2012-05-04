@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use FindBin qw($Bin);
 
 if($#ARGV < 0) {
   print "Usage: validatetest.pl testcase.\n";
@@ -85,11 +84,11 @@ if(@output or @expected_output) {
 
   if($input eq "y") {
     print "Updating test case...\n";
-    system("$Bin/rtest -b $test");
+    system("'$OMHOME'/../testsuite/rtest -b $test");
     print "Test case updated.\n";
   }
 } else {
   print "Output matching, updating test case...\n";
-  system("$Bin/rtest -b $test");
+  system("'$OMHOME'/../testsuite/rtest -b $test");
   print "Test case updated.\n";
 }

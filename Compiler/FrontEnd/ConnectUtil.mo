@@ -239,74 +239,58 @@ public function addArrayConnection
   input Connect.Sets inSets;
   input DAE.ComponentRef inCref1;
   input Connect.Face inFace1;
-  input DAE.Dimensions inDims1;
   input DAE.ComponentRef inCref2;
   input Connect.Face inFace2;
-  input DAE.Dimensions inDims2;
-  input DAE.ElementSource source;
-  input SCode.Flow flowPrefix;
-  input SCode.Stream streamPrefix;
+  input DAE.ElementSource inSource;
+  input SCode.Flow inFlow;
+  input SCode.Stream inStream;
   output Connect.Sets outSets;
-protected
-  DAE.Dimensions dims1, dims2;
 algorithm
-  dims1 := List.map(inDims1, reverseEnumType);
-  dims2 := List.map(inDims2, reverseEnumType);
-  outSets := addArrayConnection_impl(inSets, inCref1, inFace1, dims1, inCref2,
-    inFace2, dims2, source, flowPrefix, streamPrefix);
+  outSets := 
+  match(inSets, inCref1, inFace1, inCref2, inFace2, inSource, inFlow, inStream)
+    local
+      list<DAE.ComponentRef> crefs1, crefs2;
+
+    case (_, _, _, _, _, _, _, _)
+      equation
+        crefs1 = ComponentReference.expandCref(inCref1);
+        crefs2 = ComponentReference.expandCref(inCref2);
+      then
+        addArrayConnection2(inSets, crefs1, inFace1, crefs2, inFace2, inSource,
+          inFlow, inStream);
+
+  end match;
 end addArrayConnection;
 
-protected function addArrayConnection_impl
-  "This function connects two arrays by subscripting the component references
-   and calling addConnection on them. The reason why this function takes two
-   lists of dimensions is because the arrays might have different types of
-   dimensions, i.e. one might have enumeration dimensions and the other integer.
-   Tihs function will fail if the dimensions are not the same size."
+protected function addArrayConnection2
   input Connect.Sets inSets;
-  input DAE.ComponentRef inCref1;
+  input list<DAE.ComponentRef> inCrefs1;
   input Connect.Face inFace1;
-  input DAE.Dimensions inDims1;
-  input DAE.ComponentRef inCref2;
+  input list<DAE.ComponentRef> inCrefs2;
   input Connect.Face inFace2;
-  input DAE.Dimensions inDims2;
-  input DAE.ElementSource source;
-  input SCode.Flow inFlowPrefix;
-  input SCode.Stream inStreamPrefix;
+  input DAE.ElementSource inSource;
+  input SCode.Flow inFlow;
+  input SCode.Stream inStream;
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue(inSets, inCref1, inFace1, inDims1, inCref2, inFace2,
-      inDims2, source, inFlowPrefix, inStreamPrefix)
+  outSets := match(inSets, inCrefs1, inFace1, inCrefs2, inFace2, inSource,
+      inFlow, inStream)
     local
+      DAE.ComponentRef cref1, cref2;
+      list<DAE.ComponentRef> rest_crefs1, rest_crefs2;
       Connect.Sets cs;
-      DAE.ComponentRef cr1, cr2;
-      DAE.Exp idx1, idx2;
-      DAE.Dimension dim1, dim2;
-      DAE.Dimensions rest_dims1, rest_dims2;
 
-    // No more dimensions left, add the connection to the sets.
-    case (_, _, _, {}, _, _, {}, _, _, _)
+    case (cs, cref1 :: rest_crefs1, _, cref2 :: rest_crefs2, _, _, _, _)
       equation
-        cs = addConnection(inSets, inCref1, inFace1, inCref2, inFace2,
-          inFlowPrefix, inStreamPrefix, source);
+        cs = addConnection(cs, cref1, inFace1, cref2, inFace2, inFlow, inStream, inSource);
       then
-        cs;
+        addArrayConnection2(cs, rest_crefs1, inFace1, rest_crefs2, inFace2,
+          inSource, inFlow, inStream);
 
-    case (_, _, _, dim1 :: rest_dims1, _, _, dim2 :: rest_dims2, _, _, _)
-      equation
-        (idx1, dim1) = getNextIndex(dim1);
-        (idx2, dim2) = getNextIndex(dim2);
-        cr1 = ComponentReference.replaceCrefSliceSub(inCref1, {DAE.INDEX(idx1)});
-        cr2 = ComponentReference.replaceCrefSliceSub(inCref2, {DAE.INDEX(idx2)});
-        cs = addArrayConnection_impl(inSets, cr1, inFace1, rest_dims1, cr2,
-          inFace2, rest_dims2, source, inFlowPrefix, inStreamPrefix);
-        cs = addArrayConnection_impl(cs, inCref1, inFace1, dim1 :: rest_dims1,
-          inCref2, inFace2, dim2 :: rest_dims2, source, inFlowPrefix, inStreamPrefix);
-      then
-        cs;
+    else inSets;
 
-    else then inSets;
-  end matchcontinue;
-end addArrayConnection_impl;
+  end match;
+end addArrayConnection2;
 
 protected function makeConnectorType
   "Creates a connector type from the flow and stream prefix given."

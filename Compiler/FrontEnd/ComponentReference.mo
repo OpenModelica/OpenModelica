@@ -48,6 +48,7 @@ protected import ClassInf;
 protected import Config;
 protected import Debug;
 protected import Dump;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
@@ -2310,6 +2311,251 @@ algorithm
   end match;  
 end crefDepth;
 
+public function expandCref
+  "Expands an array cref into a list of elements, e.g.:
+
+     expandCref(x) => {x[1], x[2], x[3]} 
+
+   This function expects the subscripts of the cref to be constant evaluated,
+   otherwise it will fail."
+  input DAE.ComponentRef inCref;
+  output list<DAE.ComponentRef> outCref;
+algorithm
+  outCref := matchcontinue(inCref)
+    case _ then expandCref_impl(inCref);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- ComponentReference.expandCref failed on " +&
+          printComponentRefStr(inCref));
+      then
+        fail();
+
+  end matchcontinue;
+end expandCref;
+
+public function expandCref_impl
+  input DAE.ComponentRef inCref;
+  output list<DAE.ComponentRef> outCref;
+algorithm
+  outCref := match(inCref)
+    local
+      DAE.Ident id;
+      DAE.Type ty;
+      list<DAE.Dimension> dims;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs, crefs2;
+
+    // A simple cref without subscripts but array type.
+    case DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {})
+      equation
+        // Create a list of : subscripts to generate all elements.
+        subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
+      then
+        expandCref2(id, ty, subs, dims);
+
+    // A simple cref with subscripts and array type.
+    case DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs)
+      // Use the subscripts to generate only the wanted elements.
+      then expandCref2(id, ty, subs, dims);
+
+    // A qualified cref with array type.
+    case DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _), subs, cref)
+      equation
+        // Expand the rest of the cref.
+        crefs = expandCref_impl(cref);
+        // Create a simple identifier for the head of the cref and expand it.
+        cref = DAE.CREF_IDENT(id, ty, subs);
+        crefs2 = expandCref_impl(cref);
+        crefs2 = listReverse(crefs2);
+        // Create all combinations of the two lists.
+        crefs = expandCrefQual(crefs2, crefs, {});
+      then
+        crefs;
+
+    // A qualified cref with no subscripts and scalar type.
+    case DAE.CREF_QUAL(id, ty, {}, cref)
+      equation
+        // Expand the rest of the cref.
+        crefs = expandCref_impl(cref);
+        // Append the head of this cref to all of the generated crefs.
+        crefs = List.map3r(crefs, makeCrefQual, id, ty, {});
+      then
+        crefs;
+
+    // All other cases, no expansion.
+    else {inCref};
+
+  end match;
+end expandCref_impl;
+
+protected function expandCrefQual
+  "Helper function to expandCref_impl. Constructs all combinations of the head
+   and rest cref lists. E.g.:
+    expandCrefQual({x, y}, {a, b}) => {x.a, x.b, y.a, y.b} "
+  input list<DAE.ComponentRef> inHeadCrefs;
+  input list<DAE.ComponentRef> inRestCrefs;
+  input list<DAE.ComponentRef> inAccumCrefs;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inHeadCrefs, inRestCrefs, inAccumCrefs)
+    local
+      list<DAE.ComponentRef> crefs, rest_crefs;
+      DAE.ComponentRef cref;
+
+    case (cref :: rest_crefs, _, _)
+      equation
+        crefs = List.map1r(inRestCrefs, joinCrefs, cref);
+        crefs = listAppend(crefs, inAccumCrefs);
+      then
+        expandCrefQual(rest_crefs, inRestCrefs, crefs);
+
+    else inAccumCrefs;
+
+  end match;
+end expandCrefQual;
+
+protected function expandCref2
+  input DAE.Ident inId;
+  input DAE.Type inType;
+  input list<DAE.Subscript> inSubscripts;
+  input list<DAE.Dimension> inDimensions;
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  list<list<DAE.Subscript>> subs;
+algorithm
+  // Expand each subscript into a list of subscripts.
+  subs := List.threadMap(inSubscripts, inDimensions, expandSubscript);
+  subs := listReverse(subs);
+  // Use expandCref3 to construct a cref for each combination of subscripts.
+  outCrefs := expandCref3(inId, inType, subs, {}, {});
+end expandCref2;
+
+protected function expandCref3
+  input DAE.Ident inId;
+  input DAE.Type inType;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Subscript> inAccumSubs;
+  input list<DAE.ComponentRef> inAccumCrefs;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inId, inType, inSubscripts, inAccumSubs, inAccumCrefs)
+    local
+      DAE.Subscript sub;
+      list<DAE.Subscript> subs, acc_subs;
+      list<list<DAE.Subscript>> rest_subs;
+      list<DAE.ComponentRef> crefs;
+      DAE.ComponentRef cref;
+
+    case (_, _, (sub :: subs) :: rest_subs, acc_subs, crefs)
+      equation
+        crefs = expandCref3(inId, inType, subs :: rest_subs, acc_subs, crefs);
+        crefs = expandCref3(inId, inType, rest_subs, sub :: acc_subs, crefs);
+      then
+        crefs;
+
+    case (_, _, _ :: _, _, crefs)
+      then inAccumCrefs;
+
+    else
+      equation
+        cref = DAE.CREF_IDENT(inId, inType, inAccumSubs);
+      then
+        cref :: inAccumCrefs;
+
+  end match;
+end expandCref3;
+
+protected function expandSubscript
+  "Expands a subscript into a list of subscripts. Also takes a dimension to be
+   able to evaluate : subscripts."
+  input DAE.Subscript inSubscript;
+  input DAE.Dimension inDimension;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match(inSubscript, inDimension)
+    local
+      DAE.Exp exp;
+
+    // An index subscript, return it as an array.
+    case (DAE.INDEX(exp = _), _) then {inSubscript};
+
+    // A : subscript, use the dimension to generate all subscripts.
+    case (DAE.WHOLEDIM(), _)
+      then expandDimension(inDimension);
+
+    // A slice subscript.
+    case (DAE.SLICE(exp = exp), _)
+      then expandSlice(exp);
+
+  end match;
+end expandSubscript;
+
+protected function expandDimension
+  "Generates a list of subscripts given an array dimension."
+  input DAE.Dimension inDimension;
+  output list<DAE.Subscript> outSubscript;
+algorithm
+  outSubscript := match(inDimension)
+    local
+      Integer dim_int;
+      Absyn.Path enum_ty;
+      list<String> enum_lits;
+      list<DAE.Exp> enum_expl;
+
+    // An integer dimension, generate a list of integer subscripts.
+    case DAE.DIM_INTEGER(integer = dim_int)
+      then List.generateReverse(dim_int, makeIntegerSubscript);
+
+    // An enumeration dimension, construct all enumeration literals and make
+    // subscript out of them.
+    case DAE.DIM_ENUM(enumTypeName = enum_ty, literals = enum_lits)
+      equation
+        enum_expl = Expression.makeEnumLiterals(enum_ty, enum_lits);
+      then
+        List.map(enum_expl, Expression.makeIndexSubscript);
+
+  end match;
+end expandDimension;
+
+protected function makeIntegerSubscript
+  "Generates an integer subscript. For use with List.generate."
+  input Integer inIndex;
+  output Integer outNextIndex;
+  output DAE.Subscript outSubscript;
+  output Boolean outContinue;
+algorithm
+  (outNextIndex, outSubscript, outContinue) := match(inIndex)
+    case 0 then (0, DAE.WHOLEDIM(), false);
+    else (inIndex - 1, DAE.INDEX(DAE.ICONST(inIndex)), true);
+  end match;
+end makeIntegerSubscript;
+      
+protected function expandSlice
+  "Expands a slice subscript expression."
+  input DAE.Exp inSliceExp;
+  output list<DAE.Subscript> outSubscripts;
+algorithm
+  outSubscripts := match(inSliceExp)
+    local
+      list<DAE.Exp> expl;
+      String exp_str, err_str;
+
+    case DAE.ARRAY(array = expl)
+      then List.map(expl, Expression.makeIndexSubscript);
+
+    else
+      equation
+        exp_str = ExpressionDump.printExpStr(inSliceExp);
+        err_str = "ComponentReference.expandSlice: Unknown slice " +& exp_str;
+        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+      then
+        fail();
+
+  end match;
+end expandSlice;
 
 end ComponentReference;
 
