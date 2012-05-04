@@ -1207,11 +1207,20 @@ algorithm
           varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
-        ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr));
-        (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), Ceval.NO_MSG());
+        // wbraun: Evaluate parameter expressions only if they are
+        //         constant at compile time otherwise we solve them 
+        //         much faster at runtime. 
+        //((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr_orign));  
+        true = Expression.isConst(e);
+        (_, v, _) = Ceval.ceval(cache, env, e, false, NONE(), Ceval.NO_MSG());
       then
         BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
-    else inVar;
+    case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
+          varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
+          values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _, _, _)
+      then
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), NONE(), dims, idx, src, va, c, fp, sp);        
+    //else inVar;
   end matchcontinue;
 end calculateValue;
 

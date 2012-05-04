@@ -1197,6 +1197,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
   ModelicaMatVariable_t *pVar = NULL;
   const char *pError = NULL;
   char* newVarname = NULL;
+  double readerValue;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;
@@ -1254,8 +1255,53 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       else
         WARNING2("  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
     }
+
+    DEBUG_INFO(LOG_INIT, "import integer parameters");
+    for(i=0; i<mData->nParametersInteger; ++i)
+    {
+      pVar = omc_matlab4_find_var(&reader, mData->integerParameterData[i].info.name);
+
+      if(!pVar)
+      {
+        newVarname = mapToDymolaVars(mData->integerParameterData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+
+      if(pVar)
+      {
+        omc_matlab4_val(&(readerValue), &reader, pVar, initTime);
+        mData->integerParameterData[i].attribute.start = (modelica_integer) readerValue;
+        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+      }
+      else
+        WARNING2("  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+    }
+
+    DEBUG_INFO(LOG_INIT, "import boolean parameters");
+    for(i=0; i<mData->nParametersBoolean; ++i)
+    {
+      pVar = omc_matlab4_find_var(&reader, mData->booleanParameterData[i].info.name);
+
+      if(!pVar)
+      {
+        newVarname = mapToDymolaVars(mData->booleanParameterData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+
+      if(pVar)
+      {
+        omc_matlab4_val(&(readerValue), &reader, pVar, initTime);
+        mData->booleanParameterData[i].attribute.start = (modelica_boolean) readerValue;
+        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%d)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start);
+      }
+      else
+        WARNING2("  %s(start=%d)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start);
+    }
     omc_free_matlab4_reader(&reader);
   }
+
 
   return 0;
 }

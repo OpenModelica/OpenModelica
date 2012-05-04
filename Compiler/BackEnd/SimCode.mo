@@ -2426,7 +2426,7 @@ algorithm
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
         sampleEquations = createSampleEquations(sampleEqns);
         n_h = listLength(helpVarInfo);
-        
+ 
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialResiduals, fileDir,ifcpp);
         
@@ -2436,9 +2436,10 @@ algorithm
         odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
         // Assertions and crap
+        // create parameter equations
         startValueEquations = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
-        parameterEquations = createParameterEquations(shared,parameterEquations);
+        parameterEquations = createParameterEquations(shared,parameterEquations);        
         ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,({},algs));
         
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
@@ -6345,23 +6346,22 @@ algorithm
 end createStartValueEquations;
 
 protected function createParameterEquations
-  input BackendDAE.Shared shared;
+  input BackendDAE.Shared inShared;
   input list<SimEqSystem> acc;
   output list<SimEqSystem> parameterEquations;
 algorithm
-  parameterEquations := matchcontinue (shared,acc)
+  parameterEquations := matchcontinue (inShared,acc)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
       BackendDAE.Variables vars,knvars,extobj,v,kn;
       array<Algorithm.Algorithm> algs;
       array<DAE.Constraint> constrs;
-      BackendDAE.EquationArray ie,pe,emptyeqns;
+      BackendDAE.EquationArray ie,pe,emptyeqns,remeqns;
       list<SimEqSystem> inalgs,simvarasserts;
       list<DAE.Algorithm> ialgs,varasserts,varasserts1;
       BackendDAE.BackendDAE paramdlow,paramdlow1;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       array<BackendDAE.ComplexEquation> complEqs;
-      DAE.FunctionTree funcs;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.AliasVariables alisvars;
       BackendDAE.IncidenceMatrix m;
@@ -6374,8 +6374,19 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
+      BackendDAE.AliasVariables aliasVars;
       
-    case (BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,constraints=constrs,arrayEqs=arrayEqs,complEqs=complEqs,extObjClasses=extObjClasses),acc)
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.EqSystems eqs;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.SymbolicJacobians symjacs;
+      
+    case (BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,aliasVars=aliasVars,
+                            initialEqs=ie,removedEqs=remeqns,algorithms=algs,constraints=constrs,
+                            arrayEqs=arrayEqs,complEqs=complEqs,extObjClasses=extObjClasses,
+                            functionTree=funcs,eventInfo=einfo,backendDAEType=btp,symjacs=symjacs),acc)
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -6403,7 +6414,7 @@ algorithm
         (syst,comps) = BackendDAETransform.strongComponents(syst, shared);
         paramdlow = BackendDAE.DAE({syst},shared);
         Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpComponents,comps);
-        
+                                                                             
         (helpVarInfo, BackendDAE.DAE({syst},shared),_) = generateHelpVarInfo(paramdlow);
         parameterEquations = createEquations(false, false, true, false, false, syst, shared, 0, comps, helpVarInfo);
         

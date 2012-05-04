@@ -2050,6 +2050,7 @@ algorithm
       BackendDAE.Value x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType;
     case (varsLst,knvars,extvars)
       equation
+        Debug.execStat("translateDAE calculateIndexes 1",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // store vars,knvars,extvars in the list
         vars_map = fillListListConst(varsLst,0,{});
         knvars_map = fillListConst(knvars,-1,0,{});
@@ -2059,9 +2060,8 @@ algorithm
         all_map1 = listAppend(all_map,extvars_map);
         // seperate scalars and non scalars
         (noScalar_map,scalar_map) = getNoScalarVars(all_map1);
-
         noScalar_map1 = getAllElements(noScalar_map);
-        sort_map = sortNoScalarList(noScalar_map1);
+        sort_map = List.sort(noScalar_map1,comparingNonScalarsTuple);
         //print("\nsort_map:\n");
         //dumpSortMap(sort_map);
         // connect scalars and sortet non scalars
@@ -2356,32 +2356,6 @@ algorithm
   end match;
 end getAllElements1;
 
-protected function sortNoScalarList
-"function: sortNoScalarList
-  author: Frenkel TUD
-  Takes a list of unsortet noScalarVars
-  and returns a sorted list"
-  input list<tuple<BackendDAE.Var,Integer,Integer> > inlist;
-  output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
-algorithm
-  outlist:=
-  match (inlist)
-    local
-      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,out_lst;
-      BackendDAE.Var var;
-      Boolean ins;
-      Integer typ,place;
-    case {} then {};
-    case ((var,typ,place) :: rest)
-      equation
-        var_lst = sortNoScalarList(rest);
-        (var_lst1,ins) = sortNoScalarList1((var,typ,place),var_lst);
-        out_lst = listAppendTyp(boolNot(ins),(var,typ,place),var_lst1);
-      then
-        out_lst;
-  end match;
-end sortNoScalarList;
-
 protected function listAppendTyp
 "function: listAppendTyp
   author: Frenkel TUD
@@ -2407,101 +2381,6 @@ algorithm
         out_lst;
   end match;
 end listAppendTyp;
-
-protected function sortNoScalarList1
-"function: sortNoScalarList1
-  author: Frenkel TUD
-  Helper function for sortNoScalarList"
-  input tuple<BackendDAE.Var,Integer,Integer>  invar;
-  input list<tuple<BackendDAE.Var,Integer,Integer> > inlist;
-  output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
-  output Boolean insert;
-algorithm
-  (outlist,insert) := match (invar,inlist)
-    local
-      list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1;
-      BackendDAE.Var var,var1;
-      Boolean ins,ins1;
-      Integer typ,typ1,place,place1;
-    
-    case (_,{}) then ({},false);
-    
-    case ((var,typ,place),(var1,typ1,place1)::rest)
-      equation
-        (var_lst,ins) = sortNoScalarList1((var,typ,place),rest);
-        (var_lst1,ins1) = sortNoScalarList2(ins,(var,typ,place),(var1,typ1,place1),var_lst);
-      then
-        (var_lst1,ins1);
-  end match;
-end sortNoScalarList1;
-
-protected function sortNoScalarList2
-"function: sortNoScalarList2
-  author: Frenkel TUD
-  Helper function for sortNoScalarList
-  Takes a list of unsortet noScalarVars
-  and returns a sorte list"
-  input Boolean ininsert;
-  input tuple<BackendDAE.Var,Integer,Integer>  invar;
-  input tuple<BackendDAE.Var,Integer,Integer>  invar1;
-  input list< tuple<BackendDAE.Var,Integer,Integer> > inlist;
-  output list< tuple<BackendDAE.Var,Integer,Integer> > outlist;
-  output Boolean outinsert;
-algorithm
-  (outlist,outinsert):=
-  match (ininsert,invar,invar1,inlist)
-    local
-      list< tuple<BackendDAE.Var,Integer,Integer> > var_lst,var_lst1,var_lst2;
-      BackendDAE.Var var,var1;
-      Integer typ,typ1,place,place1;
-      Boolean ins;
-    case (false,(var,typ,place),(var1,typ1,place1),var_lst)
-      equation
-        ins = comparingNonScalars(var,var1);
-        var_lst1 = Util.if_(ins,{(var1,typ1,place1),(var,typ,place)},{(var1,typ1,place1)});
-        var_lst2 = listAppend(var_lst1,var_lst);
-      then
-        (var_lst2,ins);
-    case (true,(var,typ,place),(var1,typ1,place1),var_lst)
-      equation
-        var_lst1 = listAppend({(var1,typ1,place1)},var_lst);
-      then
-        (var_lst1,true);
-  end match;
-end sortNoScalarList2;
-
-protected function comparingNonScalars
-"function: comparingNonScalars
-  author: Frenkel TUD
-  Helper function for sortNoScalarList2
-  Takes two NonScalars an returns
-  it in right order
-  Example1:  A[2,2],A[1,1] -> {A[1,1],A[2,2]}
-  Example2:  A[2,2],B[1,1] -> {A[2,2],B[1,1]}"
-  input BackendDAE.Var invar1;
-  input BackendDAE.Var invar2;
-  output Boolean outval;
-algorithm
-  outval:=
-  matchcontinue (invar1,invar2)
-    local
-      DAE.ComponentRef varName1, varName2,c1,c2;
-      list<DAE.Subscript> arryDim, arryDim1;
-      list<DAE.Subscript> subscriptLst, subscriptLst1;
-      Boolean out_val;
-    case (BackendDAE.VAR(varName = varName1,arryDim = arryDim),BackendDAE.VAR(varName = varName2,arryDim = arryDim1))
-      equation
-        c1 = ComponentReference.crefStripLastSubs(varName1);
-        c2 = ComponentReference.crefStripLastSubs(varName2);
-        true = ComponentReference.crefEqualNoStringCompare(c1, c2);
-        subscriptLst = ComponentReference.crefLastSubs(varName1);
-        subscriptLst1 = ComponentReference.crefLastSubs(varName2);
-        out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
-      then
-        out_val;
-    case (_,_) then false;
-  end matchcontinue;
-end comparingNonScalars;
 
 protected function comparingNonScalars1
 "function: comparingNonScalars1
@@ -2534,12 +2413,43 @@ algorithm
         dim_lst1_1 = List.stripFirst(dim_lst1);
         val1 = calcPlace(index,dim_lst_1);
         val2 = calcPlace(index1,dim_lst1_1);
-        (val1 > val2) = true;
+        (val1 > val2) = false;
       then
-       true;
-    case (_,_,_,_) then false;
+       false;
+    case (_,_,_,_) then true;
   end matchcontinue;
 end comparingNonScalars1;
+
+protected function comparingNonScalarsTuple
+"function: comparingNonScalars
+  author: Frenkel TUD
+  Comparing two NonScalars.
+  Example1:  A[2,2],A[1,1] -> {A[1,1],A[2,2]}
+  Example2:  A[2,2],B[1,1] -> {A[2,2],B[1,1]}"
+  input tuple<BackendDAE.Var,Integer,Integer> invar1;
+  input tuple<BackendDAE.Var,Integer,Integer> invar2;
+  output Boolean outval;
+algorithm
+  outval:=
+  matchcontinue (invar1,invar2)
+    local
+      DAE.ComponentRef varName1, varName2,c1,c2;
+      list<DAE.Subscript> arryDim, arryDim1;
+      list<DAE.Subscript> subscriptLst, subscriptLst1;
+      Boolean out_val;
+    case ((BackendDAE.VAR(varName = varName1,arryDim = arryDim),_,_),(BackendDAE.VAR(varName = varName2,arryDim = arryDim1),_,_))
+      equation
+        c1 = ComponentReference.crefStripLastSubs(varName1);
+        c2 = ComponentReference.crefStripLastSubs(varName2);
+        true = ComponentReference.crefEqualNoStringCompare(c1, c2);
+        subscriptLst = ComponentReference.crefLastSubs(varName1);
+        subscriptLst1 = ComponentReference.crefLastSubs(varName2);
+        out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
+      then
+        out_val;
+    case (_,_) then true;
+  end matchcontinue;
+end comparingNonScalarsTuple;
 
 protected function calcPlace
 "function: calcPlace
