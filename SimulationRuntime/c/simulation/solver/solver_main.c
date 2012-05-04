@@ -152,15 +152,13 @@ int solver_main(DATA* simData, double start, double stop, double step,
   copyStartValuestoInitValues(simData);
   /* read input vars */
   input_function(simData);
-  /* initial sample and delay before initial the system */
-  callExternalObjectConstructors(simData);
-  initSample(simData, simInfo->startTime, simInfo->stopTime);
-  initDelay(simData, simInfo->startTime);
 
-  /* will be removed -> DOPRI45 */
   /* first interpolation point is the value of the fixed external stepsize */
   /* interpolationStep = step;*/
   sData->timeValue = simInfo->startTime;
+
+  /* instance all external Objects */
+  callExternalObjectConstructors(simData);
 
 
   if (flag == 2) {

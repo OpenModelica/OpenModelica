@@ -1024,6 +1024,10 @@ static int none_initialization(DATA *data, int updateStartValues)
     updateBoundStartValues(data);
   }
 
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
+
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
   overwriteOldSimulationData(data);
@@ -1082,6 +1086,10 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
     updateBoundParameters(data);
     updateBoundStartValues(data);
   }
+
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
 
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);

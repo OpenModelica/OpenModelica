@@ -617,11 +617,19 @@ end initParams;
 
 template initValsDefault(SimVar var, String arrayName, Integer offset) ::=
   match var
-    case SIMVAR(__) then
+    case SIMVAR(index=index, type_=type_) then
     let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
     match initialValue 
       case SOME(v) then 
       '<%str%> = <%initVal(v)%>;'
+      case NONE() then
+        match type_
+          case T_INTEGER(__)
+          case T_REAL(__)
+          case T_ENUMERATION(__) 
+          case T_BOOL(__) then '<%str%> = 0;'
+          case T_STRING(__) then '<%str%> = "";'
+          else 'UNKOWN_TYPE'
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=

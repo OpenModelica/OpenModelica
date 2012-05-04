@@ -1189,6 +1189,7 @@ protected function calculateValue
 algorithm
   outVar := matchcontinue(inVar, cache, env, vars)
     local
+      BackendDAE.Var var;
       DAE.ComponentRef cr;
       BackendDAE.VarKind vk;
       DAE.VarDirection vd;
@@ -1203,6 +1204,13 @@ algorithm
       DAE.Flow fp;
       DAE.Stream sp;
       Values.Value v;
+    case (var as BackendDAE.VAR(bindValue = SOME(_)), _, _, _)
+      equation
+        print("*** Not Ceval.eval var: ");
+        BackendDump.dumpVars({var});
+        print("\n");
+      then
+        var;      
     case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
           varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
@@ -1214,13 +1222,8 @@ algorithm
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, env, e, false, NONE(), Ceval.NO_MSG());
       then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
-    case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
-          varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
-          values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _, _, _)
-      then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), NONE(), dims, idx, src, va, c, fp, sp);        
-    //else inVar;
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);        
+    else inVar;
   end matchcontinue;
 end calculateValue;
 

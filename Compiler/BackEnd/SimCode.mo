@@ -10524,14 +10524,14 @@ algorithm
         /* String - Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = NONE(), values = dae_var_attr))
       equation
-        e = DAEUtil.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConstValue(e);
       then
         SOME(e);
         /* Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr))
       equation
-        e = DAEUtil.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConstValue(e);
       then
         SOME(e);
