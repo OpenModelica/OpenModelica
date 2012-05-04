@@ -42,9 +42,9 @@ $(PROG)$(EXEEXT) : $(OBJS)
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LDFLAGS)
 
 omc_communication.cpp: omc_communication.cc
-        ln -s $< $@
+	ln -s $< $@
 omc_communication.cc: $(runtimedir)/omc_communication.idl
-        @IDLCMD@ $<
+	@IDLCMD@ $<
 omc_communication.h: omc_communication.cc
 
 clean:
