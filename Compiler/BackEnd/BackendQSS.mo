@@ -344,7 +344,6 @@ algorithm
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
     case ((e as DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs)))
       equation
-      //p = List.position(cr,states);
       p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
       ident = stringAppend(stringAppend("x[",intString(p+1)),"]");
       then ((DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs)));
@@ -481,22 +480,22 @@ algorithm
         list<DAE.Subscript> subscriptLst;
       case (_,_,_,_)
       equation
-        p=List.position(cr,states);
+        p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
         then stringAppend(stringAppend("x[",intString(p+1)),"]");
       case (DAE.CREF_QUAL(ident,identType,subscriptLst,r),_,_,_)
       equation
         ident=DAE.derivativeNamePrefix;
         identType=DAE.T_REAL_DEFAULT;
         subscriptLst={};
-        p=List.position(r,states);
+        p = List.positionOnTrue(r,states,ComponentReference.crefEqual);
         then stringAppend(stringAppend("der(x[",intString(p+1)),"])");
       case (_,_,_,_)
       equation
-        p=List.position(cr,disc);
+        p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
         then stringAppend(stringAppend("d[",intString(p+1)),"]");
       case (_,_,_,_)
       equation
-        p=List.position(cr,algs);
+        p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
         then stringAppend(stringAppend("a[",intString(p+1)),"]");
       case (_,_,_,_)
       then ComponentReference.printComponentRefStr(cr);
