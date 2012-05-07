@@ -299,11 +299,10 @@ AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR(
 
 dnl should we use corba?
 
-AC_ARG_WITH(CORBA,  [  --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[WANT_MICO="no"])
-AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
-dnl AC_ARG_WITH(ORBIT2, [  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)],[WANT_ORBIT2="$withval"],[WANT_ORBIT2="no"])
 WANT_ORBIT2="no"
-AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
+WANT_MICO="no"
+AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
+AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR (recommended CORBA implementation)],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
 
 if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
