@@ -2309,7 +2309,7 @@ protected
  BackendDAE.IncidenceMatrix m;
 algorithm
   (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
-  List.map1_0(arrayList(m),dumpIncidenceMatrix2,inOffset);
+  _ := Util.arrayFold(m,dumpIncidenceMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
 end dumpIncidenceMatrixWork;
 
@@ -2317,11 +2317,16 @@ protected function dumpIncidenceMatrix2 "
 Help function to dumpMatrix
 "
   input list<Integer> row;
-  input Integer offset;
+  input tuple<Integer,Integer> inTpl; 
+  output tuple<Integer,Integer> outTpl; 
+protected
+  Integer offset,c;
 algorithm
-  dumpStrOpenTag(MathMLMatrixrow);
+  (offset,c) := inTpl;
+  dumpStrOpenTagAttr(MathMLMatrixrow,"id",intString(c));
   List.map1_0(row,dumpMatrixIntegerRow,offset);
   dumpStrCloseTag(MathMLMatrixrow);
+  outTpl := ((offset,c+1));
 end dumpIncidenceMatrix2;
 
 
