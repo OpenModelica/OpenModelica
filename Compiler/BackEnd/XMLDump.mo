@@ -608,7 +608,7 @@ algorithm
     case(DAE.CONSTRAINT_EXPS(exps)::constrs,conNo)
       equation
         dumpStrOpenTagAttr(CONSTRAINT, LABEL, stringAppend(stringAppend(CONSTRAINT_REF,"_"),intString(conNo)));
-        Print.printBuf(DAEDump.dumpConstraintsStr({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)}));
+        Print.printBuf(Util.xmlEscape(DAEDump.dumpConstraintsStr({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)})));
         dumpStrCloseTag(CONSTRAINT);
         conNo_1=conNo+1;
         dumpConstraints2(constrs,conNo_1);
@@ -687,10 +687,8 @@ algorithm
     case ({},_,_) then ();
     case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,false)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
@@ -707,10 +705,8 @@ algorithm
       then ();
     case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,false)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
@@ -718,10 +714,8 @@ algorithm
       then ();
     case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,true)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
@@ -742,10 +736,8 @@ algorithm
       then ();
     case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,true)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
@@ -1540,10 +1532,8 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1560,10 +1550,8 @@ algorithm
       then ();
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1585,8 +1573,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1604,8 +1591,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.stringReplaceChar(s2,">","&gt;");
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1614,8 +1600,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1635,8 +1620,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1646,8 +1630,7 @@ algorithm
       then ();
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s1 = Util.xmlEscape(s1);
+        s1 = printExpStr(e);
         res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1664,8 +1647,7 @@ algorithm
       then ();
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s1 = Util.xmlEscape(s1);
+        s1 = printExpStr(e);
         res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -2550,8 +2532,7 @@ algorithm
     case ({},_,_) then ();
     case ((e :: es),inContent,addMathMLCode)
       equation
-        s = ExpressionDump.printExpStr(e);
-        s = Util.xmlEscape(s);
+        s = printExpStr(e);
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -2560,6 +2541,12 @@ algorithm
   end match;
 end dumpLstExp2;
 
+protected function printExpStr
+  input DAE.Exp e;
+  output String s;
+algorithm
+  s := Util.xmlEscape(ExpressionDump.printExpStr(e));
+end printExpStr;
 
 public function dumpLstInt "
 function dumpLsTStr dumps a list
@@ -2739,7 +2726,7 @@ algorithm
     case (NONE(),_,_) then ();
     case (SOME(e),_,addMathMLCode)
       equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,Util.xmlEscape(printExpStr(e)));
+        dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(Content);
       then ();
@@ -2798,7 +2785,7 @@ algorithm
     case (NONE(),_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,ExpressionDump.printExpStr(ValuesUtil.valueExp(v)));
+        dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(ValuesUtil.valueExp(v)));
         dumpExp(ValuesUtil.valueExp(v),addMMLCode);
         dumpStrCloseTag(Content);
       then ();
@@ -3139,12 +3126,12 @@ algorithm
         ();
     case (DAE.INDEX(exp = e1))
       equation
-        Print.printBuf(ExpressionDump.printExpStr(e1));
+        Print.printBuf(printExpStr(e1));
       then
         ();
     case (DAE.SLICE(exp = e1))
       equation
-        Print.printBuf(ExpressionDump.printExpStr(e1));
+        Print.printBuf(printExpStr(e1));
       then
         ();
   end matchcontinue;
@@ -3559,7 +3546,7 @@ algorithm
     case ({},_) then ();
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
-        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,Util.xmlEscape(ExpressionDump.printExpStr(e)));
+        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
         dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
@@ -3614,19 +3601,6 @@ algorithm
   end match;
 end lunaryopSymbol;
 
-
-protected function printExpStr "
-function: printExpStr
-  This function prints a complete expression.
-  This function is exactly the same of the Print.printExpStr function
-  exception with the printing of the DAE.SCONST. The DAE.SCONST
-  are printed without quotes.
-"
-  input DAE.Exp e;
-  output String s;
-algorithm
-  s := ExpressionDump.printExp2Str(e, "",NONE(),NONE());
-end printExpStr;
 
 public function relopSymbol  "
 function: relopSymbol
@@ -3701,10 +3675,8 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3725,10 +3697,8 @@ algorithm
       then ();
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s1 = Util.xmlEscape(s1);
-        s2 = Util.xmlEscape(s2);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3741,7 +3711,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -3750,8 +3720,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3773,8 +3742,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3783,8 +3751,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -3808,8 +3775,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        s2 = Util.xmlEscape(s2);
+        s2 = printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -3819,8 +3785,7 @@ algorithm
       then ();
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s1 = Util.xmlEscape(s1);
+        s1 = printExpStr(e);
         res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3837,8 +3802,7 @@ algorithm
       then ();
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
-        s1 = ExpressionDump.printExpStr(e);
-        s1 = Util.xmlEscape(s1);
+        s1 = printExpStr(e);
         res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
