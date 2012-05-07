@@ -323,8 +323,8 @@ if test ! "$WANT_MICO" = "no"; then
   USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
   AC_MSG_CHECKING([mico settings])
-  CORBACFLAGS=-I`$MICO --prefix`/include;
-  CORBA_QMAKE_INCLUDES=`$MICO --prefix`/include;
+  CORBACFLAGS=-I`$MICO --prefix`/include -I.;
+  CORBA_QMAKE_INCLUDES=`$MICO --prefix`/include -I.;
   CORBALIBS=`$MICO --libs`;
   AC_MSG_RESULT([$CORBACFLAGS $USE_CORBA $QT_USE_CORBA])
   DESIRED_CORBA="mico"
