@@ -5690,17 +5690,34 @@ protected function elabBuiltinGetInstanceName
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-protected
-  String str;
-  Absyn.Path name;
 algorithm
-  {} := inAbsynExpLst;
-  {} := inNamedArg;
-  Env.CACHE(modelName=name) := inCache;
-  outCache := inCache;
-  str := Absyn.pathLastIdent(name) +& "." +& PrefixUtil.printPrefixStr(inPrefix);
-  outExp := DAE.SCONST(str);
-  outProperties := DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+    local
+      String str;
+      Absyn.Path name,envName;
+    case (Env.CACHE(modelName=name),inEnv,{},{},_,Prefix.NOPRE(),_)
+      equation
+        envName = Env.getEnvName(inEnv);
+        true = Absyn.pathEqual(envName,name);
+        str = Absyn.pathLastIdent(name);
+        outExp = DAE.SCONST(str);
+        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
+      then (inCache,outExp,outProperties);
+    case (Env.CACHE(modelName=name),inEnv,{},{},_,Prefix.NOPRE(),_)
+      equation
+        envName = Env.getEnvName(inEnv);
+        false = Absyn.pathEqual(envName,name);
+        str = Absyn.pathString(envName);
+        outExp = DAE.SCONST(str);
+        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
+      then (inCache,outExp,outProperties);
+    case (Env.CACHE(modelName=name),inEnv,{},{},_,inPrefix,_)
+      equation
+        str = Absyn.pathLastIdent(name) +& "." +& PrefixUtil.printPrefixStr(inPrefix);
+        outExp = DAE.SCONST(str);
+        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
+      then (inCache,outExp,outProperties);
+  end matchcontinue;
 end elabBuiltinGetInstanceName;
 
 protected function elabBuiltinVector "function: elabBuiltinVector
