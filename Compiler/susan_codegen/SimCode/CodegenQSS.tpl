@@ -59,7 +59,8 @@ template translateModel(SimCode simCode,QSSinfo qssInfo)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(generateQsmModel(simCode,qssInfo), 'model.mo')
+  let()= textFile(generateQsmModel(simCode,qssInfo), '<% getName(modelInfo) %>.mo')
+  let()= textFile(generateMakefile(getName(modelInfo)), '<% getName(modelInfo) %>.makefile')
   ""
 end translateModel;
 
@@ -77,7 +78,7 @@ case SIMCODE(__) then
 #include \"parameters.h\" // Parameters
 " /*BUFD*/
   let eqs = (odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),&funDecls,externalFuncs);separator="\n")
-  let () = textFile(&externalFuncs,'external_functions.c')
+  let () = textFile(&externalFuncs,'<% getName(modelInfo)%>_external_functions.c')
   <<
   <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),sampleConditions,parameterEquations) %>
   <% funDecls %>
@@ -182,7 +183,7 @@ template generateParameters(ModelInfo modelInfo,list<SimEqSystem> parameterEquat
 ::=
 match modelInfo
 case MODELINFO(vars=vars as SIMVARS(__)) then
-let () = textFile(generateHeader(modelInfo,parameterEquations),"parameters.h")
+let () = textFile(generateHeader(modelInfo,parameterEquations),'<% getName(modelInfo) %>_parameters.h')
   <<
   <% vars.paramVars |> v => generateVarDefinition(v);separator="\n" %>
   <% vars.intParamVars |> v => generateVarDefinition(v);separator="\n" %>
@@ -240,7 +241,7 @@ template generateAnnotation(Option<SimCode.SimulationSettings> simulationSetting
 match simulationSettingsOpt
 case SOME(s as SIMULATION_SETTINGS(__)) then
   <<
-    annotation(experiment(StartTime = <%s.startTime%>, StopTime = <%s.stopTime%>, Tolerance = <%s.tolerance%>, AbsTolerance = <%s.tolerance %>, Solver = QSS3, Output = {x[1]},  OutputFormat = <%s.outputFormat%>, VariableFilter = "<%s.variableFilter%>"));
+    annotation(experiment(StartTime = <%s.startTime%>, StopTime = <%s.stopTime%>, Tolerance = 1e-3, AbsTolerance = <%s.tolerance %>, Solver = LIQSS2, Output = {x[1]}, StepSize = <%s.stopTime%>/500));
   >>
 end generateAnnotation;
 
@@ -271,7 +272,7 @@ case e as SES_LINEAR(vars=vars,index=index) then
   function fsolve<%index%>
     <% BackendQSS.getRHSVars(beqs,vars,simJac,states,disc,algs) |> v hasindex i0 => 'input Real i<%i0%>;' ;separator="\n" %>
     <% vars |> v hasindex i0 => 'output Real o<%i0%>;' ;separator="\n" %>
-  external "C" annotation(Include="#include \"external_function_<%index%>.c\"");
+  external "C" ;
   end fsolve<%index%>;
 
 >>
@@ -489,4 +490,17 @@ case MODELINFO(vars=vars as SIMVARS(__)) then
   ;separator="\n" %>
 >>
 end generateHeader;
+
+template generateMakefile(String name)
+ "Generates a QSM model for simulation ."
+::=
+<<
+all: <%name%>.mo <%name%>_parameters.h <%name%>_external_functions.c
+<%\t%>mo2qsm ./<%name%>.mo
+<%\t%>qssmg  ./<%name%>.qsm $(QSSPATH)
+<%\t%>make 
+<%\t%>./<%name%> 
+<%\t%>echo "set terminal wxt persist; set grid; plot \"<%name%>_x0.dat\" with lines " | gnuplot
+>>
+end generateMakefile;
 end CodegenQSS;
