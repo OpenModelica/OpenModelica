@@ -70,13 +70,13 @@ template generateQsmModel(SimCode simCode, QSSinfo qssInfo)
 match simCode
 case SIMCODE(__) then
   let &funDecls = buffer "" /*BUFD*/
-  let &externalFuncs = buffer "#include <gsl/gsl_math.h>
+  let &externalFuncs = buffer '#include <gsl/gsl_math.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
-#include \"parameters.h\" // Parameters
-" /*BUFD*/
+#include "<% getName(modelInfo)%>_parameters.h" // Parameters
+' /*BUFD*/
   let eqs = (odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),&funDecls,externalFuncs);separator="\n")
   let () = textFile(&externalFuncs,'<% getName(modelInfo)%>_external_functions.c')
   <<
