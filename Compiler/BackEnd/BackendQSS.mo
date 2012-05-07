@@ -39,6 +39,7 @@ encapsulated package BackendQSS
   $Id$
 "
 
+public import ExpressionSimplify;
 public import SimCode;
 public import System;
 public import BackendDAE;
@@ -394,7 +395,12 @@ algorithm
       then ((DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{e2},DAE.callAttrBuiltinReal)),(states,disc,algs)));
     case ((DAE.LBINARY(e as DAE.RELATION(_,_,_,_,_),DAE.AND(_),e2 as DAE.RCONST(_)),(states,disc,algs)))
       then ((DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("boolToReal"),{e},DAE.callAttrBuiltinReal)),(states,disc,algs)));
-
+    case ((DAE.BINARY(e,DAE.POW(_),e2),(states,disc,algs)))
+      then ((DAE.CALL(Absyn.IDENT("pow"),{e,e2},DAE.callAttrBuiltinReal),(states,disc,algs)));
+    case ((DAE.BCONST(true),(states,disc,algs)))
+      then ((DAE.RCONST(1.0),(states,disc,algs)));
+    case ((DAE.BCONST(false),(states,disc,algs)))
+      then ((DAE.RCONST(0.0),(states,disc,algs)));
     case ((e,(states,disc,algs))) then ((e,(states,disc,algs)));
     end matchcontinue;
 end replaceInExp;
@@ -412,6 +418,7 @@ expout := matchcontinue (exp,states,disc,algs)
   case (_,_,_,_) 
   equation 
     ((e,_))=Expression.traverseExp(exp,replaceInExp,(states,disc,algs));
+    (e,_)=ExpressionSimplify.simplify(e);
   then e;
   end matchcontinue;
 end replaceVars;
@@ -685,7 +692,7 @@ algorithm
     case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: tail,_) 
     equation
       true = ComponentReference.crefEqual(name,d);
-      t = stringAppend("boolToReal(",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
+      t = stringAppend("(",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
       t = stringAppend(t,") /* ");
       t = stringAppend(t,ComponentReference.crefStr(d));
       t = stringAppend(t,"*/;");
@@ -827,6 +834,34 @@ algorithm
     case ((e,inputs)) then ((e,inputs));
   end matchcontinue;
 end replaceInExpInputs;
+
+
+public function getDiscRHSVars
+  input list<DAE.Exp> beqs;
+  input list<SimCode.SimVar> vars;
+  input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+  input list<DAE.ComponentRef> states;
+  input list<DAE.ComponentRef> disc;
+  input list<DAE.ComponentRef> algs;
+  output list<DAE.ComponentRef> out;
+algorithm
+  out:=matchcontinue (beqs,vars,simJac,states,disc,algs) 
+    local 
+      list<DAE.ComponentRef> vars_cref;
+      list<DAE.Exp> eqs;
+  case (_,_,_,_,_,_)
+  equation
+    vars_cref = {};
+    eqs = List.map(List.map(simJac,Util.tuple33),getExpResidual);
+    vars_cref = getCrefs(eqs,vars_cref);
+    /* TODO: Check matrix A for discrete values */
+    vars_cref = List.intersectionOnTrue(listAppend(states,listAppend(disc,algs)),vars_cref,ComponentReference.crefEqual);
+    then vars_cref;
+  end matchcontinue;
+
+end getDiscRHSVars;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
 ////////////////////////////////////////////////////////////////////////////////////////////////////

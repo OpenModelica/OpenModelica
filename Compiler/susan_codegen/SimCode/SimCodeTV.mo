@@ -2330,6 +2330,17 @@ package BackendQSS
     output list<DAE.ComponentRef> out;
   end getRHSVars;
 
+  function getDiscRHSVars
+    input list<DAE.Exp> beqs;
+    input list<SimCode.SimVar> vars;
+    input list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+    input list<DAE.ComponentRef> states;
+    input list<DAE.ComponentRef> disc;
+    input list<DAE.ComponentRef> algs;
+    output list<DAE.ComponentRef> out;
+  end getDiscRHSVars;
+
+
   function generateDInit
     input  list<DAE.ComponentRef> disc;
     input  list<SimCode.SampleCondition> sample;
