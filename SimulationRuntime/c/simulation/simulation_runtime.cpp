@@ -363,8 +363,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   else
     result_file_cstr = *result_file;
 
-  string init_initMethod = "state";
-  string init_optiMethod = "nelder_mead_ex";
+  string init_initMethod = "";
+  string init_optiMethod = "";
   string init_file = "";
   string init_time_string = "";
   double init_time = 0;

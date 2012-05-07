@@ -39,11 +39,39 @@
 #include "model_help.h"
 #include "read_matlab4.h"
 
-#include <math.h>
 #include <string.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <kinsol/kinsol.h>
+#include <kinsol/kinsol_dense.h>
+#include <nvector/nvector_serial.h>
+#include <sundials/sundials_types.h>
+#include <sundials/sundials_math.h>
 
 DATA *globalData = NULL;
 double* globalInitialResiduals = NULL;
+
+typedef struct INIT_DATA
+{
+  long nz;
+  long nStates;
+  long nParameters;
+  double* z;
+  double* start;
+  double* min;
+  double* max;
+  double* nominal;
+  char** name;
+}INIT_DATA;
+
+typedef struct KINSOL_DATA
+{
+  INIT_DATA* initData;
+  DATA* data;
+}KINSOL_DATA;
 
 #ifndef NEWUOA
 #define NEWUOA newuoa_
@@ -81,10 +109,12 @@ enum INIT_INIT_METHOD
 {
   IIM_UNKNOWN = 0,
   IIM_NONE,
-  IIM_STATE
+  IIM_STATE,
+  IIM_MAX
 };
 
-const char *initMethodStr[3] = {"unknown", "none", "state"};
+const char *initMethodStr[IIM_MAX] = {"unknown", "none", "state"};
+const char *initMethodDescStr[IIM_MAX] = {"unknown", "no initialization method", "default initialization method"};
 
 enum INIT_OPTI_METHOD
 {
@@ -92,10 +122,13 @@ enum INIT_OPTI_METHOD
   IOM_NELDER_MEAD_EX,
   IOM_NELDER_MEAD_EX2,
   IOM_SIMPLEX,
-  IOM_NEWUOA
+  IOM_NEWUOA,
+  IOM_KINSOL,
+  IOM_MAX
 };
 
-const char *optiMethodStr[5] = {"unknown", "nelder_mead_ex [with global homotopy]", "nelder_mead_ex2 [without global homotopy]", "simplex", "newuoa"};
+const char *optiMethodStr[IOM_MAX] = {"unknown", "nelder_mead_ex", "nelder_mead_ex2", "simplex", "newuoa", "kinsol"};
+const char *optiMethodDescStr[IOM_MAX] = {"unknown", "with global homotopy", "without global homotopy", "", "brent's method", "sundials/kinsol"};
 
 /*! \fn leastSquareWithLambda
  *
@@ -178,6 +211,39 @@ void leastSquare(long *nz, double *z, double *funcValue)
   *funcValue = leastSquareWithLambda(globalData, *nz, z, NULL, NULL, 1.0, globalInitialResiduals);
 
   DEBUG_INFO1(LOG_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
+}
+
+/*! \fn kinsol_residuals
+ *
+ *  \param [in]  [z]
+ *  \param [out] [f]
+ *  \param [ref] [user_data]
+ *
+ *  \author lochel
+ */
+static int kinsol_residuals(N_Vector z, N_Vector f, void* user_data)
+{
+  double* zdata = NV_DATA_S(z);
+  double* fdata = NV_DATA_S(f);
+
+  KINSOL_DATA* kdata = (KINSOL_DATA*) user_data;
+  DATA* data = kdata->data;
+  INIT_DATA* initData = kdata->initData;
+
+  double* lb = initData->min;
+  double* ub = initData->max;
+  long i;
+
+  leastSquareWithLambda(data, initData->nz, zdata, NULL, NULL, 1.0, globalInitialResiduals);
+
+  for(i=0; i<initData->nz; ++i)
+  {
+    fdata[i] = globalInitialResiduals[i];
+    fdata[initData->nz+2*i+0] = zdata[initData->nz+2*i+0] - zdata[i] + lb[i];
+    fdata[initData->nz+2*i+1] = zdata[initData->nz+2*i+1] - zdata[i] + ub[i];
+  }
+
+  return 0;
 }
 
 /*! \fn computeInitialResidualScalingCoefficients
@@ -556,11 +622,147 @@ static int reportResidualValue(DATA* data, double funcValue, double* initialResi
   return 0;
 }
 
+void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
+{
+  WARNING3("[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+  WARNING_AL1("%s", msg);
+  THROW("see last warning");
+}
+
+/*! \fn kinsol_initialization
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [initData]
+ *  \param [ref] [initialResiduals]
+ *
+ *  \author lochel
+ */
+int kinsol_initialization(DATA* data, INIT_DATA* initData, double* initialResiduals)
+{
+  double funcValue = 0.0;
+  long i, indz;
+  KINSOL_DATA* kdata = NULL;
+  double fnormtol  = 1.e-9;     /* function tolerance */
+  double scsteptol = 1.e-9;     /* step tolerance */
+
+  long int nni, nfe, nje, nfeD;
+
+  N_Vector z = NULL;
+  N_Vector s = NULL;
+  N_Vector c = NULL;
+
+  int glstr = KIN_LINESEARCH;   /* KIN_LINESEARCH */
+  int mset = 1;                 /* 0 */
+  void *kmem = NULL;
+
+  ASSERT(data->modelData.nInitEquations == initData->nz, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
+
+  kdata = (KINSOL_DATA*)malloc(sizeof(KINSOL_DATA));
+  ASSERT(kdata, "out of memory");
+
+  kdata->initData = initData;
+  kdata->data = data;
+
+  z = N_VNew_Serial(3*initData->nz);
+  ASSERT(z, "out of memory");
+
+  s = N_VNew_Serial(3*initData->nz);
+  ASSERT(s, "out of memory");
+
+  c = N_VNew_Serial(3*initData->nz);
+  ASSERT(c, "out of memory");
+
+  /* initial guess */
+  for(i=0; i<initData->nz; ++i)
+  {
+    NV_Ith_S(z, i) = initData->start[i];
+    NV_Ith_S(z, data->modelData.nInitEquations+2*i+0) = NV_Ith_S(z, i) - initData->min[i];
+    NV_Ith_S(z, data->modelData.nInitEquations+2*i+1) = NV_Ith_S(z, i) - initData->max[i];
+  }
+
+  N_VConst_Serial(1.0, s);        /* no scaling */
+
+  for(i=0; i<initData->nz; ++i)
+  {
+    NV_Ith_S(c, i) =  0.0;        /* no constraint on z[i] */
+    NV_Ith_S(c, data->modelData.nInitEquations+2*i+0) = 1.0;
+    NV_Ith_S(c, data->modelData.nInitEquations+2*i+1) = -1.0;
+  }
+
+  kmem = KINCreate();
+  ASSERT(kmem, "out of memory");
+
+  KINSetErrHandlerFn(kmem, kinsol_errorHandler, NULL);
+  KINSetUserData(kmem, kdata);
+  KINSetConstraints(kmem, c);
+  KINSetFuncNormTol(kmem, fnormtol);
+  KINSetScaledStepTol(kmem, scsteptol);
+  KINInit(kmem, kinsol_residuals, z);
+
+  /* Call KINDense to specify the linear solver */
+  KINDense(kmem, 3*initData->nz);
+
+  if(mset == 1 && glstr == KIN_NONE)
+    DEBUG_INFO(LOG_INIT, "using exact Newton");
+  else if(mset == 1)
+    DEBUG_INFO(LOG_INIT, "using exact Newton with line search");
+  else if(mset == 0 && glstr == KIN_NONE)
+    DEBUG_INFO(LOG_INIT, "using modified Newton");
+  else if(mset == 0)
+    DEBUG_INFO(LOG_INIT, "using modified Newton with line search");
+
+  DEBUG_INFO(LOG_INIT, "tolerance parameters:");
+  DEBUG_INFO_AL1(LOG_INIT, "function tolerance = %10.6g", fnormtol);
+  DEBUG_INFO_AL1(LOG_INIT, "step tolerance     = %10.6g", scsteptol);
+
+  KINSetMaxSetupCalls(kmem, mset);
+
+  globalInitialResiduals = initialResiduals;
+
+  KINSol(kmem,           /* KINSol memory block */
+         z,              /* initial guess on input; solution vector */
+         glstr,          /* global stragegy choice */
+         s,              /* scaling vector, for the variable cc */
+         s);             /* scaling vector for function values fval */
+
+  globalInitialResiduals = NULL;
+
+  KINGetNumNonlinSolvIters(kmem, &nni);
+  KINGetNumFuncEvals(kmem, &nfe);
+  KINDlsGetNumJacEvals(kmem, &nje);
+  KINDlsGetNumFuncEvals(kmem, &nfeD);
+
+  DEBUG_INFO(LOG_INIT, "final kinsol Statistics:");
+  DEBUG_INFO_AL1(LOG_INIT, "  KINGetNumNonlinSolvIters = %5ld", nni);
+  DEBUG_INFO_AL1(LOG_INIT, "  KINGetNumFuncEvals       = %5ld", nfe);
+  DEBUG_INFO_AL1(LOG_INIT, "  KINDlsGetNumJacEvals     = %5ld", nje);
+  DEBUG_INFO_AL1(LOG_INIT, "  KINDlsGetNumFuncEvals    = %5ld", nfeD);
+
+  /* Free memory */
+  N_VDestroy_Serial(z);
+  N_VDestroy_Serial(s);
+  N_VDestroy_Serial(c);
+  KINFree(&kmem);
+  free(kdata);
+
+  /* debug output */
+  indz = 0;
+  for(i=0; i<data->modelData.nStates; ++i)
+    if(data->modelData.realVarsData[i].attribute.fixed==0)
+      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->name[indz++], data->localData[0]->realVars[i]);
+
+  for(i=0; i<data->modelData.nParametersReal; ++i)
+    if(data->modelData.realParameterData[i].attribute.fixed == 0)
+      DEBUG_INFO_AL2(LOG_INIT, "   %s = %g", initData->name[indz++], data->simulationInfo.realParameter[i]);
+
+  return 0;
+}
+
 /*! \fn int newuoa_initialization(long nz, double *z)
-*
-*  This function performs initialization using the newuoa function, which is
-*  a trust region method that forms quadratic models by interpolation.
-*/
+ *
+ *  This function performs initialization using the newuoa function, which is
+ *  a trust region method that forms quadratic models by interpolation.
+ */
 int newuoa_initialization(DATA* data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals)
 {
   long IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : 0;
@@ -591,10 +793,10 @@ int newuoa_initialization(DATA* data, long nz, double *z, char** zName, double *
 }
 
 /*! \fn int simplex_initialization(long nz,double *z)
-*
-*  This function performs initialization by using the simplex algorithm.
-*  This does not require a jacobian for the residuals.
-*/
+ *
+ *  This function performs initialization by using the simplex algorithm.
+ *  This does not require a jacobian for the residuals.
+ */
 int simplex_initialization(DATA* data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals)
 {
   int ind = 0;
@@ -776,16 +978,6 @@ static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zN
   return reportResidualValue(data, funcValue, initialResiduals);
 }
 
-typedef struct INIT_DATA
-{
-  long nz;
-  long nStates;
-  long nParameters;
-  double *z;
-  double *zNominal;
-  char** zName;
-}INIT_DATA;
-
 /*! \fn freeInitData
  *
  *  \param [ref] [initData]
@@ -795,8 +987,11 @@ typedef struct INIT_DATA
 static void freeInitData(INIT_DATA *initData)
 {
   free(initData->z);
-  free(initData->zNominal);
-  free(initData->zName);
+  free(initData->start);
+  free(initData->min);
+  free(initData->max);
+  free(initData->nominal);
+  free(initData->name);
   free(initData);
 }
 
@@ -810,14 +1005,20 @@ static INIT_DATA *initializeInitData(DATA *data)
 {
   long i;
   long iz;
-  INIT_DATA *initData = (INIT_DATA*) malloc(sizeof(INIT_DATA));
+  INIT_DATA* initData = NULL;
+
+  initData = (INIT_DATA*)malloc(sizeof(INIT_DATA));
+  ASSERT(initData, "out of memory");
 
   initData->nz = 0;
   initData->nStates = 0;
   initData->nParameters = 0;
   initData->z = NULL;
-  initData->zNominal = NULL;
-  initData->zName = NULL;
+  initData->start = NULL;
+  initData->min = NULL;
+  initData->max = NULL;
+  initData->nominal = NULL;
+  initData->name = NULL;
 
   /* count unfixed states */
   for(i=0; i<data->modelData.nStates; ++i)
@@ -838,22 +1039,42 @@ static INIT_DATA *initializeInitData(DATA *data)
   }
 
   initData->z = (double*)calloc(initData->nz, sizeof(double));
-  initData->zNominal = (double*)calloc(initData->nz, sizeof(double));
-  initData->zName = (char**)calloc(initData->nz, sizeof(char*));
   ASSERT(initData->z, "out of memory");
-  ASSERT(initData->zNominal, "out of memory");
-  ASSERT(initData->zName, "out of memory");
+
+  initData->start = (double*)calloc(initData->nz, sizeof(double));
+  ASSERT(initData->start, "out of memory");
+
+  initData->min = (double*)calloc(initData->nz, sizeof(double));
+  ASSERT(initData->min, "out of memory");
+
+  initData->max = (double*)calloc(initData->nz, sizeof(double));
+  ASSERT(initData->max, "out of memory");
+
+  initData->nominal = (double*)calloc(initData->nz, sizeof(double));
+  ASSERT(initData->nominal, "out of memory");
+
+  initData->name = (char**)calloc(initData->nz, sizeof(char*));
+  ASSERT(initData->name, "out of memory");
 
   /* setup initData */
   for(i=0, iz=0; i<data->modelData.nStates; ++i)
   {
     if(data->modelData.realVarsData[i].attribute.fixed == 0)
     {
-      initData->zNominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
-      if(initData->zNominal[iz] == 0.0)
-        initData->zNominal[iz] = 1.0;
+      initData->name[iz] = (char*)data->modelData.realVarsData[i].info.name;
+      initData->nominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
+      if(initData->nominal[iz] == 0.0)
+      {
+        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+        WARNING_AL("nominal value is set to 1.0");
+        initData->nominal[iz] = 1.0;
+      }
+
       initData->z[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->zName[iz] = (char*)data->modelData.realVarsData[i].info.name;
+      initData->start[iz] = data->modelData.realVarsData[i].attribute.start;
+      initData->min[iz] = data->modelData.realVarsData[i].attribute.min;
+      initData->max[iz] = data->modelData.realVarsData[i].attribute.max;
+
       iz++;
     }
   }
@@ -862,11 +1083,20 @@ static INIT_DATA *initializeInitData(DATA *data)
   {
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      initData->zNominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
-      if(initData->zNominal[iz] == 0.0)
-        initData->zNominal[iz] = 1.0;
+      initData->name[iz] = (char*)data->modelData.realParameterData[i].info.name;
+      initData->nominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
+      if(initData->nominal[iz] == 0.0)
+      {
+        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+        WARNING_AL("nominal value is set to 1.0");
+        initData->nominal[iz] = 1.0;
+      }
+
       initData->z[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->zName[iz] = (char*)data->modelData.realParameterData[i].info.name;
+      initData->start[iz] = data->modelData.realParameterData[i].attribute.start;
+      initData->min[iz] = data->modelData.realParameterData[i].attribute.min;
+      initData->max[iz] = data->modelData.realParameterData[i].attribute.max;
+
       iz++;
     }
   }
@@ -943,7 +1173,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->zName[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -955,7 +1185,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->zName[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -977,23 +1207,23 @@ static int initialize(DATA *data, int optiMethod)
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
   for(i=0; i<initData->nStates; ++i)
-    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->zName[i]);
+    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->name[i]);
   DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
   for(; i<initData->nz; ++i)
-    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->zName[i]);
+    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->name[i]);
 
   if(optiMethod == IOM_NELDER_MEAD_EX)
-    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals, 0.0);
+    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals, 0.0);
   else if(optiMethod == IOM_NELDER_MEAD_EX2)
-    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals, 1.0);
+    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals, 1.0);
   else if(optiMethod == IOM_SIMPLEX)
-    retVal = simplex_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals);
+    retVal = simplex_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals);
   else if(optiMethod == IOM_NEWUOA)
-    retVal = newuoa_initialization(data, initData->nz, initData->z, initData->zName, initData->zNominal, initialResiduals);
+      retVal = newuoa_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals);
+  else if(optiMethod == IOM_KINSOL)
+      retVal = kinsol_initialization(data, initData, initialResiduals);
   else
-  {
-    WARNING1("unrecognized option -iom %s", optiMethodStr[optiMethod]);
-  }
+    THROW("unsupported option -iom");
 
   free(initialResiduals);
   freeInitData(initData);
@@ -1008,12 +1238,8 @@ static int initialize(DATA *data, int optiMethod)
  */
 static int none_initialization(DATA *data, int updateStartValues)
 {
-  int retVal = 0;
   long i;
   INIT_DATA *initData = initializeInitData(data);
-
-  /* start with the real initialization */
-  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
@@ -1040,11 +1266,11 @@ static int none_initialization(DATA *data, int updateStartValues)
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
   for(i=0; i<initData->nStates; ++i)
-    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->name[i], initData->z[i]);
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
   for(; i<initData->nStates+initData->nParameters; ++i)
-    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->zName[i], initData->z[i]);
+    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->name[i], initData->z[i]);
 
   storeInitialValues(data);
   storeInitialValuesParam(data);
@@ -1059,24 +1285,21 @@ static int none_initialization(DATA *data, int updateStartValues)
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
 
-  data->simulationInfo.initial = 0;
-
-  return retVal;
+  return 0;
 }
 
 /*! \fn state_initialization
  *
  *  \param [ref] [data]
  *  \param [in]  [optiMethod] specified optimization method
+ *  \param [in]  [updateStartValues]
  *
  *  \author lochel
  */
 static int state_initialization(DATA *data, int optiMethod, int updateStartValues)
 {
-  int retVal = 0, i;
-
-  /* start with the real initialization */
-  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+  int retVal = 0;
+  int i;
 
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
@@ -1125,8 +1348,6 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
-
-  data->simulationInfo.initial = 0;
 
   return retVal;
 }
@@ -1203,9 +1424,9 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
 {
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
+  double value;
   const char *pError = NULL;
   char* newVarname = NULL;
-  double readerValue;
 
   MODEL_DATA *mData = &(data->modelData);
   long i;
@@ -1217,7 +1438,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
-    WARNING1("%s", pError);
+    THROW2("unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
   }
   else
@@ -1240,7 +1461,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       }
       else
-        WARNING2("  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+        THROW1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import real parameters");
@@ -1261,7 +1482,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       }
       else
-        WARNING2("  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        THROW1("unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import integer parameters");
@@ -1278,12 +1499,12 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
 
       if(pVar)
       {
-        omc_matlab4_val(&(readerValue), &reader, pVar, initTime);
-        mData->integerParameterData[i].attribute.start = (modelica_integer) readerValue;
+        omc_matlab4_val(&value, &reader, pVar, initTime);
+        mData->integerParameterData[i].attribute.start = (modelica_integer)value;
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       }
       else
-        WARNING2("  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        THROW1("unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import boolean parameters");
@@ -1300,16 +1521,15 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
 
       if(pVar)
       {
-        omc_matlab4_val(&(readerValue), &reader, pVar, initTime);
-        mData->booleanParameterData[i].attribute.start = (modelica_boolean) readerValue;
-        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%d)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start);
+        omc_matlab4_val(&value, &reader, pVar, initTime);
+        mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
+        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       }
       else
-        WARNING2("  %s(start=%d)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start);
+        THROW1("unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
     }
     omc_free_matlab4_reader(&reader);
   }
-
 
   return 0;
 }
@@ -1325,12 +1545,13 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
  *  \author lochel
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
-    const char* pInitFile, double initTime)
+                   const char* pInitFile, double initTime)
 {
   int initMethod = IIM_STATE;               /* default method */
-  int optiMethod = IOM_NELDER_MEAD_EX;             /* default method */
+  int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
   int retVal = -1;
   int updateStartValues = 1;
+  int i;
 
   DEBUG_INFO(LOG_INIT, "### START INITIALIZATION ###");
 
@@ -1342,49 +1563,60 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   }
 
   /* if there are user-specified options, use them! */
-  if(pInitMethod)
+  if(pInitMethod && strcmp(pInitMethod, ""))
   {
-    if(!strcmp(pInitMethod, "none"))
-      initMethod = IIM_NONE;
-    else if(!strcmp(pInitMethod, "state"))
-      initMethod = IIM_STATE;
-    else
+    initMethod = IIM_UNKNOWN;
+
+    for(i=1; i<IIM_MAX; ++i)
+    {
+      if(!strcmp(pInitMethod, initMethodStr[i]))
+        initMethod = i;
+    }
+
+    if(initMethod == IIM_UNKNOWN)
     {
       WARNING1("unrecognized option -iim %s", pInitMethod);
-      WARNING_AL("current options are: none or state");
-      initMethod = IIM_UNKNOWN;
+      WARNING_AL("current options are:");
+      for(i=1; i<IIM_MAX; ++i)
+        WARNING_AL2("  %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
+      THROW("see last warning");
     }
   }
 
-  if(pOptiMethod)
+  if(pOptiMethod && strcmp(pOptiMethod, ""))
   {
-    if(!strcmp(pOptiMethod, "nelder_mead_ex"))
-      optiMethod = IOM_NELDER_MEAD_EX;
-    else if(!strcmp(pOptiMethod, "nelder_mead_ex2"))
-      optiMethod = IOM_NELDER_MEAD_EX2;
-    else if(!strcmp(pOptiMethod, "simplex"))
-      optiMethod = IOM_SIMPLEX;
-    else if(!strcmp(pOptiMethod, "newuoa"))
-      optiMethod = IOM_NEWUOA;
-    else
+    optiMethod = IOM_UNKNOWN;
+
+    for(i=1; i<IOM_MAX; ++i)
+    {
+      if(!strcmp(pOptiMethod, optiMethodStr[i]))
+        optiMethod = i;
+    }
+
+    if(optiMethod == IOM_UNKNOWN)
     {
       WARNING1("unrecognized option -iom %s", pOptiMethod);
-      WARNING_AL("current options are: nelder_mead_ex, nelder_mead_ex2, simplex or newuoa");
-      optiMethod = IOM_UNKNOWN;
+      WARNING_AL("current options are:");
+      for(i=1; i<IOM_MAX; ++i)
+        WARNING_AL2("  %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
+      THROW("see last warning");
     }
   }
 
-  DEBUG_INFO1(LOG_INIT,    "initialization method: %s", initMethodStr[initMethod]);
-  DEBUG_INFO_AL1(LOG_INIT, "optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO2(LOG_INIT,    "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
+  DEBUG_INFO_AL2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
   DEBUG_INFO_AL1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
 
+  /* start with the real initialization */
+  data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
     retVal = none_initialization(data, updateStartValues);
   else if(initMethod == IIM_STATE)
     retVal = state_initialization(data, optiMethod, updateStartValues);
   else
-    WARNING1("unrecognized option -iim %s", initMethodStr[initMethod]);
+    THROW("unsupported option -iim");
+  data->simulationInfo.initial = 0;
 
   DEBUG_INFO(LOG_INIT, "### END INITIALIZATION ###");
   return retVal;

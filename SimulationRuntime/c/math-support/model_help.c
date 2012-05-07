@@ -56,35 +56,20 @@ void update_DAEsystem(DATA *data)
   int IterationNum = 0;
 
   functionDAE(data, &needToIterate);
-  /*
-  if (DEBUG_FLAG(LOG_EVENTS))
-  {
-    sim_result_emit(data);
-  }
-  */
+
   while(checkForDiscreteChanges(data) || needToIterate)
   {
     if(needToIterate)
-    {
       DEBUG_INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
-    }
     else
-    {
       DEBUG_INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed!");
-    }
+
     storePreValues(data);
     functionDAE(data, &needToIterate);
-    /*
-    if (DEBUG_FLAG(LOG_EVENTS))
-    {
-      sim_result_emit(data);
-    }
-    */
+
     IterationNum++;
     if(IterationNum > IterationMax)
-    {
       THROW("ERROR: Too many event iterations. System is inconsistent!");
-    }
   }
 }
 

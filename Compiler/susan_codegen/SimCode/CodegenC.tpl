@@ -2138,6 +2138,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
+  SUNDIALSLIBS=-lsundials_kinsol -lsundials_nvecserial -llapack
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
@@ -2150,7 +2151,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: $(FILEPREFIX)_records.c
   
   omc_main_target: $(MAINOBJ) $(FILEPREFIX)_records.o $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-  <%\t%>$(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
+  <%\t%>$(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) $(SUNDIALSLIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
   
   <%fileNamePrefix%>.conv.c: $(FILEPREFIX).c
   <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
