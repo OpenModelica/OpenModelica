@@ -24,8 +24,5 @@ EXTERNALCMAKEFILE=Makefile
 
 include Makefile.common
 
-omdevinstall:
-
-
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status

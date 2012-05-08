@@ -39,7 +39,7 @@ $(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
 
 $(MATHOBJSPATH):%.o: %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(MATHPATH) -I$(UTILPATH) -I$(SOLVERPATH)
 
 $(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
@@ -55,14 +55,14 @@ ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,Modelic
 simulation/libf2c/libf2c.a: 
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 
-install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS) omdevinstall
+install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS)
 	# copy libraries
-	cp ./libSimulationRuntimeC.a \
+	cp -pu ./libSimulationRuntimeC.a \
 	   ./ModelicaExternalC/libModelicaExternalC.a \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	# copy header files
-	cp ./inline.h \
+	cp -pu ./inline.h \
 	   ./openmodelica.h \
 	   ./ModelicaExternalC/ModelicaUtilities.h \
 	   ./openmodelica_func.h \
@@ -75,7 +75,7 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	   ./simulation/results/*.h \
 	   ./meta/*.h  ./meta/gc/*.h $(builddir_inc)
 	# copy fmi stuff
-	cp ../fmi/export/*.h \
+	cp -pu ../fmi/export/*.h \
 	   ../fmi/export/fmu_model_interface.c \
 	   ../fmi/import/fmuWrapper.h \
 	   ../fmi/import/xmlparser.h $(builddir_inc)

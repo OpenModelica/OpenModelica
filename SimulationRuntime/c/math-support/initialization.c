@@ -38,6 +38,7 @@
 #include "openmodelica_func.h"
 #include "model_help.h"
 #include "read_matlab4.h"
+#include "events.h"
 
 #include <string.h>
 
