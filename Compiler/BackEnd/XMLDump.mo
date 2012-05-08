@@ -1917,7 +1917,7 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
-        dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
+        dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">\n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
