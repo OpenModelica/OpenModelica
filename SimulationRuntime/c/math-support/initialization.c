@@ -1066,8 +1066,14 @@ static INIT_DATA *initializeInitData(DATA *data)
       initData->nominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
       if(initData->nominal[iz] == 0.0)
       {
+        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
+         *                  because this breaks the FMI tests with these kind of messages:
+         *                  warning | (null)(nominal=0)
+         *                          | nominal value is set to 1.0
+         * put it back when everything works fine.
         WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
         WARNING_AL("nominal value is set to 1.0");
+        */
         initData->nominal[iz] = 1.0;
       }
 
@@ -1088,8 +1094,14 @@ static INIT_DATA *initializeInitData(DATA *data)
       initData->nominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
       if(initData->nominal[iz] == 0.0)
       {
+        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
+         *                  because this breaks the FMI tests with these kind of messages:
+         *                  warning | (null)(nominal=0)
+         *                          | nominal value is set to 1.0
+         * put it back when everything works fine.
         WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
         WARNING_AL("nominal value is set to 1.0");
+        */
         initData->nominal[iz] = 1.0;
       }
 
