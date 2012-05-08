@@ -238,16 +238,16 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
      if (DEBUG_FLAG(LOG_SOLVER))
      {
-       INFO1("DASSL call | value of idid: %ld", dasslData->idid);
+       INFO1("DASSL call | value of idid: %d", dasslData->idid);
        INFO1("DASSL call | current time value: %0.4g", solverInfo->currentTime);
        INFO1("DASSL call | current integration time value: %0.4g", dasslData->rwork[3]);
        INFO1("DASSL call | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
        INFO1("DASSL call | step size used on last successful step: %0.4g", dasslData->rwork[6]);
-       INFO1("DASSL call | number of steps taken so far: %ld", dasslData->iwork[10]);
-       INFO1("DASSL call | number of calls of functionODE() : %ld", dasslData->iwork[11]);
-       INFO1("DASSL call | number of calculation of jacobian : %ld", dasslData->iwork[12]);
-       INFO1("DASSL call | total number of convergence test failures: %ld", dasslData->iwork[13]);
-       INFO1("DASSL call | total number of error test failures: %ld", dasslData->iwork[14]);
+       INFO1("DASSL call | number of steps taken so far: %d", dasslData->iwork[10]);
+       INFO1("DASSL call | number of calls of functionODE() : %d", dasslData->iwork[11]);
+       INFO1("DASSL call | number of calculation of jacobian : %d", dasslData->iwork[12]);
+       INFO1("DASSL call | total number of convergence test failures: %d", dasslData->iwork[13]);
+       INFO1("DASSL call | total number of error test failures: %d", dasslData->iwork[14]);
      }
     /* save dassl stats */
     for (i = 0; i < numStatistics; i++)

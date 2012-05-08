@@ -640,7 +640,6 @@ void kinsol_errorHandler(int error_code, const char* module, const char* functio
  */
 int kinsol_initialization(DATA* data, INIT_DATA* initData, double* initialResiduals)
 {
-  double funcValue = 0.0;
   long i, indz;
   KINSOL_DATA* kdata = NULL;
   double fnormtol  = 1.e-9;     /* function tolerance */
