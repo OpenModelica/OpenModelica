@@ -688,7 +688,7 @@ algorithm
       DAE.Exp initialExp;
       DAE.ComponentRef name;
       String t;
-    case ({},_) then stringAppend(stringAppend("0.0 /*",ComponentReference.crefStr(d))," */ ;");
+    case ({},_) then stringAppend(stringAppend("0.0 /* ",ComponentReference.crefStr(d))," */ ;");
     case (SimCode.SIMVAR(name=name,initialValue=SOME(initialExp as DAE.BCONST(_))):: tail,_) 
     equation
       true = ComponentReference.crefEqual(name,d);
@@ -703,7 +703,7 @@ algorithm
       t = stringAppend("",ExpressionDump.printExpStr(replaceVars(initialExp,{},{},{})));
       t = stringAppend(t," /* ");
       t = stringAppend(t,ComponentReference.crefStr(d));
-      t = stringAppend(t,"*/");
+      t = stringAppend(t,"*/;");
     then t;
  
     case (_:: tail,_) then getInitExp(tail,d);
@@ -739,6 +739,7 @@ algorithm
       String s;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
+      list<SimCode.SimVar> algVars;
     case ({},_,_,_,_,_) then "";
     case (cref::tail,_,_,_,_,_) 
     equation
@@ -750,17 +751,43 @@ algorithm
       s=stringAppend(s,";\n");
     then stringAppend(s,generateDInit(tail,sample,vars,acc+1,total,nWhenClause));
  
-    case (cref::tail,_,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars),_,_,_) 
+    case (cref::tail,_,SimCode.SIMVARS(intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,algVars=algVars),_,_,_) 
     equation
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
       s=stringAppend(s,"]:=");
-      s=stringAppend(s,getInitExp(listAppend(intAlgVars,boolAlgVars),cref));
+      s=stringAppend(s,getInitExp(listAppend(algVars,listAppend(intAlgVars,boolAlgVars)),cref));
       s=stringAppend(s,"\n");
     then stringAppend(s,generateDInit(tail,sample,vars,acc+1,total,nWhenClause));
  
   end matchcontinue;
 end generateDInit;
+
+
+public function generateInitialParamEquations
+  input  SimCode.SimEqSystem eq;
+  output String t;
+algorithm
+  s:= 
+  matchcontinue (eq)
+  local
+    DAE.ComponentRef cref;
+    list<SimCode.SimVar> paramVars;
+    list<SimCode.SimVar> intParamVars;
+    list<SimCode.SimVar> boolParamVars;
+    Integer i;
+    DAE.Exp exp;
+    String t;
+  case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))
+        
+  equation
+    t = stringAppend("",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
+    t = stringAppend(t," := ");
+    t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));
+    t = stringAppend(t,";");
+  then t;
+  end matchcontinue;
+end generateInitialParamEquations;
 
 public function generateExtraParams
   input SimCode.SimEqSystem eq;
@@ -861,6 +888,41 @@ algorithm
 
 end getDiscRHSVars;
 
+
+public function simpleWhens
+  input list<SimCode.SimWhenClause> i;
+  output list<SimCode.SimWhenClause> o;
+algorithm
+  o:=
+    matchcontinue i
+    local 
+      list<SimCode.SimWhenClause> tail;
+      SimCode.SimWhenClause head;
+    case {} then {};
+    case (SimCode.SIM_WHEN_CLAUSE(conditions={(DAE.CALL(path=Absyn.IDENT(name="sample")),_)}) :: tail) 
+      then simpleWhens(tail);
+    case (head :: tail) 
+      then listAppend({head},simpleWhens(tail));
+    end matchcontinue;
+end simpleWhens;
+
+
+public function sampleWhens
+  input list<SimCode.SimWhenClause> i;
+  output list<SimCode.SimWhenClause> o;
+algorithm
+  o:=
+    matchcontinue i
+    local 
+      list<SimCode.SimWhenClause> tail;
+      SimCode.SimWhenClause head;
+    case {} then {};
+    case ((head as SimCode.SIM_WHEN_CLAUSE(conditions={(DAE.CALL(path=Absyn.IDENT(name="sample")),_)})) :: tail) 
+      then listAppend({head},sampleWhens(tail));
+    case (head :: tail) 
+      then sampleWhens(tail);
+    end matchcontinue;
+end sampleWhens;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
