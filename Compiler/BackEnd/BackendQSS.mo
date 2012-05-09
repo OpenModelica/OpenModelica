@@ -768,7 +768,7 @@ public function generateInitialParamEquations
   input  SimCode.SimEqSystem eq;
   output String t;
 algorithm
-  s:= 
+  t:= 
   matchcontinue (eq)
   local
     DAE.ComponentRef cref;
