@@ -67,6 +67,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   #ifndef __omc_<%lastIdentOfPath(modelInfo.name)%>_h_
   #define __omc_<%lastIdentOfPath(modelInfo.name)%>_h_
   #include "adevs.h"
+  #include "adevs_public_modelica_runtime.h"
 
   /**
    * Define the input and output type of the adevs models.
@@ -159,6 +160,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void restore_vars();
          void clear_event_flags();
          bool initial() const { return atInit; }
+
+		 // Junk for the OpenModelica c runtime
+		 adevs_omc_data* data;
 
       protected:
          /**
@@ -262,7 +266,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       epsilon(1E-4),
       helpVars(NULL),
       helpVars_saved(NULL),
-      zc(NULL)
+      zc(NULL),
+	  data(new adevs_omc_data())
    {
        timeValue = 0.0;
        if (numHelpVars() > 0)
@@ -276,6 +281,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
    {
+        delete data;
         if (helpVars != NULL) delete [] helpVars;
         if (helpVars_saved != NULL) delete [] helpVars_saved;
         if (zc != NULL) delete [] zc;
@@ -334,7 +340,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          '<%preExp%>res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
      <<
-     static void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag)
+     static void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag, void*)
      {
         active_model->residualFunc<%index%>_cpp(n,xloc,res,iflag);
      }
@@ -742,8 +748,8 @@ case SIM_WHEN_CLAUSE(__) then
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
@@ -923,8 +929,8 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -1062,7 +1068,7 @@ case SES_NONLINEAR(__) then
     nls_xold[<%i0%>] = $P$old<%cref(name)%>;
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, eqn_info_<%index%>);
+  solve_nonlinear_system(residualFunc<%index%>, eqn_info_<%index%>,(void*)NULL);
   <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
   end_nonlinear_system();<%inlineCrefs(context,crefs)%>
   >>
@@ -1077,8 +1083,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1099,8 +1105,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1128,8 +1134,8 @@ match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1142,8 +1148,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      let &helpInits += 'helpVars[<%hidx%>] = <%helpInit%>;'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1189,7 +1195,7 @@ template cref(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "timeValue"
   case WILD(__) then ''
   else "$P" + crefToCStr(cr)
 end cref;
@@ -1235,7 +1241,7 @@ template crefM(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "timeValue"
   else "P" + crefToMStr(cr)
 end crefM;
 
@@ -3017,7 +3023,7 @@ case SIMULATION(genDiscrete=true) then
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
     <%preIf%>
-    if (<%helpVarIndices |> idx => '(localData->helpVars[<%idx%>] && !localData->helpVars_saved[<%idx%>]) /* edge */' ;separator=" || "%>) {
+    if (<%helpVarIndices |> idx => '(helpVars[<%idx%>] && !helpVars_saved[<%idx%>]) /* edge */' ;separator=" || "%>) {
       <%statements%>
     }
     <%else%>
@@ -3059,7 +3065,7 @@ template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>
-      localData->helpVars[<%i%>] = <%res%>;
+      helpVars[<%i%>] = <%res%>;
       <%restPre%>
       >>
 end algStatementWhenPre;
@@ -3075,7 +3081,7 @@ case SOME(when as STMT_WHEN(__)) then
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
   let elseCondStr = (when.helpVarIndices |> hidx =>
-      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
+      '(helpVars[<%hidx%>] && !helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   <<
   else if (<%elseCondStr%>) {
@@ -3103,7 +3109,7 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
       let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
-      localData->helpVars[<%firstInt%>] = <%firstExpPart%>;
+      helpVars[<%firstInt%>] = <%firstExpPart%>;
       <%rest%>
       >>
 end algStatementWhenPreAssigns;
@@ -3907,7 +3913,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, timeValue, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
   
   case CALL(path=IDENT(name="integer"),
