@@ -1472,7 +1472,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       }
       else
-        THROW1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
+        WARNING1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import real parameters");
@@ -1493,7 +1493,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       }
       else
-        THROW1("unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
+        WARNING1("unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import integer parameters");
@@ -1515,7 +1515,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       }
       else
-        THROW1("unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
+        WARNING1("unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
     }
 
     DEBUG_INFO(LOG_INIT, "import boolean parameters");
@@ -1537,7 +1537,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
         DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       }
       else
-        THROW1("unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
+        WARNING1("unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
     }
     omc_free_matlab4_reader(&reader);
   }
