@@ -153,7 +153,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 #endif
   /* increase array */
   tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
-  ASSERT3(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
+  ASSERT3(tmp, "Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
   for(i = 0; i < ninterpolationTables; ++i)
   {
     tmp[i] = interpolationTables[i];
@@ -247,7 +247,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 #endif
   /* increase array */
   tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
-  ASSERT3(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
+  ASSERT3(tmp, "Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
   for(i = 0; i < ninterpolationTables2D; ++i)
   {
     tmp[i] = interpolationTables2D[i];
@@ -362,60 +362,60 @@ char readChr(const char **ptr, size_t *len, char chr)
 }
 
 char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char **name,
-  size_t *rows, size_t *cols)
+               size_t *rows, size_t *cols)
 {
   char* endptr;
   size_t hLen = hdrLen;
   size_t len = 0;
 
-  trim(&hdr,&hLen);
+  trim(&hdr, &hLen);
 
-  if (strncmp("double",hdr,fmin((size_t)6,hLen)) != 0)
+  if(strncmp("double", hdr, fmin((size_t)6, hLen)) != 0)
     return 0;
   hdr += 6;
   hLen -= 6;
   trim(&hdr, &hLen);
 
   for(len = 1; len < hLen; ++len)
-    if (isspace(hdr[len]) || hdr[len] == '(')
+    if(isspace(hdr[len]) || hdr[len] == '(')
     {
       *name = hdr;
       hdr += len;
       hLen -= len;
       break;
     }
-  if (!readChr(&hdr,&hLen,'('))
+  if(!readChr(&hdr, &hLen, '('))
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
-  *rows = (size_t)strtol(hdr,&endptr,10);
-  if (hdr == endptr)
+  *rows = (size_t)strtol(hdr, &endptr, 10);
+  if(hdr == endptr)
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
-  }
-  hLen -= endptr-hdr;
-  hdr = endptr;
-  if (!readChr(&hdr,&hLen,','))
-  {
-    fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
-  }
-  *cols = (size_t)strtol(hdr,&endptr,10);
-  if (hdr == endptr)
-  {
-    fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
   hLen -= endptr-hdr;
   hdr = endptr;
-  readChr(&hdr,&hLen,')');
+  if(!readChr(&hdr, &hLen, ','))
+  {
+    fclose(f->fp);
+    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+  }
+  *cols = (size_t)strtol(hdr, &endptr, 10);
+  if(hdr == endptr)
+  {
+    fclose(f->fp);
+    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+  }
+  hLen -= endptr-hdr;
+  hdr = endptr;
+  readChr(&hdr, &hLen, ')');
 
-  if ((hLen > 0) && ((*hdr) != '#'))
+  if((hLen > 0) && ((*hdr) != '#'))
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
 
   return 1;
@@ -424,31 +424,32 @@ char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char **name,
 size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 {
   char *tmp = NULL;
-  size_t col=0;
-  size_t i=0;
-  int ch=0;
+  size_t col = 0;
+  size_t i = 0;
+  int ch = 0;
   char *buf = *data;
-  memset(*data,0,sizeof(char)*(*size));
+  memset(*data, 0, sizeof(char)*(*size));
+
   /* read whole line */
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
-    if (col >= *size)
+    if(col >= *size)
     {
-      char *tmp = (char*)calloc(*size+100,sizeof(char));
-      ASSERT1(tmp,"Not enough memory for Filename %s",f->filename);
-      for (i = 0; i < *size; i++)
+      char *tmp = (char*)calloc(*size+100, sizeof(char));
+      ASSERT1(tmp, "Not enough memory for Filename %s", f->filename);
+      for(i = 0; i < *size; i++)
         tmp[i] = buf[i];
-      if (buf)
+      if(buf)
         free(buf);
       *data = tmp;
       buf = *data;
       *size = *size+100;
     }
     ch = fgetc(f->fp);
-    if (ferror(f->fp))
+    if(ferror(f->fp))
     {
       fclose(f->fp);
-      THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
+      THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
     }
     if(ch == '\n')
       break;
@@ -618,7 +619,7 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
-        THROW3("Table `%s' has zero dimensions [%d,%d].",tableName,f->hdr.mrows,f->hdr.ncols);
+        THROW3("Table `%s' has zero dimensions [%lu,%lu].", tableName, (unsigned long)f->hdr.mrows, (unsigned long)f->hdr.ncols);
       }
       *rows = f->hdr.mrows;
       *cols = f->hdr.ncols;
@@ -781,7 +782,7 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
     if (ferror(f->fp))
     {
       fclose(f->fp);
-      THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
+      THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
     }
     if(ch == '\n')
       break;
@@ -1121,7 +1122,7 @@ double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, s
 
 const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
 {
-  ASSERT6(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,%d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
   return tpl->data[tpl->colWise ? col*tpl->rows+row : row*tpl->cols+col];
 }
 void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
@@ -1478,7 +1479,7 @@ double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2,
 }
 const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
-  ASSERT6(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,%d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
   return tpl->data[row*tpl->cols+col];
 }
 

@@ -657,6 +657,18 @@ int kinsol_initialization(DATA* data, INIT_DATA* initData, double* initialResidu
 
   ASSERT(data->modelData.nInitEquations == initData->nz, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
 
+  if(mset == 1 && glstr == KIN_NONE)
+    DEBUG_INFO(LOG_INIT, "using exact Newton");
+  else if(mset == 1)
+    DEBUG_INFO(LOG_INIT, "using exact Newton with line search");
+  else if(mset == 0 && glstr == KIN_NONE)
+    DEBUG_INFO(LOG_INIT, "using modified Newton");
+  else if(mset == 0)
+    DEBUG_INFO(LOG_INIT, "using modified Newton with line search");
+
+  DEBUG_INFO_AL1(LOG_INIT, "  function tolerance = %10.6g", fnormtol);
+  DEBUG_INFO_AL1(LOG_INIT, "  step tolerance     = %10.6g", scsteptol);
+
   kdata = (KINSOL_DATA*)malloc(sizeof(KINSOL_DATA));
   ASSERT(kdata, "out of memory");
 
@@ -701,19 +713,6 @@ int kinsol_initialization(DATA* data, INIT_DATA* initData, double* initialResidu
 
   /* Call KINDense to specify the linear solver */
   KINDense(kmem, 3*initData->nz);
-
-  if(mset == 1 && glstr == KIN_NONE)
-    DEBUG_INFO(LOG_INIT, "using exact Newton");
-  else if(mset == 1)
-    DEBUG_INFO(LOG_INIT, "using exact Newton with line search");
-  else if(mset == 0 && glstr == KIN_NONE)
-    DEBUG_INFO(LOG_INIT, "using modified Newton");
-  else if(mset == 0)
-    DEBUG_INFO(LOG_INIT, "using modified Newton with line search");
-
-  DEBUG_INFO(LOG_INIT, "tolerance parameters:");
-  DEBUG_INFO_AL1(LOG_INIT, "function tolerance = %10.6g", fnormtol);
-  DEBUG_INFO_AL1(LOG_INIT, "step tolerance     = %10.6g", scsteptol);
 
   KINSetMaxSetupCalls(kmem, mset);
 

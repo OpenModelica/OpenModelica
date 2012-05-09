@@ -188,8 +188,8 @@ static void* dtostr(double d)
   }
   *res = 0;
   freedtoa(cporig);
-  if (debug) fprintf(stderr, "%.15g => %s\n", d, MMC_STRINGDATA(retval));
-  if (debug) fprintf(stderr, "%d => %d\n", strlen(MMC_STRINGDATA(retval)), MMC_STRLEN(retval));
+  if(debug) fprintf(stderr, "%.15g => %s\n", d, MMC_STRINGDATA(retval));
+  if(debug) fprintf(stderr, "%lu => %lu\n", (unsigned long)strlen(MMC_STRINGDATA(retval)), (unsigned long)MMC_STRLEN(retval));
   MMC_CHECK_STRING(retval);
   return retval;
 }
