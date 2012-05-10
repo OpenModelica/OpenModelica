@@ -100,7 +100,10 @@ uniontype IterOptions
   end ITER_OPTIONS;
 end IterOptions;
 
-  
+replaceable type ArgType1 subtypeof Any;
+replaceable type ArgType2 subtypeof Any;
+replaceable type ArgType3 subtypeof Any;
+
 //by default, we will parse new lines in every non-token string
 public function writeStr
   input Text inText;
@@ -747,13 +750,15 @@ algorithm
   outString := matchcontinue (inText)
     local
       Text txt;
-      String str;
+      String str, buf_old;
     case (txt)
       equation
+        buf_old = Print.getString();
         Print.clearBuf();
         textStringBuf(txt);
         str = Print.getString();
         Print.clearBuf();
+        Print.printBuf(buf_old);
       then
         str;
     
@@ -1534,17 +1539,14 @@ end failIfTrue;
 
 public function tplString
   input Tpl_Fun inFun;
-  input Type_a inArg;
+  input ArgType1 inArg;
   output String outString;
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;
+    input ArgType1 inArgA;
     output Text out_txt;
-    replaceable type Type_a subtypeof Any;
   end Tpl_Fun;
-  replaceable type Type_a subtypeof Any;
-
 protected
   Text txt;
   Integer nErr;
@@ -1557,20 +1559,16 @@ end tplString;
 
 public function tplString2
   input Tpl_Fun inFun;
-  input Type_a inArgA;
-  input Type_b inArgB;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
   output String outString;
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;
-    input Type_b inArgB;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
     output Text out_txt;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
   end Tpl_Fun;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
 protected
   Text txt;
   Integer nErr;
@@ -1583,24 +1581,18 @@ end tplString2;
 
 public function tplString3
   input Tpl_Fun inFun;
-  input Type_a inArgA;
-  input Type_b inArgB;
-  input Type_c inArgC;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
+  input ArgType3 inArgC;
   output String outString;
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;
-    input Type_b inArgB;
-    input Type_c inArgC;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType3 inArgC;
     output Text out_txt;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
-    replaceable type Type_c subtypeof Any;
   end Tpl_Fun;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
 protected
   Text txt;
   Integer nErr;
@@ -1611,23 +1603,80 @@ algorithm
   outString := textString(txt);
 end tplString3;
 
-
-
-public function tplNoret2
+public function tplPrint
   input Tpl_Fun inFun;
-  input Type_a inArg;
-  input Type_b inArg2;
+  input ArgType1 inArg;
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;
-    input Type_b inArgB;
+    input ArgType1 inArgA;
     output Text out_txt;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
   end Tpl_Fun;
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
+protected
+  Text txt;
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  txt := inFun(emptyTxt, inArg);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+  textStringBuf(txt);
+end tplPrint;
+
+public function tplPrint2
+  input Tpl_Fun inFun;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
+    
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    output Text out_txt;
+  end Tpl_Fun;
+protected
+  Text txt;
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  txt := inFun(emptyTxt, inArgA, inArgB);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+  textStringBuf(txt);
+end tplPrint2;
+
+public function tplPrint3
+  input Tpl_Fun inFun;
+  input ArgType1 inArgA;
+  input ArgType2 inArgB;
+  input ArgType3 inArgC;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    input ArgType3 inArgC;
+    output Text out_txt;
+  end Tpl_Fun;
+protected
+  Text txt;
+  Integer nErr;
+algorithm
+  nErr := Error.getNumErrorMessages();
+  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);
+  failIfTrue(Error.getNumErrorMessages() > nErr);
+  textStringBuf(txt);
+end tplPrint3;
+
+public function tplNoret2
+  input Tpl_Fun inFun;
+  input ArgType1 inArg;
+  input ArgType2 inArg2;
+    
+  partial function Tpl_Fun
+    input Text in_txt;
+    input ArgType1 inArgA;
+    input ArgType2 inArgB;
+    output Text out_txt;
+  end Tpl_Fun;
 protected
   Integer nErr;
 algorithm
@@ -1636,19 +1685,15 @@ algorithm
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret2;
 
-
-
 public function tplNoret
   input Tpl_Fun inFun;
-  input Type_a inArg;
+  input ArgType1 inArg;
     
   partial function Tpl_Fun
     input Text in_txt;
-    input Type_a inArgA;
+    input ArgType1 inArgA;
     output Text out_txt;
-    replaceable type Type_a subtypeof Any;
   end Tpl_Fun;
-  replaceable type Type_a subtypeof Any;
 protected
   Integer nErr;
 algorithm

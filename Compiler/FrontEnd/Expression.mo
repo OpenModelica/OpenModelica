@@ -7709,5 +7709,104 @@ algorithm
   newIndex := index + 1;
 end makeEnumLiteral;    
 
+public function priority
+  "Returns an integer priority given an expression, which is used by
+   ExpressionDumpTpl to add parentheses when dumping expressions. The inLhs
+   argument should be true if the expression occurs on the left side of a binary
+   operation, otherwise false. This is because we don't need to add parentheses
+   to expressions such as x * y / z, but x / (y * z) needs them, so the
+   priorities of some binary operations differ depending on which side they are."
+  input DAE.Exp inExp;
+  input Boolean inLhs;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inExp, inLhs)
+    local
+      DAE.Operator op;
+
+    case (DAE.BINARY(operator = op), false) then priorityBinopRhs(op);
+    case (DAE.BINARY(operator = op), true) then priorityBinopLhs(op);
+    case (DAE.UNARY(operator = _), _) then 4;
+    case (DAE.LBINARY(operator = op), _) then priorityLBinop(op);
+    case (DAE.LUNARY(operator = _), _) then 7;
+    case (DAE.RELATION(operator = op), _) then 6;
+    case (DAE.RANGE(ty = _), _) then 10;
+    case (DAE.IFEXP(expCond = _), _) then 11;
+    else 0;
+  end match;
+end priority;
+
+protected function priorityBinopLhs
+  "Returns the priority for a binary operation on the left hand side. Add and
+   sub has the same priority, and mul and div too, in contrast with
+   priorityBinopRhs."
+  input DAE.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case DAE.ADD(ty = _) then 5;
+    case DAE.SUB(ty = _) then 5;
+    case DAE.MUL(ty = _) then 2;
+    case DAE.DIV(ty = _) then 2;
+    case DAE.POW(ty = _) then 1;
+    case DAE.ADD_ARR(ty = _) then 5;
+    case DAE.SUB_ARR(ty = _) then 5;
+    case DAE.MUL_ARR(ty = _) then 2;
+    case DAE.DIV_ARR(ty = _) then 2;
+    case DAE.MUL_ARRAY_SCALAR(ty = _) then 2;
+    case DAE.ADD_ARRAY_SCALAR(ty = _) then 5;
+    case DAE.SUB_SCALAR_ARRAY(ty = _) then 5;
+    case DAE.MUL_SCALAR_PRODUCT(ty = _) then 2;
+    case DAE.MUL_MATRIX_PRODUCT(ty = _) then 2;
+    case DAE.DIV_ARRAY_SCALAR(ty = _) then 2;
+    case DAE.DIV_SCALAR_ARRAY(ty = _) then 2;
+    case DAE.POW_ARRAY_SCALAR(ty = _) then 1;
+    case DAE.POW_SCALAR_ARRAY(ty = _) then 1;
+    case DAE.POW_ARR(ty = _) then 1;
+    case DAE.POW_ARR2(ty = _) then 1;
+  end match;
+end priorityBinopLhs;
+
+protected function priorityBinopRhs
+  "Returns the priority for a binary operation on the right hand side. Add and
+   sub has different priorities, and mul and div too, in contrast with
+   priorityBinopLhs."
+  input DAE.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case DAE.ADD(ty = _) then 6;
+    case DAE.SUB(ty = _) then 5;
+    case DAE.MUL(ty = _) then 3;
+    case DAE.DIV(ty = _) then 2;
+    case DAE.POW(ty = _) then 1;
+    case DAE.ADD_ARR(ty = _) then 6;
+    case DAE.SUB_ARR(ty = _) then 5;
+    case DAE.MUL_ARR(ty = _) then 3;
+    case DAE.DIV_ARR(ty = _) then 2;
+    case DAE.MUL_ARRAY_SCALAR(ty = _) then 3;
+    case DAE.ADD_ARRAY_SCALAR(ty = _) then 6;
+    case DAE.SUB_SCALAR_ARRAY(ty = _) then 5;
+    case DAE.MUL_SCALAR_PRODUCT(ty = _) then 3;
+    case DAE.MUL_MATRIX_PRODUCT(ty = _) then 3;
+    case DAE.DIV_ARRAY_SCALAR(ty = _) then 2;
+    case DAE.DIV_SCALAR_ARRAY(ty = _) then 2;
+    case DAE.POW_ARRAY_SCALAR(ty = _) then 1;
+    case DAE.POW_SCALAR_ARRAY(ty = _) then 1;
+    case DAE.POW_ARR(ty = _) then 1;
+    case DAE.POW_ARR2(ty = _) then 1;
+  end match;
+end priorityBinopRhs;
+
+protected function priorityLBinop
+  input DAE.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case DAE.AND(ty = _) then 8;
+    case DAE.OR(ty = _) then 9;
+  end match;
+end priorityLBinop;
+
 end Expression;
 

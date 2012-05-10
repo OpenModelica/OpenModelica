@@ -1,6 +1,7 @@
 package SCodeDumpTpl
 
 import interface SCodeTV;
+import AbsynDumpTpl;
 
 template dumpProgram(list<SCode.Element> program)
 ::= dumpElements(program, false)
@@ -107,11 +108,11 @@ case IMPORT(__) then
   let visibility_str = dumpVisibility(visibility)
   let import_str = match imp
     case NAMED_IMPORT(__) then
-      'import <%name%> = <%dumpPath(path)%>'
+      'import <%name%> = <%AbsynDumpTpl.dumpPath(path)%>'
     case QUAL_IMPORT(__) then
-      'import <%dumpPath(path)%>'
+      'import <%AbsynDumpTpl.dumpPath(path)%>'
     case UNQUAL_IMPORT(__) then
-      'import <%dumpPath(path)%>.*'
+      'import <%AbsynDumpTpl.dumpPath(path)%>.*'
     else errorMsg("SCodeDump.dumpImport: Unknown import.")
   '<%visibility_str%><%import_str%>'
 end dumpImport;
@@ -120,7 +121,7 @@ template dumpExtends(SCode.Element extends)
 ::=
 match extends
   case EXTENDS(__) then
-    let bc_str = dumpPath(baseClassPath)
+    let bc_str = AbsynDumpTpl.dumpPath(baseClassPath)
     let visibility_str = dumpVisibility(visibility)
     let mod_str = dumpModifier(modifications)
     let ann_str = dumpAnnotationOpt(ann)
@@ -194,7 +195,7 @@ match classDef
     <%cdef_str%>
     >>
   case DERIVED(__) then
-    let type_str = dumpTypeSpec(typeSpec)
+    let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
     let attr_str = dumpAttributes(attributes) 
     let cmt_str = dumpCommentOpt(comment) 
@@ -207,12 +208,12 @@ match classDef
     let cmt_str = dumpCommentOpt(comment)
     '= enumeration(<%enum_str%>)<%cmt_str%>'
   case PDER(__) then
-    let func_str = dumpPath(functionPath)
+    let func_str = AbsynDumpTpl.dumpPath(functionPath)
     let cmt_str = dumpCommentOpt(comment)
     '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)<%cmt_str%>'
   case OVERLOAD(__) then
     let cmt_str = dumpCommentOpt(comment)
-    '= overload(<%pathLst |> path => dumpPath(path); separator=", "%>)<%cmt_str%>'
+    '= overload(<%pathLst |> path => AbsynDumpTpl.dumpPath(path); separator=", "%>)<%cmt_str%>'
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
@@ -250,9 +251,9 @@ match component
     let cc_str = dumpReplaceableConstrainClass(prefixes)
     let attr_pre_str = dumpAttributes(attributes)
     let attr_dim_str = dumpAttributeDim(attributes)
-    let type_str = dumpTypeSpec(typeSpec)
+    let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
-    let cond_str = match condition case SOME(cond) then ' if <%dumpExp(cond)%>'
+    let cond_str = match condition case SOME(cond) then ' if <%AbsynDumpTpl.dumpExp(cond)%>'
     let cmt_str = dumpCommentOpt(comment)
     '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cond_str%><%cmt_str%>' 
 end dumpComponent;
@@ -296,34 +297,34 @@ template dumpEEquation(SCode.EEquation equation)
 match equation
   case EQ_IF(__) then dumpIfEEquation(equation)
   case EQ_EQUALS(__) then
-    let lhs_str = dumpExp(expLeft)
-    let rhs_str = dumpExp(expRight)
+    let lhs_str = AbsynDumpTpl.dumpExp(expLeft)
+    let rhs_str = AbsynDumpTpl.dumpExp(expRight)
     let cmt_str = dumpCommentOpt(comment)
     '<%lhs_str%> = <%rhs_str%><%cmt_str%>;'
   case EQ_CONNECT(__) then
-    let lhs_str = dumpCref(crefLeft)
-    let rhs_str = dumpCref(crefRight)
+    let lhs_str = AbsynDumpTpl.dumpCref(crefLeft)
+    let rhs_str = AbsynDumpTpl.dumpCref(crefRight)
     let cmt_str = dumpCommentOpt(comment)
     'connect(<%lhs_str%>, <%rhs_str%>)<%cmt_str%>;'
   case EQ_FOR(__) then dumpForEEquation(equation)
   case EQ_WHEN(__) then dumpWhenEEquation(equation)
   case EQ_ASSERT(__) then
-    let cond_str = dumpExp(condition)
-    let msg_str = dumpExp(message)
+    let cond_str = AbsynDumpTpl.dumpExp(condition)
+    let msg_str = AbsynDumpTpl.dumpExp(message)
     let cmt_str = dumpCommentOpt(comment)
     'assert(<%cond_str%>, <%msg_str%>)<%cmt_str%>;'
   case EQ_TERMINATE(__) then
-    let msg_str = dumpExp(message)
+    let msg_str = AbsynDumpTpl.dumpExp(message)
     let cmt_str = dumpCommentOpt(comment)
     'terminate(<%msg_str%>)<%cmt_str%>;'
   case EQ_REINIT(__) then
-    let cref_str = dumpCref(cref)
-    let exp_str = dumpExp(expReinit)
+    let cref_str = AbsynDumpTpl.dumpCref(cref)
+    let exp_str = AbsynDumpTpl.dumpExp(expReinit)
     let cmt_str = dumpCommentOpt(comment)
     'reinit(<%cref_str%>, <%exp_str%>)<%cmt_str%>;'
   case EQ_NORETCALL(__) then
-    let func_str = dumpCref(functionName)
-    let args_str = dumpFunctionArgs(functionArgs)
+    let func_str = AbsynDumpTpl.dumpCref(functionName)
+    let args_str = AbsynDumpTpl.dumpFunctionArgs(functionArgs)
     let cmt_str = dumpCommentOpt(comment)
     '<%func_str%>(<%args_str%>)<%cmt_str%>;'
   else errorMsg("SCodeDump.dumpEEquation: Unknown EEquation.")
@@ -334,7 +335,7 @@ template dumpIfEEquation(SCode.EEquation ifequation)
 match ifequation
   case EQ_IF(condition = if_cond :: elseif_conds,
              thenBranch = if_branch :: elseif_branches) then
-    let if_cond_str = dumpExp(if_cond)
+    let if_cond_str = AbsynDumpTpl.dumpExp(if_cond)
     let if_branch_str = (if_branch |> e => dumpEEquation(e) ;separator="\n")
     let elseif_str = dumpElseIfEEquation(elseif_conds, elseif_branches)
     let else_str = if elseBranch then
@@ -358,7 +359,7 @@ match condition
   case cond :: rest_conds then
     match branches
       case branch :: rest_branches then
-        let cond_str = dumpExp(cond)
+        let cond_str = AbsynDumpTpl.dumpExp(cond)
         let branch_str = (branch |> e => dumpEEquation(e) ;separator="\n")
         let rest_str = dumpElseIfEEquation(rest_conds, rest_branches)
         <<
@@ -372,7 +373,7 @@ template dumpForEEquation(SCode.EEquation for_equation)
 ::=
 match for_equation
   case EQ_FOR(__) then
-    let range_str = dumpExp(range)
+    let range_str = AbsynDumpTpl.dumpExp(range)
     let eq_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
     let cmt_str = dumpCommentOpt(comment)
     <<
@@ -386,10 +387,10 @@ template dumpWhenEEquation(SCode.EEquation when_equation)
 ::=
 match when_equation
   case EQ_WHEN(__) then
-    let cond_str = dumpExp(condition)
+    let cond_str = AbsynDumpTpl.dumpExp(condition)
     let body_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
     let else_str = (elseBranches |> (else_cond, else_body) =>
-      let else_cond_str = dumpExp(else_cond)
+      let else_cond_str = AbsynDumpTpl.dumpExp(else_cond)
       let else_body_str = (else_body |> e => dumpEEquation(e) ;separator="\n")
       <<
       elsewhen <%else_cond_str%> then
@@ -426,8 +427,8 @@ template dumpStatement(SCode.Statement statement)
 ::=
 match statement
   case ALG_ASSIGN(__) then
-    let lhs_str = dumpExp(assignComponent)
-    let rhs_str = dumpExp(value)
+    let lhs_str = AbsynDumpTpl.dumpExp(assignComponent)
+    let rhs_str = AbsynDumpTpl.dumpExp(value)
     let cmt_str = dumpCommentOpt(comment)
     '<%lhs_str%> := <%rhs_str%><%cmt_str%>;'
   case ALG_IF(__) then dumpIfStatement(statement)
@@ -435,8 +436,8 @@ match statement
   case ALG_WHILE(__) then dumpWhileStatement(statement)
   case ALG_WHEN_A(__) then dumpWhenStatement(statement)
   case ALG_NORETCALL(__) then
-    let func_str = dumpCref(functionCall)
-    let args_str = dumpFunctionArgs(functionArgs)
+    let func_str = AbsynDumpTpl.dumpCref(functionCall)
+    let args_str = AbsynDumpTpl.dumpFunctionArgs(functionArgs)
     let cmt_str = dumpCommentOpt(comment)
     '<%func_str%>(<%args_str%>)<%cmt_str%>;'
   case ALG_RETURN(__) then
@@ -452,7 +453,7 @@ template dumpIfStatement(SCode.Statement if_statement)
 ::=
 match if_statement
   case ALG_IF(__) then
-    let cond_str = dumpExp(boolExpr)
+    let cond_str = AbsynDumpTpl.dumpExp(boolExpr)
     let true_branch_str = dumpStatements(trueBranch)
     let else_if_str = dumpElseIfStatements(elseIfBranch)
     let else_branch_str = dumpStatements(elseBranch)
@@ -470,7 +471,7 @@ end dumpIfStatement;
 template dumpElseIfStatements(list<tuple<Absyn.Exp, list<SCode.Statement>>> else_if)
 ::=
   else_if |> eib as (cond, body) =>
-    let cond_str = dumpExp(cond)
+    let cond_str = AbsynDumpTpl.dumpExp(cond)
     let body_str = dumpStatements(body)
     <<
     elseif <%cond_str%> then
@@ -482,7 +483,7 @@ template dumpForStatement(SCode.Statement for_statement)
 ::=
 match for_statement
   case ALG_FOR(__) then
-    let iter_str = (iterators |> i => dumpForIterator(i) ;separator=", ")
+    let iter_str = (iterators |> i => AbsynDumpTpl.dumpForIterator(i) ;separator=", ")
     let body_str = dumpStatements(forBody)
     let cmt_str = dumpCommentOpt(comment)
     <<
@@ -492,20 +493,11 @@ match for_statement
     >>
 end dumpForStatement;
 
-template dumpForIterator(Absyn.ForIterator iterator)
-::=
-match iterator
-  case ITERATOR(__) then
-    let range_str = match range case SOME(r) then ' in <%dumpExp(r)%>'
-    let guard_str = match guardExp case SOME(g) then ' guard <%dumpExp(g)%>'
-    '<%name%><%range_str%><%guard_str%>'
-end dumpForIterator;
-    
 template dumpWhileStatement(SCode.Statement while_statement)
 ::=
 match while_statement
   case ALG_WHILE(__) then
-    let cond_str = dumpExp(boolExpr)
+    let cond_str = AbsynDumpTpl.dumpExp(boolExpr)
     let body_str = dumpStatements(whileBody)
     let cmt_str = dumpCommentOpt(comment)
     <<
@@ -519,10 +511,10 @@ template dumpWhenStatement(SCode.Statement when_statement)
 ::=
 match when_statement
   case ALG_WHEN_A(branches = ((when_cond, when_body) :: elsewhens)) then
-    let when_cond_str = dumpExp(when_cond)
+    let when_cond_str = AbsynDumpTpl.dumpExp(when_cond)
     let when_body_str = dumpStatements(when_body)
     let elsewhen_str = (elsewhens |> ew as (ew_cond, ew_body) =>
-      let ew_cond_str = dumpExp(ew_cond)
+      let ew_cond_str = AbsynDumpTpl.dumpExp(ew_cond)
       let ew_body_str = dumpStatements(ew_body)
       <<
       elsewhen <%ew_cond_str%> then
@@ -536,167 +528,6 @@ match when_statement
     end when;
     >>
 end dumpWhenStatement;
-
-template dumpExp(Absyn.Exp exp)
-::=
-match exp
-  case INTEGER(__) then value
-  case REAL(__) then value
-  case CREF(__) then dumpCref(componentRef)
-  case STRING(__) then '"<%value%>"'
-  case BOOL(__) then value
-  case e as BINARY(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
-    let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
-  case e as UNARY(__) then
-    let exp_str = dumpOperand(exp, e)
-    let op_str = dumpOperator(op)
-    '<%op_str%><%exp_str%>'
-  case e as LBINARY(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
-    let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
-  case e as LUNARY(__) then
-    let exp_str = dumpOperand(exp, e)
-    let op_str = dumpOperator(op)
-    '<%op_str%> <%exp_str%>'
-  case e as RELATION(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
-    let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
-  case IFEXP(__) then dumpIfExp(exp)
-  case CALL(__) then
-    let func_str = dumpCref(function_)
-    let args_str = dumpFunctionArgs(functionArgs)
-    '<%func_str%>(<%args_str%>)'
-  case ARRAY(__) then
-    let array_str = (arrayExp |> e => dumpExp(e) ;separator=", ")
-    '{<%array_str%>}'
-  case MATRIX(__) then
-    let matrix_str = (matrix |> row => 
-        (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
-    '[<%matrix_str%>]'
-  case e as RANGE(step = SOME(step)) then
-    let start_str = dumpOperand(start, e)
-    let step_str = dumpOperand(step, e)
-    let stop_str = dumpOperand(stop, e)
-    '<%start_str%>:<%step_str%>:<%stop_str%>'
-  case e as RANGE(step = NONE()) then
-    let start_str = dumpOperand(start, e)
-    let stop_str = dumpOperand(stop, e)
-    '<%start_str%>:<%stop_str%>'
-  case TUPLE(__) then
-    let tuple_str = (expressions |> e => dumpExp(e); separator=", ")
-    '(<%tuple_str%>)'
-  case END(__) then 'end'
-  case AS(__) then 'as'
-  case CONS(__) then
-    let head_str = dumpExp(head)
-    let rest_str = dumpExp(rest)
-    '<%head_str%> :: <%rest_str%>'
-  case MATCHEXP(__) then dumpMatchExp(exp)
-  case LIST(__) then
-    let list_str = (exps |> e => dumpExp(e) ;separator=", ")
-    '{<%list_str%>}'
-end dumpExp;
-
-template dumpOperand(Absyn.Exp operand, Absyn.Exp operation)
-::=
-  let op_str = dumpExp(operand)
-  if intLt(expPriority(operation), expPriority(operand)) then
-    '(<%op_str%>)'
-  else
-    op_str
-end dumpOperand;
-
-template dumpIfExp(Absyn.Exp if_exp)
-::= 
-match if_exp
-  case IFEXP(__) then
-    let cond_str = dumpExp(ifExp)
-    let true_branch_str = dumpExp(trueBranch)
-    let else_branch_str = dumpExp(elseBranch)
-    let else_if_str = dumpElseIfExp(elseIfBranch)
-    'if <%cond_str%> then <%true_branch_str%><%else_if_str%> else <%else_branch_str%>'
-end dumpIfExp;
-
-template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if)
-::=
-  else_if |> eib as (cond, branch) => 
-    let cond_str = dumpExp(cond)
-    let branch_str = dumpExp(branch)
-    ' elseif <%cond_str%> then <%branch_str%>' ;separator="\n"
-end dumpElseIfExp;
-
-template dumpMatchExp(Absyn.Exp match_exp)
-::= "MATCH_EXP"
-end dumpMatchExp;
-
-template dumpOperator(Absyn.Operator op)
-::=
-match op
-  case ADD(__) then '+'
-  case SUB(__) then '-'
-  case MUL(__) then '*'
-  case DIV(__) then '/'
-  case POW(__) then '^'
-  case UPLUS(__) then '+'
-  case UMINUS(__) then '-'
-  case ADD_EW(__) then '.+'
-  case SUB_EW(__) then '.-'
-  case MUL_EW(__) then '.*'
-  case DIV_EW(__) then './'
-  case POW_EW(__) then '.^'
-  case UPLUS_EW(__) then '.+'
-  case UMINUS_EW(__) then '.-'
-  case AND(__) then 'and'
-  case OR(__) then 'or'
-  case NOT(__) then 'not'
-  case LESS(__) then '<'
-  case LESSEQ(__) then '<='
-  case GREATER(__) then '>'
-  case GREATEREQ(__) then '>='
-  case EQUAL(__) then '=='
-  case NEQUAL(__) then '<>'
-end dumpOperator;
-
-template dumpCref(Absyn.ComponentRef cref)
-::=
-match cref
-  case CREF_QUAL(__) then 
-    '<%name%><%dumpSubscripts(subscripts)%>.<%dumpCref(componentRef)%>'
-  case CREF_IDENT(__) 
-    then '<%name%><%dumpSubscripts(subscripts)%>'
-  case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
-  case WILD(__) then '_'
-  case ALLWILD(__) then '__'
-  case CREF_INVALID(__) then 'INVALID(<%dumpCref(cref)%>'
-end dumpCref;
-
-template dumpFunctionArgs(Absyn.FunctionArgs args)
-::=
-match args
-  case FUNCTIONARGS(__) then
-    let args_str = (args |> arg => dumpExp(arg) ;separator=", ")
-    let namedargs_str = (argNames |> narg => dumpNamedArg(narg) ;separator=", ")
-    let separator = if args_str then if argNames then ', '
-    '<%args_str%><%separator%><%namedargs_str%>'
-  case FOR_ITER_FARG(__) then
-    let exp_str = dumpExp(exp)
-    let iter_str = (iterators |> i => dumpForIterator(i) ;separator=", ")
-    '<%exp_str%> for <%iter_str%>'
-end dumpFunctionArgs;
-
-template dumpNamedArg(Absyn.NamedArg narg)
-::=
-match narg
-  case NAMEDARG(__) then
-    '<%argName%> = <%dumpExp(argValue)%>'
-end dumpNamedArg;
 
 template dumpPrefixes(SCode.Prefixes prefixes)
 ::=
@@ -747,7 +578,7 @@ template dumpReplaceableConstrainClass(SCode.Prefixes replaceable)
 match replaceable
   case PREFIXES(replaceablePrefix = REPLACEABLE(cc = SOME(CONSTRAINCLASS(
       constrainingClass = cc_path, modifier = cc_mod)))) then
-    let path_str = dumpPath(cc_path)
+    let path_str = AbsynDumpTpl.dumpPath(cc_path)
     let mod_str = dumpModifier(cc_mod)
     ' constrainedby <%path_str%><%mod_str%>'
 end dumpReplaceableConstrainClass;
@@ -793,7 +624,7 @@ match restriction
   case R_PREDEFINED_ENUMERATION(__) then 'EnumType'
   case R_METARECORD(__) then 'record'
   case R_UNIONTYPE(__) then 'uniontype'
-  else errorMsg("SCodeDimp.dumpRestriction: Unknown restriction.")
+  else errorMsg("SCodeDump.dumpRestriction: Unknown restriction.")
 end dumpRestriction;
 
 template dumpFunctionRestriction(SCode.FunctionRestriction funcRest)
@@ -803,7 +634,7 @@ match funcRest
   case FR_OPERATOR_FUNCTION(__) then 'operator function'
   case FR_EXTERNAL_FUNCTION(__) then 'function'
   case FR_RECORD_CONSTRUCTOR(__) then 'function'
-  else errorMsg("SCodeDimp.dumpFunctionRestriction: Unknown Function restriction.")
+  else errorMsg("SCodeDump.dumpFunctionRestriction: Unknown Function restriction.")
 end dumpFunctionRestriction;
 
 template dumpModifier(SCode.Mod modifier)
@@ -838,7 +669,7 @@ match modifier
 end dumpRedeclModifier;
     
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
-::= match binding case SOME((exp, _)) then ' = <%dumpExp(exp)%>'
+::= match binding case SOME((exp, _)) then ' = <%AbsynDumpTpl.dumpExp(exp)%>'
 end dumpModifierBinding;
 
 template dumpSubModifier(SCode.SubMod submod)
@@ -849,7 +680,7 @@ match submod
   case NAMEMOD(A = REDECL(__)) then
     '<%dumpRedeclModifier(A)%>'
   case IDXMOD(__) then
-    '<%dumpModifierPrefix(an)%><%dumpSubscripts(subscriptLst)%><%dumpModifier(an)%>'
+    '<%dumpModifierPrefix(an)%><%AbsynDumpTpl.dumpSubscripts(subscriptLst)%><%dumpModifier(an)%>'
 end dumpSubModifier;
 
 template dumpAttributes(SCode.Attributes attributes)
@@ -895,26 +726,8 @@ match direction
 end dumpDirection;
 
 template dumpAttributeDim(SCode.Attributes attributes)
-::= match attributes case ATTR(__) then dumpSubscripts(arrayDims)
+::= match attributes case ATTR(__) then AbsynDumpTpl.dumpSubscripts(arrayDims)
 end dumpAttributeDim;
-
-template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim)
-::= match arraydim case SOME(ad) then dumpSubscripts(ad)
-end dumpArrayDimOpt;
-
-template dumpSubscripts(list<Subscript> subscripts)
-::=
-  if subscripts then
-    let sub_str = (subscripts |> s => dumpSubscript(s) ;separator=", ")
-    '[<%sub_str%>]'
-end dumpSubscripts;
-
-template dumpSubscript(Absyn.Subscript subscript)
-::=
-match subscript
-  case NOSUB(__) then ':'
-  case SUBSCRIPT(__) then dumpExp(subscript)
-end dumpSubscript;
 
 template dumpAnnotationOpt(Option<SCode.Annotation> annotation)
 ::= match annotation case SOME(ann) then dumpAnnotation(ann)
@@ -943,10 +756,10 @@ template dumpExternalDecl(ExternalDecl externalDecl)
 match externalDecl
   case EXTERNALDECL(__) then
     let func_name_str = match funcName case SOME(name) then name
-    let func_args_str = (args |> arg => dumpExp(arg) ;separator=", ")
+    let func_args_str = (args |> arg => AbsynDumpTpl.dumpExp(arg) ;separator=", ")
     let func_str = if func_name_str then ' <%func_name_str%>(<%func_args_str%>)'
     let lang_str = match lang case SOME(l) then ' "<%l%>"'
-    let output_str = match output_ case SOME(name) then ' <%dumpCref(name)%> ='
+    let output_str = match output_ case SOME(name) then ' <%AbsynDumpTpl.dumpCref(name)%> ='
     'external<%lang_str%><%output_str%><%func_str%>;'
 end dumpExternalDecl;
 
@@ -971,33 +784,6 @@ end dumpComment;
 template dumpCommentStr(Option<String> comment)
 ::= match comment case SOME(cmt) then ' "<%cmt%>"'
 end dumpCommentStr;
-
-template dumpPath(Absyn.Path path)
-::= 
-match path
-  case FULLYQUALIFIED(__) then
-    '.<%dumpPath(path)%>'
-  case QUALIFIED(__) then
-    '<%name%>.<%dumpPath(path)%>'
-  case IDENT(__) then
-    '<%name%>'
-  else
-    errorMsg("SCodeDump.dumpPath: Unknown path.")
-end dumpPath;
-
-template dumpTypeSpec(Absyn.TypeSpec typeSpec)
-::=
-match typeSpec
-  case TPATH(__) then
-    let path_str = dumpPath(path)
-    let arraydim_str = dumpArrayDimOpt(arrayDim)
-    '<%path_str%><%arraydim_str%>'
-  case TCOMPLEX(__) then
-    let path_str = dumpPath(path)
-    let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty) ;separator=", ")
-    let arraydim_str = dumpArrayDimOpt(arrayDim)
-    '<%path_str%><<%ty_str%>><%arraydim_str%>'
-end dumpTypeSpec;
 
 template errorMsg(String errMessage)
 ::=

@@ -134,12 +134,15 @@ GLOBAL = \
 Global.mo
 
 TEMPLATE = \
+AbsynDumpTpl.mo \
 CodegenC.mo \
 CodegenFMU.mo \
 CodegenAdevs.mo \
 CodegenQSS.mo \
 CodegenCpp.mo \
 CodegenCSharp.mo \
+DAEDumpTpl.mo \
+ExpressionDumpTpl.mo \
 SCodeDumpTpl.mo \
 SimCodeDump.mo \
 Tpl.mo \
