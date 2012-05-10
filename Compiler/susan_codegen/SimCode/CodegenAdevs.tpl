@@ -161,8 +161,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void clear_event_flags();
          bool initial() const { return atInit; }
 
-		 // Junk for the OpenModelica c runtime
-		 adevs_omc_data* data;
+     // Junk for the OpenModelica c runtime
+     adevs_omc_data* data;
 
       protected:
          /**
@@ -267,7 +267,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       helpVars(NULL),
       helpVars_saved(NULL),
       zc(NULL),
-	  data(new adevs_omc_data())
+    data(new adevs_omc_data())
    {
        timeValue = 0.0;
        if (numHelpVars() > 0)
