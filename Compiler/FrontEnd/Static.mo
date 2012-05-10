@@ -12975,7 +12975,7 @@ algorithm
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo); 
           
         str1 = "\n" +&
-                  "- No excat match overloading found for operator '" +& Dump.opSymbol(inOper) +& "' " +&
+                  "- No exact match overloading found for operator '" +& Dump.opSymbol(inOper) +& "' " +&
                   "on record array of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath)) +& "'\n" +&
                    "- Automatically expanded using operator function: " +& Absyn.pathString(getCallPath(daeExp));
         Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
