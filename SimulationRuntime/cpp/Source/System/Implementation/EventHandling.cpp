@@ -156,16 +156,17 @@ bool EventHandling::IterateEventQueue(const bool* events)
   bool* events_before = new bool[dimf];
   memcpy(events_before,events, dimf*sizeof(bool));
   //Handle all events
-  vector<long>::const_iterator iter;
+ /* vector<long>::const_iterator iter;
   for(iter=_event_queue.begin();iter!=_event_queue.end();++iter)
   {
     event_system->handleEvent(*iter);
     //update continous equations
     countinous_system->update(IContinous::CONTINOUS);
   }
-  _event_queue.clear();
+  
+  _event_queue.clear();*/
   //update discrete equattions
-  countinous_system->update(IContinous::DISCRETE);
+  countinous_system->update();
 
   drestart= event_system->checkForDiscreteEvents();
   //update_event();//Update the event vector

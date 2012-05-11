@@ -1621,6 +1621,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       >>
     %>
     }
+     saveAll();
    }
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
@@ -5774,19 +5775,24 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     bool restart=true;
     int iter=0;
     <%zeroCrossingsCode%>
-     while(restart && !(iter++ > _dimZeroFunc))
+    
+  
+     
+    while(restart && !(iter++ > 15))
     {
-        double h[<%helpvarlength(simCode)%>];
-        <%helpvarvector(whenClauses,simCode)%>
+    	
+  			 double h[<%helpvarlength(simCode)%>];
+        	<%helpvarvector(whenClauses,simCode)%>
              _event_handling.setHelpVars(h);
             //iterate and handle all events inside the eventqueue
             restart=_event_handling.IterateEventQueue(_conditions1);
-           
+           saveAll();
      }
+   
      saveConditions();
      resetTimeEvents();
     if(iter>_dimZeroFunc && restart ){
-     throw std::runtime_error("Number of event iteration steps exceeded. ");}
+     throw std::runtime_error("Number of event iteration steps exceeded. " );}
    }
   >>
 end handleSystemEvents;
@@ -6133,6 +6139,7 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
   void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
   {
     <%varDecls%>
+  
    if(command & CONTINOUS)
   {
     <%paraEquations%>
@@ -6163,7 +6170,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
   { 
     <%varDecls%>
-     saveAll();
+    
     if(IContinous::RANKING) checkConditions(0,true);
       <%all_equations%>
     <%reinit%>
