@@ -1894,33 +1894,27 @@ algorithm
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
-        dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLVector);
         dumpList(es,dumpExp3);
         dumpStrCloseTag(MathMLVector);
-        dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.TUPLE(PR = es))//Tuple are dumped as vector
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
-        dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLVector);
         dumpList(es,dumpExp2);
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
-        dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.MATRIX(matrix = ebs,ty=tp))
       equation
-        dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
         dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">\n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
-        dumpStrCloseTag(MathMLApply);
       then ();
     case (e as DAE.RANGE(_,start,NONE(),stop))
       equation
