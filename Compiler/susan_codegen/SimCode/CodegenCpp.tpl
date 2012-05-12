@@ -5780,9 +5780,9 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
      
     while(restart && !(iter++ > 15))
     {
-    	
-  			 double h[<%helpvarlength(simCode)%>];
-        	<%helpvarvector(whenClauses,simCode)%>
+      
+         double h[<%helpvarlength(simCode)%>];
+          <%helpvarvector(whenClauses,simCode)%>
              _event_handling.setHelpVars(h);
             //iterate and handle all events inside the eventqueue
             restart=_event_handling.IterateEventQueue(_conditions1);
