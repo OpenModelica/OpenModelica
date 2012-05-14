@@ -74,8 +74,8 @@ protected:
     time;       ///< current simulation time (given by the solver) 
 
   double
-    *_z,        ///< "Extended state vector", containing all states and algebraic variables of all types
-    *_zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+    *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
+    *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
   bool   
     * _conditions0,   ///< External conditions changed by the solver
     * _conditions1;   ///< Internal conditions changed by the system 

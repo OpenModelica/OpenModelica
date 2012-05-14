@@ -9,8 +9,8 @@
 
 SystemDefaultImplementation::SystemDefaultImplementation()
 : time        (0.0)
-, _z        (NULL)
-, _zDot       (NULL)
+, __z        (NULL)
+, __zDot       (NULL)
 , _dimODE     (0)
 ,_conditions0(NULL)
 ,_conditions1(NULL)
@@ -19,8 +19,8 @@ SystemDefaultImplementation::SystemDefaultImplementation()
 
 SystemDefaultImplementation::~SystemDefaultImplementation()
 {
-  if(_z) delete [] _z;
-  if(_zDot) delete [] _zDot;
+  if(__z) delete [] __z;
+  if(__zDot) delete [] __zDot;
 }
 void SystemDefaultImplementation::Assert(bool cond,string msg)
 {
@@ -83,14 +83,14 @@ int SystemDefaultImplementation::getDimRHS(const IContinous::INDEX index) const
   if((_dimODE + _dimAE) > 0)
   {
     // Initialize "extended state vector"
-    if(_z) delete [] _z ; 
-    if(_zDot) delete [] _zDot;
+    if(__z) delete [] __z ; 
+    if(__zDot) delete [] __zDot;
 
-    _z = new double[_dimODE + _dimAE];
-    _zDot = new double[_dimODE + _dimAE];
+    __z = new double[_dimODE + _dimAE];
+    __zDot = new double[_dimODE + _dimAE];
 
-    memset(_z,0,(_dimODE + _dimAE)*sizeof(double));
-    memset(_zDot,0,(_dimODE + _dimAE)*sizeof(double));
+    memset(__z,0,(_dimODE + _dimAE)*sizeof(double));
+    memset(__zDot,0,(_dimODE + _dimAE)*sizeof(double));
   }
   if(_dimZeroFunc > 0)
   {
@@ -122,7 +122,7 @@ void SystemDefaultImplementation::giveVars(double* z, const IContinous::INDEX in
   {
     for(int i=0; i<_dimODE1stOrder; ++i)
     {
-      z[i] = _z[i];
+      z[i] = __z[i];
     }
 
     j += _dimODE1stOrder;
@@ -133,7 +133,7 @@ void SystemDefaultImplementation::giveVars(double* z, const IContinous::INDEX in
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
     {
-      z[i + j] = _z[_dimODE1stOrder + i];
+      z[i + j] = __z[_dimODE1stOrder + i];
     }
 
     j += _dimODE2ndOrder/2;
@@ -143,7 +143,7 @@ void SystemDefaultImplementation::giveVars(double* z, const IContinous::INDEX in
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
     {
-      z[i + j] = _z[_dimODE1stOrder + _dimODE2ndOrder/2 + i];
+      z[i + j] = __z[_dimODE1stOrder + _dimODE2ndOrder/2 + i];
     }
 
     j += _dimODE2ndOrder/2;
@@ -153,7 +153,7 @@ void SystemDefaultImplementation::giveVars(double* z, const IContinous::INDEX in
   {
     for(int i=0; i<_dimAE; ++i)
     {
-      z[i + j] = _z[_dimODE + i];
+      z[i + j] = __z[_dimODE + i];
     }
   }     
 };
@@ -167,7 +167,7 @@ void SystemDefaultImplementation::setVars(const double* z, const IContinous::IND
   {
     for(int i=0; i<_dimODE1stOrder; ++i)
     {
-      _z[i] = z[i];
+      __z[i] = z[i];
     }
 
     j += _dimODE1stOrder;
@@ -178,7 +178,7 @@ void SystemDefaultImplementation::setVars(const double* z, const IContinous::IND
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
     {
-      _z[_dimODE1stOrder + i] = z[i + j];
+      __z[_dimODE1stOrder + i] = z[i + j];
     }
 
     j += _dimODE2ndOrder/2;
@@ -188,7 +188,7 @@ void SystemDefaultImplementation::setVars(const double* z, const IContinous::IND
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
     {
-      _z[_dimODE1stOrder + _dimODE2ndOrder/2 + i] = z[i + j];
+      __z[_dimODE1stOrder + _dimODE2ndOrder/2 + i] = z[i + j];
     }
 
     j += _dimODE2ndOrder/2;
@@ -198,7 +198,7 @@ void SystemDefaultImplementation::setVars(const double* z, const IContinous::IND
   {
     for(int i=0; i<_dimAE; ++i)
     {
-      _z[_dimODE + i] = z[i + j];
+      __z[_dimODE + i] = z[i + j];
     }
   }
 
@@ -212,7 +212,7 @@ void SystemDefaultImplementation::giveRHS(double* f, const IContinous::INDEX ind
   if (index & IContinous::VAR_INDEX0)
   {
     for(int i=0; i<_dimODE1stOrder; ++i)
-      f[i] = _zDot[i];
+      f[i] = __zDot[i];
 
     j += _dimODE1stOrder;
   }
@@ -220,7 +220,7 @@ void SystemDefaultImplementation::giveRHS(double* f, const IContinous::INDEX ind
   if (index & IContinous::VAR_INDEX1)
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
-      f[i + j] = _zDot[_dimODE1stOrder + i];
+      f[i + j] = __zDot[_dimODE1stOrder + i];
 
     j += _dimODE2ndOrder/2;
   }
@@ -228,7 +228,7 @@ void SystemDefaultImplementation::giveRHS(double* f, const IContinous::INDEX ind
   if (index & IContinous::VAR_INDEX2)
   {
     for(int i=0; i<_dimODE2ndOrder/2; ++i)
-      f[i + j] = _zDot[_dimODE1stOrder + _dimODE2ndOrder/2 + i];
+      f[i + j] = __zDot[_dimODE1stOrder + _dimODE2ndOrder/2 + i];
 
     j += _dimODE2ndOrder/2;
   }
@@ -236,7 +236,7 @@ void SystemDefaultImplementation::giveRHS(double* f, const IContinous::INDEX ind
   if (index & IContinous::VAR_INDEX3)
   {
     for(int i=0; i<_dimAE; ++i)
-      f[i + j] = _zDot[_dimODE + i];
+      f[i + j] = __zDot[_dimODE + i];
   }
 
   // Here one can distinguish between the residuals of the algeraic constraints according to the differentiation 

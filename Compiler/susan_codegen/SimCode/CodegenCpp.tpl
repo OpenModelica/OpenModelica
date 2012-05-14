@@ -268,8 +268,8 @@ match eq
                                                                  ) 
    :AlgLoopDefaultImplementation()
    ,_residuals(NULL)
-   ,_z(z)
-   ,_zDot(zDot)
+   ,__z(z)
+   ,__zDot(zDot)
    ,_event_handling(event_handling)
    <%alocateLinearSystem(eq)%>
    <%iniAlgloopParamas%>
@@ -1810,9 +1810,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     Functions _functions;
     double         *_residuals;        ///< Auxillary variables
     //states
-    double* _z;
+    double* __z;
     //state derivatives
-    double* _zDot;
+    double* __zDot;
     // A matrix
     boost::multi_array<double,2> _A;
     //b vector
@@ -3098,8 +3098,8 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%vars.algVars |> SIMVAR(__) hasindex i0 =>'v(<%i0%>)=<%cref(name)%>;'%>
      <%vars.intAlgVars |> SIMVAR(__) hasindex i1 =>'v(<%i1%>+<%numAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
      <%vars.boolAlgVars |> SIMVAR(__)hasindex i2  =>'v(<%i2%>+ <%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
-     <%(vars.stateVars  |> SIMVAR(__) hasindex i3 =>' v(<%i3%> +<%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%> +<%numBoolAlgvar(modelInfo)%>)=_z[<%index%>]; ')%>
-     <%(vars.derivativeVars  |> SIMVAR(__) hasindex i4 =>' v2(<%i4%>)=_zDot[<%index%>]; ')%>
+     <%(vars.stateVars  |> SIMVAR(__) hasindex i3 =>' v(<%i3%> +<%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%> +<%numBoolAlgvar(modelInfo)%>)=__z[<%index%>]; ')%>
+     <%(vars.derivativeVars  |> SIMVAR(__) hasindex i4 =>' v2(<%i4%>)=__zDot[<%index%>]; ')%>
    
  >>
 end writeoutput2;
@@ -3124,7 +3124,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
         '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
       ;separator="\n"),
       (vars.stateVars |> SIMVAR(__) =>
-        '_event_handling.save(_z[<%index%>],"<%cref(name)%>");'
+        '_event_handling.save(__z[<%index%>],"<%cref(name)%>");'
       ;separator="\n")}
      ;separator="\n"%>
      
@@ -3574,7 +3574,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   <<
 
   _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(
-                                                                                                                                                  <%CallAlgloopParams(modelInfo)%>,_z,_zDot,_event_handling
+                                                                                                                                                  <%CallAlgloopParams(modelInfo)%>,__z,__zDot,_event_handling
                                                                                                                                                   )
                                                                                                                                   );
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
@@ -4886,11 +4886,11 @@ template representationCref1(ComponentRef inCref, SimCode simCode) ::=
    case -1 then 
    << <%cref2(inCref)%> >>
    case _  then
-   << _z[<%index%>] >>
+   << __z[<%index%>] >>
 end representationCref1;
 
 template representationCref2(ComponentRef inCref, SimCode simCode) ::=
-  cref2simvar(inCref, simCode) |> SIMVAR(__) =>'_zDot[<%index%>]'
+  cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'
 end representationCref2;
 
 template helpvarlength(SimCode simCode) 
@@ -6285,10 +6285,10 @@ then
        '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
       ;separator="\n"),
       (vars.stateVars |> SIMVAR(__) hasindex myindex =>
-       '_z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
+       '__z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
       ;separator="\n"),
       (vars.derivativeVars |> SIMVAR(__) hasindex myindex =>
-      '_zDot[<%index%>]=variables2(<%myindex%>);'
+      '__zDot[<%index%>]=variables2(<%myindex%>);'
       ;separator="\n")}
      ;separator="\n"%>     
 >>

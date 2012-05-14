@@ -88,7 +88,7 @@ protected:
 
   double 
     *_xd_init,    ///< Double values before update of loop
-    *_xd,     ///< Double values after update of loop
+    *__xd,     ///< Double values after update of loop
     *_doubleOutputs;      ///< Double outputs of loop 
 
   const double
@@ -96,7 +96,7 @@ protected:
 
   int 
     *_xi_init,      ///< Integer values before update of loop
-    *_xi,       ///< Integer values after update of loop
+    *__xi,       ///< Integer values after update of loop
     *_intOutputs;       ///< Integer outputs of loop 
                   
   const int           
@@ -104,7 +104,7 @@ protected:
 
   bool 
     *_xb_init,      ///< Boolean values before update of loop
-    *_xb,       ///< Boolean values after update of loop
+    *__xb,       ///< Boolean values after update of loop
     *_boolOutputs;        ///< Boolean outputs of loop 
                   
   const bool            
