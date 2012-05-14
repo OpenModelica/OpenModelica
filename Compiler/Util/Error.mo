@@ -592,7 +592,9 @@ public constant Message FINAL_COMPONENT_OVERRIDE = MESSAGE(222, TRANSLATION(), E
 public constant Message NOTIFY_NOT_LOADED = MESSAGE(223, SCRIPTING(), NOTIFICATION(),
   "Automatically loaded package %s %s due to uses annotation.");
 public constant Message REINIT_MUST_BE_REAL = MESSAGE(224, TRANSLATION(), ERROR(),
-  "The first argument to reinit must be a subtype of Real in reinit of %s.");
+  "The first argument to reinit must be a subtype of Real, but %s has type %s.");
+public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR(),
+  "The first argument to reinit must be a variable, but %s is a %s."); 
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

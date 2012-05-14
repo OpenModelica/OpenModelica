@@ -738,9 +738,9 @@ algorithm
     // reinit statement 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph)
       equation 
-        (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
-        checkReinitType(t, cr_1, info);
-        (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl, info);
+        (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) =
+          Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info) "reinit statement" ;
+        true = checkReinitType(t, tprop1, cr_1, info);
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl, info);
         (e2_1,_) = Types.matchProp(e2_1,tprop2,tprop1,true);
@@ -857,28 +857,39 @@ protected function checkReinitType
   "Checks that the base type of the given type is Real, otherwise it prints an
    error message that the first argument to reinit must be a subtype of Real."
   input DAE.Type inType;
+  input DAE.Properties inProperties;
   input DAE.ComponentRef inCref;
   input Absyn.Info inInfo;
+  output Boolean outSucceeded;
 algorithm
-  _ := matchcontinue(inType, inCref, inInfo)
+  outSucceeded := matchcontinue(inType, inProperties, inCref, inInfo)
     local
       DAE.Type ty;
-      String cref_str;
+      String cref_str, ty_str, cnst_str;
+      DAE.Const cnst;
 
-    case (_, _, _)
+    case (_, _, _, _)
       equation
         ty = Types.arrayElementType(inType);
-        true = Types.isReal(ty);
-      then
-        ();
-
-    else
-      equation
+        false = Types.isReal(ty);
         cref_str = ComponentReference.printComponentRefStr(inCref);
+        ty_str = Types.unparseType(ty);
         Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
-          {cref_str}, inInfo);
+          {cref_str, ty_str}, inInfo);
       then
-        fail();
+        false;
+
+    case (_, DAE.PROP(constFlag = cnst), _, _)
+      equation
+        false = Types.isVar(cnst);
+        cnst_str = Types.unparseConst(cnst);
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
+          {cref_str, cnst_str}, inInfo); 
+      then
+        false;
+
+    else true;
 
   end matchcontinue;
 end checkReinitType;

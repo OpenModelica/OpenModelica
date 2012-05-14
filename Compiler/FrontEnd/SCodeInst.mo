@@ -136,8 +136,9 @@ algorithm
         //print(InstUtil.printClass(cls));
         //print("\nend " +& name +& "\n");
 
-        _ = SCodeExpand.expand(name, cls);
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
+
+        _ = SCodeExpand.expand(name, cls);
       then
         ();
 

@@ -2036,8 +2036,20 @@ algorithm
   end match;
 end unparseType;
 
-public function unparseConst "function: unparseConst
-  This function prints a Const as a string."
+public function unparseConst
+  input Const inConst;
+  output String outString;
+algorithm
+  outString := match(inConst)
+    case DAE.C_CONST() then "constant";
+    case DAE.C_PARAM() then "parameter";
+    case DAE.C_VAR() then "";
+    case DAE.C_UNKNOWN() then "#UNKNOWN#";
+  end match;
+end unparseConst;
+
+public function printConstStr
+  "This function prints a Const as a string."
   input Const inConst;
   output String outString;
 algorithm
@@ -2046,10 +2058,10 @@ algorithm
     case DAE.C_PARAM() then "C_PARAM";
     case DAE.C_VAR() then "C_VAR";
   end match;
-end unparseConst;
+end printConstStr;
 
-public function unparseTupleconst "function: unparseTupleconst
-  This function prints a Modelica TupleConst as a string."
+public function printTupleConstStr
+  "This function prints a Modelica TupleConst as a string."
   input TupleConst inTupleConst;
   output String outString;
 algorithm
@@ -2061,18 +2073,18 @@ algorithm
       list<TupleConst> constlist;
     case DAE.SINGLE_CONST(const = c)
       equation
-        cstr = unparseConst(c);
+        cstr = printConstStr(c);
       then
         cstr;
     case DAE.TUPLE_CONST(tupleConstLst = constlist)
       equation
-        strlist = List.map(constlist, unparseTupleconst);
+        strlist = List.map(constlist, printTupleConstStr);
         res = stringDelimitList(strlist, ", ");
         res_1 = stringAppendList({"(",res,")"});
       then
         res_1;
   end match;
-end unparseTupleconst;
+end printTupleConstStr;
 
 public function printTypeStr "function: printTypeStr
   This function prints a textual description of a Modelica type to a string.  
@@ -2484,7 +2496,7 @@ algorithm
     case DAE.EQBOUND(exp = exp,evaluatedExp = NONE(),constant_ = f,source = source)
       equation
         str = ExpressionDump.printExpStr(exp);
-        str2 = unparseConst(f);
+        str2 = printConstStr(f);
         str3 = DAEUtil.printBindingSourceStr(source);
         res = stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
@@ -2492,7 +2504,7 @@ algorithm
     case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
       equation
         str = ExpressionDump.printExpStr(exp);
-        str2 = unparseConst(f);
+        str2 = printConstStr(f);
         v_str = ValuesUtil.valString(v);
         str3 = DAEUtil.printBindingSourceStr(source);
         res = stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
@@ -2997,6 +3009,16 @@ algorithm
   end match;
 end isParameterOrConstant;
 
+public function isVar
+  input Const inConst;
+  output Boolean outIsVar;
+algorithm
+  outIsVar := match(inConst)
+    case DAE.C_VAR() then true;
+    else false;
+  end match;
+end isVar;
+
 public function containReal "function: containReal
   Returns true if a builtin type, or array-type is Real."
   input list<Type> inTypeLst;
@@ -3263,7 +3285,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "- prop_tuple_any_const failed: ");
-        str = unparseTupleconst(const);
+        str = printTupleConstStr(const);
         Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
@@ -3308,7 +3330,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "- prop_tuple_all_const failed: ");
-        str = unparseTupleconst(const);
+        str = printTupleConstStr(const);
         Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
@@ -4752,14 +4774,14 @@ algorithm
     case DAE.PROP(type_ = ty,constFlag = const)
       equation
         ty_str = unparseType(ty);
-        const_str = unparseConst(const);
+        const_str = printConstStr(const);
         res = stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
       then
         res;
     case DAE.PROP_TUPLE(type_ = ty,tupleConst = tconst)
       equation
         ty_str = unparseType(ty);
-        const_str = unparseTupleconst(tconst);
+        const_str = printTupleConstStr(tconst);
         res = stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
