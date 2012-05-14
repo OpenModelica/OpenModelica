@@ -719,7 +719,7 @@ protected function cevalInteractiveFunctions2
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String functionName,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,functionName,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,
              plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
@@ -1753,10 +1753,11 @@ algorithm
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,msg)
       equation
-        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath();
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
+        omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         omcfound = System.regularFileExists(omcpath);
         os = System.os();
         touch_file = "omc.checksettings.create_file_test";
@@ -1771,8 +1772,11 @@ algorithm
         gcc = System.getCCompiler();
         gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null 2>&1");
         confcmd = System.configureCommandLine();
-        vals = {Values.STRING(omhome),Values.STRING(omlib),
-                Values.STRING(omcpath),Values.BOOL(omcfound),
+        vals = {Values.STRING(omhome),
+                Values.STRING(omlib),
+                Values.STRING(omcpath),
+                Values.STRING(omdev),
+                Values.BOOL(omcfound),
                 Values.STRING(usercflags),
                 Values.STRING(workdir),
                 Values.BOOL(touch_res),
