@@ -324,7 +324,8 @@ STRING : '"' STRING_GUTS '"'
              strs[1] = ModelicaParser_encoding;
              c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in \%s:\n  \"\%s\".\n"
   "  To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n"
-  "  To change it in a package: add a file package.encoding at the top-level.",
+  "  To change it in a package: add a file package.encoding at the top-level.\n"
+  "  Note: The Modelica Language Specification only allows files encoded in UTF-8.",
                   strs, 2, $line, $pos+1, $line, $pos+len+1,
                   ModelicaParser_readonly, ModelicaParser_filename_C);
              free(buf);
