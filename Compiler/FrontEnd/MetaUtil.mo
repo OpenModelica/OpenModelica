@@ -228,11 +228,12 @@ algorithm
       list<Absyn.ClassPart> classParts;
       Option<String>  comment;
       list<String> typeVars;
+      list<Absyn.NamedArg> classAttrs;
     
-    case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
+    case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
         classParts = List.map(classParts,createMetaClassesFromClassParts);
-        body = Absyn.PARTS(typeVars,classParts,comment);
+        body = Absyn.PARTS(typeVars,classAttrs,classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
     
     case (cl) then cl;

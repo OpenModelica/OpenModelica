@@ -137,19 +137,19 @@ constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_S
   `Real\', `Integer\' etc.
 */
 public constant SCode.Element rlType = SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) " real type ";
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) " real type ";
 
 public constant SCode.Element intType = SCode.CLASS("IntegerType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
 public constant SCode.Element strType = SCode.CLASS("StringType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
 public constant SCode.Element boolType = SCode.CLASS("BooleanType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
 protected constant SCode.Element enumType = SCode.CLASS("EnumType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_ENUMERATION(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
 protected constant SCode.Element unit = SCode.COMPONENT("unit",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
@@ -229,26 +229,26 @@ protected constant list<SCode.Element> uncertaintyComps = {
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo)} "The Uncertainty enumeration" ;
 
 protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
-          SCode.PARTS(stateSelectComps,{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The State Select Type";
+          SCode.PARTS(stateSelectComps,{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The State Select Type";
 
 protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
-          SCode.PARTS(uncertaintyComps,{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The Uncertainty Type";
+          SCode.PARTS(uncertaintyComps,{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The Uncertainty Type";
           
 public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
-          SCode.PARTS({},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "ExternalObject type" ;
+          SCode.PARTS({},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "ExternalObject type" ;
 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect,uncertainty},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
+          stateSelect,uncertainty},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({quantity,stringStart},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
+          SCode.PARTS({quantity,stringStart},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
 
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
-          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
+          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",

@@ -231,7 +231,7 @@ algorithm
         anns = translateClassdefAnnotations(parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.PARTS(els,{},{},{},{},{},NONE(),anns,scodeCmt);
+        SCode.PARTS(els,{},{},{},{},{},{},NONE(),anns,scodeCmt);
   end match;
 end translateOperatorDef;
 
@@ -361,7 +361,7 @@ algorithm
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
       equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},rest,cmt),file_info));
+        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info));
       then
         res;
     /* adrpo: handling also the case model extends X external ... end X; */
@@ -371,7 +371,7 @@ algorithm
                       body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt),
                       info = file_info))
       equation
-        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},rest,cmt),file_info));
+        res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,cmt),file_info));
       then
         res;
     else false;
@@ -445,6 +445,7 @@ algorithm
       list<Absyn.Path> pathLst;
       list<String> typeVars;
       SCode.Attributes scodeAttr;
+      list<Absyn.NamedArg> classAttrs;
 
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
@@ -455,7 +456,7 @@ algorithm
       then
         SCode.DERIVED(t,mod,scodeAttr,scodeCmt);
 
-    case (Absyn.PARTS(typeVars = typeVars, classParts = parts,comment = cmtString),_)
+    case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmtString),_)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating class parts");
         tvels = List.map1(typeVars, makeTypeVarElement, info);
@@ -471,7 +472,7 @@ algorithm
         decl = translateAlternativeExternalAnnotation(decl,parts);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.PARTS(els,eqs,initeqs,als,initals,cos,decl,anns,scodeCmt);
+        SCode.PARTS(els,eqs,initeqs,als,initals,cos,classAttrs,decl,anns,scodeCmt);
 
     case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
@@ -510,7 +511,7 @@ algorithm
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
-        SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,decl,anns,scodeCmt));
+        SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl,anns,scodeCmt));
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation

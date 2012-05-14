@@ -184,6 +184,7 @@ uniontype ClassDef
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
     list<ConstraintSection>    constraintLst       "the list of constraints";
+    list<Absyn.NamedArg>       clsattrs            "the list of class attributes. Currently for Optimica extensions";
     Option<ExternalDecl>       externalDecl        "used by external functions";
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
@@ -1199,9 +1200,10 @@ protected function classDefEqual
        list<Enum> elst1,elst2;
        list<Ident> ilst1,ilst2;
        String bcName1, bcName2;
+       list<Absyn.NamedArg> clsttrs1,clsttrs2;
        
-     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,_,anns1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,_,anns2,_))
+     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_),
+          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1228,8 +1230,8 @@ protected function classDefEqual
        then 
          true;
          
-     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,_,anns1,_)),
-           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,_,anns2,_)))
+     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_)),
+           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -3154,9 +3156,10 @@ protected
   Option<ExternalDecl> ed;
   list<Annotation> annl;
   Option<Comment> c;
+  list<Absyn.NamedArg> clsattrs;
 algorithm
-  PARTS(el, nel, iel, nal, ial, nco, ed, annl, c) := inClassDef;
-  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, nco, ed, annl, c);
+  PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed, annl, c) := inClassDef;
+  outClassDef := PARTS(inElement :: el, nel, iel, nal, ial, nco, clsattrs, ed, annl, c);
 end addElementToCompositeClassDef;
 
 public function setElementClassDefinition

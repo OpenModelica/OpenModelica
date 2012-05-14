@@ -3634,7 +3634,7 @@ algorithm
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
         instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className, 
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},NONE(),{},cmt), 
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE(),{},cmt), 
            re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
            callscope, graph, inSets, instSingleCref,info,stopInst);
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -4918,7 +4918,7 @@ algorithm
         // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, ci_state) = 
         partialInstClassdef(cache, env, ih, mods_1, pre, ci_state,  
-           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},NONE(),{}, cmt), 
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},{},{},NONE(),{}, cmt), 
            re, partialPrefix, vis, inst_dims, className, info);
       then
         (cache, env, ih, ci_state);
@@ -12115,7 +12115,7 @@ algorithm
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info)) 
       equation
         stripped_elts = List.map(elts,stripFuncOutputsMod);
-        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},extDecl,annotationLst,NONE()),info);
+        stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl,annotationLst,NONE()),info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {},true);
         /* Only external functions are valid without an algorithm section... */
         cache = Env.addDaeExtFunction(cache, funs);
@@ -13000,7 +13000,7 @@ algorithm
      SCode.NOT_ENCAPSULATED(),
      SCode.NOT_PARTIAL(),
      SCode.R_ENUMERATION(),
-     SCode.PARTS(comp,{},{},{},{},{},NONE(),{},cmt),
+     SCode.PARTS(comp,{},{},{},{},{},{},NONE(),{},cmt),
      info);
 end instEnumeration;
 

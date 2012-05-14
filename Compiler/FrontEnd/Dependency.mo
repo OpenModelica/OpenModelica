@@ -1462,7 +1462,7 @@ algorithm
   info := Absyn.INFO("",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0));
   elementspec := Absyn.EXTENDS(modelName,{},NONE());
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
-    Absyn.PARTS({},{Absyn.PUBLIC({Absyn.ELEMENTITEM(
+    Absyn.PARTS({},{},{Absyn.PUBLIC({Absyn.ELEMENTITEM(
       Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",elementspec,info,NONE())
     )})},NONE()),info);
 end createTopLevelTotalClass;

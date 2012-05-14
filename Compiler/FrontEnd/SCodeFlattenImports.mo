@@ -120,6 +120,7 @@ algorithm
       list<SCode.Equation> neql, ieql;
       list<SCode.AlgorithmSection> nal, ial;
       list<SCode.ConstraintSection> nco;
+      list<Absyn.NamedArg> clats; //class attributes
       Option<SCode.ExternalDecl> extdecl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
@@ -130,7 +131,7 @@ algorithm
       SCode.Ident bc;
       SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, extdecl, annl, cmt), _, _)
+    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl, annl, cmt), _, _)
       equation
         // Lookup elements.
         el = List.filter(el, isNotImport);
@@ -143,7 +144,7 @@ algorithm
         ial = List.map1(ial, flattenAlgorithm, env);
         nco = List.map2(nco, flattenConstraints, env, inInfo);
       then
-        (SCode.PARTS(el, neql, ieql, nal, ial, nco, extdecl, annl, cmt), env);
+        (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl, annl, cmt), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods, cdef), _, _)
       equation

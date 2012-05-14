@@ -5600,7 +5600,8 @@ algorithm
       String baseClassName;
       Absyn.Path functionName;
       list<String> typeVars,vars;
-    case Absyn.PARTS(typeVars,classParts,optString)
+      list<Absyn.NamedArg> classAttrs;
+    case Absyn.PARTS(typeVars,classAttrs,classParts,optString)
       equation
         Print.printBuf("record Absyn.PARTS typeVars = {");
         Print.printBuf(stringDelimitList(typeVars, ","));

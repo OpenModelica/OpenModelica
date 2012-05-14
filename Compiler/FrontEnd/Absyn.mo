@@ -175,6 +175,8 @@ uniontype ClassDef
  "
   record PARTS
     list<String> typeVars "class A<B,C> ... has type variables B,C";
+    list<NamedArg> classAttrs "optimization Op (objective=...) end Op. A list arguments attributing a
+    class declaration. Currently used only for Optimica extensions";
     list<ClassPart> classParts;
     Option<String>  comment;
   end PARTS;
@@ -5560,7 +5562,8 @@ algorithm
       Ident baseClassName;
       list<ElementArg> modifications;
       list<ClassPart> parts;
-    case PARTS(typeVars,parts,_) then PARTS(typeVars,parts,NONE());
+      list<NamedArg> classAttrs;
+    case PARTS(typeVars,classAttrs,parts,_) then PARTS(typeVars,classAttrs,parts,NONE());
     case CLASS_EXTENDS(baseClassName,modifications,_,parts) then CLASS_EXTENDS(baseClassName,modifications,NONE(),parts);
     case DERIVED(typeSpec,attributes,arguments,_) then DERIVED(typeSpec,attributes,arguments,NONE());
     case ENUMERATION(enumLiterals,_) then ENUMERATION(enumLiterals,NONE());
@@ -5585,10 +5588,11 @@ algorithm
       list<ClassPart> classParts;
       list<ElementItem> elts;
       FunctionRestriction funcRest;
-    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classParts,_),info)
+      list<NamedArg> classAttr;
+    case CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,classParts,_),info)
       equation
         (elts as _::_) = List.fold(listReverse(classParts),getFunctionInterfaceParts,{});
-      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,PUBLIC(elts)::{},NONE()),info);
+      then CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,R_FUNCTION(funcRest),PARTS(typeVars,classAttr,PUBLIC(elts)::{},NONE()),info);
   end match;
 end getFunctionInterface;
 

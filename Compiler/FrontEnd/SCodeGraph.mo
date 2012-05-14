@@ -210,7 +210,7 @@ algorithm
             SCode.ENCAPSULATED(), 
             SCode.NOT_PARTIAL(), 
             SCode.R_PACKAGE(), 
-            SCode.PARTS(program, {}, {}, {}, {}, {}, NONE(), {}, NONE()), 
+            SCode.PARTS(program, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), 
             Absyn.dummyInfo);
         graph = emptyGraph(rootElement);
         
@@ -1037,6 +1037,7 @@ algorithm
       list<SCode.Equation> nel, iel;
       list<SCode.AlgorithmSection> nal,ial;
       list<SCode.ConstraintSection> nc;
+      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions"; 
       Option<SCode.ExternalDecl> exd;
       list<SCode.Annotation> anl;
       Option<SCode.Comment> cmt;
@@ -1051,7 +1052,7 @@ algorithm
       SCode.ClassDef cdef;
 
     // class 
-    case (g, iContext as CONTEXT(sID, nID, iID), SCode.PARTS(els,nel,iel,nal,ial,nc,exd,anl,cmt), order)
+    case (g, iContext as CONTEXT(sID, nID, iID), SCode.PARTS(els,nel,iel,nal,ial,nc,clats,exd,anl,cmt), order)
       equation
         // dive into parts with new input
         (g, oContext) = analyzeElements(g, iContext, els, 1);

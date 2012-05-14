@@ -471,6 +471,7 @@ algorithm
       list<SCode.AlgorithmSection> na "the list of algorithms";
       list<SCode.AlgorithmSection> ia "the list of initial algorithms";
       list<SCode.ConstraintSection> co "the list of constraints for optimization";
+      list<Absyn.NamedArg> clats "the list of class attributes. Currently for Optimica extensions";
       Option<SCode.ExternalDecl> ed "used by external functions";
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
@@ -479,7 +480,7 @@ algorithm
       FlatStructure structure;
     
     // handle parts
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, ed, al, c), env, hashTable, seqNumber, info)
+    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed, al, c), env, hashTable, seqNumber, info)
       equation
         modifiers = addRedeclaresAndClassExtendsToModifiers(modifiers, els);
         (hashTable, seqNumber) = hashTableAddElements(inParentCref, parentElement, modifiers, baseClassOpt, els, env, hashTable, seqNumber);

@@ -207,14 +207,15 @@ class_specifier2 returns [void* ast, const char *s2] @init {
       $s2 = (char*)$id.text->chars;
       if (lt != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
-        $ast = Absyn__PARTS(ids, c, mk_some_or_none(cmt));
+        $ast = Absyn__PARTS(ids, mk_nil(), c, mk_some_or_none(cmt));
       } else {
-        $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
+        $ast = Absyn__PARTS(mk_nil(), mk_nil(), c, mk_some_or_none(cmt));
       }
     }
-| LPAR ( as=argument_list )? RPAR cmt=string_comment c=composition id=END_IDENT
+| (lp = LPAR na=named_arguments rp=RPAR) cmt=string_comment c=composition id=END_IDENT
     {
-      $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
+      modelicaParserAssert(metamodelica_enabled(),"Class attributes are currently allowed only for Optimica. Use +g=MetaModelica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
+      $ast = Absyn__PARTS(mk_nil(), na, c, mk_some_or_none(cmt));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {

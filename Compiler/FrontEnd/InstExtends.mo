@@ -446,6 +446,7 @@ algorithm
       list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
       list<SCode.AlgorithmSection> nAlg1,nAlg2,inAlg1,inAlg2;
       list<SCode.ConstraintSection> inCons1, inCons2;
+      list<Absyn.NamedArg> clats;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> rest;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
@@ -460,16 +461,16 @@ algorithm
         
         env_path = Absyn.pathString(Env.getEnvName(inEnv));
         name2 = buildClassExtendsName(env_path,name2);
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,externalDecl2,annotationLst2,comment2),info2) = cl;
+        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2,annotationLst2,comment2),info2) = cl;
         
         SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,externalDecl1,annotationLst1,comment1)) = classExtendsCdef;
+        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1,annotationLst1,comment1)) = classExtendsCdef;
 
-        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,externalDecl2,annotationLst2,comment2);
+        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2,annotationLst2,comment2);
         compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,info2);
         vis2 = SCode.prefixesVisibility(prefixes2);
         elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,externalDecl1,annotationLst1,comment1);
+        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1,annotationLst1,comment1);
         elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, info1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         //Debug.traceln("class extends: " +& SCodeDump.unparseElementStr(compelt) +& "  " +& SCodeDump.unparseElementStr(elt));
@@ -942,6 +943,7 @@ algorithm
       list<SCode.Equation> ne,ie;
       list<SCode.AlgorithmSection> na,ia;
       list<SCode.ConstraintSection> nc;
+      list<Absyn.NamedArg> clats;
       Option<SCode.ExternalDecl> ed;
       list<SCode.Annotation> ann;
       Option<SCode.Comment> c;
@@ -954,7 +956,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
       SCode.ClassDef cd;
     
-    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,ed,ann,c),ht)
+    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c),ht)
       equation
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
@@ -962,9 +964,9 @@ algorithm
         (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
         (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
         (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,ed,ann,c));
+      then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c));
         
-    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,ed,ann,c)),ht)
+    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c)),ht)
       equation
         (cache,mod) = fixModifications(cache,env,mod,ht);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
@@ -973,7 +975,7 @@ algorithm
         (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
         (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
         (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
-      then (cache,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,ed,ann,c)));
+      then (cache,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed,ann,c)));
 
     case (cache,env,SCode.DERIVED(ts,mod,attr,c),ht)
       equation

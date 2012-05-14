@@ -77,7 +77,7 @@ public constant SCode.Attributes BUILTIN_CONST_ATTRIBUTES = SCode.ATTR(
   {}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR());
 
 public constant SCode.ClassDef BUILTIN_EMPTY_CLASS = SCode.PARTS(
-  {}, {}, {}, {}, {}, {}, NONE(), {}, NONE());
+  {}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE());
 
 
 // Metatypes used to define the builtin types.
@@ -325,25 +325,25 @@ public constant Env BUILTIN_STATESELECT_ENV = {SCodeEnv.FRAME(SOME("StateSelect"
 public constant Item BUILTIN_REAL = SCodeEnv.CLASS(
   SCode.CLASS("Real", SCode.defaultPrefixes, 
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-      SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), BUILTIN_REAL_ENV, SCodeEnv.BASIC_TYPE());
   
 public constant Item BUILTIN_INTEGER = SCodeEnv.CLASS(
   SCode.CLASS("Integer", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-      SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), BUILTIN_INTEGER_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_BOOLEAN = SCodeEnv.CLASS(
   SCode.CLASS("Boolean", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-      SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), BUILTIN_BOOLEAN_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STRING = SCodeEnv.CLASS(
   SCode.CLASS("String", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-      SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), BUILTIN_STRING_ENV, SCodeEnv.BASIC_TYPE());
 
 public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
@@ -360,7 +360,7 @@ public constant Item BUILTIN_STATESELECT = SCodeEnv.CLASS(
 public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
   SCode.CLASS("ExternalObject", SCode.defaultPrefixes,
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
-      SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
+      SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE());
 
 protected import Debug;
@@ -1643,7 +1643,7 @@ algorithm
     inTypeName, 
     SCode.defaultPrefixes, 
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()), Absyn.dummyInfo);
 end makeDummyMetaType;
 
 public function qualifyPath

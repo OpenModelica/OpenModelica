@@ -317,6 +317,7 @@ algorithm
       list<SCode.AlgorithmSection> na "the list of algorithms";
       list<SCode.AlgorithmSection> ia "the list of initial algorithms";
       list<SCode.ConstraintSection> nc "the list of constraints for optimization";
+      list<Absyn.NamedArg> clats "class attributes. currently for optimica extensions"; 
       Option<SCode.ExternalDecl> ed "used by external functions";
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
@@ -334,7 +335,7 @@ algorithm
       SCode.Mod redeclareAsElementMods;
     
     // handle parts
-    case (SCode.PARTS(els, ne, ie, na, ia, nc, ed, al, c), iExtra)
+    case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c), iExtra)
       equation
         // collect the modifiers!
         modifiers = getRedeclaresAndClassExtends(els, {});
