@@ -360,7 +360,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  let Amatrix= 
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-      '<%preExp%>_A[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
   
  
@@ -368,7 +368,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
  let bvector =  (beqs |> exp hasindex i0 =>
 
      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-     '<%preExp%>_b[<%i0%>]=<%expPart%>;'
+     '<%preExp%>__b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
  
   
@@ -1286,7 +1286,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
      void <%modelname%>Algloop<%index%>::giveAMatrix(double* A_matrix)
      {  
-          memcpy(A_matrix,_A.data(),_dim[0]*_dim[0]*sizeof(double));
+          memcpy(A_matrix,__A.data(),_dim[0]*_dim[0]*sizeof(double));
      }
    >>
  
@@ -1314,7 +1314,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     void <%modelname%>Algloop<%index%>::giveRHS(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
     {
         if(doubleResiduals)
-        memcpy(doubleResiduals,_b.data(),_dim[0]*sizeof(double));
+        memcpy(doubleResiduals,__b.data(),_dim[0]*sizeof(double));
     }
    >>
  
@@ -1338,13 +1338,13 @@ match eq
    
     void <%modelname%>Algloop<%index%>::giveResiduals(double* doubleResiduals, int* intResiduals, bool* boolResiduals)
     {        
-        ublas::matrix<double> A=toMatrix(_dim[0],_dim[0],_A.data());
+        ublas::matrix<double> A=toMatrix(_dim[0],_dim[0],__A.data());
         double* doubleUnknowns = new double[_dim[0]];
         int* intUnknowns = new int[_dim[1]];
         bool* boolUnknowns = new bool[_dim[2]];
         giveVars(doubleUnknowns,intUnknowns,boolUnknowns);
         ublas::vector<double> x=toVector(_dim[0],doubleUnknowns);
-        ublas::vector<double> b=toVector(_dim[0],_b.data());
+        ublas::vector<double> b=toVector(_dim[0],__b.data());
         b=ublas::prod(ublas::trans(A),x)-b;         
         if(doubleResiduals) std::copy(b.data().begin(), b.data().end(), doubleResiduals);
     }
@@ -1404,7 +1404,7 @@ case SES_NONLINEAR(__) then
    <%crefs |> name hasindex i0 =>
     let namestr = cref1(name,simCode)
     <<
-    _xd[<%i0%>] = <%namestr%>;
+    __xd[<%i0%>] = <%namestr%>;
      >>
   ;separator="\n"%>
    >>
@@ -1414,7 +1414,7 @@ case SES_NONLINEAR(__) then
  let Amatrix= 
     (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
       let expPart = daeExp(eq.exp, contextSimulationNonDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/,simCode)
-      '<%preExp%>_A[<%row%>][<%col%>]=<%expPart%>;'
+      '<%preExp%>__A[<%row%>][<%col%>]=<%expPart%>;'
   ;separator="\n")
   
  
@@ -1422,7 +1422,7 @@ case SES_NONLINEAR(__) then
  let bvector =  (beqs |> exp hasindex i0 =>
 
      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-     '<%preExp%>_b[<%i0%>]=<%expPart%>;'
+     '<%preExp%>__b[<%i0%>]=<%expPart%>;'
   ;separator="\n")
  
  <<
@@ -1555,8 +1555,8 @@ case SES_NONLINEAR(__) then
     _dim[0] = <%size%>;
     _dim[1] = 0;
     _dim[2] = 0;
-    fill_array(_A,0.0);
-    fill_array(_b,0.0);
+    fill_array(__A,0.0);
+    fill_array(__b,0.0);
   >>
  
 end initAlgloopDimension;
@@ -1568,8 +1568,8 @@ match eq
 case SES_LINEAR(__) then
    let size = listLength(vars)
   <<
-    ,_A(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order())
-   ,_b(boost::extents[<%size%>])
+    ,__A(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order())
+   ,__b(boost::extents[<%size%>])
   >>
  
 end alocateLinearSystem;
@@ -1814,9 +1814,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //state derivatives
     double* __zDot;
     // A matrix
-    boost::multi_array<double,2> _A;
+    boost::multi_array<double,2> __A;
     //b vector
-    boost::multi_array<double,1> _b;
+    boost::multi_array<double,1> __b;
      <%algvars%>
     EventHandling& _event_handling; 
    };
@@ -2825,7 +2825,7 @@ end crefToCStr1;
 template crefStr(ComponentRef cr)
 ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then '_xd<%subscriptsStr(subscriptLst)%>'
+  case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStr(subscriptLst)%>'
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
