@@ -1027,13 +1027,14 @@ protected function addDimensionsFromType
   output list<DAE.Dimension> outDimensions;
   output Integer outAddedDims;
 algorithm
-  (outDimensions, outAddedDims) := match(inDimensions, inType)
+  (outDimensions, outAddedDims) := matchcontinue(inDimensions, inType)
     local
       list<DAE.Dimension> dims;
       Integer added_dims;
 
-    case (_, DAE.T_ARRAY(dims = dims))
+    case (_, _)
       equation
+        dims = Types.getDimensions(inType);
         added_dims = listLength(dims);
         dims = listAppend(inDimensions, dims);
       then
@@ -1041,7 +1042,7 @@ algorithm
 
     else (inDimensions, 0);
 
-  end match;
+  end matchcontinue;
 end addDimensionsFromType;
 
 protected function instExpList

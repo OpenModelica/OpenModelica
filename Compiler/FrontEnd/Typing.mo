@@ -975,19 +975,19 @@ algorithm
       DAE.Type ty;
       list<tuple<DAE.Exp, list<Equation>>> branches;
       list<Equation> acc_el;
+      Absyn.Path iter_name;
+      Component iter;
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el)
       equation
-        (rhs, _, _) = typeExp(rhs, NO_EVAL(), st);
-        (lhs, _, _) = typeExp(lhs, NO_EVAL(), st);
+        (rhs, _, _) = typeExp(rhs, EVAL_CONST(), st);
+        (lhs, _, _) = typeExp(lhs, EVAL_CONST(), st);
       then
         InstTypes.EQUALITY_EQUATION(lhs, rhs, info) :: acc_el;
 
     case (InstTypes.CONNECT_EQUATION(cref1, _, cref2, _, prefix, info), st, acc_el)
       equation
         acc_el = typeConnection(cref1, cref2, prefix, st, info, acc_el);
-        //(cref1, face1) = lookupConnector(cref1, prefix, st, info);
-        //(cref2, face2) = lookupConnector(cref2, prefix, st, info);
       then
         acc_el;
 
@@ -995,6 +995,9 @@ algorithm
       equation
         (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
+        iter_name = Absyn.IDENT(index);
+        iter = InstUtil.makeIterator(iter_name, ty, info);
+        st = InstSymbolTable.addIterator(iter_name, iter, st);
         eql = typeEquations(eql, st);
       then
         InstTypes.FOR_EQUATION(index, ty, exp1, eql, info) :: acc_el;
@@ -1011,7 +1014,9 @@ algorithm
       then
         InstTypes.WHEN_EQUATION(branches, info) :: acc_el;
 
-    // TODO: Remove equation if condition = false.
+    // TODO: Remove equation if condition = false. Actually, that should only be
+    // done if all conditions are false, due to non-expansion. Individual
+    // asserts can be removed during expansion.
     case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
@@ -1019,7 +1024,7 @@ algorithm
       then
         InstTypes.ASSERT_EQUATION(exp1, exp2, info) :: acc_el;
 
-    // TODO: Remove equation if condition = false.
+    // TODO: Remove equation if condition = false. See asserts above.
     case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);

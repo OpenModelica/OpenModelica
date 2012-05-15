@@ -147,7 +147,8 @@ algorithm
       equation
         ty = arrayElementType(ty);
       then
-        DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
+        ty;
+        //DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
 
     else inType;
   end match;
@@ -516,6 +517,16 @@ algorithm
   outDimension := InstTypes.UNTYPED_DIMENSION(inDimension, false);
 end wrapDimension;
   
+public function makeIterator
+  input Absyn.Path inName;
+  input DAE.Type inType;
+  input Absyn.Info inInfo;
+  output Component outIterator;
+algorithm
+  outIterator := InstTypes.TYPED_COMPONENT(inName, inType,
+    InstTypes.NO_DAE_PREFIXES(), InstTypes.UNBOUND(), inInfo);
+end makeIterator;
+
 public function mergePrefixesFromComponent
   "Merges a component's prefixes with the given prefixes, with the component's
    prefixes having priority."
@@ -1536,7 +1547,7 @@ algorithm
       DAE.Type ty1, ty2;
       DAE.ComponentRef cref1, cref2;
       Connect.Face face1, face2;
-      String index, res, eql_str;
+      String index, res, eql_str, range_str;
       String exp_str1, exp_str2, ty_str1, ty_str2, face_str1, face_str2;
       list<Equation> eql;
 
@@ -1564,7 +1575,8 @@ algorithm
         range = exp1, body = eql))
       equation
         ty_str1 = Types.unparseType(ty1);
-        res = "for {" +& ty_str1 +& "} " +& index +& " loop\n  ";
+        range_str = ExpressionDump.printExpStr(exp1);
+        res = "for {" +& ty_str1 +& "} " +& index +& " in " +& range_str +& " loop\n  ";
         eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
         res = res +& eql_str +& "\n  end for;\n";
       then
