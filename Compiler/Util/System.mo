@@ -919,7 +919,7 @@ public function realRand
   "Returns a value in the intervals (0,1]"
   output Real r;
 
-  external "C" r = SystemImpl_realRand();
+  external "C" r = SystemImpl__realRand();
 end realRand;
 
 public function intRand
@@ -928,7 +928,7 @@ public function intRand
   input Integer n;
   output Integer i;
 
-  external "C" i = SystemImpl_intRand(n);
+  external "C" i = SystemImpl__intRand(n);
 end intRand;
 
 end System;
