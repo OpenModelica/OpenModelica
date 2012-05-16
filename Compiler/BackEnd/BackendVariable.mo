@@ -3483,6 +3483,28 @@ algorithm
   end matchcontinue;
 end getVarAt;
 
+public function getVarDAE
+"function: getVarDAE
+  author: Frenkel TUD 2012-05
+  return a Variable."
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.EqSystem syst;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := match (inComponentRef,syst)
+    local
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> varlst;
+      list<Integer> indxlst;
+   case (_,BackendDAE.EQSYSTEM(orderedVars=vars))
+      equation
+        (varlst,indxlst) = getVar(inComponentRef,vars);
+      then 
+        (varlst,indxlst);
+  end match;
+end getVarDAE;
+
 public function getVar
 "function: getVar
   author: PA
