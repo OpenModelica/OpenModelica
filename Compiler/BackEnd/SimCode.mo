@@ -4923,7 +4923,8 @@ algorithm
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         cr = ComponentReference.makeCrefIdent("shift",DAE.T_REAL_DEFAULT,{});
-        crefs1 = cr :: crefs;
+        crefs1 = listReverse(crefs);
+        crefs1 = cr :: crefs1;
         eq = BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource);
         eqn_lst1 = eq :: eqn_lst;
         tcrs = List.map1r(t,listNth,crefs1);
