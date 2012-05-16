@@ -5801,7 +5801,7 @@ template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls)
 match exp
   case ICONST(__) then incrementInt(integer,-1)
   case ENUM_LITERAL(__) then incrementInt(index,-1)
-  else daeExp(exp,context,&preExp,&varDecls)
+  else '(<%daeExp(exp,context,&preExp,&varDecls)%>)-1'
 end daeExpASubIndex;
 
 template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls)
