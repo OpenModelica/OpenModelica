@@ -150,7 +150,7 @@ package SimCode
       String omhome;
       String cflags;
       String ldflags;
-      String senddatalibs;
+      String runtimelibs;
       list<String> includes;
       list<String> libs;
       String platform;

@@ -487,7 +487,7 @@ uniontype MakefileParams
     String omhome;
     String cflags;
     String ldflags;
-    String senddatalibs;
+    String runtimelibs "Libraries that are required by the runtime library";
     list<String> includes;
     list<String> libs;
     String platform;
@@ -2868,7 +2868,7 @@ protected function createMakefileParams
   input list<String> libs;
   output MakefileParams makefileParams;
 protected
-  String omhome,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,senddatalibs,platform;
+  String omhome,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,rtlibs,platform;
 algorithm
   ccompiler := System.getCCompiler();
   cxxcompiler := System.getCXXCompiler();
@@ -2880,10 +2880,10 @@ algorithm
   cflags := System.getCFlags();
   cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP),stringAppend,cflags," -fopenmp",cflags);
   ldflags := System.getLDFlags();
-  senddatalibs := System.getRTLibs();
+  rtlibs := System.getRTLibs();
   platform := System.modelicaPlatform();
   makefileParams := MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
-        omhome, cflags, ldflags, senddatalibs, includes, libs, platform);
+        omhome, cflags, ldflags, rtlibs, includes, libs, platform);
 end createMakefileParams;
 
 protected function generateHelpVarInfo

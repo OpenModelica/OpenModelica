@@ -1042,8 +1042,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  SUNDIALSLIBS=-lsundials_kinsol -lsundials_nvecserial <% if stringEq(makefileParams.platform, "win32") then "-llapack-mingw" else "-llapack"%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.senddatalibs%> $(SUNDIALSLIBS) 
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
   MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  

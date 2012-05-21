@@ -51,7 +51,7 @@
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #endif
 
-#define LDFLAGS_RT " -static-libgcc -luuid -lole32 -lws2_32"
+#define LDFLAGS_RT " -static-libgcc -luuid -lole32 -lws2_32 -lsundials_kinsol -lsundials_nvecserial -llapack"
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"

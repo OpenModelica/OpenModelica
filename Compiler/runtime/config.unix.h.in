@@ -1,6 +1,6 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
-#define LDFLAGS_RT "@RT_LDFLAGS@ -lpthread"
+#define LDFLAGS_RT "@RT_LDFLAGS@ @SUNDIALS_LDFLAGS@ -lpthread"
 #define CONFIG_EXE_EXT ""
 #define CONFIG_DLL_EXT ".so"
 #define CONFIG_PLATFORM "Unix"

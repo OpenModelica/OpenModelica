@@ -27,6 +27,7 @@ AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
+AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
@@ -305,6 +306,7 @@ AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h 
 if ! test "$NO_SUNDIALS" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
   WITH_SUNDIALS="#define WITH_SUNDIALS"
+  SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial -llapack"
 else
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: No"
   WITH_SUNDIALS="/* Without Sundials */"
