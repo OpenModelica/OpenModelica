@@ -2136,7 +2136,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LIBSIMULATIONRUNTIMEC=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-Wl,-whole-archive "%>-lSimulationRuntimeC<% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%><% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -Wl,-no-whole-archive"%>
+  LIBSIMULATIONRUNTIMEC=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" $(LIBSIMULATIONRUNTIMEC) <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
@@ -2150,7 +2150,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: $(FILEPREFIX)_records.c
   
   omc_main_target: $(MAINOBJ) $(FILEPREFIX)_records.o $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-  <%\t%> $(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
+  <%\t%> $(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
   <%fileNamePrefix%>.conv.c: $(FILEPREFIX).c
   <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%>@mv $@.tmp $@
