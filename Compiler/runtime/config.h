@@ -80,6 +80,7 @@
 
 #define CONFIG_PATH_DELIMITER "/"
 #define CONFIG_GROUP_DELIMITER ";"
+#define WITH_SUNDIALS
 
 #include "revision.h"
 

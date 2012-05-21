@@ -41,6 +41,9 @@ AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(PYTHON_INTERFACE)
+AC_SUBST(WITH_SUNDIALS)
+
+FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
 if test -z "$MAKE"; then
   MAKE=make
@@ -297,6 +300,16 @@ LIBS="$LD_LAPACK"
 AC_MSG_CHECKING([LAPACK flags])
 AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([failed using $LD_LAPACK])])
 
+AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
+
+if ! test "$NO_SUNDIALS" = "yes"; then
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
+  WITH_SUNDIALS="#define WITH_SUNDIALS"
+else
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: No"
+  WITH_SUNDIALS="/* Without Sundials */"
+fi
+
 dnl should we use corba?
 
 WANT_ORBIT2="no"
@@ -549,3 +562,5 @@ mosh/src/Makefile \
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
+
+echo -e "$FINAL_MESSAGES"
