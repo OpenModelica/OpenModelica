@@ -1477,7 +1477,7 @@ algorithm
     case(DAE.T_COMPLEX(varLst={})) then "";
 
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,visibility=SCode.PROTECTED(),ty=tp,binding=binding)::varLst,ec,lstPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes = DAE.ATTR(visibility=SCode.PROTECTED()),ty=tp,binding=binding)::varLst,ec,lstPath)) 
       equation
         s1 ="  protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
         s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));

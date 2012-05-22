@@ -431,15 +431,14 @@ algorithm
       String name;
       Type ty;
       DAE.Attributes attributes;
-      SCode.Visibility visibility;
       Binding binding;
       Option<Const> constOfForIteratorRange;
     
-    case(DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange))
+    case(DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange))
       equation
         ty = expTypetoTypesType(ty); 
       then
-        DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange);
+        DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange);
     
     case(_) equation print("error in Types.convertFromExpToTypesVar\n"); then fail();
     
@@ -938,9 +937,8 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-                       SCode.PUBLIC(),tp,DAE.UNBOUND(),
-                       NONE()) :: rest);
+        (DAE.TYPES_VAR(id, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE()) :: rest);
+
     case (_,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "-values_to_vars failed\n");
@@ -1118,8 +1116,8 @@ algorithm
       Absyn.InnerOuter io;
       Option<DAE.Const> cnstForRange;
     
-    case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,_,io),vis,tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,Absyn.INPUT(),io),vis,tp,bind,cnstForRange);
+    case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,_,io,vis),tp,bind,cnstForRange)
+    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,Absyn.INPUT(),io,vis),tp,bind,cnstForRange);
 
   end matchcontinue;
 end setVarInput;
@@ -1132,14 +1130,13 @@ algorithm
   outV := match(var,ty)
     local
       Ident name;
-      SCode.Visibility p;
       Type tp;
       Binding bind;
       Option<DAE.Const> cnstForRange;
       DAE.Attributes attr;
     
-    case (DAE.TYPES_VAR(name,attr,p,tp,bind,cnstForRange),ty)
-    then DAE.TYPES_VAR(name,attr,p,ty,bind,cnstForRange);
+    case (DAE.TYPES_VAR(name,attr,tp,bind,cnstForRange),ty)
+    then DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange);
 
   end match;
 end setVarType;
@@ -1440,7 +1437,7 @@ algorithm
     
     case (l,(DAE.TYPES_VAR(name = n,ty = t2) :: vs))
       equation
-        DAE.TYPES_VAR(_,_,_,t1,_,_) = varlistLookup(l, n);
+        DAE.TYPES_VAR(ty = t1) = varlistLookup(l, n);
         true = subtype(t1, t2);
         true = subtypeVarlist(l, vs);
       then
@@ -1491,7 +1488,6 @@ algorithm
       list<Var> cs;
       Option<Type> bc;
       Attributes attr;
-      SCode.Visibility vis;
       Binding bnd;
       DAE.Dimension dim;
       Option<DAE.Const> cnstForRange;
@@ -1517,17 +1513,17 @@ algorithm
     
     case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_COMPLEX(complexClassType = st,varLst = cs)),id)
       equation
-        DAE.TYPES_VAR(n,attr,vis,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
+        DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
         ty_1 = DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
       then
-        DAE.TYPES_VAR(n,attr,vis,ty_1,bnd,cnstForRange);
+        DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
     
     case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_SUBTYPE_BASIC(complexClassType = st,varLst = cs)),id)
       equation
-        DAE.TYPES_VAR(n,attr,vis,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
+        DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
         ty_1 = DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
       then
-        DAE.TYPES_VAR(n,attr,vis,ty_1,bnd,cnstForRange);
+        DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
     
     case (_,id) 
       equation
@@ -1581,36 +1577,24 @@ algorithm
         v;
 
    case (DAE.T_ENUMERATION(index = SOME(_)),"quantity") 
-     then DAE.TYPES_VAR("quantity",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-          SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+     then DAE.TYPES_VAR("quantity", DAE.dummyAttrParam,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
     case (DAE.T_ENUMERATION(index = SOME(_)),"min")       
-      then DAE.TYPES_VAR("min",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-           SCode.PUBLIC(),DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("min", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case (DAE.T_ENUMERATION(index = SOME(_)),"max") 
-      then DAE.TYPES_VAR("max",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-           SCode.PUBLIC(),DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("max", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case (DAE.T_ENUMERATION(index = SOME(_)),"start") 
-      then DAE.TYPES_VAR("start",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("start", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
 
     // Needs to be set to true/false higher up the call chain depending on variability of instance 
     case (DAE.T_ENUMERATION(index = SOME(_)),"fixed") 
-      then DAE.TYPES_VAR("fixed",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
-    case (DAE.T_ENUMERATION(index = SOME(_)),"enable") then DAE.TYPES_VAR("enable",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());        
+      then DAE.TYPES_VAR("fixed", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
+    case (DAE.T_ENUMERATION(index = SOME(_)),"enable") then DAE.TYPES_VAR("enable", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());        
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -2382,19 +2366,16 @@ algorithm
   outString := matchcontinue (inVar)
     local
       Ident res,n,bindStr,valStr;
-      Attributes attr;
-      SCode.Visibility vis;
-      Type typ;
       Values.Value value;
       DAE.Exp e;
     
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = vis,ty = typ,binding = DAE.EQBOUND(exp=e))
+    case DAE.TYPES_VAR(name = n, binding = DAE.EQBOUND(exp=e))
       equation
         bindStr = ExpressionDump.printExpStr(e);
         res = stringAppendList({n,"=",bindStr});
       then
         res;
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = vis,ty = typ,binding = DAE.VALBOUND(valBound=value))
+    case DAE.TYPES_VAR(name = n, binding = DAE.VALBOUND(valBound=value))
       equation
         valStr = ValuesUtil.valString(value);
         res = stringAppendList({n,"=",valStr});
@@ -2413,12 +2394,9 @@ algorithm
   outString := match (inVar)
     local
       Ident t,res,n;
-      Attributes attr;
-      SCode.Visibility vis;
       Type typ;
-      Binding bind;
       
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = vis,ty = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,ty = typ)
       equation
         t = unparseType(typ);
         res = stringAppendList({t," ",n,";\n"});
@@ -2457,12 +2435,11 @@ algorithm
     local
       Ident vs,n;
       SCode.Variability var;
-      SCode.Visibility vis;
       Type typ;
       Binding bind;
       String s1,s2;
       
-    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),visibility = vis,ty = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),ty = typ,binding = bind)
       equation
         s1 = printTypeStr(typ);
         vs = SCodeDump.variabilityString(var);
@@ -2470,7 +2447,7 @@ algorithm
         str = stringAppendList({s1," ",n," ",vs," ",s2});
       then
         str;
-    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),visibility = vis,ty = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n)
       equation
         str = stringAppendList({n});
       then
@@ -2594,16 +2571,15 @@ algorithm
       Type t;
       Integer idx;
       Attributes attributes;
-      SCode.Visibility vis;
       Binding binding;
       Var var;
       Option<DAE.Const> cnstForRange;
       
-    case (p,DAE.TYPES_VAR(name,attributes,vis,_,binding,cnstForRange) :: xs,names,idx)
+    case (p,DAE.TYPES_VAR(name,attributes,_,binding,cnstForRange) :: xs,names,idx)
       equation
         vars = makeEnumerationType1(p, xs, names, idx+1);
         t = DAE.T_ENUMERATION(SOME(idx),p,names,{},{},{p});
-        var = DAE.TYPES_VAR(name,attributes,vis,t,binding,cnstForRange);
+        var = DAE.TYPES_VAR(name,attributes,t,binding,cnstForRange);
       then
         (var :: vars);
     case (p,{},names,_) then {};
@@ -2787,15 +2763,12 @@ public function isInputVar
 algorithm
   _ := match (inVar)
     local
-      Ident n;
       Attributes attr;
-      Type ty;
-      Binding bnd;
     
-    // LS: false means not protected, hence we ignore protected variables
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = SCode.PUBLIC(),ty = ty,binding = bnd)
+    case DAE.TYPES_VAR(attributes = attr)
       equation
         true = isInputAttr(attr);
+        true = isPublicAttr(attr);
       then
         ();
   end match;
@@ -2807,15 +2780,12 @@ public function isOutputVar
 algorithm
   _ := match (inVar)
     local
-      Ident n;
       Attributes attr;
-      Type ty;
-      Binding bnd;
     
-    // LS: false means not protected, hence we ignore protected variables   
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = SCode.PUBLIC(),ty = ty,binding = bnd)
+    case DAE.TYPES_VAR(attributes = attr)
       equation
         true = isOutputAttr(attr);
+        true = isPublicAttr(attr);
       then
         ();
   end match;
@@ -2856,6 +2826,16 @@ algorithm
     case _ then false;
   end matchcontinue;
 end isBidirAttr;
+
+public function isPublicAttr
+  input Attributes inAttributes;
+  output Boolean outIsPublic;
+algorithm
+  outIsPublic := match(inAttributes)
+    case DAE.ATTR(visibility = SCode.PUBLIC()) then true;
+    else false;
+  end match;
+end isPublicAttr;
 
 public function makeFargsList
   "Makes a function argument list from a list of variables."
@@ -2931,13 +2911,9 @@ protected function makeReturnTypeSingle "function: makeReturnTypeSingle
 algorithm
   outType := match (inVar)
     local
-      Ident n;
-      Attributes attr;
-      SCode.Visibility vis;
       Type ty;
-      Binding bnd;
       
-    case DAE.TYPES_VAR(name = n,attributes = attr,visibility = vis,ty = ty,binding = bnd) then ty;
+    case DAE.TYPES_VAR(ty = ty) then ty;
   end match;
 end makeReturnTypeSingle;
 
@@ -2951,16 +2927,12 @@ algorithm
   outTypeLst := match (inVarLst)
     local
       list<Type> tys;
-      Ident n;
-      Attributes attr;
-      SCode.Visibility pr;
       Type ty;
-      Binding bnd;
       list<Var> vl;
       
     case {} then {};
       
-    case (DAE.TYPES_VAR(name = n,attributes = attr,visibility = pr,ty = ty,binding = bnd) :: vl)
+    case (DAE.TYPES_VAR(ty = ty) :: vl)
       equation
         tys = makeReturnTypeTuple(vl);
       then
@@ -2973,7 +2945,7 @@ public function isParameterVar "function: isParameter
   Succeds if a variable is a parameter."
   input Var inVar;
 algorithm
-  DAE.TYPES_VAR(attributes = DAE.ATTR(variability = SCode.PARAM()),visibility = SCode.PUBLIC()) := inVar;
+  DAE.TYPES_VAR(attributes = DAE.ATTR(variability = SCode.PARAM(),visibility = SCode.PUBLIC())) := inVar;
 end isParameterVar;
 
 public function isConstant 
@@ -3561,12 +3533,12 @@ algorithm
     
     case ({}) then {};  
     
-    case (DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange)::rest)
+    case (DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange)::rest)
       equation
         rest = simplifyVars(rest);
         ty = simplifyType(ty);
       then
-        DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange)::rest;
+        DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange)::rest;
   end matchcontinue;    
 end simplifyVars;
 
@@ -4980,12 +4952,10 @@ algorithm
     local
       list<DAE.Exp> tyexps,bndexp,exps;
       Ident id;
-      Attributes attr;
-      SCode.Visibility vis;
       Type ty;
       Binding bnd;
       
-    case DAE.TYPES_VAR(name = id,attributes = attr,visibility = vis,ty = ty,binding = bnd)
+    case DAE.TYPES_VAR(name = id,ty = ty,binding = bnd)
       equation
         tyexps = getAllExps(ty);
         bndexp = getAllExpsBinding(bnd);
@@ -6270,11 +6240,11 @@ algorithm
       list<Var> rest;
       
     case {} then {};
-    case DAE.TYPES_VAR(name,attributes,vis,type_,binding,constOfForIteratorRange)::rest
+    case DAE.TYPES_VAR(name,attributes,type_,binding,constOfForIteratorRange)::rest
       equation
         type_ = boxIfUnboxedType(type_);
         rest = boxVarLst(rest);
-      then DAE.TYPES_VAR(name,attributes,vis,type_,binding,constOfForIteratorRange)::rest;
+      then DAE.TYPES_VAR(name,attributes,type_,binding,constOfForIteratorRange)::rest;
     
   end match;
 end boxVarLst;

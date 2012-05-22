@@ -9401,7 +9401,7 @@ algorithm
       equation
         ty = Types.simplifyType(ty);
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
-        DAE.ATTR(_,_,scPrl,_,_,_) = attr;
+        DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
       then VARIABLE(cref_, ty, NONE(), {}, prl);
   end match;

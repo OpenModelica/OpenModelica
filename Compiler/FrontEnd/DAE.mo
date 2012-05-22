@@ -663,7 +663,6 @@ uniontype Var "- Variables"
   record TYPES_VAR
     Ident name "name";
     Attributes attributes "attributes";
-    SCode.Visibility visibility "protected/public";
     Type ty "type" ;
     Binding binding "binding ; equation modification";
     Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
@@ -679,13 +678,14 @@ uniontype Attributes "- Attributes"
     SCode.Variability   variability "variability" ;
     Absyn.Direction     direction "direction" ;
     Absyn.InnerOuter    innerOuter "inner, outer,  inner outer or unspecified";
+    SCode.Visibility    visibility "public, protected";
   end ATTR;
 end Attributes;
 
 public 
-constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()); 
-constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
-constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
+constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()); 
+constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;

@@ -5213,7 +5213,7 @@ algorithm
       equation
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         Types.simpleType(tp1);
-        (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
@@ -6773,8 +6773,8 @@ protected function elabCallInteractive "function: elabCallInteractive
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype = 
         DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-         {DAE.TYPES_VAR("flatClass",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("exeFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+        {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+         DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
           NONE(),DAE.emptyTypeSource);
       then
         (cache,Expression.makeBuiltinCall("translateModelCPP",
@@ -6788,8 +6788,8 @@ protected function elabCallInteractive "function: elabCallInteractive
                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype = 
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-          {DAE.TYPES_VAR("flatClass",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-           DAE.TYPES_VAR("exeFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
            NONE(),DAE.emptyTypeSource);
       then
         (cache,Expression.makeBuiltinCall("translateModelFMU",
@@ -6804,8 +6804,8 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
         recordtype = 
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-          {DAE.TYPES_VAR("flatClass",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-           DAE.TYPES_VAR("exeFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
+          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
            NONE(),DAE.emptyTypeSource);
       then
         (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
@@ -9083,22 +9083,22 @@ algorithm
 
     case {} then ({},{});
     
-    case ((DAE.TYPES_VAR(visibility = SCode.PROTECTED()) :: vs)) /* Ignore protected components */
+    case ((DAE.TYPES_VAR(attributes = DAE.ATTR(visibility = SCode.PROTECTED())) :: vs)) /* Ignore protected components */
       equation
         (in_,out) = functionParams(vs);
       then
         (in_,out);
     
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.INPUT(), variability = var),
-           visibility = SCode.PUBLIC(),ty = t,binding = DAE.UNBOUND()) :: vs))
+    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.INPUT(), variability = var,
+           visibility = SCode.PUBLIC()),ty = t,binding = DAE.UNBOUND()) :: vs))
       equation
         c = Types.variabilityToConst(var);
         (in_,out) = functionParams(vs);
       then
         (((n,t,c,NONE()) :: in_),out);
     
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.OUTPUT(), variability = var),
-           visibility = SCode.PUBLIC(),ty = t,binding = DAE.UNBOUND()) :: vs))
+    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.OUTPUT(), variability = var,
+           visibility = SCode.PUBLIC()),ty = t,binding = DAE.UNBOUND()) :: vs))
       equation
         c = Types.variabilityToConst(var);
         (in_,out) = functionParams(vs);
@@ -11496,7 +11496,7 @@ algorithm
     case (cache,crefEnv,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = restCref),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
+        (cache,DAE.ATTR(variability = vt),t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         sl = Types.getDimensions(t);
         ty = Types.simplifyType(t);
         (cache,ss_1,const1) = elabSubscriptsDims(cache, crefEnv, ss, sl, impl, crefPrefix, info);

@@ -5509,6 +5509,29 @@ algorithm
   end match;
 end isInputOrOutput;
 
+public function isInput
+  input Direction inDirection;
+  output Boolean outIsInput;
+algorithm
+  outIsInput := match(inDirection)
+    case INPUT() then true;
+    else false;
+  end match;
+end isInput;
+
+public function directionEqual
+  input Direction inDirection1;
+  input Direction inDirection2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inDirection1, inDirection2)
+    case (BIDIR(), BIDIR()) then true;
+    case (INPUT(), INPUT()) then true;
+    case (OUTPUT(), OUTPUT()) then true;
+    else false;
+  end match;
+end directionEqual;
+
 public function pathLt
   input Path path1;
   input Path path2;

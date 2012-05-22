@@ -252,8 +252,8 @@ protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefi
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),
-          SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
 protected constant DAE.Type stringIntInt2string = 
           DAE.T_FUNCTION(

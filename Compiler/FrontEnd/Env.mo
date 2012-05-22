@@ -793,8 +793,7 @@ algorithm
         new_env_1 = extendFrameV(env,
           DAE.TYPES_VAR(
             name,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
-            SCode.PUBLIC(),
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
             type_,
             binding,
             constOfForIteratorRange),
@@ -1751,7 +1750,7 @@ algorithm
       Env env;
       
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, innerOuter),ty=tp,binding=binding),
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, innerOuter, _),ty=tp,binding=binding),
              declaration = elAndmod, instStatus=instStatus, env = env)) 
       equation
         s1 = SCodeDump.flowStr(flowPrefix);

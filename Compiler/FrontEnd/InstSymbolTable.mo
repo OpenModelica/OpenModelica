@@ -117,12 +117,12 @@ algorithm
 end hashFunc;
 
 protected constant DAE.Var BUILTIN_TIME_QUANTITY = DAE.TYPES_VAR(
-  "quantity", DAE.dummyAttrVar, SCode.PUBLIC(), DAE.T_STRING_DEFAULT,
+  "quantity", DAE.dummyAttrVar, DAE.T_STRING_DEFAULT,
   DAE.EQBOUND(DAE.SCONST("Time"), NONE(), DAE.C_CONST(),
   DAE.BINDING_FROM_DEFAULT_VALUE()), NONE());
 
 protected constant DAE.Var BUILTIN_TIME_UNIT = DAE.TYPES_VAR(
-  "unit", DAE.dummyAttrVar, SCode.PUBLIC(), DAE.T_STRING_DEFAULT,
+  "unit", DAE.dummyAttrVar, DAE.T_STRING_DEFAULT,
   DAE.EQBOUND(DAE.SCONST("s"), NONE(), DAE.C_CONST(),
   DAE.BINDING_FROM_DEFAULT_VALUE()), NONE());
 

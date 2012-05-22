@@ -5795,9 +5795,10 @@ protected
   SCode.Parallelism prl;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
+  SCode.Visibility vis;
 algorithm
-  DAE.ATTR(fp, sp, prl, _, dir, io) := inAttr;
-  outAttr := DAE.ATTR(fp, sp, prl, inVar, dir, io);
+  DAE.ATTR(fp, sp, prl, _, dir, io, vis) := inAttr;
+  outAttr := DAE.ATTR(fp, sp, prl, inVar, dir, io, vis);
 end setAttrVariability;
 
 public function getAttrVariability
@@ -5805,7 +5806,7 @@ public function getAttrVariability
   input DAE.Attributes inAttr;
   output SCode.Variability outVar;
 algorithm
-  DAE.ATTR(_, _, _, outVar, _, _) := inAttr;
+  DAE.ATTR(variability = outVar) := inAttr;
 end getAttrVariability;
 
 public function addSymbolicTransformation
@@ -5906,10 +5907,11 @@ protected
   SCode.Variability var;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
+  SCode.Visibility vis;
 algorithm
   SCode.ATTR(flowPrefix = fp, streamPrefix = sp, parallelism = prl, variability = var, direction = dir) := inAttributes;
-  SCode.PREFIXES(innerOuter = io) := inPrefixes;
-  outAttributes := DAE.ATTR(fp, sp, prl, var, dir, io);
+  SCode.PREFIXES(innerOuter = io, visibility = vis) := inPrefixes;
+  outAttributes := DAE.ATTR(fp, sp, prl, var, dir, io, vis);
 end translateSCodeAttrToDAEAttr;
 
 public function varName
@@ -6023,5 +6025,21 @@ public function isNotCompleteFunction
 algorithm
   isNotComplete := not isCompleteFunction(f);
 end isNotCompleteFunction;
+
+public function setAttributeDirection
+  input Absyn.Direction inDirection;
+  input DAE.Attributes inAttributes;
+  output DAE.Attributes outAttributes;
+protected
+  SCode.Flow f;
+  SCode.Stream s;
+  SCode.Parallelism p;
+  SCode.Variability var;
+  Absyn.InnerOuter io;
+  SCode.Visibility vis;
+algorithm
+  DAE.ATTR(f, s, p, var, _, io, vis) := inAttributes;
+  outAttributes := DAE.ATTR(f, s, p, var, inDirection, io, vis);
+end setAttributeDirection;
 
 end DAEUtil;

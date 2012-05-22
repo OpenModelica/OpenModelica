@@ -3396,6 +3396,18 @@ algorithm
   end match;
 end boolFlow;
 
+public function flowEqual
+  input Flow inFlow1;
+  input Flow inFlow2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inFlow1, inFlow2)
+    case (FLOW(), FLOW()) then true;
+    case (NOT_FLOW(), NOT_FLOW()) then true;
+    else false;
+  end match;
+end flowEqual;
+
 public function streamBool
   input Stream inStream;
   output Boolean bStream;
@@ -3415,6 +3427,37 @@ algorithm
     case (false) then NOT_STREAM();
   end match;
 end boolStream;
+
+public function streamEqual
+  input Stream inStream1;
+  input Stream inStream2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inStream1, inStream2)
+    case (STREAM(), STREAM()) then true;
+    case (NOT_STREAM(), NOT_STREAM()) then true;
+    else false;
+  end match;
+end streamEqual;
+
+public function mergeAttributesFromClass
+  input Attributes inAttributes;
+  input Element inClass;
+  output Attributes outAttributes;
+algorithm
+  outAttributes := match(inAttributes, inClass)
+    local
+      Attributes cls_attr, attr;
+
+    case (_, CLASS(classDef = DERIVED(attributes = cls_attr)))
+      equation
+        SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr));
+      then
+        attr;
+
+    else inAttributes;
+  end match;
+end mergeAttributesFromClass;
 
 public function mergeAttributes 
 "@author: adrpo

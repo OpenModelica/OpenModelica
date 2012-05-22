@@ -1866,7 +1866,7 @@ algorithm
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),/*SCode.RW()*/_,_,_),_,DAE.UNBOUND(),_,_,_,_,_) 
+        (cache,DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM(), parallelism = SCode.NON_PARALLEL()),_,DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info)) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, ci_state, i, v, sl, source, initial_, impl, unrollForLoops);
@@ -3153,13 +3153,14 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,_,io1,_),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
         validConnector(ty2, c2_2, info);
-        checkConnectTypes(env, ih, c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
         f1 = ConnectUtil.componentFace(env,ih,c1_2);
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
+
+        checkConnectTypes(c1_2, ty1, f1, attr1, c2_2, ty2, f2, attr2, info);
         // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         // print("\n");
@@ -3294,6 +3295,8 @@ algorithm
       ClassInf.State state;
       list<String> variables1, variables2, variablesUnion;
       DAE.ElementSource source;
+      Connect.Face face;
+      SCode.Visibility vis1, vis2;
 
     // both c1 and c2 are expandable
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
@@ -3304,8 +3307,8 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),prl1,vt1,_,io1) = attr1;
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),prl2,vt2,_,io2) = attr2;
+        DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM()) = attr1;
+        DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM()) = attr2;
         true = isExpandableConnectorType(ty1);
         true = isExpandableConnectorType(ty2);
 
@@ -3381,7 +3384,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2,vis2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
@@ -3408,17 +3411,14 @@ algorithm
 
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
-        // add the component c2 to the environment and IH as c1 with reversed input/output
-        // flip direction
-        dirFlipped = flipDirection(dir2);
-        
+
         envComponentEmpty = Env.removeComponentsFromFrameV(envComponent);
         
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dirFlipped,io2),
-          SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+          ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
           // add empty here to connect individual components!
           envComponentEmpty);
         // ******************************************************************************
@@ -3454,7 +3454,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2,vis2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
@@ -3481,16 +3481,12 @@ algorithm
         
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
-        // add the component c2 to the environment and IH as c1 with reversed input/output
-        // flip direction
-        dirFlipped = flipDirection(dir2);
-        
+
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dirFlipped,io2),
-          SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(),
-          envComponent);
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+            ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), envComponent);
         // ******************************************************************************
         // here we need to update the correct environment.
         // walk the cref: c1_2 and update all the corresponding environments on the path:
@@ -3517,7 +3513,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,dir1,io1) = attr1;
+        DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,dir1,io1,vis1) = attr1;
         
         // then connect the components normally.
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
@@ -3528,8 +3524,8 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
-           SCode.ATTR({}, flowPrefix1, streamPrefix1, prl1, vt1, dir1), 
-           SCode.PUBLIC(), NONE(), {}, NONE(), NONE(), 
+           SCode.ATTR({}, flowPrefix1, streamPrefix1, prl1, vt1, Absyn.BIDIR()), 
+           vis1, NONE(), {}, NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, SCode.NOT_FINAL(), source, true);
         
@@ -3608,7 +3604,7 @@ algorithm
         // update the topEnv
         updatedEnv = Env.updateFrameV(
                        topEnv, 
-                       DAE.TYPES_VAR(currentName, veAttr, SCode.PUBLIC(), veTy, veBinding, veCnstForRange), 
+                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange), 
                        Env.VAR_TYPED(),
                        veEnv);
       then
@@ -3629,7 +3625,7 @@ algorithm
         // update the current environment!
         currentEnv = Env.updateFrameV(
                        currentEnv, 
-                       DAE.TYPES_VAR(currentName, veAttr, SCode.PUBLIC(), veTy, veBinding, veCnstForRange), 
+                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange), 
                        Env.VAR_TYPED(),
                        veEnv);
                  
@@ -3830,183 +3826,206 @@ algorithm
 end validConnector;
 
 protected function checkConnectTypes
-"function: checkConnectTypes
-  Check that the type and type attributes of two
-  connectors match, so that they really may be connected."
-  input Env.Env env;
-  input InstanceHierarchy inIH;
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.Type inType2;
-  input DAE.Attributes inAttributes3;
-  input DAE.ComponentRef inComponentRef4;
-  input DAE.Type inType5;
-  input DAE.Attributes inAttributes6;
-  input Absyn.InnerOuter io1;
-  input Absyn.InnerOuter io2;
-  input Absyn.Info info;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.Type inLhsType;
+  input Connect.Face inLhsFace;
+  input DAE.Attributes inLhsAttributes;
+  input DAE.ComponentRef inRhsCref;
+  input DAE.Type inRhsType;
+  input Connect.Face inRhsFace;
+  input DAE.Attributes inRhsAttributes;
+  input Absyn.Info inInfo;
+protected
+  SCode.Flow lhs_flow, rhs_flow;
+  SCode.Stream lhs_stream, rhs_stream;
+  Absyn.Direction lhs_dir, rhs_dir;
+  Absyn.InnerOuter lhs_io, rhs_io;
+  SCode.Visibility lhs_vis, rhs_vis;
 algorithm
-  _ := matchcontinue (env,inIH,inComponentRef1,inType2,inAttributes3,inComponentRef4,inType5,inAttributes6,io1,io2,info)
-    local
-      String c1_str,c2_str,s1,s2,s3,s4,s1_1,s2_2,s0;
-      DAE.ComponentRef c1,c2;
-      SCode.Flow flow1,flow2;
-      Boolean b0,outer1,outer2;
-      SCode.Stream stream1,stream2;
-      InstanceHierarchy ih;
-      DAE.Type t1,t2;
-      list<Integer> iLst1,iLst2;
-    
-    // If two input connectors are connected they must have different faces
-    case (env,ih,c1,_,DAE.ATTR(direction = Absyn.INPUT()),
-                 c2,_,DAE.ATTR(direction = Absyn.INPUT()),io1,io2,info)
-      equation
-        InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_TWO_INPUTS, {c1_str,c2_str}, info);
-      then
-        fail();
-
-    // If two output connectors are connected they must have different faces
-    case (env,ih,c1,_,DAE.ATTR(direction = Absyn.OUTPUT()),
-                 c2,_,DAE.ATTR(direction = Absyn.OUTPUT()),io1,io2,info)
-      equation
-        InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_TWO_OUTPUTS, {c1_str,c2_str}, info);
-      then
-        fail();
-
-    // The type must be identical and flow of connected variables must be same
-    case (env,ih,_,t1,DAE.ATTR(flowPrefix = flow1),_,
-                   t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      equation
-        equality(flow1 = flow2);
-        true = Types.equivtypes(t1, t2) "we do not check arrays here";
-        outer1 = Absyn.isOnlyOuter(io1);
-        outer2 = Absyn.isOnlyOuter(io2);
-        false = boolAnd(outer2,outer1) "outer to outer illegal";
-      then
-        ();
-
-    case (_,_,c1,_,_,c2,_,_,io1,io2,info)
-      equation
-        true = Absyn.isOnlyOuter(io1);
-        true = Absyn.isOnlyOuter(io2);
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_OUTER_OUTER, {c1_str,c2_str}, info);
-      then
-        fail();
-
-    case (env,ih,c1,_,DAE.ATTR(flowPrefix = SCode.FLOW()),
-                 c2,_,DAE.ATTR(flowPrefix = SCode.NOT_FLOW()),io1,io2,info)
-      equation
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c1_str,c2_str}, info);
-      then
-        fail();
-
-    case (env,ih,c1,_,DAE.ATTR(flowPrefix = SCode.NOT_FLOW()),
-                 c2,_,DAE.ATTR(flowPrefix = SCode.FLOW()),io1,io2,info)
-      equation
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c2_str,c1_str}, info);
-      then
-        fail();
-
-    case (env,ih,_,t1,DAE.ATTR(streamPrefix = stream1, flowPrefix = SCode.NOT_FLOW()),_,
-                   t2,DAE.ATTR(streamPrefix = stream2, flowPrefix = SCode.NOT_FLOW()),io1,io2,info)
-      equation
-        equality(stream1 = stream2);
-        true = Types.equivtypes(t1, t2);
-      then
-        ();
-
-    case (env,ih,c1,_,DAE.ATTR(streamPrefix = SCode.STREAM(), flowPrefix = SCode.NOT_FLOW()),
-                 c2,_,DAE.ATTR(streamPrefix = SCode.NOT_STREAM(), flowPrefix = SCode.NOT_FLOW()),io1,io2,info)
-      equation
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c1_str,c2_str}, info);
-      then
-        fail();
-
-    case (env,ih,c1,_,DAE.ATTR(streamPrefix = SCode.NOT_STREAM(), flowPrefix = SCode.NOT_FLOW()),
-                 c2,_,DAE.ATTR(streamPrefix = SCode.STREAM(), flowPrefix = SCode.NOT_FLOW()),io1,io2,info)
-      equation
-        c1_str = ComponentReference.printComponentRefStr(c1);
-        c2_str = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c2_str,c1_str}, info);
-      then
-        fail();
-    /* The type is not identical hence error */
-    case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),
-                 c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      equation
-        (t1,_) = Types.flattenArrayType(t1);
-        (t2,_) = Types.flattenArrayType(t2);
-        false = Types.equivtypes(t1, t2) "we do not check arrays here";
-        (s1,s1_1) = Types.printConnectorTypeStr(t1);
-        (s2,s2_2) = Types.printConnectorTypeStr(t2);
-        s3 = ComponentReference.printComponentRefStr(c1);
-        s4 = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES, {s3,s4,s3,s1_1,s4,s2_2}, info);
-      then
-        fail();
-
-    /* Different dimensionality */
-    case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),
-                 c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      equation
-        (t1,iLst1) = Types.flattenArrayType(t1);
-        (t2,iLst2) = Types.flattenArrayType(t2);
-        false = List.isEqualOnTrue(iLst1,iLst2,intEq);
-        false = (listLength(iLst1)+listLength(iLst2) ==0);
-        s1 = ComponentReference.printComponentRefStr(c1);
-        s2 = ComponentReference.printComponentRefStr(c2);
-        Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT, {s1,s2}, info);
-      then
-        fail();
-
-    case (env,_,c1,_,_,c2,_,_,io1,io2,info)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkConnectTypes(" +&
-          ComponentReference.printComponentRefStr(c1) +& " <-> " +&
-          ComponentReference.printComponentRefStr(c2) +& " failed");
-      then
-        fail();
-
-    case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1, streamPrefix = stream1),
-                 c2,t2,DAE.ATTR(flowPrefix = flow2, streamPrefix = stream2),io1,io2,info)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        b0 = Types.equivtypes(t1, t2);
-        s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
-        s1 = SCodeDump.flowStr(flow1) +& " " +& SCodeDump.streamStr(stream1);
-        s2 = SCodeDump.flowStr(flow2) +& " " +& SCodeDump.streamStr(stream2);
-        Debug.trace("- InstSection.checkConnectTypes(");
-        Debug.trace(s0);
-        Debug.trace(ComponentReference.printComponentRefStr(c1));
-        Debug.trace(" : ");
-        Debug.trace(s1);
-        Debug.trace(Types.unparseType(t1));
-
-        Debug.trace(ComponentReference.printComponentRefStr(c1));
-        Debug.trace(" <-> ");
-        Debug.trace(ComponentReference.printComponentRefStr(c2));
-        Debug.trace(" : ");
-        Debug.trace(s2);
-        Debug.trace(Types.unparseType(t2));
-        Debug.traceln(") failed");
-      then
-        fail();
-  end matchcontinue;
+  DAE.ATTR(flowPrefix = lhs_flow, streamPrefix = lhs_stream,
+    direction = lhs_dir, innerOuter = lhs_io, visibility = lhs_vis) := inLhsAttributes;
+  DAE.ATTR(flowPrefix = rhs_flow, streamPrefix = rhs_stream,
+    direction = rhs_dir, innerOuter = rhs_io, visibility = rhs_vis) := inRhsAttributes;
+  checkConnectTypesType(inLhsType, inRhsType, inLhsCref, inRhsCref, inInfo);
+  checkConnectTypesFlowStream(lhs_flow, lhs_stream, rhs_flow, rhs_stream,
+    inLhsCref, inRhsCref, inInfo);
+  checkConnectTypesDirection(lhs_dir, inLhsFace, lhs_vis, rhs_dir, inRhsFace,
+    rhs_vis, inLhsCref, inRhsCref, inInfo);
+  checkConnectTypesInnerOuter(lhs_io, rhs_io, inLhsCref, inRhsCref, inInfo);
 end checkConnectTypes;
+
+protected function checkConnectTypesType
+  input DAE.Type inLhsType;
+  input DAE.Type inRhsType;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inLhsType, inRhsType, inLhsCref, inRhsCref, inInfo)
+    local
+      DAE.Type t1, t2;
+      String cs1, cs2, cref_str1, cref_str2;
+      list<Integer> dims1, dims2;
+
+    case (_, _, _, _, _)
+      equation
+        true = Types.equivtypes(inLhsType, inRhsType);
+      then
+        ();
+
+    // The type is not identical hence error.
+    case (_, _, _, _, _)
+      equation
+        (t1, _) = Types.flattenArrayType(inLhsType);
+        (t2, _) = Types.flattenArrayType(inRhsType);
+        false = Types.equivtypes(t1, t2);
+        (_, cs1) = Types.printConnectorTypeStr(t1);
+        (_, cs2) = Types.printConnectorTypeStr(t2);
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES,
+          {cref_str1, cref_str2, cref_str1, cs1, cref_str2, cs2}, inInfo);
+      then
+        fail();
+
+    // Different dimensionality.
+    else
+      equation
+        (t1, dims1) = Types.flattenArrayType(inLhsType);
+        (t2, dims2) = Types.flattenArrayType(inRhsType);
+        false = List.isEqualOnTrue(dims1, dims2, intEq);
+        false = (listLength(dims1) + listLength(dims2)) == 0;
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
+          {cref_str1, cref_str2}, inInfo);
+      then
+        fail();
+  
+  end matchcontinue;
+end checkConnectTypesType;
+      
+protected function checkConnectTypesFlowStream
+  input SCode.Flow inLhsFlow;
+  input SCode.Stream inLhsStream;
+  input SCode.Flow inRhsFlow;
+  input SCode.Stream inRhsStream;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inLhsFlow, inLhsStream, inRhsFlow, inRhsStream, inLhsCref,
+      inRhsCref, inInfo)
+    local
+      String cref_str1, cref_str2;
+      list<String> err_strl;
+
+    case (_, _, _, _, _, _, _)
+      equation
+        true = SCode.flowEqual(inLhsFlow, inRhsFlow);
+        true = SCode.streamEqual(inLhsStream, inRhsStream);
+      then
+        ();
+
+    case (_, SCode.NOT_STREAM(), _, SCode.NOT_STREAM(), _, _, _)
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        err_strl = Util.if_(SCode.flowBool(inLhsFlow),
+          {cref_str1, cref_str2}, {cref_str2, cref_str1});
+        Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW,
+          err_strl, inInfo);
+      then
+        fail(); 
+
+    case (SCode.NOT_FLOW(), _, SCode.NOT_FLOW(), _, _, _, _)
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        err_strl = Util.if_(SCode.streamBool(inLhsStream),
+          {cref_str1, cref_str2}, {cref_str2, cref_str1});
+        Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM,
+          err_strl, inInfo);
+      then
+        fail(); 
+
+  end matchcontinue;
+end checkConnectTypesFlowStream;
+  
+protected function checkConnectTypesDirection
+  input Absyn.Direction inLhsDirection;
+  input Connect.Face inLhsFace;
+  input SCode.Visibility inLhsVisibility;
+  input Absyn.Direction inRhsDirection;
+  input Connect.Face inRhsFace;
+  input SCode.Visibility inRhsVisibility;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inLhsDirection, inLhsFace, inLhsVisibility, inRhsDirection,
+      inRhsFace, inRhsVisibility, inLhsCref, inRhsCref, inInfo)
+    local
+      String cref_str1, cref_str2;
+
+    // Two connectors with the same directions but different faces or different
+    // directions may be connected.
+    case (_, _, _, _, _, _, _, _, _)
+      equation
+        false = isSignalSource(inLhsDirection, inLhsFace, inLhsVisibility) and
+                isSignalSource(inRhsDirection, inRhsFace, inRhsVisibility);
+      then
+        ();
+
+    else
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        Error.addSourceMessage(Error.CONNECT_TWO_SOURCES, 
+          {cref_str1, cref_str2}, inInfo);
+      then
+        ();
+
+  end matchcontinue;
+end checkConnectTypesDirection;
+
+protected function isSignalSource
+  input Absyn.Direction inDirection;
+  input Connect.Face inFace;
+  input SCode.Visibility inVisibility;
+  output Boolean outIsSignal;
+algorithm
+  outIsSignal := match(inDirection, inFace, inVisibility)
+    case (Absyn.OUTPUT(), Connect.INSIDE(), _) then true;
+    case (Absyn.INPUT(), Connect.OUTSIDE(), SCode.PUBLIC()) then true;
+    else false;
+  end match;
+end isSignalSource;
+
+protected function checkConnectTypesInnerOuter
+  input Absyn.InnerOuter inLhsIO;
+  input Absyn.InnerOuter inRhsIO;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inLhsIO, inRhsIO, inLhsCref, inRhsCref, inInfo)
+    local
+      String cref_str1, cref_str2;
+
+    case (Absyn.OUTER(), Absyn.OUTER(), _, _, _)
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        Error.addSourceMessage(Error.CONNECT_OUTER_OUTER,
+          {cref_str1, cref_str2}, inInfo);
+      then
+        fail();
+
+    else ();
+
+  end match;
+end checkConnectTypesInnerOuter;
 
 public function connectComponents "
   This function connects two components and generates connection
@@ -4384,7 +4403,7 @@ algorithm
         stream1 = propagateStream(inStreamPrefix, stream1);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty_2);
         c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty_2);
-        checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2, io1, io2, info);
+        checkConnectTypes(c1_1, ty1, f1, attr1, c2_1, ty2, f2, attr2, info);
         (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, inPrefix, c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, flow1, stream1, io1, io2, graph, info);
         (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, inPrefix, c1, f1, xs1,vt1, c2, f2, xs2, vt2, inFlowPrefix, inStreamPrefix, io1, io2, graph, info);
         dae_1 = DAEUtil.joinDaes(dae, dae2);
@@ -5057,7 +5076,7 @@ algorithm
     case((cref,_),_,_)
       equation
         // Look up the variable
-        (_, DAE.ATTR(_,_,prl,_,_,_),_,_,cnstForRange,_,_,_,_) = Lookup.lookupVar(inCache, inEnv, cref);
+        (_, DAE.ATTR(parallelism = prl),_,_,cnstForRange,_,_,_,_) = Lookup.lookupVar(inCache, inEnv, cref);
         
         // is it parglobal var?
         isParglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());

@@ -595,6 +595,8 @@ public constant Message REINIT_MUST_BE_REAL = MESSAGE(224, TRANSLATION(), ERROR(
   "The first argument to reinit must be a subtype of Real, but %s has type %s.");
 public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR(),
   "The first argument to reinit must be a variable, but %s is a %s."); 
+public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNING(),
+  "Connecting two signal sources while connecting %s to %s.");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

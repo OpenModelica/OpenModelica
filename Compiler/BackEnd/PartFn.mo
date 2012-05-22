@@ -896,7 +896,7 @@ algorithm
       equation
         i = ComponentReference.printComponentRefStr(cref);
         // TODO: FIXME: binding?
-        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),ty,DAE.UNBOUND(),NONE()); 
+        res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),ty,DAE.UNBOUND(),NONE()); 
       then
         res;
     case(_)

@@ -132,9 +132,9 @@ algorithm
         cls = Typing.typeSections(cls, symtab);
 
         System.stopTimer();
-        //print("\nclass " +& name +& "\n");
-        //print(InstUtil.printClass(cls));
-        //print("\nend " +& name +& "\n");
+        print("\nclass " +& name +& "\n");
+        print(InstUtil.printClass(cls));
+        print("\nend " +& name +& "\n");
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
@@ -430,7 +430,7 @@ algorithm
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        DAE.TYPES_VAR(ident, DAE.dummyAttrParam, SCode.PUBLIC(), ty, binding, NONE());
+        DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE());
 
     // TODO: Print error message for invalid attributes.
   end matchcontinue;
@@ -1610,11 +1610,13 @@ algorithm
       Absyn.Path call_path;
       DAE.ComponentRef cref;
       list<DAE.Exp> pos_args;
+      list<tuple<String, DAE.Exp>> named_args;
 
     case (_, _, _, _, _)
       equation
         call_path = instFunctionName(inName, inEnv, inPrefix);
         pos_args = instExpList(inPositionalArgs, inEnv, inPrefix);
+        named_args = List.map2(inNamedArgs, instNamedArg, inEnv, inPrefix);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
@@ -1683,6 +1685,21 @@ algorithm
   end match;
 end instFunctionName2;
 
+protected function instNamedArg
+  input Absyn.NamedArg inNamedArg;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output tuple<String, DAE.Exp> outNamedArg;
+protected
+  String name;
+  Absyn.Exp aexp;
+  DAE.Exp dexp;
+algorithm
+  Absyn.NAMEDARG(argName = name, argValue = aexp) := inNamedArg;
+  dexp := instExp(aexp, inEnv, inPrefix);
+  outNamedArg := (name, dexp);
+end instNamedArg;
+  
 protected function assignParamTypes
   input Class inClass;
   input SymbolTable inSymbolTable;
@@ -1967,11 +1984,12 @@ algorithm
       String for_index;
       list<SCode.EEquation> eql;
       list<Equation> ieql;
-      list<Absyn.Exp> if_condition, expl;
+      list<Absyn.Exp> if_condition, expl, args;
       list<list<SCode.EEquation>> if_branches;
       list<tuple<DAE.Exp, list<Equation>>> inst_branches;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> when_branches;
-      list<DAE.Exp> iexpl;
+      list<DAE.Exp> iexpl, iargs;
+      list<Absyn.NamedArg> nargs;
       Env env;
       Absyn.Path func_path;
       Item item;
@@ -2048,16 +2066,24 @@ algorithm
         InstTypes.REINIT_EQUATION(dcref1, dexp1, info);
         
     case (SCode.EQ_NORETCALL(functionName = cref1, functionArgs =
-        Absyn.FUNCTIONARGS(args = expl, argNames = {}), info = info), _, _)
+        Absyn.FUNCTIONARGS(args = args, argNames = nargs), info = info), _, _)
       equation
-        func_path = Absyn.crefToPathIgnoreSubs(cref1);
-        //(item, _, env, _) =
-        //  SCodeLookup.lookupFunctionName(func_path, inEnv, info);
-        //(cls, _) = instClassItem(item, InstTypes.NOMOD(),
-        //  InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
-        iexpl = instExpList(expl, inEnv, inPrefix);
+        DAE.CALL(path = func_path, expLst = iargs) =
+          instFunctionCall(cref1, args, nargs, inEnv, inPrefix);
       then
-        InstTypes.NORETCALL_EQUATION(func_path, iexpl, info);
+        InstTypes.NORETCALL_EQUATION(func_path, iargs, info);
+
+    //case (SCode.EQ_NORETCALL(functionName = cref1, functionArgs =
+    //    Absyn.FUNCTIONARGS(args = expl, argNames = {}), info = info), _, _)
+    //  equation
+    //    func_path = Absyn.crefToPathIgnoreSubs(cref1);
+    //    //(item, _, env, _) =
+    //    //  SCodeLookup.lookupFunctionName(func_path, inEnv, info);
+    //    //(cls, _) = instClassItem(item, InstTypes.NOMOD(),
+    //    //  InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
+    //    iexpl = instExpList(expl, inEnv, inPrefix);
+    //  then
+    //    InstTypes.NORETCALL_EQUATION(func_path, iexpl, info);
 
     else
       equation

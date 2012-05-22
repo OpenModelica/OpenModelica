@@ -1146,17 +1146,16 @@ algorithm
       Env.InstStatus instStatus;
       Absyn.Path p;
       DAE.Attributes attributes;
-      SCode.Visibility visibility;
       DAE.Binding binding;
       Option<DAE.Const> cnstOpt;
     
-    case (cache,env,name,nn::names,(var as DAE.TYPES_VAR(_,_,_,ty,_,_))::vars,p)
+    case (cache,env,name,nn::names,(var as DAE.TYPES_VAR(ty = ty))::vars,p)
       equation
         // get Var
-        (cache,DAE.TYPES_VAR(name,attributes,visibility,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, nn);
+        (cache,DAE.TYPES_VAR(name,attributes,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, nn);
         // print("updateEnumerationEnvironment1 -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         // change type
-        new_var = DAE.TYPES_VAR(name,attributes,visibility,ty,binding,cnstOpt);
+        new_var = DAE.TYPES_VAR(name,attributes,ty,binding,cnstOpt);
         // update
          env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv);
         // next
@@ -1973,26 +1972,26 @@ end isBuiltInClass;
 protected constant DAE.Type stateSelectType = 
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
-          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("never",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("avoid",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("default",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("prefer",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("always",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);
           
 protected constant DAE.Type uncertaintyType = 
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"given","sought","refine"},
           {
-             DAE.TYPES_VAR("given",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+           DAE.TYPES_VAR("given",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-             DAE.TYPES_VAR("sought",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+           DAE.TYPES_VAR("sought",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE()),
-             DAE.TYPES_VAR("refine",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+           DAE.TYPES_VAR("refine",DAE.dummyAttrParam,
              DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);          
 
@@ -2368,8 +2367,8 @@ algorithm
         // convert the value also if needed!!
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-        SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case (cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
       equation
@@ -2380,16 +2379,16 @@ algorithm
         // convert the value also if needed!!
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-        SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case (cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache, env, bind1, false, NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case (cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
       equation
@@ -2398,15 +2397,15 @@ algorithm
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
-      SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
+        DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -6547,7 +6546,7 @@ algorithm
 
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl,var,dir,io),vis,
+          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl,var,dir,io,vis),
           DAE.T_UNKNOWN_DEFAULT,DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, ci_state, xs, inst_dims, impl);
       then
@@ -6921,6 +6920,7 @@ algorithm
           = redeclareType(cache, env2, ih, mod, comp, pre, ci_state, impl, DAE.NOMOD());
 
         (cache, cls, cenv) = Lookup.lookupClass(cache, env, t, true);
+        attr = SCode.mergeAttributesFromClass(attr, cls);
         
         // If the element is protected, and an external modification 
         // is applied, it is an error. 
@@ -6975,7 +6975,7 @@ algorithm
            "\n");*/
         
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
-        new_var = DAE.TYPES_VAR(name, dae_attr, vis, ty, binding, NONE());
+        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
@@ -6995,7 +6995,6 @@ algorithm
         (comp as SCode.COMPONENT(
           name,
           prefixes as SCode.PREFIXES(
-            visibility = vis,
             finalPrefix = final_prefix,
             innerOuter = io
             ),
@@ -7049,7 +7048,7 @@ algorithm
 
         // true in update_frame means the variable is now instantiated.
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
-        new_var = DAE.TYPES_VAR(name, dae_attr, vis, ty, binding, NONE()) ;
+        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE()) ;
 
         // type info present Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
@@ -9237,13 +9236,7 @@ algorithm
     case (SCode.COMPONENT(name = lit), _)
       equation
         env = Env.extendFrameV(inEnv,
-          DAE.TYPES_VAR(
-            lit,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
-            SCode.PUBLIC(),
-            DAE.T_UNKNOWN_DEFAULT,
-            DAE.UNBOUND(),
-            NONE()),
+          DAE.TYPES_VAR(lit, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE()),
           NONE(), Env.VAR_UNTYPED(), {});
       then env;
     
@@ -9482,7 +9475,7 @@ algorithm
         false = valueEq(smod, SCode.NOMOD());
                 
         // get Var
-        (cache,DAE.TYPES_VAR(nn,dae_attr,_,ty,binding,cnstOpt),_,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, name);
+        (cache,DAE.TYPES_VAR(nn,dae_attr,ty,binding,cnstOpt),_,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, name);
         // types are the same, this means only the binding/visibility, etc was updated!
         //true = valueEq(tsOld, tsNew);
         
@@ -9514,7 +9507,7 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
       then
@@ -9563,7 +9556,7 @@ algorithm
     case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,prl1,var1,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
+        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io, visibility = visibility),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,prl1,var1,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -9581,7 +9574,7 @@ algorithm
         crefs_2 = removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps, SOME(cref));
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,updatedComps);
 
@@ -9764,8 +9757,7 @@ algorithm
         (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
-        vis = SCode.prefixesVisibility(inPrefixes);
-        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,vis,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
         
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
@@ -9810,8 +9802,7 @@ algorithm
         (cache,binding) = makeBinding(cache, env, attr, m_1, ty, pre, name, info);
         /* type info present */
         //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
-        vis = SCode.prefixesVisibility(inPrefixes);
-        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,vis,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
         
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
@@ -14812,7 +14803,7 @@ algorithm
         Debug.fcall(Flags.REC_CONST, Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
-        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,prl,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
+        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,prl,var,dir,Absyn.NOT_INNER_OUTER(),vis),tp_1,bind,NONE()));
 
     case (cache,env,ih,elt,outerMod,impl)
       equation
@@ -15029,14 +15020,7 @@ algorithm
       equation
         (cache,SOME((DAE.CREF(componentRef=c1_1),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
         (cache,SOME((DAE.CREF(componentRef=c2_1),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
-        /*
-        (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
-        (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt1,_,io1) = attr1;
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt2,_,io2) = attr2;
-        */
+
         // type of left var is an expandable connector!
         true = InstSection.isExpandableConnectorType(ty1);
         // type of right left var is an expandable connector!        
@@ -16159,7 +16143,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io),vis,ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
         ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
       then

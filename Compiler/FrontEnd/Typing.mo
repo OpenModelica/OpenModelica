@@ -977,6 +977,8 @@ algorithm
       list<Equation> acc_el;
       Absyn.Path iter_name;
       Component iter;
+      Equation eq;
+      Boolean cond;
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el)
       equation
@@ -1014,9 +1016,6 @@ algorithm
       then
         InstTypes.WHEN_EQUATION(branches, info) :: acc_el;
 
-    // TODO: Remove equation if condition = false. Actually, that should only be
-    // done if all conditions are false, due to non-expansion. Individual
-    // asserts can be removed during expansion.
     case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
@@ -1024,7 +1023,6 @@ algorithm
       then
         InstTypes.ASSERT_EQUATION(exp1, exp2, info) :: acc_el;
 
-    // TODO: Remove equation if condition = false. See asserts above.
     case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
@@ -1326,7 +1324,7 @@ algorithm
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR,
           {exp_str, ty_str}, inInfo);
       then
-        DAE.T_UNKNOWN_DEFAULT;
+        fail();
 
   end matchcontinue;
 end rangeToIteratorType;

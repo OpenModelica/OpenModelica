@@ -1239,7 +1239,6 @@ package DAE
     record TYPES_VAR
       Ident name;
       Attributes attributes;
-      SCode.Visibility visibility;
       Type ty;
       Binding binding;
     end TYPES_VAR;

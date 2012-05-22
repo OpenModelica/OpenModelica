@@ -1638,10 +1638,7 @@ protected function makeFunctionVariable
   output DAE.Var outVar;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outVar := DAE.TYPES_VAR(
-    inName,
-    DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
-    SCode.PUBLIC(), inType, inBinding, NONE());
+  outVar := DAE.TYPES_VAR(inName, DAE.dummyAttrVar, inType, inBinding, NONE());
 end makeFunctionVariable;
 
 protected function getBinding
@@ -2203,12 +2200,11 @@ protected function updateRecordBinding
 protected
   DAE.Ident name;
   DAE.Attributes attr;
-  SCode.Visibility vis;
   DAE.Type ty;
   Option<DAE.Const> c;
 algorithm
-  DAE.TYPES_VAR(name, attr, vis, ty, _, c) := inVar;
-  outVar := DAE.TYPES_VAR(name, attr, vis, ty, 
+  DAE.TYPES_VAR(name, attr, ty, _, c) := inVar;
+  outVar := DAE.TYPES_VAR(name, attr, ty, 
     DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), c);
 end updateRecordBinding;
   
@@ -2221,17 +2217,16 @@ protected function updateRecordComponentBinding
 protected
   DAE.Ident name;
   DAE.Attributes attr;
-  SCode.Visibility vis;
   DAE.Type ty;
   DAE.Binding binding;
   Option<DAE.Const> c;
   Values.Value val;
 algorithm
-  DAE.TYPES_VAR(name, attr, vis, ty, binding, c) := inVar;
+  DAE.TYPES_VAR(name, attr, ty, binding, c) := inVar;
   val := getBindingOrDefault(binding, ty);
   val := updateRecordComponentValue(inComponentId, inValue, val);
   binding := DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
-  outVar := DAE.TYPES_VAR(name, attr, vis, ty, binding, c);
+  outVar := DAE.TYPES_VAR(name, attr, ty, binding, c);
 end updateRecordComponentBinding;
 
 protected function updateRecordComponentValue

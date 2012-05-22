@@ -743,7 +743,7 @@ algorithm
 
         (sets, added) = ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
         // If no connection set available (added = false), create new one
-        sets = addOuterConnectIfEmptyNoEnv(inCache, inEnv, inIH, inPrefix, sets,
+        sets = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
           added, cr1, io1, f1, cr2, io2, f2, info);
         (rest_oc, sets, ioc) =
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, true);
@@ -1555,20 +1555,20 @@ algorithm
       Option<DAE.Const> cnstForRange;
     
     // inner
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
+      then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
     
     // inner outer
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER_OUTER()) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER());
+        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
+        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, visibility, type_, binding, cnstForRange), declaration, instStatus, env);
+      then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
 
     // leave unchanged
     case (inItem, _) then inItem;

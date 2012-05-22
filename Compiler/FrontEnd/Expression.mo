@@ -3163,7 +3163,7 @@ public function makeVar "Creates a Var given a name and Type"
   output Var v;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, SCode.PUBLIC(), tp, DAE.UNBOUND(), NONE());
+  v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE());
 end makeVar;
 
 public function dimensionsMult
