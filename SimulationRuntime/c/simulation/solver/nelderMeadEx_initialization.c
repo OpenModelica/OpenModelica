@@ -394,7 +394,7 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
   }
   free(bestZ);
 
-  DEBUG_INFO(LOG_INIT, "optimization-calls: %ld", l);
+  DEBUG_INFO1(LOG_INIT, "optimization-calls: %ld", l);
 
   /* up-scale */
   updateZ(initData);
