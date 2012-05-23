@@ -114,8 +114,14 @@ extern int functionODE_inline(DATA *data, double stepsize);
  */
 extern int updateBoundStartValues(DATA *data);
 
-/* function for calculate residual values for the initial equations and fixed start attibutes */
-extern int initial_residual(DATA *data, double lambda, double* initialResiduals);
+/*! \fn initial_residual
+ *
+ * function for calculate residual values for the initial equations and initial algorithms
+ *
+ *  \param [in]  [data]
+ *  \param [ref] [initialResiduals]
+ */
+extern int initial_residual(DATA *data, double* initialResiduals);
 
 /*! \fn updateBoundParameters
  *

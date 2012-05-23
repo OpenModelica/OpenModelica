@@ -295,7 +295,7 @@ const int
   NP = <%varInfo.numParams%>,
   NO = <%varInfo.numOutVars%>, 
   NI = <%varInfo.numInVars%>, 
-  NR = <%varInfo.numResiduals%>,
+  NR = <%varInfo.numInitialResiduals%>,
   NEXT = <%varInfo.numExternalObjects%>, 
   //NFUNC = <%listLength(functions)%>, // number of functions used by the simulation
   NYSTR = <%varInfo.numStringAlgVars%>, 

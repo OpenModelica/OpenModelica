@@ -185,9 +185,10 @@
     modelica_real min;            /* = -Inf */
     modelica_real max;            /* = +Inf */
     modelica_boolean fixed;       /* depends on the type */
-    modelica_boolean useNominal;
-    modelica_real nominal;
-    modelica_real start;          /* = 0 */
+    modelica_boolean useNominal;  /* = false */
+    modelica_real nominal;        /* = 1.0 */
+    modelica_boolean useStart;    /* = false */
+    modelica_real start;          /* = 0.0 */
     modelica_real initial;
   }REAL_ATTRIBUTE;
 
@@ -197,6 +198,7 @@
     modelica_integer min;         /* = -Inf */
     modelica_integer max;         /* = +Inf */
     modelica_boolean fixed;       /* depends on the type */
+    modelica_boolean useStart;    /* = false */
     modelica_integer start;       /* = 0 */
     modelica_integer initial;
   }INTEGER_ATTRIBUTE;
@@ -205,14 +207,16 @@
   {
     modelica_string quantity;     /* = "" */
     modelica_boolean fixed;       /* depends on the type */
-    modelica_boolean start;       /* = 0 */
+    modelica_boolean useStart;    /* = false */
+    modelica_boolean start;       /* = false */
     modelica_boolean initial;
   }BOOLEAN_ATTRIBUTE;
 
   typedef struct STRING_ATTRIBUTE
   {
     modelica_string quantity;     /* = "" */
-    modelica_string start;       /* = 0 */
+    modelica_boolean useStart;    /* = false */
+    modelica_string start;        /* = "" */
     modelica_string initial;
   }STRING_ATTRIBUTE;
 
@@ -287,7 +291,8 @@
     long nSamples;
     long nDelayExpressions;
     long nInitEquations;      /* number of initial equations */
-    long nResiduals;          /* number of initial residuals */
+    long nInitAlgorithms;     /* number of initial algorithms */
+    long nInitResiduals;      /* number of initial residuals */
     long nExtObjs;
     long nFunctions;
     long nEquations;

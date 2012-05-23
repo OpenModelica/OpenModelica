@@ -255,8 +255,9 @@ case MODELINFO(varInfo=VARINFO(__)) then
   
   data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
   data->modelData.nSamples = <%varInfo.numTimeEvents%>;
-  data->modelData.nInitEquations = <%varInfo.numInitEquations%>;
-  data->modelData.nResiduals = <%varInfo.numResiduals%>;
+  data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
+  data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
+  data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;
   data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
   data->modelData.nFunctions = <%listLength(functions)%>;
   data->modelData.nEquations = <%listLength(allEquations)%>;
@@ -697,7 +698,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
 DEBUG_INFO_AL2(LOG_RES_INIT, "   residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f", i, initialResiduals[i-1]);'
     ;separator="\n")
   <<
-  int initial_residual(DATA *data, double $P$_lambda, double* initialResiduals)
+  int initial_residual(DATA *data, double* initialResiduals)
   {
     int i = 0;
     state mem_state;
@@ -2203,7 +2204,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     numberOfInputVariables              = "<%vi.numInVars%>"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
     numberOfOutputVariables             = "<%vi.numOutVars%>"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
  
-    numberOfResidualsForInitialization  = "<%vi.numResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
+    numberOfResidualsForInitialization  = "<%vi.numInitialResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
     numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
     numberOfJacobianVariables           = "<%vi.numJacobianVars%>"  cmt_numberOfJacobianVariables           = "NJACVARS: number of jacobian variables,                       OMC"    
@@ -7041,7 +7042,7 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
 ::=
   match type_
     case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeIntegerMinAttribute(minValue)%> <%ScalarVariableTypeIntegerMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue, initialValue)%> <%ScalarVariableTypeRealMinAttribute(minValue)%> <%ScalarVariableTypeRealMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
+    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeNominalAttribute(nominalValue)%> <%ScalarVariableTypeRealMinAttribute(minValue)%> <%ScalarVariableTypeRealMaxAttribute(maxValue)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
@@ -7052,14 +7053,14 @@ template ScalarVariableTypeStartAttribute(Option<DAE.Exp> initialValue, DAE.Type
  "generates code for start attribute"
 ::=
 match initialValue
-  case SOME(exp) then 'start="<%initValXml(exp)%>"' 
+  case SOME(exp) then 'useStart="true" start="<%initValXml(exp)%>"' 
   case NONE() then
     match type_
-      case T_INTEGER(__)
-      case T_REAL(__)
-      case T_ENUMERATION(__) 
-      case T_BOOL(__) then 'start="0"'
-      case T_STRING(__) then 'start=""'
+      case T_ENUMERATION(__)
+      case T_INTEGER(__) then 'useStart="false" start="0"'
+      case T_REAL(__) then 'useStart="false" start="0.0"'
+      case T_BOOL(__) then 'useStart="false" start="false"'
+      case T_STRING(__) then 'useStart="false" start=""'
       else 'UNKOWN_TYPE'
 end ScalarVariableTypeStartAttribute;
 
@@ -7071,12 +7072,12 @@ fixed="<%isFixed%>"
 >>
 end ScalarVariableTypeFixedAttribute;
 
-template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue, Option<DAE.Exp> startValue)
+template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
  "generates code for nominal attribute"
 ::=
 match nominalValue
-  case SOME(exp) then 'nominal="<%initValXml(exp)%>"' 
-  case NONE() then 'nominal="1.0"'
+  case SOME(exp) then 'useNominal="true" nominal="<%initValXml(exp)%>"' 
+  case NONE() then 'useNominal="false" nominal="1.0"'
 end ScalarVariableTypeNominalAttribute;
 
 template ScalarVariableTypeUnitAttribute(String unit)

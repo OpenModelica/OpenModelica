@@ -305,8 +305,9 @@ package SimCode
       Integer numBoolParams;
       Integer numOutVars;
       Integer numInVars;
-      Integer numInitEquations;
-      Integer numResiduals;
+      Integer numInitialEquations;
+      Integer numInitialAlgorithms;
+      Integer numInitialResiduals;
       Integer numExternalObjects;
       Integer numStringAlgVars;
       Integer numStringParamVars;

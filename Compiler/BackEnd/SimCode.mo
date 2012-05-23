@@ -230,8 +230,9 @@ uniontype VarInfo
     Integer numBoolParams;
     Integer numOutVars;
     Integer numInVars;
-    Integer numInitEquations;
-    Integer numResiduals;
+    Integer numInitialEquations;
+    Integer numInitialAlgorithms;
+    Integer numInitialResiduals;
     Integer numExternalObjects;
     Integer numStringAlgVars;
     Integer numStringParamVars;
@@ -2139,7 +2140,7 @@ algorithm
       String cname,   fileDir;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
       Integer n_h,maxDelayedExpIndex;
-      Integer numberOfInitialEquations, numberOfInitialResiduals;
+      Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       list<HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2, backendDAE2;
       DAE.FunctionTree functionTree;
@@ -2152,7 +2153,7 @@ algorithm
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;   // --> functionODE
       list<SimEqSystem> algebraicEquations;   // --> functionAlgebraics
-      list<SimEqSystem> residualEquations;    // --> initial_residual
+      list<SimEqSystem> residuals;            // --> initial_residual
       list<SimEqSystem> startValueEquations;  // --> updateBoundStartValues
       list<SimEqSystem> parameterEquations;   // --> updateBoundParameters
       list<SimEqSystem> removedEquations;
@@ -2417,7 +2418,7 @@ algorithm
                                                           functionTree = functionTree,
                                                           symjacs = symJacs)) = dlow2;
         
-        (residualEquations, numberOfInitialEquations, numberOfInitialResiduals) = createInitialResiduals(dlow2);
+        (residuals, numberOfInitialEquations, numberOfInitialAlgorithms) = createInitialResiduals(dlow2);
         
         extObjInfo = createExtObjInfo(shared);
         
@@ -2428,7 +2429,7 @@ algorithm
         n_h = listLength(helpVarInfo);
  
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialResiduals, fileDir,ifcpp);
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
@@ -2462,7 +2463,7 @@ algorithm
         (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
-        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (residuals,_) = listMap1_2(residuals, addDivExpErrorMsgtoSimEqSystem, (vars, varlst2, BackendDAE.ALL()));
         (startValueEquations,_) = listMap1_2(startValueEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
         (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
         (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
@@ -2490,7 +2491,7 @@ algorithm
           allEquations,
           odeEquations,
           algebraicEquations,
-          residualEquations,
+          residuals,
           startValueEquations,
           parameterEquations,
           removedEquations,
@@ -6073,14 +6074,14 @@ protected function createInitialResiduals "function: createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
-  output list<SimEqSystem> outResidualEquations;
+  output list<SimEqSystem> outResiduals;
   output Integer outNumberOfInitialEquations;
-  output Integer outNumberOfInitialResiduals;
+  output Integer outNumberOfInitialAlgorithms;
 algorithm
-  (outResidualEquations, outNumberOfInitialEquations, outNumberOfInitialResiduals) := matchcontinue(inDAE)
+  (outResiduals, outNumberOfInitialEquations, outNumberOfInitialAlgorithms) := matchcontinue(inDAE)
     local
-      list<SimEqSystem> residualEquations, resEqus;
-      Integer numberOfInitialEquations, numberOfInitialResiduals;
+      list<SimEqSystem> residuals, tmpResiduals, residual_equations, residual_algorithms;
+      Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs;
       array<Algorithm.Algorithm> algorithms;
@@ -6088,114 +6089,35 @@ algorithm
       
     case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs, algorithms=algorithms))) equation
       // [initial equations]
-      // lambda * initial_equation
+      // initial_equation
+      residual_equations = {};
       initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToResidualForm, {});
       initialEqs_lst = replaceDerOpInEquationList(initialEqs_lst);
       initialEqs_lst = listReverse(initialEqs_lst);
       initialEqs_lst = List.filter(initialEqs_lst, failUnlessResidual);
-      initialEqs_lst = addLambdaToEquationList(initialEqs_lst);
-      residualEquations = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
-      
-      // [initial algorithms]
+      tmpResiduals = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
+      residual_equations = listAppend(residual_equations, tmpResiduals);
       
       // [orderedVars] with start-values and fixed=true
       // lambda * (v - start(v)); fixed(v) = true
       initialEqs_lst = generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
-      resEqus = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
-      residualEquations = listAppend(residualEquations, resEqus);
+      tmpResiduals = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
+      residual_equations = listAppend(residual_equations, tmpResiduals);
       
-      numberOfInitialEquations = listLength(residualEquations);
+      // [initial algorithms]
+      // is still missing
+      residual_algorithms = {};
       
-      // [orderedVars] with start-values
-      // (1-lambda) * (v - start(v))
-      initialEqs_lst = generateStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
-      resEqus = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
-      residualEquations = listAppend(residualEquations, resEqus);
-      
-      numberOfInitialResiduals = listLength(residualEquations);
-    then (residualEquations, numberOfInitialEquations, numberOfInitialResiduals);
+      numberOfInitialEquations = listLength(residual_equations);
+      numberOfInitialAlgorithms = listLength(residual_algorithms);
+      residuals = listAppend(residual_equations, residual_algorithms);
+    then(residuals, numberOfInitialEquations, numberOfInitialAlgorithms);
         
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"createInitialResiduals failed"});
     then fail();
   end matchcontinue;
 end createInitialResiduals;
-
-protected function addLambdaToEquationList "function: addLambdaToEquationList
-  author: lochel
-  This function returns all equations multiplied by lambda.
-  Helper for createInitialResiduals."
-  input list<BackendDAE.Equation> inEqns;
-  output list<BackendDAE.Equation> outEqns;
-algorithm
-  outEqns := matchcontinue(inEqns)
-  local
-    BackendDAE.Equation eqn;
-    list<BackendDAE.Equation> eqns;
-    DAE.Exp e1, e2, lambda;
-    DAE.ElementSource es;
-    
-    case({}) then {};
-      
-    case(BackendDAE.RESIDUAL_EQUATION(e1, es)::eqns) equation
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e1);
-      eqn = BackendDAE.RESIDUAL_EQUATION(e1, es);
-      eqns = addLambdaToEquationList(eqns);
-    then eqn::eqns;
-      
-    case(eqn::eqns) equation
-      BackendDump.dumpEquation(eqn);
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: addLambdaToEquationList failed"});
-    then fail();
-  end matchcontinue;
-end addLambdaToEquationList;
-
-protected function generateStartValueResiduals "function: generateStartValueResiduals
-  author: lochel
-  Helper for createInitialResiduals."
-  input list<BackendDAE.Var> inVars;
-  output list<BackendDAE.Equation> outEqns;
-algorithm
-  outEqns := matchcontinue(inVars)
-  local
-    BackendDAE.Var var;
-    list<BackendDAE.Var> vars;
-    BackendDAE.Equation eqn;
-    list<BackendDAE.Equation> eqns;
-    DAE.Exp e, e1, e2, lambda, crefExp, startExp;
-    DAE.ComponentRef cref;
-    DAE.Type tp;
-    case({}) then {};
-      
-    case(var::vars) equation
-      SOME(startExp) = BackendVariable.varStartValueOption(var);
-      
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-      cref = BackendVariable.varCref(var);
-      crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
-      
-      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), lambda);
-      
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
-      e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
-      
-      e1 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), e2);
-      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
-      eqns = generateStartValueResiduals(vars);
-    then eqn::eqns;
-      
-    case(var::vars) equation
-      eqns = generateStartValueResiduals(vars);
-    then eqns;
-      
-    case(_) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: generateStartValueResiduals failed"});
-    then fail();
-  end matchcontinue;
-end generateStartValueResiduals;
 
 protected function generateFixedStartValueResiduals"function: generateFixedStartValueResiduals
   author: lochel
@@ -6219,8 +6141,8 @@ algorithm
       true = BackendVariable.varFixed(var);
       false = BackendVariable.isStateVar(var);
       false = BackendVariable.isParam(var);
+      false = BackendVariable.isVarDiscrete(var);
       
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
       cref = BackendVariable.varCref(var);
       crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
       
@@ -6229,7 +6151,6 @@ algorithm
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
       
-      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e1);
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
       eqns = generateFixedStartValueResiduals(vars);
     then eqn::eqns;
@@ -6780,14 +6701,14 @@ protected function createModelInfo
   input list<Function> functions;
   input list<String> labels;
   input Integer numHelpVars;
-  input Integer numInitEquations;
-  input Integer numResiduals;
+  input Integer numInitialEquations;
+  input Integer numInitialAlgorithms;
   input String fileDir;
   input Boolean ifcpp;
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir,ifcpp)
+  matchcontinue (class_, dlow, functions, labels, numHelpVars, numInitialEquations, numInitialAlgorithms, fileDir,ifcpp)
     local
       String directory;
       VarInfo varInfo;
@@ -6818,7 +6739,7 @@ algorithm
       list<SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimVar> states_2,derivatives_2,derivative;
     
-    case (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir, true)
+    case (class_, dlow, functions, labels, numHelpVars, numInitialEquations, numInitialAlgorithms, fileDir, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6844,7 +6765,7 @@ algorithm
         next = listLength(extObjVars);
         (dim_1,dim_2)= dimensions(dlow);
         Debug.fcall(Flags.CPP,print,"create varinfo \n");
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
+        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
          Debug.fcall(Flags.CPP,print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
@@ -6864,7 +6785,7 @@ algorithm
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars), 
                   functions, labels);
     
-    case (class_, dlow, functions, labels, numHelpVars, numInitEquations, numResiduals, fileDir, false)
+    case (class_, dlow, functions, labels, numHelpVars, numInitialEquations, numInitialAlgorithms, fileDir, false)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6889,7 +6810,7 @@ algorithm
         np_string = listLength(stringParamVars);
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
+        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
       then
         MODELINFO(class_, directory, varInfo, vars, functions, labels);
@@ -6913,8 +6834,8 @@ protected function createVarInfo
   input Integer numOutVars;
   input Integer numInVars;
   input Integer numHelpVars;
-  input Integer numInitEquations;
-  input Integer numResiduals;
+  input Integer numInitialEquations;
+  input Integer numInitialAlgorithms;
   input Integer ny_int;
   input Integer np_int;
   input Integer na_int;
@@ -6929,20 +6850,21 @@ protected function createVarInfo
   output VarInfo varInfo;
 algorithm
   varInfo :=
-  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
+  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
     local
-      Integer ng, ng_sam, ng_sam_1, ng_1;
+      Integer ng, ng_sam, ng_sam_1, ng_1, numInitialResiduals;
       String s1,s2;
-    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitEquations, numResiduals,
+    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
       equation
         (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
         ng_1 = filterNg(ng);
         ng_sam_1 = filterNg(ng_sam);
+        numInitialResiduals = numInitialEquations+numInitialAlgorithms;
       then
         VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numInitEquations, numResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
+          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfoCPP failed"});

@@ -29,14 +29,37 @@
  *
  */
 
-/*! \file initialization.h
+/*! \file initialization_data.h
  */
 
-#ifndef _INITIALIZATION_H_
-#define _INITIALIZATION_H_
+#ifndef _INITIALIZATION_DATA_H_
+#define _INITIALIZATION_DATA_H_
 
 #include "simulation_data.h"
-#include "initialization_data.h"
+
+#include "omc_error.h"
+
+typedef struct INIT_DATA
+{
+  /* vars */
+  long nz;
+  long nStates;
+  long nParameters;
+  double* z;            /* unscaled */
+  double* zScaled;      /* scaled */
+  double* start;
+  double* min;
+  double* max;
+  double* nominal;
+  char** name;
+
+  /* equations */
+  long nInitResiduals;
+  long nStartValueResiduals;
+  double *initialResiduals;
+  double *residualScalingCoefficients;
+  double *startValueResidualScalingCoefficients;
+}INIT_DATA;
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -44,17 +67,16 @@ extern "C"
 {
 #endif
 
-extern int initialization(DATA *data, const char* pInitMethod,
-    const char* pOptiMethod, const char* pInitFile, double initTime);
+extern INIT_DATA *initializeInitData(DATA *data);
+extern void freeInitData(INIT_DATA *initData);
 
-extern double leastSquareWithLambda(DATA* data, INIT_DATA* initData,
-    double lambda);
-extern void leastSquare(long *nz, double *z, double *funcValue);
+extern void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData);
 
-extern int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue);
+extern void updateZ(INIT_DATA *data);
+extern void updateZScaled(INIT_DATA *data);
 
-extern DATA *globalData;
-extern double* globalInitialResiduals;
+extern void setZ(INIT_DATA *data, double *z);
+extern void setZScaled(INIT_DATA *data,  double *zScaled);
 
 #ifdef __cplusplus
 }

@@ -29,14 +29,14 @@
  *
  */
 
-/*! \file initialization.h
+/*! \file nelderMeadEx_initialization.h
  */
 
-#ifndef _INITIALIZATION_H_
-#define _INITIALIZATION_H_
+#ifndef _NELDERMEADEX_INITIALIZATION_H_
+#define _NELDERMEADEX_INITIALIZATION_H_
 
 #include "simulation_data.h"
-#include "initialization_data.h"
+#include "initialization.h"
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -44,17 +44,8 @@ extern "C"
 {
 #endif
 
-extern int initialization(DATA *data, const char* pInitMethod,
-    const char* pOptiMethod, const char* pInitFile, double initTime);
-
-extern double leastSquareWithLambda(DATA* data, INIT_DATA* initData,
-    double lambda);
-extern void leastSquare(long *nz, double *z, double *funcValue);
-
-extern int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue);
-
-extern DATA *globalData;
-extern double* globalInitialResiduals;
+extern int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData,
+    double lambdaStart);
 
 #ifdef __cplusplus
 }

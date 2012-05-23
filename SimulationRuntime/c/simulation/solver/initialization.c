@@ -32,6 +32,12 @@
  */
 
 #include "initialization.h"
+
+#include "kinsol_initialization.h"
+#include "nelderMeadEx_initialization.h"
+#include "newuoa_initialization.h"
+#include "simplex_initialization.h"
+
 #include "simulation_data.h"
 #include "omc_error.h"
 #include "openmodelica.h"
@@ -40,63 +46,15 @@
 #include "read_matlab4.h"
 #include "events.h"
 
-#include <string.h>
+#include "initialization_data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 DATA *globalData = NULL;
 double* globalInitialResiduals = NULL;
-
-typedef struct INIT_DATA
-{
-  long nz;
-  long nStates;
-  long nParameters;
-  double* z;
-  double* start;
-  double* min;
-  double* max;
-  double* nominal;
-  char** name;
-}INIT_DATA;
-
-static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNominal, double* initialResidualScalingCoefficients, double lambda, double* initialResiduals);
-
-#include "initialization_sundials.c"
-
-#ifndef NEWUOA
-#define NEWUOA newuoa_
-#endif
-
-#ifndef NELMEAD
-#define NELMEAD nelmead_
-#endif
-
-void NEWUOA(long *nz,
-  long *NPT,
-  double *z,
-  double *RHOBEG,
-  double *RHOEND,
-  long *IPRINT,
-  long *MAXFUN,
-  double *W,
-  void (*leastSquare) (long *nz, double *z, double *funcValue));
-
-void NELMEAD(double *z,
-  double *STEP,
-  long *nz,
-  double *funcValue,
-  long *MAXF,
-  long *IPRINT,
-  double *STOPCR,
-  long *NLOOP,
-  long *IQUAD,
-  double *SIMP,
-  double *VAR,
-  void (*leastSquare) (long *nz, double *z, double *funcValue),
-  long *IFAULT);
 
 enum INIT_INIT_METHOD
 {
@@ -106,8 +64,16 @@ enum INIT_INIT_METHOD
   IIM_MAX
 };
 
-const char *initMethodStr[IIM_MAX] = {"unknown", "none", "state"};
-const char *initMethodDescStr[IIM_MAX] = {"unknown", "no initialization method", "default initialization method"};
+const char *initMethodStr[IIM_MAX] = {
+  "unknown",
+  "none",
+  "state"
+};
+const char *initMethodDescStr[IIM_MAX] = {
+  "unknown",
+  "no initialization method",
+  "default initialization method"
+};
 
 enum INIT_OPTI_METHOD
 {
@@ -116,9 +82,7 @@ enum INIT_OPTI_METHOD
   IOM_NELDER_MEAD_EX2,
   IOM_SIMPLEX,
   IOM_NEWUOA,
-#ifdef WITH_SUNDIALS
   IOM_KINSOL,
-#endif
   IOM_MAX
 };
 
@@ -127,20 +91,16 @@ const char *optiMethodStr[IOM_MAX] = {
   "nelder_mead_ex",
   "nelder_mead_ex2",
   "simplex",
-  "newuoa"
-#ifdef WITH_SUNDIALS
-  , "kinsol"
-#endif
+  "newuoa",
+  "kinsol"
 };
 const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
   "with global homotopy",
   "without global homotopy",
   "",
-  "brent's method"
-#ifdef WITH_SUNDIALS
-  , "sundials/kinsol"
-#endif
+  "brent's method",
+  "sundials/kinsol"
 };
 
 /*! \fn leastSquareWithLambda
@@ -156,55 +116,68 @@ const char *optiMethodDescStr[IOM_MAX] = {
  *  \param [in]  [lambda] E [0; 1]
  *  \param [out] [initialResiduals]
  */
-static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNominal, double* initialResidualScalingCoefficients, double lambda, double* initialResiduals)
+double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 {
   int indz = 0;
-  fortran_integer i = 0;
-  long j = 0;
+  long i = 0, ix;
   double funcValue = 0.0;
   double scalingCoefficient;
 
+  /* for states */
   for(i=0; i<data->modelData.nStates; ++i)
-  {
     if(data->modelData.realVarsData[i].attribute.fixed==0)
-    {
-      data->localData[0]->realVars[i] = z[indz] * (zNominal ? zNominal[indz] : 1.0);
-      indz++;
-    }
-  }
+      data->localData[0]->realVars[i] = initData->z[indz++];
 
   /* for real parameters */
   for(i=0; i<data->modelData.nParametersReal; ++i)
-  {
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
-    {
-      data->simulationInfo.realParameter[i] = z[indz] * (zNominal ? zNominal[indz] : 1.0);
-      indz++;
-    }
-  }
+      data->simulationInfo.realParameter[i] = initData->z[indz++];
 
   updateBoundParameters(data);
   functionODE(data);
   functionAlgebraics(data);
-  initial_residual(data, lambda, initialResiduals);
+  initial_residual(data, initData->initialResiduals);
 
-  if (initialResidualScalingCoefficients)
+  for(i=0; i<data->modelData.nInitResiduals; ++i)
   {
-    /* use scaling coefficients */
-    for(j=0; j<data->modelData.nResiduals; ++j)
-    {
-      scalingCoefficient = initialResidualScalingCoefficients[j];
-      if(scalingCoefficient > 0.0)
-        funcValue += (initialResiduals[j] / scalingCoefficient) * (initialResiduals[j] / scalingCoefficient);
-    }
+    if(initData->residualScalingCoefficients)
+      scalingCoefficient = initData->residualScalingCoefficients[i]; /* use scaling coefficients */
+    else
+      scalingCoefficient = 1.0; /* no scaling coefficients given */
+
+    if(initData->residualScalingCoefficients[i] > 0.0)
+      funcValue += (initData->initialResiduals[i] / scalingCoefficient) * (initData->initialResiduals[i] / scalingCoefficient);
   }
-  else
+
+  if(lambda < 1.0)
   {
-    /* no scaling coefficients given */
-    for(j=0; j<data->modelData.nResiduals; ++j)
-    {
-      funcValue += initialResiduals[j] * initialResiduals[j];
-    }
+    funcValue *= lambda;
+    ix = 0;
+    /* for real variables */
+    for(i=0; i<data->modelData.nVariablesReal; ++i)
+      if(data->modelData.realVarsData[i].attribute.useStart)
+      {
+        if(initData->startValueResidualScalingCoefficients)
+          scalingCoefficient = initData->startValueResidualScalingCoefficients[ix++]; /* use scaling coefficients */
+        else
+          scalingCoefficient = 1.0; /* no scaling coefficients given */
+
+        if(scalingCoefficient > 0.0)
+          funcValue += (1.0-lambda)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
+      }
+
+    /* for real parameters */
+    for(i=0; i<data->modelData.nParametersReal; ++i)
+      if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
+      {
+        if(initData->startValueResidualScalingCoefficients)
+          scalingCoefficient = initData->startValueResidualScalingCoefficients[ix++]; /* use scaling coefficients */
+        else
+          scalingCoefficient = 1.0; /* no scaling coefficients given */
+
+        if(scalingCoefficient > 0.0)
+          funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
+      }
   }
 
   return funcValue;
@@ -221,357 +194,25 @@ static double leastSquareWithLambda(DATA* data, long nz, double* z, double* zNom
 */
 void leastSquare(long *nz, double *z, double *funcValue)
 {
-  *funcValue = leastSquareWithLambda(globalData, *nz, z, NULL, NULL, 1.0, globalInitialResiduals);
+  INIT_DATA initData;
+  initData.nz = *nz;
+  initData.nStates = -1;
+  initData.nParameters = -1;
+  initData.z = z;
+  initData.zScaled = NULL;
+  initData.start = NULL;
+  initData.min = NULL;
+  initData.max = NULL;
+  initData.nominal = NULL;
+  initData.name = NULL;
+
+  initData.initialResiduals = globalInitialResiduals;
+  initData.residualScalingCoefficients = NULL;
+  initData.startValueResidualScalingCoefficients = NULL;
+
+  *funcValue = leastSquareWithLambda(globalData, &initData, 1.0);
 
   DEBUG_INFO1(LOG_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
-}
-
-/*! \fn computeInitialResidualScalingCoefficients
- *
- *  This function calculates coefficients for every initial_residual.
- *  They describe the order of magnitude.
- *
- *  \param [ref] [data]
- *  \param [in]  [nz] number of unfixed states and unfixed parameters
- *  \param [in]  [z] vector of unfixed states and unfixed parameters
- *  \param [in]  [zNominal] vector of nominal-values for z or NULL
- *  \param [out] [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals
- *
- *  \author lochel
- */
-static void computeInitialResidualScalingCoefficients(DATA *data, double nz, double *z, double *zNominal, double *initialResidualScalingCoefficients)
-{
-  int i, j;
-
-  double *tmpInitialResidual1 = (double*)malloc(data->modelData.nResiduals * sizeof(double));
-  double *tmpInitialResidual2 = (double*)malloc(data->modelData.nResiduals * sizeof(double));
-  double *states = (double*)malloc(nz * sizeof(double));
-
-  const double h = 1e-6;
-
-  for(j=0; j<data->modelData.nResiduals; ++j)
-    initialResidualScalingCoefficients[j] = 0.0;
-
-  if (zNominal)
-  {
-    for(i=0; i<nz; ++i)
-      states[i] = z[i] * zNominal[i];
-  }
-  else
-  {
-    for(i=0; i<nz; ++i)
-      states[i] = z[i];
-  }
-
-  /* lambda = 1.0 */
-  leastSquareWithLambda(data, nz, states, NULL, NULL, 1.0, tmpInitialResidual1);
-
-  for(i=0; i<nz; ++i)
-  {
-    states[i] += h;
-    leastSquareWithLambda(data, nz, states, NULL, NULL, 1.0, tmpInitialResidual2);
-
-    for(j=0; j<data->modelData.nResiduals; ++j)
-    {
-      double f = fabs(zNominal[i] * (tmpInitialResidual2[j] - tmpInitialResidual1[j]) / h /* / tmpInitialResidual2[j] */ );
-      if(f > initialResidualScalingCoefficients[j])
-        initialResidualScalingCoefficients[j] = f;
-    }
-    states[i] -= h;
-  }
-
-  /* lambda = 0.0 */
-  leastSquareWithLambda(data, nz, states, NULL, NULL, 0.0, tmpInitialResidual1);
-
-  for(i=0; i<nz; ++i)
-  {
-    states[i] += h;
-    leastSquareWithLambda(data, nz, states, NULL, NULL, 0.0, tmpInitialResidual2);
-
-    for(j=0; j<data->modelData.nResiduals; ++j)
-    {
-      double f = fabs(zNominal[i] * (tmpInitialResidual2[j] - tmpInitialResidual1[j]) / h /* / tmpInitialResidual2[j] */ );
-      if(f > initialResidualScalingCoefficients[j])
-        initialResidualScalingCoefficients[j] = f;
-    }
-    states[i] -= h;
-  }
-
-  DEBUG_INFO(LOG_INIT, "initial residuals scaling coefficients");
-  for(j=0; j<data->modelData.nResiduals; ++j)
-  {
-    if(initialResidualScalingCoefficients[j] < 1e-42)
-    {
-      initialResidualScalingCoefficients[j] = 0.0;
-      DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g [ineffective]", j, initialResidualScalingCoefficients[j]);
-    }
-    else
-    {
-      DEBUG_INFO_AL2(LOG_INIT, "   initial residual no. %d: %g", j, initialResidualScalingCoefficients[j]);
-    }
-  }
-
-  free(tmpInitialResidual1);
-  free(tmpInitialResidual2);
-  free(states);
-}
-
-/*! \fn NelderMeadOptimization
- *
- *  This function performs a Nelder-Mead-Optimization with some
- *  special changes for initialization.
- *
- *  \param [in]  [N] number of unfixed states and unfixed parameters
- *  \param [in]  [var] vector of unfixed states and unfixed parameters
- *  \param [in]  [scale] vector of nominal-values for var or NULL
- *  \param [in]  [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals or NULL
- *  \param [in]  [lambda_step]
- *  \param [in]  [acc]
- *  \param [in]  [maxIt]
- *  \param [in]  [dump]
- *  \param [in]  [pLambda]
- *  \param [in]  [pIteration]
- *  \param [in]  [leastSquare]
- *  \param [ref] [data]
- *  \param [in]  [initialResiduals]
- *
- *  \author lochel
- */
-static void NelderMeadOptimization(long N,
-  double* var,
-  double* scale,
-  double* initialResidualScalingCoefficients,
-  double lambda_step,
-  double acc,
-  long maxIt,
-  long dump,
-  double* pLambda,
-  long* pIteration,
-  double (*leastSquare)(DATA*, long, double*, double*, double*, double, double*),
-  DATA* data,
-  double* initialResiduals)
-{
-  const double alpha    = 1.0;        /* 0 < alpha */
-  const double beta     = 2;          /* 1 < beta */
-  const double gamma    = 0.5;        /* 0 < gamma < 1 */
-
-  double* simplex = (double*)malloc((N+1)*N*sizeof(double));
-  double* fvalues = (double*)malloc((N+1)*sizeof(double));
-
-  double* xr = (double*)malloc(N * sizeof(double));
-  double* xe = (double*)malloc(N * sizeof(double));
-  double* xk = (double*)malloc(N * sizeof(double));
-  double* xbar = (double*)malloc(N * sizeof(double));
-
-  double fxr;
-  double fxe;
-  double fxk;
-
-  long xb = 0;        /* best vertex */
-  long xs = 0;        /* worst vertex */
-  long xz = 0;        /* second-worst vertex */
-
-  long x = 0;
-  long i = 0;
-
-  double lambda = *pLambda;
-  long iteration = 0;
-
-  /* check Memory */
-  ASSERT(simplex, "out of memory");
-  ASSERT(fvalues, "out of memory");
-  ASSERT(xr, "out of memory");
-  ASSERT(xe, "out of memory");
-  ASSERT(xk, "out of memory");
-  ASSERT(xbar, "out of memory");
-
-  /* initialize simplex */
-  for(x=0; x<N+1; x++)
-  {
-    for(i=0; i<N; i++)
-    {
-      /* vertex x / var i */
-      simplex[x*N + i] = var[i];
-    }
-  }
-  for(i=0; i<N; i++)
-  {
-    simplex[i*N + i] += 1.0;    /* canonical simplex */
-  }
-
-  computeInitialResidualScalingCoefficients(data, N, simplex, scale, initialResidualScalingCoefficients);
-
-  do
-  {
-    /* lambda-control */
-    double sigma = 0.0;
-    double average = 0.0;
-    double g = 1e-8;
-
-    iteration++;
-
-    /* func-values for the simplex */
-    for(x=0; x<N+1; x++)
-      fvalues[x] = leastSquare(data, N, &simplex[x*N], scale, initialResidualScalingCoefficients, lambda, initialResiduals);
-
-    /* calculate xb, xs, xz */
-    xb = 0;
-    for(x=1; x<N+1; x++)
-    {
-      if(fvalues[x] < fvalues[xb])
-        xb = x;
-    }
-
-    if(lambda >= 1.0 && fvalues[xb] < acc)
-      break;
-
-    if(maxIt < iteration)
-      break;
-
-    xs = xb;
-    xz = xb;
-    for(x=0; x<N+1; x++)
-    {
-      if(fvalues[x] > fvalues[xs])
-      {
-        xz = xs;
-        xs = x;
-      }
-
-      if(fvalues[x] > fvalues[xz] && (x != xs))
-        xz = x;
-    }
-
-    for(x=0; x<N+1; x++)
-      average += fvalues[x];
-    average /= (N+1);
-
-    for(x=0; x<N+1; x++)
-      sigma += (fvalues[x] - average) * (fvalues[x] - average);
-    sigma /= N;
-
-    /* dump every dump-th step */
-    if(dump && !(iteration % dump))
-      INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
-
-    if(sigma < g)
-    {
-      if(lambda < 1.0)
-      {
-        lambda += lambda_step;
-        if(lambda >= 1.0)
-          break;
-
-        DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
-        continue;
-      }
-    }
-
-    /* calculate central point for the n best vertices */
-    for(i=0; i<N; i++)
-      xbar[i] = 0;
-
-    for(x=0; x<N+1; x++)
-    {
-      if(x != xs)            /* leaving worst vertex */
-      {
-        for(i=0; i<N; i++)
-          xbar[i] += simplex[x*N+i];
-      }
-    }
-
-    for(i=0; i<N; i++)
-      xbar[i] /= N;
-
-    /* reflect worst vertex at xbar */
-    for(i=0; i<N; i++)
-      xr[i] = xbar[i] + alpha*(xbar[i] - simplex[xs*N + i]);
-    fxr = leastSquare(data, N, xr, scale, initialResidualScalingCoefficients, lambda, initialResiduals);
-
-    if(fvalues[xb] <= fxr && fxr <= fvalues[xz])
-    {
-      /* replace xs by xr */
-      for(i=0; i<N; i++)
-        simplex[xs*N+i] = xr[i];
-    }
-    else if(fxr <= fvalues[xb])
-    {
-      for(i=0; i<N; i++)
-        xe[i] = xbar[i] + beta*(xr[i] - xbar[i]);
-      fxe = leastSquare(data, N, xe, scale, initialResidualScalingCoefficients, lambda, initialResiduals);
-
-      if(fxe < fxr)    /* if(fxe < fvalues[xb]) */
-      {
-        /* replace xs by xe */
-        for(i=0; i<N; i++)
-          simplex[xs*N+i] = xe[i];
-      }
-      else
-      {
-        /* replace xs by xr */
-        for(i=0; i<N; i++)
-          simplex[xs*N+i] = xr[i];
-      }
-    }
-    else if(fvalues[xz] <= fxr)
-    {
-      if(fxr >= fvalues[xs])
-      {
-        for(i=0; i<N; i++)
-          xk[i] = xbar[i] + gamma*(simplex[xs*N+i] - xbar[i]);
-        fxk = leastSquare(data, N, xk, scale, initialResidualScalingCoefficients, lambda, initialResiduals);
-      }
-      else
-      {
-        for(i=0; i<N; i++)
-          xk[i] = xbar[i] + gamma*(xr[i] - xbar[i]);
-        fxk = leastSquare(data, N, xk, scale, initialResidualScalingCoefficients, lambda, initialResiduals);
-      }
-
-      if(fxk < fvalues[xs])
-      {
-        /* replace xs by xk */
-        for(i=0; i<N; i++)
-          simplex[xs*N+i] = xk[i];
-      }
-      else
-      {
-        /* constrict simplex around xb */
-        for(x=0; x<N+1; x++)
-        {
-          for(i=0; i<N; i++)
-          {
-            simplex[x*N+i] = (simplex[x*N+i] + simplex[xb*N+i]) / 2.0;
-          }
-        }
-      }
-    }
-    else
-    {
-      /* not possible to be here */
-      WARNING1("fxr = %g", fxr);
-      WARNING1("fxk = %g", fxk);
-
-      THROW("undefined error in NelderMeadOptimization");
-    }
-  }while(1.0);
-
-  /* copying solution */
-  for(i=0; i<N; i++)
-    var[i] = simplex[xb*N+i];
-
-  if(pLambda)
-    *pLambda = lambda;
-
-  if(pIteration)
-    *pIteration = iteration;
-
-  free(xe);
-  free(xr);
-  free(xk);
-  free(xbar);
-  free(fvalues);
-  free(simplex);
 }
 
 /*! \fn reportResidualValue
@@ -582,7 +223,7 @@ static void NelderMeadOptimization(long N,
  *  \param [in]  [funcValue] leastSquare-Value
  *  \param [in]  [initialResiduals]
  */
-static int reportResidualValue(DATA* data, double funcValue, double* initialResiduals)
+int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue)
 {
   long i = 0;
   if(funcValue > 1e-5)
@@ -590,374 +231,12 @@ static int reportResidualValue(DATA* data, double funcValue, double* initialResi
     WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
     WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
 
-    for(i=0; i<data->modelData.nResiduals; i++)
-    {
-      if(fabs(initialResiduals[i]) > 1e-6)
-      {
-        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initialResiduals[i]);
-      }
-    }
+    for(i=0; i<initData->nInitResiduals; i++)
+      if(fabs(initData->initialResiduals[i]) > 1e-6)
+        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initData->initialResiduals[i]);
     return 1;
   }
   return 0;
-}
-
-/*! \fn int newuoa_initialization(long nz, double *z)
- *
- *  This function performs initialization using the newuoa function, which is
- *  a trust region method that forms quadratic models by interpolation.
- */
-int newuoa_initialization(DATA* data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals)
-{
-  long IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : 0;
-  long MAXFUN = 50000;
-  double RHOEND = 1.0e-6;
-  double RHOBEG = 10;     /* This should be about one tenth of the greatest
-                             expected value of a variable. Perhaps the nominal
-                             value can be used for this. */
-  long NPT = 2*nz+1;
-  double funcValue = 0;
-
-  double *W = (double*)calloc((NPT+13)*(NPT+nz)+3*nz*(nz+3)/2, sizeof(double));
-
-  globalData = data;
-  globalInitialResiduals = initialResiduals;
-
-
-  ASSERT(W, "out of memory");
-  NEWUOA(&nz, &NPT, z, &RHOBEG, &RHOEND, &IPRINT, &MAXFUN, W, leastSquare);
-  free(W);
-
-  globalData = NULL;
-  globalInitialResiduals = NULL;
-
-  /* Calculate the residual to verify that equations are consistent. */
-  funcValue = leastSquareWithLambda(data, nz, z, NULL, NULL, 1.0, initialResiduals);
-  return reportResidualValue(data, funcValue, initialResiduals);
-}
-
-/*! \fn int simplex_initialization(long nz,double *z)
- *
- *  This function performs initialization by using the simplex algorithm.
- *  This does not require a jacobian for the residuals.
- */
-int simplex_initialization(DATA* data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals)
-{
-  int ind = 0;
-  double funcValue = 0;
-  double *STEP = (double*)malloc(nz * sizeof(double));
-  double *VAR = (double*)malloc(nz * sizeof(double));
-  double STOPCR = 0, SIMP = 0;
-  long IPRINT = 0, NLOOP = 0, IQUAD = 0, IFAULT = 0, MAXF = 0;
-  ASSERT(STEP, "out of memory");
-  ASSERT(VAR, "out of memory");
-
-  /* Start with stepping .5 in each direction. */
-  for(ind = 0; ind < nz; ind++)
-  {
-    /* some kind of scaling */
-    STEP[ind] = (z[ind]!=0.0 ? fabs(z[ind])/1000.0 : 1);    /* 1.0 */
-    VAR[ind]  = 0.0;
-  }
-
-  /* Set max. no. of function evaluations = 5000, print every 100. */
-
-  MAXF = 5000 * nz;
-  IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : -1;
-
-  /* Set value for stopping criterion.   Stopping occurs when the
-  * standard deviation of the values of the objective function at
-  * the points of the current simplex < stopcr. */
-
-  STOPCR = 1.e-12;
-  NLOOP = nz;
-
-  /* Fit a quadratic surface to be sure a minimum has been found. */
-
-  IQUAD = 0;
-
-  /* As function value is being evaluated in DOUBLE PRECISION, it
-  * should be accurate to about 15 decimals.   If we set simp = 1.d-6,
-  * we should get about 9 dec. digits accuracy in fitting the surface. */
-
-  SIMP = 1.e-12;
-
-  /* Now call NELMEAD to do the work. */
-
-  funcValue = leastSquareWithLambda(data, nz, z, NULL, NULL, 1.0, initialResiduals);
-
-  if(fabs(funcValue) != 0)
-  {
-    globalData = data;
-    globalInitialResiduals = initialResiduals;
-    NELMEAD(z,STEP, &nz, &funcValue, &MAXF, &IPRINT, &STOPCR, &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
-    globalData = NULL;
-    globalInitialResiduals = NULL;
-  }
-  else
-  {
-    DEBUG_INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
-  }
-
-  funcValue = leastSquareWithLambda(data, nz, z, NULL, NULL, 1.0, initialResiduals);
-
-  DEBUG_INFO1(LOG_INIT, "leastSquare=%g", funcValue);
-
-  if(IFAULT == 1)
-  {
-    if(funcValue > SIMP) {
-      WARNING1("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
-      return -1;
-    }
-  }else if(IFAULT == 2 ) {
-    WARNING("Error in initialization. Inconsistent initial conditions.");
-    return -1;
-  }else if(IFAULT == 3) {
-    WARNING("Error in initialization. Number of initial values to calculate < 1");
-    return -1;
-  }else if(IFAULT == 4) {
-    WARNING("Error in initialization. Internal error, NLOOP < 1.");
-    return -1;
-  }
-  return reportResidualValue(data, funcValue, initialResiduals);
-}
-
-/*! \fn nelderMeadEx_initialization
- *
- *  This function performs initialization by using an extend version of the
- *  nelderMead algorithm.
- *  This does not require a jacobian for the residuals.
- *
- *  \param [ref] [data]
- *  \param [in]  [nz] number of unfixed states and unfixed parameters
- *  \param [in]  [z] vector of unfixed states and unfixed parameters
- *  \param [in]  [zName] variable names
- *  \param [in]  [zNominal] vector of nominal-values for z
- *  \param [in]  [initialResiduals]
- *
- *  \author lochel
- */
-static int nelderMeadEx_initialization(DATA *data, long nz, double *z, char** zName, double *zNominal, double* initialResiduals, double lambdaStart)
-{
-  double STOPCR = 1.e-12;
-  double lambda_step = 0.2;
-  long NLOOP = 1000 * nz;
-
-  double funcValue;
-
-  double lambda = lambdaStart;
-  long iteration = 0;
-
-  long l=0, i=0;
-
-  double* initialResidualScalingCoefficients = (double*)malloc(data->modelData.nResiduals * sizeof(double));
-  double* bestZ = (double*)malloc(nz * sizeof(double));
-  double bestFuncValue;
-
-  /* down-scale */
-  for(i=0; i<nz; i++)
-    z[i] /= zNominal[i];
-
-  funcValue = leastSquareWithLambda(data, nz, z, zNominal, NULL, 1.0, initialResiduals);
-
-  bestFuncValue = funcValue;
-  for(i=0; i<nz; i++)
-    bestZ[i] = z[i];
-
-  DEBUG_INFO(LOG_INIT, "starting with...");
-  for(i=0; i<nz; i++)
-    DEBUG_INFO_AL4(LOG_INIT, "   z[%ld]: %s(nominal=%g) = %g", i, zName[i], zNominal[i], z[i]);
-  DEBUG_INFO_AL1(LOG_INIT, "   funcValue = %g", funcValue);
-
-  for(l=0; l<100 && funcValue > STOPCR; l++)
-  {
-    DEBUG_INFO1(LOG_INIT, "initialization-nr. %ld", l);
-
-    NelderMeadOptimization(nz, z, zNominal, initialResidualScalingCoefficients, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? 10000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
-
-    storePreValues(data);                       /* save pre-values */
-    overwriteOldSimulationData(data);           /* if there are non-linear equations */
-    update_DAEsystem(data);                     /* evaluate discrete variables */
-
-    /* valid system for the first time! */
-    SaveZeroCrossings(data);
-    storePreValues(data);
-    overwriteOldSimulationData(data);
-
-    funcValue = leastSquareWithLambda(data, nz, z, zNominal, initialResidualScalingCoefficients, 1.0, initialResiduals);
-
-    DEBUG_INFO1(LOG_INIT, "ending with funcValue = %g", funcValue);
-    DEBUG_INFO_AL1(LOG_INIT, "   iterations: %ld", iteration);
-    DEBUG_INFO_AL1(LOG_INIT, "   lambda: %g", lambda);
-    for(i=0; i<nz; i++)
-      DEBUG_INFO_AL3(LOG_INIT, "   z[%ld]: %s = %g", i, zName[i], z[i] * (zNominal ? zNominal[i] : 1.0));
-    for(i=0; i<data->modelData.nResiduals; i++)
-      if(fabs(initialResiduals[i]) > 1e-3)
-        DEBUG_INFO_AL2(LOG_INIT, "   residual[%ld] = %g", i, initialResiduals[i]);
-
-    if(funcValue < bestFuncValue)
-    {
-      bestFuncValue = funcValue;
-      for(i=0; i<nz; i++)
-        bestZ[i] = z[i];
-    }
-    else if(funcValue == bestFuncValue)
-    {
-      WARNING("local minimum");
-      break;
-    }
-  }
-  free(initialResidualScalingCoefficients);
-  free(bestZ);
-
-  DEBUG_INFO_AL1(LOG_INIT, "   optimization-calls: %ld", l);
-
-  /* up-scale */
-  for(i=0; i<nz; i++)
-    z[i] *= zNominal[i];
-
-  if(lambda < 1.0 && funcValue > STOPCR)
-    return -1;
-
-  return reportResidualValue(data, funcValue, initialResiduals);
-}
-
-/*! \fn freeInitData
- *
- *  \param [ref] [initData]
- *
- *  \author lochel
- */
-static void freeInitData(INIT_DATA *initData)
-{
-  free(initData->z);
-  free(initData->start);
-  free(initData->min);
-  free(initData->max);
-  free(initData->nominal);
-  free(initData->name);
-  free(initData);
-}
-
-/*! \fn initializeInitData
- *
- *  \param [in]  [data]
- *
- *  \author lochel
- */
-static INIT_DATA *initializeInitData(DATA *data)
-{
-  long i;
-  long iz;
-  INIT_DATA* initData = NULL;
-
-  initData = (INIT_DATA*)malloc(sizeof(INIT_DATA));
-  ASSERT(initData, "out of memory");
-
-  initData->nz = 0;
-  initData->nStates = 0;
-  initData->nParameters = 0;
-  initData->z = NULL;
-  initData->start = NULL;
-  initData->min = NULL;
-  initData->max = NULL;
-  initData->nominal = NULL;
-  initData->name = NULL;
-
-  /* count unfixed states */
-  for(i=0; i<data->modelData.nStates; ++i)
-    if(data->modelData.realVarsData[i].attribute.fixed == 0)
-      ++initData->nz;
-  initData->nStates = initData->nz;
-
-  /* plus unfixed real-parameters */
-  for(i=0; i<data->modelData.nParametersReal; ++i)
-    if(data->modelData.realParameterData[i].attribute.fixed == 0)
-      ++initData->nz;
-  initData->nParameters = initData->nz - initData->nStates;
-
-  if(initData->nz == 0)
-  {
-    freeInitData(initData);
-    return NULL;
-  }
-
-  initData->z = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->z, "out of memory");
-
-  initData->start = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->start, "out of memory");
-
-  initData->min = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->min, "out of memory");
-
-  initData->max = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->max, "out of memory");
-
-  initData->nominal = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->nominal, "out of memory");
-
-  initData->name = (char**)calloc(initData->nz, sizeof(char*));
-  ASSERT(initData->name, "out of memory");
-
-  /* setup initData */
-  for(i=0, iz=0; i<data->modelData.nStates; ++i)
-  {
-    if(data->modelData.realVarsData[i].attribute.fixed == 0)
-    {
-      initData->name[iz] = (char*)data->modelData.realVarsData[i].info.name;
-      initData->nominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
-      if(initData->nominal[iz] == 0.0)
-      {
-        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
-         *                  because this breaks the FMI tests with these kind of messages:
-         *                  warning | (null)(nominal=0)
-         *                          | nominal value is set to 1.0
-         * put it back when everything works fine.
-        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-        WARNING_AL("nominal value is set to 1.0");
-        */
-        initData->nominal[iz] = 1.0;
-      }
-
-      initData->z[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->start[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->min[iz] = data->modelData.realVarsData[i].attribute.min;
-      initData->max[iz] = data->modelData.realVarsData[i].attribute.max;
-
-      iz++;
-    }
-  }
-
-  for(i=0; i<data->modelData.nParametersReal; ++i)
-  {
-    if(data->modelData.realParameterData[i].attribute.fixed == 0)
-    {
-      initData->name[iz] = (char*)data->modelData.realParameterData[i].info.name;
-      initData->nominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
-      if(initData->nominal[iz] == 0.0)
-      {
-        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
-         *                  because this breaks the FMI tests with these kind of messages:
-         *                  warning | (null)(nominal=0)
-         *                          | nominal value is set to 1.0
-         * put it back when everything works fine.
-        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-        WARNING_AL("nominal value is set to 1.0");
-        */
-        initData->nominal[iz] = 1.0;
-      }
-
-      initData->z[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->start[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->min[iz] = data->modelData.realParameterData[i].attribute.min;
-      initData->max[iz] = data->modelData.realParameterData[i].attribute.max;
-
-      iz++;
-    }
-  }
-
-  return initData;
 }
 
 /*! \fn initialize
@@ -969,12 +248,13 @@ static INIT_DATA *initializeInitData(DATA *data)
  */
 static int initialize(DATA *data, int optiMethod)
 {
-  int retVal = -1;
   const double h = 1e-6;
-  double *initialResiduals = NULL;
+
+  int retVal = -1;
   long i, j, k;
   double f;
   double *z_f = NULL;
+  double* nominal;
 
   INIT_DATA *initData = initializeInitData(data);
 
@@ -985,33 +265,32 @@ static int initialize(DATA *data, int optiMethod)
     return 0;
   }
 
-  if(data->modelData.nInitEquations == 0)
+  if(data->modelData.nInitResiduals == 0)
   {
-    DEBUG_INFO(LOG_INIT, "no initial equations");
+    DEBUG_INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
     return 0;
   }
 
-  initialResiduals = (double*) calloc(data->modelData.nResiduals, sizeof(double));
-  ASSERT(initialResiduals, "out of memory");
-
-  DEBUG_INFO(LOG_INIT, "initial problem:");
-  DEBUG_INFO_AL1(LOG_INIT, "   number of unfixed variables: %ld", initData->nz);
-  DEBUG_INFO_AL1(LOG_INIT, "   number of initial equations: %ld", data->modelData.nInitEquations);
-
-  if(data->modelData.nInitEquations < initData->nz)
+  if(initData->nInitResiduals < initData->nz)
   {
-    DEBUG_INFO_AL(LOG_INIT, "   [under-determined]");
+    DEBUG_INFO_AL(LOG_INIT, "| [under-determined]");
 
     z_f = (double*)malloc(initData->nz * sizeof(double));
-    f = leastSquareWithLambda(data, initData->nz, initData->z, NULL, NULL, 1.0, initialResiduals);
+    nominal = initData->nominal;
+    initData->nominal = NULL;
+    f = leastSquareWithLambda(data, initData, 1.0);
+    initData->nominal = nominal;
     for(i=0; i<initData->nz; ++i)
     {
       initData->z[i] += h;
-      z_f[i] = fabs(leastSquareWithLambda(data, initData->nz, initData->z, NULL, NULL, 1.0, initialResiduals) - f) / h;
+      nominal = initData->nominal;
+      initData->nominal = NULL;
+      z_f[i] = fabs(leastSquareWithLambda(data, initData, 1.0) - f) / h;
+      initData->nominal = nominal;
       initData->z[i] -= h;
     }
 
-    for(j=0; j < data->modelData.nInitEquations; ++j)
+    for(j=0; j < data->modelData.nInitResiduals; ++j)
     {
       k = 0;
       for(i=1; i<initData->nz; ++i)
@@ -1029,7 +308,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->name[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "| %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -1041,7 +320,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "   %s(fixed=true) = %g", initData->name[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "| %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -1051,39 +330,41 @@ static int initialize(DATA *data, int optiMethod)
 
     freeInitData(initData);
     initData = initializeInitData(data);
-    /* no initial values to calculate. (not possible to be here)*/
+    /* no initial values to calculate. (not possible to be here) */
     if(initData == NULL)
     {
       DEBUG_INFO(LOG_INIT, "no initial values to calculate");
       return 0;
     }
   }
-  else if(data->modelData.nInitEquations > initData->nz)
-    DEBUG_INFO_AL(LOG_INIT, "   [over-determined]");
+  else if(data->modelData.nInitResiduals > initData->nz)
+  {
+    DEBUG_INFO_AL(LOG_INIT, "| [over-determined]");
 
-  DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
-  for(i=0; i<initData->nStates; ++i)
-    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->name[i]);
-  DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
-  for(; i<initData->nz; ++i)
-    DEBUG_INFO_AL2(LOG_INIT, "   [%ld] %s", i, initData->name[i]);
+    /*
+    INFO("initial problem is [over-determined]");
+    if(optiMethod == IOM_KINSOL)
+    {
+      optiMethod = IOM_NELDER_MEAD_EX;
+      INFO("kinsol-method is unable to solve over-determined problems.");
+      INFO_AL2("| using %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+    }
+    */
+  }
 
   if(optiMethod == IOM_NELDER_MEAD_EX)
-    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals, 0.0);
+    retVal = nelderMeadEx_initialization(data, initData, 0.0);
   else if(optiMethod == IOM_NELDER_MEAD_EX2)
-    retVal = nelderMeadEx_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals, 1.0);
+    retVal = nelderMeadEx_initialization(data, initData, 1.0);
   else if(optiMethod == IOM_SIMPLEX)
-    retVal = simplex_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals);
+    retVal = simplex_initialization(data, initData);
   else if(optiMethod == IOM_NEWUOA)
-      retVal = newuoa_initialization(data, initData->nz, initData->z, initData->name, initData->nominal, initialResiduals);
-#ifdef WITH_SUNDIALS
+      retVal = newuoa_initialization(data, initData);
   else if(optiMethod == IOM_KINSOL)
-      retVal = kinsol_initialization(data, initData, initialResiduals);
-#endif
+      retVal = kinsol_initialization(data, initData);
   else
     THROW("unsupported option -iom");
 
-  free(initialResiduals);
   freeInitData(initData);
   return retVal;
 }
@@ -1124,11 +405,11 @@ static int none_initialization(DATA *data, int updateStartValues)
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
   for(i=0; i<initData->nStates; ++i)
-    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->name[i], initData->z[i]);
+    DEBUG_INFO2(LOG_INIT, "| %s = %g", initData->name[i], initData->z[i]);
 
   DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
   for(; i<initData->nStates+initData->nParameters; ++i)
-    DEBUG_INFO2(LOG_INIT, "   %s = %g", initData->name[i], initData->z[i]);
+    DEBUG_INFO2(LOG_INIT, "| %s = %g", initData->name[i], initData->z[i]);
 
   storeInitialValues(data);
   storeInitialValuesParam(data);
@@ -1290,8 +571,8 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
   long i;
 
   DEBUG_INFO    (LOG_INIT, "import start values");
-  DEBUG_INFO_AL1(LOG_INIT, "  file: %s", pInitFile);
-  DEBUG_INFO_AL1(LOG_INIT, "  time: %g", initTime);
+  DEBUG_INFO_AL1(LOG_INIT, "| file: %s", pInitFile);
+  DEBUG_INFO_AL1(LOG_INIT, "| time: %g", initTime);
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
@@ -1316,7 +597,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       if(pVar)
       {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
-        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       }
       else
         WARNING1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
@@ -1337,7 +618,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       if(pVar)
       {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
-        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       }
       else
         WARNING1("unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
@@ -1359,7 +640,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
-        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       }
       else
         WARNING1("unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
@@ -1381,7 +662,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
-        DEBUG_INFO_AL2(LOG_INIT, "  %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       }
       else
         WARNING1("unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
@@ -1403,7 +684,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
  *  \author lochel
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
-                   const char* pInitFile, double initTime)
+    const char* pInitFile, double initTime)
 {
   int initMethod = IIM_STATE;               /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
@@ -1436,7 +717,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       WARNING1("unrecognized option -iim %s", pInitMethod);
       WARNING_AL("current options are:");
       for(i=1; i<IIM_MAX; ++i)
-        WARNING_AL2("  %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
+        WARNING_AL2("| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
       THROW("see last warning");
     }
   }
@@ -1456,7 +737,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       WARNING1("unrecognized option -iom %s", pOptiMethod);
       WARNING_AL("current options are:");
       for(i=1; i<IOM_MAX; ++i)
-        WARNING_AL2("  %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
+        WARNING_AL2("| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
       THROW("see last warning");
     }
   }
@@ -1467,6 +748,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
+
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
     retVal = none_initialization(data, updateStartValues);
@@ -1474,6 +756,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = state_initialization(data, optiMethod, updateStartValues);
   else
     THROW("unsupported option -iim");
+
   data->simulationInfo.initial = 0;
 
   DEBUG_INFO(LOG_INIT, "### END INITIALIZATION ###");

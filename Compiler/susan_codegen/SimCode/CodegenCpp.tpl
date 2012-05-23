@@ -4938,7 +4938,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
   <<
    unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimInitEquations()
     {
-      return <%varInfo.numInitEquations%>;
+      return <%varInfo.numInitialEquations%>;
     }
   >>
   end match
@@ -4966,7 +4966,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
   <<
    unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimUnfixedParameters()
     {
-      return <%varInfo.numResiduals%>;
+      return <%varInfo.numInitialResiduals%>;
     }
   >>
   end match
