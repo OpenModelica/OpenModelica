@@ -347,11 +347,6 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
   for(i=0; i<initData->nz; i++)
     bestZ[i] = initData->z[i];
 
-  DEBUG_INFO(LOG_INIT, "starting with...");
-  for(i=0; i<initData->nz; i++)
-    DEBUG_INFO_AL5(LOG_INIT, "| %ld: %s(nominal=%g) = %g [scaled: %g]", i+1, initData->name[i], initData->nominal[i], initData->z[i], initData->zScaled[i]);
-  DEBUG_INFO_AL1(LOG_INIT, "| funcValue = %g", funcValue);
-
   for(l=0; l<200 && funcValue > STOPCR; l++)
   {
     DEBUG_INFO1(LOG_INIT, "initialization-nr. %ld", l);
@@ -374,11 +369,11 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
     DEBUG_INFO_AL1(LOG_INIT, "| lambda: %g", lambda);
     DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
     for(i=0; i<initData->nz; i++)
-      DEBUG_INFO_AL4(LOG_INIT, "| | %ld: %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
     DEBUG_INFO_AL(LOG_INIT, "| residuals (> 0.001)");
     for(i=0; i<data->modelData.nInitResiduals; i++)
       if(fabs(initData->initialResiduals[i]) > 1e-3)
-        DEBUG_INFO_AL3(LOG_INIT, "| | %ld = %g [scaled: %g]", i+1, initData->initialResiduals[i], (initData->residualScalingCoefficients[i] != 0.0) ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : 0.0);
+        DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaled: %g]", i+1, initData->initialResiduals[i], (initData->residualScalingCoefficients[i] != 0.0) ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : 0.0);
 
     if(funcValue < bestFuncValue)
     {
