@@ -670,10 +670,11 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, SimCode sim
       MODELICA_TERMINATE(<%msgVar%>);
       >>
     case ASSERT(source=SOURCE(info=info)) then 
-      assertCommon(condition, message, contextSimulationDiscrete, info, simCode)
+      assertCommon(condition, message, info, contextSimulationDiscrete, simCode)
    ;separator="\n"
 
 end functionWhenReinitStatementThen;
+
 
 template infoArgs(Info info)
 ::=
@@ -681,19 +682,19 @@ template infoArgs(Info info)
   case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
-
-template assertCommon(Exp condition, Exp message, Context context, Info info, SimCode simCode)
+template assertCommon(Exp condition, Exp message, Info info, Context context, SimCode simCode)
+ "Generates an assert statement."
 ::=
   let &preExpCond = buffer ""
-  let condVar = daeExp(condition, context, &preExpCond, simCode)
   let &preExpMsg = buffer ""
+  let condVar = daeExp(condition, context, &preExpCond, simCode)
   let msgVar = daeExp(message, context, &preExpMsg, simCode)
   <<
   <%preExpCond%>
   if (!<%condVar%>) {
     <%preExpMsg%>
-    omc_fileInfo info = {<%infoArgs(info)%>};
-    MODELICA_ASSERT(info, <%msgVar%>);
+    //<%infoArgs(info)%>
+    throw new Exception(<%msgVar%>);   
   }
   >>
 end assertCommon;
@@ -844,7 +845,7 @@ let()= System.tmpTickReset(1)
 public override void InitialResidual()
 {
   <% localRepresentationArrayDefines %>
-  var startX = startStates; var startYB = startAlgebraicsBool; var startYI = startAlgebraicsInt;
+  var startX = startStates; var startY = startAlgebraics; var startYB = startAlgebraicsBool; var startYI = startAlgebraicsInt;
   int _i = 0;
   const double _lambda = 1.0;
   
@@ -1404,7 +1405,8 @@ template algStatement(DAE.Statement stmt, Context context, SimCode simCode) ::=
     >>
   
   case STMT_TUPLE_ASSIGN(__)   then "STMT_TUPLE_ASSIGN_NI"
-  case STMT_ASSERT(__)         then "STMT_ASSERT_NI"
+  case STMT_ASSERT(source=SOURCE(info=info)) then  
+    assertCommon(cond, msg, info, context, simCode)
   case STMT_TERMINATE(__)      then "STMT_TERMINATE_NI"
   case STMT_WHEN(__)           then algStmtWhen(stmt, context, simCode)
   case STMT_BREAK(__)          then 'break; //break stmt<%\n%>'
