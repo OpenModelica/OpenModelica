@@ -147,8 +147,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
     if(initData->residualScalingCoefficients[i] > 0.0)
       funcValue += (initData->initialResiduals[i] / scalingCoefficient) * (initData->initialResiduals[i] / scalingCoefficient);
-    else
-      funcValue += initData->initialResiduals[i] * initData->initialResiduals[i];
+    /*else
+      funcValue += initData->initialResiduals[i] * initData->initialResiduals[i];*/
   }
 
   if(lambda < 1.0)
@@ -166,8 +166,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
         if(scalingCoefficient > 0.0)
           funcValue += (1.0-lambda)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
-        else
-          funcValue += (1.0-lambda)*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i]);
+        /*else
+          funcValue += (1.0-lambda)*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i]);*/
       }
 
     /* for real parameters */
@@ -181,8 +181,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
         if(scalingCoefficient > 0.0)
           funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
-        else
-          funcValue += (1.0-lambda)*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i]);
+        /*else
+          funcValue += (1.0-lambda)*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i]);*/
       }
   }
 
