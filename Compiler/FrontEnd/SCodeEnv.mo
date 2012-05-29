@@ -895,7 +895,7 @@ algorithm
       equation
         bc = Absyn.removePartialPrefix(getEnvPath(inEnv), inBaseClass);
         (item, bc, env, _) = 
-          SCodeLookup.lookupName(inBaseClass, inEnv, inInfo, NONE());
+          SCodeLookup.lookupNameSilent(inBaseClass, inEnv, inInfo);
         bc = mergePathWithEnvPath(bc, env);
       then
         (SOME(bc), SOME(item));

@@ -275,4 +275,12 @@ public uniontype Equation
   end NORETCALL_EQUATION;
 end Equation;
 
+public uniontype FunctionSlot
+  record SLOT
+    String name;
+    Option<DAE.Exp> arg;
+    Option<DAE.Exp> defaultValue;
+  end SLOT;
+end FunctionSlot;
+
 end InstTypes;

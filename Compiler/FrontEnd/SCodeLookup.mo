@@ -59,6 +59,11 @@ public uniontype RedeclareReplaceStrategy
   record IGNORE_REDECLARES end IGNORE_REDECLARES;
 end RedeclareReplaceStrategy;
 
+public uniontype LookupStrategy
+  record NO_BUILTIN_TYPES end NO_BUILTIN_TYPES;
+  record LOOKUP_ANY end LOOKUP_ANY;
+end LookupStrategy;
+
 public uniontype Origin
   record INSTANCE_ORIGIN end INSTANCE_ORIGIN;
   record CLASS_ORIGIN end CLASS_ORIGIN;
@@ -1114,7 +1119,35 @@ algorithm
   end match;
 end lookupBuiltinType;
 
-public function lookupName
+protected function lookupBuiltinName
+  input Absyn.Path inName;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := match(inName)
+    local
+      Absyn.Ident id;
+      Item item;
+
+    // A builtin type.
+    case Absyn.IDENT(name = id)
+      equation
+        item = lookupBuiltinType(id);
+      then
+        (item, SCodeEnv.emptyEnv);
+
+    // Builtin type StateSelect. The only builtin type that can be qualified,
+    // i.e. StateSelect.always.
+    case Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(id))
+      equation
+        (SOME(item), _, _) = lookupInLocalScope(id, BUILTIN_STATESELECT_ENV, {});
+      then
+        (item, BUILTIN_STATESELECT_ENV);
+
+  end match;
+end lookupBuiltinName;
+
+protected function lookupName
   "Looks up a simple or qualified name in the environment and returns the
   environment item corresponding to the name, the path for the name and
   optionally the enclosing scope of the name if the name references a class.
@@ -1123,6 +1156,7 @@ public function lookupName
   instead."
   input Absyn.Path inName;
   input Env inEnv;
+  input LookupStrategy inLookupStrategy;
   input Absyn.Info inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
@@ -1131,7 +1165,7 @@ public function lookupName
   output Origin outOrigin;
 algorithm
   (outItem, outName, outEnv, outOrigin) := 
-  matchcontinue(inName, inEnv, inInfo, inErrorType)
+  matchcontinue(inName, inEnv, inLookupStrategy, inInfo, inErrorType)
     local
       Absyn.Ident id;
       Item item;
@@ -1141,23 +1175,15 @@ algorithm
       Error.Message error_id;
       Origin origin;
 
-    // A builtin type.
-    case (Absyn.IDENT(name = id), _, _, _)
+    // Builtin types.
+    case (_, _, LOOKUP_ANY(), _, _)
       equation
-        item = lookupBuiltinType(id);
+        (item, env) = lookupBuiltinName(inName);
       then
-        (item, inName, SCodeEnv.emptyEnv, BUILTIN_ORIGIN());
-
-    // Builtin type StateSelect. The only builtin type that can be qualified,
-    // i.e. StateSelect.always.
-    case (Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(id)), _, _, _)
-      equation
-        (SOME(item), _, _) = lookupInLocalScope(id, BUILTIN_STATESELECT_ENV, {});
-      then
-        (item, inName, BUILTIN_STATESELECT_ENV, BUILTIN_ORIGIN());
+        (item, inName, env, BUILTIN_ORIGIN());
 
     // Simple name.
-    case (Absyn.IDENT(name = id), _, _, _)
+    case (Absyn.IDENT(name = id), _, _, _, _)
       equation
         (item, new_path, env) = lookupSimpleName(id, inEnv);
         origin = itemOrigin(item);
@@ -1165,7 +1191,7 @@ algorithm
         (item, new_path, env, origin);
         
     // Qualified name.
-    case (Absyn.QUALIFIED(name = id, path = path), _, _, _)
+    case (Absyn.QUALIFIED(name = id, path = path), _, _, _, _)
       equation
         // Look up the first identifier.
         (item, new_path, env) = lookupSimpleName(id, inEnv);
@@ -1177,13 +1203,13 @@ algorithm
       then
         (item, path, env, origin);
              
-    case (Absyn.FULLYQUALIFIED(path = path), _, _, _)
+    case (Absyn.FULLYQUALIFIED(path = path), _, _, _, _)
       equation
         (item, path, env) = lookupFullyQualified(path, inEnv);
       then
         (item, path, env, CLASS_ORIGIN());
 
-    case (_, _, _, SOME(error_id))
+    case (_, _, _, _, SOME(error_id))
       equation
         name_str = Absyn.pathString(inName);
         env_str = SCodeEnv.getEnvName(inEnv);
@@ -1194,6 +1220,20 @@ algorithm
   end matchcontinue;
 end lookupName;
 
+public function lookupNameSilent
+  "Looks up a name, but doesn't print an error message if it fails."
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Item outItem;
+  output Absyn.Path outName;
+  output Env outEnv;
+  output Origin outOrigin;
+algorithm
+  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv,
+    LOOKUP_ANY(), inInfo, NONE());
+end lookupNameSilent;
+
 public function lookupClassName
   "Calls lookupName with the 'Class not found' error message."
   input Absyn.Path inName;
@@ -1203,8 +1243,8 @@ public function lookupClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
-    SOME(Error.LOOKUP_ERROR));
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, LOOKUP_ANY(),
+    inInfo, SOME(Error.LOOKUP_ERROR));
 end lookupClassName;
 
 public function lookupBaseClassName
@@ -1216,7 +1256,7 @@ public function lookupBaseClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
     SOME(Error.LOOKUP_BASECLASS_ERROR));
 end lookupBaseClassName;
 
@@ -1229,8 +1269,8 @@ public function lookupVariableName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, inInfo,
-    SOME(Error.LOOKUP_VARIABLE_ERROR));
+  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, NO_BUILTIN_TYPES(),
+    inInfo, SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
 public function lookupFunctionName
@@ -1243,8 +1283,8 @@ public function lookupFunctionName
   output Env outEnv;
   output Origin outOrigin;
 algorithm
-  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv, inInfo,
-    SOME(Error.LOOKUP_FUNCTION_ERROR));
+  (outItem, outName, outEnv, outOrigin) := lookupName(inName, inEnv,
+    NO_BUILTIN_TYPES(), inInfo, SOME(Error.LOOKUP_FUNCTION_ERROR));
 end lookupFunctionName;
 
 protected function crefStripEnvPrefix
@@ -1670,7 +1710,8 @@ algorithm
 
     case (_, _, _, _)
       equation
-        (_, path, env, _) = lookupName(inPath, inEnv, inInfo, inErrorType);
+        (_, path, env, _) = lookupName(inPath, inEnv, NO_BUILTIN_TYPES(),
+          inInfo, inErrorType);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
         path = Absyn.makeFullyQualified(path);
       then

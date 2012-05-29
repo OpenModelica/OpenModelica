@@ -80,6 +80,7 @@ public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 
+protected type FunctionSlot = InstTypes.FunctionSlot;
 protected type Item = SCodeEnv.Item;
 protected type SymbolTable = InstSymbolTable.SymbolTable;
 
@@ -1174,7 +1175,7 @@ algorithm
     case (Absyn.CALL(function_ = acref, 
         functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _)
       equation
-        dexp1 = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix);
+        dexp1 = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix, Absyn.dummyInfo);
       then
         dexp1;
 
@@ -1368,7 +1369,7 @@ algorithm
     // Otherwise, look it up in the scopes above, and call instGlobalCref.
     case (_, _, _, _ :: env)
       equation
-        (_, path, env, _) = SCodeLookup.lookupName(inCrefPath, env, Absyn.dummyInfo, NONE());
+        (_, path, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, Absyn.dummyInfo);
         cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
@@ -1603,52 +1604,61 @@ protected function instFunctionCall
   input list<Absyn.NamedArg> inNamedArgs;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   output DAE.Exp outCallExp;
 algorithm
-  outCallExp := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix)
+  outCallExp := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo)
     local
       Absyn.Path call_path;
       DAE.ComponentRef cref;
-      list<DAE.Exp> pos_args;
+      list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
-
-    case (_, _, _, _, _)
+      Class func;
+      list<Element> inputs, outputs; 
+      
+    case (_, _, _, _, _, _)
       equation
-        call_path = instFunctionName(inName, inEnv, inPrefix);
+        (call_path, func) = instFunction(inName, inEnv, inPrefix, inInfo);
         pos_args = instExpList(inPositionalArgs, inEnv, inPrefix);
         named_args = List.map2(inNamedArgs, instNamedArg, inEnv, inPrefix);
+        (inputs, outputs) = getFunctionParameters(func); 
+        args = fillFunctionSlots(pos_args, named_args, inputs);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
   end match;
 end instFunctionCall;
 
-protected function instFunctionName
-  input Absyn.ComponentRef inCref;
+protected function instFunction
+  input Absyn.ComponentRef inName;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   output Absyn.Path outName;
+  output Class outClass;
 algorithm
-  outName := matchcontinue(inCref, inEnv, inPrefix)
+  (outName, outClass) := match(inName, inEnv, inPrefix, inInfo)
     local
       Absyn.Path path;
       Item item;
       SCodeLookup.Origin origin;
       Env env;
+      Class cls;
 
-    case (_, _, _)
+    case (_, _, _, _)
       equation
-        path = Absyn.crefToPath(inCref);
-        (item, _, env, origin) =
-          SCodeLookup.lookupFunctionName(path, inEnv, Absyn.dummyInfo);
-        path = instFunctionName2(item, path, origin, env, inPrefix);
+        path = Absyn.crefToPath(inName);
+        (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
+        path = instFunctionName(item, path, origin, env, inPrefix);
+        (cls, _, _) = instClassItem(item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), inEnv, inPrefix, INST_ALL());
       then
-        path;
+        (path, cls);
 
-  end matchcontinue;
-end instFunctionName;
+  end match;
+end instFunction;
 
-protected function instFunctionName2
+protected function instFunctionName
   input Item inItem;
   input Absyn.Path inPath;
   input SCodeLookup.Origin inOrigin;
@@ -1683,7 +1693,7 @@ algorithm
         path;
 
   end match;
-end instFunctionName2;
+end instFunctionName;
 
 protected function instNamedArg
   input Absyn.NamedArg inNamedArg;
@@ -1699,7 +1709,321 @@ algorithm
   dexp := instExp(aexp, inEnv, inPrefix);
   outNamedArg := (name, dexp);
 end instNamedArg;
+
+protected function getFunctionParameters
+  input Class inClass;
+  output list<Element> outInputs;
+  output list<Element> outOutputs;
+algorithm
+  (outInputs, outOutputs) := matchcontinue(inClass)
+    local
+      list<Element> comps, inputs, outputs;
+
+    case InstTypes.COMPLEX_CLASS(components = comps)
+      equation
+        (inputs, outputs) = getFunctionParameters2(comps, {}, {});
+      then
+        (inputs, outputs);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeInst.getFunctionParameters failed.\n");
+      then
+        fail();
+
+  end matchcontinue;
+end getFunctionParameters;
   
+protected function getFunctionParameters2
+  input list<Element> inElements;
+  input list<Element> inAccumInputs;
+  input list<Element> inAccumOutputs;
+  output list<Element> outInputs;
+  output list<Element> outOutputs;
+algorithm
+  (outInputs, outOutputs) := match(inElements, inAccumInputs, inAccumOutputs)
+    local
+      Prefixes prefs;
+      Absyn.Path name;
+      DAE.Type ty;
+      Absyn.Info info;
+      Element el;
+      list<Element> rest_el;
+      list<Element> inputs, outputs;
+
+    case ((el as InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(
+        name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
+        inputs, outputs)
+      equation
+        validateFunctionVariable(name, ty, prefs, info);
+        (inputs, outputs) = 
+          getFunctionParameters3(name, prefs, info, el, inputs, outputs);
+        (inputs, outputs) = getFunctionParameters2(rest_el, inputs, outputs);
+      then
+        (inputs, outputs);
+
+    case ({}, _, _) then (inAccumInputs, inAccumOutputs);
+
+  end match;
+end getFunctionParameters2;
+
+protected function getFunctionParameters3
+  input Absyn.Path inName;
+  input Prefixes inPrefixes;
+  input Absyn.Info inInfo;
+  input Element inElement;
+  input list<Element> inAccumInputs;
+  input list<Element> inAccumOutputs;
+  output list<Element> outInputs;
+  output list<Element> outOutputs;
+algorithm
+  (outInputs, outOutputs) := match(inName, inPrefixes, inInfo, inElement,
+      inAccumInputs, inAccumOutputs)
+
+    case (_, InstTypes.PREFIXES(direction = (Absyn.INPUT(), _)), _, _, _, _)
+      equation
+        validateFormalParameter(inName, inPrefixes, inInfo);
+      then
+        (inElement :: inAccumInputs, inAccumOutputs);
+
+    case (_, InstTypes.PREFIXES(direction = (Absyn.OUTPUT(), _)), _, _, _, _)
+      equation
+        validateFormalParameter(inName, inPrefixes, inInfo);
+      then
+        (inAccumInputs, inElement :: inAccumOutputs);
+
+    else
+      equation
+        validateLocalFunctionVariable(inName, inPrefixes, inInfo);
+      then
+        (inAccumInputs, inAccumOutputs);
+
+  end match;
+end getFunctionParameters3;
+
+protected function validateFunctionVariable
+  input Absyn.Path inName;
+  input DAE.Type inType;
+  input Prefixes inPrefixes;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inName, inType, inPrefixes, inInfo)
+    local
+      String name, ty_str, io_str;
+      Absyn.InnerOuter io;
+
+    case (_, _, InstTypes.PREFIXES(innerOuter = Absyn.NOT_INNER_OUTER()), _) 
+      equation
+        true = Types.isValidFunctionVarType(inType); 
+      then ();
+
+    case (_, _, _, _)
+      equation
+        false = Types.isValidFunctionVarType(inType);
+        name = Absyn.pathString(inName);
+        ty_str = Types.getTypeName(inType);
+        Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
+          {ty_str, name}, inInfo);
+      then
+        fail();
+
+    // A formal parameter may not have an inner/outer prefix.
+    case (_, _, InstTypes.PREFIXES(innerOuter = io), _)
+      equation
+        false = Absyn.isNotInnerOuter(io);
+        name = Absyn.pathString(inName);
+        io_str = Dump.unparseInnerouterStr(io);
+        Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
+          {io_str, name}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end validateFunctionVariable;
+
+protected function validateFormalParameter
+  input Absyn.Path inName;
+  input Prefixes inPrefixes;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inName, inPrefixes, inInfo)
+    local
+      String name;
+
+    // A formal parameter must be public.
+    case (_, InstTypes.PREFIXES(visibility = SCode.PROTECTED()), _)
+      equation
+        name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+          {name}, inInfo);
+      then
+        fail();
+
+    else ();
+         
+  end match;
+end validateFormalParameter;
+
+protected function validateLocalFunctionVariable
+  input Absyn.Path inName;
+  input Prefixes inPrefixes;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inName, inPrefixes, inInfo)
+    local
+      String name;
+
+    // A local function variable must be protected.
+    case (_, InstTypes.PREFIXES(visibility = SCode.PUBLIC()), _)
+      equation
+        name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR, {name}, inInfo);
+      then
+        fail();
+
+    else ();
+
+  end match;
+end validateLocalFunctionVariable;
+
+protected function fillFunctionSlots
+  input list<DAE.Exp> inPositionalArgs;
+  input list<tuple<String, DAE.Exp>> inNamedArgs;
+  input list<Element> inInputs;
+  output list<DAE.Exp> outArgs;
+protected
+  list<FunctionSlot> slots;
+algorithm
+  slots := makeFunctionSlots(inInputs, inPositionalArgs, {});
+  slots := List.fold(inNamedArgs, fillFunctionSlot, slots);
+  outArgs := List.map(slots, extractFunctionSlotExp);
+end fillFunctionSlots;
+
+protected function makeFunctionSlots
+  input list<Element> inInputs;
+  input list<DAE.Exp> inPositionalArgs;
+  input list<FunctionSlot> inAccumSlots;
+  output list<FunctionSlot> outSlots;
+algorithm
+  outSlots := match(inInputs, inPositionalArgs, inAccumSlots)
+    local
+      String param_name;
+      Binding binding;
+      list<Element> rest_inputs;
+      Option<DAE.Exp> arg, default_value;
+      list<DAE.Exp> rest_args;
+      list<FunctionSlot> slots;
+
+    case (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
+        Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots)
+      equation
+        (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
+        default_value = InstUtil.getBindingExpOpt(binding);
+        slots = InstTypes.SLOT(param_name, arg, default_value) :: slots;
+      then
+        makeFunctionSlots(rest_inputs, rest_args, slots);  
+        
+    // No more inputs and positional arguments means we're done.
+    case ({}, {}, _) then listReverse(inAccumSlots);
+
+    // No more inputs but positional arguments left is an error.
+    case ({}, _ :: _, _)
+      equation
+        // TODO: Make this a proper error message.
+        print("SCodeInst.makeFunctionSlots: Too many arguments to function!\n");
+      then
+        fail();
+
+  end match;
+end makeFunctionSlots;
+  
+protected function fillFunctionSlot
+  input tuple<String, DAE.Exp> inNamedArg;
+  input list<FunctionSlot> inSlots;
+  output list<FunctionSlot> outSlots;
+algorithm
+  outSlots := match(inNamedArg, inSlots)
+    local
+      String arg_name, slot_name;
+      DAE.Exp arg;
+      FunctionSlot slot;
+      list<FunctionSlot> rest_slots;
+      Boolean eq;
+
+      case ((arg_name, _), (slot as InstTypes.SLOT(name = slot_name)) :: rest_slots)
+        equation
+          eq = stringEq(arg_name, slot_name);
+        then
+          fillFunctionSlot2(eq, inNamedArg, slot, rest_slots);
+
+      case ((arg_name, _), {})
+        equation
+          print("No matching slot " +& arg_name +& "\n");
+        then
+          fail();
+
+  end match;
+end fillFunctionSlot;
+
+protected function fillFunctionSlot2
+  input Boolean inMatching;
+  input tuple<String, DAE.Exp> inNamedArg;
+  input FunctionSlot inSlot;
+  input list<FunctionSlot> inRestSlots;
+  output list<FunctionSlot> outSlots;
+algorithm
+  outSlots := match(inMatching, inNamedArg, inSlot, inRestSlots)
+    local
+      String name;
+      DAE.Exp arg;
+      FunctionSlot slot;
+      list<FunctionSlot> slots;
+
+    // Found a matching empty slot, fill it.
+    case (true, (_, arg), InstTypes.SLOT(name = name, arg = NONE()), _)
+      equation
+        slot = InstTypes.SLOT(name, SOME(arg), NONE());
+      then
+        slot :: inRestSlots;
+      
+    // Slot not matching, search through the rest of the slots.
+    case (false, _, _, _)
+      equation
+        slots = fillFunctionSlot(inNamedArg, inRestSlots);
+      then
+        inSlot :: slots;
+
+    // Found a matching slot that is already filled, show error.
+    case (true, _, InstTypes.SLOT(name = name, arg = SOME(_)), _)
+      equation
+        print("Slot " +& name +& " is already filled!\n");
+      then
+        fail();
+
+  end match;
+end fillFunctionSlot2;
+        
+protected function extractFunctionSlotExp
+  input FunctionSlot inSlot;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inSlot)
+    local
+      DAE.Exp exp;
+      String name;
+
+    case InstTypes.SLOT(arg = SOME(exp)) then exp;
+    case InstTypes.SLOT(defaultValue = SOME(exp)) then exp;
+    case InstTypes.SLOT(name = name)
+      equation
+        print("Slot " +& name +& " has no value.\n");
+      then
+        fail();
+
+  end match;
+end extractFunctionSlotExp;
+
 protected function assignParamTypes
   input Class inClass;
   input SymbolTable inSymbolTable;
@@ -2069,21 +2393,9 @@ algorithm
         Absyn.FUNCTIONARGS(args = args, argNames = nargs), info = info), _, _)
       equation
         DAE.CALL(path = func_path, expLst = iargs) =
-          instFunctionCall(cref1, args, nargs, inEnv, inPrefix);
+          instFunctionCall(cref1, args, nargs, inEnv, inPrefix, info);
       then
         InstTypes.NORETCALL_EQUATION(func_path, iargs, info);
-
-    //case (SCode.EQ_NORETCALL(functionName = cref1, functionArgs =
-    //    Absyn.FUNCTIONARGS(args = expl, argNames = {}), info = info), _, _)
-    //  equation
-    //    func_path = Absyn.crefToPathIgnoreSubs(cref1);
-    //    //(item, _, env, _) =
-    //    //  SCodeLookup.lookupFunctionName(func_path, inEnv, info);
-    //    //(cls, _) = instClassItem(item, InstTypes.NOMOD(),
-    //    //  InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
-    //    iexpl = instExpList(expl, inEnv, inPrefix);
-    //  then
-    //    InstTypes.NORETCALL_EQUATION(func_path, iexpl, info);
 
     else
       equation

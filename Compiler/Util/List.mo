@@ -1215,6 +1215,24 @@ algorithm
   outFirst :: outRest := inList;
 end splitFirst;
 
+public function splitFirstOption
+  "Returns the first element of a list as an option, and the rest of the list.
+   Returns NONE and {} if the list is empty."
+  input list<ElementType> inList;
+  output Option<ElementType> outFirst;
+  output list<ElementType> outRest;
+algorithm
+  (outFirst, outRest) := match(inList)
+    local
+      ElementType el;
+      list<ElementType> rest;
+
+    case (el :: rest) then (SOME(el), rest);
+    else (NONE(), {});
+
+  end match;
+end splitFirstOption;
+  
 public function splitLast
   "Returns the last element of a list and a list of all previous elements. If
    the list is the empty list, the function fails.

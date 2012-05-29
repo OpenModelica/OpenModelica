@@ -170,14 +170,14 @@ algorithm
     case (Absyn.IDENT(name = _), _, _, _)
       equation
         (item, _, env, _) = 
-          SCodeLookup.lookupName(inPath, inEnv, inInfo, NONE());
+          SCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _)
       equation
         (item, _, env, _) = 
-          SCodeLookup.lookupName(Absyn.IDENT(id), inEnv, inInfo, NONE());
+          SCodeLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
         analyseItem(item, env);
         (item, env) = lookupNameInItem(rest_path, item, env, inPrintError);
       then  
@@ -1098,7 +1098,7 @@ algorithm
 
     case (_, _, _)
       equation
-        (item, _, env, _) = SCodeLookup.lookupName(inPath, inEnv, inInfo, NONE());
+        (item, _, env, _) = SCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (SOME(item), SOME(env));
 
@@ -1286,7 +1286,7 @@ protected
   Env env;
 algorithm
   (item, _, env, _) := 
-    SCodeLookup.lookupName(Absyn.IDENT(inName), inEnv, inInfo, NONE());
+    SCodeLookup.lookupNameSilent(Absyn.IDENT(inName), inEnv, inInfo);
   analyseItem(item, env);
 end analyseAnnotationName;
 

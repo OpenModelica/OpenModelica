@@ -629,7 +629,7 @@ algorithm
         path = Absyn.crefToPath(inCref);
         (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, attributes = SCode.ATTR(
             variability = SCode.CONST()))), path, env, SCodeLookup.CLASS_ORIGIN()) = 
-          SCodeLookup.lookupName(path, inEnv, Absyn.dummyInfo, NONE());
+          SCodeLookup.lookupNameSilent(path, inEnv, Absyn.dummyInfo);
         path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
         cref = Absyn.pathToCref(path);
       then

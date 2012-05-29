@@ -953,7 +953,6 @@ protected function typeEquations
 algorithm
   outEquations := List.fold1(inEquations, typeEquation, inSymbolTable, {});
   outEquations := listReverse(outEquations);
-  //outEquation := List.map1(inEquation, typeEquation, inSymbolTable);
 end typeEquations;
 
 protected function typeEquation
@@ -965,6 +964,7 @@ algorithm
   outAccumEql := match(inEquation, inSymbolTable, inAccumEql)
     local
       DAE.Exp rhs, lhs, exp1, exp2;
+      list<DAE.Exp> args;
       SymbolTable st;
       Absyn.Info info;
       DAE.ComponentRef cref1, cref2;
@@ -975,7 +975,7 @@ algorithm
       DAE.Type ty;
       list<tuple<DAE.Exp, list<Equation>>> branches;
       list<Equation> acc_el;
-      Absyn.Path iter_name;
+      Absyn.Path iter_name, func_name;
       Component iter;
       Equation eq;
       Boolean cond;
@@ -1036,11 +1036,11 @@ algorithm
       then
         InstTypes.REINIT_EQUATION(cref1, exp1, info) :: acc_el;
 
-    case (InstTypes.NORETCALL_EQUATION(funcName = _), st, acc_el)
+    case (InstTypes.NORETCALL_EQUATION(func_name, args, info), st, acc_el)
       equation
-        print("Typing.typeEquation: IMPLEMENT NORETCALL_EQUATION\n");
+        (args, _, _) = typeExpList(args, EVAL_CONST(), st);
       then
-        acc_el;
+        InstTypes.NORETCALL_EQUATION(func_name, args, info) :: acc_el;
         
     else
       equation

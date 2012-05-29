@@ -462,6 +462,21 @@ algorithm
   end match;
 end getBindingExp;
 
+public function getBindingExpOpt
+  input Binding inBinding;
+  output Option<DAE.Exp> outExp;
+algorithm
+  outExp := match(inBinding)
+    local
+      DAE.Exp exp;
+
+    case InstTypes.UNTYPED_BINDING(bindingExp = exp) then SOME(exp);
+    case InstTypes.TYPED_BINDING(bindingExp = exp) then SOME(exp);
+    else NONE();
+
+  end match;
+end getBindingExpOpt;
+
 public function makeEnumType
   input list<SCode.Enum> inEnumLiterals;
   input Absyn.Path inEnumPath;

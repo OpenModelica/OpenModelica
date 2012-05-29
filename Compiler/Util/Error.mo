@@ -546,7 +546,7 @@ public constant Message EQUATIONS_VAR_NOT_DEFINED = MESSAGE(200, SYMBOLIC(), ERR
 public constant Message NON_FORMAL_PUBLIC_FUNCTION_VAR = MESSAGE(201, TRANSLATION(), WARNING(),
   "Invalid public variable %s, function variables that are not input/output must be protected.");
 public constant Message PROTECTED_FORMAL_FUNCTION_VAR = MESSAGE(202, TRANSLATION(), ERROR(),
-  "Invalid protected formal parameter %s, formal arguments must be public.");
+  "Invalid protected variable %s, function variables that are input/output must be public.");
 public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
   "Function argument %s was not given by the function call, and does not have a default value.");
 public constant Message SAME_CONNECT_INSTANCE = MESSAGE(204, TRANSLATION(), WARNING(),
@@ -597,6 +597,8 @@ public constant Message REINIT_MUST_BE_VAR = MESSAGE(225, TRANSLATION(), ERROR()
   "The first argument to reinit must be a variable, but %s is a %s."); 
 public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNING(),
   "Connecting two signal sources while connecting %s to %s.");
+public constant Message INNER_OUTER_FORMAL_PARAMETER = MESSAGE(227, TRANSLATION(), ERROR(),
+  "Invalid prefix %son formal parameter %s.");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");

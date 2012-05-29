@@ -155,8 +155,8 @@ algorithm
   _ := matchcontinue(inEnv)
     case _
       equation
-        (_, _, _, _) = SCodeLookup.lookupName(Absyn.IDENT("cardinality"), inEnv,
-          Absyn.dummyInfo, NONE());
+        (_, _, _, _) = SCodeLookup.lookupNameSilent(Absyn.IDENT("cardinality"),
+          inEnv, Absyn.dummyInfo);
         System.setUsesCardinality(true);
       then
         ();
