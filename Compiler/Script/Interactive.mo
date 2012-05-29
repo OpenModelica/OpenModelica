@@ -8476,7 +8476,7 @@ algorithm
         strArguments = "\"" +& Dump.printExpLstStr(args) +& "\"";
         strAnn1 = "\"" +& Dump.unparseAnnotationOption(0, ann1) +& "\"";
         strAnn2 = "\"" +& Dump.unparseAnnotationOption(0, ann2) +& "\"";
-        str = stringAppendList({strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
+        str = stringAppendList({"{", strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
       then
         str;
   
