@@ -5642,4 +5642,44 @@ algorithm
     case ELEMENTITEM(element=_) then ();
   end match;
 end filterAnnotationItem;
+
+public function getExternalDecl
+"@author: adrpo
+ returns the Absyn.EXTERNAL form parts if there is any.
+ if there is none, it fails!"
+ input Class inCls;
+ output ClassPart outExternal;
+algorithm
+ outExternal := matchcontinue(inCls)
+   local
+     ClassPart cp;
+     list<ClassPart> classParts;
+     
+   case (CLASS(body = PARTS(classParts = classParts)))
+     equation
+       cp = getExternalFromClassParts(classParts);
+     then
+       cp;
+ end matchcontinue;
+end getExternalDecl;
+
+public function getExternalFromClassParts
+ input list<ClassPart> inClassParts;
+ output ClassPart outExternal;
+algorithm
+ outExternal := matchcontinue(inClassParts)
+   local
+     ClassPart cp;
+     list<ClassPart> rest;
+     
+   case ((cp as EXTERNAL(externalDecl = _))::rest) then cp;
+
+   case (_::rest) 
+     equation
+       cp = getExternalFromClassParts(rest);
+     then
+       cp;
+ end matchcontinue;
+end getExternalFromClassParts;
+
 end Absyn;

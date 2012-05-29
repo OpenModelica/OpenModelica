@@ -1908,6 +1908,22 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getShortDefinitionBaseClassInformation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        resstr = getShortDefinitionBaseClassInformation(cr, p);
+      then
+        (resstr,st);
+        
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getExternalFunctionSpecification");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        resstr = getExternalFunctionSpecification(cr, p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
         matchApiFunction(istmts, "getClassInformation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         failure(resstr = getClassInformation(cr, p));
@@ -8381,6 +8397,93 @@ algorithm
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
           str_scol,",",str_eline,",",str_ecol,"},",dim_str,"}"}) "composing the final returned string" ;
 end getClassInformation;
+
+protected function getShortDefinitionBaseClassInformation
+"function: getShortDefinitionBaseClassInformation
+  author: adrpo
+  Returns all the prefixes of the base class and the base class array dimensions.
+  {{bool,bool,bool}}"
+  input Absyn.ComponentRef cr;
+  input Absyn.Program p;
+  output String res_1;
+algorithm
+  res_1 := matchcontinue(cr, p)
+    local
+      Absyn.Path path, baseClassPath;
+      String name,file,strFlow,strStream,strVariability,strDirection,str,dim_str,strBaseClassPath;
+      Boolean flowPrefix,streamPrefix;
+      Absyn.Variability variability;
+      Absyn.Direction direction;
+      Absyn.ArrayDim arrayDim;
+      Absyn.ClassDef cdef;
+      Absyn.ElementAttributes attr;
+      Absyn.Parallelism parallelism;
+      
+    case (cr, p)
+      equation
+        path = Absyn.crefToPath(cr);
+        Absyn.CLASS(
+          name = name, 
+          body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _), 
+                                       attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, arrayDim)) ) 
+        = getPathedClassInProgram(path, p);
+        dim_str = getClassDimensions(cdef);
+        strBaseClassPath = Absyn.pathString(baseClassPath);
+        strFlow = Util.if_(flowPrefix, "\"flow\"", "\"\"");
+        strStream = Util.if_(streamPrefix, "\"stream\"", "\"\"");
+        strVariability = attrVariabilityStr(attr);
+        strDirection = attrDirectionStr(attr);
+        str = stringAppendList({"{",strBaseClassPath, ",", strFlow,",", strStream, ",", strVariability, ",", strDirection, ",", dim_str,"}"});
+      then
+        str;
+    
+    case (cr, p) then "{}";
+    
+  end matchcontinue;
+end getShortDefinitionBaseClassInformation;
+
+protected function getExternalFunctionSpecification
+"function: getExternalFunctionSpecification
+  author: adrpo
+  Returns the external declaration from the function definition"
+  input Absyn.ComponentRef cr;
+  input Absyn.Program p;
+  output String res_1;
+algorithm
+  res_1 := matchcontinue(cr, p)
+    local
+      Absyn.Path path;
+      String name,strLanguage,strFuncName,strOutput,strAnnotation,strArguments,strAnn1,strAnn2,str;
+      Absyn.Class cls;
+      Absyn.ClassPart externalDecl;
+      Option<Absyn.Ident> funcName "The name of the external function" ;
+      Option<String>      lang     "Language of the external function" ;
+      Option<Absyn.ComponentRef> output_  "output parameter as return value" ;
+      list<Absyn.Exp>            args     "only positional arguments, i.e. expression list" ;
+      Option<Absyn.Annotation>   ann1, ann2;
+    
+    case (cr, p)
+      equation
+        path = Absyn.crefToPath(cr);
+        cls = getPathedClassInProgram(path, p);
+        Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = Absyn.getExternalDecl(cls);
+        strLanguage  = "\"" +& Util.getOptionOrDefault(lang, "") +& "\"";
+        strOutput  = "\"" +& Absyn.printComponentRefStr(
+                                Util.getOptionOrDefault(
+                                  output_, 
+                                  Absyn.CREF_IDENT("", {}))) +& "\"";
+        strFuncName  = "\"" +& Util.getOptionOrDefault(funcName, "") +& "\"";
+        strArguments = "\"" +& Dump.printExpLstStr(args) +& "\"";
+        strAnn1 = "\"" +& Dump.unparseAnnotationOption(0, ann1) +& "\"";
+        strAnn2 = "\"" +& Dump.unparseAnnotationOption(0, ann2) +& "\"";
+        str = stringAppendList({strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
+      then
+        str;
+  
+    case (cr, p) then "{}";
+    
+  end matchcontinue;
+end getExternalFunctionSpecification;
 
 protected function getClassDimensions
 "return the dimensions of a class
