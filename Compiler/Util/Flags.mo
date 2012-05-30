@@ -170,7 +170,7 @@ constant DebugFlag LINEARIZATION = DEBUG_FLAG(3, "linearization",
 constant DebugFlag JACOBIAN = DEBUG_FLAG(4, "jacobian", 
   "");
 constant DebugFlag CHECK_BACKEND_DAE = DEBUG_FLAG(5, "checkBackendDae",
-  "");
+  "Do some simple analyses on the datastructure from the frontend to check if it is consistente");
 constant DebugFlag DUMP_INIT = DEBUG_FLAG(6, "dumpInit",
   "");
 constant DebugFlag OPENMP = DEBUG_FLAG(7, "openmp",
@@ -178,9 +178,9 @@ constant DebugFlag OPENMP = DEBUG_FLAG(7, "openmp",
 constant DebugFlag PTHREADS = DEBUG_FLAG(8, "pthreads",
   "");
 constant DebugFlag TEARING = DEBUG_FLAG(9, "tearing",
-  "");
+  "Use if tearing should be performed");
 constant DebugFlag RELAXATION = DEBUG_FLAG(10, "relaxation",
-  "");
+  "Use if relaxation should be performed, Does only work with tearing");
 constant DebugFlag NO_EVENTS = DEBUG_FLAG(11, "noevents",
   "");
 constant DebugFlag EVAL_FUNC = DEBUG_FLAG(12, "evalfunc",
@@ -294,7 +294,7 @@ constant DebugFlag VAR_INDEX2 = DEBUG_FLAG(65, "varIndex2",
 constant DebugFlag BLT_DUMP = DEBUG_FLAG(66, "bltdump",
   "Dumps information from index reduction.");
 constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(67, "dummyselect",
-  "");
+  "Dumps information from dummy state selection heuristic");
 constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(68, "dumpdaelow",
   "Dumps the equation system at the beginning of the back end.");
 constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(69, "dumpindxdae",
@@ -531,6 +531,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     "lateInline",
     "inlineArrayEqn",
     "constantLinearSystem",
+//    "tearingSystem",
     "removeSimpleEquations",
     "removeUnusedFunctions"
   }),
@@ -542,6 +543,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     ("inlineArrayEqn", "DESCRIBE ME"),
     ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
     ("constantLinearSystem", "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time"),
+    ("tearingSystem","DESCRIBE ME"),
+    ("coundOperations","count the mathematic operations of the system"),
     ("dumpComponentsGraphStr", "DESCRIBE ME"),
     ("generateSymbolicJacobian", "Generates symbolic jacobian"),
     ("generateSymbolicLinearization", "Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"),

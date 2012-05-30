@@ -4080,6 +4080,34 @@ algorithm
   end matchcontinue;
 end traversingisStateVarFinder;
 
+public function getAllStateVarIndexFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+  output list<Integer> i_lst;
+algorithm
+  ((v_lst,i_lst,_)) := traverseBackendDAEVars(inVariables,traversingisStateVarIndexFinder,({},{},1));
+end getAllStateVarIndexFromVariables;
+
+protected function traversingisStateVarIndexFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
+ output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+      list<Integer> i_lst;
+      Integer i;
+    case ((v,(v_lst,i_lst,i)))
+      equation
+        true = isStateVar(v);
+      then ((v,(v::v_lst,i::i_lst,i+1)));
+    case ((v,(v_lst,i_lst,i))) then ((v,(v_lst,i_lst,i+1)));
+  end matchcontinue;
+end traversingisStateVarIndexFinder;
+
 public function mergeVariableOperations
   input BackendDAE.Var var;
   input list<DAE.SymbolicOperation> iops;

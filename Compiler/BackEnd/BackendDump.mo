@@ -931,7 +931,7 @@ algorithm
     case (SOME(eqns))
       equation
         res = dumpJacobianStr2(eqns);
-        res_1 = stringDelimitList(res, ", ");
+        res_1 = stringDelimitList(res, ",\n");
       then
         res_1;
     case (NONE()) then "No analytic jacobian available\n";
@@ -1373,6 +1373,14 @@ algorithm
       then ();
   end match;
 end dumpExtObjCls;
+
+public function dumpVarsArray
+"function: dumpVarsArray
+  Helper function to dump."
+  input BackendDAE.Variables vars;
+algorithm
+  dumpVars2(BackendDAEUtil.varList(vars), 1);
+end dumpVarsArray;
 
 public function dumpVars
 "function: dumpVars

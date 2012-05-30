@@ -50,6 +50,7 @@ public import HashTable2;
 protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
+protected import BackendDAEEXT;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVarTransform;
@@ -4317,7 +4318,6 @@ algorithm
   (osyst,osharedChanged) := 
     matchcontinue(isyst,sharedChanged)
     local
-      BackendDAE.BackendDAE dae,dae1;
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
       BackendDAE.AliasVariables aliasVars;
@@ -8223,5 +8223,956 @@ algorithm
     else tpl;
   end matchcontinue;
 end residualForm2;
+
+
+/* 
+ * tearing
+ *
+ */
+
+public function tearingSystemNew
+"function tearingSystem
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
+algorithm
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
+end tearingSystemNew;
+
+protected function tearingSystemNew0
+"function tearingSystem0
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrix mT;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps,comps1;
+      Boolean b,b1,b2;
+      list<Integer> eqnlst;
+      BackendDAE.BinTree movedVars;
+      BackendDAE.Shared shared;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
+      equation
+        (syst,shared,b2) = tearingSystemNew1(syst,shared,comps);
+        b = b1 or b2;
+      then
+        (syst,(shared,b));
+  end matchcontinue;  
+end tearingSystemNew0;
+
+protected function tearingSystemNew1
+"function tearingSystemNew1
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponents inComps;  
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+algorithm
+  (osyst,oshared,outRunMatching):=
+  matchcontinue (isyst,ishared,inComps)
+    local
+      list<Integer> eindex,vindx,tvars,residual;
+      list<list<Integer>> othercomps;
+      Boolean b,b1;
+      BackendDAE.EqSystem syst,subsyst;
+      BackendDAE.Shared shared;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp,comp1;   
+      array<Integer> ass1,ass2,columark;
+      Integer size,tornsize;
+      list<BackendDAE.Equation> eqn_lst; 
+      list<BackendDAE.Var> var_lst;    
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.IncidenceMatrix m,m1;
+      BackendDAE.IncidenceMatrix mt,mt1; 
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jacType;
+      
+    case (_,_,{})
+      then (isyst,ishared,false);
+    case (_,shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al,constraints=constrs,complEqs=complEqs),
+      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=jac,jacType=jacType))::comps)
+      equation
+        // generate Subsystem to get the incidence matrix
+        eqn_lst = BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));  
+        eqns = BackendDAEUtil.listEquation(eqn_lst);      
+        var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
+        vars = BackendDAEUtil.listVar1(var_lst);
+        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.NORMAL());
+        //  BackendDump.dumpEqSystem(subsyst);
+        // do cheap matching until a maximum matching is there if
+        // cheap matching stucks select additional tearing variable and continue
+        size = listLength(eindex);
+        ass1 = arrayCreate(size,-1);
+        ass2 = arrayCreate(size,-1);
+        columark = arrayCreate(size,-1);
+        tvars = tearingSystemNew2(m,mt,size,vars,eqns,ass1,ass2,columark,1,{});
+        ass1 = List.fold(tvars,unassignTVars,ass1);
+        //  print("TearingVars:\n"); 
+        //  BackendDump.debuglst((tvars,intString,", ")); print("\n");
+        // unmatched equations are residual equations
+        residual = getUnasigned(size,ass2,{});
+        //  print("ResidualEquations:\n"); 
+        //  BackendDump.debuglst((residual,intString,", ")); print("\n");
+        //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE());
+        // check if tearing make sense
+        tornsize = listLength(tvars);
+        true = intLt(tornsize,size);
+        // run tarian to get order of other equations
+        m1 = arrayCreate(size,{});
+        mt1 = arrayCreate(size,{});
+        m1 = getOtherEqSysIncidenceMatrix(m,size,1,residual,tvars,m1);
+        mt1 = getOtherEqSysIncidenceMatrix(mt,size,1,tvars,residual,mt1);
+        //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
+        //  BackendDump.dumpEqSystem(subsyst);
+        BackendDAEEXT.initLowLink(size);
+        BackendDAEEXT.initNumber(size);
+        List.map1_0(residual, BackendDAEEXT.setNumber, size);
+        (_,_,othercomps) = BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, size, 0, 1, {}, {});        
+        //  print("OtherEquationsOrder:\n"); 
+        //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
+        // handle system in case of liniear and other cases 
+        (syst,shared,b) = tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx);
+        //  print("Ok system torn\n");
+        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
+      then
+        (syst,shared,b or b1);
+    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
+      equation
+        (syst,shared,b) = tearingSystemNew1(isyst,ishared,{comp1});
+        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
+      then
+        (syst,shared,b1 or b);
+    case (_,_,comp::comps)
+      equation
+        (syst,shared,b) = tearingSystemNew1(isyst,ishared,comps);
+      then
+        (syst,shared,b);
+  end matchcontinue;  
+end tearingSystemNew1;
+
+protected function getOtherEqSysIncidenceMatrix
+  input BackendDAE.IncidenceMatrix m;
+  input Integer size;
+  input Integer index;
+  input list<Integer> skip;
+  input list<Integer> rowskip;
+  input BackendDAE.IncidenceMatrix mnew;
+  output BackendDAE.IncidenceMatrix outMNew;
+algorithm
+  outMNew := matchcontinue(m,size,index,skip,rowskip,mnew)
+    local
+      list<Integer> row;
+    case (_,_,_,_,_,_)
+      equation
+        true = intGt(index,size);
+      then
+        mnew;
+    case (_,_,_,_,_,_)
+      equation
+        false = listMember(index,skip);
+        row = List.select(m[index], Util.intPositive);
+        row = List.setDifferenceIntN(row, rowskip, size);
+        _ = arrayUpdate(mnew,index,row);
+      then
+        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
+    case (_,_,_,_,_,_)
+      equation
+        _ = arrayUpdate(mnew,index,{});
+      then
+        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
+  end matchcontinue;
+end getOtherEqSysIncidenceMatrix;
+
+protected function unassignTVars
+  input Integer v;
+  input array<Integer> inAss;
+  output array<Integer> outAss;
+algorithm
+  outAss := arrayUpdate(inAss,v,-1);
+end unassignTVars;
+
+protected function isAssigned
+  input array<Integer> ass1;
+  input Integer v;
+  output Boolean b;
+algorithm
+  b := intGt(ass1[v],0);
+end isAssigned;
+
+protected function isMarked
+  input tuple<array<Integer>,Integer> inTpl;
+  input Integer v;
+  output Boolean b;
+protected
+  array<Integer> markarray;
+  Integer mark;
+algorithm
+  (markarray,mark) := inTpl;
+  b := intEq(markarray[v],mark);
+end isMarked;
+
+protected function selectVarWithMostEqns
+  input list<Integer> vars;
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrix mt;
+  input Integer defaultVar;
+  input Integer eqns;
+  output Integer var;
+algorithm
+  var := matchcontinue(vars,ass2,mt,defaultVar,eqns)
+    local
+      list<Integer> rest,elst;
+      Integer e,v;
+    case ({},_,_,_,_) then defaultVar;
+    case (v::rest,_,_,_,_)
+      equation
+        elst = List.select(mt[v], Util.intPositive);
+        elst = List.removeOnTrue(ass2, isAssigned, elst);
+        e = listLength(elst);
+        true = intGt(e,eqns);
+      then
+        selectVarWithMostEqns(rest,ass2,mt,v,e);
+    case (_::rest,_,_,_,_)
+      then
+        selectVarWithMostEqns(rest,ass2,mt,defaultVar,eqns);
+  end matchcontinue;
+end selectVarWithMostEqns;
+
+protected function selectTearingVar
+  input BackendDAE.Variables vars;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrix mt;
+  output Integer tearingVar;
+algorithm
+  tearingVar := matchcontinue(vars,ass1,ass2,mt)
+    local
+      list<Integer> states;
+      Integer tvar;
+    // if states there use them as tearing variables
+    case(_,_,_,_)
+      equation
+        (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
+        states = List.removeOnTrue(ass1, isAssigned, states);
+        true = intGt(listLength(states),0);
+        tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
+      then
+        tvar;
+    case(_,_,_,_)
+      equation
+        states = getUnasigned(BackendVariable.varsSize(vars),ass1,{});
+        true = intGt(listLength(states),0);
+        tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
+      then
+        tvar;        
+      else
+    equation
+        print("selectTearingVar failed because no unmatched var!\n");
+      then
+        fail();
+  end matchcontinue;  
+end selectTearingVar;
+
+protected function getUnasigned
+  input Integer ne;
+  input array<Integer> ass;
+  input list<Integer> inUnassigned;
+  output list<Integer> outUnassigned;
+algorithm
+  outUnassigned := match(ne,ass,inUnassigned)
+    local 
+      list<Integer> unassigned;
+    case (0,_,_)
+      then
+        inUnassigned;
+    case (_,_,_)
+      equation
+        unassigned = List.consOnTrue(intLt(ass[ne],0), ne, inUnassigned);
+      then
+        getUnasigned(ne-1,ass,unassigned);
+  end match;
+end getUnasigned;
+
+protected function markEqns
+  input list<Integer> eqns;
+  input array<Integer> columark;
+  input Integer mark;
+algorithm
+  _ := match(eqns,columark,mark)
+    local
+      Integer e;
+      list<Integer> rest;
+    case({},_,_) then ();
+    case(e::rest,_,_)
+      equation
+        _ = arrayUpdate(columark,e,mark);
+        markEqns(rest,columark,mark);
+      then
+        ();
+  end match; 
+end markEqns;
+
+protected function tearingSystemNew2
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mt;
+  input Integer size;
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input array<Integer> columark;
+  input Integer mark;
+  input list<Integer> inTVars;
+  output list<Integer> outTVars;
+algorithm
+  outTVars := matchcontinue(m,mt,size,vars,eqns,ass1,ass2,columark,mark,inTVars)
+    local 
+      Integer tvar;
+      list<Integer> vareqns,unassigned;
+    case (_,_,_,_,_,_,_,_,_,_)
+      equation
+        // select tearing var
+        tvar = selectTearingVar(vars,ass1,ass2,mt);
+        //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
+        // mark tearing var
+        _ = arrayUpdate(ass1,tvar,size*2);
+        vareqns = List.select(mt[tvar], Util.intPositive);
+        vareqns = List.removeOnTrue(ass2, isAssigned, vareqns); 
+        vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns); 
+        markEqns(vareqns,columark,mark);
+        // cheap matching
+        tearingBFS(vareqns,m,mt,size,ass1,ass2,columark,mark,{});
+        // check for unassigned vars, if there some rerun 
+        unassigned = getUnasigned(size,ass1,{});
+      then
+        tearingSystemNew3(unassigned,m,mt,size,vars,eqns,ass1,ass2,columark,mark+1,tvar::inTVars);
+    else
+      equation
+        print("BackendDAEOptimize.tearingSystemNew2 failed!");
+      then
+        fail();  
+  end matchcontinue; 
+end tearingSystemNew2;
+
+protected function tearingSystemNew3
+  input list<Integer> unassigend;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mt;
+  input Integer size;
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input array<Integer> columark;
+  input Integer mark;
+  input list<Integer> inTVars;
+  output list<Integer> outTVars;
+algorithm
+  outTVars := match(unassigend,m,mt,size,vars,eqns,ass1,ass2,columark,mark,inTVars)
+    local 
+      Integer tvar;
+      list<Integer> vareqns,unassigned;
+    case ({},_,_,_,_,_,_,_,_,_,_) then inTVars;
+    else then tearingSystemNew2(m,mt,size,vars,eqns,ass1,ass2,columark,mark,inTVars);
+  end match; 
+end tearingSystemNew3;
+
+protected function tearingBFS
+  input list<Integer> queue;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mt;
+  input Integer size;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input array<Integer> columark;
+  input Integer mark;
+  input list<Integer> nextQeue;
+algorithm
+  _ := match(queue,m,mt,size,ass1,ass2,columark,mark,nextQeue)
+    local 
+      Integer c;
+      list<Integer> rest,rows,newqueue;
+    case ({},_,_,_,_,_,_,_,{}) then ();
+    case ({},_,_,_,_,_,_,_,_)
+      equation
+        //  print("NextQeue\n");
+        tearingBFS(nextQeue,m,mt,size,ass1,ass2,columark,mark,{});
+      then 
+        ();
+    case(c::rest,_,_,_,_,_,_,_,_)
+      equation
+        //  print("Process Eqn " +& intString(c) +& "\n");
+        rows = List.select(m[c], Util.intPositive);
+        rows = List.removeOnTrue(ass1, isAssigned, rows); 
+        newqueue = tearingBFS1(rows,c,mt,ass1,ass2,columark,mark,nextQeue);
+        tearingBFS(rest,m,mt,size,ass1,ass2,columark,mark,newqueue);
+      then 
+        ();
+  end match; 
+end tearingBFS;
+
+protected function tearingBFS1
+  input list<Integer> rows;
+  input Integer c;
+  input BackendDAE.IncidenceMatrix mt;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input array<Integer> columark;
+  input Integer mark;
+  input list<Integer> inNextQeue;
+  output list<Integer> outNextQeue;
+algorithm
+  outNextQeue := match(rows,c,mt,ass1,ass2,columark,mark,inNextQeue)
+    local 
+      Integer r;
+      list<Integer> vareqns,newqueue;
+    case (r::{},_,_,_,_,_,_,_)
+      equation
+        //  print("Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
+        // assigen 
+        _ = arrayUpdate(ass1,r,c);
+        _ = arrayUpdate(ass2,c,r);
+        vareqns = List.select(mt[r], Util.intPositive);
+        vareqns = List.removeOnTrue(ass2, isAssigned, vareqns); 
+        vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);   
+        markEqns(vareqns,columark,mark);     
+      then 
+        listAppend(inNextQeue,vareqns);
+    else then inNextQeue;
+  end match; 
+end tearingBFS1;
+
+protected function tearingSystemNew4
+"function tearingSystemNew4
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.JacobianType jacType;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.EqSystem subsyst;
+  input list<Integer> tvars;
+  input list<Integer> residual;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input list<list<Integer>> othercomps;
+  input list<Integer> eindex;
+  input list<Integer> vindx;    
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+algorithm
+  (osyst,oshared,outRunMatching):=
+    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx)
+    local
+      list<Integer> tvars,residual;
+      list<list<Integer>> othercomps;
+      Boolean b,b1;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      Integer size,tornsize;
+      list<BackendDAE.Equation> eqn_lst; 
+      list<BackendDAE.Var> var_lst;    
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.IncidenceMatrix m,m1;
+      BackendDAE.IncidenceMatrix mt,mt1; 
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendVarTransform.VariableReplacements repl;
+
+/*    case (BackendDAE.JAC_TIME_VARYING(),_,_,_,_,_,_,_,_,_,_)
+      equation
+          print("handel linear torn System\n");
+
+        // add temp variables for other vars at point zero (k0)
+        
+        // replace tearing vars with zero and other wars with temp variables to get equations for point zero (g(z0,k0)=g0)
+        
+        // calculate dh/dz 
+        //                             (all Equations                            tearing vars,f,i,p,s,kv,{},vars,tearingvars,matrixname);
+        //derivedEquations = deriveAll(BackendDAEUtil.equationList(orderedEqs), {x}, functions, inputVars, paramVars, stateVars, knownVars, derivedAlgorithmsLookUp, orderedVars, vars, matrixName);
+        
+
+      then
+        (isyst,ishared,true);
+*/  
+    case (_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        //  print("handel torn System\n");
+        // solve other equations for other vars
+        size = listLength(eindex);
+        eqns = BackendEquation.daeEqns(subsyst);
+        vars = BackendVariable.daeVars(subsyst);
+        (eqns,repl) = solveOtherEquations(othercomps,eqns,vars,ass2,BackendVarTransform.emptyReplacementsSized(size));
+        // replace other vars in residual equations with there expression, use reverse order from othercomps
+        eqns = List.fold1(residual,replaceOtherVarinResidualEqns,repl,eqns);
+        // replace new residual equations in original system
+        syst = replaceTornEquationsinSystem(eindex,0,eqns,isyst);
+      then
+        (syst,ishared,true);           
+    case (_,_,_,_,_,_,_,_,_,_,_)
+      then
+        (isyst,ishared,false);        
+  end matchcontinue;  
+end tearingSystemNew4;
+
+protected function solveOtherEquations
+" function: solveOtherEquations
+  try to solve the equations"
+  input list<list<Integer>> othercomps;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables inVars;
+  input array<Integer> ass2;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendDAE.EquationArray outEqns;
+  output BackendVarTransform.VariableReplacements outRepl;
+algorithm
+  (outEqns,outRepl) :=
+  matchcontinue (othercomps,inEqns,inVars,ass2,inRepl)
+    local
+      list<list<Integer>> rest;
+      BackendDAE.EquationArray eqns;
+      Integer v,c;
+      DAE.Exp e1,e2,varexp,expr,expr1;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
+      BackendVarTransform.VariableReplacements repl;
+    case ({},_,_,_,_) then (inEqns,inRepl);
+    case ({c}::rest,_,_,_,_)
+      equation
+        BackendDAE.EQUATION(e1,e2,source) = BackendDAEUtil.equationNth(inEqns, c-1);
+        v = ass2[c];
+        BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(inVars, v);
+        varexp = Expression.crefExp(cr);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        (expr1,_) = BackendVarTransform.replaceExp(expr, inRepl, NONE());
+        eqns = BackendEquation.equationSetnth(inEqns,c-1,BackendDAE.EQUATION(expr,varexp,source));
+        repl = BackendVarTransform.addReplacement(inRepl,cr,expr1);
+        (eqns,repl) = solveOtherEquations(rest,eqns,inVars,ass2,repl);
+      then
+        (eqns,repl);
+  end matchcontinue;
+end solveOtherEquations;
+
+protected function replaceOtherVarinResidualEqns
+" function: replaceOtherVarinResidualEqns
+  try to solve the equations"
+  input Integer c;
+  input BackendVarTransform.VariableReplacements inRepl;
+  input BackendDAE.EquationArray inEqns;
+  output BackendDAE.EquationArray outEqns;
+protected
+  BackendDAE.Equation eqn;
+algorithm
+  eqn := BackendDAEUtil.equationNth(inEqns, c-1);
+  eqn::_ := BackendVarTransform.replaceEquations({eqn}, inRepl);
+  //  BackendDump.printEquation(eqn);
+  outEqns := BackendEquation.equationSetnth(inEqns,c-1,eqn);
+end replaceOtherVarinResidualEqns;
+
+protected function replaceTornEquationsinSystem
+" function: setTornEquationsinSystem
+  try to solve the equations"
+  input list<Integer> eindx;
+  input Integer index;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.EqSystem isyst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (eindx,index,inEqns,isyst)
+    local
+      Integer c;
+      list<Integer> rest;
+      BackendDAE.Equation eqn;
+      BackendDAE.EqSystem syst;
+    case ({},_,_,_) then isyst;
+    case (c::rest,_,_,_)
+      equation
+        eqn = BackendDAEUtil.equationNth(inEqns, index);
+        syst = BackendEquation.equationSetnthDAE(c-1,eqn,isyst);
+      then
+        replaceTornEquationsinSystem(rest,index+1,inEqns,syst);
+  end match;
+end replaceTornEquationsinSystem;
+
+
+/* 
+ * coundOperations
+ *
+ */
+
+public function coundOperations
+"function constantLinearSystem
+  author: Frenkel TUD 2011-05"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
+algorithm
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,coundOperations0,false);
+end coundOperations;
+
+protected function coundOperations0
+"function coundOperations0
+  author: Frenkel TUD 2011-05"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.Shared shared;
+      Boolean b;
+      Integer i1,i2,i3;
+      BackendDAE.StrongComponents comps;
+      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b))
+      equation
+        ((i1,i2,i3)) = coundOperationstraverseComps(comps,isyst,shared,(0,0,0));
+        print("Add Operations: " +& intString(i1) +& "\n");
+        print("Mul Operations: " +& intString(i2) +& "\n");
+        print("Oth Operations: " +& intString(i3) +& "\n");
+      then
+        (isyst,(shared,b));
+  end matchcontinue;  
+end coundOperations0;
+
+protected function coundOperations1
+"function coundOperations1
+  author: Frenkel TUD 2011-05
+  count the mathematical operations ((+,-),(*,/),(other))"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (isyst,ishared,inTpl)
+    local
+      BackendDAE.Shared shared;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      BackendDAE.EquationArray eqns;
+     
+    case (BackendDAE.EQSYSTEM(orderedEqs = eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al,constraints=constrs,complEqs=complEqs),_)
+      then
+        BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,coundOperationsExp,inTpl);
+  end matchcontinue;  
+end coundOperations1;
+
+protected function coundOperationstraverseComps 
+" function: coundOperationstraverseComps
+  autor: Frenkel TUD 2012-05"
+  input BackendDAE.StrongComponents inComps;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+algorithm
+  outTpl := 
+  matchcontinue (inComps,isyst,ishared,inTpl)
+    local
+      Integer e;
+      BackendDAE.StrongComponent comp,comp1;
+      BackendDAE.StrongComponents rest;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
+      tuple<Integer,Integer,Integer> tpl;
+      list<BackendDAE.Equation> eqnlst;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      BackendDAE.MultiDimEquation meqn;  
+      BackendDAE.JacobianType jacType;   
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      list<BackendDAE.Var> varlst;
+      list<DAE.Exp> explst;
+    case ({},_,_,_) then inTpl; 
+    case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_) 
+      equation
+        eqns = BackendEquation.daeEqns(isyst);
+        eqn = BackendDAEUtil.equationNth(eqns, e-1);
+        (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,coundOperationsExp,inTpl);
+      then 
+         coundOperationstraverseComps(rest,isyst,ishared,tpl);
+    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::rest,_,_,_) 
+      equation
+        tpl = coundOperationstraverseComps({comp1},isyst,ishared,inTpl);
+        (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
+        tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendDAEUtil.listEquation(eqnlst),coundOperationsExp,tpl);
+      then
+        coundOperationstraverseComps(rest,isyst,ishared,tpl);
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_TIME_VARYING()))::rest,_,BackendDAE.SHARED(arrayEqs=ae,complEqs=complEqs),_) 
+      equation
+        (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
+        tpl = addJacSpecificOperations(listLength(eqnlst),inTpl);
+        tpl = countOperationsJac(jac,tpl);        
+        ((_,_,_,_,explst,_)) = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(eqnlst),BackendEquation.equationToExp,(BackendDAEUtil.listVar(varlst),ae,complEqs,{},{},{}));
+        ((_,tpl)) = Expression.traverseExpList(explst,coundOperationsExp,tpl);
+      then 
+         coundOperationstraverseComps(rest,isyst,ishared,tpl);
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=_))::rest,_,BackendDAE.SHARED(arrayEqs=ae,complEqs=complEqs),_) 
+      equation
+        (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
+        tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendDAEUtil.listEquation(eqnlst),coundOperationsExp,inTpl);
+      then
+        coundOperationstraverseComps(rest,isyst,ishared,tpl);
+    case (BackendDAE.SINGLEARRAY(eqns=e::_)::rest,_,BackendDAE.SHARED(arrayEqs=ae),_)
+      equation 
+         BackendDAE.ARRAY_EQUATION(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         tpl = BackendDAEUtil.traverseBackendDAEExpsArrayEqn(ae[e], coundOperationsExp, inTpl);
+      then 
+         coundOperationstraverseComps(rest,isyst,ishared,tpl); 
+    case (BackendDAE.SINGLEALGORITHM(eqns=e::_)::rest,_,BackendDAE.SHARED(algorithms=al),_)
+      equation
+         BackendDAE.ALGORITHM(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         tpl = BackendDAEUtil.traverseAlgorithmExps(al[e], coundOperationsExp, inTpl);
+      then 
+         coundOperationstraverseComps(rest,isyst,ishared,tpl);
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=e::_)::rest,_,BackendDAE.SHARED(complEqs=complEqs),_)
+      equation 
+         BackendDAE.COMPLEX_EQUATION(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         tpl = BackendDAEUtil.traverseBackendDAEExpsComplexEqn(complEqs[e], coundOperationsExp, inTpl);
+      then 
+         coundOperationstraverseComps(rest,isyst,ishared,tpl); 
+    case (_::rest,_,_,_) 
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("BackendDAEOptimize.coundOperationstraverseComps failed!");
+      then
+         coundOperationstraverseComps(rest,isyst,ishared,inTpl);
+    case (_::rest,_,_,_) 
+      then
+        coundOperationstraverseComps(rest,isyst,ishared,inTpl);
+  end matchcontinue;  
+end coundOperationstraverseComps;
+
+protected function countOperationsJac
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inJac;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+algorithm
+  outTpl := match(inJac,inTpl)
+    local  
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      case (NONE(),_) then inTpl;
+      case (SOME(jac),_)
+        then
+          List.fold(jac,countOperationsJac1,inTpl);
+  end match;
+end countOperationsJac;
+
+protected function countOperationsJac1
+  input tuple<Integer, Integer, BackendDAE.Equation> inJac;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+algorithm
+  (_,outTpl) := BackendEquation.traverseBackendDAEExpsEqn(Util.tuple33(inJac),coundOperationsExp,inTpl);
+end countOperationsJac1;
+
+protected function intPow
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
+algorithm
+  i := realInt(realPow(intReal(i1),intReal(i2)));
+end intPow;
+
+protected function addJacSpecificOperations
+  input Integer n;
+  input tuple<Integer,Integer,Integer> inTpl;
+  output tuple<Integer,Integer,Integer> outTpl;
+protected
+  Integer i1,i2,i3,i1_1,i2_1;
+algorithm
+  (i1,i2,i3) := inTpl;
+  i1_1 := (2*intPow(n,3)+3*intPow(n,2)-5*n)/6 + i1; 
+  i2_1 := (2*intPow(n,3)+6*intPow(n,2)-2*n)/6 + i2;
+  outTpl := (i1_1,i2_1,i3);
+end addJacSpecificOperations;
+
+protected function coundOperationsExp
+  input tuple<DAE.Exp, tuple<Integer,Integer,Integer>> inTpl;
+  output tuple<DAE.Exp, tuple<Integer,Integer,Integer>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      Integer i1,i2,i3,i1_1,i2_1,i3_1;
+    case ((exp,(i1,i2,i3)))
+      equation
+        ((_,(i1_1,i2_1,i3_1))) = Expression.traverseExp(exp,traversecoundOperationsExp,(i1,i2,i3));
+       then
+        ((exp,(i1_1,i2_1,i3_1)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end coundOperationsExp;
+
+protected function traversecoundOperationsExp
+  input tuple<DAE.Exp, tuple<Integer,Integer,Integer>> inTuple;
+  output tuple<DAE.Exp, tuple<Integer,Integer,Integer>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      Integer i1,i2,i3,i1_1,i2_1,i3_1,iexp2;
+      Real rexp2;
+      DAE.Operator op;
+   
+    case ((e as DAE.BINARY(operator=DAE.POW(ty=_),exp2=DAE.RCONST(rexp2)),(i1,i2,i3)))
+      equation
+        iexp2 = realInt(rexp2);
+        true = realEq(rexp2, intReal(iexp2));
+        i2_1 = i2+intAbs(iexp2)-1;
+      then
+        ((e, (i1,i2_1,i3)));
+    case ((e as DAE.BINARY(operator=op),(i1,i2,i3)))
+      equation
+        (i1_1,i2_1,i3_1) = countOperator(op,i1,i2,i3);
+      then
+        ((e, (i1_1,i2_1,i3_1)));
+    case inTuple then inTuple;
+  end matchcontinue;
+end traversecoundOperationsExp;
+
+protected function countOperator
+  input DAE.Operator op;
+  input Integer inInt1;
+  input Integer inInt2;
+  input Integer inInt3;  
+  output Integer outInt1;
+  output Integer outInt2;
+  output Integer outInt3;
+algorithm
+(outInt1,outInt2,outInt3):=
+  match (op,inInt1,inInt2,inInt3)
+    local
+      DAE.Type tp;
+      Integer i;
+    case (DAE.ADD(ty=_),_,_,_)
+      then (inInt1+1,inInt2,inInt3);
+    case (DAE.SUB(ty=_),_,_,_)
+      then (inInt1+1,inInt2,inInt3);
+    case (DAE.MUL(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.DIV(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.POW(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.UMINUS(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.UMINUS_ARR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1,inInt2,inInt3+i);
+    case (DAE.ADD_ARR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1+i,inInt2,inInt3);
+    case (DAE.SUB_ARR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1+i,inInt2,inInt3);
+    case (DAE.MUL_ARR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1,inInt2+i,inInt3);
+    case (DAE.DIV_ARR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1,inInt2+i,inInt3);
+    case (DAE.MUL_ARRAY_SCALAR(ty=tp),_,_,_)
+      equation
+        i = Expression.sizeOf(tp);
+      then (inInt1,inInt2+i,inInt3);
+    case (DAE.ADD_ARRAY_SCALAR(ty=_),_,_,_)
+      then (inInt1+1,inInt2,inInt3);
+    case (DAE.SUB_SCALAR_ARRAY(ty=_),_,_,_)
+      then (inInt1+1,inInt2,inInt3);
+    case (DAE.MUL_SCALAR_PRODUCT(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.MUL_MATRIX_PRODUCT(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.DIV_ARRAY_SCALAR(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.DIV_SCALAR_ARRAY(ty=_),_,_,_)
+      then (inInt1,inInt2+1,inInt3);
+    case (DAE.POW_ARRAY_SCALAR(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.POW_SCALAR_ARRAY(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.POW_ARR(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.POW_ARR2(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.AND(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.OR(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.NOT(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.NOT(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.LESS(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.LESSEQ(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.GREATER(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.GREATEREQ(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.EQUAL(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.NEQUAL(ty=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    case (DAE.USERDEFINED(fqName=_),_,_,_)
+      then (inInt1,inInt2,inInt3+1);
+    else
+      then(inInt1,inInt2,inInt3+1);
+  end match; 
+end countOperator;
 
 end BackendDAEOptimize;
