@@ -9011,25 +9011,18 @@ algorithm
   (_,outTpl) := BackendEquation.traverseBackendDAEExpsEqn(Util.tuple33(inJac),coundOperationsExp,inTpl);
 end countOperationsJac1;
 
-protected function intPow
-  input Integer i1;
-  input Integer i2;
-  output Integer i;
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-algorithm
-  i := realInt(realPow(intReal(i1),intReal(i2)));
-end intPow;
-
 protected function addJacSpecificOperations
   input Integer n;
   input tuple<Integer,Integer,Integer> inTpl;
   output tuple<Integer,Integer,Integer> outTpl;
 protected
-  Integer i1,i2,i3,i1_1,i2_1;
+  Integer i1,i2,i3,i1_1,i2_1,n2,n3;
 algorithm
   (i1,i2,i3) := inTpl;
-  i1_1 := (2*intPow(n,3)+3*intPow(n,2)-5*n)/6 + i1; 
-  i2_1 := (2*intPow(n,3)+6*intPow(n,2)-2*n)/6 + i2;
+  n2 := n*n;
+  n3 := n*n*n;
+  i1_1 := (2*n3+3*n2-5*n)/6 + i1; 
+  i2_1 := (2*n3+6*n2-2*n)/6 + i2;
   outTpl := (i1_1,i2_1,i3);
 end addJacSpecificOperations;
 
