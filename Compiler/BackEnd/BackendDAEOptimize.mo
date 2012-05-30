@@ -9021,8 +9021,8 @@ algorithm
   (i1,i2,i3) := inTpl;
   n2 := n*n;
   n3 := n*n*n;
-  i1_1 := (2*n3+3*n2-5*n)/6 + i1; 
-  i2_1 := (2*n3+6*n2-2*n)/6 + i2;
+  i1_1 := intDiv(2*n3+3*n2-5*n,6) + i1; 
+  i2_1 := intDiv(2*n3+6*n2-2*n,6) + i2;
   outTpl := (i1_1,i2_1,i3);
 end addJacSpecificOperations;
 
