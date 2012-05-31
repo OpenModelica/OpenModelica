@@ -12742,19 +12742,18 @@ algorithm
       list<String> res;
       String id;
       list<Absyn.ElementItem> rest;
-      Option<Absyn.ConstrainClass> c;
 
     case {} then {};
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))),constrainClass = c)) :: rest))
+                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))),constrainClass = NONE())) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
         (id :: res);
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(name = id)),constrainClass = c)) :: rest))
+                 Absyn.CLASS(name = id)),constrainClass = NONE())) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
