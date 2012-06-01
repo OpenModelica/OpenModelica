@@ -145,7 +145,7 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
     else
       scalingCoefficient = 1.0; /* no scaling coefficients given */
 
-    if(initData->residualScalingCoefficients[i] > 0.0)
+    if(scalingCoefficient > 0.0)
       funcValue += (initData->initialResiduals[i] / scalingCoefficient) * (initData->initialResiduals[i] / scalingCoefficient);
     /*else
       funcValue += initData->initialResiduals[i] * initData->initialResiduals[i];*/
