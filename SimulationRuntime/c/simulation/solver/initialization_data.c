@@ -32,6 +32,8 @@
  */
 
 #include "initialization_data.h"
+#include "initialization.h" /* adrpo: for leastSquareWithLambda */
+#include <math.h>
 
 /*! \fn initializeInitData
  *
@@ -261,7 +263,7 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
     initData->startValueResidualScalingCoefficients[i] = 1.0;
 
   /* lambda = 1.0 */
-  leastSquareWithLambda(data, initData, NULL, 1.0);
+  leastSquareWithLambda(data, initData, 1.0);
   for(i=0; i<initData->nInitResiduals; ++i)
     tmpResidual1[i] = initData->initialResiduals[i];
 
@@ -280,7 +282,7 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
     initData->z[i] += h;
     updateZScaled(initData);
 
-    leastSquareWithLambda(data, initData, NULL, 1.0);
+    leastSquareWithLambda(data, initData, 1.0);
     for(j=0; j<initData->nInitResiduals; ++j)
       tmpResidual2[j] = initData->initialResiduals[j];
 
