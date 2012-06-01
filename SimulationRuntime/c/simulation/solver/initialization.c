@@ -384,7 +384,7 @@ static int initialize(DATA *data, int optiMethod)
 static int none_initialization(DATA *data, int updateStartValues)
 {
   long i;
-  INIT_DATA *initData = initializeInitData(data);
+  /*INIT_DATA *initData = NULL;*/
 
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
@@ -409,13 +409,10 @@ static int none_initialization(DATA *data, int updateStartValues)
   resetAllHelpVars(data);
   storePreValues(data);
 
-  DEBUG_INFO1(LOG_INIT, "%ld unfixed states:", initData->nStates);
-  for(i=0; i<initData->nStates; ++i)
-    DEBUG_INFO2(LOG_INIT, "| %s = %g", initData->name[i], initData->z[i]);
-
-  DEBUG_INFO1(LOG_INIT, "%ld unfixed parameters:", initData->nParameters);
-  for(; i<initData->nStates+initData->nParameters; ++i)
-    DEBUG_INFO2(LOG_INIT, "| %s = %g", initData->name[i], initData->z[i]);
+  /* dump some information
+  initData = initializeInitData(data);
+  if(initData)
+    freeInitData(initData);*/
 
   storeInitialValues(data);
   storeInitialValuesParam(data);

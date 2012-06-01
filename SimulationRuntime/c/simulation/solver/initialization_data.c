@@ -321,7 +321,7 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
 
   for(i=0; i<initData->nStartValueResiduals; ++i)
   {
-    if(residualScalingCoefficients[i] < 1e-42)
+    if(startValueResidualScalingCoefficients[i] < 1e-42)
       initData->startValueResidualScalingCoefficients[i] = 0.0;
     else
       initData->startValueResidualScalingCoefficients[i] = startValueResidualScalingCoefficients[i];
