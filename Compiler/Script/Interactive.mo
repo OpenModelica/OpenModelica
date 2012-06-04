@@ -12746,14 +12746,14 @@ algorithm
     case {} then {};
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))),constrainClass = NONE())) :: rest))
+                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))))) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
         (id :: res);
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(name = id)),constrainClass = NONE())) :: rest))
+                 Absyn.CLASS(name = id)))) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
@@ -17129,7 +17129,7 @@ algorithm
       Absyn.Class class_;
       list<Absyn.ElementItem> rest;
     case {} then {};
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_),constrainClass = NONE())) :: rest))
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_))) :: rest))
       equation
         res = getClassesInElts(rest);
       then
