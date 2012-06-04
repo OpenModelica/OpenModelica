@@ -780,28 +780,6 @@ algorithm
       then
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
          
-    // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
-      equation 
-        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
-        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
-      then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
-
-    // Connections.potentialRoot(cr,priority) - priority as positional argument
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.REAL(priority)}, {})),initial_,impl,graph)
-      equation 
-        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
-        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
-      then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
-
     // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
@@ -810,6 +788,16 @@ algorithm
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(ipriority));
+      then
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+
+    // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
+              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
+      equation 
+        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
+          {"Second", "Connections.potentialRoot", ""}, info);
       then
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
 

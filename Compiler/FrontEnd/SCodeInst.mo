@@ -134,9 +134,9 @@ algorithm
         cls = Typing.typeSections(cls, symtab);
 
         System.stopTimer();
-        print("\nclass " +& name +& "\n");
-        print(InstUtil.printClass(cls));
-        print("\nend " +& name +& "\n");
+        //print("\nclass " +& name +& "\n");
+        //print(InstUtil.printClass(cls));
+        //print("\nend " +& name +& "\n");
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
