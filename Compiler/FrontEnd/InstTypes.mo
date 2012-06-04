@@ -77,6 +77,15 @@ public uniontype Class
   record BASIC_TYPE end BASIC_TYPE;
 end Class;
 
+public uniontype Function
+  record FUNCTION "A function has inputs,output and locals without binding. These are resolved to statements in the algorithm section"
+    list<Element> inputs;
+    list<Element> outputs;
+    list<Element> locals;
+    list<SCode.AlgorithmSection> algorithms "TODO: Add default bindings";
+  end FUNCTION;
+end Function;
+
 public uniontype Dimension
   record UNTYPED_DIMENSION
     DAE.Dimension dimension;

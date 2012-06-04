@@ -75,6 +75,7 @@ public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
 public type Equation = InstTypes.Equation;
+public type Function = InstTypes.Function;
 public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
@@ -1618,10 +1619,9 @@ algorithm
       
     case (_, _, _, _, _, _)
       equation
-        (call_path, func) = instFunction(inName, inEnv, inPrefix, inInfo);
+        (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs)) = instFunction(inName, inEnv, inPrefix, inInfo);
         pos_args = instExpList(inPositionalArgs, inEnv, inPrefix);
         named_args = List.map2(inNamedArgs, instNamedArg, inEnv, inPrefix);
-        (inputs, outputs) = getFunctionParameters(func); 
         args = fillFunctionSlots(pos_args, named_args, inputs);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
@@ -1635,25 +1635,29 @@ protected function instFunction
   input Prefix inPrefix;
   input Absyn.Info inInfo;
   output Absyn.Path outName;
-  output Class outClass;
+  output Function outFunction;
 algorithm
-  (outName, outClass) := match(inName, inEnv, inPrefix, inInfo)
+  (outName, outFunction) := match(inName, inEnv, inPrefix, inInfo)
     local
       Absyn.Path path;
       Item item;
       SCodeLookup.Origin origin;
       Env env;
       Class cls;
+      Function func;
+      list<Element> inputs, outputs, locals;
+      list<SCode.AlgorithmSection> algorithms;
 
     case (_, _, _, _)
       equation
         path = Absyn.crefToPath(inName);
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
-        (cls, _, _) = instClassItem(item, InstTypes.NOMOD(),
+        (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), inEnv, inPrefix, INST_ALL());
+        (inputs,outputs,locals) = getFunctionParameters(cls);
       then
-        (path, cls);
+        (path, InstTypes.FUNCTION(inputs,outputs,locals,algorithms));
 
   end match;
 end instFunction;
@@ -1714,16 +1718,17 @@ protected function getFunctionParameters
   input Class inClass;
   output list<Element> outInputs;
   output list<Element> outOutputs;
+  output list<Element> outLocals;
 algorithm
-  (outInputs, outOutputs) := matchcontinue(inClass)
+  (outInputs, outOutputs, outLocals) := matchcontinue(inClass)
     local
-      list<Element> comps, inputs, outputs;
+      list<Element> comps, inputs, outputs, locals;
 
     case InstTypes.COMPLEX_CLASS(components = comps)
       equation
-        (inputs, outputs) = getFunctionParameters2(comps, {}, {});
+        (inputs, outputs, locals) = getFunctionParameters2(comps, {}, {}, {});
       then
-        (inputs, outputs);
+        (inputs, outputs, locals);
 
     else
       equation
@@ -1739,10 +1744,12 @@ protected function getFunctionParameters2
   input list<Element> inElements;
   input list<Element> inAccumInputs;
   input list<Element> inAccumOutputs;
+  input list<Element> inAccumLocals;
   output list<Element> outInputs;
   output list<Element> outOutputs;
+  output list<Element> outLocals;
 algorithm
-  (outInputs, outOutputs) := match(inElements, inAccumInputs, inAccumOutputs)
+  (outInputs, outOutputs, outLocals) := match(inElements, inAccumInputs, inAccumOutputs, inAccumLocals)
     local
       Prefixes prefs;
       Absyn.Path name;
@@ -1750,20 +1757,20 @@ algorithm
       Absyn.Info info;
       Element el;
       list<Element> rest_el;
-      list<Element> inputs, outputs;
+      list<Element> inputs, outputs, locals;
 
     case ((el as InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(
         name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
-        inputs, outputs)
+        inputs, outputs, locals)
       equation
         validateFunctionVariable(name, ty, prefs, info);
-        (inputs, outputs) = 
-          getFunctionParameters3(name, prefs, info, el, inputs, outputs);
-        (inputs, outputs) = getFunctionParameters2(rest_el, inputs, outputs);
+        (inputs, outputs, locals) = 
+          getFunctionParameters3(name, prefs, info, el, inputs, outputs, locals);
+        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
-        (inputs, outputs);
+        (inputs, outputs, locals);
 
-    case ({}, _, _) then (inAccumInputs, inAccumOutputs);
+    case ({}, _, _, _) then (inAccumInputs, inAccumOutputs, inAccumLocals);
 
   end match;
 end getFunctionParameters2;
@@ -1775,29 +1782,31 @@ protected function getFunctionParameters3
   input Element inElement;
   input list<Element> inAccumInputs;
   input list<Element> inAccumOutputs;
+  input list<Element> inAccumLocals;
   output list<Element> outInputs;
   output list<Element> outOutputs;
+  output list<Element> outLocals;
 algorithm
-  (outInputs, outOutputs) := match(inName, inPrefixes, inInfo, inElement,
-      inAccumInputs, inAccumOutputs)
+  (outInputs, outOutputs, outLocals) := match(inName, inPrefixes, inInfo, inElement,
+      inAccumInputs, inAccumOutputs, inAccumLocals)
 
-    case (_, InstTypes.PREFIXES(direction = (Absyn.INPUT(), _)), _, _, _, _)
+    case (_, InstTypes.PREFIXES(direction = (Absyn.INPUT(), _)), _, _, _, _, _)
       equation
         validateFormalParameter(inName, inPrefixes, inInfo);
       then
-        (inElement :: inAccumInputs, inAccumOutputs);
+        (inElement :: inAccumInputs, inAccumOutputs, inAccumLocals);
 
-    case (_, InstTypes.PREFIXES(direction = (Absyn.OUTPUT(), _)), _, _, _, _)
+    case (_, InstTypes.PREFIXES(direction = (Absyn.OUTPUT(), _)), _, _, _, _, _)
       equation
         validateFormalParameter(inName, inPrefixes, inInfo);
       then
-        (inAccumInputs, inElement :: inAccumOutputs);
+        (inAccumInputs, inElement :: inAccumOutputs, inAccumLocals);
 
     else
       equation
         validateLocalFunctionVariable(inName, inPrefixes, inInfo);
       then
-        (inAccumInputs, inAccumOutputs);
+        (inAccumInputs, inAccumOutputs, inElement :: inAccumLocals);
 
   end match;
 end getFunctionParameters3;
