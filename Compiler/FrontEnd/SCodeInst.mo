@@ -80,6 +80,7 @@ public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
+public type Statement = InstTypes.Statement;
 
 protected type FunctionSlot = InstTypes.FunctionSlot;
 protected type Item = SCodeEnv.Item;
@@ -180,6 +181,7 @@ algorithm
       SCodeEnv.AvlTree cls_and_vars;
       String name, err_msg;
       list<Equation> eq, ieq;
+      list<Statement> alg, ialg;
       DAE.Type ty;
       Absyn.ArrayDim dims;
       list<DAE.Var> vars;
@@ -223,7 +225,7 @@ algorithm
         (elems, cse) = instElementList(mel, inPrefixes, exts, env, inPrefix, ip);
 
         // Instantiate all equation and algorithm sections.
-        (eq, ieq) = instSections(cdef, env, inPrefix, ip);
+        (eq, ieq, alg, ialg) = instSections(cdef, env, inPrefix, ip);
 
         // Create the class.
         state = ClassInf.start(res, Absyn.IDENT(name));
@@ -2250,22 +2252,28 @@ protected function instSections
   input InstPolicy inInstPolicy;
   output list<Equation> outEquations;
   output list<Equation> outInitialEquations;
+  output list<Statement> outStatements;
+  output list<Statement> outInitialStatements;
 algorithm
-  (outEquations, outInitialEquations) :=
+  (outEquations, outInitialEquations, outStatements, outInitialStatements) :=
   match(inClassDef, inEnv, inPrefix, inInstPolicy)
     local
       list<SCode.Equation> snel, siel;
+      list<SCode.AlgorithmSection> snal, sial;
       list<Equation> inel, iiel;
+      list<Statement> inal, iial;
 
-    case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel), _,
+    case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
         _, INST_ALL())
       equation
         inel = instEquations(snel, inEnv, inPrefix);
         iiel = instEquations(siel, inEnv, inPrefix);
+        inal = instAlgorithmSections(snal, inEnv, inPrefix);
+        iial = instAlgorithmSections(sial, inEnv, inPrefix);
       then
-        (inel, iiel);
+        (inel, iiel, inal, iial);
 
-    case (_, _, _, INST_ONLY_CONST()) then ({}, {});
+    case (_, _, _, INST_ONLY_CONST()) then ({}, {}, {}, {});
 
   end match;
 end instSections;
@@ -2414,6 +2422,54 @@ algorithm
 
   end match;
 end instEEquation;
+
+protected function instAlgorithmSections
+  input list<SCode.AlgorithmSection> inSections;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<Statement> outStatements;
+algorithm
+  outStatements := listReverse(List.fold2(inSections, instStatements, inEnv, inPrefix, {}));
+end instAlgorithmSections;
+
+protected function instStatements
+  input SCode.AlgorithmSection inSection;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input list<Statement> inStatements;
+  output list<Statement> outStatements;
+protected
+  list<SCode.Statement> sstatements;
+algorithm
+  SCode.ALGORITHM(statements=sstatements) := inSection;
+  outStatements := List.map2_tail(sstatements, instStatement, inEnv, inPrefix, inStatements);
+end instStatements;
+
+protected function instStatement
+  input SCode.Statement statement;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Statement outStatement;
+algorithm
+  outStatement := match (statement,inEnv,inPrefix)
+    local
+      Absyn.Exp exp1, exp2;
+      Absyn.Info info;
+      DAE.Exp dexp1, dexp2;
+    case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        dexp2 = instExp(exp2, inEnv, inPrefix);
+      then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
+
+    case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        dexp2 = instExp(exp2, inEnv, inPrefix);
+      then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
+
+  end match;
+end instStatement;
 
 protected function instIfBranch
   input Absyn.Exp inCondition;

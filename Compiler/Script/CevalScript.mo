@@ -2056,9 +2056,10 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"val",{cvar,Values.REAL(timeStamp)},st,msg)
+    case (cache,env,"val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)},st,msg)
       equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg);
+        (cache,Values.STRING(str),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg);
+        filename = Util.if_(stringEq(filename,"<default>"),str,filename);
         varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);

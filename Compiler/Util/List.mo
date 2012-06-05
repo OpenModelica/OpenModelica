@@ -2573,7 +2573,7 @@ algorithm
   outList := listReverse(map2_tail(inList, inFunc, inArg1, inArg2, {}));
 end map2;
 
-protected function map2_tail
+public function map2_tail
   "Tail-recursive implementation of map2"
   input list<ElementInType> inList;
   input MapFunc inFunc;

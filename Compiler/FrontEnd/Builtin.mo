@@ -602,6 +602,8 @@ algorithm
       String msg,fileModelica,fileMetaModelica,initialFunctionStr,initialFunctionStrMM;
       list<tuple<Boolean,Absyn.Program>> assocLst;
       Option<Absyn.Program> optProgram;
+      Absyn.Program initialProgram1,initialProgram2;
+      list<Absyn.Class> classes,classes1,classes2;
     case ()
       equation
         failure(_ = getGlobalRoot(Global.builtinIndex));
@@ -613,14 +615,26 @@ algorithm
       then Util.assoc(Config.acceptMetaModelicaGrammar(), assocLst);
     case ()
       equation
-        b = Config.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
+        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        initialFunctionStr = System.readFile(fileModelica);
+        initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (false,initialProgram)::assocLst);
+      then initialProgram;
+    case ()
+      equation
+        true = Config.acceptMetaModelicaGrammar();
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
-        initialFunctionStrMM = Debug.bcallret1(b, System.readFile, fileMetaModelica, "");
-        initialProgram = Parser.parsebuiltinstring(initialFunctionStr +& initialFunctionStrMM, fileModelica);
+        initialFunctionStrMM = System.readFile(fileMetaModelica);
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
+        Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltinstring(initialFunctionStrMM, fileMetaModelica);
+        classes = listAppend(classes1,classes2);
+        initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (b,initialProgram)::assocLst);
+        setGlobalRoot(Global.builtinIndex, (true,initialProgram)::assocLst);
       then initialProgram;
     else
       equation

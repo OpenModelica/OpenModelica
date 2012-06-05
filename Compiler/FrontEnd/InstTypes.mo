@@ -284,6 +284,77 @@ public uniontype Equation
   end NORETCALL_EQUATION;
 end Equation;
 
+public uniontype Statement
+  record ASSIGN_STMT
+    DAE.Exp lhs "The asignee";
+    DAE.Exp rhs "The expression";
+    Absyn.Info info;
+  end ASSIGN_STMT;
+
+  record FOR_STMT
+    String index "The name of the index/iterator variable.";
+    DAE.Type indexType "The type of the index/iterator variable.";
+    DAE.Exp range "The range expression to loop over.";
+    list<Statement> body "The body of the for loop.";
+    Absyn.Info info;
+  end FOR_STMT;
+
+  record IF_STMT
+    list<tuple<DAE.Exp, list<Statement>>> branches
+      "List of branches, where each branch is a tuple of a condition and a body.";
+    Absyn.Info info;
+  end IF_STMT;
+
+  record WHEN_STMT
+    list<tuple<DAE.Exp, list<Statement>>> branches
+      "List of branches, where each branch is a tuple of a condition and a body.";
+    Absyn.Info info;
+  end WHEN_STMT;
+
+  record ASSERT_STMT
+    DAE.Exp condition "The assert condition.";
+    DAE.Exp message "The message to display if the assert fails.";
+    Absyn.Info info;
+  end ASSERT_STMT;
+
+  record TERMINATE_STMT
+    DAE.Exp message "The message to display if the terminate triggers.";
+    Absyn.Info info;
+  end TERMINATE_STMT;
+
+  record REINIT_STMT
+    DAE.ComponentRef cref "The variable to reinitialize.";
+    DAE.Exp reinitExp "The new value of the variable.";
+    Absyn.Info info;
+  end REINIT_STMT;
+
+  record NORETCALL_STMT
+    Absyn.Path funcName;
+    list<DAE.Exp> funcArgs;
+    Absyn.Info info;
+  end NORETCALL_STMT;
+
+  record STMT_WHILE
+    DAE.Exp exp;
+    list<Statement> statementLst;
+    Absyn.Info info;
+  end STMT_WHILE;
+
+  record STMT_RETURN
+    Absyn.Info info;
+  end STMT_RETURN;
+
+  record STMT_BREAK
+    Absyn.Info info;
+  end STMT_BREAK;
+
+  record STMT_FAILURE
+    list<Statement> body;
+    Absyn.Info info;
+  end STMT_FAILURE;
+
+end Statement;
+
 public uniontype FunctionSlot
   record SLOT
     String name;

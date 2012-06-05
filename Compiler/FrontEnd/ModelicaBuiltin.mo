@@ -1865,14 +1865,7 @@ partial function basePlotFunction "Extending this does not seem to work at the m
 annotation(preferredView="text");
 end basePlotFunction;
 
-function plot "Launches a plot window using OMPlot. Returns true on success.
-  Don't require sendData support.
-  
-  Example command sequences:
-  simulate(A);plot({x,y,z});
-  simulate(A);plot(x, externalWindow=true);
-  simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);
-  "
+function plot "Launches a plot window using OMPlot."
   input VariableNames vars "The variables you want to plot";
   input Boolean externalWindow := false "Opens the plot in a new plot window";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
@@ -1888,7 +1881,16 @@ function plot "Launches a plot window using OMPlot. Returns true on success.
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
-annotation(preferredView="text");
+annotation(preferredView="text",Documentation(info="<html>
+<p>Launches a plot window using OMPlot. Returns true on success.</p>
+  
+<p>Example command sequences:</p>
+<ul>
+<li>simulate(A);plot({x,y,z});</li>
+<li>simulate(A);plot(x, externalWindow=true);</li>
+<li>simulate(A,fileNamePrefix=\"B\");simulate(C);plot(z,\"B.mat\",legend=false);</li>
+</ul>
+</html>"));
 end plot;
 
 function plotAll "Works in the same way as plot(), but does not accept any
@@ -1994,15 +1996,18 @@ external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
 
-function val "Works on the filename pointed to by the scripting variable currentSimulationResult.
-  The result is the value of the variable at a certain time point.
-  For parameters, any time may be given. For variables the startTime<=time<=stopTime needs to hold.
-  On error, nan (Not a Number) is returned and the error buffer contains the message."
+function val "Return the value of a variable at a given time in the simulation results"
   input VariableName var;
   input Real time;
+  input String fileName := "<default>" "The contents of the currentSimulationResult variable";
   output Real valAtTime;
 external "builtin";
-annotation(preferredView="text");
+annotation(preferredView="text",Documentation(info="<html>
+<p>Return the value of a variable at a given time in the simulation results.</p>
+<p>Works on the filename pointed to by the scripting variable currentSimulationResult or a given filename.</p>
+<p>For parameters, any time may be given. For variables the startTime<=time<=stopTime needs to hold.</p>
+<p>On error, nan (Not a Number) is returned and the error buffer contains the message.</p>
+</html>"));
 end val;
 
 function closeSimulationResultFile "Closes the current simulation result file.
