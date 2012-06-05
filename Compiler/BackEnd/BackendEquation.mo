@@ -45,6 +45,7 @@ public import DAE;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendVariable;
+protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -53,6 +54,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import HashTable;
 protected import List;
 protected import Util;
 
@@ -427,6 +429,108 @@ algorithm
         ((e1,crefs1));
   end match;
 end extractCrefsFromExp;
+
+public function equationUnknownCrefs
+"function: equationUnknownVars
+  author: Frenkel TUD 2012-05
+  From the equation and a variable array return all
+  variables in the equation an not in the variable array."
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars;
+  output list<DAE.ComponentRef> cr_lst;
+protected
+  HashTable.HashTable ht;
+algorithm
+  ht := HashTable.emptyHashTable();
+  (_,(_,ht)) := traverseBackendDAEExpsEqnList(inEquationLst,checkEquationsUnknownCrefs,(inVars,ht));
+  cr_lst := BaseHashTable.hashTableKeyList(ht);
+end equationUnknownCrefs;
+
+protected function checkEquationsUnknownCrefs
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables vars;
+      HashTable.HashTable ht;
+    case ((exp,(vars,ht)))
+      equation
+         ((_,(_,ht))) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,(vars,ht));
+       then
+        ((exp,(vars,ht)));
+    case inTpl then inTpl;
+  end matchcontinue;
+end checkEquationsUnknownCrefs;
+
+protected function checkEquationsUnknownCrefsExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      BackendDAE.Variables vars;
+      HashTable.HashTable ht;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl;
+      list<DAE.Var> varLst;
+      DAE.Ident ident;
+      list<BackendDAE.Var> backendVars;
+      BackendDAE.Var var;
+      DAE.ReductionIterators riters;
+    
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,ht)))
+      then ((e, (vars,ht)));
+    
+    // Special Case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,ht)))
+      equation
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(vars,ht))) = Expression.traverseExpList(expl,checkEquationsUnknownCrefsExp,(vars,ht));
+      then
+        ((e, (vars,ht)));
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,ht)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((_,(vars,ht))) = Expression.traverseExp(e1,checkEquationsUnknownCrefsExp,(vars,ht));
+      then
+        ((e, (vars,ht)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,ht)))
+      then
+        ((e, (vars,ht)));
+
+    // already there
+    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+      equation
+         _ = BaseHashTable.get(cr,ht);
+      then
+        ((e, (vars,ht)));
+
+    // known
+    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, vars);
+      then
+        ((e, (vars,ht)));
+
+    // add it
+    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+      equation
+         ht = BaseHashTable.add((cr,0),ht);
+      then
+        ((e, (vars,ht)));
+    
+    case inTuple then inTuple;
+  end matchcontinue;
+end checkEquationsUnknownCrefsExp;
 
 public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEqnList
   author: Frenkel TUD 2010-11
@@ -981,6 +1085,35 @@ algorithm
         (compleq,ext_arg_2);
   end match;
 end traverseBackendDAEExpsComplexWithUpdate;
+
+public function traverseBackendDAEEqnList"function: traverseBackendDAEEqnList
+  author: Frenkel TUD 2012-06
+  traverse all all Equations of a List. It is possible to change the equations"
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.Equation> inEquations;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<BackendDAE.Equation> outEquations;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEquations,outTypeA) := match(inEquations,func,inTypeA)
+  local 
+       BackendDAE.Equation e,e1;
+       list<BackendDAE.Equation> res,eqns;
+       Type_a ext_arg_1,ext_arg_2;
+    case({},func,inTypeA) then ({},inTypeA);
+    case(e::res,func,inTypeA)
+     equation
+      ((e1,ext_arg_1)) = func((e,inTypeA));
+      (eqns,ext_arg_2)  = traverseBackendDAEEqnList(res,func,ext_arg_1);
+    then 
+      (e1::eqns,ext_arg_2);
+    end match;
+end traverseBackendDAEEqnList;
 
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;

@@ -1298,10 +1298,25 @@ public function createpDerVar
   Create variable with $pDER.v as cref for jacobian variables."
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
 algorithm
-  outVar := match (inVar)
+  cr := varCref(inVar);
+  cr := ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+  outVar := copyVarNewName(cr,inVar);
+  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+end createpDerVar;
+
+public function copyVarNewName
+"function copyVarNewName
+  author: Frenkel TUD 2012-5
+  Create variable with new name as cref from other var."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (cr,inVar)
     local
-      DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
@@ -1317,8 +1332,7 @@ algorithm
       DAE.Stream streamPrefix;
       BackendDAE.Var oVar;
 
-    case (BackendDAE.VAR(varName = cr,
-              varKind = kind,
+    case (_,BackendDAE.VAR(varKind = kind,
               varDirection = dir,
               varParallelism = prl,
               varType = tp,
@@ -1331,13 +1345,10 @@ algorithm
               comment = comment,
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix))
-    equation
-      cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
-      oVar = BackendDAE.VAR(cr,BackendDAE.JAC_DIFF_VAR(),dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
     then
-      oVar; 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); 
   end match;
-end createpDerVar;
+end copyVarNewName;
 
 public function setVarKind
 "function setVarKind
@@ -3855,6 +3866,8 @@ algorithm
       BackendDAE.Variables vars1_1,vars1,vars2;
     case (vars1,vars2)
       equation
+        // to avoid side effects from arrays copy first
+        vars1 = copyVariables(vars1);
         varlst = BackendDAEUtil.varList(vars2);
         vars1_1 = List.fold(varlst, addVar, vars1);
       then
