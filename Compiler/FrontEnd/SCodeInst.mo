@@ -2429,10 +2429,10 @@ protected function instAlgorithmSections
   input Prefix inPrefix;
   output list<Statement> outStatements;
 algorithm
-  outStatements := listReverse(List.fold2(inSections, instStatements, inEnv, inPrefix, {}));
+  outStatements := listReverse(List.fold2(inSections, instAlgorithmSection, inEnv, inPrefix, {}));
 end instAlgorithmSections;
 
-protected function instStatements
+protected function instAlgorithmSection
   input SCode.AlgorithmSection inSection;
   input Env inEnv;
   input Prefix inPrefix;
@@ -2443,6 +2443,15 @@ protected
 algorithm
   SCode.ALGORITHM(statements=sstatements) := inSection;
   outStatements := List.map2_tail(sstatements, instStatement, inEnv, inPrefix, inStatements);
+end instAlgorithmSection;
+
+protected function instStatements
+  input list<SCode.Statement> sstatements;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output list<Statement> outStatements;
+algorithm
+  outStatements := List.map2(sstatements, instStatement, inEnv, inPrefix);
 end instStatements;
 
 protected function instStatement
@@ -2453,20 +2462,34 @@ protected function instStatement
 algorithm
   outStatement := match (statement,inEnv,inPrefix)
     local
-      Absyn.Exp exp1, exp2;
+      Absyn.Exp exp1, exp2, if_condition;
       Absyn.Info info;
       DAE.Exp dexp1, dexp2;
+      list<SCode.Statement> if_branch,else_branch;
+      list<tuple<Absyn.Exp,list<SCode.Statement>>> elseif_branches;
+      list<tuple<DAE.Exp,list<Statement>>> inst_branches;
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
       equation
         dexp1 = instExp(exp1, inEnv, inPrefix);
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
 
+    case (SCode.ALG_IF(boolExpr = if_condition, trueBranch = if_branch,
+        elseIfBranch = elseif_branches,
+        elseBranch = else_branch, info = info), _, _)
+      equation
+        elseif_branches = listAppend((if_condition,if_branch)::elseif_branches,{(Absyn.BOOL(true),else_branch)});
+        inst_branches = List.map2(elseif_branches,instStatementIfBranch,inEnv,inPrefix);
+      then
+        InstTypes.IF_STMT(inst_branches, info);
+
+      /*
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
       equation
         dexp1 = instExp(exp1, inEnv, inPrefix);
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
+      */
 
   end match;
 end instStatement;
@@ -2485,6 +2508,23 @@ algorithm
   eql := instEEquations(inBody, inEnv, inPrefix);
   outIfBranch := (cond_exp, eql);
 end instIfBranch;
+
+protected function instStatementIfBranch
+  input tuple<Absyn.Exp,list<SCode.Statement>> tpl;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output tuple<DAE.Exp, list<Statement>> outIfBranch;
+protected
+  Absyn.Exp cond;
+  DAE.Exp icond;
+  list<SCode.Statement> stmts;
+  list<Statement> istmts;
+algorithm
+  (cond,stmts) := tpl;
+  icond := instExp(cond, inEnv, inPrefix);
+  istmts := instStatements(stmts, inEnv, inPrefix);
+  outIfBranch := (icond, istmts);
+end instStatementIfBranch;
 
 protected function instWhenBranch
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
