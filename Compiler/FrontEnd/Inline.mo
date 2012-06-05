@@ -183,58 +183,14 @@ function: inlineEqOpt
 algorithm
   outEquationOption := matchcontinue(inEquationOption,inElementList)
     local
-      Functiontuple fns;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      Integer i;
-      list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
-      DAE.ComponentRef cref;
-      BackendDAE.WhenEquation weq,weq_1;
-      DAE.ElementSource source "the origin of the element";
+      BackendDAE.Equation eqn;
 
     case(NONE(),_) then NONE();
-    case(SOME(BackendDAE.EQUATION(e1,e2,source)),fns)
+    case(SOME(eqn),_)
       equation
-        (e1_1,source) = inlineExp(e1,fns,source);
-        (e2_1,source) = inlineExp(e2,fns,source);
+        eqn = inlineEq(eqn,inElementList);
       then
-        SOME(BackendDAE.EQUATION(e1_1,e2_1,source));
-
-    case(SOME(BackendDAE.ARRAY_EQUATION(i,explst,source)),fns)
-      equation
-        (explst_1,source) = inlineExps(explst,fns,source);
-      then
-        SOME(BackendDAE.ARRAY_EQUATION(i,explst_1,source));
-
-    case(SOME(BackendDAE.SOLVED_EQUATION(cref,e,source)),fns)
-      equation
-        (e_1,source) = inlineExp(e,fns,source);
-      then
-        SOME(BackendDAE.SOLVED_EQUATION(cref,e_1,source));
-
-    case(SOME(BackendDAE.RESIDUAL_EQUATION(e,source)),fns)
-      equation
-        (e_1,source) = inlineExp(e,fns,source);
-      then
-        SOME(BackendDAE.RESIDUAL_EQUATION(e_1,source));
-
-    case(SOME(BackendDAE.ALGORITHM(i,explst1,explst2,source)),fns)
-      equation
-        (explst1_1,source) = inlineExps(explst1,fns,source);
-        (explst2_1,source) = inlineExps(explst2,fns,source);
-      then
-        SOME(BackendDAE.ALGORITHM(i,explst1_1,explst2_1,source));
-
-    case(SOME(BackendDAE.WHEN_EQUATION(weq,source)),fns)
-      equation
-        (weq_1,source) = inlineWhenEq(weq,fns,source);
-      then
-        SOME(BackendDAE.WHEN_EQUATION(weq_1,source));
-  
-    case(SOME(BackendDAE.COMPLEX_EQUATION(index=i,crefOrDerCref=explst,source=source)),fns)
-      equation
-        (explst_1,source) = inlineExps(explst,fns,source);
-      then
-        SOME(BackendDAE.COMPLEX_EQUATION(i,explst_1,source));
+        SOME(eqn);
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEqOpt failed");
@@ -242,6 +198,73 @@ algorithm
         fail();
   end matchcontinue;
 end inlineEqOpt;
+
+public function inlineEq "
+function: inlineEq
+  inlines function calls in equations"
+  input BackendDAE.Equation inEquation;
+  input Functiontuple fns;
+  output BackendDAE.Equation outEquation;
+algorithm
+  outEquation := matchcontinue(inEquation,fns)
+    local
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      Integer i;
+      list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
+      DAE.ComponentRef cref;
+      BackendDAE.WhenEquation weq,weq_1;
+      DAE.ElementSource source "the origin of the element";
+
+    case(BackendDAE.EQUATION(e1,e2,source),_)
+      equation
+        (e1_1,source) = inlineExp(e1,fns,source);
+        (e2_1,source) = inlineExp(e2,fns,source);
+      then
+        BackendDAE.EQUATION(e1_1,e2_1,source);
+
+    case(BackendDAE.ARRAY_EQUATION(i,explst,source),_)
+      equation
+        (explst_1,source) = inlineExps(explst,fns,source);
+      then
+        BackendDAE.ARRAY_EQUATION(i,explst_1,source);
+
+    case(BackendDAE.SOLVED_EQUATION(cref,e,source),_)
+      equation
+        (e_1,source) = inlineExp(e,fns,source);
+      then
+        BackendDAE.SOLVED_EQUATION(cref,e_1,source);
+
+    case(BackendDAE.RESIDUAL_EQUATION(e,source),_)
+      equation
+        (e_1,source) = inlineExp(e,fns,source);
+      then
+        BackendDAE.RESIDUAL_EQUATION(e_1,source);
+
+    case(BackendDAE.ALGORITHM(i,explst1,explst2,source),_)
+      equation
+        (explst1_1,source) = inlineExps(explst1,fns,source);
+        (explst2_1,source) = inlineExps(explst2,fns,source);
+      then
+        BackendDAE.ALGORITHM(i,explst1_1,explst2_1,source);
+
+    case(BackendDAE.WHEN_EQUATION(weq,source),_)
+      equation
+        (weq_1,source) = inlineWhenEq(weq,fns,source);
+      then
+        BackendDAE.WHEN_EQUATION(weq_1,source);
+  
+    case(BackendDAE.COMPLEX_EQUATION(index=i,crefOrDerCref=explst,source=source),_)
+      equation
+        (explst_1,source) = inlineExps(explst,fns,source);
+      then
+        BackendDAE.COMPLEX_EQUATION(i,explst_1,source);
+    else
+      equation
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEq failed");
+      then
+        fail();
+  end matchcontinue;
+end inlineEq;
 
 protected function inlineWhenEq
 "function: inlineWhenEq

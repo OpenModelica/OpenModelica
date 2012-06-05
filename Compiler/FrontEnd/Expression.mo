@@ -4567,6 +4567,40 @@ algorithm
   end matchcontinue;
 end traversingComponentRefFinder;
 
+public function traversingDerAndComponentRefFinder "
+Author: Frenkel TUD 2012-06
+Exp traverser that Union the current ComponentRef with list if it is already there.
+Returns a list containing, unique, all componentRef in an Expression and a second list
+containing all componentRef from a der function."
+  input tuple<DAE.Exp, tuple<list<ComponentRef>,list<ComponentRef>>> inExp;
+  output tuple<DAE.Exp, tuple<list<ComponentRef>,list<ComponentRef>>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      list<ComponentRef> crefs,dcrefs;
+      ComponentRef cr;
+      Type ty;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(cr,ty), (crefs,dcrefs)))
+      equation
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+        // e = makeCrefExp(cr,ty);
+      then
+        ((e, (crefs,dcrefs) ));
+    
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,ty)}), (crefs,dcrefs)))
+      equation
+        dcrefs = List.unionEltOnTrue(cr,dcrefs,ComponentReference.crefEqual);
+        // e = makeCrefExp(cr,ty);
+      then
+        ((e, (crefs,dcrefs) ));    
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingDerAndComponentRefFinder;
+
 public function expHasCref "
 @author: Frenkel TUD 2011-04
  returns true if the expression contains the cref"
@@ -4608,6 +4642,48 @@ algorithm
     
   end matchcontinue;
 end traversingexpHasCref;
+
+public function expHasDerCref "
+@author: Frenkel TUD 2012-06
+ returns true if the expression contains the cref in function der"
+  input DAE.Exp inExp;
+  input ComponentRef inCr;
+  output Boolean hasCref;
+algorithm 
+  hasCref := match(inExp,inCr) 
+    local
+      Boolean b;
+      
+    case(inExp,inCr)
+      equation
+        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasDerCref, (inCr,false));
+      then
+        b;
+  end match;
+end expHasDerCref;
+
+public function traversingexpHasDerCref "
+@author: Frenkel TUD 2012-06
+Returns a true if the exp contains the componentRef in der"
+  input tuple<DAE.Exp, tuple<ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<ComponentRef,Boolean>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      ComponentRef cr,cr1;
+      DAE.Exp e;
+    
+    case ((e as DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false)))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        ((e,not b,(cr,b)));
+    
+    case (((e,(cr,b)))) then ((e,not b,(cr,b)));
+    
+  end matchcontinue;
+end traversingexpHasDerCref;
 
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
