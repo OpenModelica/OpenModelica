@@ -1,24 +1,25 @@
-.PHONY: install build $(NAME) always qm
+.PHONY: install build $(NAME) always
 
 top_builddir=../../
 builddir_bin=$(top_builddir)/build/bin/
 builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 resourcedir=./Resources/nls/
-
+  
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@
 
-install: build qm
+install: build Resources/nls/qm.stamp
 	mkdir -p ../../build/share/doc/omedit/
 	cp -p ../../doc/OMEdit/*.pdf ../../build/share/doc/omedit/
 	mkdir -p ../../build/share/omedit/nls/
 	cp -p $(resourcedir)/*.qm ../../build/share/omedit/nls/
 	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 
-qm: OMEditGUI.pro
+Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 	lrelease $<
+	@touch $@
 
 always:
 
