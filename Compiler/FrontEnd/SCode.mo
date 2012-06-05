@@ -294,8 +294,8 @@ uniontype EEquation
   end EQ_CONNECT;
 
   record EQ_FOR "the for equation"
-    Ident           index        "the index name";
-    Absyn.Exp       range        "the range of the index";
+    Ident index "the index name";
+    Option<Absyn.Exp> range "the range of the index";
     list<EEquation> eEquationLst "the equation list";
     Option<Comment> comment;
     Absyn.Info info;
@@ -1432,7 +1432,7 @@ algorithm
       then 
         true;
     
-    case (EQ_FOR(index = id1, range = exp1, eEquationLst = eql1),EQ_FOR(index = id2, range = exp2, eEquationLst = eql2))
+    case (EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
       equation
         List.threadMapAllValue(eql1,eql2,equationEqual2,true);
         true = Absyn.expEqual(exp1,exp2);
@@ -1440,6 +1440,13 @@ algorithm
       then 
         true;
     
+    case (EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1),EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))
+      equation
+        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
+        true = stringEq(id1,id2);
+      then 
+        true;
+
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
         List.threadMapAllValue(elst1,elst2,equationEqual2,true);
@@ -1831,18 +1838,27 @@ algorithm
           lst_2=Absyn.findIteratorInCRef(id,cr_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
+      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
         equation
           false = stringEq(id, id_1);
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
+      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
         equation
           true = stringEq(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
+      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
+        equation
+          false = stringEq(id, id_1);
+          lst=findIteratorInEEquationLst(id,eeqLst);
+        then lst;
+      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
+        equation
+          true = stringEq(id, id_1);
+        then {};
       case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, elseBranches = ew))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
@@ -2375,6 +2391,7 @@ algorithm
       Argument arg;
       tuple<TraverseFunc, Argument> tup;
       Absyn.Exp e1, e2;
+      Option<Absyn.Exp> oe1;
       list<Absyn.Exp> expl1;
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
@@ -2394,11 +2411,11 @@ algorithm
       then
         (EQ_IF(expl1, then_branch, else_branch, comment, info), tup);
 
-    case (EQ_FOR(index, e1, eql, comment, info), tup)
+    case (EQ_FOR(index, oe1, eql, comment, info), tup)
       equation
         (eql, tup) = traverseEEquationsList(eql, tup);
       then
-        (EQ_FOR(index, e1, eql, comment, info), tup);
+        (EQ_FOR(index, oe1, eql, comment, info), tup);
 
     case (EQ_WHEN(e1, eql, else_when, comment, info), tup)
       equation
@@ -2508,11 +2525,11 @@ algorithm
       then
         (EQ_CONNECT(cr1, cr2, comment, info), tup);
 
-    case (EQ_FOR(index, e1, eql, comment, info), (traverser, arg))
+    case (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
       then
-        (EQ_FOR(index, e1, eql, comment, info), (traverser, arg));
+        (EQ_FOR(index, SOME(e1), eql, comment, info), (traverser, arg));
 
     case (EQ_WHEN(e1, eql, else_when, comment, info), (traverser, arg))
       equation

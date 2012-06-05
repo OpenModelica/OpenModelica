@@ -2356,7 +2356,7 @@ algorithm
         InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(),
           dcref2, Connect.NO_FACE(), inPrefix, info);
 
-    case (SCode.EQ_FOR(index = for_index, range = exp1, eEquationLst = eql,
+    case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
         info = info), _, _)
       equation
         env = SCodeEnv.extendEnvWithIterators(
@@ -2364,7 +2364,15 @@ algorithm
         dexp1 = instExp(exp1, env, inPrefix);
         ieql = instEEquations(eql, env, inPrefix);
       then
-        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, dexp1, ieql, info);
+        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info);
+
+    case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
+        info = info), _, _)
+      equation
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        ieql = instEEquations(eql, env, inPrefix);
+      then
+        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
         elseBranch = eql, info = info), _, _)

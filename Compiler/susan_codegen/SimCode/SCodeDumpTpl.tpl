@@ -372,12 +372,20 @@ end dumpElseIfEEquation;
 template dumpForEEquation(SCode.EEquation for_equation)
 ::=
 match for_equation
-  case EQ_FOR(__) then
+  case EQ_FOR(range=SOME(range)) then
     let range_str = AbsynDumpTpl.dumpExp(range)
     let eq_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
     let cmt_str = dumpCommentOpt(comment)
     <<
     for <%index%> in <%range_str%> loop<%cmt_str%>
+      <%eq_str%>
+    end for;
+    >>
+  case EQ_FOR(__) then
+    let eq_str = (eEquationLst |> e => dumpEEquation(e) ;separator="\n")
+    let cmt_str = dumpCommentOpt(comment)
+    <<
+    for <%index%> loop<%cmt_str%>
       <%eq_str%>
     end for;
     >>

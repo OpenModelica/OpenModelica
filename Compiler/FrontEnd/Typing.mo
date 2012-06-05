@@ -993,7 +993,7 @@ algorithm
       then
         acc_el;
 
-    case (InstTypes.FOR_EQUATION(index, _, exp1, eql, info), st, acc_el)
+    case (InstTypes.FOR_EQUATION(index, _, SOME(exp1), eql, info), st, acc_el)
       equation
         (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
@@ -1002,7 +1002,12 @@ algorithm
         st = InstSymbolTable.addIterator(iter_name, iter, st);
         eql = typeEquations(eql, st);
       then
-        InstTypes.FOR_EQUATION(index, ty, exp1, eql, info) :: acc_el;
+        InstTypes.FOR_EQUATION(index, ty, SOME(exp1), eql, info) :: acc_el;
+
+    case (InstTypes.FOR_EQUATION(index, _, NONE(), eql, info), st, acc_el)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Implicit for ranges are not yet implemented"},info);
+      then fail();
 
     case (InstTypes.IF_EQUATION(branches, info), st, acc_el)
       equation

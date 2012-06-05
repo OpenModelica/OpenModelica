@@ -644,15 +644,15 @@ algorithm
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.   
 
     // Implicit range
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el,info=info),initial_,impl,graph)  
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el,info=info),initial_,impl,graph)  
       equation 
         (lst as {}) = SCode.findIteratorInEEquationLst(i,el);
         Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
       then
         fail();
         
-    // for i loop ... end for; NOTE: This construct is encoded as range being Absyn.END()
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el, info=info),initial_,impl,graph) 
+    // for i loop ... end for; NOTE: This construct is encoded as range being NONE()
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = NONE(),eEquationLst = el, info=info),initial_,impl,graph) 
       equation 
         (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
         tpl=List.first(lst);
@@ -667,7 +667,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     // for i in <expr> loop .. end for;
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el,info=info),initial_,impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph) 
       equation 
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
@@ -679,7 +679,7 @@ algorithm
       
     // A for-equation with a parameter range without binding, which is ok when
     // doing checkModel. Use a range {1} to check that the loop can be instantiated.
-    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el,info=info), initial_, impl, graph)
+    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = SOME(e), eEquationLst = el,info=info), initial_, impl, graph)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, e_1, DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst as DAE.C_PARAM()), _) =
@@ -693,7 +693,7 @@ algorithm
 
     // for i in <expr> loop .. end for;
     // where <expr> is not constant or parameter expression  
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el,info=info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = SOME(e),eEquationLst = el,info=info),initial_,impl,graph)
       equation 
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = _), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);

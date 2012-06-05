@@ -1051,6 +1051,7 @@ algorithm
       list<list<SCode.EEquation>> eqll;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
       Option<SCode.Comment> comment;
+      Option<Absyn.Exp> optExp;
       Absyn.FunctionArgs fargs;
       Absyn.Info info;
       Env.Cache cache;
@@ -1074,11 +1075,11 @@ algorithm
         (cache,cref1) = fixCref(cache,env,cref1,ht);
         (cache,cref2) = fixCref(cache,env,cref2,ht);
       then (cache,SCode.EQ_CONNECT(cref1,cref2,comment,info));
-    case (cache,env,SCode.EQ_FOR(id,exp,eql,comment,info),ht)
+    case (cache,env,SCode.EQ_FOR(id,optExp,eql,comment,info),ht)
       equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
+        (cache,optExp) = fixOption(cache,env,optExp,ht,fixExp);
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
-      then (cache,SCode.EQ_FOR(id,exp,eql,comment,info));
+      then (cache,SCode.EQ_FOR(id,optExp,eql,comment,info));
     case (cache,env,SCode.EQ_WHEN(exp,eql,whenlst,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);

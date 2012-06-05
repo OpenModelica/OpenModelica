@@ -1755,25 +1755,25 @@ algorithm
       equation
         l_1 = translateEEquations(l, inIsInitial);
       then
-        SCode.EQ_FOR(i,e,l_1,com,info);
+        SCode.EQ_FOR(i,SOME(e),l_1,com,info);
 
     case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),NONE())},forEquations = l),com,info,_) /* for loop with a single iterator with implicit range */
       equation
         l_1 = translateEEquations(l, inIsInitial);
       then
-        SCode.EQ_FOR(i,Absyn.END(),l_1,com,info);
+        SCode.EQ_FOR(i,NONE(),l_1,com,info);
 
     case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
       equation
         eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
       then
-        SCode.EQ_FOR(i,e,{eq},com,info);
+        SCode.EQ_FOR(i,SOME(e),{eq},com,info);
 
     case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),NONE())::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
       equation
         eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
       then
-        SCode.EQ_FOR(i,Absyn.END(),{eq},com,info);
+        SCode.EQ_FOR(i,NONE(),{eq},com,info);
 
     case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = l),_,info,_)
       equation

@@ -513,7 +513,7 @@ package SCode
 
     record EQ_FOR
       Ident index;
-      Absyn.Exp range;
+      Option<Absyn.Exp> range;
       list<EEquation> eEquationLst;
       Option<Comment> comment;
       Absyn.Info info;
