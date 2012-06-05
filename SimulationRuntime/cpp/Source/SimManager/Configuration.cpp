@@ -45,6 +45,8 @@ IDAESolver* Configuration::createSolver(IDAESystem* system)
     solver_dll.assign(EULER_LIB);
   else if(_global_settings->getSelectedSolver().compare("Idas")==0)
     solver_dll.assign(IDAS_LIB);
+  else if(_global_settings->getSelectedSolver().compare("Ida")==0)
+    solver_dll.assign(IDA_LIB);
   else if(_global_settings->getSelectedSolver().compare("CVode")==0)
     solver_dll.assign(CVODE_LIB);
   else

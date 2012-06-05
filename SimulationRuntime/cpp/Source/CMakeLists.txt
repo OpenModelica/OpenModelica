@@ -32,7 +32,7 @@ SET(INSTALL_OMDEV_LIBS ON)
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
+find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED)
 # Lapack and Blas
 find_package( BLAS )
 find_package( LAPACK  )
@@ -41,6 +41,12 @@ if(MSVC)
   SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib  )
   SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
   SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}   ${BLAS_MSVC_10} )
+
+elseif(MINGW)
+  SET(LAPACK_MINGW  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll  )
+  SET(BLAS_MINGW $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll )
+  SET(LAPACK_LIBRARIES  ${LAPACK_MINGW}   ${BLAS_MINGW} )
+
 endif()
 message(STATUS "Lapack Libraries")
 message(STATUS ${LAPACK_LIBRARIES})
@@ -55,11 +61,13 @@ find_library(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
 find_library(SUNDIALS_CVODES_LIB "sundials_cvodes"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+find_library(SUNDIALS_IDA_LIB "sundials_ida"
+    PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
 find_library(SUNDIALS_IDAS_LIB "sundials_idas"
     PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
 
-set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB})
+set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB} ${SUNDIALS_IDA_LIB})
 
 message(STATUS "Sundials Libraries:")
 message(STATUS ${SUNDIALS_LIBS})
@@ -80,11 +88,9 @@ endif()
 
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
-include_directories ( ${Boost_INCLUDE_DIRS} )
+include_directories (${Boost_INCLUDE_DIR})
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
-
-
 
 
 
@@ -118,13 +124,17 @@ if(USE_SUNDIALS)
 add_subdirectory (Solver/CVode/Implementation)
 #add  Idas solver project
 add_subdirectory (Solver/Idas/Implementation)
+add_subdirectory (Solver/Ida/Implementation)
 GET_TARGET_PROPERTY(libCVode CVode LOCATION)
 GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
 GET_TARGET_PROPERTY(libIdas Idas LOCATION)
 GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
+GET_TARGET_PROPERTY(libIda Ida LOCATION)
+GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
+
 set (IDAS_LIB ${libIdasName})
 set (CVODE_LIB ${libCVodeName})
-
+set (IDA_LIB ${libIdaName})
 endIf()
 
 GET_TARGET_PROPERTY(libNewton Newton LOCATION)
@@ -162,7 +172,7 @@ message(STATUS  ${SUNDIALS_CVODES_LIB})
 
 if(INSTALL_OMDEV_LIBS)
   if(USE_SUNDIALS)
-    install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+    install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
   endif()
 
   if(USE_MICO)
