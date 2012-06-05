@@ -51,6 +51,14 @@ getErrorString();
 
 // should we generate documentation for OM built-in functions?
 genBuiltin := true;
+// should we generate MetaModelica documentation?
+genMetaModelica := true and genBuiltin;
+
+if genMetaModelica then
+  setCommandLineOptions("+g=MetaModelica");
+  loadString("package MetaModelica \"MetaModelica Language Extensions\"\n" + readFile(getInstallationDirectoryPath()+"/lib/omc/MetaModelicaBuiltin.mo") + "\nend MetaModelica;","MetaModelicaBuiltin.mo");
+  setCommandLineOptions("+g=Modelica");
+end if;
 
 echo(false);
 allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
@@ -184,7 +192,7 @@ writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th>
 for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
-  if base <> "ModelicaBuiltin.mo" then
+  if base <> "ModelicaBuiltin.mo" and base <> "MetaModelicaBuiltin.mo" then
     base := basename(file);
     contentStrToks := typeNameStrings(cl);
     modelVersion := getVersion(cl);
@@ -208,7 +216,7 @@ if genBuiltin then
   for cl in classNames loop
     file := getSourceFile(cl);
     base := basename(file);
-    if base == "ModelicaBuiltin.mo" then
+    if base == "ModelicaBuiltin.mo" or base == "MetaModelicaBuiltin.mo" then
       contentStr := typeNameString(cl);
       contentStrToks := typeNameStrings(cl);
       modelVersion := getVersion(cl);

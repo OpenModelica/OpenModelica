@@ -727,7 +727,7 @@ external "builtin";
 end valueHashMod;
 
 function referenceEq<A>
-  ""
+  "This is a very fast comparison of two values which only checks if the pointers are equal."
   input A a1;
   input A a2;
   output Boolean b;
