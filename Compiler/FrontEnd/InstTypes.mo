@@ -294,7 +294,7 @@ public uniontype Statement
   record FOR_STMT
     String index "The name of the index/iterator variable.";
     DAE.Type indexType "The type of the index/iterator variable.";
-    DAE.Exp range "The range expression to loop over.";
+    Option<DAE.Exp> range "The range expression to loop over.";
     list<Statement> body "The body of the for loop.";
     Absyn.Info info;
   end FOR_STMT;
@@ -334,24 +334,24 @@ public uniontype Statement
     Absyn.Info info;
   end NORETCALL_STMT;
 
-  record STMT_WHILE
+  record WHILE_STMT
     DAE.Exp exp;
     list<Statement> statementLst;
     Absyn.Info info;
-  end STMT_WHILE;
+  end WHILE_STMT;
 
-  record STMT_RETURN
+  record RETURN_STMT
     Absyn.Info info;
-  end STMT_RETURN;
+  end RETURN_STMT;
 
-  record STMT_BREAK
+  record BREAK_STMT
     Absyn.Info info;
-  end STMT_BREAK;
+  end BREAK_STMT;
 
-  record STMT_FAILURE
+  record FAILURE_STMT
     list<Statement> body;
     Absyn.Info info;
-  end STMT_FAILURE;
+  end FAILURE_STMT;
 
 end Statement;
 

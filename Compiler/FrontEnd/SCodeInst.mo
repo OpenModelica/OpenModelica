@@ -2473,23 +2473,57 @@ algorithm
       Absyn.Exp exp1, exp2, if_condition;
       Absyn.Info info;
       DAE.Exp dexp1, dexp2;
-      list<SCode.Statement> if_branch,else_branch;
-      list<tuple<Absyn.Exp,list<SCode.Statement>>> elseif_branches;
+      Env env;
+      list<SCode.Statement> if_branch,else_branch,body;
+      list<tuple<Absyn.Exp,list<SCode.Statement>>> elseif_branches,branches;
       list<tuple<DAE.Exp,list<Statement>>> inst_branches;
+      list<Statement> ibody;
+      String for_index;
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
       equation
         dexp1 = instExp(exp1, inEnv, inPrefix);
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
 
+    case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _)
+      equation
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        dexp1 = instExp(exp1, env, inPrefix);
+        ibody = instStatements(body, env, inPrefix);
+      then
+        InstTypes.FOR_STMT(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info);
+
+    case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _)
+      equation
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        ibody = instStatements(body, env, inPrefix);
+      then
+        InstTypes.FOR_STMT(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info);
+
+    case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+        ibody = instStatements(body, inEnv, inPrefix);
+      then
+        InstTypes.WHILE_STMT(dexp1, ibody, info);
+
     case (SCode.ALG_IF(boolExpr = if_condition, trueBranch = if_branch,
         elseIfBranch = elseif_branches,
         elseBranch = else_branch, info = info), _, _)
       equation
-        elseif_branches = listAppend((if_condition,if_branch)::elseif_branches,{(Absyn.BOOL(true),else_branch)});
-        inst_branches = List.map2(elseif_branches,instStatementIfBranch,inEnv,inPrefix);
+        elseif_branches = (if_condition,if_branch)::elseif_branches;
+        /* Save some memory by making this more complicated than it is */
+        inst_branches = List.map2_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,{});
+        inst_branches = List.map2_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,inst_branches);
+        inst_branches = listReverse(inst_branches);
       then
         InstTypes.IF_STMT(inst_branches, info);
+
+    case (SCode.ALG_WHEN_A(branches = branches, info = info), _, _)
+      equation
+        inst_branches = List.map2(branches,instStatementBranch,inEnv,inPrefix);
+      then
+        InstTypes.WHEN_STMT(inst_branches, info);
 
       /*
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
@@ -2517,7 +2551,7 @@ algorithm
   outIfBranch := (cond_exp, eql);
 end instIfBranch;
 
-protected function instStatementIfBranch
+protected function instStatementBranch
   input tuple<Absyn.Exp,list<SCode.Statement>> tpl;
   input Env inEnv;
   input Prefix inPrefix;
@@ -2532,7 +2566,7 @@ algorithm
   icond := instExp(cond, inEnv, inPrefix);
   istmts := instStatements(stmts, inEnv, inPrefix);
   outIfBranch := (icond, istmts);
-end instStatementIfBranch;
+end instStatementBranch;
 
 protected function instWhenBranch
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
