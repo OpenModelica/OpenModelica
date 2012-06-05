@@ -336,6 +336,20 @@ algorithm
   end matchcontinue;
 end isComplexConnector;
 
+public function isComplexExpandableConnector
+  "Returns true if the given type is an expandable connector, otherwise false."
+  input Type inType;
+  output Boolean outResult;
+algorithm
+  outResult := match(inType)
+    case DAE.T_COMPLEX(complexClassType = 
+      ClassInf.CONNECTOR(isExpandable = true)) then true;
+    case DAE.T_SUBTYPE_BASIC(complexClassType =
+      ClassInf.CONNECTOR(isExpandable = true)) then true;
+    else false;
+  end match;
+end isComplexExpandableConnector;
+
 public function isComplexType "
 Author: BZ, 2008-11
 This function checks wheter a type is complex AND not extending a base type."

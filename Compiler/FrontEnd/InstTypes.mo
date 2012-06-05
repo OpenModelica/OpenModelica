@@ -234,17 +234,19 @@ public uniontype Equation
   record CONNECT_EQUATION
     DAE.ComponentRef lhs "The left hand side component.";
     Connect.Face lhsFace "The face of the lhs component, inside or outside.";
+    DAE.Type lhsType     "The type of the lhs component.";
     DAE.ComponentRef rhs "The right hand side component.";
     Connect.Face rhsFace "The face of the rhs component, inside or outside.";
+    DAE.Type rhsType     "The type of the rhs component.";
     Prefix prefix;
     Absyn.Info info;
   end CONNECT_EQUATION;
 
   record FOR_EQUATION
-    String index "The name of the index/iterator variable.";
-    DAE.Type indexType "The type of the index/iterator variable.";
+    String index          "The name of the index/iterator variable.";
+    DAE.Type indexType    "The type of the index/iterator variable.";
     Option<DAE.Exp> range "The range expression to loop over.";
-    list<Equation> body "The body of the for loop.";
+    list<Equation> body   "The body of the for loop.";
     Absyn.Info info;
   end FOR_EQUATION;
 

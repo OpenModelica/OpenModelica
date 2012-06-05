@@ -2353,8 +2353,8 @@ algorithm
         dcref1 = instCref2(cref1, inEnv, inPrefix);
         dcref2 = instCref2(cref2, inEnv, inPrefix);
       then
-        InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(),
-          dcref2, Connect.NO_FACE(), inPrefix, info);
+        InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
+          dcref2, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info);
 
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
         info = info), _, _)

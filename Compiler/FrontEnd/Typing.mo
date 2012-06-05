@@ -987,7 +987,7 @@ algorithm
       then
         InstTypes.EQUALITY_EQUATION(lhs, rhs, info) :: acc_el;
 
-    case (InstTypes.CONNECT_EQUATION(cref1, _, cref2, _, prefix, info), st, acc_el)
+    case (InstTypes.CONNECT_EQUATION(cref1, _, _, cref2, _, _, prefix, info), st, acc_el)
       equation
         acc_el = typeConnection(cref1, cref2, prefix, st, info, acc_el);
       then
@@ -1058,49 +1058,54 @@ algorithm
 end typeEquation;
 
 protected function typeConnection
-  input DAE.ComponentRef inRhs;
   input DAE.ComponentRef inLhs;
+  input DAE.ComponentRef inRhs;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
   input list<Equation> inAccumEql;
   output list<Equation> outAccumEql;
 algorithm
-  outAccumEql := match(inRhs, inLhs, inPrefix, inSymbolTable, inInfo, inAccumEql)
+  outAccumEql := match(inLhs, inRhs, inPrefix, inSymbolTable, inInfo, inAccumEql)
     local
-      DAE.ComponentRef rhs, lhs;
-      Connect.Face rhs_face, lhs_face;
-      Boolean rhs_id, lhs_id, is_deleted;
+      DAE.ComponentRef lhs, rhs;
+      Connect.Face lhs_face, rhs_face;
+      DAE.Type lhs_ty, rhs_ty;
+      Boolean lhs_id, rhs_id, is_deleted;
 
     case (_, _, _, _, _, _)
       equation
-        (rhs, rhs_face, rhs_id) =
-          typeConnectorCref(inRhs, inPrefix, inSymbolTable, inInfo);
-        (lhs, lhs_face, lhs_id) =
+        (lhs, lhs_face, lhs_ty, lhs_id) =
           typeConnectorCref(inLhs, inPrefix, inSymbolTable, inInfo);
-        is_deleted = rhs_id or lhs_id;
+        (rhs, rhs_face, rhs_ty, rhs_id) =
+          typeConnectorCref(inRhs, inPrefix, inSymbolTable, inInfo);
+        is_deleted = lhs_id or rhs_id;
       then
-        makeConnection(rhs, rhs_face, lhs, lhs_face, is_deleted, inInfo, inAccumEql);
+        makeConnection(lhs, lhs_face, lhs_ty, rhs, rhs_face, rhs_ty, is_deleted,
+          inInfo, inAccumEql);
 
   end match;
 end typeConnection;
 
 protected function makeConnection
-  input DAE.ComponentRef inRhs;
-  input Connect.Face inRhsFace;
   input DAE.ComponentRef inLhs;
   input Connect.Face inLhsFace;
+  input DAE.Type inLhsType;
+  input DAE.ComponentRef inRhs;
+  input Connect.Face inRhsFace;
+  input DAE.Type inRhsType;
   input Boolean inIsDeleted;
   input Absyn.Info inInfo;
   input list<Equation> inAccumEql;
   output list<Equation> outAccumEql;
 algorithm
-  outAccumEql :=
-  match(inRhs, inRhsFace, inLhs, inLhsFace, inIsDeleted, inInfo, inAccumEql)
-    case (_, _, _, _, true, _, _) then inAccumEql;
+  outAccumEql := match(inLhs, inLhsFace, inLhsType, inRhs, inRhsFace, inRhsType,
+      inIsDeleted, inInfo, inAccumEql)
 
-    else InstTypes.CONNECT_EQUATION(inRhs, inRhsFace, inLhs, inLhsFace,
-      InstTypes.emptyPrefix, inInfo) :: inAccumEql;
+    case (_, _, _, _, _, _, true, _, _) then inAccumEql;
+
+    else InstTypes.CONNECT_EQUATION(inLhs, inLhsFace, inLhsType, inRhs,
+      inRhsFace, inRhsType, InstTypes.emptyPrefix, inInfo) :: inAccumEql;
 
   end match;
 end makeConnection;
@@ -1112,52 +1117,64 @@ protected function typeConnectorCref
   input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
   output Connect.Face outFace;
+  output DAE.Type outType;
   output Boolean outIsDeleted;
 algorithm
-  (outCref, outFace, outIsDeleted) := match(inCref, inPrefix, inSymbolTable, inInfo)
+  (outCref, outFace, outType, outIsDeleted) :=
+  match(inCref, inPrefix, inSymbolTable, inInfo)
     local
       DAE.ComponentRef cref;
-      Component comp;
-      Option<Component> pre_comp;
+      Option<Component> comp, pre_comp;
       Connect.Face face;
       Boolean is_deleted;
+      DAE.Type ty;
 
     case (_, _, _, _)
       equation
         (cref, comp, pre_comp) =
           lookupConnectorCref(inCref, inPrefix, inSymbolTable, inInfo);
-        (face, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
+        (face, ty, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
       then
-        (cref, face, is_deleted);
+        (cref, face, ty, is_deleted);
   
   end match;
 end typeConnectorCref;
 
 protected function typeConnectorCref2
   input DAE.ComponentRef inCref;
-  input Component inComponent;
+  input Option<Component> inComponent;
   input Option<Component> inPrefixComponent;
   input Absyn.Info inInfo;
   output Connect.Face outFace;
+  output DAE.Type outType;
   output Boolean outIsDeleted;
 algorithm
-  (outFace, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
+  (outFace, outType, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
     local
       Absyn.Path name;
       Connect.Face face;
+      Component comp;
+      DAE.Type ty;
 
-    case (_, InstTypes.DELETED_COMPONENT(name = name), _, _)
+    case (_, NONE(), NONE(), _)
       equation
-        print(Absyn.pathString(name) +& " is deleted\n");
+        print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");
       then
-        (Connect.NO_FACE(), true);
+        (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
 
-    else
+    case (_, NONE(), SOME(_), _)
       equation
-        checkComponentIsConnector(inComponent, inCref, inInfo);
+        print(ComponentReference.printComponentRefStr(inCref) +& " is expandable\n");
+      then
+        (Connect.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
+
+    case (_, SOME(comp), _, _)
+      equation
+        checkComponentIsConnector(comp, inCref, inInfo);
         face = getConnectorFace(inPrefixComponent);
+        ty = InstUtil.getComponentType(comp);
       then
-        (face, false);
+        (face, ty, false);
 
   end match;
 end typeConnectorCref2;
@@ -1168,23 +1185,22 @@ protected function lookupConnectorCref
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
-  output Component outComponent;
+  output Option<Component> outComponent;
   output Option<Component> outPrefixComponent;
 algorithm
   (outCref, outComponent, outPrefixComponent) :=
   matchcontinue(inCref, inPrefix, inSymbolTable, inInfo)
     local
       DAE.ComponentRef cref;
-      Component comp;
-      Option<Component> opt_comp;
+      Option<Component> comp, pre_comp;
       String cref_str; 
 
     case (_, _, _, _)
       equation
-        (cref, comp, opt_comp) = 
+        (cref, comp, pre_comp) = 
           lookupConnectorCref2(inCref, inPrefix, inSymbolTable);
       then
-        (cref, comp, opt_comp);
+        (cref, comp, pre_comp);
 
     else
       equation
@@ -1207,7 +1223,7 @@ protected function lookupConnectorCref2
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
   output DAE.ComponentRef outCref;
-  output Component outComponent;
+  output Option<Component> outComponent;
   output Option<Component> outPrefixComponent;
 algorithm
   (outCref, outComponent, outPrefixComponent) :=
@@ -1215,14 +1231,14 @@ algorithm
     local
       Component comp, pre_comp;
       DAE.ComponentRef cref, cref2;
-      Option<Component> opt_comp;
+      Option<Component> opt_comp, opt_pre_comp;
       
     case (DAE.CREF_IDENT(ident = _), _, _)
       equation
         cref = InstUtil.prefixCref(inCref, inPrefix);
         comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
       then
-        (cref, comp, NONE());
+        (cref, SOME(comp), NONE());
 
     case (DAE.CREF_QUAL(ident = _), _, _)
       equation
@@ -1232,7 +1248,7 @@ algorithm
         cref = ComponentReference.joinCrefs(cref, cref2);
         comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
       then
-        (cref, comp, SOME(pre_comp));
+        (cref, SOME(comp), SOME(pre_comp));
 
     // If the cref is qualified but we couldn't find it, it might be part of a
     // deleted conditional component (i.e. it hasn't been instantiated). In that
@@ -1242,13 +1258,38 @@ algorithm
       equation
         cref = ComponentReference.crefStripLastIdent(inCref);
         cref = InstUtil.prefixCref(cref, inPrefix);
-        (_, comp as InstTypes.DELETED_COMPONENT(name = _), opt_comp) = 
+        (_, opt_comp, opt_pre_comp) =
           lookupConnectorCref2(cref, InstTypes.emptyPrefix, inSymbolTable);
+        (opt_comp, opt_pre_comp) = lookupConnectorCref3(opt_comp, opt_pre_comp);
       then
-        (cref, comp, opt_comp);
+        (cref, opt_comp, opt_pre_comp);
 
   end matchcontinue;
 end lookupConnectorCref2;
+
+protected function lookupConnectorCref3
+  input Option<Component> inComponent;
+  input Option<Component> inPrefixComponent;
+  output Option<Component> outComponent;
+  output Option<Component> outPrefixComponent;
+algorithm
+  (outComponent, outPrefixComponent) := match(inComponent, inPrefixComponent)
+    local
+      DAE.Type ty;
+
+    case (SOME(InstTypes.DELETED_COMPONENT(name = _)), _)
+      then (NONE(), NONE());
+
+    case (SOME(InstTypes.TYPED_COMPONENT(ty = ty)), _)
+      equation
+        true = Types.isComplexExpandableConnector(ty);
+      then
+        (NONE(), inComponent);
+
+    case (NONE(), _) then (inComponent, inPrefixComponent);
+
+  end match;
+end lookupConnectorCref3;
 
 protected function getConnectorFace
   "Determines the face of a connector element, i.e. inside or outside. A
@@ -1304,7 +1345,7 @@ algorithm
         Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
           {cref_str, ty_str}, inInfo);
       then
-        ();
+        fail();
 
   end matchcontinue;
 end checkComponentIsConnector;
