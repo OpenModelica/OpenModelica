@@ -581,7 +581,8 @@ package SCode
     end ALG_IF;
 
     record ALG_FOR
-      Absyn.ForIterators iterators;
+      String index;
+      Option<Absyn.Exp> range;
       list<Statement> forBody;
       Option<Comment> comment;
       Absyn.Info info;

@@ -442,22 +442,23 @@ algorithm
     local
       Absyn.ForIterators iters;
       Env env;
+      String iter_name;
       SCode.Statement stmt;
       Absyn.Info info;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
       Option<SCode.Comment> cmt;
 
-    case ((stmt as SCode.ALG_FOR(iterators = iters, info = info), env))
+    case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
         
-    case ((stmt as SCode.ALG_PARFOR(iterators = iters, info = info), env))
+    case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));

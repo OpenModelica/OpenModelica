@@ -1542,17 +1542,18 @@ algorithm
       Absyn.Info info;
       Absyn.ComponentRef cref;
       list<SCode.Statement> parforBody;
+      String iter_name;
 
-    case ((stmt as SCode.ALG_FOR(iterators = iters, info = info), env))
+    case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
     
-     case ((stmt as SCode.ALG_PARFOR(iterators = iters, parforBody = parforBody, info = info), env))
+     case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));

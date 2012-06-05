@@ -1817,7 +1817,8 @@ protected function unrollForLoop
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
-  input Absyn.ForIterators inIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
   input DAE.ElementSource source;
@@ -1827,7 +1828,7 @@ protected function unrollForLoop
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
@@ -1847,7 +1848,7 @@ algorithm
       InstanceHierarchy ih;
     
     // only one iterator  
-    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,i,SOME(e),sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,prop as DAE.PROP(DAE.T_ARRAY(ty = id_t),cnst),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
@@ -1861,34 +1862,13 @@ algorithm
       then
         (cache,stmts);
     
-    // multiple for iterators 
-    //  for (i in a, j in b, k in c) loop 
-    //      stmts;
-    //  end for;
-    // are translated to equivalent:
-    //  for (i in a) loop 
-    //   for (j in b) loop 
-    //    for (k in c) loop 
-    //      stmts;
-    //    end for;
-    //   end for;
-    //  end for;
-    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),sl,info,source,initial_,impl,unrollForLoops)
-      equation
-        (cache,stmts) = 
-           unrollForLoop(cache, env, ih, pre, ci_state, {Absyn.ITERATOR(i, NONE(), SOME(e))},
-              {SCode.ALG_FOR(restIterators, sl,NONE(),info)},
-              info,source,initial_, impl,unrollForLoops);
-      then
-        (cache,stmts);
-    
     // failure
-    case (cache,env,ih,pre,_,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,_,iterator,range,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // only report errors for when in for loops
         // true = containsWhenStatements(sl);
         str = Dump.unparseAlgorithmStr(0, 
-               SCode.statementToAlgorithmItem(SCode.ALG_FOR(inIterators, sl,NONE(),info)));
+               SCode.statementToAlgorithmItem(SCode.ALG_FOR(iterator, range, sl,NONE(),info)));
         Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.unrollForLoop failed on: " +& str);
       then
@@ -1903,7 +1883,8 @@ protected function instForStatement
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
-  input Absyn.ForIterators inIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
   input DAE.ElementSource source;
@@ -1913,7 +1894,7 @@ protected function instForStatement
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -1925,21 +1906,21 @@ algorithm
       InstanceHierarchy ih;
 
     // adrpo: unroll ALL for loops containing ALG_WHEN... done
-    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // check here that we have a when loop in the for statement.
         true = containsWhenStatements(sl);
-        (cache,stmts) = unrollForLoop(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = unrollForLoop(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
     // for loops not containing ALG_WHEN
-    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
-        (cache,stmts) = instForStatement_dispatch(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
-        stmts = replaceLoopDependentCrefs(stmts, inIterators);
+        (cache,stmts) = instForStatement_dispatch(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
+        stmts = replaceLoopDependentCrefs(stmts, iterator, range);
       then
         (cache,stmts);
 
@@ -1950,11 +1931,12 @@ protected function replaceLoopDependentCrefs
   "Replaces all DAE.CREFs that are dependent on a loop variable with a
   DAE.ASUB."
   input list<Algorithm.Statement> inStatements;
-  input Absyn.ForIterators forIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   output list<Algorithm.Statement> outStatements;
 algorithm
   (outStatements, _) := DAEUtil.traverseDAEEquationsStmts(inStatements,
-      replaceLoopDependentCrefInExp, forIterators);
+      replaceLoopDependentCrefInExp, {Absyn.ITERATOR(iterator,NONE(),range)});
 end replaceLoopDependentCrefs;
 
 protected function replaceLoopDependentCrefInExp
@@ -2045,7 +2027,8 @@ protected function instForStatement_dispatch
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
-  input Absyn.ForIterators inIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
   input DAE.ElementSource inSource;
@@ -2056,7 +2039,7 @@ protected function instForStatement_dispatch
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := 
-  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
+  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
@@ -2079,7 +2062,7 @@ algorithm
       DAE.ElementSource source;
 
     // one iterator
-    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,i,SOME(e),sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         t = getIteratorType(t,i,info);
@@ -2092,39 +2075,7 @@ algorithm
       then
         (cache,{stmt});
 
-    // multiple iterators
-    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
-      equation        
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        t = getIteratorType(t,i,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,stmts) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
-        source = DAEUtil.addElementSourceFileInfo(source,info);
-        stmt = Algorithm.makeFor(i, e_2, prop, stmts, source);
-      then
-        (cache,{stmt});
-    //  case (cache,env,pre,{(i,NONE())},sl,initial_,impl,unrollForLoops)
-    //    equation       
-    //      lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
-    //      len=listLength(lst);
-    //      zero=0;
-    //      equality(zero=len);
-    //      equality(lst={});
-    //      Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});
-    //    then
-    //     fail();
-    
-    case (cache,env,ih,pre,_,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops)
-      equation
-        // false = containsWhenStatements(sl);
-        {} = SCode.findIteratorInStatements(i,sl);
-        Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
-      then
-        fail();
-        
-    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),NONE())},sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,ci_state,i,NONE(),sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
@@ -2142,29 +2093,6 @@ algorithm
       then
         (cache,{stmt});
     
-    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
-      equation
-        // false = containsWhenStatements(sl);
-        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
-        tpl=List.first(lst);
-        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
-        e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
-        t = getIteratorType(t,i,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
-        source = DAEUtil.addElementSourceFileInfo(source,info);
-        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
-      then
-        (cache,{stmt});
-
-    case (_,_,_,_,_,Absyn.ITERATOR(guardExp=SOME(_))::_,_,info,_,_,_,_)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
-      then fail();
-
   end matchcontinue;
 end instForStatement_dispatch;
 
@@ -2525,7 +2453,8 @@ algorithm
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
       DAE.Type tp;
-      String str;
+      String str,iter;
+      Option<Absyn.Exp> range;
       DAE.CallAttributes attr;
       DAE.ElementSource source;
 
@@ -2549,16 +2478,16 @@ algorithm
         (cache,stmts);
         
     /* For loop */
-    case (cache,env,ih,pre,ci_state,SCode.ALG_FOR(iterators = forIterators,forBody = sl,info = info),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,ci_state,SCode.ALG_FOR(index = iter, range = range,forBody = sl,info = info),source,initial_,impl,unrollForLoops,_)
       equation 
-        (cache,stmts) = instForStatement(cache,env,ih,pre,ci_state,forIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instForStatement(cache,env,ih,pre,ci_state,iter,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
     /* ParFor loop */
-    case (cache,env,ih,pre,ci_state,SCode.ALG_PARFOR(iterators = forIterators,parforBody = sl,info = info),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,ci_state,SCode.ALG_PARFOR(index = iter, range = range,parforBody = sl,info = info),source,initial_,impl,unrollForLoops,_)
       equation 
-        (cache,stmts) = instParForStatement(cache,env,ih,pre,ci_state,forIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instParForStatement(cache,env,ih,pre,ci_state,iter,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
@@ -4864,7 +4793,8 @@ protected function instParForStatement
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
-  input Absyn.ForIterators inIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
   input DAE.ElementSource source;
@@ -4874,7 +4804,7 @@ protected function instParForStatement
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -4886,21 +4816,21 @@ algorithm
       InstanceHierarchy ih;
 
     // adrpo: unroll ALL for loops containing ALG_WHEN... done
-    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // check here that we have a when loop in the for statement.
         true = containsWhenStatements(sl);
-        (cache,stmts) = unrollForLoop(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = unrollForLoop(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
     // for loops not containing ALG_WHEN
-    case (cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
-        (cache,stmts) = instParForStatement_dispatch(cache,env,ih,pre,ci_state,inIterators,sl,info,source,initial_,impl,unrollForLoops);
-        stmts = replaceLoopDependentCrefs(stmts, inIterators);
+        (cache,stmts) = instParForStatement_dispatch(cache,env,ih,pre,ci_state,iterator,range,sl,info,source,initial_,impl,unrollForLoops);
+        stmts = replaceLoopDependentCrefs(stmts, iterator, range);
       then
         (cache,stmts);
 
@@ -4914,7 +4844,8 @@ protected function instParForStatement_dispatch
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
-  input Absyn.ForIterators inIterators;
+  input String iterator;
+  input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
   input DAE.ElementSource inSource;
@@ -4925,7 +4856,7 @@ protected function instParForStatement_dispatch
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := 
-  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,inIterators,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
+  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
@@ -4949,7 +4880,7 @@ algorithm
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars;
 
     // one iterator
-    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,ci_state,i,SOME(e),sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         t = getIteratorType(t,i,info);
@@ -4972,29 +4903,7 @@ algorithm
       then
         (cache,{stmt});
 
-    // multiple iterators
-    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
-      equation        
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        t = getIteratorType(t,i,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,stmts) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
-        source = DAEUtil.addElementSourceFileInfo(source,info);
-        stmt = Algorithm.makeFor(i, e_2, prop, stmts, source);
-      then
-        (cache,{stmt});
-    
-    case (cache,env,ih,pre,_,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops)
-      equation
-        // false = containsWhenStatements(sl);
-        {} = SCode.findIteratorInStatements(i,sl);
-        Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
-      then
-        fail();
-        
-    case (cache,env,ih,pre,ci_state,{Absyn.ITERATOR(i,NONE(),NONE())},sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,ci_state,i,NONE(),sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
@@ -5012,30 +4921,14 @@ algorithm
       then
         (cache,{stmt});
     
-    case (cache,env,ih,pre,ci_state,Absyn.ITERATOR(i,NONE(),NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,_,i,NONE(),sl,info,source,initial_,impl,unrollForLoops)
       equation
         // false = containsWhenStatements(sl);
-        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
-        tpl=List.first(lst);
-        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
-        e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
-        t = getIteratorType(t,i,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1) = instForStatement_dispatch(cache,env_1,ih,pre,ci_state,restIterators,sl,info,source,initial_,impl,unrollForLoops);
-        source = DAEUtil.addElementSourceFileInfo(source,info);
-        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
-      then
-        (cache,{stmt});
-
-    case (_,_,_,_,_,Absyn.ITERATOR(guardExp=SOME(_))::_,_,info,_,_,_,_)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
+        {} = SCode.findIteratorInStatements(i,sl);
+        Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
       then fail();
         
-    case (_,_,_,_,_,_,_,info,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,info,_,_,_,_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"instParForStatement_dispatch failed."}, info);
       then fail();

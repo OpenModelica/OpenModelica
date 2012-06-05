@@ -903,6 +903,8 @@ protected function translateClassdefAlgorithmItem
 algorithm
   stmt := match (alg,comment,info)
     local
+      String i;
+      Option<Absyn.Exp> range;
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
@@ -923,15 +925,37 @@ algorithm
         sbranches = translateBranches(branches);
       then SCode.ALG_IF(boolExpr,stmts1,sbranches,stmts2,comment,info);
 
-    case (Absyn.ALG_FOR(iterators,body),comment,info)
+    // multiple for iterators 
+    //  for (i in a, j in b, k in c) loop 
+    //      stmts;
+    //  end for;
+    // are translated to equivalent:
+    //  for (i in a) loop 
+    //   for (j in b) loop 
+    //    for (k in c) loop 
+    //      stmts;
+    //    end for;
+    //   end for;
+    //  end for;
+    case (Absyn.ALG_FOR(Absyn.ITERATOR(i,NONE(),range)::(iterators as _::_),body),comment,info)
+      equation
+        stmt = translateClassdefAlgorithmItem(Absyn.ALG_FOR(iterators,body),comment,info);
+      then SCode.ALG_FOR(i,range,{stmt},comment,info);
+
+    case (Absyn.ALG_FOR(Absyn.ITERATOR(i,NONE(),range)::{},body),comment,info)
       equation
         stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_FOR(iterators,stmts,comment,info);
+      then SCode.ALG_FOR(i,range,stmts,comment,info);
         
-    case (Absyn.ALG_PARFOR(iterators,body),comment,info)
+    case (Absyn.ALG_PARFOR(Absyn.ITERATOR(i,NONE(),range)::(iterators as _::_),body),comment,info)
+      equation
+        stmt = translateClassdefAlgorithmItem(Absyn.ALG_FOR(iterators,body),comment,info);
+      then SCode.ALG_PARFOR(i,range,{stmt},comment,info);
+
+    case (Absyn.ALG_PARFOR(Absyn.ITERATOR(i,NONE(),range)::{},body),comment,info)
       equation
         stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_PARFOR(iterators,stmts,comment,info);
+      then SCode.ALG_PARFOR(i,range,stmts,comment,info);
   
     case (Absyn.ALG_WHILE(boolExpr,body),comment,info)
       equation

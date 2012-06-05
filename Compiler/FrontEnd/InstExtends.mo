@@ -1207,6 +1207,8 @@ algorithm
   (outCache,outStmt) := matchcontinue (inCache,inEnv,inStmt,inHt)
     local
       Absyn.Exp exp,exp1,exp2;
+      Option<Absyn.Exp> optExp;
+      String iter;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
@@ -1233,17 +1235,17 @@ algorithm
         (cache,elsebranch) = fixList(cache,env,elsebranch,ht,fixStatement);
       then (cache,SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info));
 
-    case (cache,env,SCode.ALG_FOR(iterators,forbody,comment,info),ht)
+    case (cache,env,SCode.ALG_FOR(iter,optExp,forbody,comment,info),ht)
       equation
-        (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
+        (cache,optExp) = fixOption(cache,env,optExp,ht,fixExp);
         (cache,forbody) = fixList(cache,env,forbody,ht,fixStatement);
-      then (cache,SCode.ALG_FOR(iterators,forbody,comment,info));
+      then (cache,SCode.ALG_FOR(iter,optExp,forbody,comment,info));
         
-    case (cache,env,SCode.ALG_PARFOR(iterators,forbody,comment,info),ht)
+    case (cache,env,SCode.ALG_PARFOR(iter,optExp,forbody,comment,info),ht)
       equation
-        (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
+        (cache,optExp) = fixOption(cache,env,optExp,ht,fixExp);
         (cache,forbody) = fixList(cache,env,forbody,ht,fixStatement);
-      then (cache,SCode.ALG_PARFOR(iterators,forbody,comment,info));
+      then (cache,SCode.ALG_PARFOR(iter,optExp,forbody,comment,info));
 
     case (cache,env,SCode.ALG_WHILE(exp,whilebody,comment,info),ht)
       equation

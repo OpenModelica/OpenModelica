@@ -490,12 +490,20 @@ end dumpElseIfStatements;
 template dumpForStatement(SCode.Statement for_statement)
 ::=
 match for_statement
-  case ALG_FOR(__) then
-    let iter_str = (iterators |> i => AbsynDumpTpl.dumpForIterator(i) ;separator=", ")
+  case ALG_FOR(range=SOME(e)) then
+    let range_str = AbsynDumpTpl.dumpExp(e)
     let body_str = dumpStatements(forBody)
     let cmt_str = dumpCommentOpt(comment)
     <<
-    for <%iter_str%> loop<%cmt_str%>
+    for <%index%> in <%range_str%> loop<%cmt_str%>
+      <%body_str%>
+    end for;
+    >>
+  case ALG_FOR(__) then
+    let body_str = dumpStatements(forBody)
+    let cmt_str = dumpCommentOpt(comment)
+    <<
+    for <%index%> loop<%cmt_str%>
       <%body_str%>
     end for;
     >>
