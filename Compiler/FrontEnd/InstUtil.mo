@@ -1587,11 +1587,21 @@ algorithm
           +& face_str2 +& ">);";
 
     case (InstTypes.FOR_EQUATION(index = index, indexType = ty1, 
-        range = exp1, body = eql))
+        range = SOME(exp1), body = eql))
       equation
         ty_str1 = Types.unparseType(ty1);
         range_str = ExpressionDump.printExpStr(exp1);
         res = "for {" +& ty_str1 +& "} " +& index +& " in " +& range_str +& " loop\n  ";
+        eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
+        res = res +& eql_str +& "\n  end for;\n";
+      then
+        res;
+
+    case (InstTypes.FOR_EQUATION(index = index, indexType = ty1, range = NONE(), body = eql))
+      equation
+        ty_str1 = Types.unparseType(ty1);
+        range_str = ExpressionDump.printExpStr(exp1);
+        res = "for {" +& ty_str1 +& "} " +& index +& " loop\n  ";
         eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
         res = res +& eql_str +& "\n  end for;\n";
       then
