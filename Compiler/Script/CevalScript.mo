@@ -1246,7 +1246,7 @@ algorithm
       equation
         crefCName = Absyn.pathToCref(className);
         false = Interactive.existClass(crefCName, p);
-        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
+        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
         simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
       then
         (cache,simValue,st);
