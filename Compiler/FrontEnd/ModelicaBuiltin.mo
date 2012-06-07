@@ -438,6 +438,8 @@ function array
 end array;
 
 function zeros "Returns a zero array"
+  input Integer n annotation(__OpenModelica_varArgs=true);
+  output OpenModelica.Internal.BuiltinType o[:];
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
@@ -445,6 +447,8 @@ function zeros "Returns a zero array"
 end zeros;
 
 function ones "Returns a one array"
+  input Integer n annotation(__OpenModelica_varArgs=true);
+  output OpenModelica.Internal.BuiltinType o[:];
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>
@@ -452,6 +456,9 @@ function ones "Returns a one array"
 end ones;
 
 function fill "Returns an array with all elements equal"
+  input OpenModelica.Internal.BuiltinType s;
+  input Integer n annotation(__OpenModelica_varArgs=true);
+  output OpenModelica.Internal.BuiltinType o[:];
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'fill()'\">fill()</a>
@@ -680,6 +687,10 @@ type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a sin
 end Code;
 
 package Internal "Contains internal implementations, e.g. overloaded builtin functions"
+  
+  type BuiltinType "Integer,Real,String,enumeration or array of some kind"
+  end BuiltinType;
+  
   function intAbs
     input Integer v;
     output Integer o;

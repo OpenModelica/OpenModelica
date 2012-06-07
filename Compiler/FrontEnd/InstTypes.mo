@@ -203,8 +203,14 @@ public uniontype Prefixes
     tuple<Absyn.Direction, Absyn.Info> direction;
     tuple<SCode.Flow, Absyn.Info> flowPrefix;
     tuple<SCode.Stream, Absyn.Info> streamPrefix;
+    VarArgs varArgs;
   end PREFIXES;
 end Prefixes;
+
+public uniontype VarArgs
+  record NO_VARARG end NO_VARARG;
+  record IS_VARARG end IS_VARARG;
+end VarArgs;
 
 public uniontype DaePrefixes
   record NO_DAE_PREFIXES end NO_DAE_PREFIXES;

@@ -1926,6 +1926,20 @@ algorithm
       list<DAE.Exp> rest_args;
       list<FunctionSlot> slots;
 
+    // Last vararg input and no positional arguments means we're done.
+    case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _)
+      then listReverse(inAccumSlots);
+
+    // If the last input of the function is a vararg, handle it first
+    case (rest_inputs as (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
+        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG()))) :: {}),  _::_, slots)
+      equation
+        (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
+        default_value = InstUtil.getBindingExpOpt(binding);
+        slots = InstTypes.SLOT(param_name, arg, default_value) :: slots;
+      then
+        makeFunctionSlots(rest_inputs, rest_args, slots);  
+
     case (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
         Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots)
       equation

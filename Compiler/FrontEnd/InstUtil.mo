@@ -556,10 +556,11 @@ algorithm
       SCode.Attributes attr;
       Prefixes prefs;
       Absyn.Info info;
+      Option<SCode.Comment> comment;
 
-    case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, info = info), _)
+    case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, comment = comment, info = info), _)
       equation
-        prefs = makePrefixes(pf, attr, info);
+        prefs = makePrefixes(pf, attr, comment, info);
         prefs = mergePrefixes(prefs, inPrefixes, inComponentName, "variable");
       then
         prefs;
@@ -571,10 +572,11 @@ protected function makePrefixes
   "Creates an InstTypes.Prefixes record from SCode.Prefixes and SCode.Attributes."
   input SCode.Prefixes inPrefixes;
   input SCode.Attributes inAttributes;
+  input Option<SCode.Comment> inComment;
   input Absyn.Info inInfo;
   output Prefixes outPrefixes;
 algorithm
-  outPrefixes := match(inPrefixes, inAttributes, inInfo)
+  outPrefixes := match(inPrefixes, inAttributes, inComment, inInfo)
     local
       SCode.Visibility vis;
       SCode.Variability var;
@@ -584,23 +586,39 @@ algorithm
       SCode.Flow flp;
       SCode.Stream sp;
       Absyn.Info info;
+      InstTypes.VarArgs va;
 
     // All prefixes are the default ones, same as having no prefixes.
     case (SCode.PREFIXES(visibility = SCode.PUBLIC(), finalPrefix =
         SCode.NOT_FINAL(), innerOuter = Absyn.NOT_INNER_OUTER()), SCode.ATTR(
         flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM(),
-        variability = SCode.VAR(), direction = Absyn.BIDIR()), _)
+        variability = SCode.VAR(), direction = Absyn.BIDIR()), _, _)
       then InstTypes.NO_PREFIXES();
 
     // Otherwise, select the prefixes we are interested in and build a PREFIXES
     // record.
     case (SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io),
           SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
-        direction = dir), info)
-      then InstTypes.PREFIXES(vis, var, fp, io, (dir, info), (flp, info), (sp, info));
+        direction = dir), _, info)
+      equation
+        va = makeVarArg(dir,inComment);
+      then InstTypes.PREFIXES(vis, var, fp, io, (dir, info), (flp, info), (sp, info), va);
 
   end match;
 end makePrefixes;
+
+protected function makeVarArg "Checks if the component might be a varargs type of component"
+  input Absyn.Direction inDir;
+  input Option<SCode.Comment> inComment;
+  output InstTypes.VarArgs varArgs;
+algorithm
+  varArgs := match (inDir,inComment)
+    case (Absyn.INPUT(),_)
+      then
+        Util.if_(SCode.optCommentHasBooleanNamedAnnotation(inComment,"__OpenModelica_varArgs"),InstTypes.IS_VARARG(),InstTypes.NO_VARARG());
+    else InstTypes.NO_VARARG();
+  end match;
+end makeVarArg;
 
 public function mergePrefixesWithDerivedClass
   "Merges the attributes of a derived class with the given prefixes."
@@ -650,7 +668,7 @@ algorithm
     case (SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
         direction = dir), _)
       then InstTypes.PREFIXES(SCode.PUBLIC(), var, SCode.NOT_FINAL(),
-        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (flp, inInfo), (sp, inInfo));
+        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (flp, inInfo), (sp, inInfo), InstTypes.NO_VARARG());
 
   end match;
 end makePrefixesFromAttributes;
@@ -676,6 +694,7 @@ algorithm
       tuple<Absyn.Direction, Absyn.Info> dir1, dir2;
       tuple<SCode.Flow, Absyn.Info> flp1, flp2;
       tuple<SCode.Stream, Absyn.Info> sp1, sp2;
+      InstTypes.VarArgs va2;
 
     // No outer prefixes => no change.
     case (InstTypes.NO_PREFIXES(), _, _, _) then inInnerPrefixes;
@@ -683,8 +702,8 @@ algorithm
     case (_, InstTypes.NO_PREFIXES(), _, _) then inOuterPrefixes;
 
     // Both outer and inner prefixes => merge them.
-    case (InstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, flp1, sp1),
-          InstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, flp2, sp2), _, _)
+    case (InstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, flp1, sp1, _),
+          InstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, flp2, sp2, va2), _, _)
       equation
         vis2 = mergeVisibility(vis1, vis2);
         var2 = mergeVariability(var1, var2);
@@ -693,7 +712,7 @@ algorithm
         (flp2, sp2) =
           mergeFlowStream(flp1, sp1, flp2, sp2, inElementName, inElementType);
       then
-        InstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, flp2, sp2);
+        InstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, flp2, sp2, va2);
 
   end match;
 end mergePrefixes;
@@ -1352,7 +1371,7 @@ algorithm
       DAE.Stream sp2;
 
     case InstTypes.NO_PREFIXES() then InstTypes.NO_DAE_PREFIXES();
-    case InstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (flp1, _), (sp1, _))
+    case InstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (flp1, _), (sp1, _), _)
       equation
         vis2 = translateVisibility(vis1);
         var2 = translateVariability(var1);
