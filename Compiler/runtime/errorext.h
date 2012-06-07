@@ -39,8 +39,8 @@ enum enumErrorType {ErrorType_syntax=0,ErrorType_grammar,ErrorType_translation,E
 enum enumErrorLevel {ErrorLevel_error=0,ErrorLevel_warning,ErrorLevel_notification};
 typedef enum enumErrorType ErrorType;
 typedef enum enumErrorLevel ErrorLevel;
-extern const char* ErrorLevel_toStr[3];
-extern const char* ErrorType_toStr[6];
+const char* ErrorLevel_toStr(int ix);
+const char* ErrorType_toStr(int ix);
 
 void c_add_message(int errorID,
        ErrorType type,

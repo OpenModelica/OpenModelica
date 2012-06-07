@@ -32,8 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* errorext.h is a C++ header... */
-void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens);
+#include "errorext.h"
 
 /* adrpo: this is defined in errorext. (enabled with omc +showErrorMessages) */
 extern int showErrorMessages;
@@ -265,8 +264,8 @@ static int PrintImpl__writeBuf(const char* filename)
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-      "PRINT",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error writing to file %s.",
       c_tokens,
       1);
@@ -284,8 +283,8 @@ static int PrintImpl__writeBuf(const char* filename)
   {
     const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-      "PRINT",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error writing to file %s.",
       c_tokens,
       1);

@@ -53,8 +53,18 @@ struct absyn_info{
 static bool error_on = true;
 static bool pop_more_on_rollback = false;
 static int numErrorMessages = 0;
-const char* ErrorLevel_toStr[3] = {"Error","Warning","Notification"};
-const char* ErrorType_toStr[6] = {"SYNTAX","GRAMMAR","TRANSLATION","SYMBOLIC","RUNTIME","SCRIPTING"};
+
+const char* ErrorLevel_toStr(int ix) {
+  const char* toStr[3] = {"Error","Warning","Notification"};
+  if (ix<0 || ix>=3) return "#Internal Error: Unknown ErrorLevel#";
+  return toStr[ix];
+}
+
+const char* ErrorType_toStr(int ix) {
+  const char* toStr[6] = {"SYNTAX","GRAMMAR","TRANSLATION","SYMBOLIC","RUNTIME","SCRIPTING"};
+  if (ix<0 || ix>=6) return "#Internal Error: Unknown ErrorType#";
+  return toStr[ix];
+}
 
 #include "ErrorMessage.hpp"
 static std::string currVariable("");

@@ -134,14 +134,14 @@ std::string ErrorMessage::getMessage_()
   if(filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
       endLineNo_ == 0 && endColumnNo_ == 0)
   {
-    ret_msg = ErrorLevel_toStr[severity_] + (": " + message_);
+    ret_msg = ErrorLevel_toStr(severity_) + (": " + message_);
   }
   else
   {
     std::stringstream str;
     str << "[" << filename_ << ":" << startLineNo_ << ":" << startColumnNo_ <<
       "-" << endLineNo_ << ":" << endColumnNo_ << ":" <<
-      (isReadOnly_ ? "readonly" : "writable") << "] " << ErrorLevel_toStr[severity_] << ": ";
+      (isReadOnly_ ? "readonly" : "writable") << "] " << ErrorLevel_toStr(severity_) << ": ";
     std::string positionInfo = str.str();
     ret_msg = positionInfo + message_;
   }
@@ -154,8 +154,8 @@ std::string ErrorMessage::getFullMessage_()
   std::stringstream strbuf;
 
   strbuf << "{\"" << shortMessage << "\", \"" <<
-    ErrorType_toStr[messageType_] << "\", \"" <<
-    ErrorLevel_toStr[severity_] << "\", \"" <<
+    ErrorType_toStr(messageType_) << "\", \"" <<
+    ErrorLevel_toStr(severity_) << "\", \"" <<
     errorID_ <<  "\"}";
 
   return strbuf.str();
