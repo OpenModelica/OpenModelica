@@ -2560,6 +2560,12 @@ algorithm
       then
         (EQ_REINIT(cr1, e1, comment, info), (traverser, arg));
 
+    case (EQ_NORETCALL(e1, comment, info), (traverser, arg))
+      equation
+        ((e1, arg)) = traverser((e1, arg));
+      then
+        (EQ_NORETCALL(e1, comment, info), (traverser, arg));
+
     else then (inEEquation, inTuple);
   end match;
 end traverseEEquationExps;
