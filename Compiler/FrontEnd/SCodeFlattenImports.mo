@@ -463,15 +463,6 @@ algorithm
       then
         ((stmt, env));
 
-    case ((stmt as SCode.ALG_NORETCALL(functionCall = cref, 
-        functionArgs = fargs, comment = cmt, info = info), env))
-      equation
-        cref = SCodeLookup.lookupComponentRef(cref, env, info);
-        stmt = SCode.ALG_NORETCALL(cref, fargs, cmt, info);
-        (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
-      then
-        ((stmt, env));
-
     case ((stmt, env)) 
       equation
         info = SCode.getStatementInfo(stmt);

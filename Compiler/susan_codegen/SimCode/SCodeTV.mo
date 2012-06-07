@@ -602,8 +602,7 @@ package SCode
     end ALG_WHEN_A;
 
     record ALG_NORETCALL
-      Absyn.ComponentRef functionCall;
-      Absyn.FunctionArgs functionArgs;
+      Absyn.Exp exp;
       Option<Comment> comment;
       Absyn.Info info;
     end ALG_NORETCALL;

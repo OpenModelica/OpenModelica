@@ -402,8 +402,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
   end ALG_WHEN_A;
 
   record ALG_NORETCALL
-    Absyn.ComponentRef functionCall "functionCall" ;
-    Absyn.FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
+    Absyn.Exp exp;
     Option<Comment> comment;
     Absyn.Info info;
   end ALG_NORETCALL;
@@ -2107,7 +2106,7 @@ algorithm
         abranches = List.threadTuple(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
-    case ALG_NORETCALL(functionCall,functionArgs,comment,info)
+    case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall,functionArgs),NONE(),info);
     
     case ALG_RETURN(comment,info)
@@ -2209,10 +2208,8 @@ algorithm
           lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
           lst=List.flatten(lst_1::lst_lst);
         then lst;
-      case (id,ALG_NORETCALL(functionArgs = funcArgs))
-        equation
-          lst=Absyn.findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
+      case (id,ALG_NORETCALL(exp = e_1))
+        then Absyn.findIteratorInExp(id,e_1);
       case (id,ALG_TRY(tryBody = algLst_1))
         equation
           lst=findIteratorInStatements(id,algLst_1);
@@ -3010,22 +3007,11 @@ algorithm
       then
         (ALG_WHEN_A(branches, comment, info), tup);
 
-    case (ALG_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup)
+    case (ALG_NORETCALL(e1, comment, info), (traverser, arg))
       equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
-        ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
-        (args, tup) = List.mapFold(args, traverseNamedArgExps, (traverser, arg));
-      then
-        (ALG_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup);
-
-    case (ALG_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup)
-      equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
         ((e1, arg)) = traverser((e1,  arg));
-        (iters, tup) = List.mapFold(iters, traverseForIteratorExps,
-          (traverser, arg));
       then
-        (ALG_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup);
+        (ALG_NORETCALL(e1, comment, info), (traverser, arg));
 
     else then (inStatement, inTuple);
   end match;

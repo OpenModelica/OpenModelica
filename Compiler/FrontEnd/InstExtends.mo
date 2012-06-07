@@ -1258,11 +1258,10 @@ algorithm
         (cache,whenlst) = fixListTuple2(cache,env,whenlst,ht,fixExp,fixListAlgorithmItem);
       then (cache,SCode.ALG_WHEN_A(whenlst,comment,info));
 
-    case (cache,env,SCode.ALG_NORETCALL(cref,fargs,comment,info),ht)
+    case (cache,env,SCode.ALG_NORETCALL(exp,comment,info),ht)
       equation
-        (cache,fargs) = fixFarg(cache,env,fargs,ht);
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,SCode.ALG_NORETCALL(cref,fargs,comment,info));
+        (cache,exp) = fixExp(cache,env,exp,ht);
+      then (cache,SCode.ALG_NORETCALL(exp,comment,info));
 
     case (cache,env,SCode.ALG_RETURN(comment,info),ht) then (cache,SCode.ALG_RETURN(comment,info));
 

@@ -1558,13 +1558,6 @@ algorithm
       then
         ((stmt, env));
 
-    case ((stmt as SCode.ALG_NORETCALL(functionCall = cref, info = info), env))
-      equation
-        analyseCref(cref, env, info);
-        (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
-      then
-        ((stmt, env));
-
     case ((stmt, env)) 
       equation
         info = SCode.getStatementInfo(stmt);

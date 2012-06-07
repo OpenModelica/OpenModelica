@@ -969,7 +969,7 @@ algorithm
       then SCode.ALG_WHEN_A(sbranches,comment,info);
 
     case (Absyn.ALG_NORETCALL(functionCall,functionArgs),comment,info)
-    then SCode.ALG_NORETCALL(functionCall,functionArgs,comment,info);
+      then SCode.ALG_NORETCALL(Absyn.CALL(functionCall,functionArgs),comment,info);
     
     case (Absyn.ALG_RETURN(),comment,info)
     then SCode.ALG_RETURN(comment,info);

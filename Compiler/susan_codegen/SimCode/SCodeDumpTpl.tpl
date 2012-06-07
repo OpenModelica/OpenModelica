@@ -444,10 +444,9 @@ match statement
   case ALG_WHILE(__) then dumpWhileStatement(statement)
   case ALG_WHEN_A(__) then dumpWhenStatement(statement)
   case ALG_NORETCALL(__) then
-    let func_str = AbsynDumpTpl.dumpCref(functionCall)
-    let args_str = AbsynDumpTpl.dumpFunctionArgs(functionArgs)
+    let exp_str = AbsynDumpTpl.dumpExp(exp)
     let cmt_str = dumpCommentOpt(comment)
-    '<%func_str%>(<%args_str%>)<%cmt_str%>;'
+    '<%exp_str%><%cmt_str%>;'
   case ALG_RETURN(__) then
     let cmt_str = dumpCommentOpt(comment)
     'return<%cmt_str%>;'

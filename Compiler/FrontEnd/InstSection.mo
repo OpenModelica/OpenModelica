@@ -2541,8 +2541,8 @@ algorithm
       then fail();
 
     /* assert(cond,msg) */
-    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})), info = info),source,initial_,impl,unrollForLoops,_)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
         (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
@@ -2556,8 +2556,8 @@ algorithm
         (cache,stmts);
         
     /* terminate(msg) */
-    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "terminate"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {})), info = info),source,initial_,impl,unrollForLoops,_)
       equation 
         (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
@@ -2568,8 +2568,8 @@ algorithm
         (cache,{stmt});
         
     /* reinit(variable,value) */
-    case (cache,env,ih,pre,ci_state,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {}), info = info),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,ci_state,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})), info = info),source,initial_,impl,unrollForLoops,_)
       equation
         failure(ClassInf.isFunction(ci_state));
         (cache,var_1,varprop,_) = Static.elabExp(cache, env, var, impl,NONE(), true,pre,info);
@@ -2584,12 +2584,11 @@ algorithm
         (cache,{stmt});
 
     /* generic NORETCALL */
-    case (cache,env,ih,pre,ci_state,(SCode.ALG_NORETCALL(functionCall = callFunc, functionArgs = callArgs, info = info)),source,initial_,impl,unrollForLoops,_)
+    case (cache,env,ih,pre,ci_state,(SCode.ALG_NORETCALL(exp = e, info = info)),source,initial_,impl,unrollForLoops,_)
       equation
         (cache, DAE.CALL(ap, eexpl, attr), varprop, _) = 
-          Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl,NONE(), true,pre,info);
+          Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         // DO NOT PREFIX THIS PATH; THE PREFIX IS ONLY USED FOR COMPONENTS, NOT NAMES OF FUNCTIONS.... 
-        // ap = PrefixUtil.prefixPath(ap,pre);
         (cache,eexpl) = PrefixUtil.prefixExpList(cache, env, ih, eexpl, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,attr),source);
