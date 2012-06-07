@@ -52,6 +52,7 @@ docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
+	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
 	# man pages
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)

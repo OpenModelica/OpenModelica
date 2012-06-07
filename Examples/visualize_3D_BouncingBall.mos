@@ -1,3 +1,5 @@
+// This example will not run in modern OpenModelica because we no longer have visualization support
+
 loadModel(SimpleVisual);
 getErrorString();
 loadFile("visualize_3D_BouncingBall.mo");
@@ -6,4 +8,5 @@ simulate(BouncingBall3D, stopTime=10);
 getErrorString();
 visualize(BouncingBall3D);
 getErrorString();
-system("rm -f BouncingBall3D*");
+// Remove generated files is disabled because if you run it at the same time as plotting, the plot tool might crash
+// system("rm -f BouncingBall3D*");
