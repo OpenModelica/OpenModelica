@@ -1041,11 +1041,11 @@ algorithm
       then
         InstTypes.REINIT_EQUATION(cref1, exp1, info) :: acc_el;
 
-    case (InstTypes.NORETCALL_EQUATION(func_name, args, info), st, acc_el)
+    case (InstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el)
       equation
-        (args, _, _) = typeExpList(args, EVAL_CONST(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
       then
-        InstTypes.NORETCALL_EQUATION(func_name, args, info) :: acc_el;
+        InstTypes.NORETCALL_EQUATION(exp1, info) :: acc_el;
         
     else
       equation

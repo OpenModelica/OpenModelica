@@ -330,8 +330,7 @@ uniontype EEquation
   end EQ_REINIT;
 
   record EQ_NORETCALL "function calls without return value"
-    Absyn.ComponentRef functionName "the function nanme";
-    Absyn.FunctionArgs functionArgs "the function arguments";
+    Absyn.Exp exp;
     Option<Comment> comment;
     Absyn.Info info;
   end EQ_NORETCALL;
@@ -1883,10 +1882,8 @@ algorithm
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_NORETCALL(functionArgs = fArgs))
-        equation
-          lst=Absyn.findIteratorInFunctionArgs(id,fArgs);
-        then lst;
+      case (id,EQ_NORETCALL(exp = e_1))
+        then Absyn.findIteratorInExp(id,e_1);
 
   end matchcontinue;
 end findIteratorInEEquation;
@@ -2562,23 +2559,6 @@ algorithm
         ((e1, arg)) = traverser((e1, arg));
       then
         (EQ_REINIT(cr1, e1, comment, info), (traverser, arg));
-
-    case (EQ_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup)
-      equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
-        ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
-        (args, tup) = List.mapFold(args, traverseNamedArgExps, (traverser, arg));
-      then
-        (EQ_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup);
-
-    case (EQ_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup)
-      equation
-        (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
-        ((e1, arg)) = traverser((e1,  arg));
-        (iters, tup) = List.mapFold(iters, traverseForIteratorExps,
-          (traverser, arg));
-      then
-        (EQ_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup);
 
     else then (inEEquation, inTuple);
   end match;

@@ -286,8 +286,7 @@ public uniontype Equation
   end REINIT_EQUATION;
 
   record NORETCALL_EQUATION
-    Absyn.Path funcName;
-    list<DAE.Exp> funcArgs;
+    DAE.Exp exp;
     Absyn.Info info;
   end NORETCALL_EQUATION;
 end Equation;

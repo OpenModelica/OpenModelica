@@ -323,10 +323,9 @@ match equation
     let cmt_str = dumpCommentOpt(comment)
     'reinit(<%cref_str%>, <%exp_str%>)<%cmt_str%>;'
   case EQ_NORETCALL(__) then
-    let func_str = AbsynDumpTpl.dumpCref(functionName)
-    let args_str = AbsynDumpTpl.dumpFunctionArgs(functionArgs)
+    let exp_str = AbsynDumpTpl.dumpExp(exp)
     let cmt_str = dumpCommentOpt(comment)
-    '<%func_str%>(<%args_str%>)<%cmt_str%>;'
+    '<%exp_str%><%cmt_str%>;'
   else errorMsg("SCodeDump.dumpEEquation: Unknown EEquation.")
 end dumpEEquation;
 

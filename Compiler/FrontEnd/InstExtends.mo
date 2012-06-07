@@ -1100,11 +1100,10 @@ algorithm
         (cache,cref) = fixCref(cache,env,cref,ht);
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,SCode.EQ_REINIT(cref,exp,comment,info));
-    case (cache,env,SCode.EQ_NORETCALL(cref,fargs,comment,info),ht)
+    case (cache,env,SCode.EQ_NORETCALL(exp,comment,info),ht)
       equation
-        (cache,fargs) = fixFarg(cache,env,fargs,ht);
-        (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,SCode.EQ_NORETCALL(cref,fargs,comment,info));
+        (cache,exp) = fixExp(cache,env,exp,ht);
+      then (cache,SCode.EQ_NORETCALL(exp,comment,info));
   end match;
 end fixEEquation;
 

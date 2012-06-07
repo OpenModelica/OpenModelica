@@ -548,8 +548,7 @@ package SCode
     end EQ_REINIT;
 
     record EQ_NORETCALL
-      Absyn.ComponentRef functionName;
-      Absyn.FunctionArgs functionArgs;
+      Absyn.Exp exp;
       Option<Comment> comment;
       Absyn.Info info;
     end EQ_NORETCALL;

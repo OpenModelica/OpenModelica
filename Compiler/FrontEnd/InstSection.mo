@@ -758,9 +758,9 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
       
     // Connections.root(cr)  
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph)
       equation 
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -770,9 +770,9 @@ algorithm
             
     // Connections.potentialRoot(cr) 
     // TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real     
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}))),initial_,impl,graph)
       equation 
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -781,9 +781,9 @@ algorithm
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
          
     // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {})),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {}))),initial_,impl,graph)
       equation 
         (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
@@ -792,9 +792,9 @@ algorithm
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}))),initial_,impl,graph)
       equation 
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
           {"Second", "Connections.potentialRoot", ""}, info);
@@ -802,9 +802,9 @@ algorithm
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
 
     // Connections.branch(cr1,cr2)         
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
-              functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {})),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
+              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),initial_,impl,graph)
       equation 
         (cache,SOME((DAE.CREF(cr1_,t),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
         (cache,SOME((DAE.CREF(cr2_,t),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
@@ -815,10 +815,11 @@ algorithm
         (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
     
     // no return calls
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(functionName = cr, functionArgs = fargs, info = info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),initial_,impl,graph)
       equation 
-        (cache,exp,prop1,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE(),false,pre,info);
-        (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl, info);
+        (cache,exp,prop1,_) = Static.elabExp(cache,env,e,impl,NONE(),false,pre,info);
+        // This is probably an external function call that the user wants to evaluat at runtime
+        // (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl, info);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
 
         // set the source of this element

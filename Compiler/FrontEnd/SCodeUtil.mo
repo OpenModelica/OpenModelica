@@ -1818,7 +1818,7 @@ algorithm
       then SCode.EQ_REINIT(cr,e2,com,info);
 
     case (Absyn.EQ_NORETCALL(fname,fargs),com,info,_)
-      then SCode.EQ_NORETCALL(fname,fargs,com,info);
+      then SCode.EQ_NORETCALL(Absyn.CALL(fname,fargs),com,info);
   end matchcontinue;
 end translateEquation;
 

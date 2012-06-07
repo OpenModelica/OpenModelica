@@ -2428,13 +2428,11 @@ algorithm
       then
         InstTypes.REINIT_EQUATION(dcref1, dexp1, info);
         
-    case (SCode.EQ_NORETCALL(functionName = cref1, functionArgs =
-        Absyn.FUNCTIONARGS(args = args, argNames = nargs), info = info), _, _)
+    case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _)
       equation
-        DAE.CALL(path = func_path, expLst = iargs) =
-          instFunctionCall(cref1, args, nargs, inEnv, inPrefix, info);
+        dexp1 = instExp(exp1, inEnv, inPrefix);
       then
-        InstTypes.NORETCALL_EQUATION(func_path, iargs, info);
+        InstTypes.NORETCALL_EQUATION(dexp1, info);
 
     else
       equation

@@ -367,16 +367,6 @@ algorithm
       then
         ((equ, env));
 
-    case ((SCode.EQ_NORETCALL(functionName = cref, functionArgs = fargs,
-        comment = cmt, info = info), env))
-      equation
-        cref = SCodeLookup.lookupComponentRef(cref, env, info);
-        
-        equ = SCode.EQ_NORETCALL(cref, fargs, cmt, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
-      then
-        ((equ, env));
-
     case ((equ, env))
       equation
         info = SCode.getEEquationInfo(equ);

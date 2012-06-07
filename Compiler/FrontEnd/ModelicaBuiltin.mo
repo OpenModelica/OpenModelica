@@ -439,7 +439,7 @@ end array;
 
 function zeros "Returns a zero array"
   input Integer n annotation(__OpenModelica_varArgs=true);
-  output OpenModelica.Internal.BuiltinType o[:];
+  output Integer o[:];
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
@@ -448,7 +448,7 @@ end zeros;
 
 function ones "Returns a one array"
   input Integer n annotation(__OpenModelica_varArgs=true);
-  output OpenModelica.Internal.BuiltinType o[:];
+  output Integer o[:];
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>

@@ -1476,13 +1476,6 @@ algorithm
       then
         ((equ, env));
 
-    case ((equ as SCode.EQ_NORETCALL(functionName = cref1, info = info), env))
-      equation
-        analyseCref(cref1, env, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
-      then
-        ((equ, env));
-
     case ((equ, env))
       equation
         info = SCode.getEEquationInfo(equ);
