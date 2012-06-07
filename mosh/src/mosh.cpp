@@ -290,7 +290,7 @@ void doSocketCommunication(const string * scriptname)
     }
     int recvbytes = read(sock,buf,40000);
     if (recvbytes == 0) {
-      cout << "Recieved 0 bytes, exiting" << endl;
+      cout << "Received 0 bytes, exiting" << endl;
       return;
     }
     cout << buf << endl;
@@ -320,7 +320,7 @@ void doSocketCommunication(const string * scriptname)
       }
       int recvbytes = read(sock,buf,40000);
       if (recvbytes == 0) {
-        cout << "Recieved 0 bytes, exiting" << endl;
+        cout << "Received 0 bytes, exiting" << endl;
         done = true;
         break;
       }
