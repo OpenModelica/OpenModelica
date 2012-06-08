@@ -3362,6 +3362,19 @@ algorithm
   b := isArray(t, {});
 end isPropArray;
 
+public function propTupleFirstProp
+  "Returns the first property from a tuple's properties or fails."
+  input Properties inTupleProp;
+  output Properties outFirstProp;
+protected
+  Type ty;
+  DAE.Const c;
+algorithm
+  DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = ty :: _), 
+    tupleConst = DAE.TUPLE_CONST(tupleConstLst = DAE.SINGLE_CONST(const = c) :: _)) := inTupleProp;
+  outFirstProp := DAE.PROP(ty, c);
+end propTupleFirstProp;
+
 public function propTuplePropList
   "Splits a PROP_TUPLE into a list of PROPs."
   input Properties prop_tuple;
@@ -3673,19 +3686,20 @@ public function matchProp
   It matches an expression with properties with another set of properties.  
   If necessary, the expression is modified to match.  
   The only relevant property is the type."
-  input DAE.Exp inExp1;
-  input Properties inProperties2;
-  input Properties inProperties3;
+  input DAE.Exp inExp;
+  input Properties inActualType;
+  input Properties inExpectedType;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Properties outProperties;
 algorithm
-  (outExp,outProperties) := matchcontinue (inExp1,inProperties2,inProperties3,printFailtrace)
+  (outExp,outProperties) := matchcontinue (inExp, inActualType, inExpectedType, printFailtrace)
     local
       DAE.Exp e_1,e;
       Type t_1,gt,et;
       Const c,c1,c2,c_1;
       TupleConst tc,tc1,tc2;
+      Properties prop;
     case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),printFailtrace)
       equation
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
@@ -3718,13 +3732,31 @@ algorithm
       then
         (e_1,DAE.PROP(t_1,c));
 
-    case(e,inProperties2,inProperties3,true)
+    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP_TUPLE(type_ = _),printFailtrace)
+      equation
+        prop = propTupleFirstProp(inExpectedType);
+        (e_1, prop) = matchProp(e, inActualType, prop, printFailtrace);
+        gt = simplifyType(gt);
+        e_1 = DAE.TSUB(e_1, 1, gt);
+      then
+        (e_1, prop);
+             
+    case (e,DAE.PROP_TUPLE(type_ = _),DAE.PROP(type_ = _),printFailtrace)
+      equation
+        (prop as DAE.PROP(type_ = gt)) = propTupleFirstProp(inActualType);
+        (e_1, prop) = matchProp(e, prop, inExpectedType, printFailtrace);
+        gt = simplifyType(gt);
+        e_1 = DAE.TSUB(e_1, 1, gt);
+      then
+        (e_1, prop);   
+
+    case(e, _, _, true)
       equation
         // activate on +d=types flag
         true = Flags.isSet(Flags.TYPES);
         Debug.traceln("- Types.matchProp failed on exp: " +& ExpressionDump.printExpStr(e));
-        Debug.traceln(printPropStr(inProperties2) +& " != ");
-        Debug.traceln(printPropStr(inProperties3));
+        Debug.traceln(printPropStr(inActualType) +& " != ");
+        Debug.traceln(printPropStr(inExpectedType));
       then fail();
   end matchcontinue;
 end matchProp;

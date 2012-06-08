@@ -76,6 +76,9 @@ match exp
     let exp_str = dumpExp(exp, stringDelimiter)
     let sub_str = dumpExpList(sub, stringDelimiter, ", ")
     '<%exp_str%>[<%sub_str%>]'
+  case TSUB(__) then
+    let exp_str = dumpExp(exp, stringDelimiter)
+    '<%exp_str%>[<%ix%>]'
   case SIZE(__) then
     let exp_str = dumpExp(exp, stringDelimiter)
     let dim_str = match sz case SOME(dim) then ', <%dumpExp(dim, stringDelimiter)%>'

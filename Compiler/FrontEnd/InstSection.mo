@@ -1295,6 +1295,19 @@ algorithm
       then
         dae;
 
+    // Assignment to a single component with a function returning multiple
+    // values.
+    case (e1, p1 as DAE.PROP(type_ = _),
+          e2, p2 as DAE.PROP_TUPLE(type_ = _), source, initial_, impl)
+      equation
+        p2 = Types.propTupleFirstProp(p2);
+        DAE.PROP(constFlag = c) = p2;
+        (e1, DAE.PROP(type_ = t_1)) = Types.matchProp(e1, p1, p2, false);
+        e2 = DAE.TSUB(e2, 1, t_1);
+        dae = instEqEquation2(e1, e2, t_1, c, source, initial_);
+      then
+        dae;
+
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),source,initial_,impl)
       equation
         e1_str = ExpressionDump.printExpStr(e1);

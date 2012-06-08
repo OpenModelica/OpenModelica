@@ -1162,15 +1162,14 @@ algorithm
       then
         (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
 
+    // A component that should be added to an expandable connector. It can only
+    // be outside, since only connectors on the form m.c are inside.
     case (_, NONE(), SOME(_), _)
-      equation
-        print(ComponentReference.printComponentRefStr(inCref) +& " is expandable\n");
-      then
-        (Connect.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
+      then (Connect.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
 
     case (_, SOME(comp), _, _)
       equation
-        checkComponentIsConnector(comp, inCref, inInfo);
+        checkComponentIsConnector(comp, inPrefixComponent, inCref, inInfo);
         face = getConnectorFace(inPrefixComponent);
         ty = InstUtil.getComponentType(comp);
       then
@@ -1251,9 +1250,10 @@ algorithm
         (cref, SOME(comp), SOME(pre_comp));
 
     // If the cref is qualified but we couldn't find it, it might be part of a
-    // deleted conditional component (i.e. it hasn't been instantiated). In that
-    // case, strip the last identifier and look again to see if we can find a
-    // deleted component that is a prefix of the given cref.
+    // deleted conditional component (i.e. it hasn't been instantiated). It
+    // might also be part of an expandable connector. In that case, strip the
+    // last identifier and look again to see if we can find a deleted component
+    // that is a prefix of the given cref.
     case (DAE.CREF_QUAL(ident = _), _, _)
       equation
         cref = ComponentReference.crefStripLastIdent(inCref);
@@ -1277,9 +1277,13 @@ algorithm
     local
       DAE.Type ty;
 
+    // A deleted component, return nothing.
     case (SOME(InstTypes.DELETED_COMPONENT(name = _)), _)
       then (NONE(), NONE());
 
+    // A component that should be added to an expandable connector. The
+    // component we get is the expandable connector itself, so we return it as
+    // the prefix component here, and return nothing as the component.
     case (SOME(InstTypes.TYPED_COMPONENT(ty = ty)), _)
       equation
         true = Types.isComplexExpandableConnector(ty);
@@ -1323,17 +1327,27 @@ end getConnectorFace;
 
 protected function checkComponentIsConnector
   input Component inComponent;
+  input Option<Component> inPrefixComponent;
   input DAE.ComponentRef inCref;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inComponent, inCref, inInfo)
+  _ := matchcontinue(inComponent, inPrefixComponent, inCref, inInfo)
     local
       String cref_str, ty_str;
       DAE.Type ty;
+      Component comp;
 
-    case (_, _, _)
+    case (_, _, _, _)
       equation
         true = InstUtil.isConnectorComponent(inComponent);
+      then
+        ();
+
+    // A component in an expandable connector is seen as a connector.
+    case (_, SOME(comp), _, _)
+      equation
+        ty = InstUtil.getComponentType(comp);
+        true = Types.isComplexExpandableConnector(ty);
       then
         ();
 

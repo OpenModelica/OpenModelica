@@ -235,6 +235,12 @@ algorithm
       then
         ((e,true));
 
+    case ((DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i), _))
+      equation
+        e = listGet(expl, i);
+      then
+        ((e, true));
+
     // unary operations
     case (((exp as DAE.UNARY(operator = op,exp = e1)),_)) 
       equation

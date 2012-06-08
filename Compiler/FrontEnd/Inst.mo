@@ -14526,18 +14526,16 @@ algorithm
     
     case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_) /* default */
       equation
-        e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
-        (e_1,_) = Types.matchType(e, e_tp, tp, true);
+        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
         (e_1,_) = ExpressionSimplify.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
     
     case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_)
       equation
-        e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
-        (e_1,_) = Types.matchType(e, e_tp, tp, false);
+        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
     

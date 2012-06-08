@@ -1624,7 +1624,7 @@ algorithm
         (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs)) = instFunction(inName, inEnv, inPrefix, inInfo);
         pos_args = instExpList(inPositionalArgs, inEnv, inPrefix);
         named_args = List.map2(inNamedArgs, instNamedArg, inEnv, inPrefix);
-        args = fillFunctionSlots(pos_args, named_args, inputs);
+        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
         DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther);
 
@@ -1902,11 +1902,13 @@ protected function fillFunctionSlots
   input list<DAE.Exp> inPositionalArgs;
   input list<tuple<String, DAE.Exp>> inNamedArgs;
   input list<Element> inInputs;
+  input Absyn.Path inFuncName;
+  input Absyn.Info inInfo;
   output list<DAE.Exp> outArgs;
 protected
   list<FunctionSlot> slots;
 algorithm
-  slots := makeFunctionSlots(inInputs, inPositionalArgs, {});
+  slots := makeFunctionSlots(inInputs, inPositionalArgs, {}, inFuncName, inInfo);
   slots := List.fold(inNamedArgs, fillFunctionSlot, slots);
   outArgs := List.map(slots, extractFunctionSlotExp);
 end fillFunctionSlots;
@@ -1915,11 +1917,13 @@ protected function makeFunctionSlots
   input list<Element> inInputs;
   input list<DAE.Exp> inPositionalArgs;
   input list<FunctionSlot> inAccumSlots;
+  input Absyn.Path inFuncName;
+  input Absyn.Info inInfo;
   output list<FunctionSlot> outSlots;
 algorithm
-  outSlots := match(inInputs, inPositionalArgs, inAccumSlots)
+  outSlots := match(inInputs, inPositionalArgs, inAccumSlots, inFuncName, inInfo)
     local
-      String param_name;
+      String param_name, name;
       Binding binding;
       list<Element> rest_inputs;
       Option<DAE.Exp> arg, default_value;
@@ -1927,36 +1931,40 @@ algorithm
       list<FunctionSlot> slots;
 
     // Last vararg input and no positional arguments means we're done.
-    case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _)
+    case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes =
+        InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _, _, _)
       then listReverse(inAccumSlots);
 
     // If the last input of the function is a vararg, handle it first
     case (rest_inputs as (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG()))) :: {}),  _::_, slots)
+        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG()))) :: {}),  _::_, slots, _, _)
       equation
         (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
         default_value = InstUtil.getBindingExpOpt(binding);
         slots = InstTypes.SLOT(param_name, arg, default_value) :: slots;
       then
-        makeFunctionSlots(rest_inputs, rest_args, slots);  
+        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);  
 
     case (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots)
+        Absyn.IDENT(param_name), binding = binding)) :: rest_inputs, _, slots, _, _)
       equation
         (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
         default_value = InstUtil.getBindingExpOpt(binding);
         slots = InstTypes.SLOT(param_name, arg, default_value) :: slots;
       then
-        makeFunctionSlots(rest_inputs, rest_args, slots);  
+        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);  
         
     // No more inputs and positional arguments means we're done.
-    case ({}, {}, _) then listReverse(inAccumSlots);
+    case ({}, {}, _, _, _) then listReverse(inAccumSlots);
 
     // No more inputs but positional arguments left is an error.
-    case ({}, _ :: _, _)
+    case ({}, _ :: _, _, _, _)
       equation
         // TODO: Make this a proper error message.
-        print("SCodeInst.makeFunctionSlots: Too many arguments to function!\n");
+        print(Error.infoStr(inInfo) +& ": ");
+        name = Absyn.pathString(inFuncName);
+        print("SCodeInst.makeFunctionSlots: Too many arguments to function " +&
+          name +& "\n");
       then
         fail();
 
