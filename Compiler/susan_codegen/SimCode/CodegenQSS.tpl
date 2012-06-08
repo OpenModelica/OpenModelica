@@ -95,7 +95,7 @@ case SIMCODE(__) then
   algorithm
   /* Discontinuities */
   <% generateDiscont(zeroCrossings,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),
-                     whenClauses,BackendQSS.getEqs(qssInfo),listLength(sampleConditions)) %>
+                     whenClauses,BackendQSS.getEqs(qssInfo),listLength(sampleConditions),BackendQSS.getZCExps(qssInfo), BackendQSS.getZCOffset(qssInfo)) %>
   end <% getName(modelInfo) %>;
   >>
 end generateQsmModel;
@@ -314,11 +314,11 @@ end generateOdeEq;
 
 template generateZC(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states, 
                     list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, 
-                    BackendDAE.EquationArray eqs)
+                    BackendDAE.EquationArray eqs,list<DAE.Exp> zc_exps, Integer offset)
  "Generates one zc equation of the model"
 ::=
   <<
-  <% (zcs |> zc => generateOneZC(zc,states,disc,algs,eqs);separator="\n") %>
+  <% (zcs |> zc => generateOneZC(zc,states,disc,algs,eqs,zc_exps,offset);separator="\n") %>
   >>
 end generateZC;
 
@@ -331,16 +331,17 @@ template generateAssigment(BackendDAE.EqSystem eq,list<DAE.ComponentRef> states,
 end generateAssigment;
 
 template generateOneZC(BackendDAE.ZeroCrossing zc,list<DAE.ComponentRef> states,
-                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, BackendDAE.EquationArray eqs)
+                    list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, BackendDAE.EquationArray eqs,
+                    list<DAE.Exp> zc_exps, Integer offset)
 "generates one "
 ::=
   match zc
   case BackendDAE.ZERO_CROSSING(__) then
 <<
   when <% ExpressionDump.printExpStr(BackendQSS.replaceVars(relation_,states,disc,algs)) %> then
-    <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,true) %>
+    <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,true,zc_exps,offset) %>
   elsewhen <% ExpressionDump.printExpStr(BackendQSS.replaceVars(BackendQSS.negate(relation_),states,disc,algs)) %> then
-    <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,false) %>
+    <% BackendQSS.generateHandler(eqs,occurEquLst,states,disc,algs,relation_,false,zc_exps,offset) %>
   end when;
 >>
 end generateOneZC;
@@ -411,10 +412,10 @@ end generateCond;
 
 template generateDiscont(list<BackendDAE.ZeroCrossing> zcs, list<DAE.ComponentRef> states,
   list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, list<SimCode.SimWhenClause> whens,BackendDAE.EquationArray eqs,
-  Integer nSamples)
+  Integer nSamples,list<DAE.Exp> zc_exps, Integer offset)
 ::=
   <<
-  <% generateZC(zcs,states,disc,algs,eqs) %>
+  <% generateZC(zcs,states,disc,algs,eqs,zc_exps,offset) %>
   <% BackendQSS.simpleWhens(whens) |> w hasindex i0 => generateWhen(w,states,disc,algs,0);separator="\n" %>
   <% BackendQSS.sampleWhens(whens) |> w hasindex i0 => 
     generateWhen(w,states,disc,algs,intAdd(i0,intSub(listLength(disc),nSamples)));separator="\n" %>

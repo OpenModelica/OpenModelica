@@ -2260,6 +2260,8 @@ package BackendQSS
       list<DAE.ComponentRef> discreteAlgVars;
       list<DAE.ComponentRef> algVars;
       BackendDAE.EqSystems eqs;
+      list<DAE.Exp> zcs;
+      Integer zc_offset;
     end QSSINFO;
   end QSSinfo;
 
@@ -2316,6 +2318,8 @@ package BackendQSS
     input list<DAE.ComponentRef> algs;
     input DAE.Exp condition;
     input Boolean v;
+    input list<DAE.Exp> zc_exps;
+    input Integer offset;
     output String out;
     end generateHandler;
 
@@ -2377,6 +2381,17 @@ package BackendQSS
     input list<SimCode.SimWhenClause> i;
     output list<SimCode.SimWhenClause> o;
   end sampleWhens;
+
+  function getZCOffset
+    input QSSinfo qssInfo;
+    output Integer o;
+  end getZCOffset;
+
+  function getZCExps
+    input QSSinfo qssInfo;
+    output list<DAE.Exp> exps;
+  end getZCExps;
+
 end BackendQSS;
 
 package BackendVariable

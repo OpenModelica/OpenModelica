@@ -65,6 +65,8 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
     list<DAE.ComponentRef> discreteVars;
     list<DAE.ComponentRef> algVars;
     BackendDAE.EquationArray eqs;
+    list<DAE.Exp> zcs;
+    Integer zc_offset;
   end QSSINFO;
 end QSSinfo;
 
@@ -83,21 +85,27 @@ algorithm
   (QSSinfo_out,simC) :=
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents,simCode)
     local
-       QSSinfo qssInfo;
-       BackendDAE.BackendDAE dlow;
-       list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst,algVarsList;
-       BackendDAE.StrongComponents comps;
-       BackendDAE.IncidenceMatrix m, mt;
-       array<Integer> ass1, ass2;
-       BackendDAE.EqSystem syst;
-       list<SimCode.SimEqSystem> eqs;
-       list<list<Integer>> s;
-       list<DAE.ComponentRef> states,disc,algs;
-       list<SimCode.SampleCondition> sampleConditions;
-        BackendDAE.EquationArray eqsdae;
-        BackendDAE.Shared shared;
+      QSSinfo qssInfo;
+      BackendDAE.BackendDAE dlow;
+      list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst,algVarsList;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.IncidenceMatrix m, mt;
+      array<Integer> ass1, ass2;
+      BackendDAE.EqSystem syst;
+      list<SimCode.SimEqSystem> eqs;
+      list<list<Integer>> s;
+      list<DAE.ComponentRef> states,disc,algs;
+      list<SimCode.SampleCondition> sampleConditions;
+      BackendDAE.EquationArray eqsdae;
+      BackendDAE.Shared shared;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<DAE.Exp> zc_exps;
+      list<Integer> eqsindex;
+      SimCode.SimCode sc;
+      Integer offset;
+       
     case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(_,eqsdae,_,_,_)},shared), ass1, ass2, 
-          m, mt, comps,SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions))
+          m, mt, comps,sc as SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions,zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");
         print("BackEndQSS analysis initialized");
@@ -107,11 +115,15 @@ algorithm
         discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
         disc = List.map(discVarsLst,getCref);
         disc = listAppend(disc, createDummyVars(listLength(sampleConditions)));
+        (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
+        offset = listLength(disc);
+        disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
         states = List.map(stateVarsList,getCref);
         algs = computeAlgs(eqs,states,{});
         s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
+        sc = replaceDiscontsInOde(sc,zc_exps);
       then
-        (QSSINFO(s,states,disc,algs,eqsdae),simCode);
+        (QSSINFO(s,states,disc,algs,eqsdae,zc_exps,offset),sc);
     else
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
@@ -268,6 +280,31 @@ refs := match qssInfo
   then s;
   end match;
 end getStateIndexList;
+
+public function getZCExps
+  input QSSinfo qssInfo;
+  output list<DAE.Exp> exps;
+algorithm
+refs := match qssInfo 
+  local 
+    list<DAE.Exp> exs;
+  case (QSSINFO(zcs=exs))
+  then exs;
+  end match;
+end getZCExps;
+
+public function getZCOffset
+  input QSSinfo qssInfo;
+  output Integer o;
+algorithm
+refs := match qssInfo 
+  local 
+    Integer off;
+  case (QSSINFO(zc_offset=off))
+  then off;
+  end match;
+end getZCOffset;
+
 
 public function getStates
   input QSSinfo qssInfo;
@@ -537,10 +574,12 @@ public  function generateHandler
     input list<DAE.ComponentRef> algs;
     input DAE.Exp condition;
     input Boolean v;
+    input list<DAE.Exp> zc_exps;
+    input Integer offset;
     output String out;
 algorithm
   out:=
-    matchcontinue (eqs,handlers,states,disc,algs,condition,v) 
+    matchcontinue (eqs,handlers,states,disc,algs,condition,v,zc_exps,offset) 
       local 
         Integer h;
         Boolean b;
@@ -548,24 +587,69 @@ algorithm
         DAE.Exp exp,e1;
         DAE.Exp scalar "scalar" ;
         String s;
-       case (_,{h},_,_,_,_,true) 
+       case (_,{h},_,_,_,_,true,_,_) 
        equation
-         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s = stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
          s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
          s= stringAppend(s,";");
        then s;
-       case (_,{h},_,_,_,_,false) 
+       case (_,{h},_,_,_,_,true,_,_) 
+       equation
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
+         s = stringAppend(s," := ");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
+         s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
+         s= stringAppend(s,";");
+       then s;
+
+       case (_,{h},_,_,_,_,true,zc_exps,offset) 
+        local Integer p;
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s = stringAppend("/* We are adding a new discrete variable for ","");
+         s = stringAppend(s,ExpressionDump.printExpStr(condition));
+         s = stringAppend(s,"*/\n");
+         p = List.positionOnTrue(condition,zc_exps,Expression.expEqual);
+         s = stringAppend(s,"d[");
+         s = stringAppend(s,intString(p+1+offset));
+         s = stringAppend(s,"] := 1.0;\n");
+       then s;
+ 
+       case (_,{h},_,_,_,_,false,_,_) 
+       equation
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s= stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
          s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
          s= stringAppend(s,";");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+       then s;
+       case (_,{h},_,_,_,_,false,_,_) 
+       equation
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
+         s= stringAppend(s," := ");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+         s= stringAppend(s,ExpressionDump.printExpStr(replaceVars(e1,states,disc,algs)));
+         s= stringAppend(s,";");
+         ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
+       then s;
+       case (_,{h},_,_,_,_,false,zc_exps,offset) 
+        local Integer p;
+       equation
+         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         s = stringAppend("/* We are adding a new discrete variable for ","");
+         s = stringAppend(s,ExpressionDump.printExpStr(condition));
+         s = stringAppend(s,"*/\n");
+         p = List.positionOnTrue(condition,zc_exps,Expression.expEqual);
+         s = stringAppend(s,"d[");
+         s = stringAppend(s,intString(p+1+offset));
+         s = stringAppend(s,"] := 0.0;\n");
        then s;
     end matchcontinue;
 end generateHandler;
@@ -923,6 +1007,172 @@ algorithm
       then sampleWhens(tail);
     end matchcontinue;
 end sampleWhens;
+
+function newDiscreteVariables
+  input list<BackendDAE.Equation> inEquationLst;
+  input Integer zc;
+  output list<DAE.ComponentRef> d;
+algorithm
+  d := match (inEquationLst,zc)
+    local
+      list<BackendDAE.Equation> tail;
+      String s;
+    case ({},_) then {};
+    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_BOOL(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
+    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_INTEGER(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
+    case ( _ :: tail,zc) 
+    equation
+      print("Found one discontinuous equation\n");
+      s = stringAppend("zc ",intString(zc));
+    then listAppend({DAE.CREF_IDENT(s,DAE.T_REAL_DEFAULT,{})},newDiscreteVariables(tail,zc+1));
+  end match;
+end newDiscreteVariables;
+
+function getEquationsWithDiscont
+  input list<BackendDAE.ZeroCrossing> zeroCrossings;
+  output list<Integer> out;
+  output list<DAE.Exp> outexp;
+algorithm
+out := match zeroCrossings
+  local 
+    list<BackendDAE.ZeroCrossing> tail;
+    list<Integer> occurEquLst;
+    list<Integer> o;
+    list<DAE.Exp> exps;
+    DAE.Exp relation;
+  case ({}) then ({},{});
+  case (BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst,relation_=relation) :: tail)
+  equation
+    (o,exps) = getEquationsWithDiscont(tail);
+  then (listAppend(occurEquLst,o),listAppend({relation},exps));
+  end match;   
+end getEquationsWithDiscont;
+
+
+function getEquations
+  input BackendDAE.EquationArray eqsdae;
+  input list<Integer> indx;
+  output list<BackendDAE.Equation> outEquationLst;
+algorithm
+  outEquationLst := match (eqsdae,indx)
+    local 
+      list<Integer> tail;
+      Integer p;
+      list<BackendDAE.Equation> res;
+      BackendDAE.Equation eq;
+    case (_,{}) then {};
+    case (_,p::tail) 
+    equation
+      eq = BackendDAEUtil.equationNth(eqsdae,p);
+      res = listAppend({eq},getEquations(eqsdae,tail));
+    then res;
+  end match;
+end getEquations;
+  
+function replaceDiscontsInOde
+  input SimCode.SimCode sin;
+  input list<DAE.Exp> zc_exps;
+  output SimCode.SimCode sout;
+algorithm
+  sout:=match (sin,zc_exps)
+    local
+      SimCode.ModelInfo modelInfo;
+      list<DAE.Exp> literals "shared literals";
+      list<SimCode.RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<list<SimCode.SimEqSystem>> odeEquations;
+      list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<DAE.Constraint> constraints;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SimCode.SampleCondition> sampleConditions;
+      list<SimCode.HelpVarInfo> helpVarInfo;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      SimCode.DelayedExpression delayedExps;
+      list<String> labels;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;     
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<SimCode.SimEqSystem> eqs;
+    case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
+          algebraicEquations,residualEquations,startValueEquations, 
+          parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,
+          sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
+    equation
+      {eqs} = odeEquations;
+      eqs = List.map1(eqs,replaceZC,zc_exps);
+    then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, {eqs}, algebraicEquations, residualEquations, startValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, constraints, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+
+  end match;
+end replaceDiscontsInOde;
+
+
+function replaceZC
+  input SimCode.SimEqSystem eq;
+  input list<DAE.Exp> zc_exps;
+  output SimCode.SimEqSystem eq_out;
+algorithm
+  eq_out := 
+    matchcontinue (eq,zc_exps)
+      local 
+        DAE.Exp exp;
+        DAE.ComponentRef cref;
+        DAE.ElementSource source;
+      case (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source),_)
+      equation
+        exp = replaceExpZC(exp,zc_exps,0);
+      then SimCode.SES_SIMPLE_ASSIGN(cref,exp,source);
+      case (_,_) then eq;
+    end matchcontinue;
+end replaceZC;
+
+function replaceExpZC
+  input DAE.Exp exp;
+  input list<DAE.Exp> zc_exps;
+  input Integer indx;
+  output DAE.Exp out;
+algorithm
+  out := 
+    match (exp,zc_exps,indx)
+    local 
+      DAE.Exp exp1,e;
+      list<DAE.Exp> tail;
+    case (_,{},_) then exp;
+    case (_,exp1::tail,_) 
+    equation
+      ((e,_))=Expression.traverseExp(exp,replaceInExpZC,(exp1,indx));
+    then replaceExpZC(e,tail,indx+1);
+    end match;
+end replaceExpZC;
+
+
+function replaceInExpZC
+  input tuple<DAE.Exp, tuple<DAE.Exp,Integer> > tplExpIn;
+  output tuple<DAE.Exp, tuple<DAE.Exp,Integer> > tplExpOut;
+algorithm
+  tplExpOut := 
+    matchcontinue tplExpIn
+    local 
+      DAE.Exp e,zc;
+      Integer i;
+      String s;
+    case ((e,(zc,i)))
+    equation
+      true = Expression.expEqual(e,zc);
+      s = stringAppend("zc ",intString(i));
+    then ((DAE.CREF(DAE.CREF_IDENT(s,DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT),(zc,i)));
+    case _ then tplExpIn;
+  end matchcontinue;
+end replaceInExpZC;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
