@@ -438,10 +438,11 @@ algorithm
     local Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> unc;
+      Option<DAE.Distribution> dist;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,eb,ip,fn)),repl,condExpFunc)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn)),repl,condExpFunc)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (unit) = replaceExpOpt(unit,repl,condExpFunc);
@@ -450,17 +451,18 @@ algorithm
         (max) = replaceExpOpt(max,repl,condExpFunc);
         (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-        (nominal) = replaceExpOpt(nominal,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,eb,ip,fn));
+        (nominal) = replaceExpOpt(nominal,repl,condExpFunc); 
+        //TODO: replace expressions also in uncertainty attributes (unc and dist)       
+      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,eb,ip,fn)),repl,condExpFunc)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn)),repl,condExpFunc)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (min) = replaceExpOpt(min,repl,condExpFunc);
         (max) = replaceExpOpt(max,repl,condExpFunc);
         (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,eb,ip,fn));
+      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn));
 
       case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),repl,condExpFunc)
         equation

@@ -3237,21 +3237,49 @@ algorithm
       Integer numrepl;
       DAE.Exp e,e1;
       DAE.ComponentRef cr;
-    case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e)),(repl,numrepl)))
+      option<DAE.VariableAttributes> attr,new_attr;
+      
+    case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e),values=attr),(repl,numrepl)))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v,e1);
         true = Expression.isConst(e1);
         repl_1 = BackendVarTransform.addReplacement(repl, cr, e1);
+        (attr,repl_1) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl_1);
+        v1 = BackendVariable.setVarAttributes(v1,attr);
       then ((v1,(repl_1,numrepl+1)));
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)),(repl,numrepl)))
+    case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),(repl,numrepl)))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v,e1);
+        (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
+        v1 = BackendVariable.setVarAttributes(v1,new_attr);
       then ((v1,(repl,numrepl)));
-    case inTpl then inTpl;
+    
+    case  ((v as BackendDAE.VAR(values=attr),(repl,numrepl))) equation 
+      (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
+      v1 = BackendVariable.setVarAttributes(v,new_attr);      
+      then ((v1,(repl,numrepl)));
   end matchcontinue;
 end replaceFinalVarTraverser;
+
+protected function traverseExpVisitorWrapper "help function to replaceFinalVarTraverser"
+  input tuple<DAE.Exp,BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<DAE.Exp,BackendVarTransform.VariableReplacements> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local 
+    DAE.Exp exp;
+    BackendVarTransform.VariableReplacements repl;
+    DAE.ComponentRef cr;
+    
+    case((exp as DAE.CREF(cr,_),repl)) equation
+      (exp,_) = BackendVarTransform.replaceExp(exp,repl,NONE());      
+    then ((exp,repl));
+    
+    case(inTpl) then inTpl;
+  end matchcontinue;
+end traverseExpVisitorWrapper;
 
 /*  
  * remove paramters stuff 
@@ -3291,6 +3319,8 @@ algorithm
         algs = arrayList(algorithms);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
+        (knvars1,repl2) = replaceFinalVars(1,knvars1,repl2);
+        (vars,_) = replaceFinalVars(1,vars,repl2); // replacing variable attributes (e.g start) in unknown vars 
         Debug.fcall(Flags.DUMP_PARAM_REPL, BackendVarTransform.dumpReplacements, repl2);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl2);
@@ -4966,7 +4996,7 @@ algorithm
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);

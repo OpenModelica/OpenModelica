@@ -127,10 +127,18 @@ public constant SCode.Prefixes commonPrefixes =
     Absyn.NOT_INNER_OUTER(), 
     SCode.NOT_REPLACEABLE()); 
 
+public constant SCode.Prefixes commonPrefixesNotFinal = 
+  SCode.PREFIXES(
+    SCode.PUBLIC(), 
+    SCode.NOT_REDECLARE(), 
+    SCode.NOT_FINAL(), /* make everything here final! */
+    Absyn.NOT_INNER_OUTER(), 
+    SCode.NOT_REPLACEABLE()); 
+
 protected
 constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR()); 
 constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
-
+constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
 /*
 - The primitive types
   These are the primitive types that are used to build the types
@@ -202,11 +210,16 @@ protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",com
           SOME((
           Absyn.CREF(
           Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
-          
+
+/* Extensions for uncertainties */          
 protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
           SOME((Absyn.CREF(Absyn.CREF_QUAL("Uncertainty",{},Absyn.CREF_IDENT("given",{}))),false)),Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);            
+
+protected constant SCode.Element distribution = SCode.COMPONENT("distribution",commonPrefixes,attrParam,Absyn.TPATH(Absyn.IDENT("Distribution"),NONE()),
+          SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo); // Distribution is declared in ModelicaBuiltin.mo
+/* END Extensions for uncertainties */
 
 protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("never",commonPrefixes,
@@ -239,10 +252,10 @@ public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",
 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect,uncertainty},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
+          stateSelect,uncertainty,distribution},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;

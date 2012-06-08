@@ -186,7 +186,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -205,7 +205,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -345,7 +345,7 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       then
         BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -364,7 +364,7 @@ algorithm
               streamPrefix = streamPrefix),inExp)
       then
         BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE())),
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
@@ -406,6 +406,35 @@ algorithm
             s,t,streamPrefix);
   end match;
 end setVarStartValue;
+
+public function setVarAttributes 
+"sets the variable attributes of a variable.
+author: Peter Aronsson (paronsson@wolfram.com)
+"
+  input BackendDAE.Var v;
+  input option<DAE.VariableAttributes> attr;
+  output BackendDAE.Var outV;
+algorithm
+  outV := matchcontinue(v,attr)
+  local
+     DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;
+      
+    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,_,s,t,streamPrefix),attr) then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,attr,s,t,streamPrefix);  
+  end matchcontinue;
+end setVarAttributes; 
 
 public function varStartValue
 "function varStartValue
@@ -656,7 +685,7 @@ algorithm
   outReal := matchcontinue (inVar)
     local
       Real nominal;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(DAE.RCONST(nominal)),_,_,_,_,_)))) then nominal;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(DAE.RCONST(nominal)),_,_,_,_,_,_)))) then nominal;
   end matchcontinue;
 end varNominal;
 
@@ -741,6 +770,38 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end varHasUncertainValueRefine;
+
+public function varDistribution
+"
+  author: Peter Aronsson, 2012-05
+  
+  Returns Distribution record of a variable.
+"
+  input BackendDAE.Var var;
+  output DAE.Distribution d;
+algorithm 
+  d := matchcontinue (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then d;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then d;
+  end matchcontinue;
+end varDistribution;
+
+
+public function varHasDistributionAttribute
+"
+  author: Peter Aronsson, 2012-05
+  
+  Returns true if the specified variable has the attribute distribution set.
+"
+  input BackendDAE.Var var;
+  output Boolean b;
+algorithm 
+  b := matchcontinue (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(_))))) then true;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(_))))) then true;
+    case (_) then false;
+  end matchcontinue;
+end varHasDistributionAttribute;
 
 protected function failIfNonState
 "Fails if the given variable kind is state."

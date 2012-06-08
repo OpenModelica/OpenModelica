@@ -703,6 +703,31 @@ algorithm
   end matchcontinue;
 end dumpUncertaintyStr;
 
+protected function dumpDistributionStr
+"
+  Author: Peter Aronsson 2012
+
+  Dump Distribution to a string.
+"
+  input DAE.Distribution distribution;
+  output String out;
+algorithm
+  out := matchcontinue (distribution)
+    local
+      DAE.Exp name;
+      DAE.Exp params;
+      DAE.Exp paramNames;
+      String name_str,params_str, paramNames_str;
+      
+    case DAE.DISTRIBUTION(name = name, params = params,paramNames=paramNames) equation
+      name_str = ExpressionDump.printExpStr(name);
+      params_str = ExpressionDump.printExpStr(params);
+      paramNames_str = ExpressionDump.printExpStr(paramNames);
+      then
+      "Distribution(name = " +& name_str +& ", params = " +& params_str +& ", paramNames= " +& paramNames_str +& ")";
+  end matchcontinue;
+end dumpDistributionStr;
+
 public function dumpVariableAttributes "function: dumpVariableAttributes
   Dump VariableAttributes option."
   input Option<DAE.VariableAttributes> attr;
@@ -723,13 +748,14 @@ algorithm
   outString:=
   matchcontinue (inVariableAttributesOption)
     local
-      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,res_1,res1,res;
+      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res1,res;
       Boolean is_empty;
       Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed;
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
-    
-    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,_,_,_)))
+      Option<DAE.Distribution> dist;
+      
+    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
@@ -741,16 +767,18 @@ algorithm
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
         uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
+        dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
+    
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
-          initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str}, ", ");
+          initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,dist,_,_,_)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
@@ -758,7 +786,8 @@ algorithm
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
         uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str}, ", ");
+        dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str,dist_str}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);

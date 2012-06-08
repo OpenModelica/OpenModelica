@@ -376,6 +376,7 @@ uniontype VariableAttributes
     Option<Exp> nominal "nominal" ;
     Option<StateSelect> stateSelectOption;
     Option<Uncertainty> uncertainOption;
+    Option<Distribution> distributionOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
@@ -387,6 +388,7 @@ uniontype VariableAttributes
     Option<Exp> initial_ "Initial value" ;
     Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
     Option<Uncertainty> uncertainOption;
+    Option<Distribution> distributionOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected; // ,eb,ip
     Option<Boolean> finalPrefix;
@@ -440,6 +442,14 @@ public uniontype Uncertainty
 
   record REFINE end REFINE;
 end Uncertainty;
+
+public uniontype Distribution
+  record DISTRIBUTION "see Distribution record in Distribution"
+    Exp name;
+    Exp params;
+    Exp paramNames;
+  end DISTRIBUTION;    
+end Distribution;
 
 public uniontype ExtArg
   record EXTARG
@@ -736,6 +746,12 @@ public constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
 public constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
 public constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
 public constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
+
+// Arrays of unknown dimension, eg. Real[:]
+public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
+public constant Type T_ARRAY_INT_NODIM     = T_ARRAY(T_INTEGER_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
+public constant Type T_ARRAY_BOOL_NODIM    = T_ARRAY(T_BOOL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
+public constant Type T_ARRAY_STRING_NODIM  = T_ARRAY(T_STRING_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
 
 public uniontype Type "models the different front-end and back-end types"
   

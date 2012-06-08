@@ -59,6 +59,7 @@ public import Error;
 public import Interactive;
 public import Dependency;
 public import Values;
+public import SimCode;
 
 // protected imports
 protected import AbsynDep;
@@ -90,7 +91,6 @@ protected import Print;
 protected import Refactor;
 protected import SCodeDump;
 protected import SCodeFlatten;
-protected import SimCode;
 protected import System;
 protected import Static;
 protected import SCode;
@@ -105,6 +105,7 @@ protected import ValuesUtil;
 protected import XMLDump;
 protected import ComponentReference;
 protected import Uncertainties;
+protected import OpenTURNS;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -292,6 +293,79 @@ algorithm
     else (inCache,inputFilename);
   end match;
 end cevalCurrentSimulationResultExp;
+
+public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
+  input SimulationOptions opts;
+  output SimCode.SimulationSettings settings;
+algorithm
+  settings := matchcontinue(opts)
+  local 
+    Real startTime,stopTime,stepSize,tolerance;
+    Integer nIntervals;
+    String method,format,varFilter,cflags,options;
+    Boolean measureTime;
+    
+    case(SIMULATION_OPTIONS(
+      DAE.RCONST(startTime),
+      DAE.RCONST(stopTime),
+      DAE.ICONST(nIntervals),
+      DAE.RCONST(stepSize),
+      DAE.RCONST(tolerance),
+      DAE.SCONST(method),
+      _, /* fileNamePrefix*/
+      _, /* storeInTemp */
+      _, /* noCelean */
+      _, /* options */
+      DAE.SCONST(format),
+      DAE.SCONST(varFilter),
+      DAE.BCONST(measureTime),
+      DAE.SCONST(cflags),
+      _)) equation
+        options = "";
+        
+    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,measureTime,cflags);  
+  end matchcontinue;
+end convertSimulationOptionsToSimCode;
+
+public function buildSimulationOptions
+"@author: adrpo
+  builds a SimulationOptions record from the given input"
+  input DAE.Exp startTime "start time, default 0.0";
+  input DAE.Exp stopTime "stop time, default 1.0";
+  input DAE.Exp numberOfIntervals "number of intervals, default 500";
+  input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+  input DAE.Exp tolerance "tolerance, default 1e-6";
+  input DAE.Exp method "method, default 'dassl'";
+  input DAE.Exp fileNamePrefix "file name prefix, default ''";
+  input DAE.Exp storeInTemp "store in temp, default false";
+  input DAE.Exp noClean "no cleaning, default false";
+  input DAE.Exp options "options, default ''";
+  input DAE.Exp outputFormat "output format, default 'plt'";
+  input DAE.Exp variableFilter;
+  input DAE.Exp measureTime;
+  input DAE.Exp cflags;
+  input DAE.Exp simflags;
+  output SimulationOptions outSimulationOptions;
+algorithm
+  outSimulationOptions := 
+    SIMULATION_OPTIONS(
+    startTime,
+    stopTime,
+    numberOfIntervals,
+    stepSize,
+    tolerance,
+    method,
+    fileNamePrefix,
+    storeInTemp,
+    noClean,
+    options,    
+    outputFormat,
+    variableFilter,
+    measureTime,
+    cflags,
+    simflags
+  );
+end buildSimulationOptions;
 
 public function getSimulationOption
 "@author: adrpo
@@ -724,13 +798,13 @@ algorithm
              plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str;
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
-      SCode.Element c; 
+      SCode.Element c;
       DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
@@ -1221,6 +1295,12 @@ algorithm
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        
+    case(cache,env,"buildOpenTURNSInterface",vals,st,msg) 
+      equation
+        (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
+      then    
+        (cache,Values.STRING(scriptFile),st);
         
     case (cache,env,"buildModel",_,st,msg) /* failing build_model */
       then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
@@ -2985,6 +3065,43 @@ algorithm
         fail();
   end matchcontinue;
 end buildModel;
+
+protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Values.Value> vals;
+  input Interactive.SymbolTable inSt;
+  input Ceval.Msg inMsg;
+  output Env.Cache outCache;
+  output String scriptFile;
+  output Interactive.SymbolTable outSt;
+algorithm
+  (outCache,scriptFile,outSt):= matchcontinue(inCache,inEnv,vals,inSt,inMsg)
+  local
+    String templateFile,modelName;
+    Absyn.Program p,ptot;
+    list<SCode.Element> p_1;
+    Absyn.Path className;
+    Env.Cache cache;
+    DAE.DAElist dae;
+    Env.Env env;
+    BackendDAE.BackendDAE dlow,dlow_1;
+    DAE.FunctionTree funcs;
+    Interactive.SymbolTable st;
+    
+    case(cache,inEnv,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},inSt as Interactive.SYMBOLTABLE(ast=p),inMsg) equation      
+      (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
+      //print("instantiated class\n");
+      dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+      funcs = Env.getFunctionTree(cache);
+      dlow = BackendDAECreate.lower(dae,funcs,true);      
+      //print("lowered class\n");
+      dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, NONE(), NONE(), NONE(),NONE());
+      //print("calling generateOpenTurnsInterface\n");  
+      scriptFile = OpenTURNS.generateOpenTURNSInterface(dlow_1,funcs,className,p,dae,templateFile);
+    then (cache,templateFile,inSt);
+  end matchcontinue;
+end buildOpenTURNSInterface;
 
 protected function changeToTempDirectory "function changeToTempDirectory
 changes to temp directory (set using the functions from Settings.mo)

@@ -689,7 +689,8 @@ protected constant list<String> basicTypeMods = {
   "fixed",
   "nominal",
   "stateSelect",
-  "uncertain"  
+  "uncertain",    // extension for uncertainties
+  "distribution"  // extension for uncertainties
 };
 
 public function isBasicTypeComponentName

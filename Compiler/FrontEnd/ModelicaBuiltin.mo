@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Link�ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Link�ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Link�ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -569,6 +569,13 @@ function inStream
   See <a href=\"modelica://ModelicaReference.Operators.'inStream()'\">inStream()</a>
 </html>"));
 end inStream;
+
+/* Extension for uncertainty computations */
+record Distribution 
+  String name "the name of the distibution, e.g \"normal\" ";
+  Real params[:] "parameter values for the specified distribution, e.g {0,0.1} for a normal distribution";
+  String paramNames[:/*should be size(params,1) but doesn't work, cb issue #1682*/] "the parameter names for the specified distribution, e.g {\"my\",\"sigma\"} for a normal distribution";
+end Distribution;
 
 encapsulated package Connections
   function branch
@@ -1580,7 +1587,13 @@ external "builtin";
 annotation(preferredView="text");
 end instantiateModel;
 
-function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so."
+function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
+  input TypeName classNAme;
+  input String str;
+  external "builtin";
+end buildOpenTURNSInterface;  
+
+function generateCode "The input is a function name for which C-code is generated and compiled into a dll/so"
   input TypeName className;
   output Boolean success;
 external "builtin";
@@ -2525,7 +2538,7 @@ This OpenModelica 1.5 release has major improvements in the OpenModelica compile
 This release includes major improvements of the flattening frontend part of the OpenModelica Compiler (OMC) and some improvements of the backend, including, but not restricted to:
 <ul>
 <li>Improved flattening speed of at least a factor of 10 or more compared to the 1.4.5 release, primarily for larger models with inner-outer, but also speedup for other models, e.g. the robot model flattens in approximately 2 seconds.</li>
-<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravity­WithPointMasses.</li> 
+<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravity�WithPointMasses.</li> 
 <li>Progress in supporting the Media library, but simulation is not yet possible.</li>
 <li>Support for enumerations, both in the frontend and the backend.</li>
 <li>Support for expandable connectors.</li>
@@ -2575,7 +2588,7 @@ This release includes bug fix and performance improvemetns of the flattening fro
 <li>Flattening of the whole Modelica Standard Library 3.1 (MSL 3.1), except Media and Fluid.</li>
 <li>Improved flattening speed of a factor of 5-20 compared to OpenModelica 1.5 for a number of models, especially in the MultiBody library.</li>
 <li>Reduced memory consumption by the OpenModelica compiler frontend, for certain large models a reduction of a factor 50.</li>
-<li>Reorganized, more modular OpenModelica compiler backend, can now handle approximately 30 000 equations, compared to previously approximately 10 000 equations.</li>
+<li>Reorganized, more modular OpenModelica compiler backend, can now handle approximately 30�000 equations, compared to previously approximately 10�000 equations.</li>
 <li>Better error messages from the compiler, especially regarding functions.</li>
 <li>Improved simulation coverage of MSL 3.1. Many models that did not simulate before are now simulating. However, there are still many models in certain sublibraries that do not simulate.</li>
 <li>Progress in supporting the Media library, but simulation is not yet possible.</li>
@@ -2593,7 +2606,7 @@ Same as previously.
 <h4>OpenModelica Development Environment (OMDev)</h4> 
 Several enhancements. Support for match-expressions in addition to matchcontinue. Support for real if-then-else. Support for if-then without else-branches. Modelica Development Tooling 0.7.7 with small improvements such as more settings, improved error detection in console, etc.
 <h4>New Graphic Editor OMEdit</h4>
-A new improved open source graphic model connection editor called OMEdit, supporting 3.1 graphical annotations, which makes it possible to move models back and forth to other tools without problems. The editor has been implemented by students at Linköping University and is based on the C++ Qt library.
+A new improved open source graphic model connection editor called OMEdit, supporting 3.1 graphical annotations, which makes it possible to move models back and forth to other tools without problems. The editor has been implemented by students at Link�ping University and is based on the C++ Qt library.
 </html>"));
 end '1.6.0';
 package '1.7.0' "Version 1.7.0 (r8711, 2011-04-20)"

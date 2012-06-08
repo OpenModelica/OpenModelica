@@ -1311,17 +1311,18 @@ sudh as:
        Option<DAE.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
        Option<DAE.Uncertainty> unc;
+       Option<DAE.Distribution> distrOpt;
        Boolean addMMLCode;
        Option<DAE.Exp> equationBound;
        Option<Boolean> isProtected;
        Option<Boolean> finalPrefix;
 
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),_,_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,unc,
+   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,unc,distrOpt,
                                 equationBound,isProtected,finalPrefix)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
@@ -1337,7 +1338,7 @@ sudh as:
         // adrpo: TODO! FIXME! add the new information about equationBound,isProtected,finalPrefix
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,unc,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,unc,distrOpt,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);

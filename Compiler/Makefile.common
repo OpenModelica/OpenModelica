@@ -71,6 +71,7 @@ Lookup.mo \
 MMath.mo \
 MetaUtil.mo \
 Mod.mo \
+OpenTURNS.mo \
 Parser.mo \
 Patternm.mo \
 Prefix.mo \

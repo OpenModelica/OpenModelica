@@ -1995,6 +1995,31 @@ protected constant DAE.Type uncertaintyType =
              DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"given","sought","refine"},{},{},DAE.emptyTypeSource),DAE.UNBOUND(),NONE())
           },{},DAE.emptyTypeSource);          
 
+protected constant DAE.Type distributionType = 
+  DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("Distribution")),
+                {
+                  DAE.TYPES_VAR(
+                    "name",
+                    DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()), 
+                    DAE.T_STRING_DEFAULT,
+                    DAE.UNBOUND(), // binding
+                    NONE()),
+                  DAE.TYPES_VAR(
+                    "params",
+                    DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
+                    DAE.T_ARRAY_REAL_NODIM,
+                    DAE.UNBOUND(), // binding
+                    NONE()),
+                  DAE.TYPES_VAR(
+                    "paramNames",
+                    DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),
+                    DAE.T_ARRAY_STRING_NODIM,
+                    DAE.UNBOUND(), // binding
+                    NONE())
+                },
+                NONE(),
+                {});
+                
 protected function instRealClass
 "function instRealClass
   Instantiation of the Real class"
@@ -2093,7 +2118,12 @@ algorithm
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
-      then v::varLst;    
+      then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+      equation
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
+        v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,distributionType,p);
+      then v::varLst;
     case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre,ty)
       equation
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
@@ -2162,7 +2192,12 @@ algorithm
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
-      then v::varLst;      
+      then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+      equation
+        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,distributionType,p);
+      then v::varLst;
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       equation
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
@@ -13927,6 +13962,7 @@ algorithm
       Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val;
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
+      Option<DAE.Distribution> distribution_value;
       list<Env.Frame> env;
       DAE.Mod mod;
       DAE.TypeSource ts;
@@ -13951,14 +13987,16 @@ algorithm
         (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",stateSelectType,true);
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
         
-        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);        
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
+        distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
+    
         
         //TODO: check for protected attribute (here and below matches)
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
-          start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,NONE(),NONE(),NONE())));
+          start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE())));
     
     // Integer
     case (cache,env,mod,tp as DAE.T_INTEGER(varLst = varLst, source = ts),index_list)
@@ -13970,8 +14008,10 @@ algorithm
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
         (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
+        distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
+        
       then
-        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE())));
     
     // Boolean
     case (cache,env,mod,tp as DAE.T_BOOL(varLst = varLst, source = ts),index_list)
@@ -14253,6 +14293,60 @@ algorithm
     case (_) then NONE();
   end matchcontinue;
 end getStateSelectFromExpOption;
+
+protected function instDistributionBinding
+"
+  Author:Peter Aronsson, 2012
+  
+  Instantiates a distribution binding and retrieves the value.
+"
+  input DAE.Mod inMod;
+  input list<DAE.Var> varLst;
+  input list<Integer> inIntegerLst;
+  input String inString;
+  input Boolean useConstValue "if true, use constant value in TYPED (if present)";
+  output Option<DAE.Distribution> out;
+algorithm
+  out := matchcontinue (inMod,varLst,inIntegerLst,inString,useConstValue)
+    local
+      Option<DAE.Exp> result;      
+      DAE.Mod mod;
+      DAE.Exp name,params,paramNames;
+      list<Integer> index_list;
+      String bind_name,nameStr;
+      DAE.Type paramsTp,ty;
+      Integer paramDim;
+      DAE.ComponentRef cr,crName,crParams,crParamNames;
+    
+    //Record constructor
+    case (mod, varLst, index_list, bind_name, useConstValue)
+      equation
+        SOME(DAE.CALL(path = Absyn.IDENT("Distribution"), expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+      then
+        SOME(DAE.DISTRIBUTION(name, params, paramNames));
+    
+    // Cref
+    case (mod, varLst, index_list, bind_name, useConstValue)
+      equation
+        SOME(DAE.CREF(cr,ty)) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true = Types.isRecord(ty);
+        DAE.T_COMPLEX(varLst = _::DAE.TYPES_VAR(ty=DAE.T_ARRAY(dims={DAE.DIM_INTEGER(paramDim)}))::_) = ty;
+        
+        crName = ComponentReference.crefPrependIdent(cr,"name",{},DAE.T_STRING_DEFAULT);
+        crParams = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        crParamNames = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        name = Expression.makeCrefExp(crName,DAE.T_STRING_DEFAULT);
+        params = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));
+        paramNames = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)},DAE.emptyTypeSource));        
+      then
+         SOME(DAE.DISTRIBUTION(name, params, paramNames));
+     
+     
+
+    case (_,_,_,_,_) then NONE();
+
+  end matchcontinue;
+end instDistributionBinding;
 
 protected function getUncertainFromExpOption
 "

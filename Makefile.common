@@ -1,4 +1,4 @@
-.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common difftool
+inclu.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common difftool
 
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/
@@ -38,7 +38,7 @@ mkbuilddirs:
 
 debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
-release: omc install-python
+release: omc 
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
