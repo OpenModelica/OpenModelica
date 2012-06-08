@@ -6234,22 +6234,22 @@ public function testMatchingAlgorithm
     output BackendDAE.EqSystem osyst;
     output BackendDAE.Shared oshared;
     output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-		partial function StructurallySingularSystemHandlerFunc
-		  input list<Integer> eqns;
-		  input Integer actualEqn;
-		  input BackendDAE.EqSystem isyst;
-		  input BackendDAE.Shared ishared;
-		  input array<Integer> inAssignments1;
-		  input array<Integer> inAssignments2;
-		  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-		  output list<Integer> changedEqns;
-		  output Integer continueEqn;
-		  output BackendDAE.EqSystem osyst;
-		  output BackendDAE.Shared oshared;
-		  output array<Integer> outAssignments1;
-		  output array<Integer> outAssignments2; 
-		  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-		end StructurallySingularSystemHandlerFunc;	
+    partial function StructurallySingularSystemHandlerFunc
+      input list<Integer> eqns;
+      input Integer actualEqn;
+      input BackendDAE.EqSystem isyst;
+      input BackendDAE.Shared ishared;
+      input array<Integer> inAssignments1;
+      input array<Integer> inAssignments2;
+      input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+      output list<Integer> changedEqns;
+      output Integer continueEqn;
+      output BackendDAE.EqSystem osyst;
+      output BackendDAE.Shared oshared;
+      output array<Integer> outAssignments1;
+      output array<Integer> outAssignments2; 
+      output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+    end StructurallySingularSystemHandlerFunc;  
   end matchingAlgorithmFunc; 
 algorithm
   _ :=

@@ -2172,14 +2172,14 @@ public function dumpSystemGraphML
 algorithm
   _ := match(isyst,ishared,inids)
     local
-		  BackendDAE.Variables vars;
-		  BackendDAE.EquationArray eqns;
-		  BackendDAE.IncidenceMatrix m;
-		  BackendDAE.IncidenceMatrixT mt;
-		  GraphML.Graph graph;
-		  list<Integer> eqnsids;
-		  Integer neqns;
-		  array<Integer> vec1,vec2,vec3;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+      GraphML.Graph graph;
+      list<Integer> eqnsids;
+      Integer neqns;
+      array<Integer> vec1,vec2,vec3;
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE())      
       equation
         vars = BackendVariable.daeVars(isyst);
@@ -2196,18 +2196,18 @@ algorithm
        ();
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,NONE())      
       equation
-			  vars = BackendVariable.daeVars(isyst);
-			  eqns = BackendEquation.daeEqns(isyst);
-			  (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
-			  graph = GraphML.getGraph("G",false);  
-			  ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
-			  neqns = BackendDAEUtil.systemSize(isyst);
-			  eqnsids = List.intRange(neqns);
-			  graph = List.fold2(eqnsids,addEqnGraphMatch,eqns,vec2,graph);
-			  ((_,_,_,graph)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,graph));
-			  GraphML.dumpGraph(graph,"");
-		 then
-		   ();
+        vars = BackendVariable.daeVars(isyst);
+        eqns = BackendEquation.daeEqns(isyst);
+        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        graph = GraphML.getGraph("G",false);  
+        ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
+        neqns = BackendDAEUtil.systemSize(isyst);
+        eqnsids = List.intRange(neqns);
+        graph = List.fold2(eqnsids,addEqnGraphMatch,eqns,vec2,graph);
+        ((_,_,_,graph)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,graph));
+        GraphML.dumpGraph(graph,"");
+     then
+       ();
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,SOME(vec3))      
       equation
         vars = BackendVariable.daeVars(isyst);

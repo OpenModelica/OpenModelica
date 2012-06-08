@@ -7364,10 +7364,10 @@ protected function traverseBackendDAEExpsWrapper "function: traverseBackendDAEEx
 algorithm
   outTpl := match(inTpl)
     local
-		  DAE.Exp exp,exp1;
-		  Type_a arg,arg1;
-		  FuncExpTravers tfunc;
-		  FuncExpType func;
+      DAE.Exp exp,exp1;
+      Type_a arg,arg1;
+      FuncExpTravers tfunc;
+      FuncExpType func;
     case((exp,(tfunc,func,arg)))
       equation
         ((exp1,arg1)) = tfunc(exp,func,arg);
