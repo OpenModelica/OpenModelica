@@ -41,9 +41,15 @@
  *
  */
 
+#include <iostream>
+#include <stdlib.h>
+
+
 extern "C" {
+#include "matchmaker.h"
 #include "rml.h"
 }
+
 
 #include "BackendDAEEXT.cpp"
 
@@ -59,7 +65,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__initMarks)
   int neqns = RML_UNTAGFIXNUM(rmlA1);
   BackendDAEEXTImpl__initMarks(nvars,neqns);
   RML_TAILCALLK(rmlSC);
-} 
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(BackendDAEEXT__eMark)
@@ -135,7 +141,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__initLowLink)
   int nvars = RML_UNTAGFIXNUM(rmlA0);
   BackendDAEEXTImpl__initLowLink(nvars);
   RML_TAILCALLK(rmlSC);
-} 
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(BackendDAEEXT__initNumber)
@@ -143,7 +149,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__initNumber)
   int nvars = RML_UNTAGFIXNUM(rmlA0);
   BackendDAEEXTImpl__initNumber(nvars);
   RML_TAILCALLK(rmlSC);
-} 
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(BackendDAEEXT__setLowLink)
@@ -243,6 +249,192 @@ RML_BEGIN_LABEL(BackendDAEEXT__getV)
 {
   int i = RML_UNTAGFIXNUM(rmlA0);
   rmlA0 = mk_icon(BackendDAEEXTImpl__getV(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+unsigned int n=0;
+unsigned int m=0;
+int* match=NULL;
+int* row_match=NULL;
+int* col_ptrs=NULL;
+int* col_ids=NULL;
+
+RML_BEGIN_LABEL(BackendDAEEXT__setIncidenceMatrix)
+{
+  int i=0;
+  long int i1;
+  int j=0;
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  int neqns = RML_UNTAGFIXNUM(rmlA1);
+  int nz = RML_UNTAGFIXNUM(rmlA2);
+  rml_uint_t nelts = RML_HDRSLOTS(RML_GETHDR(rmlA3));
+
+  if (col_ptrs) free(col_ptrs);
+  col_ptrs = (int*) malloc((neqns+1) * sizeof(int));
+  col_ptrs[neqns]=nz;
+  if (col_ids) free(col_ids);
+  col_ids = (int*) malloc(nz * sizeof(int));
+
+  for(i=0; i<neqns; ++i) {
+    void* ie = RML_STRUCTDATA(rmlA3)[i];
+    col_ptrs[i] = j;
+    while(RML_GETHDR(ie) == RML_CONSHDR) {
+      i1 = RML_UNTAGFIXNUM(RML_CAR(ie));
+      if (i1>=0) {
+        col_ids[j++] = i1-1;
+      }
+      ie = RML_CDR(ie);
+    }
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(BackendDAEEXT__matching)
+{
+  int i=0;
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  int neqns = RML_UNTAGFIXNUM(rmlA1);
+  int matchingID = RML_UNTAGFIXNUM(rmlA2);
+  int cheapID = RML_UNTAGFIXNUM(rmlA3);
+  double relabel_period = RML_UNTAGFIXNUM(rmlA4);
+  int clear_match = RML_UNTAGFIXNUM(rmlA5);
+
+  if (clear_match==0){
+    if (neqns>n) {
+      int* tmp = (int*) malloc(neqns * sizeof(int));
+      if(match)
+      {
+        memcpy(tmp,match,n*sizeof(int));
+        free(match);
+        match = tmp;
+		for (i = n; i < neqns; i++) {
+			match[i] = -1;
+		}
+      } else {
+   	    match = (int*) malloc(neqns * sizeof(int));
+   	    memset(match,-1,neqns * sizeof(int));
+      }
+      n = neqns;
+    }
+    if (nvars>m) {
+      int* tmp = (int*) malloc(nvars * sizeof(int));
+      if(row_match)
+      {
+        memcpy(tmp,row_match,m*sizeof(int));
+        free(row_match);
+        row_match = tmp;
+		for (i = m; i < nvars; i++) {
+			row_match[i] = -1;
+		}
+      } else {
+        row_match = (int*) malloc(nvars * sizeof(int));
+   	    memset(row_match,-1,nvars * sizeof(int));
+      }
+      m = nvars;
+    }
+  }
+  else {
+	if (neqns>n) {
+      if (match) free(match);
+      match = (int*) malloc(neqns * sizeof(int));
+      memset(match,-1,neqns * sizeof(int));
+	} else {
+      memset(match,-1,n * sizeof(int));
+	}
+    n = neqns;
+    if (nvars>m) {
+      if (row_match) free(row_match);
+      row_match = (int*) malloc(nvars * sizeof(int));
+      memset(row_match,-1,nvars * sizeof(int));
+    } else {
+      memset(row_match,-1,m * sizeof(int));
+  	}
+    m = nvars;
+  }
+  if ((match != NULL) && (row_match != NULL)) {
+    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,clear_match);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(BackendDAEEXT__getEqnsforIndexReduction)
+{
+  int i=0;
+  int *eqns = (int*) malloc((n+1) * sizeof(int));
+  int eqns_size=0;
+  rmlA0 = mk_nil();
+  if ((match != NULL) && (row_match != NULL) && (eqns != NULL)) {
+    eqns_size = getEqnsForIndexReduction(col_ptrs,col_ids,match,row_match,n,m,eqns);
+  }
+  for (i = 0; i < eqns_size; i++) {
+    rmlA0 = mk_cons(mk_icon(eqns[i]+1),rmlA0);
+  }
+  if (eqns) free(eqns);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(BackendDAEEXT__getAssignment)
+{
+  int i=0;
+
+  if (match != NULL) {
+    for(i=0; i<n; ++i) {
+      if (match[i] >= 0)
+        RML_STRUCTDATA(rmlA0)[i] = mk_icon(match[i]+1);
+      else
+        RML_STRUCTDATA(rmlA0)[i] = mk_icon(-1);
+    }
+  }
+  if (row_match != NULL) {
+    for(i=0; i<m; ++i) {
+      if (row_match[i] >= 0)
+        RML_STRUCTDATA(rmlA1)[i] = mk_icon(row_match[i]+1);
+      else
+        RML_STRUCTDATA(rmlA1)[i] = mk_icon(-1);
+    }
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(BackendDAEEXT__setAssignment)
+{
+  int nelts=0;
+  int nass1 = RML_UNTAGFIXNUM(rmlA0);
+  int nass2 = RML_UNTAGFIXNUM(rmlA1);
+  int i=0;
+
+  nelts = RML_HDRSLOTS(RML_GETHDR(rmlA2));
+  if (n > 0) {
+	n = nass1;
+    if(match) {
+      free(match);
+    }
+    match = (int*) malloc(n * sizeof(int));
+    memset(match,-1,n * sizeof(int));
+    for(i=0; i<n; ++i) {
+      match[i] = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA2)[i])-1;
+      if (match[i]<0) match[i] = -1;
+    }
+  }
+  nelts = RML_HDRSLOTS(RML_GETHDR(rmlA3));
+  if (nelts > 0) {
+    m = nass2;
+    if(row_match) {
+      free(row_match);
+    }
+    row_match = (int*) malloc(m * sizeof(int));
+    memset(row_match,-1,m * sizeof(int));
+    for(i=0; i<m; ++i) {
+      row_match[i] = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA3)[i])-1;
+      if (row_match[i]<0) row_match[i] = -1;
+    }
+  }
+  rmlA0 = mk_bcon(1);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

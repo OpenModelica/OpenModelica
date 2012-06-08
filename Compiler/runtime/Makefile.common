@@ -22,7 +22,7 @@ endif
 RML_COMPAT=$(top_builddir)/SimulationRuntime/c/meta/rml_compatibility.h
 
 SRC	= Print_rml.c System_rml.c Settings_rml.c \
-  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c ModelicaExternalC_rml.c
+  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c ModelicaExternalC_rml.c  matching.c matching_cheap.c
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
   BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
@@ -32,7 +32,7 @@ OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o \
-  UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o \
+  UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
   Database_omc.o Dynload_omc.o SimulationResults_omc.o ptolemyio_omc.o Lapack_omc.o $(OMCCORBASRC)
 
 all: runtime.a install
@@ -71,7 +71,7 @@ Settings_rml.o : settingsimpl.c config.h $(configUnix)
 Settings_omc.o : settingsimpl.c config.h $(configUnix)
 UnitParserExt_rml.o : unitparserext.cpp unitparser.h
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
-BackendDAEEXT_rml.o : BackendDAEEXT.cpp
+BackendDAEEXT_rml.o : BackendDAEEXT.cpp matching.c matchmaker.h matching_cheap.c
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT)
 Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c

@@ -39,9 +39,11 @@
 #ifdef CHECK_NAN
 #define DIVISION(a,b,c) (((b) != 0) ? (isnan_error(((a) / (b)), c, __FILE__, __LINE__)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
 #else
-#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
+#define DIVISION(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error_time(b, c, time, __FILE__, __LINE__)))
 #endif
+#define DIVISIONNOTIME(a,b,c) (((b) != 0) ? ((a) / (b)) : ((a) / division_error(b, c, __FILE__, __LINE__)))
 
+modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line);
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line);
 modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line);
 

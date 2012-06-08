@@ -438,6 +438,31 @@ type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation i
 - Incidence Matrix T" ;
 
 public
+uniontype Solvability 
+  record SOLVABILITY_SOLVED "Equation is already solved for the variable" end SOLVABILITY_SOLVED;
+  record SOLVABILITY_CONSTONE "Coefficient is equal 1 or -1" end SOLVABILITY_CONSTONE;
+  record SOLVABILITY_CONST "Coefficient is constant" end SOLVABILITY_CONST;
+  record SOLVABILITY_PARAMETER "Coefficient contains parameters"
+    Boolean b "false if the partial derivative is zero";  
+  end SOLVABILITY_PARAMETER;
+  record SOLVABILITY_TIMEVARYING "Coefficient contains variables, is time varying"
+    Boolean b "false if the partial derivative is zero";  
+  end SOLVABILITY_TIMEVARYING;
+  record SOLVABILITY_NONLINEAR "The variable occurse nonlinear in the equation." end SOLVABILITY_NONLINEAR;
+  record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve 
+                     the equation for it." end SOLVABILITY_UNSOLVABLE;
+end Solvability;
+
+public
+type AdjacencyMatrixElementEnhanced = list<tuple<Integer,Solvability>>;
+
+public
+type AdjacencyMatrixEnhanced = array<AdjacencyMatrixElementEnhanced>;
+
+public
+type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
+
+public
 uniontype JacobianType "- Jacobian Type"
   record JAC_CONSTANT "If jacobian has only constant values, for system
                of equations this means that it can be solved statically." end JAC_CONSTANT;
@@ -486,14 +511,18 @@ public
 type DAEHandlerArg = tuple<StateOrder,ConstraintEquations>;
 
 public
-type ConstraintEquations = list<tuple<Integer,list<tuple<Equation,Boolean>>>>;
+type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,list<tuple<Integer,Integer,Integer>>,list<tuple<Integer,Integer,Integer>>> "StateOrder,ConstraintEqns,DerivedAlgs,DerivesArrayEqns";
+
+
+public
+type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
 
 
 public
 uniontype StateOrder 
   record STATEORDER
-    HashTableCG.HashTable hashTable "x -> dx.";
-    HashTable3.HashTable invHashTable "dx -> x.";
+    HashTableCG.HashTable hashTable "x -> dx";
+    HashTable3.HashTable invHashTable "dx -> {x,y,z}";
   end STATEORDER;
 end StateOrder;
 

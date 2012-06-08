@@ -185,13 +185,13 @@ void create_integer_array_from_range(integer_array_t *dest, modelica_integer sta
     }
 }
 
-/* 
+/*
  * Fills an integer array ROW from a range with a start, stop and step value.
  * The last argument is the row/dimension to be filled.
- * e.g: Integer a[10], b[2][10]; a := 1:2:6; b[1] := 1:10; 
- * 
+ * e.g: Integer a[10], b[2][10]; a := 1:2:6; b[1] := 1:10;
+ *
 */
-void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step, 
+void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step,
                                    modelica_integer stop/*, size_t dim*/)
 {
     size_t elements, offset=0;
@@ -1087,7 +1087,7 @@ void division_integer_array_scalar(const integer_array_t * a,modelica_integer b,
     assert(nr_of_elements == base_array_nr_of_elements(dest));
 
     for (i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, (modelica_integer)DIVISION(integer_get(a, i),b,division_str));
+        integer_set(dest, i, (modelica_integer)DIVISIONNOTIME(integer_get(a, i),b,division_str));
     }
 }
 

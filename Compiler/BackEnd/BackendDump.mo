@@ -965,7 +965,7 @@ algorithm
   end match;
 end dumpJacobianStr2;
 
-protected function dumpArrayEqns
+public function dumpArrayEqns
 "function: dumpArrayEqns
   helper function to dump"
   input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
@@ -1761,6 +1761,118 @@ algorithm
   end match;
 end dumpIncidenceRow;
 
+public function dumpAdjacencyMatrixEnhanced
+"function: dumpAdjacencyMatrixEnhanced
+  author: Frenkel TUD 2012-05
+  Prints the incidence matrix on stdout."
+  input BackendDAE.AdjacencyMatrixEnhanced m;
+protected
+  BackendDAE.Value mlen;
+  String mlen_str;
+  list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
+algorithm
+  print("Incidence Matrix (row == equation)\n");
+  print("====================================\n");
+  mlen := arrayLength(m);
+  mlen_str := intString(mlen);
+  print("number of rows: ");
+  print(mlen_str);
+  print("\n");
+  m_1 := arrayList(m);
+  dumpAdjacencyMatrixEnhanced2(m_1,1);
+end dumpAdjacencyMatrixEnhanced;
+
+public function dumpAdjacencyMatrixTEnhanced
+"function: dumpAdjacencyMatrixEnhanced
+  author: Frenkel TUD 2012-05
+  Prints the transposed incidence matrix on stdout."
+  input BackendDAE.AdjacencyMatrixTEnhanced m;
+protected
+  BackendDAE.Value mlen;
+  String mlen_str;
+  list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
+algorithm
+  print("Transpose Incidence Matrix (row == var)\n");
+  print("=====================================\n");
+  mlen := arrayLength(m);
+  mlen_str := intString(mlen);
+  print("number of rows: ");
+  print(mlen_str);
+  print("\n");
+  m_1 := arrayList(m);
+  dumpAdjacencyMatrixEnhanced2(m_1,1);
+end dumpAdjacencyMatrixTEnhanced;
+
+protected function dumpAdjacencyMatrixEnhanced2
+"function: dumpAdjacencyMatrixEnhanced2
+  author: Frenkel TUD 2012-05
+  Helper function to dumpAdjacencyMatrixEnhanced (+T)."
+  input list<BackendDAE.AdjacencyMatrixElementEnhanced> inRows;
+  input Integer rowIndex;
+algorithm
+  _ := match (inRows,rowIndex)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      list<BackendDAE.AdjacencyMatrixElementEnhanced> rows;
+    case ({},_) then ();
+    case ((row :: rows),rowIndex)
+      equation
+        print(intString(rowIndex));print(":");
+        dumpAdjacencyRowEnhanced(row);
+        dumpAdjacencyMatrixEnhanced2(rows,rowIndex+1);
+      then
+        ();
+  end match;
+end dumpAdjacencyMatrixEnhanced2;
+
+public function dumpAdjacencyRowEnhanced
+"function: dumpAdjacencyRowEnhanced
+  author: Frenkel TUD 2012-05
+  Helper function to dumpAdjacencyMatrixEnhanced2."
+  input BackendDAE.AdjacencyMatrixElementEnhanced inRow;
+algorithm
+  _ := match (inRow)
+    local
+      String s,s1;
+      BackendDAE.Value x;
+      BackendDAE.Solvability solva;
+      BackendDAE.AdjacencyMatrixElementEnhanced xs;
+    case ({})
+      equation
+        print("\n");
+      then
+        ();
+    case (((x,solva) :: xs))
+      equation
+        s = intString(x);
+        s1 = dumpSolvability(solva);
+        print("(" +& s +& "," +& s1 +& ")");
+        print(" ");
+        dumpAdjacencyRowEnhanced(xs);
+      then
+        ();
+  end match;
+end dumpAdjacencyRowEnhanced;
+
+public function dumpSolvability
+"function: dumpSolvability
+  author: Frenkel TUD 2012-05,
+  returns a string for the Solvability"
+  input BackendDAE.Solvability solva;
+  output String s;
+algorithm
+  s := match(solva)
+    local Boolean b;
+    case BackendDAE.SOLVABILITY_SOLVED() then "solved";
+    case BackendDAE.SOLVABILITY_CONSTONE() then "constone";
+    case BackendDAE.SOLVABILITY_CONST() then "const";
+    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then "param(" +& boolString(b) +& ")";
+    case BackendDAE.SOLVABILITY_TIMEVARYING(b=b) then "variable(" +& boolString(b) +& ")";
+    case BackendDAE.SOLVABILITY_NONLINEAR() then "nonlinear";
+    case BackendDAE.SOLVABILITY_UNSOLVABLE() then "unsolvable";
+  end match;
+end dumpSolvability;
+
 public function dumpFullMatching
   input BackendDAE.Matching inMatch;
 algorithm
@@ -2413,41 +2525,29 @@ algorithm
   print("Algorithms:        " +& intString(salg) +& "\n");
   print("Complex Equations: " +& intString(sce) +& "\n\n");
   print("Equationsystems with constant Jacobian:     " +& intString(listLength(e_jc)) +& " {");
-  debuglst((e_jc,intString,", "));
-  print("}\n");
+  debuglst((e_jc,intString,", ","}\n"));
   print("Equationsystems with time varying Jacobian: " +& intString(listLength(e_jt)) +& " {");
-  debuglst((e_jt,intString,", "));
-  print("}\n");
+  debuglst((e_jt,intString,", ","}\n"));
   print("Equationsystems with nonlinear Jacobian:    " +& intString(listLength(e_jn)) +& " {");
-  debuglst((e_jn,intString,", "));
-  print("}\n");
+  debuglst((e_jn,intString,", ","}\n"));
   print("Equationsystems without analytic Jacobian:  " +& intString(listLength(e_nj)) +& " {");
-  debuglst((e_nj,intString,", "));
-  print("}\n\n");
+  debuglst((e_nj,intString,", ","}\n\n"));
   print("mixed Equationsystems with Single Equation:       " +& intString(listLength(m_se)) +& " {");
-  debuglst((m_se,intString,", "));
-  print("}\n");
+  debuglst((m_se,intString,", ","}\n"));
   print("mixed Equationsystems with Array Equation:        " +& intString(listLength(m_sarr)) +& " {");
-  debuglst((m_sarr,intString,", "));
-  print("}\n");
+  debuglst((m_sarr,intString,", ","}\n"));
   print("mixed Equationsystems with Algorithm:             " +& intString(listLength(m_salg)) +& " {");
-  debuglst((m_salg,intString,", "));
-  print("}\n");
+  debuglst((m_salg,intString,", ","}\n"));
   print("mixed Equationsystems with Complex Equation:      " +& intString(listLength(m_sec)) +& " {");
-  debuglst((m_sec,intString,", "));
-  print("}\n");
+  debuglst((m_sec,intString,", ","}\n"));
   print("mixed Equationsystems with constant Jacobian:     " +& intString(listLength(me_jc)) +& " {");
-  debuglst((me_jc,intTplString,", "));
-  print("}\n");
+  debuglst((me_jc,intTplString,", ","}\n"));
   print("mixed Equationsystems with time varying Jacobian: " +& intString(listLength(me_jt)) +& " {");
-  debuglst((me_jt,intTplString,", "));
-  print("}\n");
+  debuglst((me_jt,intTplString,", ","}\n"));
   print("mixed Equationsystems with nonlinear Jacobian:    " +& intString(listLength(me_jn)) +& " {");
-  debuglst((me_jn,intTplString,", "));
-  print("}\n");  
+  debuglst((me_jn,intTplString,", ","}\n"));
   print("mixed Equationsystems without analytic Jacobian:  " +& intString(listLength(me_nj)) +& " {");
-  debuglst((me_nj,intTplString,", "));
-  print("}\n");
+  debuglst((me_nj,intTplString,", ","}\n"));
   print("##########################################################\n");
 end dumpCompShort;
 
@@ -2613,8 +2713,7 @@ protected
 algorithm
   (a,b,c,d) := inTpl;
   print(a);
-  debuglst((b,ComponentReference.printComponentRefStr,c));
-  print(d);
+  debuglst((b,ComponentReference.printComponentRefStr,c,d));
 end debugStrCrefLstStr;
 
 public function debugCrefStr
@@ -2803,7 +2902,7 @@ algorithm
 end debugStrEqnStrEqnStr;
 
 public function debuglst
-  input tuple<list<Type_a>,FuncTypeType_aToStr,String> inTpl;
+  input tuple<list<Type_a>,FuncTypeType_aToStr,String,String> inTpl "(List,FuncListElementToString,DelemiterString,EndString";
   partial function FuncTypeType_aToStr
     input Type_a inTypeA;
     output String outTypeA;
@@ -2815,18 +2914,22 @@ algorithm
       Type_a a;
       list<Type_a> rest;
       FuncTypeType_aToStr f;
-      String s,c;
-    case (({},_,_)) then ();
-    case ((a::{},f,c))
+      String s,c,se;
+    case (({},_,_,se))
+      equation
+        print(se);
+      then ();
+    case ((a::{},f,c,se))
       equation 
        s = f(a);
        print(s);
+       print(se);
     then ();  
-    case ((a::rest,f,c))
+    case ((a::rest,f,c,se))
       equation 
        s = f(a);
        print(s); print(c);
-       debuglst((rest,f,c));
+       debuglst((rest,f,c,se));
     then ();  
   end match;  
 end debuglst;

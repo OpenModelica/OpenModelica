@@ -195,5 +195,92 @@ public function getF
 
   external "C" outInteger=BackendDAEEXT_getF(inInteger) annotation(Library = "omcruntime");
 end getF;
+
+/******************************************
+ C-Implementation Stuff from 
+ Kamer Kaya, Johannes Langguth and Bora Ucar
+ see: http://bmi.osu.edu/~kamer/index.html
+ *****************************************/
+
+public function setIncidenceMatrix
+"function: setIncidenceMatrix
+  author: Frenkel TUD 2012-04
+  "
+  input Integer nv;
+  input Integer ne;
+  input Integer nz;  
+  input array<list<Integer>> m;
+
+  external "C" BackendDAEEXT_setIncidenceMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
+end setIncidenceMatrix;
+
+public function matching
+"function: matchingExternal
+  author: Frenkel TUD 2012-04
+  calls matching algorithms
+  matchingID: id of match algo (1-9)
+      1: DFS based
+      2: BFS based
+      3: MC21 (DFS + lookahead)
+      4: PF (Pothen and Fan' algorithm)
+      5: PF+ (PF + fairness)
+      6: HK (Hopcroft and Karp's algorithm)
+      7: HK-DW (Duff-Wiberg implementation of HK)
+      8: ABMP (Alt et al.'s algorithm)
+      9: ABMP-BFS (ABMP + BFS)
+     10: PR-FIFO-FAIR (DEFAULT)
+ 
+  cheapID: id of cheap algo (1-4)
+      1: Simple Greedy
+      2: Karp-Sipser
+      3: Random Karp-Sipser (DEFAULT)
+      4: Minimum Degree (two-sided)
+ 
+  relabel_period: used only when matchID = 10. Otherwise it is ignored.
+      For the PR based algorithm, a global relabeling is started after
+      every (m+n) x 'relabel_period' pushes where m and
+      n are the number of rows and columns of the matrix. Default is 1.
+       -1: for a global relabeling after every m pushes
+       -2: for a global relabeling after every n pushes
+     Other than these two, non-positive values are not allowed.  
+  "
+  input Integer nv;
+  input Integer ne;
+  input Integer matchingID;
+  input Integer cheapID;
+  input Real relabel_period;
+  input Integer clear_match;
+  external "C" BackendDAEEXT_matching(nv,ne,matchingID,cheapID,relabel_period,clear_match) annotation(Library = "omcruntime");
+end matching;
+
+public function getEqnsforIndexReduction
+"function: getEqnsforIndexReduction
+  author: Frenkel TUD 2012-04
+  "
+  output list<Integer> eqns;
+  external "C" eqns = BackendDAEEXT_getEqnsforIndexReduction() annotation(Library = "omcruntime");
+end getEqnsforIndexReduction;
+
+public function getAssignment
+"function: getAssignment
+  author: Frenkel TUD 2012-04"
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+
+  external "C" BackendDAEEXT_getAssignment(ass1,ass2) annotation(Library = "omcruntime");
+end getAssignment;
+
+public function setAssignment
+"function: getAssignment
+  author: Frenkel TUD 2012-04"
+  input Integer lenass1;
+  input Integer lenass2;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  output Boolean outBoolean;
+  
+  external "C" outBoolean=BackendDAEEXT_setAssignment(lenass1,lenass2,ass1,ass2) annotation(Library = "omcruntime");
+end setAssignment;
+
 end BackendDAEEXT;
 
