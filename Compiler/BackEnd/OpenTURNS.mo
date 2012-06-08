@@ -141,10 +141,10 @@ LogNormal_u = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA)
 Corresponding Modelica model.
 
 model A
-	parameter Distribution distributionE = Beta(0.93, 3.2, 2.8e7, 4.8e7);
-	parameter Distribution distributionF = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA);
-	parameter Distribution distributionL = Uniform(250, 260);
-	parameter Distribution distributionI = Beta(2.5, 4.0, 3.1e2, 4.5e2);	
+  parameter Distribution distributionE = Beta(0.93, 3.2, 2.8e7, 4.8e7);
+  parameter Distribution distributionF = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA);
+  parameter Distribution distributionL = Uniform(250, 260);
+  parameter Distribution distributionI = Beta(2.5, 4.0, 3.1e2, 4.5e2);	
   Real u(distribution = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA)); // distribution name becomes <instancename>+\"_\"+<distribution name> 
 end A;
 
