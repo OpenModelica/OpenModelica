@@ -587,6 +587,7 @@ algorithm
         DAE.Exp exp,e1;
         DAE.Exp scalar "scalar" ;
         String s;
+        Integer p;
        case (_,{h},_,_,_,_,true,_,_) 
        equation
          BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
@@ -607,7 +608,6 @@ algorithm
        then s;
 
        case (_,{h},_,_,_,_,true,zc_exps,offset) 
-        local Integer p;
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
@@ -640,7 +640,6 @@ algorithm
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
        case (_,{h},_,_,_,_,false,zc_exps,offset) 
-        local Integer p;
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
