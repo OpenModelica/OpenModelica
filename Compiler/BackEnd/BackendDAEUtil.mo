@@ -91,7 +91,6 @@ type Variables = BackendDAE.Variables;
 type VariableArray = BackendDAE.VariableArray;
 type EquationArray = BackendDAE.EquationArray;
 type AliasVariables = BackendDAE.AliasVariables;
-type BackendDAE = BackendDAE.BackendDAE;
 type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
@@ -111,13 +110,13 @@ type ComplexEquation = BackendDAE.ComplexEquation;
 public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMsg
   author: Frenkel TUD
   run checkDEALow and prints all errors"
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
 protected
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
   list<BackendDAE.Equation> wrongEqns;
 algorithm  
   _ := matchcontinue (inBackendDAE)
-    local BackendDAE bdae;
+    local BackendDAE.BackendDAE bdae;
       Integer i1,i2;
       Boolean samesize;
     case (bdae)
@@ -220,7 +219,7 @@ public function checkBackendDAE "function: checkBackendDAE
      part of the BackendDAE object.
   -  all variables that are reinit are states
   Returns all component references which not part of the BackendDAE object."
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
   output list<BackendDAE.Equation> outWrongEqns;
 algorithm
@@ -433,8 +432,8 @@ public function expandAlgorithmsbyInitStmts
   This function expands algorithm sections by initial statements.
   - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
   - A discrete variable v is initialized with pre(v)."
-  input BackendDAE inDAE;
-  output BackendDAE outDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
@@ -580,7 +579,7 @@ public  function createEmptyBackendDAE
   Copy the dae to avoid changes in
   vectors."
   input BackendDAEType inBDAEType;
-  output BackendDAE outBDAE;
+  output BackendDAE.BackendDAE outBDAE;
 protected 
   Variables emptyVars;
   EquationArray emptyEqns;
@@ -631,21 +630,21 @@ public  function copyBackendDAE
   autor: Frenkel TUD, wbraun
   Copy the dae to avoid changes in
   vectors."
-  input BackendDAE inBDAE;
-  output BackendDAE outBDAE;
+  input BackendDAE.BackendDAE inBDAE;
+  output BackendDAE.BackendDAE outBDAE;
 algorithm
   outBDAE:=
   match (inBDAE)
     local
-      EqSystems eqns, eqns1;
+      EqSystems eqns;
       BackendDAE.Shared shared,shared1;
-      BackendDAE bDAE;
-    case (bDAE as BackendDAE.DAE(eqs=eqns, shared=shared))
+      BackendDAE.BackendDAE bDAE;
+    case (bDAE as BackendDAE.DAE(shared=shared))
       equation
-        BackendDAE.DAE(eqs=eqns1) = mapEqSystem(bDAE, copyBackendDAEEqSystem);
+        BackendDAE.DAE(eqs=eqns) = mapEqSystem(bDAE, copyBackendDAEEqSystem);
         shared1 = copyBackendDAEShared(shared);
       then
-        BackendDAE.DAE(eqns1,shared1);
+        BackendDAE.DAE(eqns,shared1);
   end match;
 end copyBackendDAE;
 
@@ -811,8 +810,8 @@ public function addBackendDAEKnVars
   That function replace the KnownVars in BackendDAE.
   autor:  wbraun"
   input Variables inKnVars;
-  input BackendDAE inBDAE;
-  output BackendDAE outBDAE;
+  input BackendDAE.BackendDAE inBDAE;
+  output BackendDAE.BackendDAE outBDAE;
 algorithm
   outBDAE := match (inKnVars, inBDAE)
     local
@@ -839,8 +838,8 @@ public function addBackendDAEFunctionTree
   That function replace the FunctionTree in BackendDAE.
   autor:  wbraun"
   input DAE.FunctionTree inFunctionTree;
-  input BackendDAE inBDAE;
-  output BackendDAE outBDAE;
+  input BackendDAE.BackendDAE inBDAE;
+  output BackendDAE.BackendDAE outBDAE;
 algorithm
   outBDAE := match (inFunctionTree, inBDAE)
     local
@@ -876,9 +875,9 @@ public function translateDae "function: translateDae
   - y_str for algebraic variables
   - p_str for parameters
 "
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   input Option<String> dummy;
-  output BackendDAE outBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
   outBackendDAE := match (inBackendDAE,dummy)
     local
@@ -894,7 +893,6 @@ algorithm
       Variables vars, knvars, extVars;
       AliasVariables av;
       EquationArray eqns,seqns,ieqns;
-      BackendDAE trans_dae;
       ExternalObjectClasses extObjCls;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAEType btp;
@@ -947,7 +945,7 @@ public function calculateSizes "function: calculateSizes
             int, /* np */
             int  /* ng */
             int) next"
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   output Integer outnx        "number of states";
   output Integer outny        "number of alg. vars";
   output Integer outnp        "number of parameters";
@@ -989,7 +987,7 @@ end calculateSizes;
 
 public function numberOfZeroCrossings "function: numberOfZeroCrossings
   author: Frenkel TUD"
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   output Integer outng        "number of zerocrossings";
   output Integer outng_sample "number of zerocrossings that are samples";
 algorithm
@@ -1169,8 +1167,8 @@ public function calculateValues "function: calculateValues
   Use really only parameter bindungs for evaluation."
   input Env.Cache cache;
   input Env.Env env;
-  input BackendDAE inBackendDAE;
-  output BackendDAE outBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
   outBackendDAE := match (cache,env,inBackendDAE)
     local
@@ -1281,7 +1279,7 @@ public function statesDaelow
   author: PA
   Returns a BackendDAE.BinTree of all states in the BackendDAE
   This function is used in matching algorithm."
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BinTree outBinTree;
 algorithm
   outBinTree := match (inBackendDAE)
@@ -2543,7 +2541,6 @@ algorithm
       BackendDAE.Value size;
       array<BackendDAE.Value> arr,arr_1;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
-      BackendDAE dae;
       Variables v,kv;
       EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -2661,7 +2658,6 @@ algorithm
   matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
       list<Var> statevar_lst;
-      BackendDAE dae;
       array<BackendDAE.Value> arr_1,arr;
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
@@ -4722,7 +4718,6 @@ public function updateIncidenceMatrix
 algorithm
   osyst := matchcontinue (syst,shared,inIntegerLst)
     local
-      BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -4763,7 +4758,6 @@ algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
   matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
-      BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -6053,21 +6047,20 @@ public function analyzeJacobian "function: analyzeJacobian
   Analyze the jacobian to find out if the jacobian of system of equations
   can be solved at compiletime or runtime or if it is a nonlinear system
   of equations."
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output BackendDAE.JacobianType outJacobianType;
 algorithm
   outJacobianType:=
   matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLstOption)
     local
-      BackendDAE daelow;
       Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
-    case (daelow,SOME(jac))
+    case (_,SOME(jac))
       equation
         true = jacobianConstant(jac);
-        true = rhsConstant(daelow);
+        true = rhsConstant(inBackendDAE);
       then
         BackendDAE.JAC_CONSTANT();
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}),SOME(jac))
@@ -6075,8 +6068,8 @@ algorithm
         true = jacobianNonlinear(vars, jac);
       then
         BackendDAE.JAC_NONLINEAR();
-    case (daelow,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
-    case (daelow,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
+    case (_,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
+    case (_,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
   end matchcontinue;
 end analyzeJacobian;
 
@@ -6084,23 +6077,22 @@ protected function rhsConstant "function: rhsConstant
   author: PA
   Determines if the right hand sides of an equation system,
   represented as a BackendDAE, is constant."
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inBackendDAE)
     local
       Boolean res;
-      BackendDAE dae;
       EquationArray eqns;
       BackendDAE.Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;      
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})))
+    case ((BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})))
       equation
         0 = equationSize(eqns);
       then
         true;
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(arrayEqs = arreqn))))
+    case ((BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(arrayEqs = arreqn))))
       equation
         ((_,_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,arreqn,true));
       then
@@ -6119,7 +6111,6 @@ algorithm
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
       BackendDAE.Equation eqn;
-      BackendDAE dae;
       Variables vars;
       BackendDAE.Value indx;
       array<BackendDAE.MultiDimEquation> arreqn;
@@ -6468,7 +6459,7 @@ public function traverseBackendDAEExps "function: traverseBackendDAEExps
   an extra argument passed through the function.
 "
   replaceable type Type_a subtypeof Any;
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -6512,7 +6503,7 @@ public function traverseBackendDAEExpsNoCopyWithUpdate "
   an extra argument passed through the function.
 "
   replaceable type Type_a subtypeof Any;
-  input BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inBackendDAE;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -6906,7 +6897,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
 "
   input Option<DAE.VariableAttributes> attr;
  input funcType func;
-  input ExtraArgType extraArg;
+  input ExtraArgType iextraArg;
   replaceable type ExtraArgType subtypeof Any; 
   partial function funcType
     input tuple<DAE.Exp,ExtraArgType> inTpl;
@@ -6915,15 +6906,16 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.VariableAttributes> outAttr;
   output ExtraArgType outExtraArg;
 algorithm
- (outAttr,outExtraArg) := matchcontinue(attr,func,extraArg)
+ (outAttr,outExtraArg) := matchcontinue(attr,func,iextraArg)
  local Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
    Option<DAE.StateSelect> ss;
    Option<DAE.Uncertainty> unc;
    Option<DAE.Distribution> dist;
    Option<Boolean> p,fin;
-   case(NONE(),func,extraArg) then (NONE(),extraArg);
+   ExtraArgType extraArg;
+   case(NONE(),_,_) then (NONE(),iextraArg);
    case(SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),func,extraArg) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
      ((u,extraArg)) = Expression.traverseExpOpt(u,func,extraArg);
      ((du,extraArg)) = Expression.traverseExpOpt(du,func,extraArg);
      ((min,extraArg)) = Expression.traverseExpOpt(min,func,extraArg);
@@ -6935,8 +6927,8 @@ algorithm
      (dist,extraArg) = traverseBackendDAEAttrDistribution(dist,func,extraArg);
    then (SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),extraArg);
           
-   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),func,extraArg) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),_,_) equation
+     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
      ((min,extraArg)) = Expression.traverseExpOpt(min,func,extraArg);
      ((max,extraArg)) = Expression.traverseExpOpt(max,func,extraArg);
      ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
@@ -6945,22 +6937,22 @@ algorithm
       (dist,extraArg) = traverseBackendDAEAttrDistribution(dist,func,extraArg);
    then (SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),extraArg);
           
-   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),func,extraArg) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),_,_) equation
+     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
      ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
      ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
      ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
    then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),extraArg);
      
-   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),func,extraArg) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),_,_) equation
+     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
      ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
      ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
    then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),extraArg);
      
-   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),func,extraArg) equation
-      ((q,extraArg)) = Expression.traverseExpOpt(q,func,extraArg);
-     ((min,extraArg)) = Expression.traverseExpOpt(min,func,extraArg);
+   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),_,_) equation
+      ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
+     ((min,extraArg)) = Expression.traverseExpOpt(min,func,iextraArg);
      ((max,extraArg)) = Expression.traverseExpOpt(max,func,extraArg);
      ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
      ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
@@ -6975,8 +6967,8 @@ protected function traverseBackendDAEAttrDistribution
 author: Peter Aronsson (paronsson@wolfram.com)
 "
   input Option<DAE.Distribution> distOpt;
- input funcType func;
-  input ExtraArgType extraArg;
+  input funcType func;
+  input ExtraArgType iextraArg;
   replaceable type ExtraArgType subtypeof Any; 
   partial function funcType
     input tuple<DAE.Exp,ExtraArgType> inTpl;
@@ -6985,16 +6977,17 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.Distribution> outDistOpt;
   output ExtraArgType outExtraArg;
 algorithm
- (outDistOpt,outExtraArg) := matchcontinue(distOpt,func,extraArg)
+ (outDistOpt,outExtraArg) := matchcontinue(distOpt,func,iextraArg)
  local
-   DAE.Exp name,arr,sarr;  
+   DAE.Exp name,arr,sarr;
+   ExtraArgType extraArg;  
    
-   case(NONE(),func,extraArg) then (NONE(),extraArg);
+   case(NONE(),_,_) then (NONE(),iextraArg);
    
-   case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),func,extraArg) equation
+   case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
      ((arr,_)) = extendArrExp((arr,(NONE(),false)));
      ((sarr,_)) = extendArrExp((sarr,(NONE(),false)));
-     ((name,extraArg)) = Expression.traverseExp(name,func,extraArg);
+     ((name,extraArg)) = Expression.traverseExp(name,func,iextraArg);
      ((arr,extraArg)) = Expression.traverseExp(arr,func,extraArg);
      ((sarr,extraArg)) = Expression.traverseExp(sarr,func,extraArg);
     then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),extraArg);
@@ -7383,15 +7376,15 @@ end traverseBackendDAEExpsWrapper;
 partial function preoptimiseDAEModule
 "function preoptimiseDAEModule 
   This is the interface for pre optimisation modules."
-  input BackendDAE inDAE;
-  output BackendDAE outDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 end preoptimiseDAEModule;
 
 partial function pastoptimiseDAEModule
 "function pastoptimiseDAEModule 
   This is the interface for past optimisation modules."
-  input BackendDAE inDAE;
-  output BackendDAE outDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
   output Boolean outRunMatching;
 end pastoptimiseDAEModule;
 
@@ -7471,14 +7464,14 @@ public function getSolvedSystem
   Run the equation system pipeline."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strdaeHandler;
   input Option<list<String>> strPastOptModules;
-  output BackendDAE outSODE;
+  output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
+  BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
@@ -7527,9 +7520,9 @@ end getSolvedSystem;
 public function preOptimiseBackendDAE
 "function preOptimiseBackendDAE 
   Run the optimisation modules"
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
 protected
   list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
 algorithm
@@ -7540,14 +7533,14 @@ end preOptimiseBackendDAE;
 protected function preoptimiseDAE
 "function preoptimiseDAE 
   Run the optimisation modules"
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input list<tuple<preoptimiseDAEModule,String,Boolean>> optModules;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
   (outDAE,status) := matchcontinue (inDAE,optModules)
     local 
-      BackendDAE dae,dae1;
+      BackendDAE.BackendDAE dae,dae1;
       preoptimiseDAEModule optModule;
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
@@ -7578,11 +7571,11 @@ end preoptimiseDAE;
 public function transformBackendDAE
 "function transformBackendDAE 
   Run the matching and index reduction algorithm"
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input Option<MatchingOptions> inMatchingOptions;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strindexReductionMethod;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
 protected
   tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   tuple<daeHandlerFunc,String> indexReductionMethod;
@@ -7598,11 +7591,11 @@ protected function transformDAE
   Run the matching Algorithm and the sorting algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input Option<MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
@@ -7871,17 +7864,17 @@ end stateSelectionDAEWork;
 protected function pastoptimiseDAE
 "function optimiseDAE 
   Run the optimisation modules"
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input list<tuple<pastoptimiseDAEModule,String,Boolean>> optModules;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
   (outDAE,status):=
   matchcontinue (inDAE,optModules,matchingAlgorithm,daeHandler)
     local 
-      BackendDAE dae,dae1,dae2;
+      BackendDAE.BackendDAE dae,dae1,dae2;
       pastoptimiseDAEModule optModule;
       list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
@@ -7916,15 +7909,15 @@ protected function checktransformDAE
 "function checktransformDAE 
   check if the matching and sorting algorithm should be performed"
   input Boolean inRunMatching;
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<daeHandlerFunc,String> daeHandler;
-  output BackendDAE outDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE :=
   match (inRunMatching,inDAE,matchingAlgorithm,daeHandler)
     local 
-      BackendDAE sode;
+      BackendDAE.BackendDAE sode;
     case (true,_,_,_)
       equation
 //        sode = transformDAE(inDAE,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),matchingAlgorithm,daeHandler);
@@ -7999,14 +7992,14 @@ end countComponents;
 public function getSolvedSystemforJacobians
 " function: getSolvedSystemforJacobians
   Run the equation system pipeline."
-  input BackendDAE inDAE;
+  input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strdaeHandler;
   input Option<list<String>> strPastOptModules;
-  output BackendDAE outSODE;
+  output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE dae,optdae,sode;
+  BackendDAE.BackendDAE dae,optdae,sode;
   list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
   list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
   tuple<daeHandlerFunc,String> daeHandler;
@@ -8374,10 +8367,10 @@ end profilerstop2;
 
 public function mapEqSystem1
   "Helper to map a preopt module over each equation system"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   input Function func;
   input A a;
-  output BackendDAE odae;
+  output BackendDAE.BackendDAE odae;
   partial function Function
     input BackendDAE.EqSystem syst;
     input A a;
@@ -8399,11 +8392,11 @@ end mapEqSystem1;
 
 public function mapEqSystemAndFold1
   "Helper to map a preopt module over each equation system"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   input Function func;
   input A a;
   input B initialExtra;
-  output BackendDAE odae;
+  output BackendDAE.BackendDAE odae;
   output B extra;
   partial function Function
     input BackendDAE.EqSystem syst;
@@ -8427,10 +8420,10 @@ end mapEqSystemAndFold1;
 
 public function mapEqSystemAndFold
   "Helper to map a preopt module over each equation system"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   input Function func;
   input B initialExtra;
-  output BackendDAE odae;
+  output BackendDAE.BackendDAE odae;
   output B extra;
   partial function Function
     input BackendDAE.EqSystem syst;
@@ -8452,7 +8445,7 @@ end mapEqSystemAndFold;
 
 public function foldEqSystem
   "Helper to map a preopt module over each equation system"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   input Function func;
   input B initialExtra;
   output B extra;
@@ -8475,9 +8468,9 @@ end foldEqSystem;
 
 public function mapEqSystem
   "Helper to map a preopt module over each equation system"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   input Function func;
-  output BackendDAE odae;
+  output BackendDAE.BackendDAE odae;
   partial function Function
     input BackendDAE.EqSystem syst;
     input BackendDAE.Shared shared;
@@ -8542,7 +8535,7 @@ algorithm
 end filterEmptySystems2;
 
 public function getAllVarLst "retrieve all variables of the dae by collecting them from each equation system and combining with known vars"
-  input BackendDAE dae;
+  input BackendDAE.BackendDAE dae;
   output list<Var> varLst;
 protected
   EqSystems eqs;

@@ -1551,7 +1551,7 @@ algorithm
        Option<DAE.Exp> min,max,start,fixed,nominal;
        String snominal;
        Option<Boolean> isProtected,finalPrefix;
-       option<DAE.Distribution> dist;
+       Option<DAE.Distribution> dist;
     case NONE() then ();
     case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
@@ -1613,7 +1613,7 @@ end dumpAttributes;
 protected function dumpOptDistribution "
 
 "
-  input option<DAE.Distribution> dist;
+  input Option<DAE.Distribution> dist;
 algorithm
   _ := matchcontinue(dist)
   local

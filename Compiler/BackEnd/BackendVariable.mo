@@ -412,7 +412,7 @@ public function setVarAttributes
 author: Peter Aronsson (paronsson@wolfram.com)
 "
   input BackendDAE.Var v;
-  input option<DAE.VariableAttributes> attr;
+  input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var outV;
 algorithm
   outV := matchcontinue(v,attr)

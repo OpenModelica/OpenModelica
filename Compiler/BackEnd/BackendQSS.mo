@@ -113,12 +113,12 @@ algorithm
         (allVarsList, stateVarsList,orderedVarsList) = getAllVars(dlow);
         stateVarsList = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
         discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
-        disc = List.map(discVarsLst,getCref);
+        disc = List.map(discVarsLst,BackendVariable.varCref);
         disc = listAppend(disc, createDummyVars(listLength(sampleConditions)));
         (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
         offset = listLength(disc);
         disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
-        states = List.map(stateVarsList,getCref);
+        states = List.map(stateVarsList,BackendVariable.varCref);
         algs = computeAlgs(eqs,states,{});
         s = computeStateRef(List.map(states,ComponentReference.crefPrefixDer),eqs,{});
         sc = replaceDiscontsInOde(sc,zc_exps);
@@ -238,16 +238,14 @@ algorithm
     case (var1::rest, stateIndices2, loopIndex)
       equation     
         false = BackendVariable.isVarDiscrete(var1);
-        stateIndices = getDiscreteIndices(rest, stateIndices2, loopIndex+1);  
       then
-        stateIndices;
+        getDiscreteIndices(rest, stateIndices2, loopIndex+1);
     case (var1::rest, stateIndices2, loopIndex)
       equation     
         true = BackendVariable.isVarDiscrete(var1);
         stateIndices2 = listAppend(stateIndices2, {loopIndex});
-        stateIndices2 = getDiscreteIndices(rest, stateIndices2, loopIndex+1);  
       then
-        stateIndices2;
+        getDiscreteIndices(rest, stateIndices2, loopIndex+1);
   end matchcontinue;
 end getDiscreteIndices;
 
@@ -257,52 +255,25 @@ end getDiscreteIndices;
 /////  EQUATION GENERATION 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-public function getCref
-  input BackendDAE.Var var;
-  output DAE.ComponentRef cr;
-algorithm
-  cr := matchcontinue (var)
-    local
-      DAE.ComponentRef cref;
-    case (BackendDAE.VAR(varName = cref))
-    then cref;
-  end matchcontinue;
-end getCref;
-
 public function getStateIndexList
   input QSSinfo qssInfo;
   output list<list<Integer>> refs;
 algorithm
-refs := match qssInfo 
-  local 
-    list<list<Integer>> s;
-  case (QSSINFO(stateVarIndex=s))
-  then s;
-  end match;
+  QSSINFO(stateVarIndex=refs) := qssInfo;
 end getStateIndexList;
 
 public function getZCExps
   input QSSinfo qssInfo;
   output list<DAE.Exp> exps;
 algorithm
-refs := match qssInfo 
-  local 
-    list<DAE.Exp> exs;
-  case (QSSINFO(zcs=exs))
-  then exs;
-  end match;
+  QSSINFO(zcs=exps) := qssInfo;
 end getZCExps;
 
 public function getZCOffset
   input QSSinfo qssInfo;
   output Integer o;
 algorithm
-refs := match qssInfo 
-  local 
-    Integer off;
-  case (QSSINFO(zc_offset=off))
-  then off;
-  end match;
+  QSSINFO(zc_offset=o) := qssInfo;
 end getZCOffset;
 
 
@@ -310,37 +281,22 @@ public function getStates
   input QSSinfo qssInfo;
   output list<DAE.ComponentRef> refs;
 algorithm
-refs := match qssInfo 
-  local 
-    list<DAE.ComponentRef> s;
-  case (QSSINFO(stateVars=s))
-  then s;
-  end match;
+  QSSINFO(stateVars=refs) := qssInfo;
 end getStates;
 
 public function getEqs
   input QSSinfo qssInfo;
   output BackendDAE.EquationArray eqs;
 algorithm
-eqs := match qssInfo 
-  local 
-    BackendDAE.EquationArray s;
-  case (QSSINFO(eqs=s))
-  then s;
-  end match;
+  QSSINFO(eqs=eqs) := qssInfo;
 end getEqs;
 
 
 public function getAlgs
   input QSSinfo qssInfo;
-  output list<DAE.ComponentRef> refs;
+  output list<DAE.ComponentRef> algVars;
 algorithm
-refs := match qssInfo 
-  local 
-    list<DAE.ComponentRef> s;
-  case (QSSINFO(algVars=s))
-  then s;
-  end match;
+  QSSINFO(algVars=algVars) := qssInfo;
 end getAlgs;
 
 
@@ -349,12 +305,7 @@ public function getDisc
   input QSSinfo qssInfo;
   output list<DAE.ComponentRef> refs;
 algorithm
-refs := match qssInfo 
-  local 
-    list<DAE.ComponentRef> s;
-  case (QSSINFO(discreteVars=s))
-  then s;
-  end match;
+  QSSINFO(discreteVars=refs) := qssInfo;
 end getDisc;
 
 
@@ -1032,7 +983,7 @@ function getEquationsWithDiscont
   output list<Integer> out;
   output list<DAE.Exp> outexp;
 algorithm
-out := match zeroCrossings
+ (out,outexp) := match zeroCrossings
   local 
     list<BackendDAE.ZeroCrossing> tail;
     list<Integer> occurEquLst;
@@ -1041,9 +992,9 @@ out := match zeroCrossings
     DAE.Exp relation;
   case ({}) then ({},{});
   case (BackendDAE.ZERO_CROSSING(occurEquLst=occurEquLst,relation_=relation) :: tail)
-  equation
-    (o,exps) = getEquationsWithDiscont(tail);
-  then (listAppend(occurEquLst,o),listAppend({relation},exps));
+    equation
+      (o,exps) = getEquationsWithDiscont(tail);
+    then (listAppend(occurEquLst,o),listAppend({relation},exps));
   end match;   
 end getEquationsWithDiscont;
 

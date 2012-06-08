@@ -157,18 +157,18 @@ protected
   list<BackendDAE.Var> varLst;
   list<DAE.Distribution> dists;  
   list<String> sLst;
-  list<tuple<String,String>> distributionVarLst;
   String header;
+  BackendDAE.BackendDAE dae1;
 algorithm
-  dae := BackendDAEOptimize.removeParameters(dae);
+  dae1 := BackendDAEOptimize.removeParameters(dae);
   //print("removed parameters, dae:");
   //BackendDump.dump(dae);
   
-  varLst := BackendDAEUtil.getAllVarLst(dae);
+  varLst := BackendDAEUtil.getAllVarLst(dae1);
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
   
   dists := List.map(varLst,BackendVariable.varDistribution);
-  (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae);
+  (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae1);
   header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model\n";
   distributions := stringDelimitList(header::sLst,"\n");
 end generateDistributions;
