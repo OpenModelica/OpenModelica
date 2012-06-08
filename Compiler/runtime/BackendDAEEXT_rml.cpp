@@ -309,12 +309,12 @@ RML_BEGIN_LABEL(BackendDAEEXT__matching)
         memcpy(tmp,match,n*sizeof(int));
         free(match);
         match = tmp;
-		for (i = n; i < neqns; i++) {
-			match[i] = -1;
-		}
+    for (i = n; i < neqns; i++) {
+      match[i] = -1;
+    }
       } else {
-   	    match = (int*) malloc(neqns * sizeof(int));
-   	    memset(match,-1,neqns * sizeof(int));
+         match = (int*) malloc(neqns * sizeof(int));
+         memset(match,-1,neqns * sizeof(int));
       }
       n = neqns;
     }
@@ -325,24 +325,24 @@ RML_BEGIN_LABEL(BackendDAEEXT__matching)
         memcpy(tmp,row_match,m*sizeof(int));
         free(row_match);
         row_match = tmp;
-		for (i = m; i < nvars; i++) {
-			row_match[i] = -1;
-		}
+    for (i = m; i < nvars; i++) {
+      row_match[i] = -1;
+    }
       } else {
         row_match = (int*) malloc(nvars * sizeof(int));
-   	    memset(row_match,-1,nvars * sizeof(int));
+         memset(row_match,-1,nvars * sizeof(int));
       }
       m = nvars;
     }
   }
   else {
-	if (neqns>n) {
+  if (neqns>n) {
       if (match) free(match);
       match = (int*) malloc(neqns * sizeof(int));
       memset(match,-1,neqns * sizeof(int));
-	} else {
+  } else {
       memset(match,-1,n * sizeof(int));
-	}
+  }
     n = neqns;
     if (nvars>m) {
       if (row_match) free(row_match);
@@ -350,7 +350,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__matching)
       memset(row_match,-1,nvars * sizeof(int));
     } else {
       memset(row_match,-1,m * sizeof(int));
-  	}
+    }
     m = nvars;
   }
   if ((match != NULL) && (row_match != NULL)) {
@@ -410,7 +410,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__setAssignment)
 
   nelts = RML_HDRSLOTS(RML_GETHDR(rmlA2));
   if (n > 0) {
-	n = nass1;
+  n = nass1;
     if(match) {
       free(match);
     }

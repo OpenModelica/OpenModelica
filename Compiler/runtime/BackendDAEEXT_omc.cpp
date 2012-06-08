@@ -157,13 +157,13 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
         memcpy(tmp,match,n*sizeof(int));
         free(match);
         match = tmp;
-		for (i = n; i < ne; i++) {
-			match[i] = -1;
-		}
+    for (i = n; i < ne; i++) {
+      match[i] = -1;
+    }
       }
       else {
-   	    match = (int*) malloc(ne * sizeof(int));
-   	    memset(match,-1,ne * sizeof(int));
+         match = (int*) malloc(ne * sizeof(int));
+         memset(match,-1,ne * sizeof(int));
       }
       n = ne;
     }
@@ -174,9 +174,9 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
         memcpy(tmp,row_match,m*sizeof(int));
         free(row_match);
         row_match = tmp;
-		for (i = m; i < nv; i++) {
-			row_match[i] = -1;
-		}
+    for (i = m; i < nv; i++) {
+      row_match[i] = -1;
+    }
       }
       else {
         row_match = (int*) malloc(nv * sizeof(int));
@@ -186,13 +186,13 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
     }
   }
   else {
-	if (ne>n) {
+  if (ne>n) {
       if (match) free(match);
       match = (int*) malloc(ne * sizeof(int));
       memset(match,-1,ne * sizeof(int));
-	} else {
+  } else {
       memset(match,-1,n * sizeof(int));
-	}
+  }
     n = ne;
     if (nv>m) {
       if (row_match) free(row_match);
@@ -252,7 +252,7 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
 
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass1));
   if (lenass1 > nelts)
-	  return 0;
+    return 0;
   if (nelts > 0) {
     n = lenass1;
     if(match) {
@@ -267,7 +267,7 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
   }
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass2));
   if (lenass2 > nelts)
-	  return 0;
+    return 0;
   if (nelts > 0) {
     m = lenass2;
     if(row_match) {
@@ -276,8 +276,8 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
     row_match = (int*) malloc(m * sizeof(int));
     memset(row_match,-1,m * sizeof(int));
     for(i=0; i<m; ++i) {
-    	row_match[i] = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(ass2)[i])-1;
-    	if (row_match[i]<0) row_match[i] = -1;
+      row_match[i] = MMC_UNTAGFIXNUM(MMC_STRUCTDATA(ass2)[i])-1;
+      if (row_match[i]<0) row_match[i] = -1;
     }
   }
   return 1;
