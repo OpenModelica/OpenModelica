@@ -71,6 +71,7 @@ protected import Util;
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
+public type Condition = InstTypes.Condition;
 public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
@@ -2874,7 +2875,7 @@ algorithm
       SymbolTable st;
       DAE.Exp cond_exp;
       DAE.Type ty;
-      Boolean cond;
+      Condition cond;
       Absyn.Info info;
       Absyn.Path name;
       Modifier mod;
@@ -2903,7 +2904,7 @@ algorithm
 end instConditionalComponent;
 
 protected function instConditionalComponent2
-  input Boolean inCondition;
+  input Condition inCondition;
   input Absyn.Path inName;
   input SCode.Element inElement;
   input Modifier inMod;
@@ -2924,7 +2925,7 @@ algorithm
       Option<Element> oel;
       Component comp;
 
-    case (true, _, _, _, _, _, _, st)
+    case (InstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
@@ -2937,12 +2938,18 @@ algorithm
       then
         (oel, st);
 
-    else
+    case (InstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st)
       equation
         comp = InstTypes.DELETED_COMPONENT(inName);
         st = InstSymbolTable.updateComponent(comp, inSymbolTable);
       then
         (NONE(), st);
+
+    case (InstTypes.ARRAY_CONDITION(conditions = _), _, _, _, _, _, _, st)
+      equation
+        print("Sorry, complex arrays with conditional components are not yet supported.\n");
+      then
+        fail();
 
   end match;
 end instConditionalComponent2;
@@ -2952,17 +2959,24 @@ protected function evaluateConditionalExp
   input DAE.Type inType;
   input Absyn.Path inName;
   input Absyn.Info inInfo;
-  output Boolean outBoolean;
+  output Condition outCondition;
 algorithm
-  outBoolean := match(inExp, inType, inName, inInfo)
+  outCondition := match(inExp, inType, inName, inInfo)
     local
       Boolean cond;
       String exp_str, name_str, ty_str;
+      DAE.Type ty;
+      list<DAE.Exp> expl;
+      list<Condition> condl;
 
-    case (DAE.BCONST(bool = cond), DAE.T_BOOL(varLst = _), _, _) then cond;
+    case (DAE.BCONST(bool = cond), DAE.T_BOOL(varLst = _), _, _)
+      then InstTypes.SINGLE_CONDITION(cond);
 
-    // TODO: remove this case once typing is fixed!
-    case (DAE.BCONST(bool = cond), _, _, _) then cond;
+    case (DAE.ARRAY(ty = ty, array = expl), DAE.T_BOOL(varLst = _), _, _)
+      equation
+        condl = List.map3(expl, evaluateConditionalExp, ty, inName, inInfo);
+      then
+        InstTypes.ARRAY_CONDITION(condl);
 
     case (_, DAE.T_BOOL(varLst = _), _, _)
       equation

@@ -167,6 +167,16 @@ public uniontype Component
   end PACKAGE;
 end Component;
 
+public uniontype Condition
+  record SINGLE_CONDITION
+    Boolean condition;
+  end SINGLE_CONDITION;
+
+  record ARRAY_CONDITION
+    list<Condition> conditions;
+  end ARRAY_CONDITION;
+end Condition;
+
 public uniontype ParamType
   record NON_PARAM "Not a parameter." end NON_PARAM;
   record NON_STRUCT_PARAM "A non-structural parameter." end NON_STRUCT_PARAM;

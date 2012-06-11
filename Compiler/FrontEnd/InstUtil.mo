@@ -66,6 +66,7 @@ protected import Util;
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
+public type Condition = InstTypes.Condition;
 public type DaePrefixes = InstTypes.DaePrefixes;
 public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
@@ -1435,6 +1436,46 @@ algorithm
     else DAE.STREAM();
   end match;
 end translateStream;
+
+public function conditionTrue
+  input Condition inCondition;
+  output Boolean outCondition;
+algorithm
+  outCondition := matchcontinue(inCondition)
+    local
+      Boolean cond;
+      list<Condition> condl;
+
+    case InstTypes.SINGLE_CONDITION(condition = cond) then cond;
+    case InstTypes.ARRAY_CONDITION(conditions = condl)
+      equation
+        _ = List.selectFirst(condl, conditionFalse);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end conditionTrue;
+
+public function conditionFalse
+  input Condition inCondition;
+  output Boolean outCondition;
+algorithm
+  outCondition := matchcontinue(inCondition)
+    local
+      Boolean cond;
+      list<Condition> condl;
+
+    case InstTypes.SINGLE_CONDITION(condition = cond) then not cond;
+    case InstTypes.ARRAY_CONDITION(conditions = condl)
+      equation
+        _ = List.selectFirst(condl, conditionTrue);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end conditionFalse;
 
 public function printBinding
   input Binding inBinding;
