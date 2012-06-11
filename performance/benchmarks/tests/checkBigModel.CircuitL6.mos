@@ -1,3 +1,0 @@
-loadModel(Modelica); getErrorString();
-loadFile("BigModel.mo"); getErrorString();
-checkModel(BigModel.CircuitL6); getErrorString();
