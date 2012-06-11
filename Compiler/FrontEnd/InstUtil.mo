@@ -147,8 +147,7 @@ algorithm
       equation
         ty = arrayElementType(ty);
       then
-        ty;
-        //DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
+        DAE.T_SUBTYPE_BASIC(state, {}, ty, ec, src);
 
     else inType;
   end match;
