@@ -6905,7 +6905,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
 "
   input Option<DAE.VariableAttributes> attr;
   input funcType func;
-  input ExtraArgType iextraArg;
+  input ExtraArgType extraArg;
   replaceable type ExtraArgType subtypeof Any; 
   partial function funcType
     input tuple<DAE.Exp,ExtraArgType> inTpl;
@@ -6914,13 +6914,13 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.VariableAttributes> outAttr;
   output ExtraArgType outExtraArg;
 algorithm
- (outAttr,outExtraArg) := matchcontinue(attr,func,iextraArg)
- local Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
-   Option<DAE.StateSelect> ss;
-   Option<DAE.Uncertainty> unc;
-   Option<DAE.Distribution> dist;
-   Option<Boolean> p,fin;
-   ExtraArgType extraArg;
+ (outAttr,outExtraArg) := matchcontinue(attr,func,extraArg)
+   local
+     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
+     Option<DAE.StateSelect> ss;
+     Option<DAE.Uncertainty> unc;
+     Option<DAE.Distribution> dist;
+     Option<Boolean> p,fin;
    case(NONE(),_,_) then (NONE(),extraArg);
    case(SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),func,extraArg) equation
      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
