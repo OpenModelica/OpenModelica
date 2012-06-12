@@ -554,7 +554,7 @@ protected function selectAliasState
   output Integer si "state";
   output BackendDAE.Variables ov;  
 algorithm
-  (acr,ia,scr,sexp,si,ov) := match(b1,b2,var1,cr1,exp1,i1,var2,cr2,exp2,i2,iv)
+  (acr,ai,scr,sexp,si,ov) := match(b1,b2,var1,cr1,exp1,i1,var2,cr2,exp2,i2,iv)
   local
     Integer p1,p2,ia,is;
     BackendDAE.Variables v;
@@ -1901,7 +1901,7 @@ protected function generateCondition1
   input array<DAE.Exp> inExps;
   output DAE.Exp outCont; 
 algorithm
-  outEqn:= matchcontinue(p1,p2,size,inExps)
+  outCont:= matchcontinue(p1,p2,size,inExps)
     local
       Integer p;
       DAE.Exp expCond,expThen,expElse,e1,e2;
@@ -1933,7 +1933,7 @@ protected function generateCondition2
   input array<DAE.Exp> inExps;
   output DAE.Exp outCont; 
 algorithm
-  outEqn:= matchcontinue(p1,p2,size,inExps)
+  outCont:= matchcontinue(p1,p2,size,inExps)
     local
       Integer p;
       DAE.Exp expCond,expThen,expElse,e1,e2;
