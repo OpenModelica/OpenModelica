@@ -8555,7 +8555,7 @@ public function setAlgorithms "set algorithms in BackendDAE"
   input array<DAE.Algorithm> ialgs;
   output BackendDAE.BackendDAE outDae;
 algorithm
-  outDae := matchcontinue(dae,algs)
+  outDae := matchcontinue(dae,ialgs)
   local 
     Variables kv,eo;
     AliasVariables av;
