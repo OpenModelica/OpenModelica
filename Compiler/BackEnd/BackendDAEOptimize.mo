@@ -1976,9 +1976,10 @@ algorithm
     case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared,mvars,mavars)
       equation
         pos_1 = pos-1;
-        (eqn as BackendDAE.EQUATION(source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
         // select candidate
+        source = BackendEquation.equationSource(eqn);
         (cr,es,k,syst,shared,newvars) = selectAlias(cr,cr2,e1,e2,syst,shared,mavars,negate,source);
       then (cr,k,es,syst,shared,mvars,newvars,1);
     case ({i,j},length,pos,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,mvars,mavars)

@@ -658,6 +658,21 @@ algorithm
   end match;
 end varKind;
 
+public function varBindValue "function: varBindValue
+  author: PA
+
+  extracts the bindValue of a variable.
+"
+  input BackendDAE.Var inVar;
+  output Values.Value outBindValue;
+algorithm
+  outBindValue:=
+  match (inVar)
+    local Values.Value bindValue;
+    case (BackendDAE.VAR(bindValue = SOME(bindValue))) then bindValue;
+  end match;
+end varBindValue;
+
 public function varIndex "function: varIndex
   author: PA
 
@@ -1785,7 +1800,7 @@ algorithm
    end match;
 end isFinalVar;
 
-protected function getVariableAttributes
+public function getVariableAttributes
 "function getVariableAttributes
   author: Frenkel TUD 2011-04
   returns the DAE.VariableAttributes of a variable"

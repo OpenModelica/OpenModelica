@@ -94,7 +94,6 @@ type AliasVariables = BackendDAE.AliasVariables;
 type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
-type Matching = BackendDAE.Matching;
 type MatchingOptions = BackendDAE.MatchingOptions;
 type EqSystems = BackendDAE.EqSystems;
 type WhenClause = BackendDAE.WhenClause;
@@ -116,15 +115,15 @@ protected
   list<BackendDAE.Equation> wrongEqns;
 algorithm  
   _ := matchcontinue (inBackendDAE)
-    local BackendDAE.BackendDAE bdae;
+    local
       Integer i1,i2;
       Boolean samesize;
-    case (bdae)
+    case (_)
       equation
         false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       then
         ();
-    case (bdae as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement = i2))::{}))
+    case (BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement = i2))::{}))
       equation
         true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
         //Check for correct size
@@ -664,7 +663,7 @@ algorithm
       Variables ordvars,ordvars1;
       EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1;
-      Matching matching,matching1;
+      BackendDAE.Matching matching,matching1;
       BackendDAE.Shared shared;
     case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching),shared)
       equation
@@ -727,8 +726,8 @@ algorithm
 end copyBackendDAEShared;
 
 public function copyMatching
-  input Matching inMatching;
-  output Matching outMatching;
+  input BackendDAE.Matching inMatching;
+  output BackendDAE.Matching outMatching;
 algorithm
   outMatching := match (inMatching)
     local
@@ -893,12 +892,11 @@ algorithm
       Variables vars, knvars, extVars;
       AliasVariables av;
       EquationArray eqns,seqns,ieqns;
-      BackendDAE.BackendDAE trans_dae;
       ExternalObjectClasses extObjCls;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
-      Matching matching;
+      BackendDAE.Matching matching;
       EqSystems systs;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,constrs,complEqs, funcs, BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp,symjacs)),_)
       equation
@@ -927,7 +925,7 @@ algorithm
       Variables vars;
       EquationArray eqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-      Matching matching;
+      BackendDAE.Matching matching;
     case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching),varlst)
       equation
         vars = BackendVariable.addVars(varlst, vars);
@@ -2542,7 +2540,6 @@ algorithm
       BackendDAE.Value size;
       array<BackendDAE.Value> arr,arr_1;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
-      BackendDAE.BackendDAE dae;
       Variables v,kv;
       EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -2660,7 +2657,6 @@ algorithm
   matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
       list<Var> statevar_lst;
-      BackendDAE.BackendDAE dae;
       array<BackendDAE.Value> arr_1,arr;
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
@@ -4721,7 +4717,6 @@ public function updateIncidenceMatrix
 algorithm
   osyst := matchcontinue (syst,shared,inIntegerLst)
     local
-      BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -4731,7 +4726,7 @@ algorithm
       Variables vars,knvars;
       EquationArray daeeqns,daeseqns,inieq;
       list<WhenClause> wc;
-      Matching matching;
+      BackendDAE.Matching matching;
 
     case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),eqns)
       equation
@@ -4762,7 +4757,6 @@ algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
   matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
-      BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -4928,7 +4922,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
       Variables v;
       EquationArray eq;
-      Matching matching;
+      BackendDAE.Matching matching;
       BackendDAE.IndexType it;
     case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),shared,it)
       equation
@@ -4960,7 +4954,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
       Variables v;
       EquationArray eq;
-      Matching matching;
+      BackendDAE.Matching matching;
       BackendDAE.IndexType it;
     case(syst as BackendDAE.EQSYSTEM(v,eq,_,_,matching),shared,it)
       equation
@@ -6059,7 +6053,6 @@ algorithm
   outJacobianType:=
   matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLstOption)
     local
-      BackendDAE.BackendDAE daelow;
       Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
@@ -6090,7 +6083,6 @@ algorithm
   matchcontinue (inBackendDAE)
     local
       Boolean res;
-      BackendDAE.BackendDAE dae;
       EquationArray eqns;
       BackendDAE.Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;      
@@ -6118,7 +6110,6 @@ algorithm
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
       BackendDAE.Equation eqn;
-      BackendDAE.BackendDAE dae;
       Variables vars;
       BackendDAE.Value indx;
       array<BackendDAE.MultiDimEquation> arreqn;
@@ -7504,7 +7495,7 @@ algorithm
 
   // transformation phase (matching and sorting using a index reduction method
   sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-//  sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  //sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
@@ -7590,7 +7581,7 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
   outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
-//  outDAE := reduceIndexDAE(inDAE,inMatchingOptions,(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  //outDAE := reduceIndexDAE(inDAE,inMatchingOptions,(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
 end transformBackendDAE;
 
 protected function transformDAE
@@ -8026,7 +8017,7 @@ algorithm
 
   // transformation phase (matching and sorting using a index reduction method
   sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-//  sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  //sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
@@ -8507,7 +8498,7 @@ end nonEmptySystem;
 
 public function setEqSystemMatching
   input BackendDAE.EqSystem syst;
-  input Matching matching;
+  input BackendDAE.Matching matching;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst := match (syst,matching)
@@ -8561,7 +8552,7 @@ end getAlgorithms;
 
 public function setAlgorithms "set algorithms in BackendDAE"
   input BackendDAE.BackendDAE dae;
-  input array<DAE.Algorithm> algs;
+  input array<DAE.Algorithm> ialgs;
   output BackendDAE.BackendDAE outDae;
 algorithm
   outDae := matchcontinue(dae,algs)
@@ -8581,8 +8572,8 @@ algorithm
     .BackendDAE.SymbolicJacobians jac;
     .BackendDAE.EqSystems eqs;
        
-    case(BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,_,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)),algs)
-    then (BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,algs,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)));  
+    case(BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,_,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)),ialgs)
+    then (BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,ialgs,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)));  
   end matchcontinue;
 end setAlgorithms;
 
