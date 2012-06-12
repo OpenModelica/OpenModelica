@@ -2105,6 +2105,14 @@ package List
 
   end union;
 
+  function lastN 
+    input list<Type_a> inTypeALst1;
+     input Integer inN;
+    output list<Type_a> outTypeALst;
+    replaceable type Type_a subtypeof Any;
+
+  end lastN;
+
   function threadTuple
     replaceable type Type_b subtypeof Any;
     input list<Type_a> inTypeALst;

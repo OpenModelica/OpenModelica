@@ -4,6 +4,7 @@
 //#include <vector>
 #include <algorithm>
 #include <map>
+#include <cmath>
 using namespace std;
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
@@ -41,7 +42,9 @@ using boost::tie;
 using boost::get;
 using boost::make_tuple;
 
-
+using std::max;
+using std::min;
+using std::string;
 typedef  double modelica_real ;
 typedef  int modelica_integer;
 typedef  bool modelica_boolean;
@@ -61,9 +64,13 @@ typedef double abs_rettype;
 typedef double max_rettype;
 typedef double min_rettype;
 typedef double arctan_rettype;
-
-
-
+typedef double floorRetType;
+typedef double asinRetType;
+typedef double tan_rettype;
+typedef double tanhRetType;
+typedef double acosRetType;
+typedef double logRetType;
+typedef double coshRetType;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
