@@ -577,6 +577,13 @@ record Distribution
   String paramNames[:/*should be size(params,1) but doesn't work, cb issue #1682*/] "the parameter names for the specified distribution, e.g {\"my\",\"sigma\"} for a normal distribution";
 end Distribution;
 
+record Correlation "defines correlation between two uncertainty variables"
+   Real v1 "first variable";
+   Real v2 "second variable";
+   Real c "correlation value";
+end Correlation;
+
+
 encapsulated package Connections
   function branch
     external "builtin";

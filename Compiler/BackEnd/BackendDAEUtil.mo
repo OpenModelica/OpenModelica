@@ -639,7 +639,7 @@ algorithm
       EqSystems eqns;
       BackendDAE.Shared shared,shared1;
       BackendDAE.BackendDAE bDAE;
-    case (bDAE as BackendDAE.DAE(shared=shared))
+    case (bDAE as BackendDAE.DAE(eqs=eqns, shared=shared))
       equation
         BackendDAE.DAE(eqs=eqns) = mapEqSystem(bDAE, copyBackendDAEEqSystem);
         shared1 = copyBackendDAEShared(shared);
@@ -893,6 +893,7 @@ algorithm
       Variables vars, knvars, extVars;
       AliasVariables av;
       EquationArray eqns,seqns,ieqns;
+      BackendDAE.BackendDAE trans_dae;
       ExternalObjectClasses extObjCls;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAEType btp;
@@ -2541,6 +2542,7 @@ algorithm
       BackendDAE.Value size;
       array<BackendDAE.Value> arr,arr_1;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
+      BackendDAE.BackendDAE dae;
       Variables v,kv;
       EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -2658,6 +2660,7 @@ algorithm
   matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
       list<Var> statevar_lst;
+      BackendDAE.BackendDAE dae;
       array<BackendDAE.Value> arr_1,arr;
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
@@ -4718,6 +4721,7 @@ public function updateIncidenceMatrix
 algorithm
   osyst := matchcontinue (syst,shared,inIntegerLst)
     local
+      BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -4758,6 +4762,7 @@ algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
   matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
+      BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
@@ -6054,6 +6059,7 @@ algorithm
   outJacobianType:=
   matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLstOption)
     local
+      BackendDAE.BackendDAE daelow;
       Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
@@ -6084,6 +6090,7 @@ algorithm
   matchcontinue (inBackendDAE)
     local
       Boolean res;
+      BackendDAE.BackendDAE dae;
       EquationArray eqns;
       BackendDAE.Variables vars;
       array<BackendDAE.MultiDimEquation> arreqn;      
@@ -6111,6 +6118,7 @@ algorithm
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
       BackendDAE.Equation eqn;
+      BackendDAE.BackendDAE dae;
       Variables vars;
       BackendDAE.Value indx;
       array<BackendDAE.MultiDimEquation> arreqn;
@@ -6906,58 +6914,58 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.VariableAttributes> outAttr;
   output ExtraArgType outExtraArg;
 algorithm
- (outAttr,outExtraArg) := matchcontinue(attr,func,iextraArg)
+ (outAttr,outExtraArg) := matchcontinue(attr,func,extraArg)
  local Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
    Option<DAE.StateSelect> ss;
    Option<DAE.Uncertainty> unc;
    Option<DAE.Distribution> dist;
    Option<Boolean> p,fin;
    ExtraArgType extraArg;
-   case(NONE(),_,_) then (NONE(),iextraArg);
+   case(NONE(),_,_) then (NONE(),extraArg);
    case(SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),func,extraArg) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
-     ((u,extraArg)) = Expression.traverseExpOpt(u,func,extraArg);
-     ((du,extraArg)) = Expression.traverseExpOpt(du,func,extraArg);
-     ((min,extraArg)) = Expression.traverseExpOpt(min,func,extraArg);
-     ((max,extraArg)) = Expression.traverseExpOpt(max,func,extraArg);
-     ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
-     ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
-     ((n,extraArg)) = Expression.traverseExpOpt(n,func,extraArg);
-     ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
-     (dist,extraArg) = traverseBackendDAEAttrDistribution(dist,func,extraArg);
-   then (SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),extraArg);
+     ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((u,outExtraArg)) = Expression.traverseExpOpt(u,func,outExtraArg);
+     ((du,outExtraArg)) = Expression.traverseExpOpt(du,func,outExtraArg);
+     ((min,outExtraArg)) = Expression.traverseExpOpt(min,func,outExtraArg);
+     ((max,outExtraArg)) = Expression.traverseExpOpt(max,func,outExtraArg);
+     ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
+     ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
+     ((n,outExtraArg)) = Expression.traverseExpOpt(n,func,outExtraArg);
+     ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+     (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
+   then (SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),outExtraArg);
           
-   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),_,_) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
-     ((min,extraArg)) = Expression.traverseExpOpt(min,func,extraArg);
-     ((max,extraArg)) = Expression.traverseExpOpt(max,func,extraArg);
-     ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
-     ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
-     ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
-      (dist,extraArg) = traverseBackendDAEAttrDistribution(dist,func,extraArg);
-   then (SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),extraArg);
+   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),func,extraArg) equation
+     ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((min,outExtraArg)) = Expression.traverseExpOpt(min,func,outExtraArg);
+     ((max,outExtraArg)) = Expression.traverseExpOpt(max,func,outExtraArg);
+     ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
+     ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
+     ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+      (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
+   then (SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),outExtraArg);
           
-   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),_,_) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
-     ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
-     ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
-     ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
-   then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),extraArg);
+   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),func,extraArg) equation
+     ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
+     ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
+     ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+   then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),outExtraArg);
      
-   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),_,_) equation
-     ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
-     ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
-     ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
-   then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),extraArg);
+   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),func,extraArg) equation
+     ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
+     ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+   then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),outExtraArg);
      
-   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),_,_) equation
-      ((q,extraArg)) = Expression.traverseExpOpt(q,func,iextraArg);
-     ((min,extraArg)) = Expression.traverseExpOpt(min,func,iextraArg);
-     ((max,extraArg)) = Expression.traverseExpOpt(max,func,extraArg);
-     ((i,extraArg)) = Expression.traverseExpOpt(i,func,extraArg);
-     ((f,extraArg)) = Expression.traverseExpOpt(f,func,extraArg);
-     ((eqbound,extraArg)) = Expression.traverseExpOpt(eqbound,func,extraArg);
-    then (SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),extraArg);
+   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),func,extraArg) equation
+      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
+     ((min,outExtraArg)) = Expression.traverseExpOpt(min,func,outExtraArg);
+     ((max,outExtraArg)) = Expression.traverseExpOpt(max,func,outExtraArg);
+     ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
+     ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
+     ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
+    then (SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),outExtraArg);
            
  end matchcontinue;
 end traverseBackendDAEVarAttr;
@@ -6968,7 +6976,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
 "
   input Option<DAE.Distribution> distOpt;
   input funcType func;
-  input ExtraArgType iextraArg;
+  input ExtraArgType extraArg;
   replaceable type ExtraArgType subtypeof Any; 
   partial function funcType
     input tuple<DAE.Exp,ExtraArgType> inTpl;
@@ -6977,20 +6985,19 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.Distribution> outDistOpt;
   output ExtraArgType outExtraArg;
 algorithm
- (outDistOpt,outExtraArg) := matchcontinue(distOpt,func,iextraArg)
+ (outDistOpt,outExtraArg) := matchcontinue(distOpt,func,extraArg)
  local
    DAE.Exp name,arr,sarr;
-   ExtraArgType extraArg;  
    
-   case(NONE(),_,_) then (NONE(),iextraArg);
+   case(NONE(),func,outExtraArg) then (NONE(),outExtraArg);
    
    case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
      ((arr,_)) = extendArrExp((arr,(NONE(),false)));
      ((sarr,_)) = extendArrExp((sarr,(NONE(),false)));
-     ((name,extraArg)) = Expression.traverseExp(name,func,iextraArg);
-     ((arr,extraArg)) = Expression.traverseExp(arr,func,extraArg);
-     ((sarr,extraArg)) = Expression.traverseExp(sarr,func,extraArg);
-    then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),extraArg);
+     ((name,outExtraArg)) = Expression.traverseExp(name,func,extraArg);
+     ((arr,outExtraArg)) = Expression.traverseExp(arr,func,outExtraArg);
+     ((sarr,outExtraArg)) = Expression.traverseExp(sarr,func,outExtraArg);
+    then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),outExtraArg);
  end matchcontinue;
 end traverseBackendDAEAttrDistribution;
 
@@ -8544,5 +8551,39 @@ algorithm
   BackendDAE.DAE(eqs=eqs,shared = BackendDAE.SHARED(knownVars=knvars)) := dae;
   varLst := List.flatten(List.map(listAppend({knvars},List.map(eqs,BackendVariable.daeVars)),varList));  
 end getAllVarLst;
+
+public function getAlgorithms "return all algorithms from BackendDAE"
+  input BackendDAE.BackendDAE dae;
+  output array<DAE.Algorithm> algs;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(algorithms=algs)) := dae;
+end getAlgorithms;
+
+public function setAlgorithms "set algorithms in BackendDAE"
+  input BackendDAE.BackendDAE dae;
+  input array<DAE.Algorithm> algs;
+  output BackendDAE.BackendDAE outDae;
+algorithm
+  outDAE := matchcontinue(dae,algs)
+  local 
+    Variables kv,eo;
+    AliasVariables av;
+    EquationArray ieqns;
+    EquationArray reqns;
+    array< .BackendDAE.MultiDimEquation> aeqns ;
+    array< .DAE.Algorithm> algs;
+    array< .DAE.Constraint> constraints;
+    array< .BackendDAE.ComplexEquation> complEqs;
+    .DAE.FunctionTree functionTree;
+    .BackendDAE.EventInfo eventInfo;
+    .BackendDAE.ExternalObjectClasses extObjClasses;
+    .BackendDAE.BackendDAEType tp;
+    .BackendDAE.SymbolicJacobians jac;
+    .BackendDAE.EqSystems eqs;
+       
+    case(BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,_,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)),algs)
+    then (BackendDAE.DAE(eqs,BackendDAE.SHARED(kv,eo,av,ieqns,reqns,aeqns,algs,constraints,complEqs,functionTree,eventInfo,extObjClasses,tp,jac)));  
+  end matchcontinue;
+end setAlgorithms;
 
 end BackendDAEUtil;

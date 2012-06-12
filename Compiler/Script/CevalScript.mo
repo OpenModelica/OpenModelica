@@ -3095,10 +3095,9 @@ algorithm
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
       funcs = Env.getFunctionTree(cache);
       dlow = BackendDAECreate.lower(dae,funcs,true);      
-      //print("lowered class\n");
-      dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, NONE(), NONE(), NONE(),NONE());
+      //print("lowered class\n");      
       //print("calling generateOpenTurnsInterface\n");  
-      scriptFile = OpenTURNS.generateOpenTURNSInterface(dlow_1,funcs,className,p,dae,templateFile);
+      scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
     then (cache,templateFile,inSt);
   end matchcontinue;
 end buildOpenTURNSInterface;

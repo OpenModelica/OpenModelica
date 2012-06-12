@@ -336,6 +336,47 @@ algorithm
   end matchcontinue;
 end arrayMapNoCopyHelp1_1;
 
+public function arrayFindFirstOnTrue "finds the first element in the array that the predicate function returns true on"
+  replaceable type Type_a subtypeof Any;
+  input array<Type_a> array;
+  input ArrayPredFunc func;
+  partial function ArrayPredFunc
+    input Type_a elt;
+    output Boolean res;
+  end ArrayPredFunc;
+  
+  output Option<Type_a> elt;
+algorithm
+  elt :=arrayFindFirstOnTrue2(array,func,1);
+end arrayFindFirstOnTrue;
+
+protected function arrayFindFirstOnTrue2 "help function"  
+  input array<Type_a> array;
+  input ArrayPredFunc func;
+  input Integer pos;
+  replaceable type Type_a subtypeof Any;
+  partial function ArrayPredFunc
+    input Type_a elt;
+    output Boolean res;
+  end ArrayPredFunc;
+  
+  output Option<Type_a> elt;
+algorithm
+  elt := matchcontinue(array,func,pos)
+  local 
+    Type_a e;
+     
+    case(array,func,pos) equation
+      true = pos > arrayLength(array);
+    then NONE();
+    case(array,func,pos) equation
+      e = array[pos];
+      true = func(e);
+    then SOME(e);
+    case(array,func,pos) then  arrayFindFirstOnTrue2(array,func,pos+1);
+  end matchcontinue;
+end arrayFindFirstOnTrue2; 
+
 public function arraySelect 
 "Takes an array and a list with index and output a new array with the indexed elements. 
  Since it will update the array values the returned array must not have the same type, 
