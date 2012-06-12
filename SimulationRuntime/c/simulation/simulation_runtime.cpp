@@ -643,34 +643,42 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   int retVal = -1;
   if(!setjmp(globalJmpbuf))
   {
-      if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
-        return 1;
-      /* sighandler_t oldhandler = different type on all platforms... */
+    if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
+      return 1;
+
+    /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
-      signal(SIGUSR1, SimulationRuntime_printStatus);
+    signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-      /*if (interactiveSimulation) {
-        cout << "startInteractiveSimulation: " << version << endl;
-        retVal = startInteractiveSimulation(argc, argv);
-      } else {
-      */
-        /* cout << "startNonInteractiveSimulation: " << version << endl; */
-        retVal = startNonInteractiveSimulation(argc, argv, data);
-      /*}*/
+    /*
+     * if (interactiveSimulation)
+     * {
+     *   cout << "startInteractiveSimulation: " << version << endl;
+     *   retVal = startInteractiveSimulation(argc, argv);
+     * }
+     * else
+     * {
+     *   cout << "startNonInteractiveSimulation: " << version << endl;
+     *   retVal = startNonInteractiveSimulation(argc, argv, data);
+     * }
+     */
+    retVal = startNonInteractiveSimulation(argc, argv, data);
+
+    /*
+     * deinitializeEventData();
+     * callExternalObjectDestructors2(globalData);
+     * free(globalData);
+     */
+    callExternalObjectDestructors(data);
+    DeinitializeDataStruc(data);
+    fflush(NULL);
   }
   else
   {
     /* THROW was executed */
   }
 
-  /* deinitializeEventData();
-   * callExternalObjectDestructors2(globalData);
-   * free(globalData);
-   */
-  callExternalObjectDestructors(data);
-  DeinitializeDataStruc(data);
-  fflush(NULL);
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (sim_communication_port_open) {
     sim_communication_port.close();

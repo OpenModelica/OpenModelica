@@ -83,6 +83,7 @@ enum INIT_OPTI_METHOD
   IOM_SIMPLEX,
   IOM_NEWUOA,
   IOM_KINSOL,
+  IOM_KINSOL_SCALED,
   IOM_MAX
 };
 
@@ -92,7 +93,8 @@ const char *optiMethodStr[IOM_MAX] = {
   "nelder_mead_ex2",
   "simplex",
   "newuoa",
-  "kinsol"
+  "kinsol",
+  "kinsol_scaled"
 };
 const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
@@ -100,7 +102,8 @@ const char *optiMethodDescStr[IOM_MAX] = {
   "without global homotopy",
   "",
   "brent's method",
-  "sundials/kinsol"
+  "sundials/kinsol",
+  "sundials/kinsol with scaling"
 };
 
 /*! \fn leastSquareWithLambda
@@ -147,8 +150,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
     if(scalingCoefficient > 0.0)
       funcValue += (initData->initialResiduals[i] / scalingCoefficient) * (initData->initialResiduals[i] / scalingCoefficient);
-    /*else
-      funcValue += initData->initialResiduals[i] * initData->initialResiduals[i];*/
+    else
+      funcValue += initData->initialResiduals[i] * initData->initialResiduals[i];
   }
 
   if(lambda < 1.0)
@@ -166,8 +169,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
         if(scalingCoefficient > 0.0)
           funcValue += (1.0-lambda)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
-        /*else
-          funcValue += (1.0-lambda)*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i]);*/
+        else
+          funcValue += (1.0-lambda)*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realVarsData[i].attribute.start-data->localData[0]->realVars[i]);
       }
 
     /* for real parameters */
@@ -181,8 +184,8 @@ double leastSquareWithLambda(DATA* data, INIT_DATA* initData, double lambda)
 
         if(scalingCoefficient > 0.0)
           funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
-        /*else
-          funcValue += (1.0-lambda)*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i]);*/
+        else
+          funcValue += (1.0-lambda)*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])*(data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i]);
       }
   }
 
@@ -219,30 +222,6 @@ void leastSquare(long *nz, double *z, double *funcValue)
   *funcValue = leastSquareWithLambda(globalData, &initData, 1.0);
 
   DEBUG_INFO1(LOG_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
-}
-
-/*! \fn reportResidualValue
- *
- *  Returns 1 if residual is non-zero and prints appropriate error message.
- *
- *  \param [ref] [data]
- *  \param [in]  [funcValue] leastSquare-Value
- *  \param [in]  [initialResiduals]
- */
-int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue)
-{
-  long i = 0;
-  if(funcValue > 1e-5)
-  {
-    WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
-    WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
-
-    for(i=0; i<initData->nInitResiduals; i++)
-      if(fabs(initData->initialResiduals[i]) > 1e-6)
-        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initData->initialResiduals[i]);
-    return 1;
-  }
-  return 0;
 }
 
 /*! \fn initialize
@@ -365,9 +344,11 @@ static int initialize(DATA *data, int optiMethod)
   else if(optiMethod == IOM_SIMPLEX)
     retVal = simplex_initialization(data, initData);
   else if(optiMethod == IOM_NEWUOA)
-      retVal = newuoa_initialization(data, initData);
+    retVal = newuoa_initialization(data, initData);
   else if(optiMethod == IOM_KINSOL)
-      retVal = kinsol_initialization(data, initData);
+    retVal = kinsol_initialization(data, initData, 0);
+  else if(optiMethod == IOM_KINSOL_SCALED)
+    retVal = kinsol_initialization(data, initData, 1);
   else
     THROW("unsupported option -iom");
 
@@ -383,7 +364,6 @@ static int initialize(DATA *data, int optiMethod)
  */
 static int none_initialization(DATA *data, int updateStartValues)
 {
-  long i;
   /*INIT_DATA *initData = NULL;*/
 
   /* set up all variables and parameters with their start-values */

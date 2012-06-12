@@ -58,6 +58,30 @@ void NEWUOA(long *nz,
   double *W,
   void (*leastSquare) (long *nz, double *z, double *funcValue));
 
+/*! \fn reportResidualValue
+ *
+ *  Returns 1 if residual is non-zero and prints appropriate error message.
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [funcValue] leastSquare-Value
+ *  \param [in]  [initialResiduals]
+ */
+static int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue)
+{
+  long i = 0;
+  if(funcValue > 1e-5)
+  {
+    WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
+    WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
+
+    for(i=0; i<initData->nInitResiduals; i++)
+      if(fabs(initData->initialResiduals[i]) > 1e-6)
+        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initData->initialResiduals[i]);
+    return 1;
+  }
+  return 0;
+}
+
 /*! \fn int newuoa_initialization(long nz, double *z)
  *
  *  This function performs initialization using the newuoa function, which is

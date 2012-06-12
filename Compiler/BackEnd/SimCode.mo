@@ -6099,7 +6099,7 @@ algorithm
       residual_equations = listAppend(residual_equations, tmpResiduals);
       
       // [orderedVars] with start-values and fixed=true
-      // lambda * (v - start(v)); fixed(v) = true
+      // v - start(v); fixed(v) = true
       initialEqs_lst = generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
       tmpResiduals = List.map1(initialEqs_lst, dlowEqToSimEqSystem, algorithms);
       residual_equations = listAppend(residual_equations, tmpResiduals);

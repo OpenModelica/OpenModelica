@@ -44,7 +44,7 @@ extern "C"
 {
 #endif
 
-extern int kinsol_initialization(DATA* data, INIT_DATA* initData);
+extern int kinsol_initialization(DATA* data, INIT_DATA* initData, int useScaling);
 
 #ifdef __cplusplus
 }

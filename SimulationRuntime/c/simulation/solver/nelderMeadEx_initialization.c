@@ -383,7 +383,7 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
     }
     else if(funcValue == bestFuncValue)
     {
-      WARNING("local minimum");
+      /*WARNING("local minimum");*/
       break;
     }
   }
@@ -397,5 +397,5 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
   if(lambda < 1.0 && funcValue > STOPCR)
     return -1;
 
-  return reportResidualValue(data, initData, funcValue);
+  return 0;
 }

@@ -51,8 +51,6 @@ extern double leastSquareWithLambda(DATA* data, INIT_DATA* initData,
     double lambda);
 extern void leastSquare(long *nz, double *z, double *funcValue);
 
-extern int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue);
-
 extern DATA *globalData;
 extern double* globalInitialResiduals;
 
