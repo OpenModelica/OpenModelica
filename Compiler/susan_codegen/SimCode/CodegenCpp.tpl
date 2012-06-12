@@ -2837,13 +2837,13 @@ template boostextentDims(ComponentRef cr, list<String> arraydims)
 ::=
    match cr
   case CREF_IDENT(__) then 
- 	'[<%arraydims;separator="]["%>]'
- 	//subscriptsToCStr(subscriptLst)
+   '[<%arraydims;separator="]["%>]'
+   //subscriptsToCStr(subscriptLst)
   case CREF_QUAL(componentRef=c) then   
-   match arraydims
-    	case val::dims            
-  			then boostextentDims(c,dims)
-  		end match
+    match arraydims
+      case val::dims            
+        then boostextentDims(c,dims)
+    end match
   else "CREF_NOT_IDENT_OR_QUAL"
 end boostextentDims;
 */
@@ -2852,10 +2852,10 @@ template boostextentDims(ComponentRef cr, list<String> arraydims)
 ::=
    match cr
   case CREF_IDENT(subscriptLst=dims) then 
- 	'[<%List.lastN(arraydims,listLength(dims));separator="]["%>]'
- 	//subscriptsToCStr(subscriptLst)
+    '[<%List.lastN(arraydims,listLength(dims));separator="]["%>]'
+    //subscriptsToCStr(subscriptLst)
   case CREF_QUAL(componentRef=c) then   
-  		boostextentDims(c,arraydims)
+    boostextentDims(c,arraydims)
   else "CREF_NOT_IDENT_OR_QUAL"
 end boostextentDims;
 
@@ -2881,7 +2881,7 @@ template crefToCStr1(ComponentRef cr)
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
-		 
+
 template subscriptsToCStrForArray(list<Subscript> subscripts)
 ::=
   if subscripts then
