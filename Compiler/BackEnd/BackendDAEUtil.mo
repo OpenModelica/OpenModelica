@@ -6904,7 +6904,7 @@ public function traverseBackendDAEVarAttr
 author: Peter Aronsson (paronsson@wolfram.com)
 "
   input Option<DAE.VariableAttributes> attr;
- input funcType func;
+  input funcType func;
   input ExtraArgType iextraArg;
   replaceable type ExtraArgType subtypeof Any; 
   partial function funcType
@@ -6914,7 +6914,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.VariableAttributes> outAttr;
   output ExtraArgType outExtraArg;
 algorithm
- (outAttr,outExtraArg) := matchcontinue(attr,func,extraArg)
+ (outAttr,outExtraArg) := matchcontinue(attr,func,iextraArg)
  local Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
    Option<DAE.StateSelect> ss;
    Option<DAE.Uncertainty> unc;
@@ -8564,7 +8564,7 @@ public function setAlgorithms "set algorithms in BackendDAE"
   input array<DAE.Algorithm> algs;
   output BackendDAE.BackendDAE outDae;
 algorithm
-  outDAE := matchcontinue(dae,algs)
+  outDae := matchcontinue(dae,algs)
   local 
     Variables kv,eo;
     AliasVariables av;
