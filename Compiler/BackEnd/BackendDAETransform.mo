@@ -1902,17 +1902,16 @@ algorithm
   matchcontinue (cr,dcr,inStateOrder)
     local
         HashTableCG.HashTable ht,ht1;
-        HashTable3.HashTable dht,dht1;   
-        DAE.ComponentRef dcr;
+        HashTable3.HashTable dht,dht1;  
         list<DAE.ComponentRef> crlst;
-    case (cr,dcr,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         ht1 = BaseHashTable.add((cr, dcr),ht);
         failure(_ = getDerStateOrder(dcr,inStateOrder));
         dht1 = BaseHashTable.add((dcr, {cr}),dht); 
       then
        BackendDAE.STATEORDER(ht1,dht1);
-    case (cr,dcr,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
       equation
         ht1 = BaseHashTable.add((cr, dcr),ht);
         crlst = getDerStateOrder(dcr,inStateOrder);
@@ -1921,6 +1920,123 @@ algorithm
        BackendDAE.STATEORDER(ht1,dht1);
   end matchcontinue;    
 end addStateOrder;
+
+public function addAliasStateOrder
+"function: addAliasStateOrder
+  author: Frenkel TUD 2012-06
+  add state and replace alias state in the 
+  stateorder."
+  input DAE.ComponentRef cr;
+  input DAE.ComponentRef acr;
+  input BackendDAE.StateOrder inStateOrder;
+  output BackendDAE.StateOrder outStateOrder;
+algorithm
+ outStateOrder :=
+  matchcontinue (cr,acr,inStateOrder)
+    local
+        HashTableCG.HashTable ht,ht1;
+        HashTable3.HashTable dht,dht1;   
+        DAE.ComponentRef dcr,cr1;
+        list<DAE.ComponentRef> crlst;
+        Boolean b;
+    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+      equation
+        dcr = BaseHashTable.get(acr,ht);
+        failure(_ = BaseHashTable.get(cr,ht));
+        ht1 = BaseHashTable.add((cr, dcr),ht);
+        {cr1} = BaseHashTable.get(dcr,dht);
+        ht1 = BaseHashTable.delete(acr,ht1);
+        b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
+        crlst = Util.if_(b,{cr},{cr,cr1});
+        dht1 = BaseHashTable.add((dcr, crlst),dht); 
+      then
+        BackendDAE.STATEORDER(ht1,dht1);
+        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+      equation
+        dcr = BaseHashTable.get(acr,ht);
+        failure(_ = BaseHashTable.get(cr,ht));
+        ht1 = BaseHashTable.add((cr, dcr),ht);
+        ht1 = BaseHashTable.delete(acr,ht1);
+        crlst = BaseHashTable.get(dcr,dht);
+        crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
+        dht1 = BaseHashTable.add((dcr, cr::crlst),dht); 
+      then
+        BackendDAE.STATEORDER(ht1,dht1);
+        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+      equation
+        dcr = BaseHashTable.get(acr,ht);
+        _ = BaseHashTable.get(cr,ht);
+        {cr1} = BaseHashTable.get(dcr,dht);
+        ht1 = BaseHashTable.delete(acr,ht);
+        b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
+        crlst = Util.if_(b,{cr},{cr,cr1});
+        dht1 = BaseHashTable.add((dcr, crlst),dht); 
+      then
+        BackendDAE.STATEORDER(ht1,dht1);
+        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+      equation
+        dcr = BaseHashTable.get(acr,ht);
+        _ = BaseHashTable.get(cr,ht);
+        ht1 = BaseHashTable.delete(acr,ht);
+        crlst = BaseHashTable.get(dcr,dht);
+        crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
+        dht1 = BaseHashTable.add((dcr, cr::crlst),dht); 
+      then
+        BackendDAE.STATEORDER(ht1,dht1);
+        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));               
+    case (_,_,BackendDAE.STATEORDER(hashTable=ht))
+      equation
+        failure(_ = BaseHashTable.get(acr,ht));
+      then
+        inStateOrder;
+        //replaceDerStateOrder(cr,acr,inStateOrder);
+  end matchcontinue;    
+end addAliasStateOrder;
+
+protected function replaceDerStateOrder
+"function: replaceDerStateOrder
+  author: Frenkel TUD 2012-06
+  replace a state  in the 
+  stateorder."
+  input DAE.ComponentRef cr;
+  input DAE.ComponentRef acr;
+  input BackendDAE.StateOrder inStateOrder;
+  output BackendDAE.StateOrder outStateOrder;
+algorithm
+ outStateOrder :=
+  matchcontinue (cr,acr,inStateOrder)
+    local
+        HashTableCG.HashTable ht,ht1;
+        HashTable3.HashTable dht,dht1;   
+        DAE.ComponentRef cr1;
+        list<DAE.ComponentRef> crlst;
+        list<tuple<DAE.ComponentRef,DAE.ComponentRef>> crcrlst;
+        Boolean b;
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
+      equation
+        {cr1} = BaseHashTable.get(acr,dht);
+        ht1 = BaseHashTable.add((cr1, cr),ht); 
+        BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",cr1," -> ",cr,"\n"));
+      then
+       BackendDAE.STATEORDER(ht1,dht);
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
+      equation
+        crlst = BaseHashTable.get(acr,dht);
+        crcrlst = List.map1(crlst,Util.makeTuple,cr);
+        ht1 = List.fold(crcrlst,BaseHashTable.add,ht);
+        BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",acr," -> ",cr,"\n"));
+      then
+       BackendDAE.STATEORDER(ht1,dht);                     
+    case (_,_,BackendDAE.STATEORDER(invHashTable=dht))
+      equation
+        failure(_ = BaseHashTable.get(acr,dht));
+      then
+       inStateOrder;
+  end matchcontinue;    
+end replaceDerStateOrder;
 
 public function getStateOrder
 "function: getStateOrder
@@ -1932,9 +2048,8 @@ public function getStateOrder
   output DAE.ComponentRef dcr;
 protected
   HashTableCG.HashTable ht;
-  HashTable3.HashTable dht;  
 algorithm
-  BackendDAE.STATEORDER(ht,dht) := inStateOrder;
+  BackendDAE.STATEORDER(hashTable=ht) := inStateOrder;
   dcr := BaseHashTable.get(cr,ht);
 end getStateOrder;
 
@@ -1947,10 +2062,9 @@ public function getDerStateOrder
   input BackendDAE.StateOrder inStateOrder;
   output list<DAE.ComponentRef> crlst;
 protected
-  HashTableCG.HashTable ht;
   HashTable3.HashTable dht;  
 algorithm
-  BackendDAE.STATEORDER(ht,dht) := inStateOrder;
+  BackendDAE.STATEORDER(invHashTable=dht) := inStateOrder;
   crlst := BaseHashTable.get(dcr,dht);
 end getDerStateOrder;
 
@@ -1970,18 +2084,18 @@ algorithm
       Integer e1;
       BackendDAE.ConstraintEquations rest,orgeqnslst;
     
-    case ({},e,inEqn) then {(e,{inEqn})};
+    case ({},_,_) then {(e,{inEqn})};
     case ((e1,orgeqns)::rest,e,inEqn)
       equation
         true = intGt(e1,e);
       then
         (e,{inEqn})::inOrgEqns;
-    case ((e1,orgeqns)::rest,e,inEqn)
+    case ((e1,orgeqns)::rest,_,_)
       equation
         true = intEq(e1,e);
       then
         (e1,inEqn::orgeqns)::rest;     
-    case ((e1,orgeqns)::rest,e,inEqn)
+    case ((e1,orgeqns)::rest,_,_)
       equation
         orgeqnslst = addOrgEqn(rest,e,inEqn);
       then
@@ -5592,7 +5706,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsEqnAlgs;
 
-protected function traverseBackendDAEExpsEqnList
+public function traverseBackendDAEExpsEqnList
 "function traverseBackendDAEExpsEqnList
   author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
@@ -5969,10 +6083,10 @@ algorithm
   prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
   prio2 := varStateSelectHeuristicPrio2(vCr,vars);
   prio3 := varStateSelectHeuristicPrio3(vCr,vars);
-  //prio4 := varStateSelectHeuristicPrio4(v);
+//  prio4 := varStateSelectHeuristicPrio4(v);
   prio5 := varStateSelectHeuristicPrio5(v);
   prio6 := varStateSelectHeuristicPrio6(v);
-  prio:= prio1 +. prio2 +. prio3 +. prio5 +. prio6; // +. prio4
+  prio:= prio1 +. prio2 +. prio3 +. prio5 +. prio6;// +. prio4;
   dumpvarStateSelectHeuristicPrio(prio1,prio2,prio3,prio5,prio6);
 end varStateSelectHeuristicPrio;
 
