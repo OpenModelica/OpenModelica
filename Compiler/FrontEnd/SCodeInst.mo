@@ -182,7 +182,7 @@ algorithm
       SCodeEnv.AvlTree cls_and_vars;
       String name, err_msg;
       list<Equation> eq, ieq;
-      list<Statement> alg, ialg;
+      list<list<Statement>> alg, ialg;
       DAE.Type ty;
       Absyn.ArrayDim dims;
       list<DAE.Var> vars;
@@ -230,7 +230,7 @@ algorithm
 
         // Create the class.
         state = ClassInf.start(res, Absyn.IDENT(name));
-        (cls, ty) = InstUtil.makeClass(elems, eq, ieq, {}, {}, state, cse);
+        (cls, ty) = InstUtil.makeClass(elems, eq, ieq, alg, ialg, state, cse);
       then
         (cls, ty, InstTypes.NO_PREFIXES());
 
@@ -1649,7 +1649,8 @@ algorithm
       Class cls;
       Function func;
       list<Element> inputs, outputs, locals;
-      list<SCode.AlgorithmSection> algorithms;
+      list<list<Statement>> algorithms;
+      list<Statement> stmts;
 
     case (_, _, _, _)
       equation
@@ -1659,8 +1660,9 @@ algorithm
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), inEnv, inPrefix, INST_ALL());
         (inputs,outputs,locals) = getFunctionParameters(cls);
+        stmts = List.flatten(algorithms);
       then
-        (path, InstTypes.FUNCTION(inputs,outputs,locals,algorithms));
+        (path, InstTypes.FUNCTION(inputs,outputs,locals,stmts));
 
   end match;
 end instFunction;
@@ -2275,8 +2277,8 @@ protected function instSections
   input InstPolicy inInstPolicy;
   output list<Equation> outEquations;
   output list<Equation> outInitialEquations;
-  output list<Statement> outStatements;
-  output list<Statement> outInitialStatements;
+  output list<list<Statement>> outStatements;
+  output list<list<Statement>> outInitialStatements;
 algorithm
   (outEquations, outInitialEquations, outStatements, outInitialStatements) :=
   match(inClassDef, inEnv, inPrefix, inInstPolicy)
@@ -2284,7 +2286,7 @@ algorithm
       list<SCode.Equation> snel, siel;
       list<SCode.AlgorithmSection> snal, sial;
       list<Equation> inel, iiel;
-      list<Statement> inal, iial;
+      list<list<Statement>> inal, iial;
 
     case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
         _, INST_ALL())
@@ -2456,22 +2458,21 @@ protected function instAlgorithmSections
   input list<SCode.AlgorithmSection> inSections;
   input Env inEnv;
   input Prefix inPrefix;
-  output list<Statement> outStatements;
+  output list<list<Statement>> outStatements;
 algorithm
-  outStatements := listReverse(List.fold2(inSections, instAlgorithmSection, inEnv, inPrefix, {}));
+  outStatements := List.map2(inSections, instAlgorithmSection, inEnv, inPrefix);
 end instAlgorithmSections;
 
 protected function instAlgorithmSection
   input SCode.AlgorithmSection inSection;
   input Env inEnv;
   input Prefix inPrefix;
-  input list<Statement> inStatements;
   output list<Statement> outStatements;
 protected
   list<SCode.Statement> sstatements;
 algorithm
   SCode.ALGORITHM(statements=sstatements) := inSection;
-  outStatements := List.map2_tail(sstatements, instStatement, inEnv, inPrefix, inStatements);
+  outStatements := List.map2(sstatements, instStatement, inEnv, inPrefix);
 end instAlgorithmSection;
 
 protected function instStatements
@@ -2754,7 +2755,7 @@ algorithm
       SymbolTable st;
       list<Element> comps;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
 
     case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
       equation

@@ -6366,6 +6366,18 @@ algorithm
   end match;
 end isCref;
 
+public function isNotCref 
+  "Returns true if the given expression is a not component reference, 
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsCref;
+algorithm 
+  outIsCref := match(inExp)
+    case DAE.CREF(componentRef = _) then false;
+    else true;
+  end match;
+end isNotCref;
+
 public function isCrefArray 
   "Checks whether a cref is an array or not.
 "
@@ -7883,6 +7895,26 @@ algorithm
     case DAE.OR(ty = _) then 9;
   end match;
 end priorityLBinop;
+
+public function isWild
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.CREF(componentRef=DAE.WILD()) then true;
+    else false;
+  end match;
+end isWild;
+
+public function isNotWild
+  input DAE.Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case DAE.CREF(componentRef=DAE.WILD()) then false;
+    else true;
+  end match;
+end isNotWild;
 
 end Expression;
 

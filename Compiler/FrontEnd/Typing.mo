@@ -68,6 +68,7 @@ public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
+public type Statement = InstTypes.Statement;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
 public uniontype EvalPolicy
@@ -86,7 +87,7 @@ algorithm
     local
       list<Element> comps;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
       SymbolTable st;
 
     case (InstTypes.BASIC_TYPE(), st) then (inClass, st);
@@ -895,7 +896,7 @@ algorithm
     local
       list<Element> comps;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
       SymbolTable st;
 
     case (InstTypes.BASIC_TYPE(), _) then inClass;
@@ -905,6 +906,8 @@ algorithm
         comps = List.map1(comps, typeSectionsInElement, st);
         eq = typeEquations(eq, st);
         ieq = typeEquations(ieq, st);
+        al = typeAlgorithms(al, st);
+        ial = typeAlgorithms(ial, st);
       then
         InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
 
@@ -1408,5 +1411,65 @@ algorithm
 
   end match;
 end typeBranch;
+
+protected function typeAlgorithms
+  input list<list<Statement>> inStmts;
+  input SymbolTable inSymbolTable;
+  output list<list<Statement>> outStmts;
+algorithm
+  outStmts := List.map1(inStmts,typeStatements,inSymbolTable);
+end typeAlgorithms;
+
+protected function typeStatements
+  input list<Statement> inStmts;
+  input SymbolTable inSymbolTable;
+  output list<Statement> outStmts;
+algorithm
+  outStmts := listReverse(List.fold1(inStmts, typeStatement, inSymbolTable, {}));
+end typeStatements;
+
+protected function typeStatement
+  input Statement inStmt;
+  input SymbolTable inSymbolTable;
+  input list<Statement> inAcc;
+  output list<Statement> outAcc;
+algorithm
+  outAcc := match (inStmt,inSymbolTable,inAcc)
+    local
+      DAE.Exp lhs,rhs;
+      Absyn.Info info;
+      DAE.Type lty,rty;
+      SymbolTable st;
+    case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),st,_)
+      equation
+        (lhs,lty,_) = typeExp(lhs, NO_EVAL(), st);
+        (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), st);
+        // rhs = typeCheck(rhs,lty,rty)
+      then typeAssignment(lhs,rhs,info,inAcc);
+  end match;
+end typeStatement;
+
+protected function typeAssignment
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input Absyn.Info info;
+  input list<Statement> inAcc;
+  output list<Statement> outAcc;
+algorithm
+  outAcc := matchcontinue (lhs,rhs,info,inAcc)
+    local
+      list<DAE.Exp> el;
+    case (DAE.TUPLE(PR=el),rhs,info,inAcc)
+      equation
+        false = List.exist(el,Expression.isNotWild);
+      then InstTypes.NORETCALL_STMT(rhs,info)::inAcc;
+    case (DAE.TUPLE(PR=el),rhs,info,inAcc)
+      equation
+        false = List.exist(el,Expression.isNotCref);
+      then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
+    case (lhs as DAE.CREF(componentRef=_),rhs,info,inAcc)
+      then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
+  end matchcontinue;
+end typeAssignment;
 
 end Typing;

@@ -70,8 +70,8 @@ public uniontype Class
     list<Element> components;
     list<Equation> equations;
     list<Equation> initialEquations;
-    list<SCode.AlgorithmSection> algorithms;
-    list<SCode.AlgorithmSection> initialAlgorithms;
+    list<list<Statement>> algorithms;
+    list<list<Statement>> initialAlgorithms;
   end COMPLEX_CLASS;
 
   record BASIC_TYPE end BASIC_TYPE;
@@ -82,7 +82,7 @@ public uniontype Function
     list<Element> inputs;
     list<Element> outputs;
     list<Element> locals;
-    list<SCode.AlgorithmSection> algorithms "TODO: Add default bindings";
+    list<Statement> algorithms "TODO: Add default bindings";
   end FUNCTION;
 end Function;
 
@@ -346,8 +346,7 @@ public uniontype Statement
   end REINIT_STMT;
 
   record NORETCALL_STMT
-    Absyn.Path funcName;
-    list<DAE.Exp> funcArgs;
+    DAE.Exp exp;
     Absyn.Info info;
   end NORETCALL_STMT;
 

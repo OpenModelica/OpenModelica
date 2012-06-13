@@ -76,14 +76,15 @@ public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
+public type Statement = InstTypes.Statement;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
 public function makeClass
   input list<Element> inElements;
   input list<Equation> inEquations;
   input list<Equation> inInitialEquations;
-  input list<SCode.AlgorithmSection> inAlgorithms;
-  input list<SCode.AlgorithmSection> inInitialAlgorithms;
+  input list<list<Statement>> inAlgorithms;
+  input list<list<Statement>> inInitialAlgorithms;
   input ClassInf.State inState;
   input Boolean inContainsSpecialExtends;
   output Class outClass;
@@ -94,7 +95,7 @@ algorithm
     local
       list<Element> elems;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
       Class cls;
       DAE.Type ty;
 
@@ -163,7 +164,7 @@ algorithm
     local
       list<Element> el;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
 
     case (_, InstTypes.COMPLEX_CLASS(el, eq, ieq, al, ial))
       equation
@@ -1043,7 +1044,7 @@ algorithm
     local
       list<Element> comps;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
 
     case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _)
       equation
@@ -1262,7 +1263,7 @@ algorithm
       TraverseArgType arg;
       list<Element> comps;
       list<Equation> eq, ieq;
-      list<SCode.AlgorithmSection> al, ial;
+      list<list<Statement>> al, ial;
 
     case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), arg, _)
       equation

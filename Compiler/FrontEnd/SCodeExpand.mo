@@ -54,16 +54,19 @@ protected import InstUtil;
 protected import List;
 protected import SCode;
 protected import Types;
+protected import Util;
   
 protected type Equation = InstTypes.Equation;
+protected type Statement = InstTypes.Statement;
 
 replaceable type ElementType subtypeof Any;
+replaceable type AccumType subtypeof Any;
 
 partial function ExpandScalarFunc
   input ElementType inElement;
   input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Element> inAccumEl;
-  output list<DAE.Element> outElements;
+  input list<AccumType> inAccumEl;
+  output list<AccumType> outElements;
 end ExpandScalarFunc;
 
 public function expand
@@ -158,13 +161,15 @@ algorithm
       list<InstTypes.Element> comps;
       list<DAE.Element> el;
       list<Equation> eq;
+      list<list<Statement>> al;
 
     case (InstTypes.BASIC_TYPE(), _, _) then inAccumEl;
     
-    case (InstTypes.COMPLEX_CLASS(components = comps, equations = eq), _, _)
+    case (InstTypes.COMPLEX_CLASS(components = comps, equations = eq, algorithms = al), _, _)
       equation
         el = List.fold1(comps, expandElement, inSubscripts, inAccumEl);
         el = List.fold1(eq, expandEquation, inSubscripts, el);
+        el = List.fold2(al, expandStatements, inSubscripts, false /* not initial */, el);
       then
         el;
 
@@ -277,16 +282,16 @@ protected function expandArray
   input ElementType inElement;
   input list<DAE.Dimension> inDimensions;
   input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Element> inAccumEl;
+  input list<AccumType> inAccumEl;
   input ExpandScalarFunc inScalarFunc;
-  output list<DAE.Element> outElements;
+  output list<AccumType> outElements;
 algorithm
   outElements := 
   match(inElement, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       Integer dim;
       list<DAE.Dimension> rest_dims;
-      list<DAE.Element> el;
+      list<AccumType> el;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       String dim_str;
@@ -327,16 +332,16 @@ protected function expandArrayIntDim
   input Integer inDimSize;
   input list<DAE.Dimension> inDimensions;
   input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Element> inAccumEl;
+  input list<AccumType> inAccumEl;
   input ExpandScalarFunc inScalarFunc;
-  output list<DAE.Element> outElements;
+  output list<AccumType> outElements;
 algorithm
   outElements := 
   matchcontinue(inElement, inIndex, inDimSize, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
-      list<DAE.Element> el;
+      list<AccumType> el;
       String err_msg;
 
     case (_, _, _, _, _, _, _)
@@ -745,5 +750,88 @@ algorithm
        
   end match;
 end subscriptArrayElements;
+
+protected function expandStatements
+  input list<Statement> inStmts;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input Boolean isInitial;
+  input list<DAE.Element> inAccumEl;
+  output list<DAE.Element> outElements;
+protected
+  list<DAE.Statement> dstmt;
+  DAE.Algorithm alg;
+  DAE.Element el;
+algorithm
+  dstmt := listReverse(List.fold1(inStmts, expandStatement, inSubscripts, {}));
+  alg := DAE.ALGORITHM_STMTS(dstmt);
+  el := Util.if_(isInitial,DAE.INITIALALGORITHM(alg,DAE.emptyElementSource),DAE.ALGORITHM(alg,DAE.emptyElementSource));
+  outElements := Util.if_(List.isEmpty(dstmt),inAccumEl,el::inAccumEl);
+end expandStatements;
+
+protected function expandStatement
+  input Statement inStmt;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Statement> inAccumEl;
+  output list<DAE.Statement> outElements;
+algorithm
+  outElements := matchcontinue(inStmt, inSubscripts, inAccumEl)
+    local
+      DAE.Exp rhs, lhs, exp;
+      DAE.Statement eq;
+      DAE.ComponentRef cref1, cref2;
+      DAE.Type ty1, ty2;
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Statement> accum_el;
+      list<DAE.Dimension> dims;
+
+    case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _)
+      equation
+        ty1 = Expression.typeof(lhs);
+        dims = Types.getDimensions(ty1);
+        accum_el = expandArray((lhs, rhs), dims, {} :: inSubscripts, inAccumEl,
+          expandAssignment);
+      then
+        accum_el;
+        
+    case (InstTypes.NORETCALL_STMT(exp = exp), _, _)
+      then DAE.STMT_NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
+
+    else
+      equation
+        print("SCodeExpand.expandStatement failed\n");
+      then
+        fail();
+
+  end matchcontinue;
+end expandStatement;
+
+protected function expandAssignment
+  input tuple<DAE.Exp, DAE.Exp> inTuple;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Statement> inAccumEl;
+  output list<DAE.Statement> outAccumEl;
+algorithm
+  outAccumEl := match(inTuple, inSubscripts, inAccumEl)
+    local
+      DAE.Exp lhs, rhs;
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Subscript> comp_subs;
+      DAE.Statement eq;
+      list<DAE.Exp> sub_expl;
+
+    case ((lhs, rhs), subs as comp_subs :: _, _)
+      equation
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        lhs = subscriptExp(lhs, sub_expl, subs);
+        /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
+        rhs = subscriptExp(rhs, sub_expl, subs);
+        (rhs, _) = ExpressionSimplify.simplify(rhs);
+        eq = DAE.STMT_ASSIGN(DAE.T_ANYTYPE_DEFAULT, lhs, rhs, DAE.emptyElementSource);
+      then
+        eq :: inAccumEl;
+        
+  end match;
+end expandAssignment;
 
 end SCodeExpand;
