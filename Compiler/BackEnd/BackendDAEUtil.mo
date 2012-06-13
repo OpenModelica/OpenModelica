@@ -3501,6 +3501,7 @@ algorithm outExp := matchcontinue(inExp)
         j = Expression.dimensionSize(jd);
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
+        cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,Expression.makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
@@ -3531,6 +3532,7 @@ algorithm outExp := matchcontinue(inExp)
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
+        cr = ComponentReference.crefStripLastSubs(cr);
         crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = List.map1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
