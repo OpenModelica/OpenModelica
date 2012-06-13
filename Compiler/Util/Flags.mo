@@ -573,7 +573,9 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     ("generateSymbolicJacobian", "Generates symbolic jacobian"),
     ("generateSymbolicLinearization", "Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"),
     ("collapseIndependentBlocks", "Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)"),
-    ("removeUnusedFunctions", "removed all unused functions from functionTree")})),
+    ("removeUnusedFunctions", "removed all unused functions from functionTree"),
+    ("simplifyTimeIndepFuncCalls","simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")
+    })),
   "Sets the post optimisation modules to use in the back end. See +help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(16, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 

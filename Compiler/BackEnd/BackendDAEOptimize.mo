@@ -8279,6 +8279,144 @@ algorithm
   end matchcontinue;
 end residualForm2;
 
+/* 
+ * simplify time independent function calls 
+ *
+ */
+
+public function simplifyTimeIndepFuncCalls
+"function simplifyTimeIndepFuncCalls
+  simplifies time independent built in function calls like
+  pre(param) -> param
+  der(param) -> 0.0 
+  change(param) -> false
+  edge(param) -> false
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
+algorithm
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
+  outDAE := simplifyTimeIndepFuncCallsShared(outDAE);
+end simplifyTimeIndepFuncCalls;
+
+protected function simplifyTimeIndepFuncCalls0
+"function simplifyTimeIndepFuncCalls0
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+      BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared, _))
+      equation
+        ((_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(BackendVariable.daeKnVars(shared),false));
+      then
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,true));
+    else
+      (isyst,sharedChanged);   
+  end matchcontinue;  
+end simplifyTimeIndepFuncCalls0;
+
+protected function traversersimplifyTimeIndepFuncCalls
+"function traversersimplifyTimeIndepFuncCalls
+  author: Frenkel TUD 2012-06"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
+protected
+  DAE.Exp e;
+  tuple<BackendDAE.Variables,Boolean> tpl;
+algorithm
+  (e,tpl) := tpl;
+  outTpl := Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,tpl);
+end traversersimplifyTimeIndepFuncCalls;
+
+protected function traverserExpsimplifyTimeIndepFuncCalls
+"function traverserExpsimplifyTimeIndepFuncCalls
+  author: Frenkel TUD 2012-06"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.Type tp;
+      DAE.Exp e,zero;
+      DAE.ComponentRef cr;
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then 
+        ((zero,(vars,true)));  
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+      then 
+        ((e,(vars,true)));   
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+      then 
+        ((DAE.BCONST(false),(vars,true)));  
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+      then 
+        ((DAE.BCONST(false),(vars,true)));                         
+    case tpl then tpl;
+  end matchcontinue;
+end traverserExpsimplifyTimeIndepFuncCalls;
+
+protected function simplifyTimeIndepFuncCallsShared
+"function simplifyTimeIndepFuncCallsShared
+  simplifies time independent built in function calls like
+  pre(param) -> param
+  der(param) -> 0.0 
+  change(param) -> false
+  edge(param) -> false
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:= match (inDAE)
+    local
+      BackendDAE.Variables knvars,exobj;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      array<DAE.Constraint> constrs;
+      array<BackendDAE.ComplexEquation> complEqs;
+      DAE.FunctionTree funcTree;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.BackendDAEType btp; 
+      BackendDAE.EqSystems systs;  
+      BackendDAE.Shared shared;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcTree,eventInfo,eoc,btp,symjacs)))
+      equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,false));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,false));
+        (arreqns,_) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traversersimplifyTimeIndepFuncCalls,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(knvars,false));
+        (algorithms,_) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traversersimplifyTimeIndepFuncCalls,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(knvars,false));
+        (complEqs,_) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(complEqs,traversersimplifyTimeIndepFuncCalls,BackendEquation.traverseBackendDAEExpsComplexWithUpdate,1,arrayLength(complEqs),(knvars,false));
+      then 
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcTree,eventInfo,eoc,btp,symjacs));
+  end match;
+end simplifyTimeIndepFuncCallsShared;
 
 /* 
  * tearing
@@ -8306,29 +8444,9 @@ algorithm
   (osyst,osharedChanged) := 
     matchcontinue(isyst,sharedChanged)
     local
-      BackendDAE.BackendDAE dae,dae1;
-      DAE.FunctionTree funcs;
-      BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
-      array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
-      array<DAE.Constraint> constrs;
-      array<BackendDAE.ComplexEquation> complEqs;
-      BackendDAE.EventInfo einfo;
-      list<BackendDAE.WhenClause> whenClauseLst;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrix mT;
-      array<Integer> ass1,ass2;
-      BackendDAE.StrongComponents comps,comps1;
+      BackendDAE.StrongComponents comps;
       Boolean b,b1,b2;
-      list<Integer> eqnlst;
-      BackendDAE.BinTree movedVars;
       BackendDAE.Shared shared;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
