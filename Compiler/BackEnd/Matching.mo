@@ -5809,13 +5809,13 @@ protected function getEqnsforIndexReduction
   output list<Integer> eqns;
 algorithm
   eqns := match(U,neqns,m,ass2)
-    local array<Boolean> rowmmarks;
+    local array<Boolean> colummarks;
     case({},_,_,_) then {};
     else
       equation
-        rowmmarks = arrayCreate(neqns,false);
+        colummarks = arrayCreate(neqns,false);
       then
-        getEqnsforIndexReduction1(U,m,rowmmarks,ass2,{});
+        getEqnsforIndexReduction1(U,m,colummarks,ass2,{});
     end match;
 end getEqnsforIndexReduction;
 
@@ -5824,24 +5824,27 @@ protected function getEqnsforIndexReduction1
  autor: Frenkel TUD 2012-04"
   input list<Integer> U;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input array<Boolean> rowmmarks;
+  input array<Boolean> colummarks;
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
-  outEqns:= matchcontinue (U,m,rowmmarks,ass2,inEqns)
+  outEqns:= matchcontinue (U,m,colummarks,ass2,inEqns)
     local 
       list<Integer> rest,eqns;
       Integer e;
     case ({},_,_,_,_) then listReverse(inEqns);
     case (e::rest,_,_,_,_)
       equation
-        eqns = getEqnsforIndexReductionphase(e,m,rowmmarks,ass2,e::inEqns);
+        // row is not visited
+        false = colummarks[e];
+        _= arrayUpdate(colummarks,e,true);
+        eqns = getEqnsforIndexReductionphase(e,m,colummarks,ass2,e::inEqns);
       then
-        getEqnsforIndexReduction1(rest,m,rowmmarks,ass2,eqns);
+        getEqnsforIndexReduction1(rest,m,colummarks,ass2,eqns);
     case (_::rest,_,_,_,_)
       then
-        getEqnsforIndexReduction1(rest,m,rowmmarks,ass2,inEqns);        
+        getEqnsforIndexReduction1(rest,m,colummarks,ass2,inEqns);        
   end matchcontinue;
 end getEqnsforIndexReduction1;
 
@@ -5850,13 +5853,13 @@ protected function getEqnsforIndexReductionphase
  autor: Frenkel TUD 2012-04"
   input Integer e;
   input BackendDAE.IncidenceMatrix m;
-  input array<Boolean> rowmmarks;
+  input array<Boolean> colummarks;
   input array<Integer> ass2;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns :=
-  match (e,m,rowmmarks,ass2,inEqns)
+  match (e,m,colummarks,ass2,inEqns)
     local
       list<Integer> rest,rows; 
     case (_,_,_,_,_)
@@ -5864,7 +5867,7 @@ algorithm
         // traverse all adiacent rows
         rows = List.select(m[e], Util.intPositive);
       then
-        getEqnsforIndexReductiontraverseRows(rows,m,rowmmarks,ass2,inEqns);
+        getEqnsforIndexReductiontraverseRows(rows,m,colummarks,ass2,inEqns);
     else
       then
         fail();
@@ -5876,13 +5879,13 @@ protected function getEqnsforIndexReductiontraverseRows
  autor: Frenkel TUD 2012-04"
   input list<Integer> rows;
   input BackendDAE.IncidenceMatrix m;
-  input array<Boolean> rowmmarks;
+  input array<Boolean> colummarks;
   input array<Integer> ass2;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns:=
-  matchcontinue (rows,m,rowmmarks,ass2,inEqns)
+  matchcontinue (rows,m,colummarks,ass2,inEqns)
     local
       list<Integer> rest,queue,queue2; 
       Integer rc,r;    
@@ -5890,18 +5893,17 @@ algorithm
     case ({},_,_,_,_) then inEqns;
     case (r::rest,_,_,_,_)
       equation
-        // row is not visited
-        false = rowmmarks[r];
-        _= arrayUpdate(rowmmarks,r,true);
         // row is matched
         rc = ass2[r];
-        false = intLt(rc,0);
-        queue = getEqnsforIndexReductionphase(rc,m,rowmmarks,ass2,rc::inEqns);
+        true = intGt(rc,0);
+        false = colummarks[rc];
+        _= arrayUpdate(colummarks,rc,true);        
+        queue = getEqnsforIndexReductionphase(rc,m,colummarks,ass2,rc::inEqns);
       then
-        getEqnsforIndexReductiontraverseRows(rest,m,rowmmarks,ass2,queue);
+        getEqnsforIndexReductiontraverseRows(rest,m,colummarks,ass2,queue);
     case (_::rest,_,_,_,_)
       then
-        getEqnsforIndexReductiontraverseRows(rest,m,rowmmarks,ass2,inEqns);
+        getEqnsforIndexReductiontraverseRows(rest,m,colummarks,ass2,inEqns);
   end matchcontinue;
 end getEqnsforIndexReductiontraverseRows;
 

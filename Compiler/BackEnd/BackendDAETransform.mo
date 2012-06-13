@@ -1703,35 +1703,31 @@ public function reachableNodes "function: reachableNodes
   that n1 solves for a variable (e.g. \'a\') that is used in the equation
   of n2, i.e. the equation of n1 must be solved before the equation of n2.
 "
-  input Integer inInteger1;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix2;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
-  input array<Integer> inIntegerArray4;
-  input array<Integer> inIntegerArray5;
+  input Integer eqn;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a1;
+  input array<Integer> a2;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
-  matchcontinue (inInteger1,inIncidenceMatrix2,inIncidenceMatrixT3,inIntegerArray4,inIntegerArray5)
+  matchcontinue (eqn,m,mt,a1,a2)
     local
-      BackendDAE.Value var,pos,eqn;
-      list<BackendDAE.Value> reachable,reachable_1,reachable_2;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
+      BackendDAE.Value var;
+      list<BackendDAE.Value> reachable,reachable_1;
       String eqnstr;
-    case (eqn,m,mt,a1,a2)
+    case (_,_,_,_,_)
       equation
         var = a2[eqn];
         reachable = mt[var] "Got the variable that is solved in the equation" ;
         reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
-        pos = List.position(eqn, reachable_1) ".. except this one" ;
-        reachable_2 = listDelete(reachable_1, pos);
       then
-        reachable_2;
+        List.removeOnTrue(eqn, intEq, reachable_1);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-reachable_nodes failed, eqn: ");
-        eqnstr = intString(inInteger1);
+        eqnstr = intString(eqn);
         Debug.traceln(eqnstr);
       then
         fail();

@@ -372,7 +372,7 @@ algorithm
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.ComponentRef cr,cr1,cr2,scr;
-      Boolean negate,b1,b2;
+      Boolean negate,b1,b2,b;
       DAE.Exp exp1,exp2;
       BackendDAE.Var var1,var2;
       BackendDAE.ConstraintEquations orgEqnsLst;
@@ -403,16 +403,17 @@ algorithm
         e1 = inAss1[i];
         //ass1 = arrayUpdate(inAss1,i,e);
         //ass2 = arrayUpdate(inAss2,e,i);
-        //ass2 = Debug.bcallret3(intGt(e1,0),arrayUpdate,ass2,e1,-1,ass2);        
-        ass1 = arrayUpdate(inAss1,i,-1);
-        ass2 = arrayUpdate(inAss2,e,-1);
-        ass2 = Debug.bcallret3(intGt(e1,0),arrayUpdate,ass2,e1,-1,ass2);        
+        //ass2 = Debug.bcallret3(intGt(e1,0),arrayUpdate,ass2,e1,-1,ass2);   
+        b = intGt(e1,0);    
+        ass1 = Debug.bcallret3(b,arrayUpdate,inAss1,i,-1,inAss1); 
+        //ass2 = arrayUpdate(inAss2,e,-1);
+        ass2 = Debug.bcallret3(b,arrayUpdate,inAss2,e1,-1,inAss2); 
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,functionTree,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp,symjacs);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, changedEqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrCrefStr,("Found Alias State ",cr," := ",scr,"\n Update Incidence Matrix: "));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(changedEqns,intString," ","\n"));        
-        //changedEqns = listAppend(changedEqns,inchangedEqns);  
+        changedEqns = List.consOnTrue(b, e1, {e});
         changedEqns = List.unionOnTrue(inchangedEqns, changedEqns, intEq);
         (syst,shared,ass1,ass2,so1,orgEqnsLst,changedEqns,eqnslst) = differentiateAliasEqns(syst,shared,es,ass1,ass2,so,orgEqnsLst,changedEqns,iEqnsAcc);
       then
@@ -507,8 +508,6 @@ algorithm
         shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,constrs,complEqs,functionTree,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp,symjacs);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, eqnslst1);
         orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
-        //changedEqns = listAppend(inchangedEqns,eqnslst);
-        //changedEqns = e::changedEqns;  
         changedEqns = List.unionOnTrue(inchangedEqns, e::eqnslst, intEq);      
         (syst,shared,ass1,ass2,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst,changedEqns) = differentiateEqns(syst,shared,es,ass1,ass2,derivedAlgs,derivedMultiEqn,so,orgEqnsLst,changedEqns);
       then
@@ -1585,7 +1584,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);       
         (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives1(me,meT,vars1,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov);
       then
-        (hov1,dummystates,lov,syst,shared); 
+        (hov1,dummystates,lov,syst,shared);
     case(_,_,_,_,_,_,_,_,_,_)
       equation
         // try to select dummy vars heuristic based
@@ -1598,6 +1597,8 @@ algorithm
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
         states = BackendDAETransform.sortStateCandidates(states,syst);
+        //states = List.sort(states,stateSortFund);
+        //states = listReverse(states);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
         (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
@@ -1614,6 +1615,14 @@ algorithm
         fail();
   end matchcontinue;
 end selectDummyDerivatives;
+
+protected function stateSortFund
+  input tuple<DAE.ComponentRef, Integer> inA;
+  input tuple<DAE.ComponentRef, Integer> inB;
+  output Boolean b;
+algorithm
+  b:= ComponentReference.crefSortFunc(Util.tuple21(inA),Util.tuple21(inB));
+end stateSortFund;
 
 protected function selectDummyDerivatives1
 "function: selectDummyDerivatives1
@@ -1763,8 +1772,9 @@ algorithm
         list<DAE.Exp> explst;
         list<BackendDAE.Equation> selecteqns,dselecteqns;
         list<BackendDAE.WhenClause> wclst;
-    case(_,{},{},_,_,_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
+        true = intEq(listLength(dstates),eqnsSize);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize,"\n"));        
@@ -1776,6 +1786,9 @@ algorithm
         // for now only implemented for one equation
         true = intEq(eqnsSize,1);
         rang = eqnsSize-listLength(states);
+        // workaround to avoid state changes
+        //states = List.sort(states,stateSortFund);
+        //states = listReverse(states);        
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize,"\n"));   
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
