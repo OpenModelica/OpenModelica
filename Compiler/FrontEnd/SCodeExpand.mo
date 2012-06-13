@@ -779,10 +779,11 @@ algorithm
       DAE.Exp rhs, lhs, exp;
       DAE.Statement eq;
       DAE.ComponentRef cref1, cref2;
-      DAE.Type ty1, ty2;
+      DAE.Type ty1, ty2, ty;
       list<list<DAE.Subscript>> subs;
       list<DAE.Statement> accum_el;
       list<DAE.Dimension> dims;
+      list<tuple<DAE.Exp,list<Statement>>> branches;
 
     case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _)
       equation
@@ -794,7 +795,16 @@ algorithm
         accum_el;
         
     case (InstTypes.NORETCALL_STMT(exp = exp), _, _)
-      then DAE.STMT_NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
+      equation
+        ty = Expression.typeof(exp);
+        dims = Types.getDimensions(ty);
+        accum_el = expandArray(exp, dims, {} :: inSubscripts, inAccumEl, expandNoretcall);
+      then accum_el;
+
+    case (InstTypes.IF_STMT(branches = branches), _, _)
+      equation
+        accum_el = expandArray(branches, {}, {} :: inSubscripts, inAccumEl, expandIfStmt);
+      then accum_el;
 
     else
       equation
@@ -833,5 +843,54 @@ algorithm
         
   end match;
 end expandAssignment;
+
+protected function expandNoretcall
+  input DAE.Exp inExp;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Statement> inAccumEl;
+  output list<DAE.Statement> outAccumEl;
+algorithm
+  outAccumEl := match(inExp, inSubscripts, inAccumEl)
+    local
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Subscript> comp_subs;
+      DAE.Statement eq;
+      list<DAE.Exp> sub_expl;
+      DAE.Exp exp;
+
+    case (exp, subs as comp_subs :: _, _)
+      equation
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        exp = subscriptExp(exp, sub_expl, subs);
+        (exp, _) = ExpressionSimplify.simplify(exp);
+        eq = DAE.STMT_NORETCALL(exp, DAE.emptyElementSource);
+      then
+        eq :: inAccumEl;
+        
+  end match;
+end expandNoretcall;
+
+protected function expandIfStmt
+  input list<tuple<DAE.Exp,list<Statement>>> branches;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Statement> inAccumEl;
+  output list<DAE.Statement> outAccumEl;
+algorithm
+  outAccumEl := match(branches, inSubscripts, inAccumEl)
+    local
+      list<list<DAE.Subscript>> subs;
+      list<DAE.Subscript> comp_subs;
+      DAE.Statement eq;
+      list<DAE.Exp> sub_expl;
+
+    case (branches, subs as comp_subs :: _, _)
+      equation
+        print("TODO: Expand if-stmt\n");
+      then
+        inAccumEl;
+        
+  end match;
+end expandIfStmt;
 
 end SCodeExpand;

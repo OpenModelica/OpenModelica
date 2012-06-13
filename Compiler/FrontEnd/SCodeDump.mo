@@ -55,6 +55,13 @@ algorithm
   outString := Tpl.tplString(SCodeDumpTpl.dumpProgram, inProgram);
 end programStr;
 
+public function statementStr
+  input SCode.Statement stmt;
+  output String outString;
+algorithm
+  outString := Tpl.tplString(SCodeDumpTpl.dumpStatement, stmt);
+end statementStr;
+
 public function equationStr
   input SCode.EEquation inEEquation;
   output String outString;

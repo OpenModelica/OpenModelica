@@ -59,6 +59,7 @@ protected import InstSymbolTable;
 protected import InstUtil;
 protected import List;
 protected import SCodeCheck;
+protected import SCodeDump;
 protected import SCodeExpand;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
@@ -2340,14 +2341,14 @@ protected function instEEquation
   input Prefix inPrefix;
   output Equation outEquation;
 algorithm
-  outEquation := match(inEquation, inEnv, inPrefix)
+  outEquation := matchcontinue (inEquation, inEnv, inPrefix)
     local
       Absyn.Exp exp1, exp2;
       DAE.Exp dexp1, dexp2;
       Absyn.ComponentRef cref1, cref2;
       DAE.ComponentRef dcref1, dcref2;
       Absyn.Info info;
-      String for_index;
+      String for_index,str;
       list<SCode.EEquation> eql;
       list<Equation> ieql;
       list<Absyn.Exp> if_condition, expl, args;
@@ -2447,11 +2448,12 @@ algorithm
 
     else
       equation
-        print("Unknown equation in SCodeInst.instEEquation.\n");
+        str = SCodeDump.equationStr(inEquation);
+        print("Unknown or failed equation in SCodeInst.instEEquation: " +& str +& "\n");
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end instEEquation;
 
 protected function instAlgorithmSections
@@ -2547,6 +2549,11 @@ algorithm
       then
         InstTypes.WHEN_STMT(inst_branches, info);
 
+    case (SCode.ALG_NORETCALL(exp = exp1, info = info), _, _)
+      equation
+        dexp1 = instExp(exp1, inEnv, inPrefix);
+      then InstTypes.NORETCALL_STMT(dexp1, info);
+
       /*
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _)
       equation
@@ -2554,6 +2561,10 @@ algorithm
         dexp2 = instExp(exp2, inEnv, inPrefix);
       then InstTypes.ASSIGN_STMT(dexp1, dexp2, info);
       */
+    else
+      equation
+        print("SCodeInst.instStatement failed: " +& SCodeDump.statementStr(statement) +& "\n");
+      then fail();
 
   end match;
 end instStatement;

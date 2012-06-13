@@ -1436,16 +1436,32 @@ protected function typeStatement
 algorithm
   outAcc := match (inStmt,inSymbolTable,inAcc)
     local
-      DAE.Exp lhs,rhs;
+      DAE.Exp lhs,rhs,exp;
       Absyn.Info info;
       DAE.Type lty,rty;
       SymbolTable st;
+      list<tuple<DAE.Exp,list<Statement>>> branches;
     case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),st,_)
       equation
         (lhs,lty,_) = typeExp(lhs, NO_EVAL(), st);
         (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), st);
         // rhs = typeCheck(rhs,lty,rty)
       then typeAssignment(lhs,rhs,info,inAcc);
+    case (InstTypes.NORETCALL_STMT(exp=exp, info=info),st,_)
+      equation
+        // Let's try skipping evaluation. Maybe helps some external functions
+        (exp,_,_) = typeExp(exp, NO_EVAL(), st);
+        // TODO: Check variability/etc to potentially reduce the statement?
+      then InstTypes.NORETCALL_STMT(exp,info)::inAcc;
+    case (InstTypes.IF_STMT(branches=branches, info=info),st,_)
+      equation
+        branches = List.map1(branches, typeBranchStatement, st);
+      then
+        InstTypes.IF_STMT(branches, info) :: inAcc;
+    else
+      equation
+        print("Unknown statement in Typing.typeStatement\n");
+      then fail();
   end match;
 end typeStatement;
 
@@ -1471,5 +1487,26 @@ algorithm
       then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
   end matchcontinue;
 end typeAssignment;
+
+protected function typeBranchStatement
+  input tuple<DAE.Exp, list<Statement>> inBranch;
+  input SymbolTable inSymbolTable;
+  output tuple<DAE.Exp, list<Statement>> outBranch;
+algorithm
+  outBranch := match(inBranch, inSymbolTable)
+    local
+      DAE.Exp cond_exp;
+      list<Statement> branch_body;
+
+    case ((cond_exp, branch_body), _)
+      equation
+        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), inSymbolTable);
+        /* TODO: Type-check the condition */
+        branch_body = typeStatements(branch_body, inSymbolTable);
+      then
+        ((cond_exp, branch_body));
+
+  end match;
+end typeBranchStatement;
 
 end Typing;
