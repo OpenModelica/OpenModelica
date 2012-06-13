@@ -8331,13 +8331,13 @@ end simplifyTimeIndepFuncCalls0;
 protected function traversersimplifyTimeIndepFuncCalls
 "function traversersimplifyTimeIndepFuncCalls
   author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> itpl;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
 protected
   DAE.Exp e;
   tuple<BackendDAE.Variables,Boolean> tpl;
 algorithm
-  (e,tpl) := tpl;
+  (e,tpl) := itpl;
   outTpl := Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,tpl);
 end traversersimplifyTimeIndepFuncCalls;
 

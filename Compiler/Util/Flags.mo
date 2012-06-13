@@ -556,7 +556,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
 //    "relaxSystem",
 //    "removeSimpleEquations",
 //    "countOperations",
-    "removeUnusedFunctions"
+    "removeUnusedFunctions",
+    "simplifyTimeIndepFuncCalls"
   }),
   SOME(STRING_DESC_OPTION({
     ("lateInline", "perform function inlining for function with annotation LateInline=true"),
