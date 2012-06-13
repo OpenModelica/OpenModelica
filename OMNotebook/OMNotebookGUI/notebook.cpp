@@ -167,8 +167,7 @@ NotebookWindow::NotebookWindow(Document *subject,
 
 
   // 2006-01-16 AF, Added an icon to the window
-  //    setWindowIcon( QIcon("./omnotebook_png.png") );
-  setWindowIcon( QIcon(":/Resources/omnotebook_png.png"));
+  setWindowIcon( QIcon(":/Resources/OMNotebook_icon.svg"));
 
   statusBar()->showMessage("Ready");
   resize(800, 600);

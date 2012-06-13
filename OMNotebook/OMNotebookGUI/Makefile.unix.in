@@ -11,7 +11,7 @@ NAME=OMNotebook
 
 all: build
 
-Makefile: OMNotebookGUI.pro
+Makefile: OMNotebookGUI.pro rc_omnotebook.rc
 	$(QMAKE)
 
 clean: Makefile
