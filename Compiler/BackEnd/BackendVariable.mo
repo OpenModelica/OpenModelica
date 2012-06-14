@@ -810,7 +810,7 @@ public function varUncertainty
   input BackendDAE.Var var;
   output DAE.Uncertainty u;
 algorithm 
-  d := matchcontinue (var)
+  u := matchcontinue (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(u))))) then u;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(u))))) then u;
   end matchcontinue;

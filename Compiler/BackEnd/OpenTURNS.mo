@@ -199,16 +199,17 @@ algorithm
   local 
     String varName,varStr;
     BackendDAE.Var v;
+    list<BackendDAE.Var> rest;
     
     case({}) then {};
-    case(v::varLst) equation
+    case(v::rest) equation
      DAE.GIVEN() = BackendVariable.varUncertainty(v);
      varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
      varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
-     strLst = generateXMLLibraryInputs(varLst);    
+     strLst = generateXMLLibraryInputs(rest);    
     then varStr::strLst;
-    case(_::varLst) equation
-     strLst = generateXMLLibraryInputs(varLst);
+    case(_::rest) equation
+     strLst = generateXMLLibraryInputs(rest);
     then strLst;  
   end matchcontinue;
 end generateXMLLibraryInputs;
@@ -221,16 +222,16 @@ algorithm
   local
     String varName,varStr;
     BackendDAE.Var v;
-  
+    list<BackendDAE.Var> rest;
   case({}) then {};  
-  case(v::varLst) equation
+  case(v::rest) equation
      DAE.SOUGHT() = BackendVariable.varUncertainty(v);
      varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
      varStr =  "    <variable id=\""+&varName+&"\" type=\"out\" />";
-     strLst = generateXMLLibraryOutputs(varLst);    
+     strLst = generateXMLLibraryOutputs(rest);    
     then varStr::strLst;
-    case(_::varLst) equation
-     strLst = generateXMLLibraryOutputs(varLst);
+    case(_::rest) equation
+     strLst = generateXMLLibraryOutputs(rest);
     then strLst;  
   end matchcontinue;
 end generateXMLLibraryOutputs;
