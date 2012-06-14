@@ -52,6 +52,7 @@ Dependency.mo \
 Dump.mo \
 DumpGraphviz.mo \
 Env.mo \
+EvalFunction.mo \
 ExpandableConnectors.mo \
 Expression.mo \
 ExpressionDump.mo \
@@ -60,6 +61,7 @@ Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
 Inst.mo \
+Instance.mo \
 InstExtends.mo \
 InstInfo.mo \
 InstSection.mo \
@@ -76,6 +78,7 @@ Parser.mo \
 Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
+Reference.mo \
 SCode.mo \
 SCodeCheck.mo \
 SCodeDependency.mo \
@@ -102,8 +105,6 @@ UnitAbsynBuilder.mo \
 UnitChecker.mo \
 Values.mo \
 ValuesUtil.mo \
-Instance.mo \
-Reference.mo \
 Visited.mo \
 Element.mo \
 Node.mo \

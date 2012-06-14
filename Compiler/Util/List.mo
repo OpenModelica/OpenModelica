@@ -4340,7 +4340,7 @@ algorithm
 end map1Fold_tail;
 
 public function map2Fold
-  "Takes a list, an extra argument, two extra constant arguments, and a function.
+  "Takes a list, two extra constant arguments, an extra argument, and a function.
   The function will be applied to each element in the list, and the extra
   argument will be passed to the function and updated."
   input list<ElementInType> inList;
