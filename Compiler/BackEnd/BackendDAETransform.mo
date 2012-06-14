@@ -1541,16 +1541,15 @@ algorithm
     local
       Integer n;
       list<list<Integer>> comps;
-      array<Integer> ass1,ass2;
+      array<Integer> ass1,ass2,number,lowlink;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.StrongComponents comps1;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
       equation
         n = arrayLength(m);
-        BackendDAEEXT.initLowLink(n);
-        BackendDAEEXT.initNumber(n);
-        (_,_,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
+        number = arrayCreate(n,0);
+        lowlink = arrayCreate(n,0);
+        (_,_,comps) = strongConnectMain(m, mt, ass1, ass2, number, lowlink, n, 0, 1, {}, {});
       then
         comps;
     else
@@ -1569,6 +1568,8 @@ public function strongConnectMain "function: strongConnectMain
               IncidenceMatrixT,
               int vector, /* Assignment */
               int vector, /* Assignment */
+              int vector, /* Number */
+              int vector, /* Lowlink */
               int, /* n - number of equations */
               int, /* i */
               int, /* w */
@@ -1576,50 +1577,47 @@ public function strongConnectMain "function: strongConnectMain
               int list list /* components */)
   outputs: (int /* i */, int list /* stack */, int list list /* components */)
 "
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
-  input Integer inInteger5;
-  input Integer inInteger6;
-  input Integer inInteger7;
-  input list<Integer> inIntegerLst8;
-  input list<list<Integer>> inIntegerLstLst9;
-  output Integer outInteger;
-  output list<Integer> outIntegerLst;
-  output list<list<Integer>> outIntegerLstLst;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a1;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;
+  input Integer n;
+  input Integer i;
+  input Integer w;
+  input list<Integer> istack;
+  input list<list<Integer>> icomps;
+  output Integer oi;
+  output list<Integer> ostack;
+  output list<list<Integer>> ocomps;
 algorithm
-  (outInteger,outIntegerLst,outIntegerLstLst):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inInteger7,inIntegerLst8,inIntegerLstLst9)
+  (oi,ostack,ocomps):=
+  matchcontinue (m,mt,a1,a2,number,lowlink,n,i,w,istack,icomps)
     local
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-      array<BackendDAE.Value> a1,a2;
-      BackendDAE.Value n,i,w,w_1,num;
-      list<BackendDAE.Value> stack,stack_1,stack_2;
-      list<list<BackendDAE.Value>> comp, comps;
+      Integer i1,num;
+      list<Integer> stack;
+      list<list<Integer>> comps;
       
-    case (m,mt,a1,a2,n,i,w,stack,comp)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         (w > n) = true;
       then
-        (i,stack,comp);
-    case (m,mt,a1,a2,n,i,w,stack,comps)
+        (i,istack,icomps);
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
-        0 = BackendDAEEXT.getNumber(w);
-        (i,stack_1,comps) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
-        w_1 = w + 1;
-        (i,stack_2,comps) = strongConnectMain(m, mt, a1, a2, n, i, w_1, stack_1, comps);
+        true = intEq(number[w],0);
+        (i1,stack,comps) = strongConnect(m,mt,a1,a2,number,lowlink,i,w,istack,icomps);
+        (i1,stack,comps) = strongConnectMain(m,mt,a1,a2,number,lowlink,n,i,w + 1,stack,comps);
       then
-        (i,stack_2,comps);
-    case (m,mt,a1,a2,n,i,w,stack,comps)
+        (i1,stack,comps);
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
-        num = BackendDAEEXT.getNumber(w);
+        num = number[w];
         (num == 0) = false;
-        w_1 = w + 1;
-        (i,stack_1,comps) = strongConnectMain(m, mt, a1, a2, n, i, w_1, stack, comps);
+        (i1,stack,comps) = strongConnectMain(m,mt,a1,a2,number,lowlink, n, i, w + 1, istack, icomps);
       then
-        (i,stack_1,comps);
+        (i1,stack,comps);
   end matchcontinue;
 end strongConnectMain;
 
@@ -1632,10 +1630,12 @@ protected function strongConnect "function: strongConnect
               int /* i */, int /* v */, int list /* stack */, int list list /* components */)
   outputs: (int /* i */, int list /* stack */, int list list /* components */ )
 "
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a1;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;  
   input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
@@ -1645,22 +1645,20 @@ protected function strongConnect "function: strongConnect
   output list<list<Integer>> outIntegerLstLst;
 algorithm
   (outInteger,outIntegerLst,outIntegerLstLst):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inIntegerLst7,inIntegerLstLst8)
+  matchcontinue (m,mt,a1,a2,number,lowlink,inInteger5,inInteger6,inIntegerLst7,inIntegerLstLst8)
     local
-      BackendDAE.Value i_1,i,v;
-      list<BackendDAE.Value> stack_1,eqns,stack_2,stack_3,comp,stack;
-      list<list<BackendDAE.Value>> comps_1,comps_2,comps;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
-    case (m,mt,a1,a2,i,v,stack,comps)
+      Integer i_1,i,v;
+      list<Integer> stack_1,eqns,stack_2,stack_3,comp,stack;
+      list<list<Integer>> comps_1,comps_2,comps;
+    case (_,_,_,_,_,_,i,v,stack,comps)
       equation
         i_1 = i + 1;
-        BackendDAEEXT.setNumber(v, i_1);
-        BackendDAEEXT.setLowLink(v, i_1);
+        _ = arrayUpdate(number,v,i_1);
+        _ = arrayUpdate(lowlink,v,i_1);
         stack_1 = (v :: stack);
         eqns = reachableNodes(v, m, mt, a1, a2);
-        (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, m, mt, a1, a2, i_1, v, stack_1, comps);
-        (stack_3,comp) = checkRoot(v, stack_2);
+        (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, m, mt, a1, a2,number,lowlink, i_1, v, stack_1, comps);
+        (stack_3,comp) = checkRoot(v, stack_2,number,lowlink);
         comps_2 = consIfNonempty(comp, comps_1);
       then
         (i_1,stack_3,comps_2);
@@ -1685,8 +1683,8 @@ algorithm
   outIntegerLstLst:=
   matchcontinue (inIntegerLst,inIntegerLstLst)
     local
-      list<list<BackendDAE.Value>> lst;
-      list<BackendDAE.Value> e;
+      list<list<Integer>> lst;
+      list<Integer> e;
     case ({},lst) then lst;
     case (e,lst) then (e :: lst);
   end matchcontinue;
@@ -1743,63 +1741,63 @@ protected function iterateReachableNodes "function: iterateReachableNodes
               int /* i */, int /* v */, int list /* stack */, int list list /* components */)
   outputs: (int /* i */, int list /* stack */, int list list /* components */)
 "
-  input list<Integer> inIntegerLst1;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix2;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
-  input array<Integer> inIntegerArray4;
-  input array<Integer> inIntegerArray5;
-  input Integer inInteger6;
-  input Integer inInteger7;
-  input list<Integer> inIntegerLst8;
-  input list<list<Integer>> inIntegerLstLst9;
+  input list<Integer> eqns;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a1;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;   
+  input Integer i;
+  input Integer v;
+  input list<Integer> istack;
+  input list<list<Integer>> icomps;
   output Integer outInteger;
   output list<Integer> outIntegerLst;
   output list<list<Integer>> outIntegerLstLst;
 algorithm
   (outInteger,outIntegerLst,outIntegerLstLst):=
-  matchcontinue (inIntegerLst1,inIncidenceMatrix2,inIncidenceMatrixT3,inIntegerArray4,inIntegerArray5,inInteger6,inInteger7,inIntegerLst8,inIntegerLstLst9)
+  matchcontinue (eqns,m,mt,a1,a2,number,lowlink,i,v,istack,icomps)
     local
-      BackendDAE.Value i,lv,lw,minv,w,v,nw,nv,lowlinkv;
-      list<BackendDAE.Value> stack,ws;
-      list<list<BackendDAE.Value>> comps_1,comps_2,comps;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
+      Integer i1,lv,lw,minv,w,nw,nv,lowlinkv;
+      list<Integer> stack,ws;
+      list<list<Integer>> comps_1,comps_2,comps;
     
     // empty case
-    case ({},m,mt,a1,a2,i,v,stack,comps) then (i,stack,comps);    
+    case ({},_,_,_,_,_,_,_,_,_,_) then (i,istack,icomps);    
     
     // nw is 0
-    case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
+    case ((w :: ws),_,_,_,_,_,_,_,_,_,_)
       equation
-        0 = BackendDAEEXT.getNumber(w);
-        (i,stack,comps_1) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
-        lv = BackendDAEEXT.getLowLink(v);
-        lw = BackendDAEEXT.getLowLink(w);
+        true = intEq(number[w],0);
+        (i1,stack,comps_1) = strongConnect(m, mt, a1, a2, number, lowlink, i, w, istack, icomps);
+        lv = lowlink[v];
+        lw = lowlink[w];
         minv = intMin(lv, lw);
-        BackendDAEEXT.setLowLink(v, minv);
-        (i,stack,comps_2) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps_1);
+        _ = arrayUpdate(lowlink,v,minv);
+        (i1,stack,comps_2) = iterateReachableNodes(ws, m, mt, a1, a2, number, lowlink, i1, v, stack, comps_1);
       then
-        (i,stack,comps_2);
+        (i1,stack,comps_2);
     
     // nw 
-    case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
+    case ((w :: ws),_,_,_,_,_,_,_,_,_,_)
       equation
-        nw = BackendDAEEXT.getNumber(w);
-        nv = BackendDAEEXT.getNumber(v);
+        nw = number[w];
+        nv = lowlink[v];        
         (nw < nv) = true;
-        true = listMember(w, stack);
-        lowlinkv = BackendDAEEXT.getLowLink(v);
+        true = listMember(w, istack);
+        lowlinkv = lowlink[v];
         minv = intMin(nw, lowlinkv);
-        BackendDAEEXT.setLowLink(v, minv);
-        (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
+        _ = arrayUpdate(lowlink,v,minv);
+        (i1,stack,comps) = iterateReachableNodes(ws, m, mt, a1, a2, number, lowlink, i, v, istack, icomps);
       then
-        (i,stack,comps_1);
+        (i1,stack,comps);
 
-    case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
+    case ((_ :: ws),_,_,_,_,_,_,i,_,_,_)
       equation
-        (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
+        (i1,stack,comps) = iterateReachableNodes(ws, m, mt, a1, a2, number, lowlink, i, v, istack, icomps);
       then
-        (i,stack,comps_1);
+        (i1,stack,comps);
     
   end matchcontinue;
 end iterateReachableNodes;
@@ -1809,29 +1807,30 @@ protected function checkRoot "function: checkRoot
 
   Helper function to strong_connect.
 
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector,
-              int /* i */, int /* v */, int list /* stack */)
-  outputs: (int /* i */, int list /* stack */, int list /* comps */)
+  inputs:  (int /* v */, int list /* stack */, int vector, int vector)
+  outputs: (int list /* stack */, int list /* comps */)
 "
-  input Integer inInteger6;
-  input list<Integer> inIntegerLst7;
-  output list<Integer> outIntegerLst2;
-  output list<Integer> outIntegerLst3;
+  input Integer v;
+  input list<Integer> istack;
+  input array<Integer> number;
+  input array<Integer> lowlink;   
+  output list<Integer> ostack;
+  output list<Integer> ocomps;
 algorithm
-  (outIntegerLst2,outIntegerLst3):=
-  matchcontinue (inInteger6,inIntegerLst7)
+  (ostack,ocomps):=
+  matchcontinue (v,istack,number,lowlink)
     local
-      BackendDAE.Value lv,nv,v;
-      list<BackendDAE.Value> stack_1,comps,stack;
-    case (v,stack)
+      BackendDAE.Value lv,nv;
+      list<BackendDAE.Value> comps,stack;
+    case (_,_,_,_)
       equation
-        lv = BackendDAEEXT.getLowLink(v);
-        nv = BackendDAEEXT.getNumber(v);
-        (lv == nv) = true;
-        (stack_1,comps) = checkStack(nv, stack, {});
+        lv = lowlink[v];
+        nv = number[v];
+        true = intEq(lv,nv);
+        (stack,comps) = checkStack(nv, istack, number, {});
       then
-        (stack_1,comps);
-    case (v,stack) then (stack,{});
+        (stack,comps);
+    case (_,_,_,_) then (istack,{});
   end matchcontinue;
 end checkRoot;
 
@@ -1840,29 +1839,28 @@ protected function checkStack "function: checkStack
 
   Helper function to check_root.
 
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector,
-              int /* i */, int /* v */, int list /* stack */, int list /* component list */)
-  outputs: (int /* i */, int list /* stack */, int list /* comps */)
+  inputs:  (int /* vn */, int list /* stack */, int vector, int list /* component list */)
+  outputs: (int list /* stack */, int list /* comps */)
 "
-  input Integer inInteger6;
-  input list<Integer> inIntegerLst7;
-  input list<Integer> inIntegerLst8;
-  output list<Integer> outIntegerLst2;
-  output list<Integer> outIntegerLst3;
+  input Integer vn;
+  input list<Integer> istack;
+  input array<Integer> number;
+  input list<Integer> icomp;
+  output list<Integer> ostack;
+  output list<Integer> ocomp;
 algorithm
-  (outIntegerLst2,outIntegerLst3):=
-  matchcontinue (inInteger6,inIntegerLst7,inIntegerLst8)
+  (ostack,ocomp):=
+  matchcontinue (vn,istack,number,icomp)
     local
-      BackendDAE.Value topn,vn,top;
-      list<BackendDAE.Value> stack_1,comp_1,rest,comp,stack;
-    case (vn,(top :: rest),comp)
+      Integer top;
+      list<Integer> rest,comp,stack;
+    case (_,(top :: rest),_,_)
       equation
-        topn = BackendDAEEXT.getNumber(top);
-        (topn >= vn) = true;
-        (stack_1,comp_1) = checkStack(vn, rest, comp);
+        true = intGe(number[top],vn);
+        (stack,comp) = checkStack(vn, rest, number, top :: icomp);
       then
-        (stack_1,(top :: comp_1));
-    case (_,stack,comp) then (stack,comp);
+        (stack,comp);
+    case (_,_,_,_) then (istack,icomp);
   end matchcontinue;
 end checkStack;
 

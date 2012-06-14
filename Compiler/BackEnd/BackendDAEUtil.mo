@@ -8043,7 +8043,7 @@ algorithm
   strIndexReductionMethod := Config.getIndexReductionMethod();
 end getIndexReductionMethodString;
 
-public function getIndexReductionMethod
+protected function getIndexReductionMethod
 " function: getIndexReductionMethod"
   input Option<String> ostrIndexReductionMethod;
   output tuple<daeHandlerFunc,String> IndexReductionMethod;
@@ -8102,7 +8102,7 @@ algorithm
   strMatchingAlgorithm := Config.getMatchingAlgorithm();
 end getMatchingAlgorithmString;
 
-public function getMatchingAlgorithm
+protected function getMatchingAlgorithm
 " function: getIndexReductionMethod"
   input Option<String> ostrMatchingAlgorithm;
   output tuple<matchingAlgorithmFunc,String> matchingAlgorithm;

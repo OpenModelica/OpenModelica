@@ -403,7 +403,7 @@ algorithm
       list<Integer> allUncertainVars; 
       BackendDAE.Shared shared;
       
-      BackendDAE.EqSystem newSystem;
+      BackendDAE.EqSystem newSystem,syst;
       BackendDAE.EquationArray newSystemEqns;
       BackendDAE.Variables newSystemVars;   
             
@@ -458,10 +458,7 @@ algorithm
         ////////////////////////////////////////////////////////////////
         
      
-        n = arrayLength(m);
-        BackendDAEEXT.initLowLink(n);
-        BackendDAEEXT.initNumber(n);
-        (_,_,comps) = BackendDAETransform.strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
+        comps = BackendDAETransform.tarjanAlgorithm(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,{})));
         
         print("All components:\n");
         dumpComponents(comps);
@@ -779,9 +776,6 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
      // Functions funcs;
      // Real t1,t2;
-     
-     tuple<BackendDAEUtil.daeHandlerFunc,String> daeHandler;
-     tuple<BackendDAEUtil.matchingAlgorithmFunc,String> matchingAlgorithm;
 
     case(elimVarIndexList,dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns)))) equation
       ieqnLst = BackendDAEUtil.equationList(ieqns);
@@ -801,11 +795,7 @@ algorithm
       dae = setDaeVars(dae,vars_1);
       dae = setDaeKnownVars(dae,kvars_1);
       
-      matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
-      daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
-      
-     (dae) = BackendDAEUtil.transformDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),matchingAlgorithm,daeHandler);
-      
+     dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
 
 /*      
       Debug.fcall("dumprepldae",print," removed "+&intString(listLength(seqns))+&" eqns \n");

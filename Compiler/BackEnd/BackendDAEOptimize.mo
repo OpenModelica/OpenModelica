@@ -51,7 +51,6 @@ public import IndexReduction;
 protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
-protected import BackendDAEEXT;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVarTransform;
@@ -8478,7 +8477,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;   
-      array<Integer> ass1,ass2,columark;
+      array<Integer> ass1,ass2,columark,number,lowlink;
       Integer size,tornsize;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;    
@@ -8516,7 +8515,7 @@ algorithm
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
         //  IndexReduction.dumpSystemGraphMLEnhanced(subsyst,shared,me,meT);
           
-          m1 = incidenceMatrixfromEnhanced(me);
+       /*   m1 = incidenceMatrixfromEnhanced(me);
           Matching.matchingExternalsetIncidenceMatrix(size,size,m1);
           BackendDAEEXT.matching(size,size,5,-1,1.0,1);
           ass1 = arrayCreate(size,-1);
@@ -8524,7 +8523,7 @@ algorithm
           BackendDAEEXT.getAssignment(ass1,ass2);         
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass1);
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass2);          
-          
+        */  
         // do cheap matching until a maximum matching is there if
         // cheap matching stucks select additional tearing variable and continue
         ass1 = arrayCreate(size,-1);
@@ -8551,10 +8550,10 @@ algorithm
         mt1 = getOtherEqSysIncidenceMatrix(mt,size,1,tvars,residual,mt1);
         //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
         //  BackendDump.dumpEqSystem(subsyst);
-        BackendDAEEXT.initLowLink(size);
-        BackendDAEEXT.initNumber(size);
-        List.map1_0(residual, BackendDAEEXT.setNumber, size);
-        (_,_,othercomps) = BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, size, 0, 1, {}, {});        
+        number = arrayCreate(size,0);
+        lowlink = arrayCreate(size,0);        
+        number = setIntArray(residual,number,size);
+        (_,_,othercomps) = BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, number, lowlink, size, 0, 1, {}, {});        
         //  print("OtherEquationsOrder:\n"); 
         //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
         // handle system in case of liniear and other cases 
@@ -8576,6 +8575,25 @@ algorithm
         (syst,shared,b);
   end matchcontinue;  
 end tearingSystemNew1;
+
+protected function setIntArray
+  input list<Integer> inLst;
+  input array<Integer> arr;
+  input Integer value;
+  output array<Integer> oarr;
+algorithm
+  oarr := match(inLst,arr,value)
+    local 
+      Integer indx;
+      list<Integer> rest;
+    case(indx::rest,_,_)
+      equation
+        _= arrayUpdate(arr,indx,value);
+      then
+        setIntArray(rest,arr,value);
+    case({},_,_) then arr;
+  end match;
+end setIntArray;
 
 protected function incidenceMatrixfromEnhanced
   input BackendDAE.AdjacencyMatrixEnhanced me;
