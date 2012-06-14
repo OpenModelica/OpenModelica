@@ -77,9 +77,284 @@ algorithm
         ();
   end matchcontinue;
 end dumpComponents2;
+
+
+public function createIndexMap "creates an index map that translates old incices to new, when a list of indices are removed.
+For example.
+{1,2,3,4,5} - Vars, n == 5
+{2,4} - removeIndices 
+=> {1->1,2->0,3->2,4->0,5->3}
+"
+  input list<Integer> removeIndices "must be sorted in ascending order";
+  input Integer n;
+  output array<Integer> map;
+  protected array<Integer> an;
+algorithm
+  an := arrayCreate(n,0);
+  map := createIndexMap2(an,removeIndices,1,1);
+end createIndexMap;
+
+protected function createIndexMap2 "help function to createIndexMap"
+  input array<Integer> mapIn;
+  input list<Integer> removeIn;
+  input Integer i;
+  input Integer off;
+  output  array<Integer> outMap;
+algorithm
+  outMap := matchcontinue(mapIn,removeIn,i,off)
+  local Integer v;
+    array<Integer> map;
+    list<Integer> remove;
+    case(map,{},i,off) equation
+      map = fillRestMap(map,i,off,arrayLength(map)+1-i);  
+    then 
+      map;
+    case(map,v::remove,i,off) equation
+      true = i == v "remove"; 
+      map = createIndexMap2(map,remove,i+1,off);
+    then 
+      map;
+    case(map,v::remove,i,off) equation
+      false = i == v "keep";
+      map = arrayUpdate(map,i,off);
+      map = createIndexMap2(map,v::remove,i+1,off+1);
+    then
+       map;
+  end matchcontinue;
+end createIndexMap2;
+
+protected function fillRestMap "help function to e.g. removeEquationsWithMap, fills the rest of the map after all equations been removed, i.e. 
+the left over should be kept, indices increased by one in each step"
+   input array<Integer> mapIn;   
+   input Integer indx;
+   input Integer i;
+   input Integer N;
+   output array<Integer> outMap;
+algorithm
+  outMap := matchcontinue(mapIn,indx,i,N)
+    local
+       array<Integer> map;
+    case(map,indx,i,0) then map;
+    case(map,indx,i,N) equation
+      map = arrayUpdate(map,indx,i);
+      map = fillRestMap(map,indx+1,i+1,N-1);
+    then map;
+    case(map,indx,i,N) equation
+      print("fillRestMap failed\n");
+    then fail();
+  end matchcontinue;
+end fillRestMap;
+
+protected function removeArrayElements
+   input array<Type_a> arrayIn;
+   input list<Integer> elems;
+   input Type_a typeDefault;
+   output array<Type_a> arrayOut;
+   replaceable type Type_a subtypeof Any;
+   protected array<Type_a> newArray;
+   protected Integer n;
+algorithm
+   n:=arrayLength(arrayIn)-listLength(elems);
+   newArray:=arrayCreate(n,typeDefault);
+   arrayOut:= removeArrayElements2(arrayIn,newArray,1,1,elems,n);
+end removeArrayElements;
+
+protected function removeArrayElements2
+   input array<Type_a> array1In;
+   input array<Type_a> array2In;
+   input Integer index1;
+   input Integer index2;
+   input list<Integer> elems;
+   input Integer maxn;
+   
+   output array<Type_a> arrayOut;
+   replaceable type Type_a subtypeof Any;
+
+algorithm
+   arrayOut:=matchcontinue(array1In,array2In,index1,index2,elems,maxn)
+      local
+        list<Integer> tail;
+        Integer head;
+        array<Type_a> array1,array2;
+        case(_,array2,_,index2,_,maxn)
+          equation
+             true=(index2>maxn);
+          then array2;
+        case(array1,array2,index1,index2,elems,maxn)
+          equation
+             true=listMember(index1,elems);
+          then
+            removeArrayElements2(array1,array2,index1+1,index2,elems,maxn);
+        case(array1,array2,index1,index2,elems,maxn)
+          equation
+            array2=arrayUpdate(array2,index2,array1[index1]); 
+          then
+            removeArrayElements2(array1,array2,index1+1,index2+1,elems,maxn);   
+        case(_,_,_,_,_,_)
+          then
+            fail();  
+   end matchcontinue;
   
+end removeArrayElements2;
+
+
+protected function intEqZero
+input Integer i;
+output Boolean o;
+algorithm
+  o:=not intEq(i,0);
+end intEqZero;
+
+protected function removeZeros
+   input list<Integer> l;
+   output list<Integer> o;
+algorithm   
+   o:=List.filterOnTrue(l,intEqZero);
+end removeZeros;
+
+protected function fixIndices2
+   input list<Integer> listIn;
+   input array<Integer> map;
+   output list<Integer> listOut;
+algorithm
+   listOut:=List.map1r(listIn,arrayGet,map);
+end fixIndices2;
+
+protected function fixIndices
+   input BackendDAE.IncidenceMatrix listIn;
+   input array<Integer> map;
+   output BackendDAE.IncidenceMatrix listOut;
+   protected list<list<Integer>> l1,l2;
+algorithm
+  l1:=arrayList(listIn);
+  l2:=List.map1(l1,fixIndices2,map);
+  l2:=List.map(l2,removeZeros);
+  listOut:=listArray(l2);
+end fixIndices;
+
+protected function fixNonMatchedVariables2
+   input array<Integer> ass2In;
+   input BackendDAE.IncidenceMatrix mtIn;
+   input Integer index;
+   input Integer max;
+   output array<Integer> ass2Out;
+algorithm
+    ass2Out:=matchcontinue(ass2In,mtIn,index,max)
+      local 
+         array<Integer> ass2;
+         Integer eqn;
+        case(ass2,_,index,max)
+          equation
+             true = (index>max);
+          then
+            ass2;
+        case(ass2,mtIn,index,max)
+         equation
+           eqn = ass2[index];
+           true = intEq(eqn,0); // if the index is zero    
+           eqn = List.first(mtIn[index]);   // get a new one
+           ass2=arrayUpdate(ass2,index,eqn);
+         then
+           fixNonMatchedVariables2(ass2,mtIn,index+1,max);
+        case(ass2,mtIn,index,max)
+         then
+           fixNonMatchedVariables2(ass2,mtIn,index+1,max);     
+    end matchcontinue;         
+end fixNonMatchedVariables2;
+
+protected function fixNonMatchedVariables
+   input BackendDAE.IncidenceMatrix mtIn;
+   input array<Integer> ass2In;
+   output array<Integer> ass2Out;
+   Integer n;
+algorithm
+   n:=arrayLength(ass2In);
+   ass2Out:=fixNonMatchedVariables2(ass2In,mtIn,1,n);
+end fixNonMatchedVariables;
+
+protected function getRemovedVariables
+    input BackendDAE.IncidenceMatrix mtIn;
+    input Integer index;
+    input Integer maxn;
+    input list<Integer> acc;
+    output list<Integer> out;
+algorithm
+out:=matchcontinue(mtIn,index,maxn,acc)
+  case(mtIn,index,maxn,acc)
+    equation
+      true=(index>maxn);
+       then  acc;
+  case(mtIn,index,maxn,acc)
+    equation
+        true=(intEq(listLength(mtIn[index]),0));
+    then
+        getRemovedVariables(mtIn,index+1,maxn,index::acc);
+  case(mtIn,index,maxn,acc)
+    then
+        getRemovedVariables(mtIn,index+1,maxn,acc);            
+end matchcontinue;      
+end getRemovedVariables;
+
+protected function removeEquationsFromSystem
+   input BackendDAE.IncidenceMatrix mIn;
+   input BackendDAE.IncidenceMatrix mtIn;  
+   input list<Integer> eqns; // equations to remove
+   output BackendDAE.IncidenceMatrix mOut;
+   output BackendDAE.IncidenceMatrix mtOut;  
+   output list<Integer> removedVars;
+   
+   protected array<Integer> eqIndexMap,varIndexMap;
+   protected Integer maxn;
+   protected BackendDAE.IncidenceMatrix m,mt;
+   
+algorithm 
+   maxn:=arrayLength(mIn);
+   eqIndexMap:=createIndexMap(List.sort(eqns,intGt),maxn); // creates a map of the indices of the equations
+   m:=removeArrayElements(mIn,eqns,{});     // removes the equations from the incidence matrix
+   mt:= fixIndices(mtIn,eqIndexMap);        // adjust the indices in the transpose of the incidence matrix
+   
+   removedVars:=getRemovedVariables(mt,1,arrayLength(mt),{}); // get the variables that do no appear in any equation
+   
+   mt:=removeArrayElements(mt,removedVars,{}); // remove the variables from the transpose of the incidence matrix
+
+   maxn:=arrayLength(mtIn);
+   varIndexMap:=createIndexMap(List.sort(removedVars,intGt),maxn); // creates a map of the indices for the removed variables
+   
+   m:=fixIndices(m,varIndexMap); // updates the indices of the variables (in the incidence matrix) after removing variables
+
+   mOut:=m;
+   mtOut:=mt;
+       
+end removeEquationsFromSystem;
   
-  public function modelEquationsUC
+protected function dumpUncertainVariablesInBlocks
+  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.IncidenceMatrix m;
+  input list<list<Integer>> comps;
+algorithm
+  _:=matchcontinue(dlow,m,comps)
+      local list<Integer> comp;
+        list<list<Integer>> tail;
+        list<Integer> uncVars;
+        case(_,_,{}) then ();
+        case(dlow,m,comp::tail) equation
+          uncVars=getUncertainRefineVariablesInBlocks(dlow,m,{comp});
+          print("Block: {"); 
+          print(stringDelimitList(List.map(comp,intString)," , "));
+          print("}\n");
+          print("\tVariables:");
+          print(stringDelimitList(List.map(uncVars,intString)," , "));
+          print("\n");
+          dumpUncertainVariablesInBlocks(dlow,m,tail);
+        then ();  
+        case(_,_,_)
+          equation
+            print("***dumpUncertainVariablesInBlocks: failed");  
+          then ();  
+      end matchcontinue; 
+end dumpUncertainVariablesInBlocks;
+  
+public function modelEquationsUC
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
@@ -100,7 +375,7 @@ algorithm
       list<SCode.Element> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1,dlow_2;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.SymbolTable st;
@@ -109,23 +384,33 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs,funcs1;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      BackendDAE.IncidenceMatrix m,mt;
-      array<Integer> ass1,ass2;
+      BackendDAE.IncidenceMatrix m,mt,m2,mt2;
+      array<Integer> ass1,ass2,ass1_2,ass2_2;
       BackendDAE.Value n;
       list<list<Integer>> comps, uccomps;
       Integer varCount;
       BackendDAE.Variables vars,kvars;
-      list<Integer> eqnIndexList, varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,equationToExtract;
+      list<Integer> eqnIndexList, varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,equationToExtract,otherEquations,squareBlockEquations,removedVars;
       BackendDAE.EquationArray eqns,ieqns;
       array<BackendDAE.MultiDimEquation> arrEqns;
       array<DAE.Algorithm> algs;
       list<BackendDAE.Equation> eqnLst,ieqnLst;
-      list<BackendDAE.EqSystem> eqsyslist;      
+      list<BackendDAE.EqSystem> eqsyslist; 
+      String modelName,outputFileName;
+      array<Integer> eqMap; 
+      BackendDAE.Variables allVars;
+      BackendDAE.EquationArray allEqs;
+      list<Integer> allUncertainVars; 
+      BackendDAE.Shared shared;
+      
+      BackendDAE.EqSystem newSystem;
+      BackendDAE.EquationArray newSystemEqns;
+      BackendDAE.Variables newSystemVars;   
             
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix)
       equation
         
-        print("* Calling  modelEquationsUC\n");
+        //print("* Calling  modelEquationsUC\n");
         // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
@@ -137,64 +422,27 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = Env.getFunctionTree(cache);
         
-        print("* Flatten ok\n");
-        
+        //print("* Flatten ok\n");   
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        print("* Lower ok\n");
-        
-        
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, SOME({"removeFinalParameters", "removeEqualFunctionCalls","partitionIndependentBlocks", "expandDerOperator"}), NONE(), NONE(), NONE());
+        //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, SOME({"removeSimpleEquations","removeFinalParameters"}), NONE(), NONE(),SOME({}));
         print("*** Lowered: \n");
-        BackendDump.dump(dlow_1);
-        print("*** end Lowered: \n");
-        
+
+        //BackendDump.dump(dlow_1);
        
-        BackendDAE.DAE(eqsyslist as (BackendDAE.EQSYSTEM(_,_,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_),_/*BackendDAE.SHARED()*/) = dlow_1;
+        BackendDAE.DAE(eqsyslist as (BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_),shared) = dlow_1;
         
-        print("** Number of EQSYSTEM: ");
-        print(intString(listLength(eqsyslist)));
-        print("\n");
-        
-        n = arrayLength(m);
-        BackendDAEEXT.initLowLink(n);
-        BackendDAEEXT.initNumber(n);
-        (_,_,comps) = BackendDAETransform.strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
-        
-        print("All components:\n");
-        dumpComponents(comps);
-        
-        
-        // Extract equations for uncertainty computations.          
-        uccomps = extractEquationsForUC(dlow_1, m, comps);
-        
-        print("UC components:\n");
-        dumpComponents(uccomps);
-        
-        // Get a subsystem with only the equations and variables considered for uncertainty computations.          
-        eqnIndexList = getEquationsInBlocks(uccomps);
-        print("Equations with uncertainty variables: "); 
-        print(stringDelimitList(List.map(eqnIndexList,intString)," , "));
-        print("\n"); 
+        allUncertainVars=getUncertainRefineVariableIndexes(allVars,List.intRange(BackendVariable.varsSize(allVars))); 
         
         
         
-        // get equations with annotation ApproximatedEquation
-        approximatedEquations=getEquationsWithApproximatedAnnotation(dlow_1);
-        print("Approximated Equations: "); 
-        print(stringDelimitList(List.map(approximatedEquations,intString)," , "));
-        print("\n");
-        
-        equationToExtract = List.setDifference(eqnIndexList, approximatedEquations);
-        varIndexList = getVariablesInBlocks(m, uccomps);
-        
-        
-        (dlow_1 as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount))::_)) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
+        ////////////////////////////////////////////
         // Eliminate variables whose uncertain attribute is not set to Uncertainty.refine.          
-        allVarIndexList = List.intRange(varCount);
-        refineVarIndexList = getUncertainRefineVariableIndexes(vars, allVarIndexList);
+        allVarIndexList = List.intRange(BackendVariable.varsSize(allVars));
+        refineVarIndexList = getUncertainRefineVariableIndexes(allVars, allVarIndexList);
         elimVarIndexList = List.setDifferenceOnTrue(allVarIndexList, refineVarIndexList, intEq);
         
-        print("Variables with uncertainty attibute: "); 
+        print("Original variables with uncertainty attibute: "); 
         print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
         print("\n");
         
@@ -203,30 +451,195 @@ algorithm
         print("\n");
         
         
-        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) = eliminateVariablesDAE(elimVarIndexList,dlow_1);
+        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_,shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) 
+                    = eliminateVariablesDAE(elimVarIndexList,dlow_1);
+        
+        //BackendDump.dump(dlow_1);
+        ////////////////////////////////////////////////////////////////
+        
+     
+        n = arrayLength(m);
+        BackendDAEEXT.initLowLink(n);
+        BackendDAEEXT.initNumber(n);
+        (_,_,comps) = BackendDAETransform.strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
+        
+        print("All components:\n");
+        dumpComponents(comps);
+        
+        //dumpUncertainVariablesInBlocks(dlow_1,m,comps);
+        
+        refineVarIndexList = getUncertainRefineVariablesInBlocks(dlow_1, m, comps);
+      
+        print("Variables with uncertainty attibute: "); 
+        print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        print("\n");
+        //BackendDump.dump(dlow_1);
+        
+        squareBlockEquations = getSquareBlocks(m,comps,{},refineVarIndexList);
+        
+        
+        print("Equations in squared blocks: "); 
+        print(stringDelimitList(List.map(squareBlockEquations,intString)," , "));
+        print("\n");
+        
+       
+        (m,mt,removedVars)=removeEquationsFromSystem(m,mt,squareBlockEquations);
+ 
+        print("Removed variables from squared blocks: "); 
+        print(stringDelimitList(List.map(removedVars,intString)," , "));
+        print("\n");
+ 
+
+        newSystemEqns = BackendDAEUtil.listEquation(List.deletePositions(BackendDAEUtil.equationList(allEqs),List.map1(squareBlockEquations,intAdd,-1)));
+        newSystemVars = BackendDAEUtil.listVar(listReverse(List.deletePositions(BackendDAEUtil.varList(allVars),List.map1(removedVars,intAdd,-1))));
+
+        //newSystemVars = allVars;
+      
+        newSystem=BackendDAE.EQSYSTEM(newSystemVars, newSystemEqns, SOME(m), SOME(mt), BackendDAE.NO_MATCHING());
+      
+        dlow_1 = BackendDAE.DAE({newSystem},shared);
+        //BackendDump.dump(dlow_1);
+        
+       
+        
+        //print("Final components:\n");
+        //dumpComponents(comps);
+        //dumpUncertainVariablesInBlocks(dlow_1,m,comps);
+        //BackendDump.dump(dlow_1);
+        
+        
+        refineVarIndexList = getUncertainRefineVariableIndexes(newSystemVars,List.intRange(BackendVariable.varsSize(newSystemVars))); 
+        //BackendDump.dump(dlow_1);
+      
+        //dumpUncertainVariablesInBlocks(dlow_1,m,comps);
+        print("Variables with uncertainty attibute: "); 
+        print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        print("\n");
+        
+        // Extract equations for uncertainty computations.          
+        //uccomps = extractEquationsForUC(dlow_1, m, comps);
+        
+        //print("UC components:\n");
+        //dumpUncertainVariablesInBlocks(dlow_1, m, uccomps);
+        
+        // Get a subsystem with only the equations and variables considered for uncertainty computations.          
+        //eqnIndexList = getEquationsInBlocks(uccomps);
+        //print("Original equations with uncertainty variables: "); 
+        //print(stringDelimitList(List.map(eqnIndexList,intString)," , "));
+        //print("\n"); 
+        
+        
+        //BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedEqs=eqns)::_) = dlow_1;
+        //BackendDump.dumpEqns(List.map1r(eqnIndexList,listGet,BackendDAEUtil.equationList(eqns)));
+        
+        // get equations with annotation ApproximatedEquation
+        approximatedEquations=getEquationsWithApproximatedAnnotation(dlow_1);
+        print("Approximated Equations: "); 
+        print(stringDelimitList(List.map(approximatedEquations,intString)," , "));
+        print("\n");
+        
+        ///////////refineVarIndexList = getUncertainRefineVariablesInBlocks(dlow_1, m, comps);
+        otherEquations=getEquationsWithOneVariable(dlow_1,refineVarIndexList);
+        
+        equationToExtract = List.setDifference(List.setDifference(List.intRange(arrayLength(m)), approximatedEquations),otherEquations);
+        varIndexList = List.flatten(arrayList(m));
+        
+        
+        (dlow_1 as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount),orderedEqs=eqns)::_)) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
+        
+        //print("Equations after removing non influencial blocks: \n"); 
+        //BackendDump.dumpEqns(BackendDAEUtil.equationList(eqns));
+        //BackendDump.dump(dlow_1);
+        
+        // Eliminate variables whose uncertain attribute is not set to Uncertainty.refine.          
+        //allVarIndexList = List.intRange(varCount);
+        //refineVarIndexList = getUncertainRefineVariableIndexes(vars, allVarIndexList);
+        //elimVarIndexList = List.setDifferenceOnTrue(allVarIndexList, refineVarIndexList, intEq);
+        
+        //print("Variables with uncertainty attibute: "); 
+        //print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        //print("\n");
+        
+        //print("Variables to eliminate: "); 
+        //print(stringDelimitList(List.map(elimVarIndexList,intString)," , "));
+        //print("\n");
+        
+        
+        //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) = eliminateVariablesDAE(elimVarIndexList,dlow_1);
 
         eqnLst = BackendDAEUtil.equationList(eqns);
-        ieqnLst = BackendDAEUtil.equationList(ieqns);
+        //ieqnLst = BackendDAEUtil.equationList(ieqns);
         
-        print("*** Uncertainties extracted: \n");
-        BackendDump.dump(dlow_1);
+        print("* Uncertainty equations extracted: \n");
+        BackendDump.dumpEqns(eqnLst);
 
-        //resstr = MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs));     
+        //modelName=Absyn.pathLastIdent(className);        
+        //print(System.readEnv("TEMP")+&"\\uncertainties.out");
         
-           
-        resstr="";
+        //System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs)));           
+             
+        resstr="Done...";
       then
         (cache,Values.STRING(resstr),st);
     case (_,_,className,_,_)
       equation        
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
+        resstr = stringAppendList({"modelEquationsUC: The model equations in model",resstr," could not be extracted"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
   end matchcontinue;
 end modelEquationsUC;
+
+
+protected function getEquationsWithOneVariable
+   input BackendDAE.BackendDAE dae;
+   input list<Integer> uncertainVariables;
+   output list<Integer> outEq;  
+algorithm
+outEq:=matchcontinue(dae,uncertainVariables)
+   local array<list<Integer>> m;
+  case (BackendDAE.DAE(BackendDAE.EQSYSTEM(_,_,SOME(m),_,_)::_,_),uncertainVariables)
+   then
+     getEquationsWithOneVariable2(arrayList(m),uncertainVariables,1);
+end matchcontinue;     
+end getEquationsWithOneVariable;
+
+protected function getEquationsWithOneVariable2
+   input list<list<Integer>> m;
+   input list<Integer> uncertainVariables;
+   input Integer index;
+   output list<Integer> out;
+algorithm
+out:=matchcontinue(m,uncertainVariables,index)
+       local
+         list<list<Integer>> tail;
+         list<Integer> head,indexList;
+         
+     case({},_,_)
+           then {};    
+     case(head::tail,uncertainVariables,index)
+       equation
+         false = getEquationsWithOneVariable3(head,uncertainVariables);
+         indexList = getEquationsWithOneVariable2(tail,uncertainVariables,index+1);
+       then 
+         index::indexList;
+     case(head::tail,uncertainVariables,index)
+       then
+         getEquationsWithOneVariable2(tail,uncertainVariables,index+1);     
+   end matchcontinue;       
+end getEquationsWithOneVariable2;
+
+protected function getEquationsWithOneVariable3
+   input list<Integer> variables;
+   input list<Integer> uncertainVariables;
+   output Boolean out;
+   protected list<Integer> temp;  
+algorithm
+   temp:=List.intersectionOnTrue(variables,uncertainVariables,intEq);   
+   out:=listLength(temp)>1;
+end getEquationsWithOneVariable3;
 
 protected function getEquationsWithApproximatedAnnotation
    input BackendDAE.BackendDAE dae;
@@ -366,6 +779,9 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
      // Functions funcs;
      // Real t1,t2;
+     
+     tuple<BackendDAEUtil.daeHandlerFunc,String> daeHandler;
+     tuple<BackendDAEUtil.matchingAlgorithmFunc,String> matchingAlgorithm;
 
     case(elimVarIndexList,dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns)))) equation
       ieqnLst = BackendDAEUtil.equationList(ieqns);
@@ -384,6 +800,12 @@ algorithm
       (vars_1,kvars_1) = moveVariables(BackendVariable.daeVars(syst),BackendVariable.daeKnVars(shared),movedvars_1); 
       dae = setDaeVars(dae,vars_1);
       dae = setDaeKnownVars(dae,kvars_1);
+      
+      matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
+      daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
+      
+     (dae) = BackendDAEUtil.transformDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),matchingAlgorithm,daeHandler);
+      
 
 /*      
       Debug.fcall("dumprepldae",print," removed "+&intString(listLength(seqns))+&" eqns \n");
@@ -427,15 +849,15 @@ algorithm
     array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
-    BackendDAE.SymbolicJacobians symjacs;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
+    BackendDAE.SymbolicJacobians symjacs;
     
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,functionTree=funcs,
-                                   eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType))),eqns,false) 
+                                   eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),eqns,false) 
     equation
        syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching);                              
     then
@@ -490,10 +912,10 @@ algorithm
     array<DAE.Constraint> constraints "constraints" ;
     array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo";
-    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
+    BackendDAE.SymbolicJacobians symjacs;
   
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
@@ -923,10 +1345,10 @@ algorithm
     array<DAE.Constraint> constraints "constraints" ;
     array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
-    BackendDAE.EventInfo eventInfo "eventInfo";
-    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
+    BackendDAE.SymbolicJacobians symjacs;
     
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,constraints=constraints,complEqs=complEqs,eventInfo=eventInfo,
@@ -964,7 +1386,28 @@ algorithm
   end match;
 end setDaeVarsAndEqs;  
   
-  public function extractEquationsForUC
+  
+public function dumpEquationsInBlocks
+   input BackendDAE.BackendDAE daelow; 
+   input list<list<Integer>> blocksIn;
+algorithm
+  
+  _:=matchcontinue(daelow,blocksIn)
+   local 
+      list<Integer> eqsIndx;
+      list<list<Integer>> blocks;
+      list<BackendDAE.Equation> eqnsList;
+      BackendDAE.EquationArray eqns;
+     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns)::_,_),blocks)   
+     equation
+         eqsIndx=getEquationsInBlocks(blocks);
+         eqnsList=BackendEquation.getEqns(eqsIndx,eqns); 
+         BackendDump.dumpEqns(eqnsList);
+     then ();      
+  end matchcontinue;   
+end dumpEquationsInBlocks;
+  
+public function extractEquationsForUC
 "
   author: Daniel Hedberg, 2011-01
   modified by: Leonardo Laguna, 2012-01
@@ -978,10 +1421,12 @@ algorithm
     local
       list<list<Integer>> blocks_1, blocks_2;
       list<Integer> refineVarIndexList, refineVarIndexList_1;
-    case (daelow, m, blocks) equation
+    case (daelow, m, blocks) 
+     equation
       refineVarIndexList = getUncertainRefineVariablesInBlocks(daelow, m, blocks);
-      blocks_1 = removeSquareBlocksUC(m, blocks);
-      blocks_2 = removeNonInfluencingBlocksUC(daelow, m, blocks_1, {});
+      //blocks_1 = removeSquareBlocksUC(m, blocks);
+      //blocks_2 = removeNonInfluencingBlocksUC(daelow, m, blocks_1, {});
+      blocks_2 = removeNonInfluencingBlocksUC(daelow, m, blocks, {});
       // Make sure that all variables with attribute uncertain set to
       // Uncertainty.refine are present in the remaining blocks.
       refineVarIndexList_1 = getUncertainRefineVariablesInBlocks(daelow, m, blocks_2);
@@ -1002,7 +1447,189 @@ algorithm
     case (_,_,_) equation print("extractEquationsForUC failed!\n"); then fail();
   end matchcontinue;
 end extractEquationsForUC;
+
+
+
+
+protected function getSquareBlocks
+
+  input BackendDAE.IncidenceMatrix mIn;
+  input list<list<Integer>> blocksIn;
+  input list<Integer> equationsAccIn;
+  input list<Integer> uncertainVariables;
+  output list<Integer> equationsToRemove;
+algorithm
+  equationsToRemove := matchcontinue (mIn,blocksIn,equationsAccIn,uncertainVariables)
+    local
+      list<Integer> block_1, vars,eqns,unc_vars_in_block;
+      list<list<Integer>> tail, blocks_1;
+      Integer blockSize,varNumber,n;
+      
+      BackendDAE.IncidenceMatrix m;
+      list<Integer> equationsAcc;
+      list<Integer> removedEquations;
+    case (m,{},equationsAcc,uncertainVariables) 
+      equation
+        //print("No more squared blocks\n");
+      then equationsAcc;
+    
+    case (m,removedEquations::tail,equationsAcc,uncertainVariables) equation
+      vars = getVariablesInBlock(m, removedEquations);
+      unc_vars_in_block = List.intersectionOnTrue(vars,uncertainVariables,intEq);
+      blockSize = listLength(removedEquations);
+      varNumber = listLength(vars);
+      true = intEq(blockSize, varNumber) and not (blockSize>listLength(unc_vars_in_block));     // Square? - Remove block
+   then
+      getSquareBlocks(m,tail,listAppend(removedEquations,equationsAcc),uncertainVariables);
+    case (m,removedEquations::tail,equationsAcc,uncertainVariables) equation
+      vars = getVariablesInBlock(m, removedEquations);
+      blockSize = listLength(removedEquations);
+      varNumber = listLength(vars);
+      unc_vars_in_block = List.intersectionOnTrue(vars,uncertainVariables,intEq);
+      false = intEq(blockSize, varNumber) and not (blockSize>listLength(unc_vars_in_block));
+      //print("Non-squared block\n");
+    then
+      getSquareBlocks(m,tail,equationsAcc,uncertainVariables);
+    case (_,_,_,_) equation 
+      print("removeSquareBlocksUC_v2 failed!\n"); 
+      then fail();
+  end matchcontinue;
+end getSquareBlocks;
+
+
+/*
+protected function removeSquareBlocksUC_v2
+"
+  author: Daniel Hedberg, 2011-01
+  modified by: Leonardo Laguna, 2012-01
+"
+  input BackendDAE.BackendDAE dlowIn;
+  input list<BackendDAE.Var> variablesIn;
+  input list<BackendDAE.Equation> equationsIn; 
+  input BackendDAE.IncidenceMatrix mIn;
+  input BackendDAE.IncidenceMatrix mtIn;
+  input list<list<Integer>> blocksIn;
+  input list<list<Integer>> blocksAccIn;
+  input list<Integer> uncertainVariables;
+  input BackendDAE.Shared sharedIn;
   
+  
+  output BackendDAE.BackendDAE dlowOut;
+  output BackendDAE.IncidenceMatrix mOut;
+  output BackendDAE.IncidenceMatrix mtOut;
+  output list<list<Integer>> blocksOut;
+algorithm
+  (dlowOut,mOut,mtOut,blocksOut) := matchcontinue (dlowIn,variablesIn,equationsIn,mIn,mtIn,blocksIn,blocksAccIn,uncertainVariables,sharedIn)
+    local
+      list<Integer> block_1, vars,eqns,unc_vars_in_block;
+      list<list<Integer>> tail, blocks_1;
+      Integer blockSize,varNumber,n;
+      
+      BackendDAE.IncidenceMatrix m,mt;
+      array<Integer> ass1,ass2,eqMap;
+      list<list<Integer>> blocks,blocksAcc;
+      list<Integer> removedVars,removedEquations;
+      BackendDAE.Shared shared;
+      list<BackendDAE.Var> variables,newVariables; 
+      list<BackendDAE.Equation> equations,newEquations;
+      BackendDAE.EqSystem newSystem;
+      BackendDAE.EquationArray newSystemEqns;
+      BackendDAE.Variables newSystemVars;
+      Env.Cache cache;
+      Env.Env env;
+      BackendDAE.BackendDAE dlow;
+      tuple<BackendDAEUtil.daeHandlerFunc,String> daeHandler;
+      tuple<BackendDAEUtil.matchingAlgorithmFunc,String> matchingAlgorithm;
+      
+      
+    case (dlow,variables,equations,m,mt,{},blocksAcc,uncertainVariables,shared) 
+      equation
+        //print("No more squared blocks\n");
+      then (dlow,m,mt,blocksAcc);
+    
+    case (dlow,variables,equations,m,mt,removedEquations::tail,blocksAcc,uncertainVariables,shared) equation
+     
+      vars = getVariablesInBlock(m, removedEquations);
+      unc_vars_in_block = List.intersectionOnTrue(vars,uncertainVariables,intEq);
+      blockSize = listLength(removedEquations);
+      varNumber = listLength(vars);
+      true = intEq(blockSize, varNumber) and not (blockSize>listLength(unc_vars_in_block));     // Square? - Remove block
+      
+      print("Initial number of equations: "); print(intString(listLength(equations)));print("\n");
+      print("Initial number of variables: "); print(intString(listLength(variables)));print("\n");
+      
+      (m,mt,removedVars)=removeEquationsFromSystem(m,mt,removedEquations);
+          
+      
+      print("Removing Equations: "); print(intString(listLength(removedEquations))); print("\n");
+      print(stringDelimitList(List.map(removedEquations,intString)," , "));
+      print("\n");
+      
+      
+      print("Removing Variables: "); print(intString(listLength(removedVars))); print("\n");
+      print(stringDelimitList(List.map(removedVars,intString)," , "));
+      print("\n");
+      
+      
+ 
+      newEquations = List.deletePositions(equations,List.map1(removedEquations,intAdd,-1));
+      newVariables = List.deletePositions(variables,List.map1(removedVars,intAdd,-1));
+      
+      newSystemEqns = BackendDAEUtil.listEquation(newEquations);
+      newSystemVars = BackendDAEUtil.listVar(newVariables);
+      
+      print("New number of equations: "); print(intString(listLength(newEquations)));print("\n");
+      print("New number of variables: "); print(intString(listLength(newVariables)));print("\n");
+      
+      newSystem=BackendDAE.EQSYSTEM(newSystemVars, newSystemEqns, SOME(m), SOME(mt), BackendDAE.NO_MATCHING());
+      
+      dlow = BackendDAE.DAE({newSystem},shared);
+      
+      // get the default matching algorithms and handler
+      //matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
+      //daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
+      
+     //(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(newSystemVars,newSystemEqns,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_,_)) = BackendDAEUtil.transformDAE(dlow,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),matchingAlgorithm,daeHandler);
+      
+      //newEquations = BackendDAEUtil.equationList(newSystemEqns);
+      //newVariables = BackendDAEUtil.varList(newSystemVars);
+      
+      //BackendDump.dumpIncidenceMatrix(m);
+      //BackendDump.dumpIncidenceMatrix(mt);
+      
+      //print("New assignations\n");
+      //BackendDump.dumpMatching(ass1);
+      //BackendDump.dumpMatching(ass2);
+  
+      //n = arrayLength(m);
+      //BackendDAEEXT.initLowLink(n);
+      //BackendDAEEXT.initNumber(n);
+      //(_,_,blocks) = BackendDAETransform.strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
+      //print("Remaining blocks\n");
+      //dumpComponents(blocks);
+      //print("-----------------------------\n");
+      
+      //(dlow,m,mt,blocks) = removeSquareBlocksUC_v2(dlow,newVariables,newEquations,m,mt,blocks,{},uncertainVariables,shared);
+      (dlow,m,mt,blocks) = removeSquareBlocksUC_v2(dlow,newVariables,newEquations,m,mt,tail,blocksAcc,uncertainVariables,shared);
+    then
+      (dlow,m,mt,blocks);
+    case (dlow,variables,equations,m,mt,removedEquations::tail,blocksAcc,uncertainVariables,shared) equation
+      vars = getVariablesInBlock(m, removedEquations);
+      blockSize = listLength(removedEquations);
+      varNumber = listLength(vars);
+      unc_vars_in_block = List.intersectionOnTrue(vars,uncertainVariables,intEq);
+      false = intEq(blockSize, varNumber) and not (blockSize>listLength(unc_vars_in_block));
+      //print("Non-squared block\n");
+      (dlow,m,mt,blocks) = removeSquareBlocksUC_v2(dlow,variables,equations,m,mt,tail,removedEquations::blocksAcc,uncertainVariables,shared);
+    then
+      (dlow,m,mt,blocks);
+    case (dlow,_,_,m,mt,blocks,_,_,_) equation 
+      print("removeSquareBlocksUC_v2 failed!\n"); 
+      then fail();
+      //then (dlow,m,mt,blocks);  
+  end matchcontinue;
+end removeSquareBlocksUC_v2;
+  */
   
   protected function removeNonInfluencingBlocksUC
 "
@@ -1051,7 +1678,7 @@ end removeNonInfluencingBlocksUC;
 algorithm
   out := matchcontinue (m, blocks)
     local
-      list<Integer> block_, block_1, vars;
+      list<Integer> block_, block_1, vars,eqns;
       list<list<Integer>> blocksRest, blocks_1;
     case (_, {}) then {};
     case (m, block_ :: blocksRest) equation
@@ -1174,6 +1801,7 @@ algorithm
     case (_,_,_) equation print("getUncertainRefineVariablesInBlock failed!\n"); then fail();
   end matchcontinue;
 end getUncertainRefineVariablesInBlock;
+
   
   protected function getUncertainRefineVariablesInEquation
 "

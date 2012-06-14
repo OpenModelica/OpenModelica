@@ -7586,7 +7586,7 @@ algorithm
   //outDAE := reduceIndexDAE(inDAE,inMatchingOptions,(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
 end transformBackendDAE;
 
-protected function transformDAE
+public function transformDAE
 "function transformDAE 
   Run the matching Algorithm and the sorting algorithm.
   In case of an DAE an DAE-Handler is used to reduce
@@ -8043,7 +8043,7 @@ algorithm
   strIndexReductionMethod := Config.getIndexReductionMethod();
 end getIndexReductionMethodString;
 
-protected function getIndexReductionMethod
+public function getIndexReductionMethod
 " function: getIndexReductionMethod"
   input Option<String> ostrIndexReductionMethod;
   output tuple<daeHandlerFunc,String> IndexReductionMethod;
@@ -8102,7 +8102,7 @@ algorithm
   strMatchingAlgorithm := Config.getMatchingAlgorithm();
 end getMatchingAlgorithmString;
 
-protected function getMatchingAlgorithm
+public function getMatchingAlgorithm
 " function: getIndexReductionMethod"
   input Option<String> ostrMatchingAlgorithm;
   output tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
