@@ -43,6 +43,7 @@ encapsulated package ExpressionSimplify
 public import Absyn;
 public import DAE;
 public import Error;
+public import SCode;
 
 public type ComponentRef = DAE.ComponentRef;
 public type Ident = String;
@@ -68,6 +69,37 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
+public uniontype Evaluate "The expression should be evaluated to a literal value; return an error if this fails"
+  record NO_EVAL end NO_EVAL;
+  record DO_EVAL end DO_EVAL;
+end Evaluate;
+
+public replaceable type SymbolTable subtypeof Any;
+public type SymbolTableInterface = tuple<SymbolTableLookupValue,SymbolTableLookupVariability,SymbolTableAddScope,SymbolTableRemoveScope>;
+public partial function SymbolTableLookupValue
+  input SymbolTable st;
+  input DAE.ComponentRef cr;
+  output DAE.Exp exp;
+end SymbolTableLookupValue;
+public partial function SymbolTableLookupVariability
+  input SymbolTable st;
+  input DAE.ComponentRef cr;
+  output SCode.Variability var;
+end SymbolTableLookupVariability;
+public partial function SymbolTableAddScope
+  input SymbolTable st;
+  input DAE.ComponentRef cr;
+  input DAE.Exp exp;
+  output SymbolTable ost;
+end SymbolTableAddScope;
+public partial function SymbolTableRemoveScope
+  input SymbolTable st;
+  output SymbolTable ost;
+end SymbolTableRemoveScope;
+public type Options = tuple<Option<tuple<SymbolTable,SymbolTableInterface>>,Evaluate> "I am a stupid tuple because MM does not like type variables in records";
+
+constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
+
 public uniontype IntOp
   record MULOP end MULOP;
   record DIVOP end DIVOP;
@@ -82,27 +114,42 @@ public function simplify "function simplify
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := matchcontinue(inExp)
+  (outExp,hasChanged) := simplifyWithOptions(inExp,optionSimplifyOnly);
+end simplify;
+
+public function simplifyWithOptions "Simplifies expressions"
+  input DAE.Exp inExp;
+  input Options options;
+  output DAE.Exp outExp;
+  output Boolean hasChanged;
+algorithm
+  (outExp,hasChanged) := matchcontinue (inExp,options)
     local
       DAE.Exp e, eNew;
       Boolean b;
-    case (e)
+    case (e,options as (_,DO_EVAL()))
       equation
-        true = Config.getNoSimplify();
-        (eNew,b) = simplify1(e);
+        (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
+        Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);
+        b = not Expression.expEqual(e,eNew);
       then (eNew,b);
-    case (e)
+    case (e,options)
       equation
+        false = Config.getNoSimplify();
         //print("SIMPLIFY BEFORE->" +& ExpressionDump.printExpStr(e) +& "\n");
-        (eNew,_) = simplify1(e); // Basic local simplifications
+        (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
         //print("SIMPLIFY INTERMEDIATE->" +& ExpressionDump.printExpStr(eNew) +& "\n");
         eNew = simplify2(eNew); // Advanced (global) simplifications
-        (eNew,_) = simplify1(eNew); // Basic local simplifications
+        (eNew,_) = simplify1WithOptions(eNew,options); // Basic local simplifications
         b = not Expression.expEqual(e,eNew);
         //print("SIMPLIFY FINAL->" +& ExpressionDump.printExpStr(eNew) +& "\n");
       then (eNew,b);
+    case (e,options)
+      equation
+        (eNew,b) = simplify1WithOptions(e,options);
+      then (eNew,b);
   end matchcontinue;
-end simplify;
+end simplifyWithOptions;
 
 public function simplifyTraverseHelper
   input tuple<DAE.Exp,A> tpl;
@@ -132,8 +179,8 @@ end simplify1time;
 public function simplifyWork
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
-  input tuple<DAE.Exp,Boolean> inTpl;
-  output tuple<DAE.Exp,Boolean> tpl;
+  input tuple<DAE.Exp,tuple<Boolean,Options>> inTpl;
+  output tuple<DAE.Exp,tuple<Boolean,Options>> tpl;
 algorithm
   tpl := matchcontinue (inTpl)
     local
@@ -158,40 +205,41 @@ algorithm
       DAE.TailCall tc;
       DAE.Dimensions dims;
       DAE.Dimension dim;
+      Options options;
 
     // noEvent propagated to relations and event triggering functions
-    case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),b))
+    case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),(b,options)))
       equation
-        (e1,_) = simplify1(Expression.stripNoEvent(e));
+        (e1,_) = simplify1WithOptions(Expression.stripNoEvent(e),options);
         e2 = Expression.addNoEventToRelations(e1);
         e3 = Expression.addNoEventToEventTriggeringFunctions(e2);
         // TODO: Do this better?
       then 
-        ((e3,b));
+        ((e3,(b,options)));
     
-    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), b))
+    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
       equation
         true = Expression.isConst(exp);
       then
-        ((e, true));
+        ((e,(true,options)));
         
     // normal call 
-    case ((e as DAE.CALL(expLst=expl),_))
+    case ((e as DAE.CALL(expLst=expl),(_,options)))
       equation
         true = Expression.isConstWorkList(expl, true);
         e2 = simplifyBuiltinConstantCalls(e);
       then
-        ((e2,true));
+        ((e2,(true,options)));
     
     // simplify some builtin calls, like cross, etc
-    case ((e as DAE.CALL(attr=DAE.CALL_ATTR(builtin = true)),_))
+    case ((e as DAE.CALL(attr=DAE.CALL_ATTR(builtin = true)),(_,options)))
       equation
         e2 = simplifyBuiltinCalls(e);
       then 
-        ((e2,true));
+        ((e2,(true,options)));
     
     // simplify size operator
-    case ((e as DAE.SIZE(exp=e1,sz=SOME(e2)),_))
+    case ((e as DAE.SIZE(exp=e1,sz=SOME(e2)),(_,options)))
       equation
         i = Expression.expInt(e2);
         t = Expression.typeof(e1);
@@ -199,118 +247,118 @@ algorithm
         dim = listNth(dims,i-1);
         n = Expression.dimensionSize(dim);
       then 
-        ((DAE.ICONST(n),true));
+        ((DAE.ICONST(n),(true,options)));
     
-    case ((e,_))
+    case ((e,(_,options)))
       equation
         e2 = simplifyTrigIdentities(e);
       then 
-        ((e2,true));
+        ((e2,(true,options)));
 
     /* simplify different casts. Optimized to only run simplify1 once on subexpression e*/
-    case ((DAE.CAST(ty = tp,exp=e),_))
+    case ((DAE.CAST(ty = tp,exp=e),(_,options)))
       equation
         e = simplifyCast(e,tp);
-      then ((e,true));
+      then ((e,(true,options)));
     
     // simplify identity 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}),_))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}),(_,options)))
       equation
         matrix = simplifyIdentity(1,n);
         e = DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),
           false,matrix);
-      then ((e,true));
+      then ((e,(true,options)));
 
     // MetaModelica builtin operators are calls
-    case ((e,_))
+    case ((e,(_,options)))
       equation
         true = Config.acceptMetaModelicaGrammar();
-      then ((simplifyMetaModelica(e),true));
+      then ((simplifyMetaModelica(e),(true,options)));
     
     // other subscripting/asub simplifications where e is not simplified first.
-    case ((DAE.ASUB(exp = e,sub = subs),_))
+    case ((DAE.ASUB(exp = e,sub = subs),(_,options)))
       equation
         _ = List.map(subs,Expression.expInt);
         e = List.foldr(subs,simplifyAsub,e);
       then
-        ((e,true));
+        ((e,(true,options)));
 
-    case ((DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i), _))
+    case ((DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i), (_, options)))
       equation
         e = listGet(expl, i);
       then
-        ((e, true));
+        ((e, (true,options)));
 
     // unary operations
-    case (((exp as DAE.UNARY(operator = op,exp = e1)),_)) 
+    case (((exp as DAE.UNARY(operator = op,exp = e1)), (_,options))) 
       equation
         e = simplifyUnary(op, e1);
       then
-        ((e,true));
+        ((e,(true,options)));
     
     // binary operations on arrays
-    case (((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),_)) 
+    case (((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),(_,options))) 
       equation
         e_1 = simplifyBinaryArray(e1, op, e2);
       then
-        ((e_1,true));
+        ((e_1,(true,options)));
     
     // binary scalar simplifications
-    case (((DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),_))
+    case (((DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),(_,options)))
       equation
         e_1 = simplifyBinaryCommutative(op, e1, e2);
       then
-        ((e_1,true));
+        ((e_1,(true,options)));
     
     // binary scalar simplifications
-    case (((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),_))
+    case (((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),(_,options)))
       equation
         e_1 = simplifyBinary(op, e1, e2);
       then
-        ((e_1,true));
+        ((e_1,(true,options)));
     
     // relations 
-    case (((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB)),_))
+    case (((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB)),(_,options)))
       equation
         e = simplifyBinary(op, e1, e2);
       then
-        ((e,true));
+        ((e,(true,options)));
     
     // logical unary expressions
-    case (((DAE.LUNARY(operator = op,exp = e1)),_))
+    case (((DAE.LUNARY(operator = op,exp = e1)),(_,options)))
       equation
         e = simplifyUnary(op, e1);
       then
-        ((e,true));
+        ((e,(true,options)));
     
     // logical binary expressions
-    case ((DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),_))
+    case ((DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),(_,options)))
       equation
         e = simplifyBinary(op, e1, e2);
       then
-        ((e,true));
+        ((e,(true,options)));
     
     // if true and false branches are equal
-    case ((DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),_))
+    case ((DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),(_,options)))
       equation
         e = simplifyIfExp(e1,e2,e3);
-      then ((e,true));
+      then ((e,(true,options)));
     
     // component references
-    case ((DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t),_))
+    case ((DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t),(_,options)))
       equation
         exp1 = simplifyCref(c_1,t);
       then
-        ((exp1,true));
+        ((exp1,(true,options)));
     
-    case ((DAE.REDUCTION(reductionInfo,e1,riters),_))
+    case ((DAE.REDUCTION(reductionInfo,e1,riters),(_,options)))
       equation
         (riters,b2) = simplifyReductionIterators(riters, {}, false);
         exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
-      then ((simplifyReduction(exp1,b2),true));
+      then ((simplifyReduction(exp1,b2),(true,options)));
 
       // Look for things we really *should* have simplified, but only if we did not modify anything!
-    case ((e,false))
+    case ((e,(false,_)))
       equation
         true = Flags.isSet(Flags.CHECK_SIMPLIFY); 
         true = Expression.isConst(e);
@@ -332,9 +380,21 @@ public function simplify1
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := simplify1FixP(inExp,100,true);
-  checkSimplify(Flags.isSet(Flags.CHECK_SIMPLIFY),inExp,outExp);
+  (outExp,hasChanged) := simplify1WithOptions(inExp,optionSimplifyOnly);
 end simplify1;
+
+public function simplify1WithOptions
+"function: simplify1
+  This function does some very basic simplification
+  on expressions, like 0*a = 0, [1][1] => 1, etc."
+  input DAE.Exp inExp;
+  input Options options;
+  output DAE.Exp outExp;
+  output Boolean hasChanged;
+algorithm
+  (outExp,hasChanged) := simplify1FixP(inExp,options,100,true);
+  checkSimplify(Flags.isSet(Flags.CHECK_SIMPLIFY),inExp,outExp);
+end simplify1WithOptions;
 
 protected function checkSimplify
   "Verifies that the complexity of the expression is lower or equal than before the simplification was performed"
@@ -365,36 +425,38 @@ end checkSimplify;
 protected function simplify1FixP
 "Does fixpoint simplify1 max n times"
   input DAE.Exp inExp;
+  input Options inOptions;
   input Integer n;
   input Boolean cont;
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
-  (outExp,hasChanged) := match (inExp,n,cont)
+  (outExp,hasChanged) := match (inExp,inOptions,n,cont)
     local
       DAE.Exp exp;
       Boolean b;
       String str1,str2;
-    case (exp,_,false)
+      Options options;
+    case (exp,_,_,false)
       equation
         // print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then (exp,false);
-    case (exp,0,_)
+    case (exp,options,0,_)
       equation
         str1 = ExpressionDump.printExpStr(exp);
-        ((exp,_)) = Expression.traverseExp(exp,simplifyWork,false);
+        ((exp,_)) = Expression.traverseExp(exp,simplifyWork,(false,options));
         str2 = ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.SIMPLIFY_FIXPOINT_MAXIMUM, {str1,str2});
       then (exp,false); 
-    case (exp,n,_)
+    case (exp,options,n,_)
       equation
         // print("simplify1 start: " +& ExpressionDump.printExpStr(exp) +& "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
-        ((exp,b)) = Expression.traverseExp(exp,simplifyWork,false);
+        ((exp,(b,options))) = Expression.traverseExp(exp,simplifyWork,(false,options));
         Debug.bcall1(b,ErrorExt.rollBack,"ExpressionSimplify");
         Debug.bcall1(not b,ErrorExt.delCheckpoint,"ExpressionSimplify");
         // print("simplify1 iter: " +& ExpressionDump.printExpStr(exp) +& "\n");
-        (exp,_) = simplify1FixP(exp,n-1,b);
+        (exp,_) = simplify1FixP(exp,options,n-1,b);
       then (exp,b);
   end match;
 end simplify1FixP;

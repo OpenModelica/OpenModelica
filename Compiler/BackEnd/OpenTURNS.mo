@@ -195,22 +195,24 @@ protected function generateXMLLibraryInputs "help function"
   input list<BackendDAE.Var> varLst;
   output list<String> strLst;
 algorithm
-  strLst := matchcontinue(varLst) 
+  strLst := matchcontinue (varLst) 
   local 
     String varName,varStr;
     BackendDAE.Var v;
     list<BackendDAE.Var> rest;
     
-    case({}) then {};
-    case(v::rest) equation
-     DAE.GIVEN() = BackendVariable.varUncertainty(v);
-     varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
-     varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
-     strLst = generateXMLLibraryInputs(rest);    
-    then varStr::strLst;
-    case(_::rest) equation
-     strLst = generateXMLLibraryInputs(rest);
-    then strLst;  
+    case ({}) then {};
+    case (v::rest)
+      equation
+        DAE.GIVEN() = BackendVariable.varUncertainty(v);
+       varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+       varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
+       strLst = generateXMLLibraryInputs(rest);    
+      then varStr::strLst;
+    case (_::rest)
+      equation
+        strLst = generateXMLLibraryInputs(rest);
+      then strLst;
   end matchcontinue;
 end generateXMLLibraryInputs;
   

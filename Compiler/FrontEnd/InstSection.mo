@@ -360,7 +360,7 @@ algorithm
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
-        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
+        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
     case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
       equation
@@ -2221,7 +2221,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
-        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
         
         dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
@@ -2288,7 +2288,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
-        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
         
         dae = DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
