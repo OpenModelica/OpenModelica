@@ -17461,6 +17461,11 @@ algorithm
         rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
         stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source));
       then stmt;
+    case (path,DAE.STMT_NORETCALL(rhs,source),invars,{})
+      equation
+        rhs = optimizeStatementTail2(path,rhs,{},invars,{},source);
+        stmt = DAE.STMT_NORETCALL(rhs,source);
+      then stmt;
     else inStmt;
   end matchcontinue;
 end optimizeStatementTail;
