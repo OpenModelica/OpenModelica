@@ -1374,7 +1374,7 @@ algorithm
     // Otherwise, look it up in the scopes above, and call instGlobalCref.
     case (_, _, _, _ :: env)
       equation
-        (_, path, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, Absyn.dummyInfo);
+        (_, path, env) = SCodeLookup.lookupVariableName(inCrefPath, env, Absyn.dummyInfo);
         cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
@@ -1659,7 +1659,7 @@ algorithm
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _) = instClassItem(item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), inEnv, inPrefix, INST_ALL());
+          InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL());
         (inputs,outputs,locals) = getFunctionParameters(cls);
         stmts = List.flatten(algorithms);
       then
