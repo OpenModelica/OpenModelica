@@ -801,6 +801,20 @@ algorithm
   end matchcontinue;
 end varDistribution;
 
+public function varUncertainty
+"
+  author: Peter Aronsson, 2012-05
+  
+  Returns Uncertainty of a variable.
+"
+  input BackendDAE.Var var;
+  output DAE.Uncertainty u;
+algorithm 
+  d := matchcontinue (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(u))))) then u;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(u))))) then u;
+  end matchcontinue;
+end varUncertainty;
 
 public function varHasDistributionAttribute
 "
@@ -817,6 +831,22 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end varHasDistributionAttribute;
+
+public function varHasUncertaintyAttribute
+"
+  author: Peter Aronsson, 2012-05
+  
+  Returns true if the specified variable has the attribute uncertain set.
+"
+  input BackendDAE.Var var;
+  output Boolean b;
+algorithm 
+  b := matchcontinue (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(_))))) then true;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(_))))) then true;
+    case (_) then false;
+  end matchcontinue;
+end varHasUncertaintyAttribute;
 
 protected function failIfNonState
 "Fails if the given variable kind is state."

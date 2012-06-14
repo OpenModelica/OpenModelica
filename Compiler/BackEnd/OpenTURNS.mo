@@ -86,23 +86,160 @@ algorithm
   // correlation matrix form (vector of records) currently not supported by OpenModelica backend, remove it .
   //print("enter dae:");
   //BackendDump.dump(inDaelow);
-  strippedDae := stripCorrelationFromDae(inDaelow);
+  dae := BackendDAEOptimize.removeParameters(inDaelow);
+  //print("generating python script\n");  
+ 
+ (scriptFile) := generatePythonScript(fileNamePrefix,templateFile,cname_str,dae,inDaelow);
+ 
+ // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
+  strippedDae := stripCorrelationFromDae(dae);
   
   strippedDae := BackendDAEUtil.getSolvedSystem(cache, env, strippedDae, NONE(), NONE(), NONE(),NONE());
   
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);  
-  (dae,libs,fileDir,_,_,_) := SimCode.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+  (_,libs,fileDir,_,_,_) := SimCode.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
   
   //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");  
   CevalScript.compileModel(fileNamePrefix , libs, fileDir, "", "");
-  (scriptFile) := generatePythonScript(fileNamePrefix,templateFile,cname_str,inDaelow);
+  
+  generateXMLFile(cname_str,strippedDae);
 end generateOpenTURNSInterface; 
+
+protected function generateXMLFile "generates the xml file for the OpenTURNS wrapper"
+  input String className;
+  input BackendDAE.BackendDAE dae;
+protected
+  String xmlFileContent;
+algorithm
+  xmlFileContent := generateXMLFileContent(className,dae);
+  System.writeFile(className+&"_wrapper.xml",xmlFileContent);
+end generateXMLFile;
+
+protected function generateXMLFileContent "help function"
+  input String className;
+  input BackendDAE.BackendDAE dae;
+  output String content;  
+algorithm
+  content := generateXMLHeader(className) +& "<wrapper>\n" +& generateXMLLibrary(className,dae)+&"\n"+&generateXMLExternalCode(className,dae)+& "\n</wrapper>"; 
+end generateXMLFileContent;
+
+protected function generateXMLHeader "help function"
+  input String className;
+  output String header;
+algorithm
+  header := "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n<!--\n"+&className+&".xml\n-->\n"+&
+  "<!DOCTYPE wrapper SYSTEM \"wrapper.dtd\">\n";
+end generateXMLHeader;
+
+protected function generateXMLExternalCode "help function"
+  input String className;
+  input BackendDAE.BackendDAE dae;
+  output String content;
+algorithm
+  content :=stringDelimitList({
+    "<external-code>",
+    "  <!-- Those data are external to the platform (input files, etc.)-->",
+    "  <data></data>",
+    "",
+    "  <wrap-mode type=\"static-link\" state=\"shared\">",
+    "    <in-data-transfer mode=\"arguments\" />",
+    "    <out-data-transfer mode=\"arguments\" />",
+    "  </wrap-mode>",
+    "",
+    "  <command># no command</command>",
+  "</external-code>"},"\n");
+end generateXMLExternalCode;
+
+protected function generateXMLLibrary "help function"
+  input String className;
+  input BackendDAE.BackendDAE dae;
+  output String content;
+protected
+  list<BackendDAE.Var> varLst;
+  String inputs,outputs,funcStr;
+algorithm
+  varLst := BackendDAEUtil.getAllVarLst(dae);
+  varLst := List.select(varLst,BackendVariable.varHasUncertaintyAttribute);
+  inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
+  outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
+  funcStr := "   <function provided=\"yes\">"+&className+&"_wrapper</function>";
+  
+  content :=stringDelimitList({
+   "<library>",
+   "",
+   " <!-- The path of the shared object -->",
+   " <path>CantileverBeam_wrapper.dll</path>",
+   "",
+   " <!-- This section describes all exchanges data between the wrapper and the platform -->",
+   " <description>",
+   "",
+   "   <!-- Those variables are substituted in the files above -->",
+   "   <!-- The order of variables is the order of the arguments of the function -->",
+   "   <variable-list>",
+   inputs,outputs,
+   "   </variable-list>",
+   "",
+   "    <!-- The function that we try to execute through the wrapper -->",
+   funcStr,
+   "   <!-- the gradient is  defined  -->",
+   "   <gradient provided=\"no\"></gradient>",
+   "   <!--  the hessian is  defined  -->",
+   "   <hessian provided=\"no\"></hessian>",
+   " </description>",
+   "",
+   "</library>"},"\n");
+end generateXMLLibrary;
+
+protected function generateXMLLibraryInputs "help function"
+  input list<BackendDAE.Var> varLst;
+  output list<String> strLst;
+algorithm
+  strLst := matchcontinue(varLst) 
+  local 
+    String varName,varStr;
+    BackendDAE.Var v;
+    
+    case({}) then {};
+    case(v::varLst) equation
+     DAE.GIVEN() = BackendVariable.varUncertainty(v);
+     varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+     varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
+     strLst = generateXMLLibraryInputs(varLst);    
+    then varStr::strLst;
+    case(_::varLst) equation
+     strLst = generateXMLLibraryInputs(varLst);
+    then strLst;  
+  end matchcontinue;
+end generateXMLLibraryInputs;
+  
+protected function generateXMLLibraryOutputs "help function"
+  input list<BackendDAE.Var> varLst;
+  output list<String> strLst;
+algorithm
+  strLst := matchcontinue(varLst) 
+  local
+    String varName,varStr;
+    BackendDAE.Var v;
+  
+  case({}) then {};  
+  case(v::varLst) equation
+     DAE.SOUGHT() = BackendVariable.varUncertainty(v);
+     varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+     varStr =  "    <variable id=\""+&varName+&"\" type=\"out\" />";
+     strLst = generateXMLLibraryOutputs(varLst);    
+    then varStr::strLst;
+    case(_::varLst) equation
+     strLst = generateXMLLibraryOutputs(varLst);
+    then strLst;  
+  end matchcontinue;
+end generateXMLLibraryOutputs;
 
 protected function generatePythonScript "generates the python script as input to OpenTURNS, given a template file name"
   input String fileNamePrefix;
   input String templateFile;
   input String modelName;
+  input BackendDAE.BackendDAE dae;
   input BackendDAE.BackendDAE inDaelow;
   output String pythonFileName;
   protected
@@ -112,27 +249,23 @@ protected function generatePythonScript "generates the python script as input to
   String pythonFileContent;
   list<tuple<String,String>> distributionVarLst;
 algorithm
-  //print("reached\n");
   templateFileContent := System.readFile(templateFile);
-  
   //generate the different parts of the python file 
   (distributions,distributionVarLst) := generateDistributions(inDaelow);
   (correlationMatrix) := generateCorrelationMatrix(inDaelow,listLength(distributionVarLst),List.map(distributionVarLst,Util.tuple21));
   collectionDistributions := generateCollectionDistributions(inDaelow,distributionVarLst);
-  inputDescriptions  := generateInputDescriptions(inDaelow);    
-  //
+  inputDescriptions  := generateInputDescriptions(inDaelow);
   pythonFileName := System.stringReplace(templateFile,"template",modelName);
-  
+
   // Replace template markers
   pythonFileContent := System.stringReplace(templateFileContent,"<%distributions%>",distributions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%correlationMatrix%>",correlationMatrix);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%collectionDistributions%>",collectionDistributions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%inputDescriptions%>",inputDescriptions);  
-  
+
   //Write file
   //print("writing python script to file "+&pythonFileName+&"\n");
-  System.writeFile(pythonFileName,pythonFileContent);
-    
+  System.writeFile(pythonFileName,pythonFileContent);    
 end generatePythonScript;
 
 protected function generateDistributions "generates distibution code for the python script.
