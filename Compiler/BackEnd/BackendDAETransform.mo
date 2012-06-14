@@ -1860,7 +1860,7 @@ algorithm
         (stack,comp) = checkStack(vn, rest, number, top :: icomp);
       then
         (stack,comp);
-    case (_,_,_,_) then (istack,icomp);
+    case (_,_,_,_) then (istack,listReverse(icomp));
   end matchcontinue;
 end checkStack;
 
