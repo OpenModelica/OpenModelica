@@ -9380,13 +9380,17 @@ algorithm
   
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("handel torn System\n");
+        Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
         // solve other equations for other vars
         size = listLength(eindex);
         eqns = BackendEquation.daeEqns(subsyst);
         vars = BackendVariable.daeVars(subsyst);
+        tvarcrefs = List.map1(tvars,getTVarCrefs,vars);
+        Debug.fcall(Flags.TEARING_DUMP, print,"TVars:\n");
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarcrefs,ComponentReference.printComponentRefStr,"\n","\n"));        
         (eqns,repl) = solveOtherEquations(othercomps,eqns,vars,ass2,BackendVarTransform.emptyReplacementsSized(size));
         // replace other vars in residual equations with there expression, use reverse order from othercomps
+        Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
         eqns = List.fold1(residual,replaceOtherVarinResidualEqns,repl,eqns);
         // replace new residual equations in original system
         syst = replaceTornEquationsinSystem(eindex,0,eqns,isyst);
@@ -9641,8 +9645,8 @@ protected
 algorithm
   eqn := BackendDAEUtil.equationNth(inEqns, c-1);
   eqn::_ := BackendVarTransform.replaceEquations({eqn}, inRepl);
-  //  BackendDump.printEquation(eqn);
   outEqns := BackendEquation.equationSetnth(inEqns,c-1,eqn);
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquation,eqn);        
 end replaceOtherVarinResidualEqns;
 
 protected function replaceTornEquationsinSystem
