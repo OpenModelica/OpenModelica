@@ -367,7 +367,7 @@ algorithm
     // redeclare-as-element class
     case (redecl as SCode.CLASS(name = cls_name, info = info), _)
       equation
-        (path, base_item) = SCodeLookup.lookupBaseClass(cls_name, inEnv, info);
+        (path, base_item) = lookupElementRedeclaration(cls_name, inEnv, info);
         (SOME(item), _, _) = SCodeLookup.lookupInLocalScope(cls_name, inEnv, {});
         item = SCodeEnv.linkItemUsage(base_item, item);
         env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
@@ -377,7 +377,7 @@ algorithm
     // redeclare-as-element component
     case (redecl as SCode.COMPONENT(name = name, info = info), _)
       equation
-        (path, base_item) = SCodeLookup.lookupBaseClass(name, inEnv, info);
+        (path, base_item) = lookupElementRedeclaration(name, inEnv, info);
         item = SCodeEnv.newVarItem(redecl, true);
         item = SCodeEnv.linkItemUsage(base_item, item);
         env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
@@ -394,6 +394,34 @@ algorithm
         fail();
   end matchcontinue;
 end addElementRedeclarationsToEnv2;
+
+protected function lookupElementRedeclaration
+  input SCode.Ident inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.Path outPath;
+  output Item outItem;
+algorithm
+  (outPath, outItem) := matchcontinue(inName, inEnv, inInfo)
+    local
+      Absyn.Path path;
+      Item item;
+
+    case (_, _, _)
+      equation
+        (path, item) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
+      then
+        (path, item);
+
+    else
+      equation
+        Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
+          {inName}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end lookupElementRedeclaration;
 
 protected function addRedeclareToEnvExtendsTable
   input Item inRedeclaredElement;
