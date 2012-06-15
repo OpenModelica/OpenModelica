@@ -507,7 +507,7 @@ public constant Message LOAD_MODEL_DIFFERENT_VERSIONS = MESSAGE(183, SCRIPTING()
 public constant Message LOAD_MODEL = MESSAGE(184, SCRIPTING(), ERROR(),
   "Failed to load package %s (%s) using MODELICAPATH %s.");
 public constant Message INVALID_ARGUMENT_TYPE = MESSAGE(185, TRANSLATION(), ERROR(),
-  "Argument %s of %s must be %s");
+  "The %sargument of %s must be %s.");
 public constant Message INVALID_SIZE_INDEX = MESSAGE(186, TRANSLATION(), ERROR(),
   "Invalid index %s in call to size of %s, valid index interval is [1,%s].");
 public constant Message ALGORITHM_TRANSITION_FAILURE = MESSAGE(187, TRANSLATION(), ERROR(),
@@ -599,6 +599,8 @@ public constant Message CONNECT_TWO_SOURCES = MESSAGE(226, TRANSLATION(), WARNIN
   "Connecting two signal sources while connecting %s to %s.");
 public constant Message INNER_OUTER_FORMAL_PARAMETER = MESSAGE(227, TRANSLATION(), ERROR(),
   "Invalid prefix %son formal parameter %s.");
+public constant Message REDECLARE_NONEXISTING_ELEMENT = MESSAGE(228, TRANSLATION(), ERROR(),
+  "Illegal redeclare of element %s, no inherited element with that name exists.");
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
