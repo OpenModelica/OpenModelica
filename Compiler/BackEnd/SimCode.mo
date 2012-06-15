@@ -2739,14 +2739,14 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
-        seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, name);
+        seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
         comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
         seedVars = List.sort(seedVars,varIndexComparer);
 
         dummyVarName = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-        derivedVariableslst = BackendDAEOptimize.creatallDiffedVars(alldiffedVars, x, v, 0, name);
+        derivedVariableslst = BackendDAEOptimize.creatallDiffedVars(alldiffedVars, x, v, 0, (name,false));
         derivedVariables = BackendDAEUtil.listVar(derivedVariableslst);
         ((columnVars,_)) =  BackendVariable.traverseBackendDAEVars(derivedVariables,traversingdlowvarToSimvar,({},empty));
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));

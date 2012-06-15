@@ -1597,7 +1597,7 @@ algorithm
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
         states = BackendDAETransform.sortStateCandidates(states,syst);
-        //states = List.sort(states,stateSortFund);
+        //states = List.sort(states,stateSortFunc);
         //states = listReverse(states);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
@@ -1616,13 +1616,13 @@ algorithm
   end matchcontinue;
 end selectDummyDerivatives;
 
-protected function stateSortFund
+protected function stateSortFunc
   input tuple<DAE.ComponentRef, Integer> inA;
   input tuple<DAE.ComponentRef, Integer> inB;
   output Boolean b;
 algorithm
   b:= ComponentReference.crefSortFunc(Util.tuple21(inA),Util.tuple21(inB));
-end stateSortFund;
+end stateSortFunc;
 
 protected function selectDummyDerivatives1
 "function: selectDummyDerivatives1
@@ -1765,11 +1765,11 @@ algorithm
         BackendDAE.Shared shared; 
         list<BackendDAE.Var> varlst,statesvars;
         BackendDAE.Var vcont;
-        list<tuple<DAE.ComponentRef, Integer>> states; 
+        list<tuple<DAE.ComponentRef, Integer>> dstates1,states1; 
         list<Integer> unassigned,changedeqns,stateindxs;   
         BackendDAE.Equation eqn,eqcont;
-        DAE.Exp exp,contExp,crconexp;
-        list<DAE.Exp> explst;
+        DAE.Exp exp,contExp,crconexp,contstartExp;
+        list<DAE.Exp> explst,sexplst;
         list<BackendDAE.Equation> selecteqns,dselecteqns;
         list<BackendDAE.WhenClause> wclst;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1780,16 +1780,16 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize,"\n"));        
         (hov1,lov,dummystates) = selectDummyStates(dstates,1,eqnsSize,vars,hov,inLov,inDummyStates);
       then
-        (hov1,dummystates,lov,isyst,ishared);             
+        (hov1,dummystates,lov,isyst,ishared); 
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // for now only implemented for one equation
         true = intEq(eqnsSize,1);
-        rang = eqnsSize-listLength(states);
+        rang = listLength(states)-listLength(unassignedEqns);
         // workaround to avoid state changes
-        //states = List.sort(states,stateSortFund);
+        //states = List.sort(states,stateSortFunc);
         //states = listReverse(states);        
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize,"\n"));   
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));        
@@ -1800,8 +1800,7 @@ algorithm
         
         stateindxs = List.map(states,Util.tuple22);
         statesvars = List.map1r(stateindxs,BackendVariable.getVarAt,vars);
-        (varlst,_) = List.mapFold(varlst, setStartValue, statesvars);
-        varlst = vcont::varlst;
+        //(varlst,_) = List.mapFold(varlst, setStartValue, statesvars);
         
         Debug.fcall(Flags.BLT_DUMP, print, ("StatesSet:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((crset,ComponentReference.printComponentRefStr,"\n","\n")));
@@ -1813,12 +1812,18 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((explst,ExpressionDump.printExpStr,"\n","\n")));
         // generate condition equation
         contExp = generateCondition(1,listLength(states),listArray(explst));
+        ((contstartExp,_)) = Expression.traverseExp(contExp, changeVarToStartValue, BackendVariable.daeVars(isyst));
+        (contstartExp,_) = ExpressionSimplify.simplify(contstartExp);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrExpStr,("StartExp: ",contstartExp,"\n"));
+        vcont = BackendVariable.setVarStartValue(vcont, contstartExp);
         crconexp = Expression.crefExp(crcon);
         setsize = listLength(crstates);
-        eqcont = BackendDAE.EQUATION(crconexp,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinInteger),DAE.ICONST(setsize),contExp),DAE.emptyElementSource);
+        //eqcont = BackendDAE.EQUATION(crconexp,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinInteger),DAE.ICONST(setsize),contExp),DAE.emptyElementSource);
+        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource);
         // generate select equations and when clauses
-        (selecteqns,dselecteqns,wclst) = generateSelectEquations(1,crset,crconexp,List.map(crstates,Expression.crefExp),{},{},{});
+        (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquations(1,crset,crconexp,List.map(crstates,Expression.crefExp),contstartExp,varlst,List.map(statesvars,BackendVariable.varStartValue),{},{},{},{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
+        varlst = vcont::varlst;
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqns,selecteqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
         // add Equations and vars
@@ -1831,46 +1836,97 @@ algorithm
         (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,syst,shared);             
+    // dummy derivative case - no dynamic state selection // this case will be removed as var c_runtime works well            
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        rang = listLength(states)-listLength(unassignedEqns);
+        (states1,dstates1) = List.split(states, rang);
+        dstates1 = listAppend(dstates1,dstates);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states1,BackendDAETransform.dumpStates,"\n","\n")));     
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates1,BackendDAETransform.dumpStates,"\n","\n")));  
+        (hov1,lov,dummystates) = selectDummyStates(dstates1,1,eqnsSize,vars,hov,inLov,inDummyStates);
+      then
+        (hov1,dummystates,lov,isyst,ishared); 
   end matchcontinue;
 end selectDummyDerivatives2;
+
+
+protected function changeVarToStartValue "
+function changeVarToStartValue
+Author: Frenkel TUD 2012-06
+  replace the variable with there start value"
+  input tuple<DAE.Exp, BackendDAE.Variables > inExp;
+  output tuple<DAE.Exp, BackendDAE.Variables > outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      BackendDAE.Var var;
+      DAE.Exp e,es;
+    
+    case((e as DAE.CREF(componentRef=cr),vars))
+      equation
+        (var::_,_) = BackendVariable.getVar(cr, vars);
+        es = BackendVariable.varStartValue(var);
+      then
+        ((es, vars ));
+    
+    else then inExp;
+    
+  end matchcontinue;
+end changeVarToStartValue;
 
 protected function generateSelectEquations
   input Integer indx;
   input list<DAE.ComponentRef> crset;
   input DAE.Exp contexp;
   input list<DAE.Exp> states;
+  input DAE.Exp contstartExp;
+  input list<BackendDAE.Var> ivarlst;
+  input list<DAE.Exp> istartvalues;
   input list<BackendDAE.Equation> iEqns;
   input list<BackendDAE.Equation> idEqns;
   input list<BackendDAE.WhenClause> iWc;
+  input list<BackendDAE.Var> isetvarlst;
   output list<BackendDAE.Equation> oEqns;
   output list<BackendDAE.Equation> odEqns;
   output list<BackendDAE.WhenClause> oWc;
+  output list<BackendDAE.Var> osetvarlst;
 algorithm
-  (oEqns,odEqns,oWc) := matchcontinue(indx,crset,contexp,states,iEqns,idEqns,iWc)
+  (oEqns,odEqns,oWc,osetvarlst) := matchcontinue(indx,crset,contexp,states,contstartExp,ivarlst,istartvalues,iEqns,idEqns,iWc,isetvarlst)
     local
       list<BackendDAE.Equation> eqns,deqns;
       BackendDAE.Equation eqn,deqn;
-      DAE.Exp cre,e1,e2,con,coni,crconexppre;
+      DAE.Exp cre,e1,e2,con,coni,crconexppre,es1,es2,startcond;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst,startvalues;
       BackendDAE.WhenClause wc,wc1;
       list<BackendDAE.WhenClause> wclst;
-    case(_,{},_,_,_,_,_) then (listReverse(iEqns),listReverse(idEqns),listReverse(iWc));        
-    case(_,cr::crlst,_,e1::(e2::explst),_,_,_)
+      list<BackendDAE.Var> varlst,varlst1;
+      BackendDAE.Var var;
+    case(_,{},_,_,_,_,_,_,_,_,_) then (listReverse(iEqns),listReverse(idEqns),listReverse(iWc),listReverse(isetvarlst));        
+    case(_,cr::crlst,_,e1::(e2::explst),_,var::varlst,es1::(es2::startvalues),_,_,_,_)
       equation
         cre = Expression.crefExp(cr);
         crconexppre = DAE.CALL(Absyn.IDENT("pre"), {contexp}, DAE.callAttrBuiltinReal);
         con = DAE.RELATION(crconexppre,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE());
         coni = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.T_BOOL_DEFAULT),con);
-        eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(coni,e1,e2),DAE.emptyElementSource);
-        deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(coni,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
+        //eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(coni,e1,e2),DAE.emptyElementSource);
+        eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(con,e1,e2),DAE.emptyElementSource);
+        //deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(coni,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
+        deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(con,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
         con = DAE.RELATION(contexp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE());
         wc = BackendDAE.WHEN_CLAUSE(con,{BackendDAE.REINIT(cr,e1,DAE.emptyElementSource)},NONE());
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT),con),{BackendDAE.REINIT(cr,e2,DAE.emptyElementSource)},NONE());
-        (eqns,deqns,wclst) = generateSelectEquations(indx+1,crlst,contexp,e2::explst,eqn::iEqns,deqn::idEqns,wc1::(wc::iWc));
+        (startcond,_) = ExpressionSimplify.simplify(DAE.IFEXP(DAE.RELATION(contstartExp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE()),es1,es2));
+        var = BackendVariable.setVarStartValue(var,startcond);
+        (eqns,deqns,wclst,varlst1) = generateSelectEquations(indx+1,crlst,contexp,e2::explst,contstartExp,varlst,es2::startvalues,eqn::iEqns,deqn::idEqns,wc1::(wc::iWc),var::isetvarlst);
       then
-        (eqns,deqns,wclst);
+        (eqns,deqns,wclst,varlst1);
   end matchcontinue;
 end generateSelectEquations;
 

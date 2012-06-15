@@ -5385,7 +5385,7 @@ protected function adjacencyRowEnhanced3
 algorithm
   oSolvab := matchcontinue(b1,b2,cr,e,crlst,vars,kvars)
     local
-      Boolean b;
+      Boolean b,b1;
       DAE.Exp e1;
     case(true,true,_,_,_,_,_)
       equation
@@ -5404,8 +5404,9 @@ algorithm
         ((e1,_)) = Expression.traverseExp(e, replaceVartraverser, kvars);
         (e1,_) = ExpressionSimplify.simplify(e1);
         b = not Expression.isZero(e1);
+        b1 = Expression.isConst(e1);
       then 
-       BackendDAE.SOLVABILITY_PARAMETER(b);
+       Util.if_(b1,BackendDAE.SOLVABILITY_PARAMETER(b),BackendDAE.SOLVABILITY_TIMEVARYING(b));
     case(_,_,_,_,_,_,_)
       equation
         b = not Expression.isZero(e);
