@@ -52,7 +52,6 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
-protected import Util;
 
 public function solve
 "function: solve
@@ -110,6 +109,17 @@ algorithm
         (res_1,_) = ExpressionSimplify.simplify1(res);
       then
         (res_1,asserts);
+        
+    case (lhs,rhs,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}))
+      equation
+        cr2 = ComponentReference.crefPrefixDer(cr1);
+        crexp = Expression.crefExp(cr2);
+        ((lhs,_)) = Expression.replaceExp(lhs, inExp3, crexp);
+        ((rhs,_)) = Expression.replaceExp(rhs, inExp3, crexp);
+        (res,asserts) = solve2(lhs, rhs, crexp, false);
+        (res_1,_) = ExpressionSimplify.simplify1(res);
+      then
+        (res_1,asserts);        
     
     case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
       equation

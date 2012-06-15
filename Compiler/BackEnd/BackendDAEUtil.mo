@@ -2718,7 +2718,7 @@ algorithm
         print("- BackendDAEUtil.markStateEquation var ");
         s = ComponentReference.printComponentRefStr(cr);
         print(s);
-        print("not found\n");
+        print(" not found\n");
       then
         fail();
     

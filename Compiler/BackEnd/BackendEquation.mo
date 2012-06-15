@@ -437,42 +437,42 @@ public function equationUnknownCrefs
   variables in the equation an not in the variable array."
   input list<BackendDAE.Equation> inEquationLst;
   input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inKnVars;
   output list<DAE.ComponentRef> cr_lst;
 protected
   HashTable.HashTable ht;
 algorithm
   ht := HashTable.emptyHashTable();
-  (_,(_,ht)) := traverseBackendDAEExpsEqnList(inEquationLst,checkEquationsUnknownCrefs,(inVars,ht));
+  (_,(_,_,ht)) := traverseBackendDAEExpsEqnList(inEquationLst,checkEquationsUnknownCrefs,(inVars,inKnVars,ht));
   cr_lst := BaseHashTable.hashTableKeyList(ht);
 end equationUnknownCrefs;
 
 protected function checkEquationsUnknownCrefs
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable>> outTpl;
 algorithm
   outTpl :=
   matchcontinue inTpl
     local  
       DAE.Exp exp;
-      BackendDAE.Variables vars;
-      HashTable.HashTable ht;
-    case ((exp,(vars,ht)))
+      tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable> tpl;
+    case ((exp,tpl))
       equation
-         ((_,(_,ht))) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,(vars,ht));
+         ((_,tpl)) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,tpl);
        then
-        ((exp,(vars,ht)));
+        ((exp,tpl));
     case inTpl then inTpl;
   end matchcontinue;
 end checkEquationsUnknownCrefs;
 
 protected function checkEquationsUnknownCrefsExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,HashTable.HashTable>> outTuple;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,HashTable.HashTable>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e,e1;
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars,knvars;
       HashTable.HashTable ht;
       DAE.ComponentRef cr;
       list<DAE.Exp> expl;
@@ -483,50 +483,55 @@ algorithm
       DAE.ReductionIterators riters;
     
     // special case for time, it is never part of the equation system  
-    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,ht)))
-      then ((e, (vars,ht)));
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,knvars,ht)))
+      then ((e, (vars,knvars,ht)));
     
     // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,ht)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,knvars,ht)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        ((_,(vars,ht))) = Expression.traverseExpList(expl,checkEquationsUnknownCrefsExp,(vars,ht));
+        ((_,(vars,knvars,ht))) = Expression.traverseExpList(expl,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
       then
-        ((e, (vars,ht)));
+        ((e, (vars,knvars,ht)));
 
     // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,ht)))
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,knvars,ht)))
       equation
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
-        ((_,(vars,ht))) = Expression.traverseExp(e1,checkEquationsUnknownCrefsExp,(vars,ht));
+        ((_,(vars,knvars,ht))) = Expression.traverseExp(e1,checkEquationsUnknownCrefsExp,(vars,knvars,ht));
       then
-        ((e, (vars,ht)));
+        ((e, (vars,knvars,ht)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,ht)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,knvars,ht)))
       then
-        ((e, (vars,ht)));
+        ((e, (vars,knvars,ht)));
 
     // already there
-    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+    case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
          _ = BaseHashTable.get(cr,ht);
       then
-        ((e, (vars,ht)));
+        ((e, (vars,knvars,ht)));
 
     // known
-    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+    case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
          (_,_) = BackendVariable.getVar(cr, vars);
       then
-        ((e, (vars,ht)));
-
+        ((e, (vars,knvars,ht)));
+    case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
+      equation
+         (_,_) = BackendVariable.getVar(cr, knvars);
+      then
+        ((e, (vars,knvars,ht)));
+        
     // add it
-    case ((e as DAE.CREF(componentRef = cr),(vars,ht)))
+    case ((e as DAE.CREF(componentRef = cr),(vars,knvars,ht)))
       equation
          ht = BaseHashTable.add((cr,0),ht);
       then
-        ((e, (vars,ht)));
+        ((e, (vars,knvars,ht)));
     
     case inTuple then inTuple;
   end matchcontinue;
