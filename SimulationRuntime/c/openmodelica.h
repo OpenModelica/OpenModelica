@@ -46,6 +46,7 @@ extern "C" {
 #include <stdio.h>
 #include <limits.h>
 #include <assert.h>
+#include <float.h>
 
 /* adrpo: extreme windows crap! */
 #if defined(__MINGW32__) || defined(_MSC_VER)

@@ -246,6 +246,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
   CheckForNewEvent(simData, 0, &(solverInfo.currentTime));
   SaveZeroCrossings(simData);
   storePreValues(simData);
+  storeOldValues(simData);
   sim_result_emit(simData);
   overwriteOldSimulationData(simData);
 
@@ -294,9 +295,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
       rt_tick(SIM_TIMER_STEP);
     }
 
-    /* rotate RingBuffer before step is calculated */
     rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
-
 
     /* Calculate new step size after an event */
     if (solverInfo.didEventStep == 1) {
@@ -320,9 +319,6 @@ int solver_main(DATA* simData, double start, double stop, double step,
     if (simData->simulationInfo.curSampleTimeIx < simData->simulationInfo.nSampleTimes) {
       solverInfo.sampleEventActivated = checkForSampleEvent(simData, &solverInfo);
     }
-
-    /* read input vars */
-    input_function(simData);
 
     DEBUG_INFO2(LOG_SOLVER, "Call Solver from %f to %f", solverInfo.currentTime,
         solverInfo.currentTime + solverInfo.currentStepSize);
@@ -370,6 +366,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
 
     /******** Emit this time step ********/
     storePreValues(simData);
+    storeOldValues(simData);
     /*if (useInterpolation)
       interpolation_control(dideventstep, interpolationStep, step, stop);
     */
@@ -535,7 +532,6 @@ rungekutta_step(DATA* simData, SOLVER_INFO* solverInfo) {
   double** k = ((RK4*)(solverInfo->solverData))->work_states;
   double sum;
   int i,j;
-
   SIMULATION_DATA *sData = (SIMULATION_DATA*)simData->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)simData->localData[1];
   modelica_real* stateDer = sData->realVars + simData->modelData.nStates;

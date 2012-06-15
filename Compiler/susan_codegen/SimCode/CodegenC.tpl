@@ -285,7 +285,21 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
+   /*
+   This fragment produces some empty lines, since emptyCount is not implemented in susan!
+   */
+   let eqnsDefines = (allEquations |> eq hasindex i0 => match eq
+    case SES_ALGORITHM(__)
+    case SES_WHEN(__)
+    case SES_RESIDUAL(__)
+    case SES_ARRAY_CALL_ASSIGN(__)
+    case SES_SIMPLE_ASSIGN(__)  then ''
+    case SES_MIXED(__)
+    case SES_LINEAR(__)
+    case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'; empty; separator="\n")
   <<
+  /* Some empty lines, since emptyCount is not implemented in susan! */
+  <%eqnsDefines%>
   void setupDataStruc2(DATA *data)
   {  
     <%globalDataFunctionInfoArray("function_names", functions)%>
@@ -400,14 +414,14 @@ template globalDataParDefine(SimVar simVar, String arrayName)
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
-    #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute.start
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
-    #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute.start
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>  
 end globalDataParDefine;
@@ -426,7 +440,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset)
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute.start
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
@@ -435,7 +449,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset)
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute.start
+    #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>  
 end globalDataVarDefine;
@@ -675,7 +689,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
     DEBUG_INFO(LOG_INIT, "updating start-values:");
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
     'DEBUG_INFO_AL2(LOG_INIT, "   %s(start=%f)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
-$P$START<%cref(cref)%> = <%cref(cref)%>;'
+$P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;'
     ;separator="\n"%>
   
     return 0;
@@ -1935,7 +1949,8 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-    nls_x[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    nls_diag[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
+    nls_xEx[<%i0%>] = nls_x[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
     nls_xold[<%i0%>] = _<%namestr%>(1) /*old*/;
     >>
   ;separator="\n"%>
@@ -5833,11 +5848,11 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
   match exp
   case cr as CREF(__) then
-    '$P$START<%cref(cr.componentRef)%>'
+    '$P$ATTRIBUTE<%cref(cr.componentRef)%>.start'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let cref = cref(cr.componentRef)
-    '*(&$P$START<%cref%> + <%offset%>)'
+    '*(&$P$ATTRIBUTE<%cref(cr.componentRef)%>.start + <%offset%>)'
   else
     error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
 end daeExpCallStart;
@@ -6890,12 +6905,6 @@ template equationInfo(list<SimEqSystem> eqs)
     <<
     <%preBuf%>
     <%res%>
-    <% eqs |> eq hasindex i0 => match eq
-      case SES_MIXED(__)
-      case SES_LINEAR(__)
-      case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'
-    ; separator="\n"
-    %>
     const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq hasindex i0 => match eq
         case SES_MIXED(__)
         case SES_LINEAR(__)

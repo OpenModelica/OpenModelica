@@ -131,6 +131,12 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
    int giveUp = 0; \
    int retries = 0; \
    int retries2 = 0; \
+   int retries3 = 0; \
+   int i; \
+   for (i = 0; i < n; i++) { nls_diagSave[i] = nls_diag[i]; }; \
+   if (DEBUG_FLAG(LOG_NONLIN_SYS)){ \
+     INFO2("Start solving Non-Linear System %s at time %f", no.name, data->localData[0]->timeValue); \
+   } \
    while(!giveUp) { \
      giveUp = 1; \
      _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
@@ -138,29 +144,64 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
       if (info == 0) \
           printErrorEqSyst(IMPROPER_INPUT, no, data->localData[0]->timeValue); \
+      if (info == 1){ \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
+          INFO_AL("### System solved! ###"); \
+          INFO_AL2("\tSolution with %d retries and %d restarts.",retries, retries2); \
+          INFO_AL2("\tinfo = %d\tnfunc = %d",info, nfev); \
+          if (DEBUG_FLAG(LOG_DEBUG)) { \
+            for (i = 0; i < n; i++) { \
+              INFO_AL7("%d. scale-factor[%d] = %f\tresidual[%d] = %f\tx[%d] = %f",i,i,nls_diag[i],i,nls_fvec[i],i,nls_x[i]); \
+            } \
+          } \
+        } \
+      } \
       if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
         retries++;  giveUp = 0; \
         factor = factor / 10.0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS))  \
-          printErrorEqSyst(NO_PROGRESS_FACTOR, no, factor); \
+          INFO_AL1(" - iteration making no progress:\tdecrease factor to %f",factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
-        int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++;  giveUp=0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
-          printErrorEqSyst(NO_PROGRESS_START_POINT, no, 1e-6); \
+          INFO_AL(" - iteration making no progress:\tvary initial point by +1\%"); \
+      } else if ((info == 4 || info == 5) && retries < 7) {   \
+         for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i]*1.01; }; \
+         retries++; giveUp=0; \
+         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+           INFO_AL(" - iteration making no progress:\tvary initial point by adding 1%"); \
+      } else if ((info == 4 || info == 5) && retries < 9) { \
+        for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i] * 0.99; }; \
+        retries++; giveUp=0; \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+          INFO_AL(" - iteration making no progress:\tvary initial point by %"); \
       } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-        retries = 0; retries2++; giveUp = 0; \
-        int i = 0; \
+        factor = initial_factor; retries = 0; retries2++; giveUp = 0; \
         for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+          INFO_AL(" - iteration making no progress:\tuse old values instead extrapolated"); \
+      } else if ((info == 4 || info == 5) && retries3 < 1) { \
+         for (i = 0; i < n; i++) { nls_diag[i] = nls_diagSave[i];} \
+         factor = initial_factor; retries = 0; retries2 = 0; mode = 2; retries3++; giveUp = 0;\
+         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+           INFO_AL(" - iteration making no progress:\tchange scaling factors"); \
+     } else if ((info == 4 || info == 5) && retries3 < 2) { \
+        for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i]; nls_diag[i] = fmax(1e-2,fabs(nls_xEx[i]));} \
+        factor = initial_factor; retries = 0; retries2 = 0; mode = 1; retries3++; giveUp = 0;\
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+          INFO_AL(" - iteration making no progress:\tchange scaling factors"); \
+      } else if ((info == 4 || info == 5) && retries3 < 3) {  \
+        for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i]; nls_diag[i] = 1.0; } \
+        factor = initial_factor; retries = 0; retries2 = 0; retries3++; mode = 2; giveUp = 0;\
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
+        INFO_AL(" - iteration making no progress:\tremove scaling factor at all!"); \
       } else if (info >= 2 && info <= 5) { \
-        int i = 0; \
         modelErrorCode=ERROR_NONLINSYS; \
         printErrorEqSyst(ERROR_AT_TIME, no, data->localData[0]->timeValue); \
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
+        if (DEBUG_FLAG(LOG_DEBUG)) { \
           for (i = 0; i < n; i++) { \
-             DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
-             DEBUG_INFO_AL2(LOG_NONLIN_SYS," x[%d] = %f",i,nls_x[i]); \
+             INFO_AL7("\t%d. scale-factor[%d] = %f\tresidual[%d] = %f\tx[%d] = %f",i,i,nls_diag[i],i,nls_fvec[i],i,nls_x[i]); \
           } \
         } \
       }\
@@ -239,24 +280,27 @@ _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
 } while (0) /* (no trailing ; ) */
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
+double nls_xEx[size] = {0}; \
 double nls_xold[size] = {0}; \
 double nls_fvec[size] = {0}; \
 double nls_diag[size] = {0}; \
+double nls_diagSave[size] = {0}; \
 double nls_r[(size*(size + 1) / 2)] = {0}; \
 double nls_qtf[size] = {0}; \
 double nls_wa1[size] = {0}; \
 double nls_wa2[size] = {0}; \
 double nls_wa3[size] = {0}; \
 double nls_wa4[size] = {0}; \
-double xtol = 1e-12; \
+double xtol =  1e-12; \
 double epsfcn = 1e-12; \
-int maxfev = 8000; \
+int maxfev = size*10000; \
 int n = size; \
 int ml = size - 1; \
 int mu = size - 1; \
 int mode = 1; \
 int info = 0, nfev = 0, njev = 0; \
 double factor = 100.0; \
+double initial_factor = 100.0; \
 int nprint = 0; \
 int lr = (size*(size + 1)) / 2; \
 int ldfjac = size; \

@@ -478,7 +478,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
   double *states_right = (double*) malloc(simData->modelData.nStates * sizeof(double));
   double *states_left = (double*) malloc(simData->modelData.nStates * sizeof(double));
 
-  double time_left = simData->localData[1]->timeValue;
+  double time_left = simData->simulationInfo.timeValueOld;
   double time_right = simData->localData[0]->timeValue;
 
   if(!tmpEventList)
@@ -495,7 +495,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
   /*write states to work arrays*/
   for (i = 0; i < simData->modelData.nStates; i++)
     {
-      states_left[i] = simData->localData[1]->realVars[i];
+      states_left[i] = simData->simulationInfo.realVarsOld[i];
       states_right[i] = simData->localData[0]->realVars[i];
     }
 

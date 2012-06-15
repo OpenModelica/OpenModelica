@@ -111,6 +111,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   dasslData->dasslStatisticsTmp = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
   ASSERT(dasslData->dasslStatisticsTmp,"out of memory");
 
+  dasslData->info[2] = 1;
   /*********************************************************************
    *info[2] = 1;  //intermediate-output mode
    *********************************************************************
@@ -180,31 +181,50 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   /* Calculate time steps until TOUT is reached
    * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
+  tout = solverInfo->currentTime + solverInfo->currentStepSize;
+  /* Check that tout is not less than timeValue
+   * else will dassl get in trouble. If that is the case we skip the current step. */
+  if (solverInfo->currentTime - tout >= -1e-13)
+  {
+    DEBUG_INFO(LOG_SOLVER, "**Desired step to small try next one");
+    DEBUG_INFO(LOG_SOLVER, "**Interpolate linear");
+
+    for (i = 0; i < simData->modelData.nStates; i++)
+    {
+      sData->realVars[i] = sDataOld->realVars[i]
+          + stateDer[i] * solverInfo->currentStepSize;
+    }
+    sData->timeValue = tout;
+    functionODE(simData);
+    solverInfo->currentTime = tout;
+    /*TODO: interpolate states and evaluate the system again */
+    return 2;
+  }
+
+  DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %g to %g",
+      solverInfo->currentTime, tout);
   do
   {
+    DEBUG_INFO2(LOG_SOLVER, "**Start step %g to %g", solverInfo->currentTime, tout);
+    if (dasslData->idid == 1){
+      DEBUG_INFO(LOG_SOLVER, "Rotate Ringbuffer!");
 
-    tout = solverInfo->currentTime + solverInfo->currentStepSize;
-    /* Check that tout is not less than timeValue
-     * else will dassl get in trouble. If that is the case we skip the current step. */
-    if (solverInfo->currentTime - tout >= -1e-13)
-    {
-      DEBUG_INFO(LOG_SOLVER, "**Desired step to small try next one");
-      DEBUG_INFO(LOG_SOLVER, "**Interpolate linear");
+      /* rotate RingBuffer before step is calculated */
+      rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
+      sData = (SIMULATION_DATA*) simData->localData[0];
+      sDataOld = (SIMULATION_DATA*) simData->localData[1];
+      stateDer = sDataOld->realVars + mData->nStates;
+      sData->timeValue = solverInfo->currentTime;
 
-      for (i = 0; i < simData->modelData.nStates; i++)
-      {
-        sData->realVars[i] = sDataOld->realVars[i]
-            + stateDer[i] * solverInfo->currentStepSize;
-      }
-      sData->timeValue = tout;
-      functionODE(simData);
-      solverInfo->currentTime = tout;
-      /*TODO: interpolate states and evaluate the system again */
-      return 2;
     }
+    /* read input vars */
+    input_function(simData);
 
-    DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %g to %g",
-        solverInfo->currentTime, tout);
+    if (DEBUG_FLAG(LOG_DEBUG)){
+      for (i=0; i<3;i++){
+        printAllVars(simData,i);
+      }
+    }
 
     if (jac_flag)
     {
@@ -236,25 +256,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
           dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_zeroCrossing,
           &tmpZero, NULL);
     }
-     if (DEBUG_FLAG(LOG_SOLVER))
-     {
-       INFO1("DASSL call | value of idid: %d", dasslData->idid);
-       INFO1("DASSL call | current time value: %0.4g", solverInfo->currentTime);
-       INFO1("DASSL call | current integration time value: %0.4g", dasslData->rwork[3]);
-       INFO1("DASSL call | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
-       INFO1("DASSL call | step size used on last successful step: %0.4g", dasslData->rwork[6]);
-       INFO1("DASSL call | number of steps taken so far: %d", dasslData->iwork[10]);
-       INFO1("DASSL call | number of calls of functionODE() : %d", dasslData->iwork[11]);
-       INFO1("DASSL call | number of calculation of jacobian : %d", dasslData->iwork[12]);
-       INFO1("DASSL call | total number of convergence test failures: %d", dasslData->iwork[13]);
-       INFO1("DASSL call | total number of error test failures: %d", dasslData->iwork[14]);
-     }
-    /* save dassl stats */
-    for (i = 0; i < numStatistics; i++)
-    {
-      assert(10 + i < dasslData->liw);
-      dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];
-    }
 
     if (dasslData->idid == -1)
     {
@@ -275,15 +276,35 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       INFO1("DASRT can't continue. time = %f", sData->timeValue);
       return 1;
     }
-    sData->timeValue = solverInfo->currentTime;
-    functionODE(simData);
-  } while (dasslData->idid == -1
-      && solverInfo->currentTime <= simData->simulationInfo.stopTime);
 
-  if (simData->simulationInfo.stopTime >= solverInfo->currentTime)
+  } while (dasslData->idid == 1 || (dasslData->idid == -1
+      && solverInfo->currentTime <= simData->simulationInfo.stopTime));
+
+  if (DEBUG_FLAG(LOG_SOLVER))
   {
-    DEBUG_INFO(LOG_SOLVER, "DDASRT finished");
+    INFO1("DASSL call | value of idid: %d", dasslData->idid);
+    INFO1("DASSL call | current time value: %0.4g", solverInfo->currentTime);
+    INFO1("DASSL call | current integration time value: %0.4g", dasslData->rwork[3]);
+    INFO1("DASSL call | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
+    INFO1("DASSL call | step size used on last successful step: %0.4g", dasslData->rwork[6]);
+    INFO1("DASSL call | number of steps taken so far: %d", dasslData->iwork[10]);
+    INFO1("DASSL call | number of calls of functionODE() : %d", dasslData->iwork[11]);
+    INFO1("DASSL call | number of calculation of jacobian : %d", dasslData->iwork[12]);
+    INFO1("DASSL call | total number of convergence test failures: %d", dasslData->iwork[13]);
+    INFO1("DASSL call | total number of error test failures: %d", dasslData->iwork[14]);
   }
+  /* save dassl stats */
+  for (i = 0; i < numStatistics; i++)
+  {
+   assert(10 + i < dasslData->liw);
+   dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];
+  }
+
+  sData->timeValue = solverInfo->currentTime;
+  functionODE(simData);
+
+  DEBUG_INFO(LOG_SOLVER, "*** Finished DDASRT step! ***");
+
   return 0;
 }
 
@@ -351,16 +372,13 @@ int functionODE_residual(double *t, double *x, double *xd, double *delta,
                     fortran_integer *ires, double *rpar, fortran_integer *ipar)
 {
   DATA* data = (DATA*)(void*)rpar;
-  /*DASSL_DATA* dasslData = (DASSL_DATA*)(void*)rpar[1];*/
+
   double timeBackup;
-  double* statesBackup;
   long i;
 
   timeBackup = data->localData[0]->timeValue;
-  statesBackup = data->localData[0]->realVars;
 
   data->localData[0]->timeValue = *t;
-  data->localData[0]->realVars = x;
   functionODE(data);
 
   /* get the difference between the temp_xd(=localData->statesDerivatives)
@@ -369,7 +387,6 @@ int functionODE_residual(double *t, double *x, double *xd, double *delta,
     delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - xd[i];
   }
 
-  data->localData[0]->realVars = statesBackup;
   data->localData[0]->timeValue = timeBackup;
 
   return 0;

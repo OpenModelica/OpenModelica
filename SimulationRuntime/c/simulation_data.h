@@ -338,6 +338,13 @@
     modelica_boolean* helpVars;
     modelica_boolean* helpVarsPre;
 
+    /* old vars for event handling */
+    modelica_real timeValueOld;
+    modelica_real* realVarsOld;
+    modelica_integer* integerVarsOld;
+    modelica_boolean* booleanVarsOld;
+    modelica_string* stringVarsOld;
+
     modelica_real* realVarsPre;
     modelica_integer* integerVarsPre;
     modelica_boolean* booleanVarsPre;
