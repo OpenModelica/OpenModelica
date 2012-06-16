@@ -8563,7 +8563,7 @@ algorithm
         //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
         // handle system in case of liniear and other cases 
         (syst,shared,b) = tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx);
-        Debug.fcall(Flags.TEARING_DUMP, print,"Ok system torn\n");
+        Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(b,"Ok system torn\n","System not torn\n"));
         (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
       then
         (syst,shared,b or b1);
@@ -9301,18 +9301,19 @@ algorithm
       list<list<Integer>> othercomps;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      Integer size,tornsize;
+      Integer size,tornsize,numvars;
       list<BackendDAE.Equation> h0,g0,h,g,eqnslst;
       list<list<BackendDAE.Equation>> derivedEquations,hlst,glst; 
       array<list<BackendDAE.Equation>> derivedEquationsArr;
       list<BackendDAE.Var> k0,pdvarlst;    
-      BackendDAE.Variables vars,kvars,sysvars,sysvars1,kvars1;
+      BackendDAE.Variables vars,kvars,sysvars,sysvars1,kvars1,varst1;
       BackendDAE.EquationArray eqns,syseqns;
       BackendVarTransform.VariableReplacements repl;
       list<DAE.ComponentRef> tvarcrefs,varcrefs;
       DAE.FunctionTree functionTree;
       list<DAE.ComponentRef> pdcr_lst;
       list<DAE.Exp> tvarexps;
+      list<BackendDAE.Var> vlst,states;
       BackendDAE.BinTree bt;
 
     case (BackendDAE.JAC_TIME_VARYING(),_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
@@ -9340,13 +9341,14 @@ algorithm
         sysvars = BackendVariable.daeVars(isyst);
         sysvars1 = BackendVariable.copyVariables(sysvars);
         kvars1 = BackendVariable.copyVariables(kvars);
+        states = BackendVariable.getAllStateVarFromVariables(sysvars);
         varcrefs = BackendVariable.getAllCrefFromVariables(vars);
         bt = BackendDAEUtil.treeAddList(BackendDAE.emptyBintree,varcrefs);
         sysvars1 = BackendVariable.deleteVars(bt,sysvars1);
         kvars1 = BackendVariable.mergeVariables(sysvars1, kvars1);
         eqnslst = BackendDAEUtil.equationList(eqns);
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDerCalls, vars);
-        derivedEquations = deriveAll(eqnslst,tvarcrefs,functionTree,BackendDAEUtil.listVar({}),kvars1,BackendDAEUtil.listVar({}),BackendDAEUtil.listVar({}),{},vars,tvarcrefs,("$WRT",true),{});
+        derivedEquations = deriveAll(eqnslst,tvarcrefs,functionTree,BackendDAEUtil.listVar({}),kvars1,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar({}),{},vars,tvarcrefs,("$WRT",true),{});
         derivedEquationsArr = listArray(derivedEquations);
         glst = getOtherDerivedEquations(othercomps,derivedEquationsArr,{});
         hlst = List.map1(residual,collectArrayElements,derivedEquationsArr);
@@ -9367,6 +9369,13 @@ algorithm
         h = generateHEquations(hlst,tvarexps,h0,{});
         Debug.fcall(Flags.TEARING_DUMP, print,"dh/dz*z=-h:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,h);
+        // check if all tearing vars part of the system
+        vlst = List.map1r(tvars,BackendVariable.getVarAt,vars);
+        varst1 = BackendEquation.equationsLstVars(h, BackendDAEUtil.listVar1(vlst), BackendDAEUtil.emptyVars());
+        numvars = BackendVariable.numVariables(varst1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrIntStr,("Found ",numvars," Tearing Vars in the Residual Equations\n"));
+        true = intEq(listLength(tvars),numvars);
+        // all additional vars and equations
         sysvars = BackendVariable.addVars(k0,sysvars);
         sysvars = BackendVariable.addVars(pdvarlst,sysvars);
         syseqns = BackendEquation.daeEqns(isyst);
@@ -9394,6 +9403,13 @@ algorithm
         // replace other vars in residual equations with there expression, use reverse order from othercomps
         Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
         eqns = List.fold2(residual,replaceOtherVarinResidualEqns,repl,BackendDAEUtil.listVar1(k0),eqns);
+        // check if all tearing vars part of the system
+        vlst = List.map1r(tvars,BackendVariable.getVarAt,vars);
+        eqnslst = BackendEquation.getEqns(residual,eqns);
+        varst1 = BackendEquation.equationsLstVars(eqnslst, BackendDAEUtil.listVar1(vlst), BackendDAEUtil.emptyVars());
+        numvars = BackendVariable.numVariables(varst1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrIntStr,("Found ",numvars," Tearing Vars in the Residual Equations\n"));
+        true = intEq(listLength(tvars),numvars);       
         // replace new residual equations in original system
         syst = replaceTornEquationsinSystem(residual,listArray(eindex),eqns,isyst);
       then
@@ -9730,6 +9746,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   eqn := BackendDAEUtil.equationNth(inEqns, c-1);
+  false := BackendEquation.isEqnWrapper(eqn);
   (eqn,_) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inOtherVars);
   eqn::_ := BackendVarTransform.replaceEquations({eqn}, inRepl);
   outEqns := BackendEquation.equationSetnth(inEqns,c-1,eqn);

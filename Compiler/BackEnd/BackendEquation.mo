@@ -1838,4 +1838,17 @@ algorithm
   end match;
 end addOperation;
 
+
+public function isEqnWrapper
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.ARRAY_EQUATION(index=_) then true;
+    case BackendDAE.ALGORITHM(index=_) then true;
+    case BackendDAE.COMPLEX_EQUATION(index=_) then true;
+    else then false;
+  end match;
+end isEqnWrapper;
+
 end BackendEquation;
