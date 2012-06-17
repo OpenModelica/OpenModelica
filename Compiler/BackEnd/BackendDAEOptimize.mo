@@ -9582,13 +9582,11 @@ protected function getZeroTVarReplacements
 protected
   DAE.ComponentRef cr;
   BackendDAE.Var var;
-  DAE.Exp e;
 algorithm
   var := BackendVariable.getVarAt(inVars, v);
   cr := BackendVariable.varCref(var);
   cr := Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
-  e := BackendVariable.varStartValue(var);
-  outRepl := BackendVarTransform.addReplacement(inRepl,cr,e);
+  outRepl := BackendVarTransform.addReplacement(inRepl,cr,DAE.RCONST(0.0));
 end getZeroTVarReplacements;
 
 protected function getEquationsPointZero
