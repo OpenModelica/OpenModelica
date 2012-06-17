@@ -7611,6 +7611,13 @@ algorithm
     DAE.Exp e1;
     DAE.ComponentRef x,cref;
     tuple<String,Boolean> matrixName;
+    Option<tuple<DAE.FunctionTree,BackendDAE.Variables, BackendDAE.Variables, BackendDAE.Variables, BackendDAE.Variables, BackendDAE.Variables, list<DAE.ComponentRef>, tuple<String,Boolean>>> tpl;
+    
+    case((DAE.CALL(path=fname, expLst={e1}),x,tpl as SOME((_, _, _, _, _, _, _, matrixName as (_,true)))))
+      equation
+        e1 = diffCref((e1,x,tpl));
+    then e1; 
+    
     case((DAE.CALL(path=fname, expLst={e1}),x,SOME((_, _, _, _, _, _, _, matrixName))))
       equation
       cref = Expression.expCref(e1);
@@ -9341,7 +9348,7 @@ algorithm
         sysvars = BackendVariable.daeVars(isyst);
         sysvars1 = BackendVariable.copyVariables(sysvars);
         kvars1 = BackendVariable.copyVariables(kvars);
-        states = BackendVariable.getAllStateVarFromVariables(sysvars);
+        states = BackendVariable.getAllStateVarFromVariables(vars);
         varcrefs = BackendVariable.getAllCrefFromVariables(vars);
         bt = BackendDAEUtil.treeAddList(BackendDAE.emptyBintree,varcrefs);
         sysvars1 = BackendVariable.deleteVars(bt,sysvars1);
@@ -9398,7 +9405,7 @@ algorithm
         vars = BackendVariable.daeVars(subsyst);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
         Debug.fcall(Flags.TEARING_DUMP, print,"TVars:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,"\n","\n"));        
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,"\n","\nOther Equations:\n"));        
         (eqns,repl,k0) = solveOtherEquations(othercomps,eqns,vars,ass2,ishared,BackendVarTransform.emptyReplacementsSized(size),{});
         // replace other vars in residual equations with there expression, use reverse order from othercomps
         Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
@@ -9575,11 +9582,13 @@ protected function getZeroTVarReplacements
 protected
   DAE.ComponentRef cr;
   BackendDAE.Var var;
+  DAE.Exp e;
 algorithm
   var := BackendVariable.getVarAt(inVars, v);
   cr := BackendVariable.varCref(var);
   cr := Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
-  outRepl := BackendVarTransform.addReplacement(inRepl,cr,DAE.RCONST(0.0));
+  e := BackendVariable.varStartValue(var);
+  outRepl := BackendVarTransform.addReplacement(inRepl,cr,e);
 end getZeroTVarReplacements;
 
 protected function getEquationsPointZero
@@ -9638,6 +9647,7 @@ algorithm
         repl = BackendVarTransform.addReplacement(inRepl,cr,varexp);
         var = BackendVariable.copyVarNewName(cr1,var);
         var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+        var = BackendVariable.setVarAttributes(var, NONE());
         (eqn,_) = BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inVars);
         eqn::_ = BackendVarTransform.replaceEquations({eqn}, repl);
         (eqsLst,varLst,repl) = getOtherEquationsPointZero(rest,inEqns,inVars,ass2,repl,eqn::inEqsLst,var::inVarLst);
@@ -9727,6 +9737,7 @@ algorithm
         eqns = BackendEquation.equationSetnth(inEqns,c-1,BackendDAE.EQUATION(expr,varexp,source));
         cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         repl = BackendVarTransform.addReplacement(inRepl,cr,expr1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr1,"\n"));
         (eqns,repl,otherVars) = solveOtherEquations(rest,eqns,inVars,ass2,ishared,repl,var::iOtherVars);
       then
         (eqns,repl,otherVars);
