@@ -6015,24 +6015,37 @@ protected function calculateJacobianRow2 "function: calculateJacobianRow2
              int list) /* var indexes */
   outputs: ((int int Equation) list option)"
   input DAE.Exp inExp;
-  input Variables inVariables;
-  input Integer inInteger;
+  input Variables vars;
+  input Integer eqn_indx;
   input list<Integer> inIntegerLst;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm
-  outTplIntegerIntegerEquationLstOption := match (inExp,inVariables,inInteger,inIntegerLst,differentiateIfExp)
+  outTplIntegerIntegerEquationLstOption := matchcontinue (inExp,vars,eqn_indx,inIntegerLst,differentiateIfExp)
     local
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e,e_1,e_2,dcrexp;
       Var v;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> es;
-      Variables vars;
-      BackendDAE.Value eqn_indx,vindx;
+      BackendDAE.Value vindx;
       list<BackendDAE.Value> vindxs;
 
     case (e,_,_,{},_) then SOME({});
-    case (e,vars,eqn_indx,(vindx :: vindxs),differentiateIfExp)
+    case (e,_,_,(vindx :: vindxs),_)
+      equation
+        v = BackendVariable.getVarAt(vars, vindx);
+        true = BackendVariable.isStateVar(v);
+        cr = BackendVariable.varCref(v);
+        dcr = ComponentReference.crefPrefixDer(cr);
+        dcrexp = Expression.crefExp(cr);
+        dcrexp = DAE.CALL(Absyn.IDENT("der"),{dcrexp},DAE.callAttrBuiltinReal);
+        ((e,_)) = Expression.replaceExp(e, dcrexp, Expression.crefExp(dcr));
+        e_1 = Derive.differentiateExp(e, dcr, differentiateIfExp);
+        (e_2,_) = ExpressionSimplify.simplify(e_1);
+        SOME(es) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp);
+      then
+        SOME(((eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));      
+    case (e,_,_,(vindx :: vindxs),_)
       equation
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
@@ -6041,7 +6054,7 @@ algorithm
         SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs, differentiateIfExp);
       then
         SOME(((eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));
-  end match;
+  end matchcontinue;
 end calculateJacobianRow2;
 
 public function analyzeJacobian "function: analyzeJacobian
