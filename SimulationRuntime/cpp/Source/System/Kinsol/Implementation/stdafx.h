@@ -7,9 +7,9 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <string>
-#include <boost/extension/extension.hpp>
+#include "utils/extension/extension.hpp"
 #include <typeinfo>
-#include <boost/extension/type_map.hpp>
-#include <boost/extension/factory.hpp>
+#include "utils/extension/extension.hpp"
+#include "utils/extension/factory.hpp"
 using namespace boost::numeric;
 using namespace std;

@@ -25,10 +25,10 @@
 #include <boost/serialization/nvp.hpp>
 #include <string>
 #include <fstream>
-#include <boost/extension/extension.hpp>
+#include "utils/extension/extension.hpp"
 #include <typeinfo>
-#include <boost/extension/type_map.hpp>
-#include <boost/extension/factory.hpp>
+#include "utils/extension/type_map.hpp"
+#include "utils/extension/factory.hpp"
 using namespace boost::numeric;
 using namespace std;
 using std::ios;

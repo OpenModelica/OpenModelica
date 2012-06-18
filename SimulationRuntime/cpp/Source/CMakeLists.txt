@@ -1,5 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 
+
+
+
 project(CppSolverInterface)
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
@@ -184,8 +187,32 @@ if(INSTALL_OMDEV_LIBS)
   #install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 endif()
 
+
+MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
+ 
+FOREACH(HEADER ${${HEADER_LIST}})
+    STRING(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
+    INSTALL(FILES ${HEADER} DESTINATION include/omc/cpp/${DIR})
+ENDFOREACH(HEADER)
+ 
+ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
+ 
+
+
+
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
 install (FILES "DataExchange/Interfaces/IHistory.h" 
   DESTINATION include/omc/cpp/DataExchange/Interfaces)
-  
+ 
+ 
+ #copy utils/extension
+ SET(HS utils/extension/adaptable_factory.hpp  utils/extension/common.hpp utils/extension/convenience.hpp 
+		utils/extension/extension.hpp  utils/extension/factory.hpp utils/extension/factory_map.hpp utils/extension/filesystem.hpp 
+		utils/extension/parameter.hpp utils/extension/parameter_map.hpp utils/extension/registry.hpp utils/extension/shared_library.hpp 
+		utils/extension/type_map.hpp
+ utils/extension/impl/adaptable_factory.hpp utils/extension/impl/adaptable_factory_free_functions.hpp utils/extension/impl/adaptable_factory_set.hpp
+ utils/extension/impl/create.hpp  utils/extension/impl/create_func.hpp utils/extension/impl/decl.hpp
+ utils/extension/impl/factory.hpp utils/extension/impl/factory_map.hpp utils/extension/impl/function.hpp utils/extension/impl/library_impl.hpp 
+ utils/extension/impl/shared_library.hpp utils/extension/impl/typeinfo.hpp) 
+   INSTALL_HEADERS_WITH_DIRECTORY(HS)
   

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "AlgLoopSolverFactory.h"
-#include <boost/extension/shared_library.hpp>
-#include <boost/extension/convenience.hpp>
+#include "utils/extension/shared_library.hpp"
+#include "utils/extension/convenience.hpp"
 #include "LibrariesConfig.h"
 AlgLoopSolverFactory::AlgLoopSolverFactory()
 {

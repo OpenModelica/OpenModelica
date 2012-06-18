@@ -23,11 +23,11 @@ using namespace std;
 #include <boost/shared_ptr.hpp>
 
 
-#include <boost/extension/shared_library.hpp>
-#include <boost/extension/extension.hpp>
-#include <boost/extension/type_map.hpp>
-#include <boost/extension/factory.hpp>
-#include <boost/extension/convenience.hpp>
+#include "utils/extension/shared_library.hpp"
+#include "utils/extension/extension.hpp"
+#include "utils/extension/extension.hpp"
+#include "utils/extension/factory.hpp"
+#include "utils/extension/convenience.hpp"
 using namespace boost::extensions;
 
 using std::ios;
