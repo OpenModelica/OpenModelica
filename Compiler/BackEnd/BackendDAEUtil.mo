@@ -2602,7 +2602,7 @@ algorithm
   end matchcontinue;
 end splitBlocks;
 
-protected function blockIsDynamic "function blockIsDynamic
+public function blockIsDynamic "function blockIsDynamic
   Return true if the block contains a variable that is marked"
   input list<Integer> inIntegerLst;
   input array<Integer> inIntegerArray;
@@ -2656,7 +2656,6 @@ algorithm
   outIntegerArray:=
   matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
-      list<Var> statevar_lst;
       list<Integer> statevarindx_lst;
       array<Integer> arr_1,arr,a1,a2;
       BackendDAE.IncidenceMatrix m;
@@ -2668,7 +2667,7 @@ algorithm
     
     case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
-        (statevar_lst,statevarindx_lst) = BackendVariable.getAllStateVarIndexFromVariables(v);
+        (_,statevarindx_lst) = BackendVariable.getAllStateVarIndexFromVariables(v);
         ((arr_1,_,_,_,_)) = List.fold(statevarindx_lst, markStateEquation, (arr,m,mt,a1,a2));
       then
         arr_1;

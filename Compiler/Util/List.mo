@@ -5349,6 +5349,76 @@ algorithm
   end match;
 end thread3Map_2_tail;
 
+public function thread3MapFold
+  "Takes three lists and a function, and threads (interleaves) and maps the
+   elements of the three lists, creating a new list. This function also takes
+   one extra argument which are passed to the mapping function and fold."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input list<ElementType3> inList3;
+  input MapFunc inFunc;
+  input ArgType1 inArg;
+  output list<ElementOutType> outList;
+  output ArgType1 outArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ElementType3 inElement3;
+    input ArgType1 inArg;
+    output ElementOutType outElement;
+    output ArgType1 outArg;
+  end MapFunc;
+algorithm
+  (outList,outArg) := thread3MapFold_tail(inList1, inList2, inList3, inFunc, 
+    inArg, {});
+end thread3MapFold;
+
+public function thread3MapFold_tail
+  "Tail recursive implementation of thread3MapFold."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input list<ElementType3> inList3;
+  input MapFunc inFunc;
+  input ArgType1 inArg;
+  input list<ElementOutType> inAccum;
+  output list<ElementOutType> outList;
+  output ArgType1 outArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ElementType3 inElement3;
+    input ArgType1 inArg;
+    output ElementOutType outElement;
+    output ArgType1 outArg;
+  end MapFunc;
+algorithm
+  (outList,outArg) := 
+  match(inList1, inList2, inList3, inFunc, inArg, inAccum)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      ElementType3 e3;
+      list<ElementType3> rest3;
+      ElementOutType res;
+      list<ElementOutType> reslst;
+      ArgType1 arg;
+
+    case ({}, {}, {}, _, _, _) then (listReverse(inAccum),inArg);
+
+    case (e1 :: rest1, e2 :: rest2, e3 :: rest3, _, _, _)
+      equation
+        (res,arg) = inFunc(e1, e2, e3, inArg);
+        (reslst,arg) = thread3MapFold_tail(rest1, rest2, rest3, inFunc, 
+          arg, res :: inAccum);
+      then
+        (reslst,arg);
+  end match;
+end thread3MapFold_tail;
+
 public function thread3Map3
   "Takes three lists and a function, and threads (interleaves) and maps the
    elements of the three lists, creating a new list. This function also takes

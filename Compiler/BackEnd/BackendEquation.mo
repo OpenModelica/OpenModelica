@@ -1851,4 +1851,14 @@ algorithm
   end match;
 end isEqnWrapper;
 
+public function isWhenEquation
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.WHEN_EQUATION(whenEquation=_) then true;
+    else then false;
+  end match;
+end isWhenEquation;
+
 end BackendEquation;

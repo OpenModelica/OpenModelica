@@ -165,12 +165,12 @@ case simCode as SIMCODE(__) then
   <%functionInitialResidual(residualEquations)%>
   
   <%functionUpdateBoundParameters(parameterEquations)%>
+
+  <%functionDAE(allEquations, whenClauses, helpVarInfo)%>
   
   <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
   
   <%functionAlgebraic(algebraicEquations)%>
-                       
-  <%functionDAE(allEquations, whenClauses, helpVarInfo)%>
     
   <%functionOnlyZeroCrossing(zeroCrossings)%>
   
@@ -279,6 +279,40 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   >>
 end functionInitializeDataStruc;
 
+template functionSimProfDef(SimEqSystem eq, Integer value)
+ "Generates function in simulation file."
+::=
+match eq
+  case SES_ALGORITHM(__) then
+  <<
+  >>
+  case SES_WHEN(__) then
+  <<
+  >>
+  case SES_RESIDUAL(__) then
+  <<
+  >>
+  case SES_ARRAY_CALL_ASSIGN(__) then
+  <<
+  >>
+  case SES_SIMPLE_ASSIGN(__)   then
+  <<
+  >>
+  case SES_MIXED(__) then
+  <<
+  <%functionSimProfDef(cont,value)%>
+  >>
+  case SES_LINEAR(__) then
+  <<
+  >>
+  case SES_NONLINEAR(__) then
+  <<
+  #define SIM_PROF_EQ_<%index%> <%value%>
+  >>  
+  else 
+  <<
+  >>
+end functionSimProfDef;
 
 template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations)
  "Generates function in simulation file."
@@ -288,15 +322,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
    /*
    This fragment produces some empty lines, since emptyCount is not implemented in susan!
    */
-   let eqnsDefines = (allEquations |> eq hasindex i0 => match eq
-    case SES_ALGORITHM(__)
-    case SES_WHEN(__)
-    case SES_RESIDUAL(__)
-    case SES_ARRAY_CALL_ASSIGN(__)
-    case SES_SIMPLE_ASSIGN(__)  then ''
-    case SES_MIXED(__)
-    case SES_LINEAR(__)
-    case SES_NONLINEAR(__) then '#define SIM_PROF_EQ_<%index%> <%i0%>'; empty; separator="\n")
+   let eqnsDefines = (allEquations |> eq hasindex i0 => '<%functionSimProfDef(eq,i0)%>'; separator="")
   <<
   /* Some empty lines, since emptyCount is not implemented in susan! */
   <%eqnsDefines%>
@@ -925,7 +951,7 @@ template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
 ::=
   let &varDecls = buffer ""
   let &tmp = buffer ""
-  let odeEqs = derivativEquations |> eq => equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp); separator="\n"
+  let odeEqs = derivativEquations |> eq => equationNames_(eq); separator="\n"
   <<
   <%&tmp%>
   static void functionODE_system<%n%>(DATA *data,int omc_thread_number)
@@ -1014,7 +1040,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let algEquations = (algebraicEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp)
+      equationNames_(eq)
     ;separator="\n")
   <<
   <%tmp%>
@@ -1607,6 +1633,19 @@ template zeroCrossingOpFunc(Operator op)
   case GREATEREQ(__) then "GreaterEq"
 end zeroCrossingOpFunc;
 
+template equationIndex(SimEqSystem eq)
+ "Generates an equation."
+::=
+  match eq
+  case SES_RESIDUAL(__) then '<%index%>'
+  case SES_SIMPLE_ASSIGN(__) then '<%index%>'
+  case SES_ARRAY_CALL_ASSIGN(__) then '<%index%>'
+  case SES_ALGORITHM(__) then '<%index%>'
+  case SES_LINEAR(__) then '<%index%>'
+  case SES_NONLINEAR(__) then '<%index%>'
+  case SES_MIXED(__) then '<%index%>'
+  case SES_WHEN(__) then '<%index%>'
+end equationIndex;
 
 template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs)
  "Generates an equation.
@@ -1621,7 +1660,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   then ""
   else
   (
-  let ix = System.tmpTickIndex(10)
+  let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
   let &tmp = buffer ""
   let &varD = buffer ""
   let x = match eq
@@ -1653,6 +1692,21 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   >>
   )
 end equation_;
+
+template equationNames_(SimEqSystem eq)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  <<
+  eqFunction_<%ix%>(data);
+  >>
+end equationNames_;
 
 template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
  "Generates an equation.
