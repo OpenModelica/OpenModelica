@@ -2657,9 +2657,10 @@ algorithm
   matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
       list<Var> statevar_lst;
-      array<BackendDAE.Value> arr_1,arr;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
+      list<Integer> statevarindx_lst;
+      array<Integer> arr_1,arr,a1,a2;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
       Variables v,kn;
       EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -2667,8 +2668,8 @@ algorithm
     
     case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
-        statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
-        ((_,arr_1,_,_,_,_)) = List.fold(statevar_lst, markStateEquation, (syst,arr,m,mt,a1,a2));
+        (statevar_lst,statevarindx_lst) = BackendVariable.getAllStateVarIndexFromVariables(v);
+        ((arr_1,_,_,_,_)) = List.fold(statevarindx_lst, markStateEquation, (arr,m,mt,a1,a2));
       then
         arr_1;
     
@@ -2686,51 +2687,30 @@ protected function markStateEquation
   It performs marking for one equation and its transitive closure by
   following edges in backward direction.
   inputs and outputs are tuples so we can use Util.list_fold"
-  input Var inVar;
-  input tuple<BackendDAE.EqSystem, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
-  output tuple<BackendDAE.EqSystem, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  input Integer inVarIndx;
+  input tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTpl;
+  output tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
-  matchcontinue (inVar,inTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
+  outTpl:=
+  matchcontinue (inVarIndx,inTpl)
     local
-      list<BackendDAE.Value> v_indxs,v_indxs_1,eqns;
-      array<BackendDAE.Value> arr_1,arr;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
-      DAE.ComponentRef cr;
-      BackendDAE.EqSystem syst;
-      Variables vars;
-      String s,str;
-      BackendDAE.Value v_indx,v_indx_1;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+      array<Integer> arr_1,arr,a1,a2;
+      Integer eindx;
+      String str;
     
-    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
+    case (_,(arr,m,mt,a1,a2))
       equation
-        (_,v_indxs) = BackendVariable.getVar(cr, vars);
-        v_indxs_1 = List.map1(v_indxs, intSub, 1);
-        eqns = List.map1r(v_indxs_1, arrayNth, a1);
-        ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
+        eindx = a1[inVarIndx];
+        ((arr_1,m,mt,a1,a2)) = markStateEquation2({eindx}, (arr,m,mt,a1,a2));
       then
-        ((syst,arr_1,m,mt,a1,a2));
+        ((arr_1,m,mt,a1,a2));
     
-    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
+    case (_,(arr,m,mt,a1,a2))
       equation
-        failure((_,_) = BackendVariable.getVar(cr, vars));
-        print("- BackendDAEUtil.markStateEquation var ");
-        s = ComponentReference.printComponentRefStr(cr);
-        print(s);
-        print(" not found\n");
-      then
-        fail();
-    
-    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
-      equation
-        (_,{v_indx}) = BackendVariable.getVar(cr, vars);
-        v_indx_1 = v_indx - 1;
-        failure(_ = a1[v_indx_1 + 1]);
-        print("-  BackendDAEUtil.markStateEquation index = ");
-        str = intString(v_indx);
-        print(str);
-        print(", failed\n");
+        failure(_ = a1[inVarIndx]);
+        print("-  BackendDAEUtil.markStateEquation index = " +& intString(inVarIndx) +& ", failed\n");
       then
         fail();
   end matchcontinue;
@@ -2754,7 +2734,7 @@ algorithm
       array<BackendDAE.Value> marks,marks_1,marks_2,marks_3;
       array<list<BackendDAE.Value>> m,mt,m_1,mt_1;
       array<BackendDAE.Value> a1,a2,a1_1,a2_1;
-      BackendDAE.Value eqn_1,eqn,mark_value,len;
+      BackendDAE.Value eqn,mark_value,len;
       list<BackendDAE.Value> inv_reachable,inv_reachable_1,eqns;
       list<list<BackendDAE.Value>> inv_reachable_2;
       String eqnstr,lens,ms;
@@ -2763,9 +2743,9 @@ algorithm
     
     case ((eqn :: eqns),(marks,m,mt,a1,a2))
       equation
-        eqn_1 = eqn - 1 "Mark an unmarked node/equation" ;
-        0 = marks[eqn_1 + 1];
-        marks_1 = arrayUpdate(marks, eqn_1 + 1, 1);
+        // "Mark an unmarked node/equation"
+        0 = marks[eqn];
+        marks_1 = arrayUpdate(marks, eqn, 1);
         inv_reachable = invReachableNodes(eqn, m, mt, a1, a2);
         inv_reachable_1 = removeNegative(inv_reachable);
         inv_reachable_2 = List.map(inv_reachable_1, List.create);
@@ -2776,8 +2756,8 @@ algorithm
     
     case ((eqn :: eqns),(marks,m,mt,a1,a2))
       equation
-        eqn_1 = eqn - 1 "Node allready marked." ;
-        mark_value = marks[eqn_1 + 1];
+        // Node allready marked.
+        mark_value = marks[eqn];
         (mark_value <> 0) = true;
         ((marks_1,m_1,mt_1,a1_1,a2_1)) = markStateEquation2(eqns, (marks,m,mt,a1,a2));
       then
@@ -2793,8 +2773,7 @@ algorithm
         lens = intString(len);
         print(lens);
         print("\n");
-        eqn_1 = eqn - 1;
-        mark_value = marks[eqn_1 + 1];
+        mark_value = marks[eqn];
         ms = intString(mark_value);
         print("mark_value: ");
         print(ms);
