@@ -723,7 +723,7 @@ const char* ModelicaInternal_getcwd(int dummy)
 }
 
 
-const char* ModelicaInternal_getenv(const char* name, int convertToSlash, int* exist)
+void ModelicaInternal_getenv(const char* name, int convertToSlash, char** content, int* exist)
 {
     /* Get content of environment variable */
     char* value = getenv(name);
@@ -739,7 +739,7 @@ const char* ModelicaInternal_getenv(const char* name, int convertToSlash, int* e
         if ( convertToSlash == 1 ) ModelicaConvertToUnixDirectorySeparator(result);
         *exist = 1;
     }
-    return result;
+    *content = result;
 }
 
 
