@@ -7,5 +7,5 @@ if [ ! -f "${XSLTPROCEXE}" ]
 then 
   XSLTPROCEXE=xsltproc
 fi
-${XSLTPROCEXE} --stringparam variableName $1 --stringparam variableStart $2 replace-startValue.xsl $3
+${XSLTPROCEXE} --stringparam variableName $1 --stringparam variableStart $2 "${OPENMODELICAHOME}/share/omc/scripts/replace-startValue.xsl" $3
 

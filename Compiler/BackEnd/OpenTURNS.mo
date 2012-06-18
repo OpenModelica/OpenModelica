@@ -49,6 +49,7 @@ import CevalScript;
 import SimCode;
 import Interactive;
 import System;
+import Settings;
 import BackendDump;
 import BackendDAEUtil;
 import List;
@@ -58,6 +59,14 @@ import ComponentReference;
 import BackendDAEOptimize;
 import Expression;
 import Util;
+
+// important constants!
+constant String cStrSharePath               = "share/omc/scripts/OpenTurns/";
+constant String cStrWrapperSuffix           = "_wrapper";
+constant String cStrCWrapperTemplate        = "wrapper_template.c";
+constant String cStrMakefileWrapperTemplate = "wrapper_template.makefile";
+constant String cStrWrapperCompileCmd       = "wrapper_template.compile.cmd";
+constant String cStrInvokeOpenTurnsCmd      = "invoke.cmd";
 
 public function generateOpenTURNSInterface "generates the dll and the python script for connections with OpenTURNS"
   input Env.Cache cache;
@@ -71,12 +80,13 @@ public function generateOpenTURNSInterface "generates the dll and the python scr
   output String scriptFile "the name of the generated file";
   
   protected
-  String cname_str,fileNamePrefix,fileDir;
+  String cname_str,fileNamePrefix,fileDir,cname_last_str;
   list<String> libs;
   BackendDAE.BackendDAE dae,strippedDae;  
   SimCode.SimulationSettings simSettings;
 algorithm
   cname_str := Absyn.pathString(inPath);
+  cname_last_str := Absyn.pathLastIdent(inPath);
   fileNamePrefix := cname_str;
       
   simSettings := CevalScript.convertSimulationOptionsToSimCode(
@@ -89,7 +99,7 @@ algorithm
   dae := BackendDAEOptimize.removeParameters(inDaelow);
   //print("generating python script\n");  
  
- (scriptFile) := generatePythonScript(fileNamePrefix,templateFile,cname_str,dae,inDaelow);
+ scriptFile := generatePythonScript(inPath,templateFile,dae,inDaelow);
  
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(dae);
@@ -97,14 +107,56 @@ algorithm
   strippedDae := BackendDAEUtil.getSolvedSystem(cache, env, strippedDae, NONE(), NONE(), NONE(),NONE());
   
   //print("strippedDae :");
-  //BackendDump.dump(strippedDae);  
+  //BackendDump.dump(strippedDae);
   (_,libs,fileDir,_,_,_) := SimCode.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
   
   //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");  
   CevalScript.compileModel(fileNamePrefix , libs, fileDir, "", "");
   
-  generateXMLFile(cname_str,strippedDae);
+  generateXMLFile(cname_last_str,strippedDae);
+  generateWrapperLibrary(cname_str,cname_last_str);
 end generateOpenTURNSInterface; 
+
+protected function generateWrapperLibrary
+"@author:adrpo
+ generates the helpers for the OpenTURNS wrapper:
+ replace #define MODELNAMESTR \"Full.ModelName\" in wrapper_template.c
+ replace #define WRAPPERNAME ModelName_wrapper in wrapper_template.c
+ replace WRAPPERNAME = ModelName_wrapper in wrapper_template.makefile
+ replace ModelName_wrapper in wrapper_template.command
+ generates files: 
+   ModelName_wrapper.makefile from wrapper_template.makefile
+   ModelName_wrapper.c from wrapper_template.c
+ then compiles the wrapper using the specific wrapper_template.command!"
+ input String fullClassName;
+ input String lastClassName;
+protected
+  String strCWrapperContents;
+  String strWrapperNameDefine;
+  String strMakefileContents;
+  String compileWrapperCommand;
+algorithm
+  // read the wrapper_template.c template, replace the extension points
+  strCWrapperContents := System.readFile(getFullShareFileName(cStrCWrapperTemplate));
+  strCWrapperContents := System.stringReplace(strCWrapperContents,"<%fullModelName%>", fullClassName);
+  strCWrapperContents := System.stringReplace(strCWrapperContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  // dump the result into ModelName_wrapper.c  
+  System.writeFile(lastClassName +& cStrWrapperSuffix +& ".c", strCWrapperContents);
+  
+  // read the wrapper_template.makefile template, replace the extension points
+  strMakefileContents := System.readFile(getFullShareFileName(cStrMakefileWrapperTemplate));
+  strMakefileContents := System.stringReplace(strMakefileContents,"<%fullModelName%>", fullClassName);
+  strMakefileContents := System.stringReplace(strMakefileContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  // dump the result into ModelName_wrapper.makefile
+  System.writeFile(lastClassName +& cStrWrapperSuffix +& ".makefile",strMakefileContents);
+  
+  // we should check if it works fine!
+  compileWrapperCommand := System.readFile(getFullShareFileName(cStrWrapperCompileCmd));
+  compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%currentDirectory%>", System.pwd());
+  compileWrapperCommand := compileWrapperCommand +& " > " +& lastClassName +& cStrWrapperSuffix +& ".log" +& " 2>&1";  
+  runCommand(compileWrapperCommand);
+end generateWrapperLibrary;
 
 protected function generateXMLFile "generates the xml file for the OpenTURNS wrapper"
   input String className;
@@ -113,7 +165,7 @@ protected
   String xmlFileContent;
 algorithm
   xmlFileContent := generateXMLFileContent(className,dae);
-  System.writeFile(className+&"_wrapper.xml",xmlFileContent);
+  System.writeFile(className +& cStrWrapperSuffix +& ".xml", xmlFileContent);
 end generateXMLFile;
 
 protected function generateXMLFileContent "help function"
@@ -142,7 +194,7 @@ algorithm
     "  <!-- Those data are external to the platform (input files, etc.)-->",
     "  <data></data>",
     "",
-    "  <wrap-mode type=\"static-link\" state=\"shared\">",
+    "  <wrap-mode type=\"static-link\" >",
     "    <in-data-transfer mode=\"arguments\" />",
     "    <out-data-transfer mode=\"arguments\" />",
     "  </wrap-mode>",
@@ -157,19 +209,20 @@ protected function generateXMLLibrary "help function"
   output String content;
 protected
   list<BackendDAE.Var> varLst;
-  String inputs,outputs,funcStr;
+  String inputs,outputs,funcStr,dllStr;
 algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae);
   varLst := List.select(varLst,BackendVariable.varHasUncertaintyAttribute);
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
-  funcStr := "   <function provided=\"yes\">"+&className+&"_wrapper</function>";
+  dllStr := " <path>" +& className +& cStrWrapperSuffix +& System.getDllExt() +& "</path>";
+  funcStr := "   <function provided=\"yes\">" +& className +& cStrWrapperSuffix +& "</function>";
   
   content :=stringDelimitList({
    "<library>",
    "",
    " <!-- The path of the shared object -->",
-   " <path>CantileverBeam_wrapper.dll</path>",
+   dllStr,
    "",
    " <!-- This section describes all exchanges data between the wrapper and the platform -->",
    " <description>",
@@ -239,19 +292,20 @@ algorithm
 end generateXMLLibraryOutputs;
 
 protected function generatePythonScript "generates the python script as input to OpenTURNS, given a template file name"
-  input String fileNamePrefix;
+  input Absyn.Path inModelPath;
   input String templateFile;
-  input String modelName;
   input BackendDAE.BackendDAE dae;
   input BackendDAE.BackendDAE inDaelow;
   output String pythonFileName;
   protected
-  String templateFileContent;
+  String templateFileContent,modelName,modelLastName;
   String distributions,correlationMatrix;
   String collectionDistributions,inputDescriptions;
   String pythonFileContent;
   list<tuple<String,String>> distributionVarLst;
 algorithm
+  modelName := Absyn.pathString(inModelPath);
+  modelLastName := Absyn.pathLastIdent(inModelPath);
   templateFileContent := System.readFile(templateFile);
   //generate the different parts of the python file 
   (distributions,distributionVarLst) := generateDistributions(inDaelow);
@@ -265,6 +319,7 @@ algorithm
   pythonFileContent := System.stringReplace(pythonFileContent,"<%correlationMatrix%>",correlationMatrix);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%collectionDistributions%>",collectionDistributions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%inputDescriptions%>",inputDescriptions);  
+  pythonFileContent := System.stringReplace(pythonFileContent,"<%wrapperName%>",modelLastName +& cStrWrapperSuffix);
 
   //Write file
   //print("writing python script to file "+&pythonFileName+&"\n");
@@ -329,6 +384,15 @@ algorithm
     DAE.ComponentRef cr;
     list<DAE.Exp> expl1,expl2;
     
+    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),dae) equation
+      // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
+      // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
+      args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
+      varName = ComponentReference.crefModelicaStr(cr);
+      distVar ="distribution"+&varName; 
+      // add LogNormal.MUSIGMA!
+      str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)\n";
+    then (str,(varName,distVar));    
     
     case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),dae) equation
       // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
@@ -568,5 +632,68 @@ algorithm
   inputDescriptions := "# input descriptions currently not used, set above";   
 
 end generateInputDescriptions;
-    
+
+public function getFullSharePath
+"@author: adrpo
+ returns $OPENMODELICAHOME/share/omc/scripts/OpenTurns/"
+ output String strFullSharePath;
+algorithm
+ strFullSharePath := 
+   Settings.getInstallationDirectoryPath() +& 
+   System.pathDelimiter() +& 
+   cStrSharePath +& 
+   System.pathDelimiter();  
+end getFullSharePath;
+
+public function getFullShareFileName
+"@author: adrpo
+ returns $OPENMODELICAHOME/share/omc/scripts/OpenTurns/FILE_NAME
+ where FILE_NAME is given as input."
+ input String strFileName;
+ output String strFullShareFileName;
+algorithm
+ strFullShareFileName := getFullSharePath() +& strFileName;  
+end getFullShareFileName;
+
+public function runPythonScript
+"@author: adrpo
+ generates inStrPythonScriptFile.bat and calls it
+ runs the OpenTurns python handler with the given script"
+ input String inStrPythonScriptFile;
+ output String outStrLogFile;
+algorithm
+  outStrLogFile := matchcontinue(inStrPythonScriptFile)
+    local
+      String cmdContents, logFile, cmdFile;
+    case (inStrPythonScriptFile)
+      equation
+        cmdContents = System.readFile(getFullShareFileName(cStrInvokeOpenTurnsCmd));
+        cmdContents = System.stringReplace(cmdContents, "<%pythonScriptOpenModelica%>", inStrPythonScriptFile);
+        cmdFile = inStrPythonScriptFile +& ".bat";
+        System.writeFile(cmdFile, cmdContents);
+        logFile = inStrPythonScriptFile +& ".log";
+        runCommand(cmdFile +& " > " +& logFile +& " 2>&1"); 
+      then
+        logFile;
+  end matchcontinue;
+end runPythonScript;
+
+protected function runCommand
+  input String cmd;
+algorithm
+  _ := matchcontinue(cmd)
+    case (cmd)
+      equation
+        print("running: " +& cmd +& "\n");
+        0 = System.systemCall(cmd);
+      then
+        ();
+    case (cmd)
+      equation
+        print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
+      then
+        ();
+  end matchcontinue;      
+end runCommand;
+
 end OpenTURNS;

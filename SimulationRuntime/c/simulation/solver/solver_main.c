@@ -171,7 +171,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
     solverInfo.solverData = &rungeData;
   }else if (flag == 3){
     /* Initial DASSL solver */
-    DASSL_DATA dasslData;
+    DASSL_DATA dasslData = {0};
     DEBUG_INFO(LOG_SOLVER, "*** Initializing DASSL");
     dasrt_initial(simData, &solverInfo, &dasslData);
     solverInfo.solverData = &dasslData;
@@ -431,7 +431,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
       break;
     }
 
-    DEBUG_INFO3(LOG_SOLVER, "** Step to  %e Done! Run still to stop time %e. time left :%e ", solverInfo.currentTime,simInfo->stopTime,solverInfo.currentTime- simInfo->stopTime);
+    DEBUG_INFO3(LOG_SOLVER, "** Step to  %e Done! Run still to stop time %e. time left :%e ", solverInfo.currentTime,simInfo->stopTime,simInfo->stopTime-solverInfo.currentTime);
     /* debug print */
     if (DEBUG_FLAG(LOG_DEBUG)){
       for (i=0; i<3;i++){

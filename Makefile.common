@@ -20,7 +20,7 @@ INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python
+.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -32,6 +32,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
+	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
@@ -42,6 +43,9 @@ release: omc
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
+
+install-openturns: 
+	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 interactive: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
@@ -172,7 +176,7 @@ install-dirs:
 	test ! -d ${builddir_share}/omedit/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omedit/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
-install: install-dirs install-python
+install: install-dirs install-python install-openturns
 	echo Installing OpenModelica...
 	# Application directory (OSX)
 	if [ "$(EXE)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi

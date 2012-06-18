@@ -1,3 +1,0 @@
-#define WRAPPERNAME OpenModelica
-
-

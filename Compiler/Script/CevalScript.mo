@@ -798,7 +798,7 @@ algorithm
              plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile;
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
       SCode.Program scodeP,sp;
@@ -1301,6 +1301,12 @@ algorithm
         (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
       then    
         (cache,Values.STRING(scriptFile),st);
+        
+    case(cache,env,"runOpenTURNSPythonScript",vals,st,msg) 
+      equation
+        (cache,logFile,st) = runOpenTURNSPythonScript(cache,env,vals,st,msg);
+      then    
+        (cache,Values.STRING(logFile),st);
         
     case (cache,env,"buildModel",_,st,msg) /* failing build_model */
       then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
@@ -3098,9 +3104,32 @@ algorithm
       //print("lowered class\n");      
       //print("calling generateOpenTurnsInterface\n");  
       scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
-    then (cache,templateFile,inSt);
+    then (cache,scriptFile,inSt);
   end matchcontinue;
 end buildOpenTURNSInterface;
+
+protected function runOpenTURNSPythonScript  
+"runs OpenTURNS with the given python script returning the log file"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Values.Value> vals;
+  input Interactive.SymbolTable inSt;
+  input Ceval.Msg inMsg;
+  output Env.Cache outCache;
+  output String outLogFile;
+  output Interactive.SymbolTable outSt;
+algorithm
+  (outCache,outLogFile,outSt):= matchcontinue(inCache,inEnv,vals,inSt,inMsg)
+    local
+      String pythonScriptFile, logFile;
+      Env.Cache cache; 
+    case(cache,inEnv,{Values.STRING(pythonScriptFile)},inSt,inMsg)       
+      equation
+        logFile = OpenTURNS.runPythonScript(pythonScriptFile);
+      then 
+        (cache,logFile,inSt);
+  end matchcontinue;
+end runOpenTURNSPythonScript;
 
 protected function changeToTempDirectory "function changeToTempDirectory
 changes to temp directory (set using the functions from Settings.mo)

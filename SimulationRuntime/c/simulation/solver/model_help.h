@@ -84,6 +84,7 @@ void resetAllHelpVars(DATA* data);
 
 double getNextSampleTimeFMU(DATA *data);
 
+void storeOldValues(DATA *data);
 
 /* functions used in function_ZeroCrossings */
 double Less(double a, double b);
