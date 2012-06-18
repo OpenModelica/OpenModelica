@@ -176,7 +176,7 @@ install-dirs:
 	test ! -d ${builddir_share}/omedit/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omedit/nls/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
-install: install-dirs install-python install-openturns
+install: install-dirs install-python
 	echo Installing OpenModelica...
 	# Application directory (OSX)
 	if [ "$(EXE)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
