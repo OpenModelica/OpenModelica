@@ -125,8 +125,8 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
-        (cls, _, _) = instClassItem(item, InstTypes.NOMOD(), 
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL());
+        (cls, _, _, _) = instClassItem(item, InstTypes.NOMOD(), 
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), dummyFunctions);
         const_el = instGlobalConstants(inGlobalConstants, inClassPath, inEnv);
         cls = InstUtil.addElementsToClass(const_el, cls);
 
@@ -168,12 +168,14 @@ protected function instClassItem
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
+  input FunctionHashTable inFunctions;
   output Class outClass;
   output DAE.Type outType;
   output Prefixes outPrefixes;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outClass, outType, outPrefixes) :=
-  match(inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
+  (outClass, outType, outPrefixes, outFunctions) :=
+  match(inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inFunctions)
     local
       list<SCode.Element> el;
       list<tuple<SCode.Element, Modifier>> mel;
@@ -206,19 +208,20 @@ algorithm
       InstPolicy ip;
       SCode.Attributes attr;
       Prefixes prefs;
+      FunctionHashTable functions;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
-        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _) 
+        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _, functions) 
       equation
         (vars,_) = instBasicTypeAttributes(inMod, env, dummyFunctions);
         ty = instBasicType(name, inMod, vars);
       then 
-        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES());
+        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES(), functions);
 
     // A class with parts, instantiate all elements in it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, restriction = res,
         classDef = cdef as SCode.PARTS(elementLst = el), info = info),
-        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip)
+        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip, functions)
       equation
         // Enter the class scope and look up all class elements.
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
@@ -236,12 +239,12 @@ algorithm
         state = ClassInf.start(res, Absyn.IDENT(name));
         (cls, ty) = InstUtil.makeClass(elems, eq, ieq, alg, ialg, state, cse);
       then
-        (cls, ty, InstTypes.NO_PREFIXES());
+        (cls, ty, InstTypes.NO_PREFIXES(), functions);
 
     // A derived class, look up the inherited class and instantiate it.
     case (SCodeEnv.CLASS(cls = scls as SCode.CLASS(name = name, classDef =
         SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
-        restriction = res, info = info)), _, _, _, _, ip)
+        restriction = res, info = info)), _, _, _, _, ip, functions)
       equation
         // Look up the inherited class.
         (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
@@ -252,34 +255,34 @@ algorithm
         dim_count = listLength(dims);
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
-        (cls, ty, prefs) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
+        (cls, ty, prefs, functions) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip, functions);
 
         // Merge the attributes of this class with the prefixes of the inherited
         // class.
         prefs = InstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
         // Add any dimensions from this class to the resulting type.
-        ty = liftArrayType(dims, ty, inEnv, inPrefix);
+        (ty,functions) = liftArrayType(dims, ty, inEnv, inPrefix, functions);
 
         state = ClassInf.start(res, Absyn.IDENT(name));
         ty = InstUtil.makeDerivedClassType(ty, state);
       then
-        (cls, ty, prefs);
+        (cls, ty, prefs, functions);
         
     case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env),
-        _, _, _, _, ip)
+        _, _, _, _, ip, functions)
       equation
         (cls, ty) =
           instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip);
       then
-        (cls, ty, InstTypes.NO_PREFIXES());
+        (cls, ty, InstTypes.NO_PREFIXES(), functions);
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _)
+        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, functions)
       equation
         path = InstUtil.prefixToPath(inPrefix);
         ty = InstUtil.makeEnumType(enums, path);
       then
-        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES());
+        (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES(), functions);
 
     else
       equation
@@ -326,7 +329,7 @@ algorithm
         cdef = SCode.addElementToCompositeClassDef(ext, cdef);
         scls = SCode.setElementClassDefinition(cdef, inClassExtends);
         item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.USERDEFINED());
-        (cls, ty, _) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip);
+        (cls, ty, _, _) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip, dummyFunctions);
       then
         (cls, ty);
 
@@ -682,7 +685,7 @@ algorithm
         (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
 
         // Instantiate array dimensions and add them to the prefix.
-        dims = instDimensions(ad, inEnv, inPrefix);
+        (dims,functions) = instDimensions(ad, inEnv, inPrefix, functions);
         prefix = InstUtil.addPrefix(name, dims, inPrefix);
 
         // Check that it's legal to instantiate the class.
@@ -703,7 +706,7 @@ algorithm
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
-        (cls, ty, cls_prefs) = instClassItem(item, mod, prefs, env, prefix, ip);
+        (cls, ty, cls_prefs, functions) = instClassItem(item, mod, prefs, env, prefix, ip, functions);
         prefs = InstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
 
         // Add dimensions from the class type.
@@ -714,7 +717,7 @@ algorithm
         // Instantiate the binding.
         mod = SCodeMod.propagateMod(mod, dim_count);
         binding = SCodeMod.getModifierBinding(mod);
-        binding = instBinding(binding, dim_count);
+        (binding,functions) = instBinding(binding, dim_count, functions);
 
         // Create the component and add it to the program.
         comp = InstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
@@ -783,7 +786,7 @@ algorithm
         // Instantiate the class.
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty, _) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip);
+        (cls, ty, _, _) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip, dummyFunctions);
         cse = InstUtil.isSpecialExtends(ty);
       then
         (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse);
@@ -825,8 +828,8 @@ algorithm
       equation
         item = SCodeLookup.lookupInClass(name, inEnv);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _, _) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
-          prefix, INST_ONLY_CONST());
+        (cls, _, _, _) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
+          prefix, INST_ONLY_CONST(), dummyFunctions);
         oel = makeConstantsPackage(prefix, cls);
       then
         oel;
@@ -918,9 +921,11 @@ end instEnumLiteral;
 protected function instBinding
   input Binding inBinding;
   input Integer inCompDimensions;
+  input FunctionHashTable inFunctions;
   output Binding outBinding;
+  output FunctionHashTable outFunctions;
 algorithm
-  outBinding := match(inBinding, inCompDimensions)
+  (outBinding,outFunctions) := match(inBinding, inCompDimensions, inFunctions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
@@ -928,14 +933,15 @@ algorithm
       Prefix prefix;
       Integer pl, cd;
       Absyn.Info info;
+      FunctionHashTable functions;
 
-    case (InstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd)
+    case (InstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, functions)
       equation
-        (dexp,_) = instExp(aexp, env, prefix, dummyFunctions);
+        (dexp, functions) = instExp(aexp, env, prefix, functions);
       then
-        InstTypes.UNTYPED_BINDING(dexp, false, pl, info);
+        (InstTypes.UNTYPED_BINDING(dexp, false, pl, info), functions);
 
-    else inBinding;
+    else (inBinding,inFunctions);
 
   end match;
 end instBinding;
@@ -944,29 +950,34 @@ protected function instDimensions
   input list<Absyn.Subscript> inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output list<DAE.Dimension> outDimensions;
+  output FunctionHashTable outFunctions;
 algorithm
-  outDimensions := List.map2(inSubscript, instDimension, inEnv, inPrefix);
+  (outDimensions,outFunctions) := List.map2Fold(inSubscript, instDimension, inEnv, inPrefix, inFunctions);
 end instDimensions;
 
 protected function instDimension
   input Absyn.Subscript inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output DAE.Dimension outDimension;
+  output FunctionHashTable outFunctions;
 algorithm
-  outDimension := match(inSubscript, inEnv, inPrefix)
+  (outDimension,outFunctions) := match(inSubscript, inEnv, inPrefix, inFunctions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
+      FunctionHashTable functions;
 
-    case (Absyn.NOSUB(), _, _) then DAE.DIM_UNKNOWN();
+    case (Absyn.NOSUB(), _, _, _) then (DAE.DIM_UNKNOWN(),inFunctions);
 
-    case (Absyn.SUBSCRIPT(subscript = aexp), _, _)
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, functions)
       equation
-        (dexp,_) = instExp(aexp, inEnv, inPrefix, dummyFunctions);
+        (dexp,functions) = instExp(aexp, inEnv, inPrefix, functions);
       then
-        InstUtil.makeDimension(dexp);
+        (InstUtil.makeDimension(dexp),functions);
 
   end match;
 end instDimension;
@@ -1025,27 +1036,30 @@ protected function liftArrayType
   input DAE.Type inType;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output DAE.Type outType;
+  output FunctionHashTable outFunctions;
 algorithm
-  outType := match(inDims, inType, inEnv, inPrefix)
+  (outType,outFunctions) := match(inDims, inType, inEnv, inPrefix, inFunctions)
     local
       DAE.Dimensions dims1, dims2;
       DAE.TypeSource src;
       DAE.Type ty;
+      FunctionHashTable functions;
 
-    case ({}, _, _, _) then inType;
-    case (_, DAE.T_ARRAY(ty, dims1, src), _, _)
+    case ({}, _, _, _, _) then (inType,inFunctions);
+    case (_, DAE.T_ARRAY(ty, dims1, src), _, _, functions)
       equation
-        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+        (dims2,functions) = List.map2Fold(inDims, instDimension, inEnv, inPrefix, functions);
         dims1 = listAppend(dims2, dims1);
       then
-        DAE.T_ARRAY(ty, dims1, src);
+        (DAE.T_ARRAY(ty, dims1, src),functions);
 
     else
       equation
-        dims2 = List.map2(inDims, instDimension, inEnv, inPrefix);
+        (dims2,functions) = List.map2Fold(inDims, instDimension, inEnv, inPrefix, inFunctions);
       then
-        DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource);
+        (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource),functions);
   
   end match;
 end liftArrayType;
@@ -1702,8 +1716,8 @@ algorithm
         path = Absyn.crefToPath(inName);
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
-        (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _) = instClassItem(item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL());
+        (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, _) = instClassItem(item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL(), dummyFunctions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
         stmts = List.flatten(algorithms);
       then
