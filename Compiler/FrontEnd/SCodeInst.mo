@@ -135,7 +135,7 @@ algorithm
         (cls, symtab) = assignParamTypes(cls, symtab);
         (cls, symtab) = Typing.typeClass(cls, symtab);
 
-        (cls, symtab) = instConditionalComponents(cls, symtab);
+        (cls, symtab, _) = instConditionalComponents(cls, symtab, dummyFunctions);
         (cls, symtab) = Typing.typeClass(cls, symtab);
         cls = Typing.typeSections(cls, symtab);
 
@@ -210,7 +210,7 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _) 
       equation
-        vars = instBasicTypeAttributes(inMod, env);
+        (vars,_) = instBasicTypeAttributes(inMod, env, dummyFunctions);
         ty = instBasicType(name, inMod, vars);
       then 
         (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES());
@@ -385,26 +385,29 @@ end instBasicType;
 protected function instBasicTypeAttributes
   input Modifier inMod;
   input Env inEnv;
+  input FunctionHashTable inFunctions;
   output list<DAE.Var> outVars;
+  output FunctionHashTable outFunctions;
 algorithm
-  outVars := match(inMod, inEnv)
+  (outVars,outFunctions) := match(inMod, inEnv, inFunctions)
     local
       list<Modifier> submods;
       SCodeEnv.AvlTree attrs;
       list<DAE.Var> vars;
       SCode.Element el;
       Absyn.Info info;
+      FunctionHashTable functions;
 
-    case (InstTypes.NOMOD(), _) then {};
+    case (InstTypes.NOMOD(), _, functions) then ({},functions);
 
     case (InstTypes.MODIFIER(subModifiers = submods), 
-        SCodeEnv.FRAME(clsAndVars = attrs) :: _)
+        SCodeEnv.FRAME(clsAndVars = attrs) :: _,functions)
       equation
-        vars = List.map1(submods, instBasicTypeAttribute, attrs);
+        (vars,functions) = List.map1Fold(submods, instBasicTypeAttribute, attrs, functions);
       then
-        vars;
+        (vars,functions);
 
-    case (InstTypes.REDECLARE(element = el), _)
+    case (InstTypes.REDECLARE(element = el), _, _)
       equation
         info = SCode.elementInfo(el);
         Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE, {}, info);
@@ -417,9 +420,11 @@ end instBasicTypeAttributes;
 protected function instBasicTypeAttribute
   input Modifier inMod;
   input SCodeEnv.AvlTree inAttributes;
+  input FunctionHashTable inFunctions;
   output DAE.Var outAttribute;
+  output FunctionHashTable outFunctions;
 algorithm
-  outAttribute := matchcontinue(inMod, inAttributes)
+  (outAttribute,outFunctions) := matchcontinue(inMod, inAttributes, inFunctions)
     local
       String ident, tspec;
       DAE.Type ty;
@@ -428,18 +433,19 @@ algorithm
       DAE.Binding binding;
       Env env;
       Prefix prefix;
+      FunctionHashTable functions;
 
     case (InstTypes.MODIFIER(name = ident, subModifiers = {}, 
-        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _)), _)
+        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _)), _, functions)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
         ty = instBasicTypeAttributeType(tspec);
-        (inst_exp,_) = instExp(bind_exp, env, prefix, dummyFunctions);
+        (inst_exp,functions) = instExp(bind_exp, env, prefix, functions);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE());
+        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), functions);
 
     // TODO: Print error message for invalid attributes.
   end matchcontinue;
@@ -496,8 +502,8 @@ protected function instElementList
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
 algorithm
-  (outElements, outContainsSpecialExtends) := instElementList2(inElements, 
-    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false);
+  (outElements, outContainsSpecialExtends, _) := instElementList2(inElements, 
+    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, dummyFunctions);
 end instElementList;
 
 protected function instElementList2
@@ -509,31 +515,34 @@ protected function instElementList2
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
+  input FunctionHashTable inFunctions;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElements, outContainsSpecialExtends) :=
+  (outElements, outContainsSpecialExtends, outFunctions) :=
   match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends)
+      inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       tuple<SCode.Element, Modifier> elem;
       list<tuple<SCode.Element, Modifier>> rest_el;
       Boolean cse;
       list<Element> accum_el;
       list<SCodeEnv.Extends> exts;
+      FunctionHashTable functions;
 
-    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse)
+    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
       equation
-        (accum_el, exts, cse) = instElementList_dispatch(elem, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse);
-        (accum_el, cse) = instElementList2(rest_el, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse);
+        (accum_el, exts, cse, functions) = instElementList_dispatch(elem, inPrefixes, exts,
+          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
+        (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
+          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
       then
-        (accum_el, cse);
+        (accum_el, cse, functions);
 
-    case ({}, _, {}, _, _, _, _, cse) then (inAccumEl, cse);
+    case ({}, _, {}, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
 
-    case ({}, _, _ :: _, _, _, _, _, _)
+    case ({}, _, _ :: _, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList2 has extends left!."});
@@ -552,13 +561,15 @@ protected function instElementList_dispatch
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
+  input FunctionHashTable inFunctions;
   output list<Element> outElements;
   output list<SCodeEnv.Extends> outExtends;
   output Boolean outContainsSpecialExtends;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElements, outExtends, outContainsSpecialExtends) :=
+  (outElements, outExtends, outContainsSpecialExtends, outFunctions) :=
   match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends)
+      inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       SCode.Element elem;
       Modifier mod;
@@ -570,44 +581,45 @@ algorithm
       list<SCodeEnv.Extends> rest_exts;
       String name;
       InstPolicy ip;
+      FunctionHashTable functions;
 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, functions)
       equation
-        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy);
+        (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
-        (res :: inAccumEl, inExtends, cse);
+        (res :: inAccumEl, inExtends, cse, functions);
 
     case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse)
+        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
       equation
-        res = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy);
+        (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
-        (res :: inAccumEl, inExtends, cse);
+        (res :: inAccumEl, inExtends, cse, functions);
 
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _)
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, functions)
       equation
         (res, cse) = instExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix, ip);
         cse = inContainsSpecialExtends or cse;
       then
-        (res :: inAccumEl, rest_exts, cse);
+        (res :: inAccumEl, rest_exts, cse, functions);
 
     case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        mod), _, _, _, _, ip, _, cse)
+        mod), _, _, _, _, ip, _, cse, functions)
       equation
         ores = instPackageConstants(elem, mod, inEnv, inPrefix);
         accum_el = List.consOption(ores, inAccumEl);
       then
-        (accum_el, inExtends, cse);
+        (accum_el, inExtends, cse, functions);
 
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
         {"SCodeInst.instElementList_dispatch ran out of extends!."});
       then
         fail();
 
-    else (inAccumEl, inExtends, inContainsSpecialExtends);
+    else (inAccumEl, inExtends, inContainsSpecialExtends, inFunctions);
 
   end match;
 end instElementList_dispatch;
@@ -619,10 +631,12 @@ protected function instElement
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
+  input FunctionHashTable inFunctions;
   output Element outElement;
+  output FunctionHashTable outFunctions;
 algorithm
-  outElement := 
-  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy)
+  (outElement,outFunctions) := 
+  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inFunctions)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -648,20 +662,21 @@ algorithm
       Absyn.Exp cond_exp;
       DAE.Exp inst_exp;
       ParamType pty;
+      FunctionHashTable functions;
 
     case (SCode.COMPONENT(name = name, 
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _)
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, functions)
       equation
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
         path = InstUtil.prefixToPath(prefix);
         comp = InstTypes.OUTER_COMPONENT(path, NONE());
       then
-        InstTypes.ELEMENT(comp, InstTypes.BASIC_TYPE());
+        (InstTypes.ELEMENT(comp, InstTypes.BASIC_TYPE()),functions);
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = path), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _, ip)
+        condition = NONE(), info = info), _, _, _, _, ip, functions)
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
@@ -704,18 +719,18 @@ algorithm
         // Create the component and add it to the program.
         comp = InstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
       then
-        InstTypes.ELEMENT(comp, cls);
+        (InstTypes.ELEMENT(comp, cls),functions);
 
     // A conditional component, save it for later.
     case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
-        _, _, _, _, _)
+        _, _, _, _, _, functions)
       equation
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        (inst_exp,_) = instExp(cond_exp, inEnv, inPrefix, dummyFunctions);
+        (inst_exp,functions) = instExp(cond_exp, inEnv, inPrefix, functions);
         comp = InstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
           inClassMod, inPrefixes, inEnv, inPrefix, info);
       then
-        InstTypes.CONDITIONAL_ELEMENT(comp);
+        (InstTypes.CONDITIONAL_ELEMENT(comp),functions);
 
     else
       equation
@@ -2732,8 +2747,8 @@ algorithm
 
     case (SCodeEnv.VAR(var = el), _, true, _)
       equation
-        iel = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
-          InstTypes.emptyPrefix, INST_ALL());
+        (iel,_) = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
+          InstTypes.emptyPrefix, INST_ALL(), dummyFunctions);
         pre_path = Absyn.pathPrefix(inPath);
         prefix = InstUtil.pathPrefix(pre_path);
         iel = InstUtil.prefixElement(iel, prefix);
@@ -2744,9 +2759,9 @@ algorithm
       equation
         pre_path = Absyn.pathPrefix(inPath);
         prefix = InstUtil.pathPrefix(pre_path);
+        (iel,_) = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv, prefix, INST_ALL(), dummyFunctions);
       then
-        instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
-          prefix, INST_ALL());
+        iel;
 
     case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
         SCode.ENUMERATION(enumLst = enuml), info = info)), _, _, _)
@@ -2789,23 +2804,26 @@ end makeEnumExpFromElement;
 protected function instConditionalComponents
   input Class inClass;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctions;
   output Class outClass;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inSymbolTable)
+  (outClass, outSymbolTable, outFunctions) := match(inClass, inSymbolTable, inFunctions)
     local
       SymbolTable st;
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
+      FunctionHashTable functions;
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st, functions)
       equation
-        (comps, st) = instConditionalElements(comps, st, {});
+        (comps, st, functions) = instConditionalElements(comps, st, {}, functions);
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
+        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st, functions);
 
-    else (inClass, inSymbolTable);
+    else (inClass, inSymbolTable, inFunctions);
 
   end match;
 end instConditionalComponents;
@@ -2814,10 +2832,12 @@ protected function instConditionalElements
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
   input list<Element> inAccumEl;
+  input FunctionHashTable inFunctions;
   output list<Element> outElements;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElements, outSymbolTable) := match(inElements, inSymbolTable, inAccumEl)
+  (outElements, outSymbolTable, outFunctions) := match(inElements, inSymbolTable, inAccumEl, inFunctions)
     local
       Element el;
       list<Element> rest_el, accum_el;
@@ -2826,16 +2846,17 @@ algorithm
       Absyn.Path bc;
       Class cls;
       DAE.Type ty;
+      FunctionHashTable functions;
 
-    case ({}, st, accum_el) then (listReverse(accum_el), st);
+    case ({}, st, accum_el, functions) then (listReverse(accum_el), st, functions);
 
-    case (el :: rest_el, st, accum_el)
+    case (el :: rest_el, st, accum_el, functions)
       equation
-        (oel, st) = instConditionalElement(el, st);
+        (oel, st, functions) = instConditionalElement(el, st, functions);
         accum_el = List.consOption(oel, accum_el);
-        (accum_el, st) = instConditionalElements(rest_el, st, accum_el);
+        (accum_el, st, functions) = instConditionalElements(rest_el, st, accum_el, functions);
       then
-        (accum_el, st);
+        (accum_el, st, functions);
 
   end match;
 end instConditionalElements;
@@ -2844,21 +2865,24 @@ protected function instConditionalElementOnTrue
   input Boolean inCondition;
   input Element inElement;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctions;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElement, outSymbolTable) := match(inCondition, inElement, inSymbolTable)
+  (outElement, outSymbolTable) := match(inCondition, inElement, inSymbolTable, inFunctions)
     local
       Option<Element> oel;
       SymbolTable st;
+      FunctionHashTable functions;
 
-    case (true, _, st)
+    case (true, _, st, functions)
       equation
-        (oel, st) = instConditionalElement(inElement, st);
+        (oel, st, functions) = instConditionalElement(inElement, st, functions);
       then
-        (oel, st);
+        (oel, st, functions);
 
-    else (NONE(), inSymbolTable);
+    else (NONE(), inSymbolTable, inFunctions);
 
   end match;
 end instConditionalElementOnTrue;
@@ -2866,10 +2890,12 @@ end instConditionalElementOnTrue;
 protected function instConditionalElement
   input Element inElement;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctions;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElement, outSymbolTable) := match(inElement, inSymbolTable)
+  (outElement, outSymbolTable, outFunctions) := match(inElement, inSymbolTable, inFunctions)
     local
       Component comp;
       Class cls;
@@ -2878,28 +2904,29 @@ algorithm
       Option<Element> oel;
       Absyn.Path bc;
       DAE.Type ty;
+      FunctionHashTable functions;
 
-    case (InstTypes.ELEMENT(comp, cls), st)
+    case (InstTypes.ELEMENT(comp, cls), st, functions)
       equation
-        (cls, st) = instConditionalComponents(cls, st);
+        (cls, st, functions) = instConditionalComponents(cls, st, functions);
         el = InstTypes.ELEMENT(comp, cls);
       then
-        (SOME(el), st);
+        (SOME(el), st, functions);
 
-    case (InstTypes.CONDITIONAL_ELEMENT(comp), st)
+    case (InstTypes.CONDITIONAL_ELEMENT(comp), st, functions)
       equation
-        (oel, st) = instConditionalComponent(comp, st);
+        (oel, st, functions) = instConditionalComponent(comp, st, functions);
       then
-        (oel, st);
+        (oel, st, functions);
 
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st)
+    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, functions)
       equation
-        (cls, st) = instConditionalComponents(cls, st);
+        (cls, st, functions) = instConditionalComponents(cls, st, functions);
         el = InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
       then
-        (SOME(el), st);
+        (SOME(el), st, functions);
 
-    else (SOME(inElement), inSymbolTable);
+    else (SOME(inElement), inSymbolTable, inFunctions);
 
   end match;
 end instConditionalElement;
@@ -2907,10 +2934,12 @@ end instConditionalElement;
 protected function instConditionalComponent
   input Component inComponent;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctions;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElement, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+  (outElement, outSymbolTable, outFunctions) := matchcontinue(inComponent, inSymbolTable, inFunctions)
     local
       SCode.Element sel;
       Env env;
@@ -2924,16 +2953,17 @@ algorithm
       Modifier mod;
       Option<Element> el;
       Prefixes prefs;
+      FunctionHashTable functions;
 
     case (InstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
-        prefix, info), st)
+        prefix, info), st, functions)
       equation
         (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);
-        (el, st) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st);
+        (el, st, functions) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, functions);
       then
-        (el, st);
+        (el, st, functions);
          
     else
       equation
@@ -2955,11 +2985,13 @@ protected function instConditionalComponent2
   input Env inEnv;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctions;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
+  output FunctionHashTable outFunctions;
 algorithm
-  (outElement, outSymbolTable) := 
-  match(inCondition, inName, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable)
+  (outElement, outSymbolTable, outFunctions) := 
+  match(inCondition, inName, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable, inFunctions)
     local
       SCode.Element sel;
       Element el;
@@ -2967,28 +2999,29 @@ algorithm
       Boolean added;
       Option<Element> oel;
       Component comp;
+      FunctionHashTable functions;
 
-    case (InstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st)
+    case (InstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st, functions)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
         // Instantiate the element and update the symbol table.
-        el = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL());
+        (el,functions) = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL(), functions);
         (el, st, added) = InstSymbolTable.addInstCondElement(el, st);
         // Recursively instantiate any conditional components in this element.
-        (oel, st) = instConditionalElementOnTrue(added, el, st);
+        (oel, st, functions) = instConditionalElementOnTrue(added, el, st, functions);
       then
-        (oel, st);
+        (oel, st, functions);
 
-    case (InstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st)
+    case (InstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st, functions)
       equation
         comp = InstTypes.DELETED_COMPONENT(inName);
         st = InstSymbolTable.updateComponent(comp, inSymbolTable);
       then
-        (NONE(), st);
+        (NONE(), st, functions);
 
-    case (InstTypes.ARRAY_CONDITION(conditions = _), _, _, _, _, _, _, st)
+    case (InstTypes.ARRAY_CONDITION(conditions = _), _, _, _, _, _, _, st, _)
       equation
         print("Sorry, complex arrays with conditional components are not yet supported.\n");
       then
