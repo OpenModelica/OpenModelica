@@ -2870,7 +2870,7 @@ protected function instConditionalElementOnTrue
   output SymbolTable outSymbolTable;
   output FunctionHashTable outFunctions;
 algorithm
-  (outElement, outSymbolTable) := match(inCondition, inElement, inSymbolTable, inFunctions)
+  (outElement, outSymbolTable, outFunctions) := match(inCondition, inElement, inSymbolTable, inFunctions)
     local
       Option<Element> oel;
       SymbolTable st;
