@@ -216,20 +216,24 @@ package SimCode
   
   uniontype SimEqSystem
     record SES_RESIDUAL
+      Integer index;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_RESIDUAL;
     record SES_SIMPLE_ASSIGN
+      Integer index;
       DAE.ComponentRef cref;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_SIMPLE_ASSIGN;
     record SES_ARRAY_CALL_ASSIGN
+      Integer index;
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
       DAE.ElementSource source;
     end SES_ARRAY_CALL_ASSIGN;
     record SES_ALGORITHM
+      Integer index;
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
     record SES_LINEAR
@@ -253,6 +257,7 @@ package SimCode
       list<Integer> value_dims;
     end SES_MIXED;
     record SES_WHEN
+      Integer index;
       DAE.ComponentRef left;
       DAE.Exp right;
       list<tuple<DAE.Exp, Integer>> conditions;

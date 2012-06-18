@@ -627,7 +627,7 @@ algorithm
       SimCode.SimEqSystem eq;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> vars_cref;
-    case (SimCode.SES_SIMPLE_ASSIGN(cref,_,_) :: tail,_,i_algs) 
+    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,i_algs) 
     equation
       true = List.notMember(cref,List.map(states,ComponentReference.crefPrefixDer));
       true = List.notMember(cref,states);
@@ -653,7 +653,7 @@ function getExpResidual
 algorithm
   o:=match (i) 
   local DAE.Exp e;
-  case (SimCode.SES_RESIDUAL(e,_)) then e;
+  case (SimCode.SES_RESIDUAL(exp=e)) then e;
   end match;
 end getExpResidual;
 
@@ -1074,13 +1074,14 @@ algorithm
   eq_out := 
     matchcontinue (eq,zc_exps)
       local 
+        Integer index;
         DAE.Exp exp;
         DAE.ComponentRef cref;
         DAE.ElementSource source;
-      case (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source),_)
+      case (SimCode.SES_SIMPLE_ASSIGN(index,cref,exp,source),_)
       equation
         exp = replaceExpZC(exp,zc_exps,0);
-      then SimCode.SES_SIMPLE_ASSIGN(cref,exp,source);
+      then SimCode.SES_SIMPLE_ASSIGN(index,cref,exp,source);
       case (_,_) then eq;
     end matchcontinue;
 end replaceZC;
