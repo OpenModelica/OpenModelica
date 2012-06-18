@@ -2144,7 +2144,7 @@ algorithm
     local
       String cname,   fileDir;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
-      Integer n_h,maxDelayedExpIndex;
+      Integer n_h,maxDelayedExpIndex,uniqueEqIndex;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       list<HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2, backendDAE2;
@@ -2430,14 +2430,14 @@ algorithm
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
-        sampleEquations = createSampleEquations(sampleEqns);
+        (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
         n_h = listLength(helpVarInfo);
  
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
-        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
+        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,uniqueEqIndex,{},{},{});
         
         odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
@@ -2446,9 +2446,9 @@ algorithm
         startValueEquations = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
         parameterEquations = createParameterEquations(shared,parameterEquations);        
-        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,({},algs));
+        ((uniqueEqIndex,removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{},algs));
         
-        algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
+        ((uniqueEqIndex,algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,(uniqueEqIndex,{}));
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
         makefileParams = createMakefileParams(includeDirs,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
@@ -2474,7 +2474,8 @@ algorithm
         (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         // add equations with only parameters as division expression
         allDivStmts = List.map(divLst,generateParameterDivisionbyZeroTestEqn);
-        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(0,allDivStmts)});
+        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(uniqueEqIndex,allDivStmts)});
+        uniqueEqIndex = uniqueEqIndex+1;
         
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
@@ -2537,15 +2538,17 @@ protected function createEquationsForSystems
   input BackendDAE.Shared shared;
   input Integer offset;
   input list<HelpVarInfo> helpVarInfo;
+  input Integer iuniqueEqIndex;
   input list<list<SimEqSystem>> inOdeEquations;
   input list<SimEqSystem> inAlgebraicEquations;
   input list<SimEqSystem> inAllEquations;
+  output Integer ouniqueEqIndex;
   output list<list<SimEqSystem>> oodeEquations;
   output list<SimEqSystem> oalgebraicEquations;
   output list<SimEqSystem> oallEquations;
 algorithm
-  (oodeEquations,oalgebraicEquations,oallEquations) := 
-  matchcontinue (ifcpp,inSysts,shared,offset,helpVarInfo,inOdeEquations,inAlgebraicEquations,inAllEquations)
+  (ouniqueEqIndex,oodeEquations,oalgebraicEquations,oallEquations) := 
+  matchcontinue (ifcpp,inSysts,shared,offset,helpVarInfo,iuniqueEqIndex,inOdeEquations,inAlgebraicEquations,inAllEquations)
     local
       list<SimEqSystem> odeEquations1,algebraicEquations1,allEquations1;
       BackendDAE.Matching matching;
@@ -2555,11 +2558,12 @@ algorithm
       list<list<SimEqSystem>> odeEquations;
       list<SimEqSystem> algebraicEquations;
       list<SimEqSystem> allEquations;
+      Integer uniqueEqIndex;
       
-    case (_,{},_,_,_,odeEquations,algebraicEquations,allEquations)
-      then (odeEquations,algebraicEquations,allEquations);
+    case (_,{},_,_,_,_,odeEquations,algebraicEquations,allEquations)
+      then (iuniqueEqIndex,odeEquations,algebraicEquations,allEquations);
     
-    case (ifcpp,(syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)))::systs,_,offset,_,odeEquations,algebraicEquations,allEquations)
+    case (ifcpp,(syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)))::systs,_,offset,_,_,odeEquations,algebraicEquations,allEquations)
       equation
         (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
         blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
@@ -2573,8 +2577,8 @@ algorithm
         odeEquations = odeEquations1::odeEquations;
         algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
         allEquations = listAppend(allEquations,allEquations1);
-        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,offset+BackendDAEUtil.systemSize(syst),helpVarInfo,odeEquations,algebraicEquations,allEquations);
-     then (odeEquations,algebraicEquations,allEquations);
+        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,offset+BackendDAEUtil.systemSize(syst),helpVarInfo,iuniqueEqIndex,odeEquations,algebraicEquations,allEquations);
+     then (uniqueEqIndex,odeEquations,algebraicEquations,allEquations);
   end matchcontinue;
 end createEquationsForSystems;
 
@@ -3392,21 +3396,23 @@ end extractExtObjInfo2;
 protected function createAlgorithmAndEquationAsserts
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input list<SimEqSystem> acc;
-  output list<SimEqSystem> algorithmAndEquationAsserts;
+  input tuple<Integer,list<SimEqSystem>> acc;
+  output tuple<Integer,list<SimEqSystem>> algorithmAndEquationAsserts;
 algorithm
   algorithmAndEquationAsserts := matchcontinue (syst,shared,acc)
     local
+      list<SimEqSystem> simeqns;
       array<DAE.Algorithm> algs;
       list<DAE.Algorithm> res,res1;
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       Boolean b;
       list<SimEqSystem> result;
+      Integer uniqueEqIndex;
       
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars = vars),BackendDAE.SHARED(algorithms=algs),acc)
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars = vars),BackendDAE.SHARED(algorithms=algs),(uniqueEqIndex,simeqns))
       equation
-        b = List.isEmpty(acc) "execute this part only once :D";
+        b = List.isEmpty(simeqns) "execute this part only once :D";
         res = createAlgorithmAndEquationAssertsFromAlgs(Debug.bcallret1(b,arrayList,algs,{}));
         // get sqrt asserts
         res1 = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,findSqrtCallsforAsserts,{});
@@ -3414,9 +3420,9 @@ algorithm
         // get minmax and nominal asserts
         res1 = BackendVariable.traverseBackendDAEVars(vars,createVarMinMaxAssert,{});
         res = listAppend(res,res1);
-        result = List.map(res,dlowAlgToSimEqSystem);
-        result = listAppend(result,acc);
-      then result;
+        (result,uniqueEqIndex) = List.mapFold(res,dlowAlgToSimEqSystem,uniqueEqIndex);
+        result = listAppend(result,simeqns);
+      then ((uniqueEqIndex,result));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"createAlgorithmAndEquationAsserts failed"});
@@ -3506,7 +3512,7 @@ algorithm
       equation
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(vars,createVarMinMaxAssert,{});
-        simvarasserts = List.map(varasserts,dlowAlgToSimEqSystem);
+        (simvarasserts,_) = List.mapFold(varasserts,dlowAlgToSimEqSystem,0);
         removedEquations = listAppend(simvarasserts,acc);
         
       then removedEquations;
@@ -3518,8 +3524,8 @@ algorithm
 end createRemovedEquations;
 
 protected function traversedlowEqToSimEqSystem
-  input tuple<BackendDAE.Equation, tuple<list<SimEqSystem>,array<Algorithm.Algorithm>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<list<SimEqSystem>,array<Algorithm.Algorithm>>> outTpl;
+  input tuple<BackendDAE.Equation, tuple<Integer,list<SimEqSystem>,array<Algorithm.Algorithm>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<Integer,list<SimEqSystem>,array<Algorithm.Algorithm>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local 
@@ -3527,10 +3533,11 @@ algorithm
       SimEqSystem se;
       list<SimEqSystem> seqnlst;
       array<Algorithm.Algorithm> algs;
-    case ((e,(seqnlst,algs)))
+      Integer uniqueEqIndex;
+    case ((e,(uniqueEqIndex,seqnlst,algs)))
       equation
         se = dlowEqToSimEqSystem(e,algs);
-      then ((e,(se::seqnlst,algs)));
+      then ((e,(uniqueEqIndex,se::seqnlst,algs)));
     case inTpl then inTpl;
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
@@ -3773,7 +3780,7 @@ algorithm
   end match;
 end whenClauseToSimWhenClause;
 
-public function createEquations
+protected function createEquations
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
@@ -4175,9 +4182,12 @@ author: wbraun
 Create SimCodeEqns from Backend Equation list.
 used for create Sample equations."
   input list<BackendDAE.Equation> inEqns;
-  output list<SimEqSystem> outEqns;
+  input Integer iIndex;
+  input list<SimEqSystem> iSamEqns;
+  output Integer oIndex;
+  output list<SimEqSystem> oSamEqns;
 algorithm
-  outEqns := matchcontinue (inEqns)
+  (oIndex,oSamEqns) := matchcontinue (inEqns,iIndex,iSamEqns)
     local
       BackendDAE.Equation eq;
       list<BackendDAE.Equation> eqns;
@@ -4186,23 +4196,25 @@ algorithm
       DAE.Exp e2;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-    case ({}) then {};
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source = source)::eqns)
+      Integer index;
+    case ({},_,_) then (iIndex,listReverse(iSamEqns));
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source = source)::eqns,_,_)
       equation
-        simeqns = createSampleEquations(eqns);
+        (index,simeqns) = createSampleEquations(eqns,iIndex+1,SES_SIMPLE_ASSIGN(iIndex,cr, e2, source)::iSamEqns);
       then
-        (SES_SIMPLE_ASSIGN(0,cr, e2, source)::simeqns);
-    case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e2, source = source)::eqns)
+        (index,simeqns);
+    case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e2, source = source)::eqns,_,_)
       equation
-        simeqns = createSampleEquations(eqns);
+        (index,simeqns) = createSampleEquations(eqns,iIndex+1,SES_SIMPLE_ASSIGN(iIndex,cr, e2, source)::iSamEqns);
       then
-        (SES_SIMPLE_ASSIGN(0,cr, e2, source)::simeqns);
-    case (eq::eqns)
+        (index,simeqns);        
+    case (eq::eqns,_,_)
       equation
         eqstr = BackendDump.equationStr(eq);
         Error.addCompilerWarning("sample call in equation: " +& eqstr +& "not supported, yet!");
-        simeqns = createSampleEquations(eqns);
-      then (simeqns);
+        (index,simeqns) = createSampleEquations(eqns,iIndex,iSamEqns);
+      then
+        (index,simeqns);
   end matchcontinue;
 end createSampleEquations;
 
@@ -6198,17 +6210,18 @@ end dlowEqToSimEqSystem;
 
 protected function dlowAlgToSimEqSystem
   input DAE.Algorithm inAlg;
+  input Integer iuniqueEqIndex;
   output SimEqSystem outEquation;
+  output Integer ouniqueEqIndex;
 algorithm
-  outEquation := match (inAlg)
+  (outEquation,ouniqueEqIndex) := match (inAlg,iuniqueEqIndex)
     local
-      DAE.Algorithm alg;
       list<DAE.Statement> algStatements;
-    case (alg)
+    case (_,_)
       equation
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(inAlg, NONE());
       then
-        SES_ALGORITHM(0,algStatements);
+        (SES_ALGORITHM(iuniqueEqIndex,algStatements),iuniqueEqIndex+1);
   end match;
 end dlowAlgToSimEqSystem;
 
@@ -6234,7 +6247,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars=vars),_,acc)
       equation
         asserts1 = BackendVariable.traverseBackendDAEVars(vars,createVarNominalAssert,{});
-        asserts2 = List.map(asserts1,dlowAlgToSimEqSystem);
+        (asserts2,_) = List.mapFold(asserts1,dlowAlgToSimEqSystem,0);
       then listAppend(asserts2,acc);
   end matchcontinue;
 end createVarNominalAssertFromVars;
@@ -6345,10 +6358,10 @@ algorithm
         parameterEquations = createEquations(false, false, true, false, false, syst, shared, 0, comps, helpVarInfo);
         
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
-        inalgs = List.map(ialgs,dlowAlgToSimEqSystem);
+        (inalgs,_) = List.mapFold(ialgs,dlowAlgToSimEqSystem,0);
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
-        simvarasserts = List.map(varasserts,dlowAlgToSimEqSystem);
+        (simvarasserts,_) = List.mapFold(varasserts,dlowAlgToSimEqSystem,0);
         
         parameterEquations = listAppend(parameterEquations, inalgs);
         parameterEquations = listAppend(parameterEquations, simvarasserts);
