@@ -3472,6 +3472,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''  
   let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.c<%i%>' else '<%contextCref(var.name,contextFunction)%>'
+  let &varInits += initRecordMembers(var)
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ") 
@@ -3490,7 +3491,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
     else
       let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
       let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
-     let &varInits += defaultValue
+      let &varInits += defaultValue
       "")
   else
     (match var.value
