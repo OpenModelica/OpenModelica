@@ -206,14 +206,14 @@ install (FILES "DataExchange/Interfaces/IHistory.h"
   DESTINATION include/omc/cpp/DataExchange/Interfaces)
  
  
- #copy utils/extension
- SET(HS utils/extension/adaptable_factory.hpp  utils/extension/common.hpp utils/extension/convenience.hpp 
-		utils/extension/extension.hpp  utils/extension/factory.hpp utils/extension/factory_map.hpp utils/extension/filesystem.hpp 
-		utils/extension/parameter.hpp utils/extension/parameter_map.hpp utils/extension/registry.hpp utils/extension/shared_library.hpp 
-		utils/extension/type_map.hpp
- utils/extension/impl/adaptable_factory.hpp utils/extension/impl/adaptable_factory_free_functions.hpp utils/extension/impl/adaptable_factory_set.hpp
- utils/extension/impl/create.hpp  utils/extension/impl/create_func.hpp utils/extension/impl/decl.hpp
- utils/extension/impl/factory.hpp utils/extension/impl/factory_map.hpp utils/extension/impl/function.hpp utils/extension/impl/library_impl.hpp 
- utils/extension/impl/shared_library.hpp utils/extension/impl/typeinfo.hpp) 
+ #copy Utils/extension
+ SET(HS Utils/extension/adaptable_factory.hpp  Utils/extension/common.hpp Utils/extension/convenience.hpp 
+		Utils/extension/extension.hpp  Utils/extension/factory.hpp Utils/extension/factory_map.hpp Utils/extension/filesystem.hpp 
+		Utils/extension/parameter.hpp Utils/extension/parameter_map.hpp Utils/extension/registry.hpp Utils/extension/shared_library.hpp 
+		Utils/extension/type_map.hpp
+ Utils/extension/impl/adaptable_factory.hpp Utils/extension/impl/adaptable_factory_free_functions.hpp Utils/extension/impl/adaptable_factory_set.hpp
+ Utils/extension/impl/create.hpp  Utils/extension/impl/create_func.hpp Utils/extension/impl/decl.hpp
+ Utils/extension/impl/factory.hpp Utils/extension/impl/factory_map.hpp Utils/extension/impl/function.hpp Utils/extension/impl/library_impl.hpp 
+ Utils/extension/impl/shared_library.hpp Utils/extension/impl/typeinfo.hpp) 
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
   
