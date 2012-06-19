@@ -42,9 +42,11 @@ encapsulated package SCodeInst
 public import Absyn;
 public import DAE;
 public import InstTypes;
+public import HashTablePathToFunction;
 public import SCode;
 public import SCodeEnv;
 
+protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Connect;
@@ -78,7 +80,7 @@ public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
 public type Equation = InstTypes.Equation;
 public type Function = InstTypes.Function;
-public type FunctionHashTable = Integer;
+public type FunctionHashTable = HashTablePathToFunction.HashTable;
 public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
@@ -93,9 +95,6 @@ protected uniontype InstPolicy
   record INST_ALL end INST_ALL;
   record INST_ONLY_CONST end INST_ONLY_CONST;
 end InstPolicy;
-
-protected constant FunctionHashTable dummyFunctions = -128912362;
-protected constant FunctionHashTable emptyFunctions = -128912362;
 
 public function instClass
   "Flattens a class."
@@ -128,7 +127,7 @@ algorithm
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         (cls, _, _, functions) = instClassItem(item, InstTypes.NOMOD(), 
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), emptyFunctions);
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize));
         (const_el,functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
         cls = InstUtil.addElementsToClass(const_el, cls);
 

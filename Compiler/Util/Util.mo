@@ -3346,4 +3346,12 @@ algorithm
   end matchcontinue;
 end nextPrime_isPrime2;
 
+public function anyToEmptyString "Useful if you do not want to write an unparser"
+  input A a;
+  output String empty;
+  replaceable type A subtypeof Any;
+algorithm
+  empty := "";
+end anyToEmptyString;
+
 end Util;
