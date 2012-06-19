@@ -15,9 +15,9 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
-#include "utils/extension/extension.hpp"
-#include "utils/extension/factory.hpp"
-#include "utils/extension/type_map.hpp"
+#include "Utils/extension/extension.hpp"
+#include "Utils/extension/factory.hpp"
+#include "Utils/extension/type_map.hpp"
 
 using namespace boost::extensions;
 using namespace std;

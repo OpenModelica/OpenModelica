@@ -17,9 +17,9 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include "boost/tuple/tuple.hpp"
 #include <boost/shared_ptr.hpp>
-#include "utils/extension/extension.hpp"
-#include "utils/extension/shared_library.hpp"
-#include "utils/extension/convenience.hpp"
+#include "Utils/extension/extension.hpp"
+#include "Utils/extension/shared_library.hpp"
+#include "Utils/extension/convenience.hpp"
 using namespace boost::extensions;
 using  boost::tuple;
 using  boost::tie;
