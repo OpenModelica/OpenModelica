@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
   }
   if(!scriptname) {
     cout << "OMShell "
-         << "Copyright 1997-" << dateStr+7 << ", Linkoping University" << endl
+         << "Copyright 1997-" << dateStr+7 << ", Open Source Modelica Consortium (OSMC)" << endl
          << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
          << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
   }
