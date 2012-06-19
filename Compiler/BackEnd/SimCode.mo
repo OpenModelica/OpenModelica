@@ -2482,7 +2482,7 @@ algorithm
         allEquations = List.map(allEquations,applyResidualReplacements);
 
         // generate jacobian or linear model matrices
-        LinearMatrices = createJacobianLinearCode(dlow2);
+        LinearMatrices = createJacobianLinearCode(dlow2,uniqueEqIndex);
         
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
@@ -2635,14 +2635,15 @@ end addJacobianstoSimCode;
 
 protected function createJacobianLinearCode
   input BackendDAE.BackendDAE inBDAE;
+  input Integer uniqueEqIndex;
   output list<JacobianMatrix> res;
 algorithm
-  res := matchcontinue (inBDAE)
+  res := matchcontinue (inBDAE,uniqueEqIndex)
     local 
       BackendDAE.BackendDAE bDAE;
       BackendDAE.SymbolicJacobians symjacs;
       Boolean b;
-    case (inBDAE)
+    case (_,_)
       equation
         true = Flags.isSet(Flags.JACOBIAN);
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -2651,7 +2652,7 @@ algorithm
         // I did not rewrite it to take advantage of any parallelism in the code
         bDAE = BackendDAEOptimize.collapseIndependentBlocks(inBDAE);
         (bDAE as BackendDAE.DAE(shared=BackendDAE.SHARED(symjacs=symjacs))) = BackendDAEUtil.transformBackendDAE(bDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
-        res = createSymbolicJacobianssSimCode(symjacs,bDAE);
+        res = createSymbolicJacobianssSimCode(symjacs,bDAE,uniqueEqIndex);
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         _ = Flags.set(Flags.EXEC_STAT, b);
@@ -2670,10 +2671,12 @@ protected function createSymbolicJacobianssSimCode
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobians;
   input BackendDAE.BackendDAE inBackendDAE;
+  input Integer iuniqueEqIndex;
   output list<JacobianMatrix> outJacobianMatrixes;
+  output Integer ouniqueEqIndex;
 algorithm
-  outJacobianMatrixes :=
-  matchcontinue (inSymJacobians, inBackendDAE)
+  (outJacobianMatrixes,ouniqueEqIndex) :=
+  matchcontinue (inSymJacobians, inBackendDAE, iuniqueEqIndex)
     local
       BackendDAE.BackendDAE bdaeJac, backendDAE2;
       BackendDAE.StrongComponents comps;
@@ -2712,16 +2715,17 @@ algorithm
       String dummyVarName;
       BackendDAE.Variables derivedVariables;
       String res1;
+      Integer uniqueEqIndex;
       
-    case ({},_) then {};
+    case ({},_,_) then ({},iuniqueEqIndex);
     case (((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     diffVars, diffedVars, alldiffedVars))::rest,
-                                    inBackendDAE as BackendDAE.DAE(eqs=systs))
+                                    inBackendDAE as BackendDAE.DAE(eqs=systs),_)
       equation
         
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        (columnEquations,_,_) = createEquations(false, false, false, false, true, syst, shared, comps, {},0);
+        (columnEquations,_,uniqueEqIndex) = createEquations(false, false, false, false, true, syst, shared, comps, {},iuniqueEqIndex);
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
@@ -2779,10 +2783,10 @@ algorithm
                        +& intString(nonZeroElements) +& " with max vertex degree: " +& intString(maxdegree) +& ".\n" +&
                        "Graph colored with  " +& intString(maxColor) +& " color.", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
 
-        linearModelMatrices = createSymbolicJacobianssSimCode(rest, inBackendDAE);
+        (linearModelMatrices,uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inBackendDAE, uniqueEqIndex);
         linearModelMatrices = listAppend({(({((columnEquations,columnVars,s))},seedVars,name,sparsepattern,colsColors,maxColor))},linearModelMatrices);
      then
-        linearModelMatrices;
+        (linearModelMatrices,uniqueEqIndex);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of symbolic matrix SimCode (SimCode.createSymbolicJacobianssSimCode) failed"});
