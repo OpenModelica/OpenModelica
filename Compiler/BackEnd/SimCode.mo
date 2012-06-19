@@ -2652,7 +2652,7 @@ algorithm
         // I did not rewrite it to take advantage of any parallelism in the code
         bDAE = BackendDAEOptimize.collapseIndependentBlocks(inBDAE);
         (bDAE as BackendDAE.DAE(shared=BackendDAE.SHARED(symjacs=symjacs))) = BackendDAEUtil.transformBackendDAE(bDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
-        res = createSymbolicJacobianssSimCode(symjacs,bDAE,uniqueEqIndex);
+        (res,_) = createSymbolicJacobianssSimCode(symjacs,bDAE,uniqueEqIndex);
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         _ = Flags.set(Flags.EXEC_STAT, b);

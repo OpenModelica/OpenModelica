@@ -307,7 +307,7 @@ match eq
   >>
   case SES_NONLINEAR(__) then
   <<
-  #define SIM_PROF_EQ_<%index%> <%value%>
+  #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
   >>  
   else 
   <<
