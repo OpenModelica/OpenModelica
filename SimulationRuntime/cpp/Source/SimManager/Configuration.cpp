@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
 #include "LibrariesConfig.h"

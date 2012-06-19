@@ -1,7 +1,7 @@
 
 #include "stdafx.h"
 #include "Configuration.h"
-#include "System/Interfaces/ISystemproperties.h"
+#include "System/Interfaces/ISystemProperties.h"
 #include "LibrariesConfig.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)

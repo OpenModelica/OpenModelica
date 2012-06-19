@@ -4,8 +4,8 @@
 #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "SystemDefaultImplementation.h"
 #include "AlgLoopSolverFactory.h"
-#include "Eventhandling.h"
-#include "Algloopdefaultimplementation.h"
+#include "EventHandling.h"
+#include "AlgLoopDefaultImplementation.h"
 
 SystemDefaultImplementation::SystemDefaultImplementation()
 : time        (0.0)

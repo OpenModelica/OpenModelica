@@ -1,6 +1,5 @@
 #pragma once
-#define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_IMPORT_DECL
-
+#define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "Solver/Implementation/SolverDefaultImplementation.h"
 
 class IEulerSettings;

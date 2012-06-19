@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 project(CVode)
-include_directories(${SUNDIALS_INCLUDE_DIR}/Cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}) 
+include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}) 
 
 # add the solver default implementation library
 add_library(CVode SHARED CVode.cpp CVodeSettings.cpp  )

@@ -19,7 +19,7 @@
 #  define BOOST_EXTENSION_EXPORT_DECL __declspec(dllexport)
 #  define BOOST_EXTENSION_IMPORT_DECL __declspec(dllimport)
 #else
-#  define BOOST_EXTENSION_EXPORT_DECL __declspec(dllexport)
-#  define BOOST_EXTENSION_IMPORT_DECL __declspec(dllimport)
+#  define BOOST_EXTENSION_EXPORT_DECL 
+#  define BOOST_EXTENSION_IMPORT_DECL
 
 #endif

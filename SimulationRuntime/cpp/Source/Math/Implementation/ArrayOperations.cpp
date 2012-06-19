@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "arrayoperations.h"
+#include "ArrayOperations.h"
 #include <sstream>
 #include <stdio.h>
 using namespace std;

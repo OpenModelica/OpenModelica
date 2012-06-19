@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Cvode.h"
+#include "CVode.h"
 #include "CVodeSettings.h"
 #include "Math/Implementation/Functions.h"
 #include "System/Interfaces/ISystemProperties.h"  

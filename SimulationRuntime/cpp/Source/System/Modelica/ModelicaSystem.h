@@ -1,13 +1,13 @@
 #pragma once
-#define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
-#define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
+#define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
+#define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
  #include "System/Implementation/SystemDefaultImplementation.h"
  #include "Math/Implementation/ArrayOperations.h"
  #include "System/Implementation/EventHandling.h"
  #include "SettingsFactory/Interfaces/IGlobalSettings.h"
  #include "DataExchange/Interfaces/IHistory.h"
  #include "HistoryImpl.h"
- #include "policies/TextFileWriter.h"
+ #include "Policies/TextfileWriter.h"
 
 
 

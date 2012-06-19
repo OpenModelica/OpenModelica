@@ -3,7 +3,7 @@
 #include "System/Interfaces/IAlgLoop.h"       // Interface for algebraic loops
 #include "System/Interfaces/IAlgLoopSolver.h"   // Interface for algebraic loops
 #include "System/Newton/Interfaces/INewtonSettings.h"
-#include "System/KinSol/Interfaces/IKinSolSettings.h"
+#include "System/Kinsol/Interfaces/IKinsolSettings.h"
 #include "System/Interfaces/IAlgLoopSolverFactory.h"  
 /*****************************************************************************/
 /**

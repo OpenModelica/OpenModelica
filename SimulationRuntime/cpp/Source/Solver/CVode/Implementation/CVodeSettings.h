@@ -1,5 +1,5 @@
 #pragma once
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_IMPORT_DECL
+#define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include "../../Implementation/SolverSettings.h"
 #include "../Interfaces/ICVodeSettings.h"
 
