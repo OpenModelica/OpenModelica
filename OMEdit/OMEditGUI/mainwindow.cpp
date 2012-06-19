@@ -1184,7 +1184,7 @@ void MainWindow::openAbout()
   QString aboutText = QString("OMEdit - ").append(Helper::applicationIntroText).append(" ")
       .append(Helper::applicationVersion).append("\n")
       .append(tr("Connected to OpenModelica ")).append(OMCVersion).append("\n\n")
-      .append(trUtf8("Copyright Linköping University.\n"
+      .append(tr("Copyright Open Source Modelica Consortium (OSMC).\n"
               "Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n"
               "Created by Adeel Asghar and Sonia Tariq as part of their final thesis."));
 
