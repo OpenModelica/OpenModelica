@@ -1344,10 +1344,10 @@ bool OMCProxy::loadString(QString value)
 //! Parse the file. Doesn't load it into OMC.
 //! @param fileName the file to parse.
 //! @return bool true on success
-bool OMCProxy::parseFile(QString fileName)
+bool OMCProxy::parseFile(QString fileName, QString encoding)
 {
   fileName = fileName.replace('\\', '/');
-  sendCommand("parseFile(\"" + fileName + "\")");
+  sendCommand("parseFile(\"" + fileName + "\",\"" + encoding + "\")");
   if (getResult() == "{}")
   {
     printMessagesStringInternal();

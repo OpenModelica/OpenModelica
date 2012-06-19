@@ -145,7 +145,7 @@ public:
   QString changeDirectory(QString directory = QString());
   bool loadFile(QString fileName);
   bool loadString(QString value);
-  bool parseFile(QString fileName);
+  bool parseFile(QString fileName, QString encoding = "UTF-8");
   QStringList parseString(QString value);
   bool createClass(QString type, QString className);
   bool createSubClass(QString type, QString className, QString parentClassName);
