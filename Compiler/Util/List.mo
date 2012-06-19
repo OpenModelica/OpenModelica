@@ -4363,7 +4363,7 @@ algorithm
   (outList, outArg) := map2Fold_tail(inList, inFunc, inConstArg, inConstArg2, inArg, {});
 end map2Fold;
 
-protected function map2Fold_tail
+public function map2Fold_tail
   "Tail recursive implementation of map1Fold."
   input list<ElementInType> inList;
   input FuncType inFunc;
