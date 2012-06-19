@@ -301,7 +301,7 @@ STRING : '"' STRING_GUTS '"'
          char *res = 0;
          if (*text->chars) {
            res = SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0);
-           if (!res) {
+           if (!*res) {
              const char *strs[2];
              signed char *buf  = (signed char*) strdup((char*)text->chars);
              int len = strlen((const char*)buf), i;
