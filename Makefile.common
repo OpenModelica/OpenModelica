@@ -20,7 +20,7 @@ INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns
+.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -72,6 +72,15 @@ breakprocess:
 	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd testsuite/bootstrapping; cp BreakProcess.exe ../../$(builddir_bin)/)
 	
+runtimeCPP: 
+	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget))	
+
+runtimeCPPinstall: 
+	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) install)	
+	
+runtimeCPPclean: 
+	cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) clean)
+	
 testfast: test
 
 test:
@@ -108,10 +117,10 @@ testlibraries:
 
 testlibrariemsl31:
 	(cd testsuite/libraries/msl31/simulate; time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
-	echo "log is in testsuite/libraries/msl31/simulate/testsuite-msl31-trace.txt"
+	echo "log is in testsuite/libraries/msl31/simulate/testsuite-msl31-trace.txt" 
 
 testfmi:
-	(cd testsuite/fmi; time $(MAKE) -f Makefile)	
+	(cd testsuite/fmi; time $(MAKE) -f Makefile)
 	
 testSummary:
 	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
