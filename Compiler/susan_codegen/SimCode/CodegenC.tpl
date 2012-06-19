@@ -951,7 +951,7 @@ template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
 ::=
   let &varDecls = buffer ""
   let &tmp = buffer ""
-  let odeEqs = derivativEquations |> eq => equationNames_(eq); separator="\n"
+  let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
   <<
   <%&tmp%>
   static void functionODE_system<%n%>(DATA *data,int omc_thread_number)
@@ -1040,7 +1040,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let algEquations = (algebraicEquations |> eq =>
-      equationNames_(eq)
+      equationNames_(eq,contextSimulationNonDiscrete)
     ;separator="\n")
   <<
   <%tmp%>
@@ -1663,6 +1663,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
   let &tmp = buffer ""
   let &varD = buffer ""
+  let disc = match context
+  case SIMULATION(genDiscrete=true) then 1
+  else 0
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
     then equationSimpleAssign(e, context, &varD /*BUFD*/)
@@ -1681,31 +1684,42 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &eqs +=
   <<
   
-  void eqFunction_<%ix%>(DATA *data) {
+  void eqFunction_<%ix%>(DATA *data, char discreteCall) {
     <%&varD%>
     <%x%>
   }
   
   >>
   <<
-  eqFunction_<%ix%>(data);
+  eqFunction_<%ix%>(data,<%disc%>);
   >>
   )
 end equation_;
 
-template equationNames_(SimEqSystem eq)
+template equationNames_(SimEqSystem eq, Context context)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
+match context
+case SIMULATION(genDiscrete=true) then
  match eq
   case e as SES_ALGORITHM(statements={})
   then ""
   else
   let ix = equationIndex(eq)
   <<
-  eqFunction_<%ix%>(data);
+  eqFunction_<%ix%>(data,1);
   >>
+else
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  <<
+  eqFunction_<%ix%>(data,0);
+  >>  
 end equationNames_;
 
 template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
@@ -4456,9 +4470,7 @@ end algStmtNoretcall;
 template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/)
  "Generates a when algorithm statement."
 ::=
-match context
-case SIMULATION(genDiscrete=true) then
-  match when
+match when
   case STMT_WHEN(__) then
     let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/)
     let statements = (statementLst |> stmt =>
@@ -4466,11 +4478,13 @@ case SIMULATION(genDiscrete=true) then
       ;separator="\n")
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
-    <%preIf%>
-    if (<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
-      <%statements%>
-    }
-    <%else%>
+    if (discreteCall == 1) {
+      <%preIf%>
+      if (<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
+        <%statements%>
+      }
+      <%else%>
+    }  
     >>
   end match
 end algStmtWhen;
