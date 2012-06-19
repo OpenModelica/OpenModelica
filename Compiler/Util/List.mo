@@ -5137,6 +5137,74 @@ algorithm
   end match;
 end threadMap2_tail;
 
+public function threadMap2ReverseFold
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. This function also takes two
+   extra arguments and a fold argument that are passed to the mapping function.
+   The order of the result list will be reversed compared to the input lists."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input FoldType inFoldArg;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input FoldType inFoldArg;
+    output ElementOutType outElement;
+    output FoldType outFoldArg;
+  end MapFunc;
+algorithm
+  (outList,outFoldArg) := threadMap2Fold_tail(inList1, inList2, inMapFunc, inArg1, inArg2, inFoldArg, {});
+end threadMap2ReverseFold;
+
+public function threadMap2Fold_tail
+  "Tail recursive implementation of threadMap2Fold."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input FoldType inFoldArg;
+  input list<ElementOutType> inAccum;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input FoldType inFoldArg;
+    output ElementOutType outElement;
+    output FoldType outFoldArg;
+  end MapFunc;
+algorithm
+  (outList,outFoldArg) := match(inList1, inList2, inMapFunc, inArg1, inArg2, inFoldArg, inAccum)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      ElementOutType res;
+      FoldType foldArg;
+
+    case ({}, {}, _, _, _, _, _) then (inAccum,inFoldArg);
+    case (e1 :: rest1, e2 :: rest2, _, _, _, foldArg, _)
+      equation
+        (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, foldArg);
+        (outList,foldArg) = threadMap2Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, foldArg, res :: inAccum);
+      then
+        (outList,foldArg);
+  end match;
+end threadMap2Fold_tail;
+
 public function threadMap3
   "Takes two lists and a function and threads (interleaves) and maps the
    elements of two lists, creating a new list. This function also takes three

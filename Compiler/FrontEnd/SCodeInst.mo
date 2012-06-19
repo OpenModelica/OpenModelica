@@ -2352,8 +2352,8 @@ algorithm
     case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
         _, INST_ALL())
       equation
-        inel = instEquations(snel, inEnv, inPrefix);
-        iiel = instEquations(siel, inEnv, inPrefix);
+        (inel,_) = instEquations(snel, inEnv, inPrefix, dummyFunctions);
+        (iiel,_) = instEquations(siel, inEnv, inPrefix, dummyFunctions);
         inal = instAlgorithmSections(snal, inEnv, inPrefix);
         iial = instAlgorithmSections(sial, inEnv, inPrefix);
       then
@@ -2368,40 +2368,47 @@ protected function instEquations
   input list<SCode.Equation> inEquations;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output list<Equation> outEquations;
+  output FunctionHashTable outFunctions;
 algorithm
-  outEquations := List.map2(inEquations, instEquation, inEnv, inPrefix);
-  //outEquations := {};
+  (outEquations,outFunctions) := List.map2Fold(inEquations, instEquation, inEnv, inPrefix, inFunctions);
 end instEquations;
 
 protected function instEquation
   input SCode.Equation inEquation;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output Equation outEquation;
+  output FunctionHashTable outFunctions;
 protected
   SCode.EEquation eq; 
 algorithm
   SCode.EQUATION(eEquation = eq) := inEquation;
-  outEquation := instEEquation(eq, inEnv, inPrefix);
+  (outEquation,outFunctions) := instEEquation(eq, inEnv, inPrefix, inFunctions);
 end instEquation;
 
 protected function instEEquations
   input list<SCode.EEquation> inEquations;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output list<Equation> outEquations;
+  output FunctionHashTable outFunctions;
 algorithm
-  outEquations := List.map2(inEquations, instEEquation, inEnv, inPrefix);
+  (outEquations,outFunctions) := List.map2Fold(inEquations, instEEquation, inEnv, inPrefix, inFunctions);
 end instEEquations;
 
 protected function instEEquation
   input SCode.EEquation inEquation;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output Equation outEquation;
+  output FunctionHashTable outFunctions;
 algorithm
-  outEquation := matchcontinue (inEquation, inEnv, inPrefix)
+  (outEquation,outFunctions) := matchcontinue (inEquation, inEnv, inPrefix, inFunctions)
     local
       Absyn.Exp exp1, exp2;
       DAE.Exp dexp1, dexp2;
@@ -2421,90 +2428,90 @@ algorithm
       Absyn.Path func_path;
       Item item;
       Class cls;
+      FunctionHashTable functions;
 
-    case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _)
+    case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, functions)
       equation
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
-        (dexp2,_) = instExp(exp2, inEnv, inPrefix, dummyFunctions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, functions);
       then
-        InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info);
+        (InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info),functions);
 
     // To determine whether a connected component is inside or outside we need
     // to know the type of the first identifier in the cref. Since it's illegal
     // to connect to global constants we can just save the prefix until we do
     // the typing, which means that we can then determine this with a hashtable
     // lookup.
-    case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _)
+    case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _, functions)
       equation
-        (dcref1,_) = instCref2(cref1, inEnv, inPrefix, dummyFunctions);
-        (dcref2,_) = instCref2(cref2, inEnv, inPrefix, dummyFunctions);
+        (dcref1,functions) = instCref2(cref1, inEnv, inPrefix, functions);
+        (dcref2,functions) = instCref2(cref2, inEnv, inPrefix, functions);
       then
-        InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
-          dcref2, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info);
+        (InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
+          dcref2, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), functions);
 
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
-        info = info), _, _)
+        info = info), _, _, functions)
       equation
         env = SCodeEnv.extendEnvWithIterators(
           {Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
-        (dexp1,_) = instExp(exp1, env, inPrefix, dummyFunctions);
-        ieql = instEEquations(eql, env, inPrefix);
+        (dexp1,functions) = instExp(exp1, env, inPrefix, functions);
+        (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
-        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info);
+        (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info),functions);
 
     case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
-        info = info), _, _)
+        info = info), _, _, functions)
       equation
         env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
-        ieql = instEEquations(eql, env, inPrefix);
+        (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
-        InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info);
+        (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), functions);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
-        elseBranch = eql, info = info), _, _)
+        elseBranch = eql, info = info), _, _, functions)
       equation
-        inst_branches = List.threadMap2Reverse(if_condition, if_branches,
-          instIfBranch, inEnv, inPrefix);
-        ieql = instEEquations(eql, inEnv, inPrefix);
+        (inst_branches,functions) = List.threadMap2ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, functions);
+        (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
         // Add else branch as a branch with condition true last in the list.
         inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
       then
-        InstTypes.IF_EQUATION(inst_branches, info);
+        (InstTypes.IF_EQUATION(inst_branches, info),functions);
          
     case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
-        elseBranches = when_branches, info = info), _, _)
+        elseBranches = when_branches, info = info), _, _, functions)
       equation
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
-        ieql = instEEquations(eql, inEnv, inPrefix);
-        inst_branches = List.map2(when_branches, instWhenBranch, inEnv, inPrefix); 
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
+        (inst_branches,functions) = List.map2Fold(when_branches, instWhenBranch, inEnv, inPrefix, functions); 
       then
-        InstTypes.WHEN_EQUATION(inst_branches, info);
+        (InstTypes.WHEN_EQUATION(inst_branches, info), functions);
 
-    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, info = info), _, _)
+    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, info = info), _, _, functions)
       equation
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
-        (dexp2,_) = instExp(exp2, inEnv, inPrefix, dummyFunctions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, functions);
       then
-        InstTypes.ASSERT_EQUATION(dexp1, dexp2, info);
+        (InstTypes.ASSERT_EQUATION(dexp1, dexp2, info), functions);
 
-    case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _)
+    case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, functions)
       equation
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
       then
-        InstTypes.TERMINATE_EQUATION(dexp1, info);
+        (InstTypes.TERMINATE_EQUATION(dexp1, info), functions);
 
-    case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _)
+    case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _, functions)
       equation
-        (dcref1,_) = instCref(cref1, inEnv, inPrefix, dummyFunctions);
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
+        (dcref1,functions) = instCref(cref1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
       then
-        InstTypes.REINIT_EQUATION(dcref1, dexp1, info);
+        (InstTypes.REINIT_EQUATION(dcref1, dexp1, info), functions);
         
-    case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _)
+    case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _, functions)
       equation
-        (dexp1,_) = instExp(exp1, inEnv, inPrefix, dummyFunctions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
       then
-        InstTypes.NORETCALL_EQUATION(dexp1, info);
+        (InstTypes.NORETCALL_EQUATION(dexp1, info), functions);
 
     else
       equation
@@ -2634,13 +2641,15 @@ protected function instIfBranch
   input list<SCode.EEquation> inBody;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output tuple<DAE.Exp, list<Equation>> outIfBranch;
+  output FunctionHashTable outFunctions;
 protected
   DAE.Exp cond_exp;
   list<Equation> eql;
 algorithm
-  (cond_exp,_) := instExp(inCondition, inEnv, inPrefix, dummyFunctions);
-  eql := instEEquations(inBody, inEnv, inPrefix);
+  (cond_exp,outFunctions) := instExp(inCondition, inEnv, inPrefix, inFunctions);
+  (eql,outFunctions) := instEEquations(inBody, inEnv, inPrefix, outFunctions);
   outIfBranch := (cond_exp, eql);
 end instIfBranch;
 
@@ -2665,7 +2674,9 @@ protected function instWhenBranch
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
   input Env inEnv;
   input Prefix inPrefix;
+  input FunctionHashTable inFunctions;
   output tuple<DAE.Exp, list<Equation>> outBranch;
+  output FunctionHashTable outFunctions;
 protected
   Absyn.Exp aexp;
   list<SCode.EEquation> eql;
@@ -2673,8 +2684,8 @@ protected
   list<Equation> ieql;
 algorithm
   (aexp, eql) := inBranch;
-  (dexp, _) := instExp(aexp, inEnv, inPrefix, dummyFunctions);
-  ieql := instEEquations(eql, inEnv, inPrefix);
+  (dexp, outFunctions) := instExp(aexp, inEnv, inPrefix, inFunctions);
+  (ieql,outFunctions) := instEEquations(eql, inEnv, inPrefix, outFunctions);
   outBranch := (dexp, ieql);
 end instWhenBranch;
 
