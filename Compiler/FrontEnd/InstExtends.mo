@@ -125,12 +125,13 @@ algorithm
       SCode.Final finalPrefix;
       Absyn.Info info;
       Option<SCode.Comment> cmt;
+      SCode.Visibility vis;
 
     /* no further elements to instantiate */
     case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
       
     /* instantiate a base class */
-    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod)) :: rest,ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));        
         //print("EXTENDS: " +& Env.printEnvPathStr(env) +& "/" +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ") outemod: " +& Mod.printModStr(mod) +& "\n");
@@ -154,10 +155,12 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "EXTENDS (FULLY QUAL): " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.printModStr(emod));
         
         (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache, env, tp, false);
+
         //print("Found " +& cn +& "\n");
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
+        els = updateElementListVisibility(els, vis);
         
         (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         
@@ -275,6 +278,17 @@ algorithm
         fail();
   end matchcontinue;
 end instExtendsList;
+
+protected function updateElementListVisibility
+  input list<SCode.Element> inElements;
+  input SCode.Visibility inVisibility;
+  output list<SCode.Element> outElements;
+algorithm
+  outElements := match(inElements, inVisibility)
+    case (_, SCode.PUBLIC()) then inElements;
+    else List.map(inElements, SCode.makeElementProtected);
+  end match;
+end updateElementListVisibility;
 
 public function instExtendsAndClassExtendsList "
   This function flattens out the inheritance structure of a class.

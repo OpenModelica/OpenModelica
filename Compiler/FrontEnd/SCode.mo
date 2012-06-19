@@ -3939,5 +3939,43 @@ algorithm
   end match;
 end isInnerComponent;
 
+public function makeElementProtected
+  input Element inElement;
+  output Element outElement;
+algorithm
+  outElement := match(inElement)
+    local
+      Ident name;
+      Attributes attr;
+      Absyn.TypeSpec ty;
+      Mod mod;
+      Option<Comment> cmt;
+      Option<Absyn.Exp> cnd;
+      Absyn.Info info;
+      Redeclare rdp;
+      Final fp;
+      Absyn.InnerOuter io;
+      Replaceable rpp;
+      Path bc;
+      Option<Annotation> ann;
+
+    case COMPONENT(prefixes = PREFIXES(visibility = PROTECTED()))
+      then inElement;
+
+    case COMPONENT(name, PREFIXES(_, rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)
+      then COMPONENT(name, PREFIXES(PROTECTED(), rdp, fp, io, rpp),
+        attr, ty, mod, cmt, cnd, info);
+
+    case EXTENDS(visibility = PROTECTED())
+      then inElement;
+
+    case EXTENDS(bc, _, mod, ann, info)
+      then EXTENDS(bc, PROTECTED(), mod, ann, info);
+
+    else inElement;
+
+  end match;
+end makeElementProtected;
+
 end SCode;
 
