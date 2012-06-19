@@ -4,7 +4,7 @@
 
 #include "SolverDefaultImplementation.h"
 #include "SolverSettings.h"
-#include "Settingsfactory/Interfaces/IGlobalSettings.h"
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
 
 
 SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISolverSettings* settings)

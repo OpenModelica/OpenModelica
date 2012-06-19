@@ -1,5 +1,5 @@
 #pragma once
-#include "Settingsfactory/Interfaces/IGlobalSettings.h"
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
 //#include "Math/Implementation/Constants.h"
 /*****************************************************************************/
 /**

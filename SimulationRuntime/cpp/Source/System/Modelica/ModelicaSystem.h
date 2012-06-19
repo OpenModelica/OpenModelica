@@ -4,7 +4,7 @@
  #include "System/Implementation/SystemDefaultImplementation.h"
  #include "Math/Implementation/ArrayOperations.h"
  #include "System/Implementation/EventHandling.h"
- #include "Settingsfactory/Interfaces/IGlobalSettings.h"
+ #include "SettingsFactory/Interfaces/IGlobalSettings.h"
  #include "DataExchange/Interfaces/IHistory.h"
  #include "HistoryImpl.h"
  #include "policies/TextFileWriter.h"
