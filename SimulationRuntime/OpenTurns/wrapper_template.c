@@ -105,18 +105,24 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
     /* read the model name from the included model_name.h file */
     char *modelName = MODELNAMESTR;
     char *modelInitFileName = NULL;
-    char *newModelInitFileNameTmp = "OpenTurns_init.xml_tmp";
-    char *newModelInitFileName = "OpenTurns_init.xml";
-    char *resultFile = "OpenTurns_res.mat";
+    char *newModelInitFileName = "OT_init.xml";
+    char *newModelInitFileNameTmp = "OT_init.xml_tmp";
+    char *resultFile = "OT_res.mat";
     char *errorMsg = 0;
-    double variableValue = 0, stopTime = 0;
-    struct WrapperVariableList   *varLst = p_exchangedData->variableList_;
+    double variableValue = 0, stopTime = 0, F, E, L, I, y;
+    struct WrapperVariableList *varLst = p_exchangedData->variableList_;
     ModelicaMatReader matReader = {0};
-
     char *uniqueTmpDir = 0;
     char *cmd = 0;
     char *currentWorkingDirectory = 0;
     char *prefix = MODELNAMESTR;
+    char *toXmlFile = NULL, *fromXmlFile = NULL, *tmpXmlFile = NULL;
+
+    if (!openModelicaHome)
+    {
+      SETERROR( "Error: OPENMODELICAHOME is not set!" );
+      return WRAPPER_EXECUTION_ERROR;
+    }
 
     /* We save the current working directory for a future come back */
     currentWorkingDirectory = getCurrentWorkingDirectory( p_error );
@@ -127,71 +133,89 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
                                                    p_exchangedData, p_error );
     if (uniqueTmpDir == NULL) return WRAPPER_EXECUTION_ERROR;
 
-    modelInitFileName = (char*)malloc(strlen(modelName)+strlen("_init.xml")+2);
-    sprintf(modelInitFileName, "%s_init.xml", modelName);
-    fprintf(stderr, "Wrapper execution for model: %s\n", MODELNAMESTR); fflush(NULL);
-    if (!openModelicaHome)
+    if (varLst->variable_ == NULL)
     {
-      SETERROR( "Error: OPENMODELICAHOME is not set!" );
-      return WRAPPER_EXECUTION_ERROR;
+        SETERROR("The input variables structure is NULL");
+        return WRAPPER_EXECUTION_ERROR;
     }
-    /* for each of the input variables change the start in the OpenModelica_init.xml file */
-    SETERROR( "Creating OpenTurns_init.xml file with start values from OpenTurns and the rest from OpenModelica_init.xml file" );
+
+    fprintf(stderr, "DIR: %s run: %s(", uniqueTmpDir, modelName);
     while (varLst != NULL)
     {
-      if (varLst->variable_ == NULL)
-      {
-          SETERROR("The input variables structure is NULL");
-          return WRAPPER_EXECUTION_ERROR;
-      }
       variableName = varLst->variable_->id_;
       variableType = varLst->variable_->type_;
-
-      /* copy the _init.xml file to uniqueTmpDir/OpenTurns_init.xml */
-      sprintf(systemCommand, "cp -f \"%s/%s\" \"%s/%s\"", currentWorkingDirectory, modelInitFileName, uniqueTmpDir, newModelInitFileName);
-      exitCode = system(systemCommand);
-      if (exitCode)
-      {
-        SETERROR( "Error writing input values in OpenTurns_init.xml file, command %s returned %d", systemCommand, exitCode );
-        return WRAPPER_EXECUTION_ERROR;
-      }
-
       /* filter the output variables */
       if (variableType == 0)
       {
         variableValue = inPoint->data_[idx];
-        /* update the variable in uniqueTmpDir/OpenTurns_init.xml > uniqueTmpDir/OpenTurns_init.xml_tmp */
-        sprintf(systemCommand, "%s/share/omc/scripts/replace-startValue %s %g \"%s/%s\" > \"%s/%s\"",
-            openModelicaHome,
-            variableName,
-            variableValue,
-            uniqueTmpDir,
-            newModelInitFileName,
-            uniqueTmpDir,
-            newModelInitFileNameTmp);
-        exitCode = system(systemCommand);
-        if (exitCode)
-        {
-          SETERROR( "Error writing input values in OpenTurns_init.xml file, command %s returned %d", systemCommand, exitCode );
-          return WRAPPER_EXECUTION_ERROR;
-        }
-
-        /* copy the uniqueTmpDir/OpenTurns_init.xml_tmp file to uniqueTmpDir/OpenTurns_init.xml */
-        sprintf(systemCommand, "mv.exe -f \"%s/%s\" \"%s/%s\"", uniqueTmpDir, newModelInitFileNameTmp, uniqueTmpDir, newModelInitFileName);
-        exitCode = system(systemCommand);
-        if (exitCode)
-        {
-          SETERROR( "Error writing input values in OpenTurns_init.xml file, command %s returned %d", systemCommand, exitCode );
-          return WRAPPER_EXECUTION_ERROR;
-        }
-
+        fprintf(stderr, "%s(start=%g),", variableName, variableValue);
         idx++;
       }
       /* move to next */
       varLst = varLst->next_;
     }
-    SETERROR( "Running the simulation executable with OpenTurns_init.xml file as input" );
-    sprintf(systemCommand, "\"%s/%s\" -f %s/%s -r %s/%s", currentWorkingDirectory, MODELNAMESTR, uniqueTmpDir, newModelInitFileName, uniqueTmpDir, resultFile);
+
+    fprintf(stderr, ")\n"); fflush(NULL);
+
+    modelInitFileName = (char*)malloc(strlen(modelName)+strlen("_init.xml")+2);
+    sprintf(modelInitFileName, "%s_init.xml", modelName);
+    /* for each of the input variables change the start in the OpenModelica_init.xml file */
+    fromXmlFile = (char*)malloc(strlen(currentWorkingDirectory) + strlen(modelInitFileName) + 4);
+    toXmlFile = (char*)malloc(strlen(uniqueTmpDir) + strlen(newModelInitFileName) + 4);
+
+    sprintf(fromXmlFile, "\"%s/%s\"", currentWorkingDirectory, modelInitFileName);
+    sprintf(toXmlFile, "\"%s/%s\"", uniqueTmpDir, newModelInitFileName);
+    /* move to start */
+    idx = 0;
+    varLst = p_exchangedData->variableList_;
+    while (varLst != NULL)
+    {
+      variableName = varLst->variable_->id_;
+      variableType = varLst->variable_->type_;
+      /* filter the output variables */
+      if (variableType == 0)
+      {
+        variableValue = inPoint->data_[idx];
+        /* update the variable in fromXmlFile > toXmlFile */
+        sprintf(systemCommand, "%s/share/omc/scripts/replace-startValue \"%s\" \"%g\" %s > %s",
+            openModelicaHome,
+            variableName,
+            variableValue,
+            fromXmlFile,
+            toXmlFile);
+        exitCode = system(systemCommand);
+        /* fprintf(stderr, "%s\n", systemCommand); */
+        if (exitCode)
+        {
+          SETERROR( "Error writing input values in xml file, command %s returned %d", systemCommand, exitCode );
+          return WRAPPER_EXECUTION_ERROR;
+        }
+        /* if it is for the first variable: change fromFile to OT_init.xml and toFile to OT_init.xml_tmp */
+        if (varLst->next_ != NULL) /* make sure the last one is toXmlFile!!! */
+        if (!idx)
+        {
+          free(fromXmlFile);
+          free(toXmlFile);
+          fromXmlFile = (char*)malloc(strlen(uniqueTmpDir) + strlen(newModelInitFileName) + 4);
+          toXmlFile = (char*)malloc(strlen(uniqueTmpDir) + strlen(newModelInitFileNameTmp) + 4);
+          sprintf(fromXmlFile, "\"%s/%s\"", uniqueTmpDir, newModelInitFileName);
+          sprintf(toXmlFile, "\"%s/%s\"", uniqueTmpDir, newModelInitFileNameTmp);
+        }
+        else /* just flip to <-> from */
+        {
+            tmpXmlFile = fromXmlFile;
+            fromXmlFile = toXmlFile;
+            toXmlFile = tmpXmlFile;
+        }
+        idx++;
+      }
+      /* move to next */
+      varLst = varLst->next_;
+    }
+    /* unquote: */
+    toXmlFile += 1; toXmlFile[strlen(toXmlFile)-1] = '\0';
+    /* build the command */
+    sprintf(systemCommand, "\"%s/%s\" -f %s -r %s/%s", currentWorkingDirectory, MODELNAMESTR, toXmlFile, uniqueTmpDir, resultFile);
     exitCode = system(systemCommand);
     if (exitCode)
     {
@@ -199,16 +223,43 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
       return WRAPPER_EXECUTION_ERROR;
     }
     sprintf(systemCommand, "%s/%s", uniqueTmpDir, resultFile);
-    //fprintf(stderr, "Reading the output values from %s Matlab file\n", systemCommand); fflush(NULL);
     errorMsg = (char*)omc_new_matlab4_reader(systemCommand, &matReader);
     if (errorMsg)
     {
-      SETERROR( "Error in calling the OpenModelica simulation code" );
+      SETERROR( "Error in opening the result file: %s", systemCommand );
       return WRAPPER_EXECUTION_ERROR;
     }
     stopTime = omc_matlab4_stopTime(&matReader);
 
-    // reset values
+    /* move to start */
+    idx = 0;
+    varLst = p_exchangedData->variableList_;
+    fprintf(stderr, "DIR: %s end: %s results: ", uniqueTmpDir, modelName);
+    while (varLst != NULL)
+    {
+      variableName = varLst->variable_->id_;
+      variableType = varLst->variable_->type_;
+      /* filter the output variables */
+      if (variableType == 1)
+      {
+        /* read the variable at stop time */
+        ModelicaMatVariable_t *matVar = omc_matlab4_find_var(&matReader, variableName);
+        omc_matlab4_val(&variableValue, &matReader, matVar, stopTime);
+        // y=F*L^3/(3.0*E*I)
+        F = inPoint->data_[0];
+        L = inPoint->data_[1];
+        E = inPoint->data_[2];
+        I = inPoint->data_[3];
+        y = (F*L*L*L)/(3*E*I);
+        fprintf(stderr, "%s=%.15g [%g] at time %g, ", variableName, variableValue, y, stopTime);
+        idx++;
+      }
+      /* move to next */
+      varLst = varLst->next_;
+    }
+    fprintf(stderr, "\n"); fflush(NULL);
+
+    /* move to start */
     idx = 0;
     varLst = p_exchangedData->variableList_;
     /* populate the outPoint! */
@@ -228,13 +279,17 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
       }
       /* move to next */
       varLst = varLst->next_;
-    }    
+    }
     omc_free_matlab4_reader(&matReader);
+    close(systemCommand);
 
     /* We kill the temporary directory if no error has occurred */
-    /* deleteTemporaryDirectory(uniqueTmpDir, rc, p_error); */
+    deleteTemporaryDirectory(uniqueTmpDir, rc, p_error);
 
     free ( currentWorkingDirectory );
+    free ( modelInitFileName );
+    free ( fromXmlFile );
+    free ( toXmlFile-1 );
 
     return rc;
 }
