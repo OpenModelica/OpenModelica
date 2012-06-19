@@ -246,12 +246,13 @@ long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EX
         ModelicaMatVariable_t *matVar = omc_matlab4_find_var(&matReader, variableName);
         omc_matlab4_val(&variableValue, &matReader, matVar, stopTime);
         // y=F*L^3/(3.0*E*I)
-        F = inPoint->data_[0];
-        L = inPoint->data_[1];
-        E = inPoint->data_[2];
-        I = inPoint->data_[3];
-        y = (F*L*L*L)/(3*E*I);
-        fprintf(stderr, "%s=%.15g [%g] at time %g, ", variableName, variableValue, y, stopTime);
+        // F = inPoint->data_[0];
+        // L = inPoint->data_[1];
+        // E = inPoint->data_[2];
+        // I = inPoint->data_[3];
+        // y = (F*L*L*L)/(3*E*I);
+        // fprintf(stderr, "%s=%.15g [%g] at time %g, ", variableName, variableValue, y, stopTime);
+        fprintf(stderr, "%s=%.15g at time %g, ", variableName, variableValue, stopTime);
         idx++;
       }
       /* move to next */
