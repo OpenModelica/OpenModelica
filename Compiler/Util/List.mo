@@ -4364,7 +4364,7 @@ algorithm
 end map2Fold;
 
 public function map2Fold_tail
-  "Tail recursive implementation of map1Fold."
+  "Tail recursive implementation of map2Fold."
   input list<ElementInType> inList;
   input FuncType inFunc;
   input ArgType1 inConstArg;
@@ -4401,6 +4401,73 @@ algorithm
         (rest_res, arg);
   end match;
 end map2Fold_tail;
+
+public function map3Fold
+  "Takes a list, three extra constant arguments, an extra argument, and a function.
+  The function will be applied to each element in the list, and the extra
+  argument will be passed to the function and updated."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input FoldType inArg;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := map3Fold_tail(inList, inFunc, inConstArg, inConstArg2, inConstArg3, inArg, {});
+end map3Fold;
+
+public function map3Fold_tail
+  "Tail recursive implementation of map3Fold."
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input FoldType inArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := match(inList, inFunc, inConstArg, inConstArg2, inConstArg3, inArg, inAccumList)
+    local
+      ElementInType e1;
+      list<ElementInType> rest_e1;
+      ElementOutType res;
+      list<ElementOutType> rest_res, acc;
+      FoldType arg;
+      
+    case ({}, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
+    case (e1 :: rest_e1, _, _, _, _, _, _)
+      equation
+        (res, arg) = inFunc(e1, inConstArg, inConstArg2, inConstArg3, inArg);
+        acc = res :: inAccumList;
+        (rest_res, arg) = map3Fold_tail(rest_e1, inFunc, inConstArg, inConstArg2, inConstArg3, arg, acc);
+      then
+        (rest_res, arg);
+  end match;
+end map3Fold_tail;
 
 public function mapFoldTuple
   "Takes a list, an extra argument and a function. The function will be applied
@@ -5346,6 +5413,78 @@ algorithm
         thread3Map_tail(rest1, rest2, rest3, inFunc, res :: inAccum);
   end match;
 end thread3Map_tail;
+
+public function threadMap3ReverseFold
+  "Takes two lists and a function and threads (interleaves) and maps the
+   elements of two lists, creating a new list. This function also takes three
+   extra arguments and a fold argument that are passed to the mapping function.
+   The order of the result list will be reversed compared to the input lists."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input FoldType inFoldArg;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input FoldType inFoldArg;
+    output ElementOutType outElement;
+    output FoldType outFoldArg;
+  end MapFunc;
+algorithm
+  (outList,outFoldArg) := threadMap3Fold_tail(inList1, inList2, inMapFunc, inArg1, inArg2, inArg3, inFoldArg, {});
+end threadMap3ReverseFold;
+
+public function threadMap3Fold_tail
+  "Tail recursive implementation of threadMap3Fold."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input FoldType inFoldArg;
+  input list<ElementOutType> inAccum;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input FoldType inFoldArg;
+    output ElementOutType outElement;
+    output FoldType outFoldArg;
+  end MapFunc;
+algorithm
+  (outList,outFoldArg) := match(inList1, inList2, inMapFunc, inArg1, inArg2, inArg3, inFoldArg, inAccum)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      ElementOutType res;
+      FoldType foldArg;
+
+    case ({}, {}, _, _, _, _, _, _) then (inAccum,inFoldArg);
+    case (e1 :: rest1, e2 :: rest2, _, _, _, _, foldArg, _)
+      equation
+        (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inArg3, foldArg);
+        (outList,foldArg) = threadMap3Fold_tail(rest1, rest2, inMapFunc, inArg1, inArg2, inArg3, foldArg, res :: inAccum);
+      then
+        (outList,foldArg);
+  end match;
+end threadMap3Fold_tail;
 
 public function thread3Map_2
   "Takes three lists and a function, and threads (interleaves) and maps the
@@ -6928,5 +7067,146 @@ algorithm
     else inAccumList;
   end match;
 end generate_tail2;
+
+public function mapFoldSplit
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input FoldFunc inFoldFunc;
+  input FoldType inStartValue;
+  output list<ElementOutType> outList;
+  output FoldType outResult;
+
+  partial function MapFunc
+    input ElementInType inElem;
+    output ElementOutType outElem;
+    output FoldType outResult;
+  end MapFunc;
+
+  partial function FoldFunc
+    input FoldType inNewValue;
+    input FoldType inOldValue;
+    output FoldType outFoldedValue;
+  end FoldFunc;
+algorithm
+  (outList, outResult) :=
+    mapFoldSplit_tail(inList, inMapFunc, inFoldFunc, inStartValue, {});
+end mapFoldSplit;
+
+public function mapFoldSplit_tail
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input FoldFunc inFoldFunc;
+  input FoldType inStartValue;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outResult;
+
+  partial function MapFunc
+    input ElementInType inElem;
+    output ElementOutType outElem;
+    output FoldType outResult;
+  end MapFunc;
+
+  partial function FoldFunc
+    input FoldType inNewValue;
+    input FoldType inOldValue;
+    output FoldType outFoldedValue;
+  end FoldFunc;
+algorithm
+  (outList, outResult) :=
+  match(inList, inMapFunc, inFoldFunc, inStartValue, inAccumList)
+    local
+      ElementInType ie1;
+      list<ElementInType> rest_ie1;
+      ElementOutType oe1;
+      list<ElementOutType> rest_oe1, acc;
+      FoldType res;
+
+    case (ie1 :: rest_ie1, _, _, _, acc)
+      equation
+        (oe1, res) = inMapFunc(ie1);
+        res = inFoldFunc(res, inStartValue);
+        acc = oe1 :: acc;
+        (acc, res) = mapFoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, res, acc);
+      then
+        (acc, res);
+        
+    case ({}, _, _, _, _) then (listReverse(inAccumList), inStartValue);
+
+  end match;
+end mapFoldSplit_tail;
+
+public function map1FoldSplit
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inConstArg;
+  input FoldType inStartValue;
+  output list<ElementOutType> outList;
+  output FoldType outResult;
+
+  partial function MapFunc
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    output ElementOutType outElem;
+    output FoldType outResult;
+  end MapFunc;
+
+  partial function FoldFunc
+    input FoldType inNewValue;
+    input FoldType inOldValue;
+    output FoldType outFoldedValue;
+  end FoldFunc;
+algorithm
+  (outList, outResult) :=
+    map1FoldSplit_tail(inList, inMapFunc, inFoldFunc, inConstArg, inStartValue, {});
+end map1FoldSplit;
+
+public function map1FoldSplit_tail
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inConstArg;
+  input FoldType inStartValue;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outResult;
+
+  partial function MapFunc
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    output ElementOutType outElem;
+    output FoldType outResult;
+  end MapFunc;
+
+  partial function FoldFunc
+    input FoldType inNewValue;
+    input FoldType inOldValue;
+    output FoldType outFoldedValue;
+  end FoldFunc;
+algorithm
+  (outList, outResult) :=
+  match(inList, inMapFunc, inFoldFunc, inConstArg, inStartValue, inAccumList)
+    local
+      ElementInType ie1;
+      list<ElementInType> rest_ie1;
+      ElementOutType oe1;
+      list<ElementOutType> rest_oe1, acc;
+      FoldType res;
+
+    case (ie1 :: rest_ie1, _, _, _, _, acc)
+      equation
+        (oe1, res) = inMapFunc(ie1, inConstArg);
+        res = inFoldFunc(res, inStartValue);
+        acc = oe1 :: acc;
+        (acc, res) = 
+          map1FoldSplit_tail(rest_ie1, inMapFunc, inFoldFunc, inConstArg, res, acc);
+      then
+        (acc, res);
+        
+    case ({}, _, _, _, _, _) then (listReverse(inAccumList), inStartValue);
+
+  end match;
+end map1FoldSplit_tail;
 
 end List;

@@ -585,19 +585,28 @@ end Correlation;
 
 
 encapsulated package Connections
+  import OpenModelica.Code.VariableName;
+
   function branch
+    input VariableName node1;
+    input VariableName node2;
     external "builtin";
   end branch;
 
   function root
+    input VariableName node;
     external "builtin";
   end root;
 
   function potentialRoot
+    input VariableName node;
+    parameter input Integer priority = 0;
     external "builtin";
   end potentialRoot;
 
   function isRoot
+    input VariableName node;
+    output Boolean isroot;
     external "builtin";
   end isRoot;
 end Connections;
@@ -1600,7 +1609,7 @@ function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
   output String outPythonScript;
   external "builtin";
 end buildOpenTURNSInterface;
-
+ 
 function runOpenTURNSPythonScript "runs OpenTURNS with the given python script returning the log file"
   input String pythonScriptFile;
   output String logOutputFile;

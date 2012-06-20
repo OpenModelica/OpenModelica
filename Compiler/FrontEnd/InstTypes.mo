@@ -217,6 +217,11 @@ public uniontype Prefixes
   end PREFIXES;
 end Prefixes;
 
+public constant Prefixes DEFAULT_PROTECTED_PREFIXES = PREFIXES(
+  SCode.PROTECTED(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
+  (Absyn.BIDIR(), Absyn.dummyInfo), (SCode.NOT_FLOW(), Absyn.dummyInfo),
+  (SCode.NOT_STREAM(), Absyn.dummyInfo), NO_VARARG());
+
 public uniontype VarArgs
   record NO_VARARG end NO_VARARG;
   record IS_VARARG end IS_VARARG;

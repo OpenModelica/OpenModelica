@@ -138,7 +138,7 @@ algorithm
 
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
         (cls, symtab) = Typing.typeClass(cls, symtab);
-        cls = Typing.typeSections(cls, symtab);
+        (cls, _) = Typing.typeSections(cls, symtab);
 
         System.stopTimer();
         //print("\nclass " +& name +& "\n");
@@ -262,7 +262,7 @@ algorithm
         // class.
         prefs = InstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
         // Add any dimensions from this class to the resulting type.
-        (ty,functions) = liftArrayType(dims, ty, inEnv, inPrefix, functions);
+        (ty,functions) = liftArrayType(dims, ty, inEnv, inPrefix, info, functions);
 
         state = ClassInf.start(res, Absyn.IDENT(name));
         ty = InstUtil.makeDerivedClassType(ty, state);
@@ -441,14 +441,15 @@ algorithm
       Env env;
       Prefix prefix;
       FunctionHashTable functions;
+      Absyn.Info info;
 
     case (InstTypes.MODIFIER(name = ident, subModifiers = {}, 
-        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _)), _, functions)
+        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, functions)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
         ty = instBasicTypeAttributeType(tspec);
-        (inst_exp,functions) = instExp(bind_exp, env, prefix, functions);
+        (inst_exp,functions) = instExp(bind_exp, env, prefix, info, functions);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
@@ -691,7 +692,7 @@ algorithm
         (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
 
         // Instantiate array dimensions and add them to the prefix.
-        (dims,functions) = instDimensions(ad, inEnv, inPrefix, functions);
+        (dims,functions) = instDimensions(ad, inEnv, inPrefix, info, functions);
         prefix = InstUtil.addPrefix(name, dims, inPrefix);
 
         // Check that it's legal to instantiate the class.
@@ -735,7 +736,7 @@ algorithm
         _, _, _, _, _, functions)
       equation
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        (inst_exp,functions) = instExp(cond_exp, inEnv, inPrefix, functions);
+        (inst_exp,functions) = instExp(cond_exp, inEnv, inPrefix, info, functions);
         comp = InstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
           inClassMod, inPrefixes, inEnv, inPrefix, info);
       then
@@ -779,6 +780,7 @@ algorithm
       DAE.Type ty;
       Boolean cse;
       InstPolicy ip;
+      Prefixes prefs;
       FunctionHashTable functions;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
@@ -793,9 +795,10 @@ algorithm
           inRedeclares, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
+        prefs = InstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty, _, functions) = instClassItem(item, mod, inPrefixes, env, inPrefix, ip, functions);
+        (cls, ty, _, functions) = instClassItem(item, mod, prefs, env, inPrefix, ip, functions);
         cse = InstUtil.isSpecialExtends(ty);
       then
         (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse, functions);
@@ -949,7 +952,7 @@ algorithm
 
     case (InstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, functions)
       equation
-        (dexp, functions) = instExp(aexp, env, prefix, functions);
+        (dexp, functions) = instExp(aexp, env, prefix, info, functions);
       then
         (InstTypes.UNTYPED_BINDING(dexp, false, pl, info), functions);
 
@@ -962,32 +965,36 @@ protected function instDimensions
   input list<Absyn.Subscript> inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output list<DAE.Dimension> outDimensions;
   output FunctionHashTable outFunctions;
 algorithm
-  (outDimensions,outFunctions) := List.map2Fold(inSubscript, instDimension, inEnv, inPrefix, inFunctions);
+  (outDimensions,outFunctions) :=
+    List.map3Fold(inSubscript, instDimension, inEnv, inPrefix, inInfo, inFunctions);
 end instDimensions;
 
 protected function instDimension
   input Absyn.Subscript inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.Dimension outDimension;
   output FunctionHashTable outFunctions;
 algorithm
-  (outDimension,outFunctions) := match(inSubscript, inEnv, inPrefix, inFunctions)
+  (outDimension,outFunctions) :=
+  match(inSubscript, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
       FunctionHashTable functions;
 
-    case (Absyn.NOSUB(), _, _, _) then (DAE.DIM_UNKNOWN(),inFunctions);
+    case (Absyn.NOSUB(), _, _, _, _) then (DAE.DIM_UNKNOWN(),inFunctions);
 
-    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, functions)
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, functions)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, functions);
+        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
       then
         (InstUtil.makeDimension(dexp),functions);
 
@@ -998,32 +1005,36 @@ protected function instSubscripts
   input list<Absyn.Subscript> inSubscripts;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output list<DAE.Subscript> outSubscripts;
   output FunctionHashTable outFunctions;
 algorithm
-  (outSubscripts,outFunctions) := List.map2Fold(inSubscripts, instSubscript, inEnv, inPrefix, inFunctions);
+  (outSubscripts,outFunctions) :=
+    List.map3Fold(inSubscripts, instSubscript, inEnv, inPrefix, inInfo, inFunctions);
 end instSubscripts;
 
 protected function instSubscript
   input Absyn.Subscript inSubscript;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.Subscript outSubscript;
   output FunctionHashTable outFunctions;
 algorithm
-  (outSubscript,outFunctions) := match(inSubscript, inEnv, inPrefix, inFunctions)
+  (outSubscript,outFunctions) :=
+  match(inSubscript, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
       FunctionHashTable functions;
 
-    case (Absyn.NOSUB(), _, _, functions) then (DAE.WHOLEDIM(),functions);
+    case (Absyn.NOSUB(), _, _, _, functions) then (DAE.WHOLEDIM(),functions);
 
-    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, functions)
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, functions)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, functions);
+        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
       then
         (makeSubscript(dexp),functions);
 
@@ -1048,28 +1059,32 @@ protected function liftArrayType
   input DAE.Type inType;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.Type outType;
   output FunctionHashTable outFunctions;
 algorithm
-  (outType,outFunctions) := match(inDims, inType, inEnv, inPrefix, inFunctions)
+  (outType,outFunctions) :=
+  match(inDims, inType, inEnv, inPrefix, inInfo, inFunctions)
     local
       DAE.Dimensions dims1, dims2;
       DAE.TypeSource src;
       DAE.Type ty;
       FunctionHashTable functions;
 
-    case ({}, _, _, _, _) then (inType,inFunctions);
-    case (_, DAE.T_ARRAY(ty, dims1, src), _, _, functions)
+    case ({}, _, _, _, _, _) then (inType,inFunctions);
+    case (_, DAE.T_ARRAY(ty, dims1, src), _, _, _, functions)
       equation
-        (dims2,functions) = List.map2Fold(inDims, instDimension, inEnv, inPrefix, functions);
+        (dims2,functions) =
+          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, functions);
         dims1 = listAppend(dims2, dims1);
       then
         (DAE.T_ARRAY(ty, dims1, src),functions);
 
     else
       equation
-        (dims2,functions) = List.map2Fold(inDims, instDimension, inEnv, inPrefix, inFunctions);
+        (dims2,functions) =
+          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, inFunctions);
       then
         (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource),functions);
   
@@ -1104,30 +1119,33 @@ protected function instExpList
   input list<Absyn.Exp> inExp;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output list<DAE.Exp> outExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outExp,outFunctions) := List.map2Fold(inExp, instExp, inEnv, inPrefix, inFunctions);
+  (outExp,outFunctions) :=
+    List.map3Fold(inExp, instExp, inEnv, inPrefix, inInfo, inFunctions);
 end instExpList;
 
 protected function instExpOpt
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output Option<DAE.Exp> outExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inFunctions)
+  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
       FunctionHashTable functions;
 
-    case (SOME(aexp), _, _, functions)
+    case (SOME(aexp), _, _, _, functions)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, functions);
+        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
       then
         (SOME(dexp),functions);
 
@@ -1140,11 +1158,12 @@ protected function instExp
   input Absyn.Exp inExp;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.Exp outExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inFunctions)
+  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
     local
       Integer ival;
       Real rval;
@@ -1165,106 +1184,115 @@ algorithm
       Option<DAE.Exp> odexp;
       FunctionHashTable functions;
 
-    case (Absyn.REAL(value = rval), _, _, functions) then (DAE.RCONST(rval),functions);
-    case (Absyn.INTEGER(value = ival), _, _, functions) then (DAE.ICONST(ival),functions);
-    case (Absyn.BOOL(value = bval), _, _, functions) then (DAE.BCONST(bval),functions);
-    case (Absyn.STRING(value = sval), _, _, functions) then (DAE.SCONST(sval),functions);
-    case (Absyn.CREF(componentRef = acref), _, _, functions)
+    case (Absyn.REAL(value = rval), _, _, _, functions) 
+      then (DAE.RCONST(rval),functions);
+
+    case (Absyn.INTEGER(value = ival), _, _, _, functions)
+      then (DAE.ICONST(ival),functions);
+
+    case (Absyn.BOOL(value = bval), _, _, _, functions)
+      then (DAE.BCONST(bval),functions);
+
+    case (Absyn.STRING(value = sval), _, _, _, functions)
+      then (DAE.SCONST(sval),functions);
+
+    case (Absyn.CREF(componentRef = acref), _, _, _, functions)
       equation
-        (dcref,functions) = instCref(acref, inEnv, inPrefix, functions);
+        (dcref,functions) = instCref(acref, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT),functions);
 
-    case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, functions)
+    case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
         dop = instOperator(aop);
       then
         (DAE.BINARY(dexp1, dop, dexp2),functions);
 
-    case (Absyn.UNARY(op = aop, exp = aexp1), _, _, functions)
+    case (Absyn.UNARY(op = aop, exp = aexp1), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
         dop = instOperator(aop);
       then
         (DAE.UNARY(dop, dexp1),functions);
 
-    case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, functions)
+    case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
         dop = instOperator(aop);
       then
         (DAE.LBINARY(dexp1, dop, dexp2),functions);
 
-    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, functions)
+    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
         //dop = instOperator(aop);
         dop = DAE.NOT(DAE.T_BOOL_DEFAULT);
       then
         (DAE.LUNARY(dop, dexp1),functions);
 
-    case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, functions)
+    case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
         dop = instOperator(aop);
       then
         (DAE.RELATION(dexp1, dop, dexp2, -1, NONE()),functions);
 
-    case (Absyn.ARRAY(arrayExp = aexpl), _, _, functions)
+    case (Absyn.ARRAY(arrayExp = aexpl), _, _, _, functions)
       equation
-        (dexp1,functions) = instArray(aexpl, inEnv, inPrefix, functions);
+        (dexp1,functions) = instArray(aexpl, inEnv, inPrefix, inInfo, functions);
       then
         (dexp1,functions);
 
-    case (Absyn.MATRIX(matrix = mat_expl), _, _, functions)
+    case (Absyn.MATRIX(matrix = mat_expl), _, _, _, functions)
       equation
-        (dexpl,functions) = List.map2Fold(mat_expl, instArray, inEnv, inPrefix, functions);
+        (dexpl,functions) =
+          List.map3Fold(mat_expl, instArray, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl),functions);
 
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.SIZE(dexp1, SOME(dexp2)),functions);
 
     case (Absyn.CALL(function_ = acref, 
-        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
       equation
-        (dexp1,functions) = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix, functions, Absyn.dummyInfo);
+        (dexp1,functions) = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix, inInfo, functions);
       then
         (dexp1,functions);
 
-    case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _, functions)
+    case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (odexp,functions) = instExpOpt(oaexp, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (odexp,functions) = instExpOpt(oaexp, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2), functions);
 
-    case (Absyn.TUPLE(expressions = aexpl), _, _, functions)
+    case (Absyn.TUPLE(expressions = aexpl), _, _, _, functions)
       equation
-        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, functions);
+        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.TUPLE(dexpl),functions);
 
-    case (Absyn.LIST(exps = aexpl), _, _, functions)
+    case (Absyn.LIST(exps = aexpl), _, _, _, functions)
       equation
-        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, functions);
+        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.LIST(dexpl),functions);
 
-    case (Absyn.CONS(head = aexp1, rest = aexp2), _, _, functions)
+    case (Absyn.CONS(head = aexp1, rest = aexp2), _, _, _, functions)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.CONS(dexp1, dexp2),functions);
 
@@ -1282,13 +1310,15 @@ protected function instArray
   input list<Absyn.Exp> inExpl;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.Exp outArray;
   output FunctionHashTable outFunctions;
 protected
   list<DAE.Exp> expl;
 algorithm
-  (expl,outFunctions) := List.map2Fold(inExpl, instExp, inEnv, inPrefix, inFunctions);
+  (expl,outFunctions) :=
+    List.map3Fold(inExpl, instExp, inEnv, inPrefix, inInfo, inFunctions);
   outArray := DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
 end instArray;
 
@@ -1330,11 +1360,13 @@ protected function instCref
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.ComponentRef outCref;
   output FunctionHashTable outFunctions;
 algorithm
-  (outCref,outFunctions) := matchcontinue(inCref, inEnv, inPrefix, inFunctions)
+  (outCref,outFunctions) :=
+  matchcontinue(inCref, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.ComponentRef acref;
       DAE.ComponentRef cref;
@@ -1345,19 +1377,19 @@ algorithm
       Env env;
       FunctionHashTable functions;
 
-    case (Absyn.WILD(), _, _, _) then (DAE.WILD(),inFunctions);
-    case (Absyn.ALLWILD(), _, _, _) then (DAE.WILD(),inFunctions);
-    case (Absyn.CREF_FULLYQUALIFIED(acref), _, _, functions)
+    case (Absyn.WILD(), _, _, _, _) then (DAE.WILD(),inFunctions);
+    case (Absyn.ALLWILD(), _, _, _, _) then (DAE.WILD(),inFunctions);
+    case (Absyn.CREF_FULLYQUALIFIED(acref), _, _, _, functions)
       equation
-        (cref,functions) = instCref2(acref, inEnv, inPrefix, functions);
+        (cref,functions) = instCref2(acref, inEnv, inPrefix, inInfo, functions);
       then
         (cref,functions);
 
-    case (_, _, _, functions)
+    case (_, _, _, _, functions)
       equation
-        (cref,functions) = instCref2(inCref, inEnv, inPrefix, functions);
+        (cref,functions) = instCref2(inCref, inEnv, inPrefix, inInfo, functions);
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        cref = prefixCref(cref, path, inPrefix, inEnv);
+        cref = prefixCref(cref, path, inPrefix, inEnv, inInfo);
       then
         (cref,functions);
 
@@ -1379,11 +1411,12 @@ protected function instCref2
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output DAE.ComponentRef outCref;
   output FunctionHashTable outFunctions;
 algorithm
-  (outCref,outFunctions) := match(inCref, inEnv, inPrefix, inFunctions)
+  (outCref,outFunctions) := match(inCref, inEnv, inPrefix, inInfo, inFunctions)
     local
       String name;
       Absyn.ComponentRef cref;
@@ -1392,23 +1425,26 @@ algorithm
       list<DAE.Subscript> dsubs;
       FunctionHashTable functions;
 
-    case (Absyn.CREF_IDENT(name, asubs), _, _, functions)
+    case (Absyn.CREF_IDENT(name, asubs), _, _, _, functions)
       equation
-        (dsubs,functions) = instSubscripts(asubs, inEnv, inPrefix, functions);
+        (dsubs,functions) =
+          instSubscripts(asubs, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs),functions);
 
-    case (Absyn.CREF_QUAL(name, asubs, cref), _, _, functions)
+    case (Absyn.CREF_QUAL(name, asubs, cref), _, _, _, functions)
       equation
-        (dsubs,functions) = instSubscripts(asubs, inEnv, inPrefix, functions);
-        (dcref,functions) = instCref2(cref, inEnv, inPrefix, functions);
+        (dsubs,functions) =
+          instSubscripts(asubs, inEnv, inPrefix, inInfo, functions);
+        (dcref,functions) = instCref2(cref, inEnv, inPrefix, inInfo, functions);
       then
         (DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref),functions);
 
-    case (Absyn.CREF_FULLYQUALIFIED(cref), _, _, functions)
+    case (Absyn.CREF_FULLYQUALIFIED(cref), _, _, _, functions)
       equation
-        (dcref,functions) = instCref2(cref, inEnv, inPrefix, functions);
-      then (dcref,functions);
+        (dcref,functions) = instCref2(cref, inEnv, inPrefix, inInfo, functions);
+      then
+        (dcref,functions);
 
   end match;
 end instCref2;
@@ -1419,18 +1455,20 @@ protected function prefixCref
   input Absyn.Path inCrefPath;
   input Prefix inPrefix;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inCrefPath, inPrefix, inEnv)
+  outCref := matchcontinue(inCref, inCrefPath, inPrefix, inEnv, inInfo)
     local
       Env env;
       DAE.ComponentRef cref;
       SCodeLookup.Origin origin;
       Boolean is_global;
       Absyn.Path path;
+      String name_str, env_str;
 
     // If the name can be found in the local scope, call instLocalCref.
-    case (_, _, _, _)
+    case (_, _, _, _, _)
       equation
         (_, path, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
         is_global = SCodeLookup.originIsGlobal(origin);
@@ -1439,12 +1477,23 @@ algorithm
         cref;
 
     // Otherwise, look it up in the scopes above, and call instGlobalCref.
-    case (_, _, _, _ :: env)
+    case (_, _, _, _ :: env, _)
       equation
-        (_, path, env) = SCodeLookup.lookupVariableName(inCrefPath, env, Absyn.dummyInfo);
+        (_, path, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, inInfo);
         cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
+
+    // If the cref couldn't be found, print an error message here instead of
+    // letting SCodeLookup do it, to get the correct scope.
+    else
+      equation
+        name_str = ComponentReference.printComponentRefStr(inCref);
+        env_str = SCodeEnv.getEnvName(inEnv);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+          {name_str, env_str}, inInfo);
+      then
+        fail();
 
   end matchcontinue;
 end prefixCref;
@@ -1676,12 +1725,12 @@ protected function instFunctionCall
   input list<Absyn.NamedArg> inNamedArgs;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
   input Absyn.Info inInfo;
+  input FunctionHashTable inFunctions;
   output DAE.Exp outCallExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outCallExp,outFunctions) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inFunctions, inInfo)
+  (outCallExp,outFunctions) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Path call_path;
       DAE.ComponentRef cref;
@@ -1691,11 +1740,11 @@ algorithm
       list<Element> inputs, outputs; 
       FunctionHashTable functions;
       
-    case (_, _, _, _, _, functions, _)
+    case (_, _, _, _, _, _, functions)
       equation
         (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
-        (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, functions);
-        (named_args,functions) = List.map2Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, functions);
+        (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, functions);
+        (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
         (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
@@ -1790,6 +1839,7 @@ protected function instNamedArg
   input Absyn.NamedArg inNamedArg;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output tuple<String, DAE.Exp> outNamedArg;
   output FunctionHashTable outFunctions;
@@ -1799,7 +1849,7 @@ protected
   DAE.Exp dexp;
 algorithm
   Absyn.NAMEDARG(argName = name, argValue = aexp) := inNamedArg;
-  (dexp,outFunctions) := instExp(aexp, inEnv, inPrefix, inFunctions);
+  (dexp,outFunctions) := instExp(aexp, inEnv, inPrefix, inInfo, inFunctions);
   outNamedArg := (name, dexp);
 end instNamedArg;
 
@@ -2458,8 +2508,8 @@ algorithm
 
     case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
       then
         (InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info),functions);
 
@@ -2470,8 +2520,8 @@ algorithm
     // lookup.
     case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _, functions)
       equation
-        (dcref1,functions) = instCref2(cref1, inEnv, inPrefix, functions);
-        (dcref2,functions) = instCref2(cref2, inEnv, inPrefix, functions);
+        (dcref1,functions) = instCref2(cref1, inEnv, inPrefix, info, functions);
+        (dcref2,functions) = instCref2(cref2, inEnv, inPrefix, info, functions);
       then
         (InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
           dcref2, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), functions);
@@ -2481,7 +2531,7 @@ algorithm
       equation
         env = SCodeEnv.extendEnvWithIterators(
           {Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
-        (dexp1,functions) = instExp(exp1, env, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
         (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
         (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info),functions);
@@ -2497,7 +2547,7 @@ algorithm
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
         elseBranch = eql, info = info), _, _, functions)
       equation
-        (inst_branches,functions) = List.threadMap2ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, functions);
+        (inst_branches,functions) = List.threadMap3ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, info, functions);
         (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
         // Add else branch as a branch with condition true last in the list.
         inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
@@ -2507,42 +2557,43 @@ algorithm
     case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
         elseBranches = when_branches, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
         (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
-        (inst_branches,functions) = List.map2Fold(when_branches, instWhenBranch, inEnv, inPrefix, functions); 
+        (inst_branches,functions) = List.map3Fold(when_branches, instWhenBranch, inEnv, inPrefix, info, functions); 
       then
         (InstTypes.WHEN_EQUATION(inst_branches, info), functions);
 
     case (SCode.EQ_ASSERT(condition = exp1, message = exp2, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
       then
         (InstTypes.ASSERT_EQUATION(dexp1, dexp2, info), functions);
 
     case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
       then
         (InstTypes.TERMINATE_EQUATION(dexp1, info), functions);
 
     case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _, functions)
       equation
-        (dcref1,functions) = instCref(cref1, inEnv, inPrefix, functions);
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dcref1,functions) = instCref(cref1, inEnv, inPrefix, info, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
       then
         (InstTypes.REINIT_EQUATION(dcref1, dexp1, info), functions);
         
     case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
       then
         (InstTypes.NORETCALL_EQUATION(dexp1, info), functions);
 
     else
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         str = SCodeDump.equationStr(inEquation);
-        print("Unknown or failed equation in SCodeInst.instEEquation: " +& str +& "\n");
+        Debug.traceln("Unknown or failed equation in SCodeInst.instEEquation: " +& str);
       then
         fail();
 
@@ -2607,14 +2658,14 @@ algorithm
       FunctionHashTable functions;
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
       then (InstTypes.ASSIGN_STMT(dexp1, dexp2, info),functions);
 
     case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, functions)
       equation
         env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
-        (dexp1,functions) = instExp(exp1, env, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
         (ibody,functions) = instStatements(body, env, inPrefix, functions);
       then
         (InstTypes.FOR_STMT(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info),functions);
@@ -2628,7 +2679,7 @@ algorithm
 
     case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
         (ibody,functions) = instStatements(body, inEnv, inPrefix, functions);
       then
         (InstTypes.WHILE_STMT(dexp1, ibody, info),functions);
@@ -2639,21 +2690,21 @@ algorithm
       equation
         elseif_branches = (if_condition,if_branch)::elseif_branches;
         /* Save some memory by making this more complicated than it is */
-        (inst_branches,functions) = List.map2Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,functions,{});
-        (inst_branches,functions) = List.map2Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,functions,inst_branches);
+        (inst_branches,functions) = List.map3Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,info,functions,{});
+        (inst_branches,functions) = List.map3Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,info, functions,inst_branches);
         inst_branches = listReverse(inst_branches);
       then
         (InstTypes.IF_STMT(inst_branches, info),functions);
 
     case (SCode.ALG_WHEN_A(branches = branches, info = info), _, _, functions)
       equation
-        (inst_branches,functions) = List.map2Fold(branches,instStatementBranch,inEnv,inPrefix,functions);
+        (inst_branches,functions) = List.map3Fold(branches,instStatementBranch,inEnv,inPrefix,info,functions);
       then
         (InstTypes.WHEN_STMT(inst_branches, info),functions);
 
     case (SCode.ALG_NORETCALL(exp = exp1, info = info), _, _, functions)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, functions);
+        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
       then (InstTypes.NORETCALL_STMT(dexp1, info),functions);
 
     else
@@ -2669,6 +2720,7 @@ protected function instIfBranch
   input list<SCode.EEquation> inBody;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output tuple<DAE.Exp, list<Equation>> outIfBranch;
   output FunctionHashTable outFunctions;
@@ -2676,7 +2728,7 @@ protected
   DAE.Exp cond_exp;
   list<Equation> eql;
 algorithm
-  (cond_exp,outFunctions) := instExp(inCondition, inEnv, inPrefix, inFunctions);
+  (cond_exp,outFunctions) := instExp(inCondition, inEnv, inPrefix, inInfo, inFunctions);
   (eql,outFunctions) := instEEquations(inBody, inEnv, inPrefix, outFunctions);
   outIfBranch := (cond_exp, eql);
 end instIfBranch;
@@ -2685,6 +2737,7 @@ protected function instStatementBranch
   input tuple<Absyn.Exp,list<SCode.Statement>> tpl;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output tuple<DAE.Exp, list<Statement>> outIfBranch;
   output FunctionHashTable outFunctions;
@@ -2695,7 +2748,7 @@ protected
   list<Statement> istmts;
 algorithm
   (cond,stmts) := tpl;
-  (icond,outFunctions) := instExp(cond, inEnv, inPrefix, inFunctions);
+  (icond,outFunctions) := instExp(cond, inEnv, inPrefix, inInfo, inFunctions);
   (istmts,outFunctions) := instStatements(stmts, inEnv, inPrefix, outFunctions);
   outIfBranch := (icond, istmts);
 end instStatementBranch;
@@ -2704,6 +2757,7 @@ protected function instWhenBranch
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
   input Env inEnv;
   input Prefix inPrefix;
+  input Absyn.Info inInfo;
   input FunctionHashTable inFunctions;
   output tuple<DAE.Exp, list<Equation>> outBranch;
   output FunctionHashTable outFunctions;
@@ -2714,7 +2768,7 @@ protected
   list<Equation> ieql;
 algorithm
   (aexp, eql) := inBranch;
-  (dexp, outFunctions) := instExp(aexp, inEnv, inPrefix, inFunctions);
+  (dexp, outFunctions) := instExp(aexp, inEnv, inPrefix, inInfo, inFunctions);
   (ieql,outFunctions) := instEEquations(eql, inEnv, inPrefix, outFunctions);
   outBranch := (dexp, ieql);
 end instWhenBranch;

@@ -718,6 +718,42 @@ algorithm
   end match;
 end mergePrefixes;
 
+public function mergePrefixesFromExtends
+  input SCode.Element inExtends;
+  input Prefixes inPrefixes;
+  output Prefixes outPrefixes;
+protected
+  SCode.Visibility vis;
+algorithm
+  SCode.EXTENDS(visibility = vis) := inExtends;
+  outPrefixes := setPrefixVisibility(vis, inPrefixes);
+end mergePrefixesFromExtends;
+
+protected function setPrefixVisibility
+  input SCode.Visibility inVisibility;
+  input Prefixes inPrefixes;
+  output Prefixes outPrefixes;
+algorithm
+  outPrefixes := match(inVisibility, inPrefixes)
+    local
+      SCode.Variability var;
+      SCode.Final fp;
+      Absyn.InnerOuter io;
+      tuple<Absyn.Direction, Absyn.Info> dir;
+      tuple<SCode.Flow, Absyn.Info> flp;
+      tuple<SCode.Stream, Absyn.Info> sp;
+      InstTypes.VarArgs va;
+
+    case (SCode.PUBLIC(), _) then inPrefixes;
+
+    case (_, InstTypes.PREFIXES(_, var, fp, io, dir, flp, sp, va))
+      then InstTypes.PREFIXES(inVisibility, var, fp, io, dir, flp, sp, va);
+
+    else InstTypes.DEFAULT_PROTECTED_PREFIXES;
+
+  end match;
+end setPrefixVisibility;
+
 protected function mergeVisibility
   "Merges an outer and inner visibility prefix."
   input SCode.Visibility inOuterVisibility;
