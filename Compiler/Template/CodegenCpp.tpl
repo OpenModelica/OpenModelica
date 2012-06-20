@@ -137,14 +137,14 @@ EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDFLAGS=-L"<%makefileParams.omhome%>/bin" -L$(BOOST_LIBS)
+LDFLAGS=-L"<%makefileParams.omhome%>/bin" -L$(BOOST_LIBS) -L"./"  
 
 MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>   -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;
@@ -1715,13 +1715,13 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
-  #include "Policies/BufferReaderWriter.h"
+  #include "policies/BufferReaderWriter.h"
   typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;  
 
   >>
   else
   <<
-  #include "Policies/TextFileWriter.h"
+  #include "policies/TextfileWriter.h"
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
   
   >>%>
