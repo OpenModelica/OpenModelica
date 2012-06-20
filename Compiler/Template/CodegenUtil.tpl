@@ -47,6 +47,53 @@ package CodegenUtil
 
 import interface SimCodeTV;
 
+template crefStr(ComponentRef cr)
+ "Generates the name of a variable for variable name array."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
+  // Are these even needed? Function context should only have CREF_IDENT :)
+  case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefStr;
+
+template subscriptsStr(list<Subscript> subscripts)
+ "Generares subscript part of the name."
+::=
+  if subscripts then
+    '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
+end subscriptsStr;
+
+template subscriptStr(Subscript subscript)
+ "Generates a single subscript.
+  Only works for constant integer indicies."
+
+::=
+  match subscript
+  case INDEX(exp=ICONST(integer=i)) then i
+  case SLICE(exp=ICONST(integer=i)) then i
+  case WHOLEDIM(__) then "WHOLEDIM"
+  else "UNKNOWN_SUBSCRIPT"
+end subscriptStr;
+
+
+template initValXml(Exp initialValue) 
+::=
+  match initialValue 
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
+  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
+end initValXml;
+
+/*********************************************************************
+ *********************************************************************
+ *                       Paths
+ *********************************************************************
+ *********************************************************************/
 
 template dotPath(Path path)
  "Generates paths with components separated by dots."
@@ -57,6 +104,35 @@ template dotPath(Path path)
   case FULLYQUALIFIED(__) then dotPath(path)
 end dotPath;
 
+
+/*********************************************************************
+ *********************************************************************
+ *                       Error
+ *********************************************************************
+ *********************************************************************/
+
+template error(Absyn.Info srcInfo, String errMessage)
+"Example source template error reporting template to be used together with the sourceInfo() magic function.
+Usage: error(sourceInfo(), <<message>>) "
+::=
+let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
+<<
+
+#error "<% Error.infoStr(srcInfo) %> <% errMessage %>"<%\n%>
+>>
+end error;
+
+//for completeness; although the error() template above is preferable
+template errorMsg(String errMessage)
+"Example template error reporting template
+ that is reporting only the error message without the usage of source infotmation."
+::=
+let() = Tpl.addTemplateError(errMessage)
+<<
+
+#error "<% errMessage %>"<%\n%>
+>>
+end errorMsg;
 
 end CodegenUtil;
 

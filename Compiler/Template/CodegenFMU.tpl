@@ -494,7 +494,7 @@ template dervativeNameCStyle(ComponentRef cr)
  "Generates the name of a derivative in c style, replaces ( with _"
 ::=
   match cr
-  case CREF_QUAL(ident = "$DER") then 'der_<%CodegenC.crefStr(componentRef)%>_'
+  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
 end dervativeNameCStyle;
 
 template DefineVariables(SimVar simVar)

@@ -19,7 +19,7 @@ CodegenUtil.mo : CodegenUtil.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "	
 	
-CodegenC.mo : CodegenC.tpl SimCodeTV.mo
+CodegenC.mo : CodegenC.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** CodegenC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -29,7 +29,7 @@ CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 		
-CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl
+CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
@@ -44,12 +44,12 @@ Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "	
 
-SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenC.tpl
+SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "	
 
-CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl 
+CodegenQSS.mo : CodegenQSS.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl 
 	@echo " ** CodegenQSS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "	
