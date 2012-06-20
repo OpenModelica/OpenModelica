@@ -102,7 +102,7 @@ algorithm
  scriptFile := generatePythonScript(inPath,templateFile,dae,inDaelow);
  
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
-  strippedDae := stripCorrelationFromDae(dae);
+  strippedDae := stripCorrelationFromDae(inDaelow);
   
   strippedDae := BackendDAEUtil.getSolvedSystem(cache, env, strippedDae, NONE(), NONE(), NONE(),NONE());
   
