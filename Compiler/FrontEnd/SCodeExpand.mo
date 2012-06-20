@@ -39,11 +39,14 @@ encapsulated package SCodeExpand
 "
 
 public import DAE;
+public import HashTablePathToFunction;
 public import InstTypes;
 
 protected import Absyn;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEDump;
+protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -57,6 +60,7 @@ protected import Types;
 protected import Util;
   
 protected type Equation = InstTypes.Equation;
+public type FunctionHashTable = HashTablePathToFunction.HashTable;
 protected type Statement = InstTypes.Statement;
 
 replaceable type ElementType subtypeof Any;
@@ -72,25 +76,30 @@ end ExpandScalarFunc;
 public function expand
   input String inName;
   input InstTypes.Class inClass;
+  input FunctionHashTable inFunctions;
   output DAE.DAElist outDAE;
 protected
   list<DAE.Element> el;
   DAE.FunctionTree tree;
 algorithm
-  outDAE := matchcontinue(inName, inClass)
+  outDAE := matchcontinue(inName, inClass, inFunctions)
     local
       list<DAE.Element> el;
       DAE.DAElist dae;
       DAE.FunctionTree tree;
       Integer vars, params;
+      list<DAE.Function> funcs;
     
-    case (_, _)
+    case (_, _, _)
       equation
         el = expandClass(inClass, {}, {});
         el = listReverse(el);
         dae = DAE.DAE({DAE.COMP(inName, el, DAE.emptyElementSource, NONE())});
+        
+        funcs = List.map(BaseHashTable.hashTableValueList(inFunctions), expandFunction);
 
-        tree = DAE.AVLTREENODE(NONE(), 0, NONE(), NONE());
+        tree = DAEUtil.emptyFuncTree;
+        tree = DAEUtil.addDaeFunction(funcs, tree);
         print("\nEXPANDED FORM:\n\n");
         print(DAEDump.dumpStr(dae, tree) +& "\n");
         (vars, params) = countElements(el, 0, 0);
@@ -892,5 +901,18 @@ algorithm
         
   end match;
 end expandIfStmt;
+
+protected function expandFunction
+  input InstTypes.Function inFunction;
+  output DAE.Function outFunction;
+algorithm
+  outFunction := match (inFunction)
+    local
+      Absyn.Path path;
+    case InstTypes.FUNCTION(path=path)
+      equation
+      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF({})},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+  end match;
+end expandFunction;
 
 end SCodeExpand;

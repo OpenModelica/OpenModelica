@@ -79,6 +79,7 @@ end Class;
 
 public uniontype Function
   record FUNCTION "A function has inputs,output and locals without binding. These are resolved to statements in the algorithm section"
+    Absyn.Path path;
     list<Element> inputs;
     list<Element> outputs;
     list<Element> locals;

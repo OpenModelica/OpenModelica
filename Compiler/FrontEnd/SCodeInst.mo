@@ -147,7 +147,7 @@ algorithm
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
-        _ = SCodeExpand.expand(name, cls /*, functions */);
+        _ = SCodeExpand.expand(name, cls, functions);
       then
         ();
 
@@ -1790,7 +1790,7 @@ algorithm
           InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL(), functions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
         stmts = List.flatten(algorithms);
-        outFunction = InstTypes.FUNCTION(inputs,outputs,locals,stmts);
+        outFunction = InstTypes.FUNCTION(path,inputs,outputs,locals,stmts);
         functions = BaseHashTable.addUnique((path,outFunction),functions);
       then
         (path, outFunction, functions);
@@ -1817,7 +1817,7 @@ algorithm
 
     // A qualified name with class origin should be prefixed with the package
     // name.
-    case (_, Absyn.QUALIFIED(name = _), SCodeLookup.CLASS_ORIGIN(), _, _)
+    case (_, _, SCodeLookup.CLASS_ORIGIN(), _, _)
       equation
         name = SCodeEnv.getItemName(inItem);
         path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
