@@ -6903,51 +6903,60 @@ template literalExpConstArrayVal(Exp lit)
   else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
 end literalExpConstArrayVal;
 
+template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines)
+::=
+match eq
+  case SES_RESIDUAL(__) then
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    '{<%index%>,"SES_RESIDUAL <%index%>",0,NULL}'
+  case SES_SIMPLE_ASSIGN(__) then
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    let var = '<%cref(cref)%>__varInfo'
+    let &preBuf += 'const VAR_INFO** equationInfo_cref<%index%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
+    let &preBuf += 'equationInfo_cref<%index%>[0] = &<%var%>;<%\n%>'
+    '{<%index%>,"SES_SIMPLE_ASSIGN <%index%>",1,equationInfo_cref<%index%>}'
+  case SES_ARRAY_CALL_ASSIGN(__) then
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    //let var = '<%cref(componentRef)%>__varInfo'
+    //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
+    '{<%index%>,"SES_ARRAY_CALL_ASSIGN <%index%>",0,NULL}'
+  case SES_ALGORITHM(__) then 
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'
+  case SES_WHEN(__) then 
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    '{<%index%>,"SES_WHEN <%index%>", 0, NULL}'
+  case SES_LINEAR(__) then
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
+    let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+    '{<%index%>,"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%index%>}'
+  case SES_NONLINEAR(__) then
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    let &preBuf += 'const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
+    let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
+    '{<%index%>,"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%index%>}'
+  case SES_MIXED(__) then 
+    let conEqn = equationInfo1(cont,preBuf,eqnsDefines) 
+    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%><%\n%>' 
+    let &preBuf += '<%\n%>const VAR_INFO** equationInfo_crefs<%index%> = (const VAR_INFO**)malloc(<%listLength(discVars)%>*sizeof(VAR_INFO*));<%\n%>'
+    let &preBuf += '<%discVars|>var hasindex i0 => 'equationInfo_crefs<%index%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+    '<%conEqn%>,<%\n%>{<%index%>,"MIXED<%index%>", <%listLength(discVars)%>, equationInfo_crefs<%index%>}'
+  else '<%error(sourceInfo(), 'Unkown Equation Type in equationInfo1')%>'
+end equationInfo1;
+
 template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
 ::=
   match eqs
   case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
   else
+    let()= System.tmpTickReset(0)
     let &preBuf = buffer ""
     let res =
     <<
     const struct EQUATION_INFO equationInfo[<%listLength(eqs)%>] = {
       <% eqs |> eq hasindex eqIndex =>
-        <<{<%System.tmpTick()%>,<%match eq
-          case SES_RESIDUAL(__) then
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            '"SES_RESIDUAL <%eqIndex%>",0,NULL'
-          case SES_SIMPLE_ASSIGN(__) then
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            let var = '<%cref(cref)%>__varInfo'
-            let &preBuf += 'const VAR_INFO** equationInfo_cref<%eqIndex%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
-            let &preBuf += 'equationInfo_cref<%eqIndex%>[0] = &<%var%>;<%\n%>'
-            '"SES_SIMPLE_ASSIGN <%eqIndex%>",1,equationInfo_cref<%eqIndex%>'
-          case SES_ARRAY_CALL_ASSIGN(__) then
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            //let var = '<%cref(componentRef)%>__varInfo'
-            //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%eqIndex%> = &<%var%>;'
-            '"SES_ARRAY_CALL_ASSIGN <%eqIndex%>",0,NULL'
-          case SES_ALGORITHM(__) then 
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            '"SES_ALGORITHM <%eqIndex%>", 0, NULL'
-          case SES_WHEN(__) then 
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            '"SES_WHEN <%eqIndex%>", 0, NULL'
-          case SES_LINEAR(__) then
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
-            let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
-            '"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%eqIndex%>'
-          case SES_NONLINEAR(__) then
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-            let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
-            '"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%eqIndex%>'
-          case SES_MIXED(__) then 
-            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
-            '"MIXED<%index%>", 0, NULL'
-          else '"unknown equation <%eqIndex%>",0,NULL'%>}
+        <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
         >> ; separator=",\n"%>
     };
     >>
