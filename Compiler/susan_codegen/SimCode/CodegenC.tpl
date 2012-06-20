@@ -4471,7 +4471,9 @@ end algStmtNoretcall;
 template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/)
  "Generates a when algorithm statement."
 ::=
-match when
+match context
+case SIMULATION(__) then
+  match when
   case STMT_WHEN(__) then
     let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/)
     let statements = (statementLst |> stmt =>
@@ -4488,6 +4490,7 @@ match when
     }  
     >>
   end match
+end match
 end algStmtWhen;
 
 
