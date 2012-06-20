@@ -173,6 +173,7 @@ HashTable3.mo \
 HashTable4.mo \
 HashTable5.mo \
 HashTableCG.mo \
+HashTableCrILst.mo \
 HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
 HashTableExpToIndex.mo \
