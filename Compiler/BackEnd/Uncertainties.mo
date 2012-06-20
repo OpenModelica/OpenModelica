@@ -574,7 +574,8 @@ algorithm
         //modelName=Absyn.pathLastIdent(className);        
         //print(System.readEnv("TEMP")+&"\\uncertainties.out");
         
-        System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs,complex)));           
+        System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",
+          MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs,complex)));           
              
         resstr="Done...";
       then

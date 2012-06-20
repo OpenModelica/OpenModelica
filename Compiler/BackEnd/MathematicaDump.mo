@@ -18,16 +18,16 @@ public function dumpMmaDAEStr "
 Dumps the equations, initial equations variables and parameters on a form suitable
 for reading into Mathematica"
 input tuple<BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>,list<BackendDAE.Equation>,
-    BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:]> inTuple "(vars, knvars, eqsn, ieqns)";
+    array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>> inTuple "(vars, knvars, eqsn, ieqns)";
 output String res;
 algorithm
   res := matchcontinue(inTuple)
     local 
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.Equation> eqns,ieqns;
-      BackendDAE.MultiDimEquation[:] arrEqns;
-      DAE.Algorithm[:] aalgs;
-      BackendDAE.ComplexEquation[:] complex;
+      array<BackendDAE.MultiDimEquation> arrEqns;
+      array<DAE.Algorithm> aalgs;
+      array<BackendDAE.ComplexEquation> complex;
       String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s2,s3,s4,res;
       list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns,arrEqns,aalgs,complex)) equation
@@ -58,12 +58,14 @@ algorithm
 end dumpMmaDAEStr;
 
 protected function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
-  input list<BackendDAE.Equation> eqns;
-  input tuple<BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:],BackendDAE.Variables,BackendDAE.Variables> inTuple;
+  input list<BackendDAE.Equation> inEqns;
+  input tuple<array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.Variables,BackendDAE.Variables> inTuple;
   output String res;
 algorithm
-  res := matchcontinue(eqns,inTuple)
-  local String s1;
+  res := matchcontinue(inEqns,inTuple)
+    local 
+      String s1;
+      list<BackendDAE.Equation> eqns;
     case (eqns,inTuple) equation
       eqns = List.unionOnTrue({},eqns,sameMultiEquation);
       s1 = Util.stringDelimitListNonEmptyElts(List.map1(eqns,printMmaEqnStr,inTuple),",");
@@ -95,7 +97,7 @@ end sameMultiEquation;
 
 protected function printMmaEqnStr "help function to printMmaEqnsStr"
   input BackendDAE.Equation eqn;
-  input tuple<BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:],BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
+  input tuple<array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
   output String str;
 algorithm
   str := matchcontinue(eqn,inTuple)
@@ -104,11 +106,11 @@ algorithm
     BackendDAE.Variables vars,knvars;
     String s1,s2;
     Integer indx;
-    DAE.Algorithm[:] algs;
-    BackendDAE.MultiDimEquation[:] md;
+    array<DAE.Algorithm> algs;
+    array<BackendDAE.MultiDimEquation> md;
     BackendDAE.MultiDimEquation ae;
     DAE.Algorithm alg;
-    BackendDAE.ComplexEquation[:] complexEqs;
+    array<BackendDAE.ComplexEquation> complexEqs;
     BackendDAE.ComplexEquation complexEq;
     BackendDAE.WhenEquation whenEq;
     
@@ -679,6 +681,7 @@ protected function printRowMmaStr "Prints a list of expressions to a string on M
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
   output String s;
+protected
   list<DAE.Exp> es_1;
 algorithm 
   s := stringDelimitList(List.map2(es, printExpMmaStr, vars,knvars),",");
@@ -768,7 +771,7 @@ output list<String> algs;
 output list<String> outputs;
 output list<String> inputs;
 algorithm
-  str := matchcontinue(vars)
+  (states,algs,outputs,inputs) := matchcontinue(vars)
     local
       list<BackendDAE.Var> varLst;
     case(vars)      
@@ -873,7 +876,7 @@ E.g. {R1R->1.0,R2R->R1R*0.5,I3I->0.1}
   output list<String> params;
   output list<String> inputs;
 algorithm
-  str := matchcontinue(knvars)
+  (params, inputs) := matchcontinue(knvars)
     local
       String s1,s2;
       list<BackendDAE.Var> varLst;
