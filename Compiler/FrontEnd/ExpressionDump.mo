@@ -620,7 +620,7 @@ algorithm
     
     case (DAE.SCONST(string = s), stringDelimiter, _, _)
       equation
-        s = System.escapedString(s);
+        s = System.escapedString(s,false);
         s = stringAppendList({stringDelimiter, s, stringDelimiter});
       then
         s;
@@ -1151,7 +1151,7 @@ algorithm
     
     case (DAE.SCONST(string = s))
       equation
-        s = System.escapedString(s);
+        s = System.escapedString(s,true);
         s = stringAppendList({"\"", s, "\""});
       then
         Graphviz.LNODE("SCONST",{s},{},{});
@@ -1344,7 +1344,7 @@ algorithm
     case (DAE.SCONST(string = s),level) /* Graphviz.LNODE(\"SCONST\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        s = System.escapedString(s);
+        s = System.escapedString(s,true);
         res_str = stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
       then
         res_str;

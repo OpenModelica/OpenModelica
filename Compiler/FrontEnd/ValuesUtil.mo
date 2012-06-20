@@ -2049,7 +2049,7 @@ algorithm
         ();
     case Values.STRING(string = s)
       equation
-        s = System.escapedString(s);
+        s = System.escapedString(s,false);
         s_1 = stringAppendList({"\"",s,"\""});
         Print.printBuf(s_1);
       then

@@ -147,7 +147,7 @@ algorithm
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
-        _ = SCodeExpand.expand(name, cls);
+        _ = SCodeExpand.expand(name, cls /*, functions */);
       then
         ();
 
@@ -1713,7 +1713,7 @@ protected function instFunction
   output Function outFunction;
   output FunctionHashTable outFunctions;
 algorithm
-  (outName, outFunction, outFunctions) := match(inName, inEnv, inPrefix, inInfo, inFunctions)
+  (outName, outFunction, outFunctions) := matchcontinue (inName, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Path path;
       Item item;
@@ -1729,16 +1729,24 @@ algorithm
     case (_, _, _, _, functions)
       equation
         path = Absyn.crefToPath(inName);
+        outFunction = BaseHashTable.get(path,functions);
+      then (path, outFunction, functions);
+
+    case (_, _, _, _, functions)
+      equation
+        path = Absyn.crefToPath(inName);
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL(), functions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
         stmts = List.flatten(algorithms);
+        outFunction = InstTypes.FUNCTION(inputs,outputs,locals,stmts);
+        functions = BaseHashTable.addUnique((path,outFunction),functions);
       then
-        (path, InstTypes.FUNCTION(inputs,outputs,locals,stmts), functions);
+        (path, outFunction, functions);
 
-  end match;
+  end matchcontinue;
 end instFunction;
 
 protected function instFunctionName
