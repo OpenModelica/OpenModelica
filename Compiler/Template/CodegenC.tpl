@@ -778,6 +778,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      <%&tmp%>
      void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag, void* userdata)
      {
+       char discreteCall = 1;
        DATA *data = ((DATA*)userdata);
        state mem_state;
        <%varDecls%>
