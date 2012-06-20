@@ -146,7 +146,7 @@ simcode:
 else 
 simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
-	$(MAKE) -C susan_codegen/SimCode/
+	$(MAKE) -C Template/
 OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/Interactive.mo FrontEnd/Values.mo Util/Error.mo GenerateOMCHeader.mos Template/Unparsing.mo
 	../build/bin/omc +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
 	@mv $@.new $@
