@@ -45,6 +45,7 @@ public import HashTable2;
 public import HashTable3;
 public import HashTable4;
 public import HashTableCG;
+public import HashTableCrILst;
 
 public constant String partialDerivativeNamePrefix="$pDER";
 public constant Integer RT_PROFILER0=6;
@@ -297,6 +298,7 @@ uniontype Variables "- Variables"
     VariableArray varArr "varArr ; Array of variables";
     Integer bucketSize "bucketSize ; bucket size";
     Integer numberOfVars "numberOfVars ; no. of vars";
+    HashTableCrILst.HashTable fastht "cref -> list<Integer>(indxes)";
   end VARIABLES;
 end Variables;
 

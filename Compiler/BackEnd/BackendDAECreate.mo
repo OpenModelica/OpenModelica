@@ -60,6 +60,7 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
 protected import HashTableExpToIndex;
+protected import HashTable;
 protected import Inline;
 protected import List;
 protected import SCode;
@@ -2876,61 +2877,85 @@ algorithm
   outTpl := matchcontinue(tpl)
     local
       BackendDAE.Variables vars;
-      BackendDAE.BinTree bt;
-      DAE.FunctionTree funcs;
       DAE.Exp e1,e2;
-      list<DAE.ComponentRef> newStates;
       DAE.ComponentRef cr;
       String str;
       list<DAE.SymbolicOperation> ops;
       BackendDAE.Shared shared;
+      list<BackendDAE.Var> varlst;
     case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,_,_)))
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();      
+    case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,shared,_)))
+      equation
+        (varlst,_) = BackendVariable.getVar(cr, vars);
+        vars = updateStatesVars(vars,varlst,false);       
+      then ((e1,(vars,shared,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,shared,_)))
       equation
         e2 = Derive.differentiateExpTime(e1,(vars,shared));
         (e2,_) = ExpressionSimplify.simplify(e2);
-        ((_,bt)) = statesExp((e2,BackendDAE.emptyBintree));
-        (newStates,_) = BackendDAEUtil.bintreeToList(bt);
-        vars = updateStatesVars(vars,newStates);
+        ((_,vars)) = Expression.traverseExp(e2,derCrefsExp,vars);
       then ((e2,(vars,shared,true)));
     case tpl then tpl;
   end matchcontinue;
 end expandDerExp;
 
+protected function derCrefsExp "
+helper for statesExp
+"
+  input tuple<DAE.Exp, BackendDAE.Variables > inExp;
+  output tuple<DAE.Exp, BackendDAE.Variables > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    DAE.ComponentRef cr;
+    BackendDAE.Variables vars;
+    list<BackendDAE.Var> varlst;
+    DAE.Exp e;
+  case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
+    equation
+      (varlst,_) = BackendVariable.getVar(cr, vars);
+      vars = updateStatesVars(vars,varlst,false);
+    then
+      ((e,vars));
+  case(inExp) then inExp;
+end matchcontinue;
+end derCrefsExp;
+
+
 protected function updateStatesVars
 "Help function to expandDerExp"
   input BackendDAE.Variables inVars;
-  input list<DAE.ComponentRef> inNewStates;
+  input list<BackendDAE.Var> inNewStates;
+  input Boolean noStateFound;
   output BackendDAE.Variables outVars;
 algorithm
-  outVars := matchcontinue(inVars,inNewStates)
+  outVars := matchcontinue(inVars,inNewStates,noStateFound)
     local
-      DAE.ComponentRef cr;
       BackendDAE.Var var;
-      String str;
-      list<DAE.ComponentRef> newStates;
+      list<BackendDAE.Var> newStates;
       BackendDAE.Variables vars;
+      //DAE.ComponentRef cr;
+      //String str;
 
-    case(vars,{}) then vars;
-    case(vars,cr::newStates)
+    case(_,{},true) then inVars;
+    case(_,var::newStates,_)
       equation
-        ((var :: _),_) = BackendVariable.getVar(cr, vars);
+        false = BackendVariable.isStateVar(var);
         var = BackendVariable.setVarKind(var,BackendDAE.STATE());
-        vars = BackendVariable.addVar(var, vars);
-        vars = updateStatesVars(vars,newStates);
+        vars = BackendVariable.addVar(var, inVars);
+        vars = updateStatesVars(vars,newStates,true);
       then vars;
-    case(vars,cr::newStates)
+    case(_,_::newStates,_)
       equation
         /* Might be part of a different equation-system...
         str = "BackendDAECreate.updateStatesVars failed for: " +& ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
         */
-        vars = updateStatesVars(vars,newStates);
+        vars = updateStatesVars(inVars,newStates,noStateFound);
       then vars;
   end matchcontinue;
 end updateStatesVars;

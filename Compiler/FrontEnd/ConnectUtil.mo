@@ -253,8 +253,8 @@ algorithm
 
     case (_, _, _, _, _, _, _, _)
       equation
-        crefs1 = ComponentReference.expandCref(inCref1);
-        crefs2 = ComponentReference.expandCref(inCref2);
+        crefs1 = ComponentReference.expandCref(inCref1,false);
+        crefs2 = ComponentReference.expandCref(inCref2,false);
       then
         addArrayConnection2(inSets, crefs1, inFace1, crefs2, inFace2, inSource,
           inFlow, inStream);

@@ -184,6 +184,7 @@ algorithm
   dumpStart();
   dumpGraph_Internal(inGraph,"  ");
   dumpEnd();
+  //System.writeFile(name,str);           
 end dumpGraph;
 
 /*************************************************

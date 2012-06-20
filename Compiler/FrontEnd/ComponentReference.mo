@@ -2319,10 +2319,11 @@ public function expandCref
    This function expects the subscripts of the cref to be constant evaluated,
    otherwise it will fail."
   input DAE.ComponentRef inCref;
+  input Boolean expandRecord;
   output list<DAE.ComponentRef> outCref;
 algorithm
-  outCref := matchcontinue(inCref)
-    case _ then expandCref_impl(inCref);
+  outCref := matchcontinue(inCref,expandRecord)
+    case (_,_) then expandCref_impl(inCref,expandRecord);
 
     else
       equation
@@ -2337,9 +2338,10 @@ end expandCref;
 
 public function expandCref_impl
   input DAE.ComponentRef inCref;
+  input Boolean expandRecord;
   output list<DAE.ComponentRef> outCref;
 algorithm
-  outCref := match(inCref)
+  outCref := match(inCref,expandRecord)
     local
       DAE.Ident id;
       DAE.Type ty;
@@ -2347,9 +2349,20 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.Var> varLst;
+      list<list<DAE.ComponentRef>> crlstlst;
+
+    // A simple cref without subscripts but record type.
+    case (DAE.CREF_IDENT(id, DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), {}),true)
+      equation
+        // Create a list of crefs from names
+        crefs =  List.map(varLst,creffromVar);
+        crlstlst = List.map1(crefs,expandCref_impl,true);        
+      then
+        List.flatten(crlstlst);
 
     // A simple cref without subscripts but array type.
-    case DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {})
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2357,18 +2370,18 @@ algorithm
         expandCref2(id, ty, subs, dims);
 
     // A simple cref with subscripts and array type.
-    case DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs)
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
       // Use the subscripts to generate only the wanted elements.
       then expandCref2(id, ty, subs, dims);
 
     // A qualified cref with array type.
-    case DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _), subs, cref)
+    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _), subs, cref),_)
       equation
         // Expand the rest of the cref.
-        crefs = expandCref_impl(cref);
+        crefs = expandCref_impl(cref,expandRecord);
         // Create a simple identifier for the head of the cref and expand it.
         cref = DAE.CREF_IDENT(id, ty, subs);
-        crefs2 = expandCref_impl(cref);
+        crefs2 = expandCref_impl(cref,expandRecord);
         crefs2 = listReverse(crefs2);
         // Create all combinations of the two lists.
         crefs = expandCrefQual(crefs2, crefs, {});
@@ -2376,10 +2389,10 @@ algorithm
         crefs;
 
     // A qualified cref with no subscripts and scalar type.
-    case DAE.CREF_QUAL(id, ty, {}, cref)
+    case (DAE.CREF_QUAL(id, ty, {}, cref),_)
       equation
         // Expand the rest of the cref.
-        crefs = expandCref_impl(cref);
+        crefs = expandCref_impl(cref,expandRecord);
         // Append the head of this cref to all of the generated crefs.
         crefs = List.map3r(crefs, makeCrefQual, id, ty, {});
       then

@@ -199,16 +199,19 @@ algorithm
     local
       BackendDAE.Value esize,vars_size;
       BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
       String esize_str,vsize_str;
     case (_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED())) then ();
-    case (BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns),_)
       equation
+        vars_size = BackendVariable.varsSize(vars);
         esize = BackendDAEUtil.equationSize(eqns);
         ((esize) == vars_size) = true;
       then
         ();
-    case (BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns),_)
       equation
+        vars_size = BackendVariable.varsSize(vars);
         esize = BackendDAEUtil.equationSize(eqns);
         (esize < vars_size) = true;
         esize = esize - 1;
@@ -218,8 +221,9 @@ algorithm
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
-    case (BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns),_)
       equation
+        vars_size = BackendVariable.varsSize(vars);
         esize = BackendDAEUtil.equationSize(eqns);
         (esize > vars_size) = true;
         esize = esize - 1;

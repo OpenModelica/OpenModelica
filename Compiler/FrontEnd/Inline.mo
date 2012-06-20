@@ -65,6 +65,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import HashTableCrILst;
 protected import List;
 protected import Types;
 
@@ -317,13 +318,14 @@ algorithm
       Integer i1,i2,i3,i4;
       array<Option<BackendDAE.Var>> vararr,vararr_1;
       list<Option<BackendDAE.Var>> varlst,varlst_1;
-    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
+      HashTableCrILst.HashTable fastht;
+    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2,fastht),fns)
       equation
         varlst = arrayList(vararr);
         varlst_1 = List.map1(varlst,inlineVarOpt,fns);
         vararr_1 = listArray(varlst_1);
       then
-        BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
+        BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2,fastht);
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");

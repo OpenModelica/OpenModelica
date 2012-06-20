@@ -4091,8 +4091,8 @@ algorithm
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         dim_int = Expression.dimensionSize(dim1);
 
-        crefs1 = ComponentReference.expandCref(c1);
-        crefs2 = ComponentReference.expandCref(c2);
+        crefs1 = ComponentReference.expandCref(c1,false);
+        crefs2 = ComponentReference.expandCref(c2,false);
         (cache, _, ih, sets_1, dae, graph) = connectArrayComponents(cache, env,
           ih, sets, pre, crefs1, f1, t1, vt1, io1, crefs2, f2, t2, vt2, io2,
           flowPrefix, streamPrefix, graph, info);

@@ -2213,7 +2213,7 @@ algorithm
         
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
-        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
+        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo,{});
         (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
         n_h = listLength(helpVarInfo);
  
@@ -3161,7 +3161,7 @@ algorithm
     case BackendDAE.SHARED(externalObjects=evars)
       equation
         evarLst = BackendDAEUtil.varList(evars);
-        (simvars,aliases) = extractExtObjInfo2(evarLst,evars);
+        (simvars,aliases) = extractExtObjInfo2(evarLst,evars,{},{});
       then EXTOBJINFO(simvars,aliases);
   end match;
 end createExtObjInfo;
@@ -3169,25 +3169,27 @@ end createExtObjInfo;
 protected function extractExtObjInfo2
   input list<BackendDAE.Var> varLst;
   input BackendDAE.Variables evars;
+  input list<SimVar> ivars;
+  input list<ExtAlias> ialiases;
   output list<SimVar> vars;
   output list<ExtAlias> aliases;
 algorithm
-  (vars,aliases) := match (varLst,evars)
+  (vars,aliases) := match (varLst,evars,ivars,ialiases)
     local
       BackendDAE.Var bv;
       SimVar sv;
       list<BackendDAE.Var> vs;
       DAE.ComponentRef cr,name;
-    case ({},_) then ({},{});
-    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),varKind=BackendDAE.EXTOBJ(_))::vs,evars)
+    case ({},_,_,_) then (listReverse(ivars),listReverse(ialiases));
+    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),varKind=BackendDAE.EXTOBJ(_))::vs,evars,_,_)
       equation
-        (vars,aliases) = extractExtObjInfo2(vs,evars);
-      then (vars,(name, cr)::aliases);
-    case (bv::vs,evars)
+        (vars,aliases) = extractExtObjInfo2(vs,evars,ivars,(name, cr)::ialiases);
+      then (vars,aliases);
+    case (bv::vs,evars,_,_)
       equation
         sv = dlowvarToSimvar(bv,NONE(),evars);
-        (vars,aliases) = extractExtObjInfo2(vs,evars);
-      then (sv::vars,aliases);
+        (vars,aliases) = extractExtObjInfo2(vs,evars,sv::ivars,ialiases);
+      then (vars,aliases);
   end match;
 end extractExtObjInfo2;
 
@@ -3446,11 +3448,8 @@ algorithm
       BackendDAE.EqSystems systs;
       
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),helpVarInfo)
-      equation
-        simWhenClauses = createSimWhenClausesWithEqs(systs, wc, wc, helpVarInfo, 0);
       then
-        simWhenClauses;
-    
+        createSimWhenClausesWithEqs(systs, wc, wc, helpVarInfo, 0, {});
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.createSimWhenClauses failed"});
@@ -3464,27 +3463,27 @@ protected function createSimWhenClausesWithEqs
   input list<BackendDAE.WhenClause> allwhenClauses;
   input list<HelpVarInfo> helpVarInfo;
   input Integer currentWhenClauseIndex;
+  input list<SimWhenClause> isimWhenClauses;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
-  match (systs, whenClauses, allwhenClauses, helpVarInfo, currentWhenClauseIndex)
+  match (systs, whenClauses, allwhenClauses, helpVarInfo, currentWhenClauseIndex, isimWhenClauses)
     local
       BackendDAE.WhenClause whenClause;
-      list<BackendDAE.WhenClause> wc,wc1;
-      BackendDAE.EquationArray eqs;
+      list<BackendDAE.WhenClause> wc;
       Option<BackendDAE.WhenEquation> whenEq;
       SimWhenClause simWhenClause;
       Integer nextIndex;
       
-    case (_, {}, _, _, _) then {};
+    case (_, {}, _, _, _, _) then listReverse(isimWhenClauses);
       
-    case (systs, whenClause :: wc, wc1, helpVarInfo, currentWhenClauseIndex)
+    case (_, whenClause :: wc, _, _, _, _)
       equation
         whenEq = createSimWhenClausesWithEqsHelper(systs,currentWhenClauseIndex);
-        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq, wc1, helpVarInfo, currentWhenClauseIndex);
+        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq, allwhenClauses, helpVarInfo, currentWhenClauseIndex);
         nextIndex = currentWhenClauseIndex + 1;
-        simWhenClauses = createSimWhenClausesWithEqs(systs, wc, wc1, helpVarInfo, nextIndex);
-      then simWhenClause :: simWhenClauses;
+      then
+        createSimWhenClausesWithEqs(systs, wc, allwhenClauses, helpVarInfo, nextIndex, simWhenClause :: isimWhenClauses);
   end match;
 end createSimWhenClausesWithEqs;
 
@@ -6501,30 +6500,31 @@ protected function createSampleConditions
   and add the corresponding helpVar index to the sample"
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
   input list<HelpVarInfo> inHelpVarInfo;
+  input list<SampleCondition> iSample;
   output list<SampleCondition> outSample;
   output list<HelpVarInfo> outHelpVarInfo;
 algorithm
-  (outSample, outHelpVarInfo) := matchcontinue (inZeroCrossings,inHelpVarInfo)
+  (outSample, outHelpVarInfo) := matchcontinue (inZeroCrossings,inHelpVarInfo,iSample)
     local
       list<BackendDAE.ZeroCrossing> rest;
       DAE.Exp e;
       SampleCondition res;
       list<HelpVarInfo> newHelpVars, helpVarInfo;
       
-    case ({}, inHelpVarInfo) then ({},inHelpVarInfo) ;
-    case (BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT("sample")))::rest, inHelpVarInfo)
+    case ({}, _,_) then (listReverse(iSample),inHelpVarInfo) ;
+    case (BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT("sample")))::rest, _,_)
       equation
         (res,newHelpVars) = addHForConditionSample(e,inHelpVarInfo,listLength(inHelpVarInfo));
         helpVarInfo = listAppend(inHelpVarInfo,newHelpVars);
-        (outSample, helpVarInfo) = createSampleConditions(rest,helpVarInfo);
-      then
-        ((res::outSample),inHelpVarInfo);
-    case (_::rest, inHelpVarInfo)
-      equation
-        (outSample,helpVarInfo) = createSampleConditions(rest,inHelpVarInfo);
+        (outSample, helpVarInfo) = createSampleConditions(rest,helpVarInfo,res::iSample);
       then
         (outSample,helpVarInfo);
-    case (_,_)
+    case (_::rest, _,_)
+      equation
+        (outSample,helpVarInfo) = createSampleConditions(rest,inHelpVarInfo,iSample);
+      then
+        (outSample,helpVarInfo);
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createSampleConditions failed"});
       then

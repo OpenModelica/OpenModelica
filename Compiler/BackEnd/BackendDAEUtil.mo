@@ -75,6 +75,7 @@ protected import Flags;
 protected import Global;
 protected import HashTable2;
 protected import HashTable4;
+protected import HashTableCrILst;
 protected import IndexReduction;
 protected import List;
 protected import Matching;
@@ -1326,12 +1327,14 @@ protected
   list<Option<Var>> lst;
   array<Option<Var>> emptyarr;
   Integer bucketSize, arrSize;
+  HashTableCrILst.HashTable fastht;
 algorithm
   bucketSize := BaseHashTable.bigBucketSize;
   arrSize := bucketSize; // BaseHashTable.bucketToValuesSize(bucketSize);
   arr := arrayCreate(bucketSize, {});
   emptyarr := arrayCreate(arrSize, NONE());
-  outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0,arrSize,emptyarr),bucketSize,0);
+  fastht := HashTableCrILst.emptyHashTable();
+  outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0,arrSize,emptyarr),bucketSize,0,fastht);
 end emptyVars;
 
 public function emptyAliasVariables
