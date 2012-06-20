@@ -138,7 +138,7 @@ algorithm
 
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
         (cls, symtab) = Typing.typeClass(cls, symtab);
-        (cls, _) = Typing.typeSections(cls, symtab);
+        cls = Typing.typeSections(cls, symtab);
 
         System.stopTimer();
         //print("\nclass " +& name +& "\n");
