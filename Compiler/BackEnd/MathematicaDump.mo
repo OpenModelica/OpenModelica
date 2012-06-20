@@ -18,49 +18,49 @@ public function dumpMmaDAEStr "
 Dumps the equations, initial equations variables and parameters on a form suitable
 for reading into Mathematica"
 input tuple<BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>,list<BackendDAE.Equation>,
-		BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:]> inTuple "(vars, knvars, eqsn, ieqns)";
+    BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:]> inTuple "(vars, knvars, eqsn, ieqns)";
 output String res;
 algorithm
   res := matchcontinue(inTuple)
-  	local 
-  	  BackendDAE.Variables vars,knvars;
-  	  list<BackendDAE.Equation> eqns,ieqns;
-  	  BackendDAE.MultiDimEquation[:] arrEqns;
-  	  DAE.Algorithm[:] aalgs;
-  	  BackendDAE.ComplexEquation[:] complex;
-  	  String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s2,s3,s4,res;
-  	  list<String> params,inputs,states,algs,outputs,inputsStates;
+    local 
+      BackendDAE.Variables vars,knvars;
+      list<BackendDAE.Equation> eqns,ieqns;
+      BackendDAE.MultiDimEquation[:] arrEqns;
+      DAE.Algorithm[:] aalgs;
+      BackendDAE.ComplexEquation[:] complex;
+      String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s2,s3,s4,res;
+      list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns,arrEqns,aalgs,complex)) equation
-      	
-      	(states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
-      	(params,inputs) = printMmaParamsStr(knvars);
-      	//inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
-      	s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
-      	//print(" states: " +& s1_1 +& "\n");
-      	s1_2 = Util.stringDelimitListNonEmptyElts(algs,",");
-      	//print(" algs: " +& s1_2 +& "\n");
-      	s1_3 = Util.stringDelimitListNonEmptyElts(outputs,",");
-      	//print(" outputs: " +& s1_3 +& "\n");
-      	s1_4 = Util.stringDelimitListNonEmptyElts(inputs,",");
-      	//print(" inputs: " +& s1_4 +& "\n");
-      	s1_5 = Util.stringDelimitListNonEmptyElts(params,",");
-      	//print(" params: " +& s1_5 +& "\n");
-      	allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
-      	//print(" vars: " +& allVarStr +& "\n"); 
-      	
-      	s3 = printMmaEqnsStr(eqns,(arrEqns,aalgs,complex,vars,knvars));
-      	s4 = printMmaEqnsStr(ieqns,(arrEqns,aalgs,complex,vars,knvars));
-      	res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
-      	//print(" Eqns-1-: " +& s3 +& "\n");
-      	//print(" Eqns-2-: " +& s4 +& "\n");
+        
+        (states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
+        (params,inputs) = printMmaParamsStr(knvars);
+        //inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
+        s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
+        //print(" states: " +& s1_1 +& "\n");
+        s1_2 = Util.stringDelimitListNonEmptyElts(algs,",");
+        //print(" algs: " +& s1_2 +& "\n");
+        s1_3 = Util.stringDelimitListNonEmptyElts(outputs,",");
+        //print(" outputs: " +& s1_3 +& "\n");
+        s1_4 = Util.stringDelimitListNonEmptyElts(inputs,",");
+        //print(" inputs: " +& s1_4 +& "\n");
+        s1_5 = Util.stringDelimitListNonEmptyElts(params,",");
+        //print(" params: " +& s1_5 +& "\n");
+        allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
+        //print(" vars: " +& allVarStr +& "\n"); 
+        
+        s3 = printMmaEqnsStr(eqns,(arrEqns,aalgs,complex,vars,knvars));
+        s4 = printMmaEqnsStr(ieqns,(arrEqns,aalgs,complex,vars,knvars));
+        res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
+        //print(" Eqns-1-: " +& s3 +& "\n");
+        //print(" Eqns-2-: " +& s4 +& "\n");
     then res;      
   end matchcontinue;
 end dumpMmaDAEStr;
 
 protected function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
-	input list<BackendDAE.Equation> eqns;
-	input tuple<BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:],BackendDAE.Variables,BackendDAE.Variables> inTuple;
-	output String res;
+  input list<BackendDAE.Equation> eqns;
+  input tuple<BackendDAE.MultiDimEquation[:],DAE.Algorithm[:],BackendDAE.ComplexEquation[:],BackendDAE.Variables,BackendDAE.Variables> inTuple;
+  output String res;
 algorithm
   res := matchcontinue(eqns,inTuple)
   local String s1;
@@ -410,7 +410,7 @@ algorithm
         s2 = printExp2MmaStr(start, vars,knvars);
         s3 = printExp2MmaStr(step, vars,knvars);
         s4 = printExp2MmaStr(stop, vars,knvars);
-        s_5 =	stringAppendList({"Range[",s2,",",s4,",",s3,"]"}); // Range[start,stop,step]
+        s_5 =  stringAppendList({"Range[",s2,",",s4,",",s3,"]"}); // Range[start,stop,step]
       then
         s_5;
         /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
@@ -504,7 +504,7 @@ algorithm
       
       nameStr = System.stringReplace(nameStr,"(","[");
       nameStr = System.stringReplace(nameStr,")","]");
-			// if not translated variables
+      // if not translated variables
       nameStr = System.stringReplace(nameStr,"_","\\[UnderBracket]");
       
       nameStr = wrapInMember(nameStr);
@@ -529,7 +529,7 @@ algorithm
       nameStr = System.stringReplace(nameStr,"$rb","]");
       nameStr = System.stringReplace(nameStr,"$leftParentesis","(");
       nameStr = System.stringReplace(nameStr,"$rightParentesis",")");
-			// if not translated variables
+      // if not translated variables
       nameStr = System.stringReplace(nameStr,"_","\\[UnderBracket]");
       
       nameStr = wrapInMember(nameStr);
