@@ -1107,6 +1107,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
   int functionDAE(DATA *data, int *needToIterate)
   {
     state mem_state;
+    char discreteCall = 1;
     <%varDecls%>
     *needToIterate = 0;
   
