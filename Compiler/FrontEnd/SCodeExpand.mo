@@ -909,9 +909,20 @@ algorithm
   outFunction := match (inFunction)
     local
       Absyn.Path path;
-    case InstTypes.FUNCTION(path=path)
+      list<DAE.Element> el;
+      list<InstTypes.Element> inputs,outputs,locals;
+      list<InstTypes.Statement> al;
+    case InstTypes.FUNCTION(path=path,inputs=inputs,outputs=outputs,locals=locals,algorithms=al)
       equation
-      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF({})},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+        el = {};
+        /* Elements need to be typed...
+        el = List.fold1(inputs, expandElement, {}, el);
+        el = List.fold1(outputs, expandElement, {}, el);
+        el = List.fold1(locals, expandElement, {}, el);
+        */
+        el = expandStatements(al, {}, false /* not initial */, el);
+        el = listReverse(el);
+      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
   end match;
 end expandFunction;
 
