@@ -67,7 +67,6 @@ public type Modifier = InstTypes.Modifier;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 public type Statement = InstTypes.Statement;
-public type SymbolTable = InstSymbolTable.SymbolTable;
 public type Key = Absyn.Path;
 public type Value = InstTypes.Component;
 

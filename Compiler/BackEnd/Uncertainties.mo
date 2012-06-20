@@ -31,7 +31,7 @@ package Uncertainties
   import ExpressionSolve;
   import BackendDump;
   import ExpressionSimplify;
-  //import MathematicaDump;
+  import MathematicaDump;
   import BackendDAEEXT;
   
   
@@ -392,6 +392,7 @@ algorithm
       BackendDAE.Variables vars,kvars;
       list<Integer> eqnIndexList, varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,equationToExtract,otherEquations,squareBlockEquations,removedVars;
       BackendDAE.EquationArray eqns,ieqns;
+      array<BackendDAE.ComplexEquation> complex;
       array<BackendDAE.MultiDimEquation> arrEqns;
       array<DAE.Algorithm> algs;
       list<BackendDAE.Equation> eqnLst,ieqnLst;
@@ -426,7 +427,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,funcs,true);
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
         (dlow_1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, SOME({"removeSimpleEquations","removeFinalParameters"}), NONE(), NONE(),SOME({}));
-        print("*** Lowered: \n");
+        print("* Lowered Ok \n");
 
         //BackendDump.dump(dlow_1);
        
@@ -442,13 +443,13 @@ algorithm
         refineVarIndexList = getUncertainRefineVariableIndexes(allVars, allVarIndexList);
         elimVarIndexList = List.setDifferenceOnTrue(allVarIndexList, refineVarIndexList, intEq);
         
-        print("Original variables with uncertainty attibute: "); 
-        print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
-        print("\n");
+        //print("Original variables with uncertainty attibute: "); 
+        //print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        //print("\n");
         
-        print("Variables to eliminate: "); 
-        print(stringDelimitList(List.map(elimVarIndexList,intString)," , "));
-        print("\n");
+        //print("Variables to eliminate: "); 
+        //print(stringDelimitList(List.map(elimVarIndexList,intString)," , "));
+        //print("\n");
         
         
         (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_,shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) 
@@ -460,31 +461,31 @@ algorithm
      
         comps = BackendDAETransform.tarjanAlgorithm(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,{})));
         
-        print("All components:\n");
-        dumpComponents(comps);
+        //print("All components:\n");
+        //dumpComponents(comps);
         
         //dumpUncertainVariablesInBlocks(dlow_1,m,comps);
         
         refineVarIndexList = getUncertainRefineVariablesInBlocks(dlow_1, m, comps);
       
-        print("Variables with uncertainty attibute: "); 
-        print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
-        print("\n");
+        //print("Variables with uncertainty attibute: "); 
+        //print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        //print("\n");
         //BackendDump.dump(dlow_1);
         
         squareBlockEquations = getSquareBlocks(m,comps,{},refineVarIndexList);
         
         
-        print("Equations in squared blocks: "); 
-        print(stringDelimitList(List.map(squareBlockEquations,intString)," , "));
-        print("\n");
+        //print("Equations in squared blocks: "); 
+        //print(stringDelimitList(List.map(squareBlockEquations,intString)," , "));
+        //print("\n");
         
        
         (m,mt,removedVars)=removeEquationsFromSystem(m,mt,squareBlockEquations);
  
-        print("Removed variables from squared blocks: "); 
-        print(stringDelimitList(List.map(removedVars,intString)," , "));
-        print("\n");
+        //print("Removed variables from squared blocks: "); 
+        //print(stringDelimitList(List.map(removedVars,intString)," , "));
+        //print("\n");
  
 
         newSystemEqns = BackendDAEUtil.listEquation(List.deletePositions(BackendDAEUtil.equationList(allEqs),List.map1(squareBlockEquations,intAdd,-1)));
@@ -509,9 +510,9 @@ algorithm
         //BackendDump.dump(dlow_1);
       
         //dumpUncertainVariablesInBlocks(dlow_1,m,comps);
-        print("Variables with uncertainty attibute: "); 
-        print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
-        print("\n");
+        //print("Variables with uncertainty attibute: "); 
+        //print(stringDelimitList(List.map(refineVarIndexList,intString)," , "));
+        //print("\n");
         
         // Extract equations for uncertainty computations.          
         //uccomps = extractEquationsForUC(dlow_1, m, comps);
@@ -531,9 +532,9 @@ algorithm
         
         // get equations with annotation ApproximatedEquation
         approximatedEquations=getEquationsWithApproximatedAnnotation(dlow_1);
-        print("Approximated Equations: "); 
-        print(stringDelimitList(List.map(approximatedEquations,intString)," , "));
-        print("\n");
+        //print("Approximated Equations: "); 
+        //print(stringDelimitList(List.map(approximatedEquations,intString)," , "));
+        //print("\n");
         
         ///////////refineVarIndexList = getUncertainRefineVariablesInBlocks(dlow_1, m, comps);
         otherEquations=getEquationsWithOneVariable(dlow_1,refineVarIndexList);
@@ -542,7 +543,7 @@ algorithm
         varIndexList = List.flatten(arrayList(m));
         
         
-        (dlow_1 as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount),orderedEqs=eqns)::_)) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
+        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount),orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs,complEqs=complex))) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
         
         //print("Equations after removing non influencial blocks: \n"); 
         //BackendDump.dumpEqns(BackendDAEUtil.equationList(eqns));
@@ -565,7 +566,7 @@ algorithm
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) = eliminateVariablesDAE(elimVarIndexList,dlow_1);
 
         eqnLst = BackendDAEUtil.equationList(eqns);
-        //ieqnLst = BackendDAEUtil.equationList(ieqns);
+        ieqnLst = BackendDAEUtil.equationList(ieqns);
         
         print("* Uncertainty equations extracted: \n");
         BackendDump.dumpEqns(eqnLst);
@@ -573,7 +574,7 @@ algorithm
         //modelName=Absyn.pathLastIdent(className);        
         //print(System.readEnv("TEMP")+&"\\uncertainties.out");
         
-        //System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs)));           
+        System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs,complex)));           
              
         resstr="Done...";
       then

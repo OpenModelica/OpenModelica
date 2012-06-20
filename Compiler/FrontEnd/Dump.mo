@@ -130,7 +130,7 @@ algorithm
   end matchcontinue;
 end unparseStr;
 
-protected function unparseClassList
+public function unparseClassList
 "function: unparseClassList
   Prettyprints a list of classes"
   input Integer inInteger;
@@ -2995,7 +2995,7 @@ algorithm
   end match;
 end unparseEqElseifStr;
 
-protected function printAlgorithmitem "Algorithm clauses
+public function printAlgorithmitem "Algorithm clauses
   function: printAlgorithmitem
   Prints an AlgorithmItem to the Print buffer."
   input Absyn.AlgorithmItem inAlgorithmItem;

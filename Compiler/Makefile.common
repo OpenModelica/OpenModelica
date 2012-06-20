@@ -132,7 +132,8 @@ TaskGraph.mo \
 XMLDump.mo \
 Matching.mo \
 IndexReduction.mo \
-Uncertainties.mo
+Uncertainties.mo \
+MathematicaDump.mo
 
 
 GLOBAL = \

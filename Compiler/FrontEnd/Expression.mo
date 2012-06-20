@@ -7712,7 +7712,7 @@ algorithm
   end match;
 end tpComplexity;
 
-protected function dimComplexity
+public function dimComplexity
   input DAE.Dimension dim;
   output Integer i;
 algorithm
