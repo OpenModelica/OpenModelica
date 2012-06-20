@@ -61,7 +61,7 @@ namespace impl {
   inline library_handle load_shared_library(const char* library_name) {
   	library_handle  handle = dlopen(library_name, RTLD_LAZY);
 	if (!handle) {
-        std::cout << "Cannot open library: " << dlerror() << '\n';
+        std::cout << "Cannot open library: " << dlerror() << std::endl;
         return NULL;
     }
 	return handle;
