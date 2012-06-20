@@ -1344,7 +1344,7 @@ algorithm
         
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        executable1=Util.if_(ifcpp,"Simulation",executable);
+        executable1=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/Simulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
         sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ",simflags," > output.log 2>&1"});
