@@ -1699,13 +1699,13 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #pragma once
-  #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
-  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
-  #include <boost\shared_ptr.hpp>
+  #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
+  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
+  #include <boost/shared_ptr.hpp>
   #include "System/Implementation/SystemDefaultImplementation.h"
   #include "Math/Implementation/ArrayOperations.h"
   #include "System/Implementation/EventHandling.h"
-  #include "Settingsfactory/Interfaces/IGlobalSettings.h"
+  #include "SettingsFactory/Interfaces/IGlobalSettings.h"
   #include "System/Interfaces/IAlgLoopSolverFactory.h"
   #include "System/Interfaces/IAlgLoopSolver.h"
   #include "Functions.h"
@@ -1715,13 +1715,13 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
-  #include "policies/BufferReaderWriter.h"
+  #include "Policies/BufferReaderWriter.h"
   typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;  
 
   >>
   else
   <<
-  #include "policies/TextFileWriter.h"
+  #include "Policies/TextFileWriter.h"
   typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
   
   >>%>
@@ -4511,7 +4511,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     
     let &preExp += 'fill_array<<%ty_str%>,<%listLength(dims)%>>(<%tvar%>, <%valExp%>);<%\n%>'
     '<%tvar%>'
-  
+  case CALL(path=IDENT(name="$_start"), expLst={arg}) then
+    daeExpCallStart(arg, context, preExp, varDecls,simCode)  
     
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -4647,6 +4648,21 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
     
 end daeExpCall;
+
+template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
+                       Text &varDecls /*BUFP*/,SimCode simCode)
+  "Generates code for an asub of a cref, which becomes cref + offset."
+::=
+  match exp
+  case cr as CREF(__) then
+    '$P$ATTRIBUTE<%cref1(cr.componentRef,simCode)%>.start'
+  case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
+    let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let cref = cref1(cr.componentRef,simCode)
+    '*(&$P$ATTRIBUTE<%cref(cr.componentRef)%>.start + <%offset%>)'
+  else
+    error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
+end daeExpCallStart;
 
 template expTypeFromExpShort(Exp exp)
 
