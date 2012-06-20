@@ -47,6 +47,8 @@ package CodegenC
 
 import interface SimCodeTV;
 
+import CodegenUtil.*;
+
 template translateModel(SimCode simCode) 
  "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model."
@@ -322,7 +324,13 @@ case MODELINFO(varInfo=VARINFO(__)) then
    /*
    This fragment produces some empty lines, since emptyCount is not implemented in susan!
    */
+   let &eqnsDefines = buffer ""
+   /*
    let eqnsDefines = (allEquations |> eq hasindex i0 => '<%functionSimProfDef(eq,i0)%>'; separator="")
+    <%equationInfo(allEquations)%>
+   */
+   let &eqnsDefines = buffer ""
+   let eqnInfo = equationInfo(allEquations,&eqnsDefines)
   <<
   /* Some empty lines, since emptyCount is not implemented in susan! */
   <%eqnsDefines%>
@@ -331,7 +339,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
     <%globalDataFunctionInfoArray("function_names", functions)%>
     memcpy(data->modelData.functionNames, &funcInfo, data->modelData.nFunctions*sizeof(FUNCTION_INFO));
     
-    <%equationInfo(allEquations)%>
+    <%eqnInfo%>
     memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
     
     data->modelData.nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
@@ -2631,15 +2639,6 @@ template crefFunctionName(ComponentRef cr)
   case CREF_QUAL(__) then 
     '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionName(componentRef)%>'
 end crefFunctionName;
-
-template dotPath(Path path)
- "Generates paths with components separated by dots."
-::=
-  match path
-  case QUALIFIED(__)      then '<%name%>.<%dotPath(path)%>'
-  case IDENT(__)          then name
-  case FULLYQUALIFIED(__) then dotPath(path)
-end dotPath;
 
 template replaceDotAndUnderscore(String str)
  "Replace _ with __ and dot in identifiers with _"
@@ -6904,7 +6903,7 @@ template literalExpConstArrayVal(Exp lit)
   else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
 end literalExpConstArrayVal;
 
-template equationInfo(list<SimEqSystem> eqs)
+template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
 ::=
   match eqs
   case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
@@ -6915,27 +6914,39 @@ template equationInfo(list<SimEqSystem> eqs)
     const struct EQUATION_INFO equationInfo[<%listLength(eqs)%>] = {
       <% eqs |> eq hasindex eqIndex =>
         <<{<%System.tmpTick()%>,<%match eq
-          case SES_RESIDUAL(__) then '"SES_RESIDUAL <%eqIndex%>",0,NULL'
+          case SES_RESIDUAL(__) then
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            '"SES_RESIDUAL <%eqIndex%>",0,NULL'
           case SES_SIMPLE_ASSIGN(__) then
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
             let var = '<%cref(cref)%>__varInfo'
             let &preBuf += 'const VAR_INFO** equationInfo_cref<%eqIndex%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
             let &preBuf += 'equationInfo_cref<%eqIndex%>[0] = &<%var%>;<%\n%>'
             '"SES_SIMPLE_ASSIGN <%eqIndex%>",1,equationInfo_cref<%eqIndex%>'
           case SES_ARRAY_CALL_ASSIGN(__) then
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
             //let var = '<%cref(componentRef)%>__varInfo'
             //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%eqIndex%> = &<%var%>;'
             '"SES_ARRAY_CALL_ASSIGN <%eqIndex%>",0,NULL'
-          case SES_ALGORITHM(__) then '"SES_ALGORITHM <%eqIndex%>", 0, NULL'
-          case SES_WHEN(__) then '"SES_WHEN <%eqIndex%>", 0, NULL'
+          case SES_ALGORITHM(__) then 
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            '"SES_ALGORITHM <%eqIndex%>", 0, NULL'
+          case SES_WHEN(__) then 
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            '"SES_WHEN <%eqIndex%>", 0, NULL'
           case SES_LINEAR(__) then
-           let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
-           let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(vars)%>*sizeof(VAR_INFO*));<%\n%>'
+            let &preBuf += '<%vars|>var hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(varName(var))%>__varInfo;'; separator="\n"%>;'
             '"linear system <%index%> (size <%listLength(vars)%>)", <%listLength(vars)%>, equationInfo_crefs<%eqIndex%>'
           case SES_NONLINEAR(__) then
-           let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
-           let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            let &preBuf += 'const VAR_INFO** equationInfo_crefs<%eqIndex%> = (const VAR_INFO**)malloc(<%listLength(crefs)%>*sizeof(VAR_INFO*));<%\n%>'
+            let &preBuf += '<%crefs|>cr hasindex i0 => 'equationInfo_crefs<%eqIndex%>[<%i0%>] = &<%cref(cr)%>__varInfo;'; separator="\n"%>;'
             '"residualFunc<%index%> (size <%listLength(crefs)%>)", <%listLength(crefs)%>, equationInfo_crefs<%eqIndex%>'
-          case SES_MIXED(__) then '"MIXED<%index%>", 0, NULL'
+          case SES_MIXED(__) then 
+            let &eqnsDefines += '<%functionSimProfDef(eq,eqIndex)%><%\n%>' 
+            '"MIXED<%index%>", 0, NULL'
           else '"unknown equation <%eqIndex%>",0,NULL'%>}
         >> ; separator=",\n"%>
     };

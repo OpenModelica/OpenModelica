@@ -51,6 +51,7 @@
 package CodegenQSS
 
 import interface SimCodeTV;
+import CodegenUtil.*;
 import CodegenC.*;
 
 template translateModel(SimCode simCode,QSSinfo qssInfo) 

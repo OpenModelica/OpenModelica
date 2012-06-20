@@ -141,6 +141,7 @@ Global.mo
 
 TEMPLATE = \
 AbsynDumpTpl.mo \
+CodegenUtil.mo \
 CodegenC.mo \
 CodegenFMU.mo \
 CodegenAdevs.mo \

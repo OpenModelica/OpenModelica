@@ -2,7 +2,7 @@
 
 OMC = OPENMODELICAHOME=`pwd`/../../build/ ../../build/bin/omc +d=failtrace
 
-all : AbsynDumpTpl.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo
+all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
@@ -14,6 +14,11 @@ CodegenAdevs.mo : CodegenAdevs.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 
+CodegenUtil.mo : CodegenUtil.tpl SimCodeTV.mo
+	@echo " ** CodegenUtil template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "	
+	
 CodegenC.mo : CodegenC.tpl SimCodeTV.mo
 	@echo " ** CodegenC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)

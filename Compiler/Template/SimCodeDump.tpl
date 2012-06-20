@@ -1,6 +1,7 @@
 package SimCodeDump
 
 import interface SimCodeTV;
+import CodegenUtil.*;
 import CodegenC.*;
 
 template dumpSimCode(SimCode code)
