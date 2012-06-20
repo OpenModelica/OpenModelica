@@ -746,6 +746,7 @@ end Expression;
 package System
   function escapedString
     input String unescapedString;
+    input Boolean escapeNewline;
     output String escapedString;
   end escapedString;
 end System;

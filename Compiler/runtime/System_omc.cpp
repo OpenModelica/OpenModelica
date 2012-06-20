@@ -579,9 +579,9 @@ extern void* System_regex(const char* str, const char* re, int maxn, int extende
   return res;
 }
 
-extern char* System_escapedString(char* str)
+extern char* System_escapedString(char* str, int nl)
 {
-  char *res = SystemImpl__escapedString(str);
+  char *res = SystemImpl__escapedString(str,nl);
   if (res == NULL) return str;
   return res;
 }

@@ -2043,7 +2043,7 @@ public function escapeModelicaStringToCString
   output String cString;
 algorithm
   // C cannot handle newline in string constants
-  cString := System.stringReplace(System.escapedString(modelicaString), "\n", "\\n");
+  cString := System.escapedString(modelicaString,true);
 end escapeModelicaStringToCString;
 
 public function escapeModelicaStringToXmlString

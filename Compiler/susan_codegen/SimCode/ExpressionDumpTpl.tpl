@@ -10,7 +10,7 @@ match exp
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then 
-    let str = escapedString(string)
+    let str = escapedString(string,false)
     '<%stringDelimiter%><%str%><%stringDelimiter%>'
   case BCONST(__) then bool
   case ENUM_LITERAL(__) then AbsynDumpTpl.dumpPath(name)

@@ -1910,7 +1910,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__escapedString)
 {
-  char *str = SystemImpl__escapedString(RML_STRINGDATA(rmlA0));
+  char *str = SystemImpl__escapedString(RML_STRINGDATA(rmlA0),RML_UNTAGFIXNUM(rmlA1));
   if (str == NULL) {
     RML_TAILCALLK(rmlSC);
   } else {

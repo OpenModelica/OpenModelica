@@ -791,8 +791,9 @@ public function escapedString
 "Because list() requires escape-sequences to be in the AST, we need to be
 able to unescape them in some places of the code."
   input String unescapedString;
+  input Boolean unescapeNewline;
   output String escapedString;
-  external "C" escapedString=System_escapedString(unescapedString) annotation(Library = "omcruntime");
+  external "C" escapedString=System_escapedString(unescapedString,unescapeNewline) annotation(Library = "omcruntime");
 end escapedString;
 
 public function unescapedString

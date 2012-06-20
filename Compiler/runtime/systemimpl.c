@@ -1168,7 +1168,7 @@ extern char* SystemImpl__unescapedString(const char* str)
   return res;
 }
 
-extern int SystemImpl__escapedStringLength(const char* str)
+extern int SystemImpl__escapedStringLength(const char* str, int nl)
 {
   int i=0;
   while (*str) {
@@ -1179,6 +1179,8 @@ extern int SystemImpl__escapedStringLength(const char* str)
       case '\b':
       case '\f':
       case '\v': i++;
+      case '\r': i++; if (nl && str[1] == '\n') str++;
+      case '\n': i++; if (nl && str[1] == '\r') str++;
       default: i++;
     }
     str++;
@@ -1186,13 +1188,16 @@ extern int SystemImpl__escapedStringLength(const char* str)
   return i;
 }
 
-extern char* SystemImpl__escapedString(const char* str)
+/* "\b",_ => "\\b"
+ * "\n",true => "\\n"
+ */
+extern char* SystemImpl__escapedString(const char* str, int nl)
 {
   int len1,len2;
   char *res;
   int i=0;
   len1 = strlen(str);
-  len2 = SystemImpl__escapedStringLength(str);
+  len2 = SystemImpl__escapedStringLength(str,nl);
   if (len1 == len2) return NULL;
   res = (char*) malloc(len2+1);
   while (*str) {
@@ -1203,6 +1208,8 @@ extern char* SystemImpl__escapedString(const char* str)
       case '\b': res[i++] = '\\'; res[i++] = 'b'; break;
       case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
       case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
+      case '\r': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\n') str++;} else {res[i++] = *str;} break;
+      case '\n': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\r') str++;} else {res[i++] = *str;} break;
       default: res[i++] = *str;
     }
     str++;

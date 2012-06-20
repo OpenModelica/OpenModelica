@@ -702,6 +702,7 @@ package System
   
   function escapedString
     input String unescapedString;
+    input Boolean unescapeNewline;
     output String escapedString;
   end escapedString;
 
