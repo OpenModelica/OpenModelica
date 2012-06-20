@@ -2357,6 +2357,7 @@ algorithm
       equation
         // Create a list of crefs from names
         crefs =  List.map(varLst,creffromVar);
+        crefs = List.map1r(crefs,joinCrefs,inCref);
         crlstlst = List.map1(crefs,expandCref_impl,true);        
       then
         List.flatten(crlstlst);
