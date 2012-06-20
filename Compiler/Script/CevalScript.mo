@@ -798,7 +798,7 @@ algorithm
              plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile;
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
       SCode.Program scodeP,sp;
@@ -1338,17 +1338,21 @@ algorithm
         (cache,simValue,st);
         
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,msg)
-      equation
+        
+	equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        executable1=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/Simulation",executable);
+	 compileDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
+	 simflags2=Util.if_(ifcpp,stringAppendList({compileDir," ","./"}),"");       
+	 executable1=Util.if_(ifcpp,"Simulation",executable); 
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ",simflags," > output.log 2>&1"});
-        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ",simflags," ",simflags2," > output.log 2>&1"});
+      	 print("\n Simulation call: " +& sim_call +& "\n" );
+	 System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
         

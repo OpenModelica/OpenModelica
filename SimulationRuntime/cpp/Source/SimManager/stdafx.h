@@ -17,6 +17,8 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include "boost/tuple/tuple.hpp"
 #include <boost/shared_ptr.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 #include "Utils/extension/extension.hpp"
 #include "Utils/extension/shared_library.hpp"
 #include "Utils/extension/convenience.hpp"
@@ -26,3 +28,4 @@ using  boost::tie;
 using namespace boost::numeric;
 using namespace std;
 using boost::shared_ptr;
+namespace fs = boost::filesystem;

@@ -21,7 +21,8 @@ using namespace std;
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/shared_ptr.hpp>
-
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 #include "Utils/extension/shared_library.hpp"
 #include "Utils/extension/extension.hpp"
@@ -29,7 +30,7 @@ using namespace std;
 #include "Utils/extension/factory.hpp"
 #include "Utils/extension/convenience.hpp"
 using namespace boost::extensions;
-
+namespace fs = boost::filesystem;
 using std::ios;
 using boost::tuple;
 using boost::shared_ptr;

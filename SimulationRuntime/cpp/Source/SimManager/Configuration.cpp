@@ -2,11 +2,15 @@
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
 #include "LibrariesConfig.h"
-Configuration::Configuration(void)
+Configuration::Configuration(fs::path libraries_path)
+:_libraries_path(libraries_path)
 {
   type_map types;
-  std::string settings_name(SETTINGSFACTORY_LIB);
-  if(!load_single_library(types, settings_name))
+
+  fs::path settings_name(SETTINGSFACTORY_LIB);
+  fs::path settings_path = libraries_path;
+  settings_path/=settings_name;
+  if(!load_single_library(types,settings_path.c_str()))
     throw std::invalid_argument("Settings factory library could not be loaded");
   std::map<std::string, factory<ISettingsFactory> >::iterator iter;
   std::map<std::string, factory<ISettingsFactory> >& factories(types.get());
@@ -17,7 +21,7 @@ Configuration::Configuration(void)
     throw std::invalid_argument("No such settings library");
   }
   _settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create());
-  tie(_global_settings,_solver_settings) =_settings_factory->create();
+  tie(_global_settings,_solver_settings) =_settings_factory->create(libraries_path);
 
 
 }
@@ -52,8 +56,12 @@ IDAESolver* Configuration::createSolver(IDAESystem* system)
   else
     throw std::invalid_argument("Selected Solver is not available");
   
-  if(!load_single_library(types, solver_dll))
-    throw std::invalid_argument(solver_dll + "library could not be loaded");
+  fs::path solver_name(solver_dll);
+  fs::path solver_path = _libraries_path;
+  solver_path/=solver_name;
+
+  if(!load_single_library(types,solver_path.c_str()))
+    throw std::invalid_argument(solver_path.native()  +  "library could not be loaded");
   std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >::iterator iter;
   std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >& factories(types.get());
   iter = factories.find(solver);

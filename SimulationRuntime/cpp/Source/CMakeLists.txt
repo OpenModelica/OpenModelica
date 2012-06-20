@@ -36,7 +36,7 @@ SET(USE_SUNDIALS ON)
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED)
+find_package(Boost 1.45.0 COMPONENTS filesystem  system serialization REQUIRED)
 # Lapack and Blas
 find_package( BLAS )
 find_package( LAPACK  )
@@ -158,12 +158,15 @@ GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
 GET_TARGET_PROPERTY(libSystem System LOCATION)
 GET_FILENAME_COMPONENT(libSystemName ${libSystem} NAME)
 
+GET_TARGET_PROPERTY(libSolver Solver LOCATION)
+GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
 
 set (EULER_LIB ${libEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
 set (SYSTEM_LIB ${libSystemName})
+set (SOLVER_LIB ${libSolverName})
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate 
 

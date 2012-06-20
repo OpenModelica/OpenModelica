@@ -1,4 +1,5 @@
 #pragma once
+#include <boost/filesystem/path.hpp>
 #include "SettingsFactory/Interfaces/IGlobalSettings.h"
 #include "Solver/Interfaces/ISolverSettings.h"
 #include "Solver/Interfaces/IDAESolver.h"
@@ -8,7 +9,7 @@
 class Configuration
 {
 public:
-  Configuration(void);
+  Configuration(fs::path libraries_path);
   ~Configuration(void);
   IDAESolver* createSolver(IDAESystem* system);
   IGlobalSettings* getGlobalSettings();
@@ -19,4 +20,5 @@ private:
    boost::shared_ptr<ISolverSettings>  _solver_settings;
    boost::shared_ptr<IGlobalSettings>  _global_settings;
    boost::shared_ptr<IDAESolver> _solver;
+   fs::path _libraries_path;
 };

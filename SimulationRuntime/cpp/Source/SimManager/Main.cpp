@@ -3,6 +3,7 @@
 #include "Configuration.h"
 #include "System/Interfaces/ISystemProperties.h"
 #include "LibrariesConfig.h"
+namespace fs = boost::filesystem;
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
@@ -11,18 +12,35 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, const char* argv[])
 #endif
 {  
-  
-  
+   if(argc < 3)
+     throw std::invalid_argument("No runtime library path and Modelica system library path defined");
+
+   fs::path libraries_path = fs::path( argv[1] ) ;
+  fs::path modelica_path = fs::path( argv[2] ) ;
+
+   std::cout << libraries_path << "  end" << std::endl;
   try
   {
     
-    Configuration config;
+    Configuration config(libraries_path);
     
     IGlobalSettings* global_settings = config.getGlobalSettings();
     //Load Modelica sytem library
     type_map types;
-    std::string modelica_name(MODELICASYSTEM_LIB);
-    if(!load_single_library(types, modelica_name))
+    
+     fs::path modelica_system_name(MODELICASYSTEM_LIB);
+    fs::path modelica_system_path = modelica_path;
+    modelica_system_path/=modelica_system_name;
+    
+  fs::path default_system_name(SYSTEM_LIB);
+  fs::path default_system_path = libraries_path;
+  default_system_path/=default_system_name;
+  
+ if(!load_single_library(types,  default_system_path.c_str()))
+      throw std::invalid_argument("System default library could not be loaded");
+
+    
+    if(!load_single_library(types,  modelica_system_path.c_str()))
       throw std::invalid_argument("ModelicaSystem library could not be loaded");
     std::map<std::string, factory<IDAESystem,IGlobalSettings&> >::iterator iter;
     std::map<std::string, factory<IDAESystem,IGlobalSettings&> >& factories(types.get());

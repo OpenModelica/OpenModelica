@@ -17,8 +17,11 @@ SettingsFactory::~SettingsFactory(void)
 
  
 }
-tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > SettingsFactory::create()
+tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > SettingsFactory::create(fs::path libraries_path)
 {
+  
+ 
+
   cout<<"Read Settings..."<<std::endl;
   
   //load global settings or use default settings
@@ -27,6 +30,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   std::string solver_dll;
   //Load solver dll
   
+
   if(_global_settings->getSelectedSolver().compare("Euler")==0)
     solver_dll.assign(EULER_LIB);
   else if(_global_settings->getSelectedSolver().compare("Idas")==0)
@@ -43,8 +47,18 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
       _global_settings->getSelectedSolver().append("Settings.xml"));
   type_map types;
   
-  if(!load_single_library(types,solver_dll))
-    throw std::invalid_argument(solver_dll + " library could not be loaded");
+  fs::path solver_name(solver_dll);
+  fs::path solver_path = libraries_path;
+  solver_path/=solver_name;
+   fs::path solver_default_name(SOLVER_LIB);
+  fs::path solver_default_path = libraries_path;
+  solver_default_path/=solver_default_name;
+  cout << "loading solver" << std::endl;
+  if(!load_single_library(types,solver_default_path.c_str()))
+    throw std::invalid_argument(solver_default_path.native()  + " library could not be loaded");
+
+  if(!load_single_library(types,solver_path.c_str()))
+    throw std::invalid_argument(solver_path.native()  + " library could not be loaded");
   //get solver factory
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter;
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >& factories(types.get());

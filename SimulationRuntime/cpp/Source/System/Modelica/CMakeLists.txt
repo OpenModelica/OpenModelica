@@ -9,7 +9,7 @@ target_link_libraries (Modelica  System ModelicaExternalC)
 
 GET_TARGET_PROPERTY(libModelicaSystem Modelica LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemName ${libModelicaSystem} NAME)
-set (BOOST_LIBS ${Boost_LIBRARIES})
+#set (BOOST_LIBS ${Boost})
 set (BOOS_INCLUDE ${Boost_INCLUDE_DIRS})
 set (MODELICA_SYSTEM_LIB ${libModelicaSystemName})
  configure_file (
