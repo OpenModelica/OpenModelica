@@ -2406,6 +2406,18 @@ algorithm
       then
         crefs;
 
+    // this case is needed because there is an error somewhere destroying the array type
+    // A qualified cref with type complex.
+    case (DAE.CREF_QUAL(id, ty as DAE.T_COMPLEX(complexClassType=_), subs, cref),true)
+      equation
+        // Expand the rest of the cref.
+        crefs = expandCref_impl(cref,expandRecord);
+        // Append the head of this cref to all of the generated crefs.
+        crefs = List.map3r(crefs, makeCrefQual, id, ty, subs);
+      then
+        crefs;
+
+
     // A qualified cref with no subscripts and scalar type.
     case (DAE.CREF_QUAL(id, ty, {}, cref),_)
       equation
