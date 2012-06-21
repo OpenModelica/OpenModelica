@@ -859,7 +859,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
         Debug.fcall(Flags.BLT_DUMP, print, "Final System with DummyStates:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);       
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpShared,shared);       
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpShared,shared);  
      then 
        (syst,shared);
     else
@@ -1370,7 +1370,7 @@ algorithm
     local 
       list<BackendDAE.Equation> eqnslst;
       list<tuple<Integer, list<BackendDAE.Equation>, Integer>> orgeqns;
-      BackendDAE.Variables lov,hov_1;
+      BackendDAE.Variables lov,hov_1,cvars1;
       list<DAE.ComponentRef> dummyStates;
       BackendDAE.EquationArray eqns;
       list<Integer> eqnindxlst;
@@ -1380,8 +1380,9 @@ algorithm
     case (_,_,_,_,_,_,_,_)
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
+        cvars1 = BackendEquation.equationsLstVars(eqnslst, hov, BackendDAEUtil.emptyVars());
         eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,BackendDAEUtil.emptyVars());
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars1,BackendVariable.numVariables(cvars1),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,BackendDAEUtil.emptyVars());
         // get derivatives one order less
         lov = lowerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so);
         // call again with original equations of derived equations 
@@ -1527,17 +1528,13 @@ algorithm
         BackendDAE.AdjacencyMatrixEnhanced me;
         BackendDAE.AdjacencyMatrixTEnhanced meT;  
         array<BackendDAE.MultiDimEquation> ae;     
-    case(_,_,_,_,_,_,_,_,_,_)
-      equation
+    case(_,0,_,_,_,_,_,_,_,_)
         // if no vars then there is nothing do do
-        true = intEq(varSize,0);
       then
         (hov,inDummyStates,inLov,isyst,ishared);
-    case(_,_,_,_,_,_,dummystates,_,_,_)
+    case(_,1,_,1,_,_,dummystates,_,_,_)
       equation
         // if there is only one var select it because there is no choice
-        true = intEq(varSize,1);
-        true = intEq(eqnsSize,1);
         Debug.fcall(Flags.BLT_DUMP, print, "single var and eqn\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()));
         v = BackendVariable.getVarAt(vars,1);
@@ -1680,7 +1677,40 @@ algorithm
         BackendDAE.Shared shared; 
         list<BackendDAE.Var> varlst;
         list<tuple<DAE.ComponentRef, Integer>> states,dstates; 
-        list<Integer> unassigned;   
+        list<Integer> unassigned;  
+    case(_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        m = incidenceMatrixfromEnhanced2(me);
+        mT = incidenceMatrixfromEnhanced2(meT);  
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
+        Matching.matchingExternalsetIncidenceMatrix(eqnsSize,varSize,mT);
+        BackendDAEEXT.matching(eqnsSize,varSize,3,-1,1.0,1);
+        vec1 = arrayCreate(eqnsSize,-1);
+        vec2 = arrayCreate(varSize,-1);
+        BackendDAEEXT.getAssignment(vec2,vec1);         
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec1);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec2);
+/*        (states,_) = checkAssignment(1,varSize,vec2,vars,{},{});
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
+        rang = eqnsSize-listLength(states);
+        true = intEq(rang,0);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize-rang,"\n"));        
+        (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
+      then
+        (hov1,dummystates,lov,isyst,ishared); 
+*/
+        (dstates,states) = checkAssignment(1,varSize,vec2,vars,{},{});
+        {} = Matching.getUnassigned(eqnsSize, vec1, {});
+        
+        Debug.fcall(Flags.BLT_DUMP, print, ("dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));     
+        Debug.fcall(Flags.BLT_DUMP, print, ("States:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));                
+        
+        (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives2(dstates,states,{},me,meT,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov);
+      then
+        (hov1,dummystates,lov,syst,shared);          
     case(_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         m = incidenceMatrixfromEnhanced(me);
@@ -2268,6 +2298,45 @@ algorithm
     else then iRow;
   end match;
 end incidenceMatrixElementElementfromEnhanced1;
+
+protected function incidenceMatrixfromEnhanced2
+"function: incidenceMatrixfromEnhanced2
+  author: Frenkel TUD 2012-05
+  converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  output BackendDAE.IncidenceMatrix m;
+algorithm
+  m := Util.arrayMap(me,incidenceMatrixElementfromEnhanced2);
+end incidenceMatrixfromEnhanced2;
+
+protected function incidenceMatrixElementfromEnhanced2
+"function: incidenceMatrixElementfromEnhanced2
+  author: Frenkel TUD 2012-05
+  helper for incidenceMatrixfromEnhanced2"
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  output BackendDAE.IncidenceMatrixElement oRow;
+algorithm
+//  oRow := List.map(List.sort(iRow,AdjacencyMatrixElementEnhancedCMP), incidenceMatrixElementElementfromEnhanced);
+  oRow := List.fold(iRow, incidenceMatrixElementElementfromEnhanced2, {});
+  oRow := listReverse(oRow);
+end incidenceMatrixElementfromEnhanced2;
+
+protected function incidenceMatrixElementElementfromEnhanced2
+"function: incidenceMatrixElementElementfromEnhanced2
+  author: Frenkel TUD 2012-05
+  converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
+  input tuple<Integer, BackendDAE.Solvability> inTpl;
+  input list<Integer> iRow;
+  output list<Integer> oRow;
+algorithm
+  oRow := match(inTpl,iRow)
+    local Integer i;
+    case ((i,BackendDAE.SOLVABILITY_SOLVED()),_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_CONSTONE()),_) then i::iRow;
+    case ((i,BackendDAE.SOLVABILITY_CONST()),_) then i::iRow;
+    else then iRow;
+  end match;
+end incidenceMatrixElementElementfromEnhanced2;
 
 protected function checkAssignment
 "function: checkAssignment
@@ -3137,7 +3206,7 @@ algorithm
       Option<DAE.Distribution> distribution;
       BackendDAE.Var v;
 
-/*    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst)))
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst)))
       equation
         dummyder = BackendDAETransform.getStateOrder(cr,so);
         (v::_,i::_) = BackendVariable.getVar(dummyder,vars);
@@ -3146,19 +3215,6 @@ algorithm
         e = Expression.crefExp(dummyder);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars,eqns,so,i::ilst)));
-*/
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst)))
-      equation
-        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
-        // do not use the normal derivative prefix for the name
-        //dummyder = ComponentReference.crefPrefixDer(cr);
-        dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
-        (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE())), comment, flowPrefix, streamPrefix), vars);
-        e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
-        i = BackendVariable.varsSize(vars_1);
-      then
-        ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst)));
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst)))
       equation
