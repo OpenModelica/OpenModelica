@@ -2452,6 +2452,9 @@ algorithm
   end match;
 end addDummyStates;
 
+/*****************************************
+ calculation of the determinant of a square matrix . 
+ *****************************************/
 
 public function tryDeterminant
 "function tryDeterminant
@@ -2511,14 +2514,15 @@ protected function determinant
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer size;
 protected 
-  array<list<Integer>> digraph;
+  array<list<tuple<Integer,DAE.Exp>>> digraph;
   array<Integer> nodemark;
   array<Integer> visited;
-  list<tuple<list<Integer>,Integer>> zycles;
+  list<tuple<list<DAE.Exp>,Integer>> zycles;
+  DAE.Exp det;
 algorithm
   digraph := arrayCreate(size,{});
   digraph := getDeterminantDigraph(jac,digraph);
-  BackendDump.dumpIncidenceMatrix(digraph);
+  dumpDigraph(digraph);
   // for node 1 do
   // traverse all edges
   // count edges, remember last start node, remember visited nodes 
@@ -2526,10 +2530,112 @@ algorithm
   visited := arrayCreate(size,-1);
   
   _ := arrayUpdate(visited,1,1);
-  print("Starte Determinantenberechnung mit 1. Node\n");
-  zycles := determinantEdges(digraph[1],size,1,{1},1,1,digraph,{});
-  dumpzycles(zycles);
+  //print("Starte Determinantenberechnung mit 1. Node\n");
+  zycles := determinantEdges(digraph[1],size,1,{1},{},1,1,digraph,{});
+  //dumpzycles(zycles,size);
+  det := determinantfromZycles(zycles,size,DAE.RCONST(0.0));
+  print("Determinant: \n" +& ExpressionDump.printExpStr(det) +& "\n");
 end determinant;
+
+protected function determinantfromZycles
+"function determinantfromZycles
+  author: Frenkel TUD 2012-06"
+  input list<tuple<list<DAE.Exp>,Integer>> zycles;
+  input Integer size;
+  input DAE.Exp iExp;
+  output DAE.Exp oExp;
+algorithm
+  oExp := matchcontinue(zycles,size,iExp)
+    local
+      Integer d;
+      Real sign;
+      DAE.Exp e;
+      list<DAE.Exp> elst;
+      list<tuple<list<DAE.Exp>,Integer>> rest;
+    case({},_,_) 
+      equation
+        (e,_) = ExpressionSimplify.simplify(iExp);
+      then
+        e;
+    case((elst,d)::rest,_,_)
+      equation
+        sign = realPow(-1.0,intReal(size-d));
+        e = List.fold(elst, Expression.expMul, DAE.RCONST(sign));
+        e = Expression.expAdd(iExp,e);
+      then
+        determinantfromZycles(rest,size,e);
+  end matchcontinue;
+end determinantfromZycles;
+
+protected function dumpDigraph
+"function: dumpDigraph
+  author: Frenkel TUD"
+  input array<list<tuple<Integer,DAE.Exp>>> digraph;
+protected
+  Integer len;
+  String len_str;
+  list<list<tuple<Integer,DAE.Exp>>> g;
+algorithm
+  print("Digraph\n");
+  print("====================================\n");
+  len := arrayLength(digraph);
+  len_str := intString(len);
+  print("number of rows: ");
+  print(len_str);
+  print("\n");
+  g := arrayList(digraph);
+  dumpDigraph1(g,1);
+end dumpDigraph;
+
+protected function dumpDigraph1
+"function: dumpDigraph1
+  author: Frenkel TUD 2012-06"
+  input list<list<tuple<Integer,DAE.Exp>>> inIntegerLstLst;
+  input Integer rowIndex;
+algorithm
+  _ := match (inIntegerLstLst,rowIndex)
+    local
+      list<tuple<Integer,DAE.Exp>> row;
+      list<list<tuple<Integer,DAE.Exp>>> rows;
+    case ({},_) then ();
+    case ((row :: rows),rowIndex)
+      equation
+        print(intString(rowIndex));print(":");
+        dumpDigraph2(row);
+        dumpDigraph1(rows,rowIndex+1);
+      then
+        ();
+  end match;
+end dumpDigraph1;
+
+public function dumpDigraph2
+"function: dumpDigraph2
+  author: Frenkel TUD 2012-06"
+  input list<tuple<Integer,DAE.Exp>> inIntegerLst;
+algorithm
+  _ := match (inIntegerLst)
+    local
+      String s;
+      Integer x;
+      DAE.Exp e;
+      list<tuple<Integer,DAE.Exp>> xs;
+    case ({})
+      equation
+        print("\n");
+      then
+        ();
+    case (((x,e) :: xs))
+      equation
+        s = intString(x);
+        print(s);
+        print(" ");
+        print(ExpressionDump.printExpStr(e));
+        print(" ");
+        dumpDigraph2(xs);
+      then
+        ();
+  end match;
+end dumpDigraph2;
 
 protected function getUnvisitedNode
 "function getUnvisitedNode
@@ -2559,35 +2665,37 @@ protected function determinantEdges
 "function determinantEdges
   author: Frenkel TUD 2012-06
   traverse each edge and call determinantNode"
-  input list<Integer> edges;
+  input list<tuple<Integer,DAE.Exp>> edges;
   input Integer size;
   input Integer length;
   input list<Integer> zycle;
+  input list<DAE.Exp> ezycle;
   input Integer subzycles;
   input Integer startNode;
-  input array<list<Integer>> digraph; 
-  input list<tuple<list<Integer>,Integer>> izycles;
-  output list<tuple<list<Integer>,Integer>> ozycles;
+  input array<list<tuple<Integer,DAE.Exp>>> digraph; 
+  input list<tuple<list<DAE.Exp>,Integer>> izycles;
+  output list<tuple<list<DAE.Exp>,Integer>> ozycles;
 algorithm
-  ozycles := matchcontinue(edges,size,length,zycle,subzycles,startNode,digraph,izycles)
+  ozycles := matchcontinue(edges,size,length,zycle,ezycle,subzycles,startNode,digraph,izycles)
     local
       Integer edge,nextnode;
-      list<Integer> rest;
-      list<tuple<list<Integer>,Integer>> zycles;
-    case({},_,_,_,_,_,_,_) then izycles;
-    case(edge::rest,_,_,_,_,_,_,_)
+      DAE.Exp e;
+      list<tuple<Integer,DAE.Exp>> rest;
+      list<tuple<list<DAE.Exp>,Integer>> zycles;
+    case({},_,_,_,_,_,_,_,_) then izycles;
+    case((edge,e)::rest,_,_,_,_,_,_,_,_)
       equation
-        print("Check edge:" +& intString(edge) +& " startNode " +& intString(startNode) +& " length " +& intString(length) +& "\n");  
+        //print("Check edge:" +& intString(edge) +& " startNode " +& intString(startNode) +& " length " +& intString(length) +& "\n");  
         // back at the start node of the cycle?
         true = intEq(edge,startNode);
         // a full cycle?
         true = intEq(size,length);
         // return zicle
-        print("Voller Zyklus gefunden: d:" +& intString(subzycles) +& "\n");
-        BackendDump.debuglst((zycle,intString,", ","\n"));        
+        //print("Voller Zyklus gefunden: d:" +& intString(subzycles) +& "\n");
+        //BackendDump.debuglst((e::ezycle,ExpressionDump.printExpStr,", ","\n"));
       then
-        (zycle,subzycles)::izycles;      
-    case(edge::rest,_,_,_,_,_,_,_)
+        (e::ezycle,subzycles)::izycles;      
+    case((edge,e)::rest,_,_,_,_,_,_,_,_)
       equation
         // back at the start node of the cycle?
         true = intEq(edge,startNode);
@@ -2595,48 +2703,56 @@ algorithm
         false = intGt(length,size);
         // get next unvisited node
         nextnode = getUnvisitedNode(1,size,zycle);
-        print("unvollstaendiger Zyklus gefunden: d:" +& intString(subzycles) +& " fahre mit Node " +& intString(nextnode) +& " fort\n");
-        zycles = determinantEdges(digraph[nextnode],size,length+1,nextnode::zycle,subzycles+1,nextnode,digraph,izycles);
+        //print("unvollstaendiger Zyklus gefunden: d:" +& intString(subzycles) +& " fahre mit Node " +& intString(nextnode) +& " fort\n");
+        zycles = determinantEdges(digraph[nextnode],size,length+1,nextnode::zycle,e::ezycle,subzycles+1,nextnode,digraph,izycles);
       then
-        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,zycles);
-    case(edge::rest,_,_,_,_,_,_,_)
+        determinantEdges(rest,size,length,zycle,ezycle,subzycles,startNode,digraph,zycles);
+    case((edge,e)::rest,_,_,_,_,_,_,_,_)
       equation
         // not a full cycle?
         false = intGt(length,size);
         // not allready visited
         false = listMember(edge,zycle);
-        print("fahre mit Node " +& intString(edge) +& " fort\n");
-        zycles = determinantEdges(digraph[edge],size,length+1,edge::zycle,subzycles,startNode,digraph,izycles);
+        //print("fahre mit Node " +& intString(edge) +& " fort\n");
+        zycles = determinantEdges(digraph[edge],size,length+1,edge::zycle,e::ezycle,subzycles,startNode,digraph,izycles);
       then
-        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,zycles);
-    case(edge::rest,_,_,_,_,_,_,_)
+        determinantEdges(rest,size,length,zycle,ezycle,subzycles,startNode,digraph,zycles);
+    case((edge,_)::rest,_,_,_,_,_,_,_,_)
       equation
         // not a full cycle?
         false = intGt(length,size);
       then
-        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,izycles);
+        determinantEdges(rest,size,length,zycle,ezycle,subzycles,startNode,digraph,izycles);
   end matchcontinue;  
 end determinantEdges;
+
+
+protected function dumpZycle
+  input tuple<Integer,DAE.Exp> inTpl;
+  output String s;
+algorithm
+  s := intString(Util.tuple21(inTpl)) +& ":" +& ExpressionDump.printExpStr(Util.tuple22(inTpl));
+end dumpZycle;
 
 protected function getDeterminantDigraph
 "function determinant
   author: Frenkel TUD 2012-06
   generate the digraph edges by {jac= list of (i,j,Eqn)} directed edge from j to i"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-  input array<list<Integer>> iDigraph;
-  output array<list<Integer>> oDigraph;
+  input array<list<tuple<Integer,DAE.Exp>>> iDigraph;
+  output array<list<tuple<Integer,DAE.Exp>>> oDigraph;
 algorithm
   oDigraph := matchcontinue(jac,iDigraph)
     local
       Integer i,j;
       DAE.Exp e;
-      list<Integer> ilst;
+      list<tuple<Integer,DAE.Exp>> ilst;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
     case({},_) then iDigraph;
     case((i,j,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_)
       equation
         ilst = iDigraph[j];
-        _ = arrayUpdate(iDigraph,j,i::ilst);
+        _ = arrayUpdate(iDigraph,j,(i,e)::ilst);
       then
         getDeterminantDigraph(rest,iDigraph);
   end matchcontinue;
@@ -2645,20 +2761,22 @@ end getDeterminantDigraph;
 protected function dumpzycles
 "function dumpzycles
   author: Frenkel TUD 2012-06"
-  input list<tuple<list<Integer>,Integer>> zycles;
+  input list<tuple<list<DAE.Exp>,Integer>> zycles;
+  input Integer size;
 algorithm
-  _ := matchcontinue(zycles)
+  _ := matchcontinue(zycles,size)
     local
       Integer d;
-      DAE.Exp e;
-      list<Integer> ilst;
-      list<tuple<list<Integer>,Integer>> rest;
-    case({}) then ();
-    case((ilst,d)::rest)
+      Real sign;
+      list<DAE.Exp> elst;
+      list<tuple<list<DAE.Exp>,Integer>> rest;
+    case({},_) then ();
+    case((elst,d)::rest,_)
       equation
-        print("d:" +& intString(d) +& " : ");
-        BackendDump.debuglst((ilst,intString,", ","\n")); 
-        dumpzycles(rest);
+        sign = realPow(-1.0,intReal(size-d));
+        print("d:" +& intString(d) +& " : " +& realString(sign) +& "*");
+        BackendDump.debuglst((elst,ExpressionDump.printExpStr,"*","\n"));
+        dumpzycles(rest,size);
       then
         ();
   end matchcontinue;
