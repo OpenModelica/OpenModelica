@@ -2364,6 +2364,218 @@ algorithm
   end match;
 end addDummyStates;
 
+
+public function tryDeterminant
+"function tryDeterminant
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tryDeterminant0,false);
+end tryDeterminant;
+
+protected function tryDeterminant0
+"function tryDeterminant0
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.StrongComponents comps;
+      Boolean b,b1,b2;
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<BackendDAE.ComplexEquation> complEqs;
+      
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared as BackendDAE.SHARED(arrayEqs=ae, complEqs=complEqs), b1))
+      equation
+         BackendDump.dumpEqSystem(syst);
+         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
+         BackendDump.dumpIncidenceMatrixT(mt);
+         
+         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, ae, complEqs, m, mt,true);
+         jac = listReverse(jac);
+         print("Jac:\n" +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+         
+         // generate Determinant
+         // base is jacobian of the system
+         determinant(jac,BackendDAEUtil.systemSize(syst));
+
+      then
+        (syst,(shared,false));
+  end matchcontinue;  
+end tryDeterminant0;
+
+
+protected function determinant
+"function determinant
+  author: Frenkel TUD 2012-06"
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  input Integer size;
+protected 
+  array<list<Integer>> digraph;
+  array<Integer> nodemark;
+  array<Integer> visited;
+  list<tuple<list<Integer>,Integer>> zycles;
+algorithm
+  digraph := arrayCreate(size,{});
+  digraph := getDeterminantDigraph(jac,digraph);
+  BackendDump.dumpIncidenceMatrix(digraph);
+  // for node 1 do
+  // traverse all edges
+  // count edges, remember last start node, remember visited nodes 
+  nodemark := arrayCreate(size,-1);
+  visited := arrayCreate(size,-1);
+  
+  _ := arrayUpdate(visited,1,1);
+  print("Starte Determinantenberechnung mit 1. Node\n");
+  zycles := determinantEdges(digraph[1],size,1,{1},1,1,digraph,{});
+  dumpzycles(zycles);
+end determinant;
+
+protected function getUnvisitedNode
+"function getUnvisitedNode
+  author: Frenkel TUD 2012-06
+  returns the first unvisited node"
+  input Integer index;
+  input Integer size;
+  input list<Integer> zycle;
+  output Integer node;
+algorithm
+  node := matchcontinue(index,size,zycle)
+    case(_,_,_)
+      equation
+        false = intGt(index,size);
+        false = listMember(index,zycle);
+      then
+        index;
+    case(_,_,_)
+      equation
+        false = intGt(index,size);
+      then
+        getUnvisitedNode(index+1,size,zycle);    
+  end matchcontinue;
+end getUnvisitedNode;
+
+protected function determinantEdges
+"function determinantEdges
+  author: Frenkel TUD 2012-06
+  traverse each edge and call determinantNode"
+  input list<Integer> edges;
+  input Integer size;
+  input Integer length;
+  input list<Integer> zycle;
+  input Integer subzycles;
+  input Integer startNode;
+  input array<list<Integer>> digraph; 
+  input list<tuple<list<Integer>,Integer>> izycles;
+  output list<tuple<list<Integer>,Integer>> ozycles;
+algorithm
+  ozycles := matchcontinue(edges,size,length,zycle,subzycles,startNode,digraph,izycles)
+    local
+      Integer edge,nextnode;
+      list<Integer> rest;
+      list<tuple<list<Integer>,Integer>> zycles;
+    case({},_,_,_,_,_,_,_) then izycles;
+    case(edge::rest,_,_,_,_,_,_,_)
+      equation
+        print("Check edge:" +& intString(edge) +& " startNode " +& intString(startNode) +& " length " +& intString(length) +& "\n");  
+        // back at the start node of the cycle?
+        true = intEq(edge,startNode);
+        // a full cycle?
+        true = intEq(size,length);
+        // return zicle
+        print("Voller Zyklus gefunden: d:" +& intString(subzycles) +& "\n");
+        BackendDump.debuglst((zycle,intString,", ","\n"));        
+      then
+        (zycle,subzycles)::izycles;      
+    case(edge::rest,_,_,_,_,_,_,_)
+      equation
+        // back at the start node of the cycle?
+        true = intEq(edge,startNode);
+        // not a full cycle?
+        false = intGt(length,size);
+        // get next unvisited node
+        nextnode = getUnvisitedNode(1,size,zycle);
+        print("unvollstaendiger Zyklus gefunden: d:" +& intString(subzycles) +& " fahre mit Node " +& intString(nextnode) +& " fort\n");
+        zycles = determinantEdges(digraph[nextnode],size,length+1,nextnode::zycle,subzycles+1,nextnode,digraph,izycles);
+      then
+        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,zycles);
+    case(edge::rest,_,_,_,_,_,_,_)
+      equation
+        // not a full cycle?
+        false = intGt(length,size);
+        // not allready visited
+        false = listMember(edge,zycle);
+        print("fahre mit Node " +& intString(edge) +& " fort\n");
+        zycles = determinantEdges(digraph[edge],size,length+1,edge::zycle,subzycles,startNode,digraph,izycles);
+      then
+        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,zycles);
+    case(edge::rest,_,_,_,_,_,_,_)
+      equation
+        // not a full cycle?
+        false = intGt(length,size);
+      then
+        determinantEdges(rest,size,length,zycle,subzycles,startNode,digraph,izycles);
+  end matchcontinue;  
+end determinantEdges;
+
+protected function getDeterminantDigraph
+"function determinant
+  author: Frenkel TUD 2012-06
+  generate the digraph edges by {jac= list of (i,j,Eqn)} directed edge from j to i"
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  input array<list<Integer>> iDigraph;
+  output array<list<Integer>> oDigraph;
+algorithm
+  oDigraph := matchcontinue(jac,iDigraph)
+    local
+      Integer i,j;
+      DAE.Exp e;
+      list<Integer> ilst;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
+    case({},_) then iDigraph;
+    case((i,j,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_)
+      equation
+        ilst = iDigraph[j];
+        _ = arrayUpdate(iDigraph,j,i::ilst);
+      then
+        getDeterminantDigraph(rest,iDigraph);
+  end matchcontinue;
+end getDeterminantDigraph;
+
+protected function dumpzycles
+"function dumpzycles
+  author: Frenkel TUD 2012-06"
+  input list<tuple<list<Integer>,Integer>> zycles;
+algorithm
+  _ := matchcontinue(zycles)
+    local
+      Integer d;
+      DAE.Exp e;
+      list<Integer> ilst;
+      list<tuple<list<Integer>,Integer>> rest;
+    case({}) then ();
+    case((ilst,d)::rest)
+      equation
+        print("d:" +& intString(d) +& " : ");
+        BackendDump.debuglst((ilst,intString,", ","\n")); 
+        dumpzycles(rest);
+      then
+        ();
+  end matchcontinue;
+end dumpzycles;
+
 /*****************************************
  dummy derivative index reduction method . 
  *****************************************/
