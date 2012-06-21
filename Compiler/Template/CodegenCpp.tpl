@@ -144,7 +144,7 @@ FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem  -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;
