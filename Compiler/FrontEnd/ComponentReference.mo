@@ -2350,7 +2350,6 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs, crefs2;
       list<DAE.Var> varLst;
-      list<list<DAE.ComponentRef>> crlstlst;
 
     // A simple cref without subscripts but record type.
     case (DAE.CREF_IDENT(id, DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), {}),true)
@@ -2358,9 +2357,17 @@ algorithm
         // Create a list of crefs from names
         crefs =  List.map(varLst,creffromVar);
         crefs = List.map1r(crefs,joinCrefs,inCref);
-        crlstlst = List.map1(crefs,expandCref_impl,true);        
       then
-        List.flatten(crlstlst);
+        List.map1Flat(crefs,expandCref_impl,true);        
+
+    // A simple cref without subscripts but array type.
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
+      equation
+        // Create a list of : subscripts to generate all elements.
+        subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
+        crefs = expandCref2(id, ty, subs, dims);
+      then
+        expandCrefLst(crefs,varLst,{});
 
     // A simple cref without subscripts but array type.
     case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
@@ -2371,9 +2378,19 @@ algorithm
         expandCref2(id, ty, subs, dims);
 
     // A simple cref with subscripts and array type.
+    case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
+      equation
+        // Use the subscripts to generate only the wanted elements.
+        crefs = expandCref2(id, ty, subs, dims);
+      then
+        expandCrefLst(crefs,varLst,{});
+
+    // A simple cref with subscripts and array type.
     case (DAE.CREF_IDENT(id, DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
-      // Use the subscripts to generate only the wanted elements.
-      then expandCref2(id, ty, subs, dims);
+        // Use the subscripts to generate only the wanted elements.
+      then
+        expandCref2(id, ty, subs, dims);
+
 
     // A qualified cref with array type.
     case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _), subs, cref),_)
@@ -2404,6 +2421,29 @@ algorithm
 
   end match;
 end expandCref_impl;
+
+protected function expandCrefLst
+  input list<DAE.ComponentRef> inCrefs;
+  input list<DAE.Var> varLst;
+  input list<list<DAE.ComponentRef>> inCrefsAcc;
+  output list<DAE.ComponentRef> outCref;
+algorithm
+  outCref := match(inCrefs,varLst,inCrefsAcc)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefs,rest;
+    case ({},_,_) then List.flatten(inCrefsAcc);
+    case (cr::rest,_,_) 
+      equation
+        // Create a list of crefs from names
+        crefs = List.map(varLst,creffromVar);
+        crefs = List.map1r(crefs,joinCrefs,cr);
+        crefs = List.map1Flat(crefs,expandCref_impl,true);        
+      then
+        expandCrefLst(rest,varLst,crefs::inCrefsAcc);
+  end match;
+end expandCrefLst;
+
 
 protected function expandCrefQual
   "Helper function to expandCref_impl. Constructs all combinations of the head
