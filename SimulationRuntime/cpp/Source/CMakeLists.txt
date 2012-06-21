@@ -1,8 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
 
-
-
-
 project(CppSolverInterface)
 # on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
@@ -188,7 +185,7 @@ if(INSTALL_OMDEV_LIBS)
 
   install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
   install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
-  #install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
+  #install (FILES "${BOOST_SERIALIZATION_LIBRARY_RELEASE}"   DESTINATION bin)
 endif()
 
 

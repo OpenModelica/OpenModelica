@@ -27,7 +27,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   fs::path settingsfolder_name("config");
   settingsfile_path/=settingsfolder_name;
   settingsfile_path/=settingsfile_name;
-  cout<<"Read Settings from "<< settingsfile_path << std::endl;
+  //cout<<"Read Settings from "<< settingsfile_path << std::endl;
    //load global settings or use default settings
   _global_settings =  boost::shared_ptr<IGlobalSettings>(new GlobalSettings());
   _global_settings->load( settingsfile_path.string());
@@ -81,7 +81,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   }
   //create with solver factory selected solver settings
   _solver_settings = boost::shared_ptr<ISolverSettings>(iter->second.create(_global_settings.get())); 
-  cout<<"Read Settings from "<< solversettingsfile_path << std::endl;
+  //cout<<"Read Settings from "<< solversettingsfile_path << std::endl;
  
  _solver_settings->load( solversettingsfile_path.string());
   

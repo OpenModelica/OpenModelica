@@ -76,10 +76,11 @@ runtimeCPP:
 	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget))	
 
 runtimeCPPinstall: 
-	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) install)	
+	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) install)
+	(cd testsuite/cppruntime; time $(MAKE) -f Makefile)
 	
 runtimeCPPclean: 
-	cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) clean)
 	
 testfast: test
 

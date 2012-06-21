@@ -18,7 +18,7 @@ int main(int argc, const char* argv[])
    fs::path libraries_path = fs::path( argv[1] ) ;
   fs::path modelica_path = fs::path( argv[2] ) ;
 
-   std::cout << libraries_path << "  end" << std::endl;
+   //std::cout << libraries_path << "  end" << std::endl;
   try
   {
     
@@ -74,8 +74,9 @@ int main(int argc, const char* argv[])
     }
     // Get the status of the solver (is the interation done sucessfully?) 
     IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
-    solver->writeSimulationInfo(std::cout);
-    solver->reportErrorMessage(std::cout);
+    //Todo: use flags for simulation outputs
+	//solver->writeSimulationInfo(std::cout);
+    //solver->reportErrorMessage(std::cout);
     return 0;
   }
   catch(std::exception& ex)
