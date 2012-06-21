@@ -897,6 +897,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       String msg;
+      list<DAE.ComponentRef> crlst;
+      list<String> slst;
             
     case (comp,eqn_lst,var_varindx_lst,_,_,ass1,ass2,false)
       equation
@@ -964,7 +966,12 @@ algorithm
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
         false = BackendVariable.hasContinousVar(var_lst);
-        msg = "Sorry - Support for Discrete Equation Systems is not yed implemented";
+        msg = "Sorry - Support for Discrete Equation Systems is not yed implemented\n";
+        crlst = List.map(var_lst,BackendVariable.varCref);
+        slst = List.map(crlst,ComponentReference.printComponentRefStr);
+        msg = msg +& stringDelimitList(slst,"\n");
+        slst = List.map(eqn_lst,BackendDump.equationStr);
+        msg = msg +& "\n" +& stringDelimitList(slst,"\n");
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();            
