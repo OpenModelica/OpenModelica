@@ -100,7 +100,7 @@ algorithm
   (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg):=
   matchcontinue (eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     local
-      list<Integer> eqns_1,changedeqns,unassignedStates;
+      list<Integer> eqns_1,changedeqns,unassignedStates,discEqns;
       Integer contiEqn;
       Boolean b;
       array<Integer> ass1,ass2;
@@ -112,9 +112,12 @@ algorithm
         true = intGt(listLength(eqns),0);
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         // the check may should first split the equations in independent subgraphs
-        (b,eqns_1,unassignedStates) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
-        (changedeqns,contiEqn,syst,shared,ass1,ass2,arg) =
+        (b,eqns_1,unassignedStates,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
+        (changedeqns,syst,shared,ass1,ass2,arg) =
          pantelidesIndexReduction1(b,unassignedStates,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+        changedeqns = List.unionOnTrue(changedeqns, discEqns, intEq);
+        changedeqns = List.sort(changedeqns,intEq);
+        contiEqn = List.fold(changedeqns,intMin,listNth(eqns,0));
       then
        (changedeqns,contiEqn,syst,shared,ass1,ass2,arg);
     else
@@ -140,19 +143,17 @@ public function pantelidesIndexReduction1
   input array<Integer> inAssignments2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> changedEqns;
-  output Integer continueEqn;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2; 
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
-  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg):=
+  (changedEqns,osyst,oshared,outAssignments1,outAssignments2,outArg):=
   matchcontinue (b,unassignedStates,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     local
       list<BackendDAE.Var> varlst;
       list<Integer> changedeqns,eqns1;
-      Integer contiEqn;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedMultiEqn,derivedMultiEqn1;
       BackendDAE.StateOrder so,so1;
       BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1;
@@ -168,10 +169,8 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns));
         (syst,shared,ass1,ass2,so1,orgEqnsLst,changedeqns,eqns1) = differentiateAliasEqns(isyst,ishared,eqns,inAssignments1,inAssignments2,so,orgEqnsLst,{},{});
         (syst,shared,ass1,ass2,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst1,changedeqns) = differentiateEqns(syst,shared,eqns1,ass1,ass2,derivedAlgs,derivedMultiEqn,so1,orgEqnsLst,changedeqns);
-        changedeqns = List.sort(changedeqns,intEq);
-        contiEqn = List.fold(changedeqns,intMin,listNth(eqns,0));
       then
-       (changedeqns,contiEqn,syst,shared,ass1,ass2,(so1,orgEqnsLst1,derivedAlgs1,derivedMultiEqn1));
+       (changedeqns,syst,shared,ass1,ass2,(so1,orgEqnsLst1,derivedAlgs1,derivedMultiEqn1));
 
     case (_,_,_,_,_,_,_,_,_,_)
       equation
@@ -218,6 +217,7 @@ protected function minimalStructurallySingularSystem
   output Boolean b;
   output list<Integer> outEqnsLst;
   output list<Integer> outStateIndxs;
+  output list<Integer> discEqns;
 protected
   list<Integer> unassignedEqns;
   BackendDAE.IncidenceMatrix m;
@@ -227,7 +227,7 @@ protected
   Integer size;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
-  ((unassignedEqns,outEqnsLst)) := List.fold2(inEqnsLst,unassignedContinuesEqns,vars,inAssignments2,({},{}));
+  ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(inEqnsLst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
   outEqnsLst := listReverse(outEqnsLst);
   size := BackendDAEUtil.equationSize(eqns);
   statemark := arrayCreate(size,false);
@@ -238,17 +238,21 @@ end minimalStructurallySingularSystem;
 protected function unassignedContinuesEqns
   input Integer eindx;
   input BackendDAE.Variables vars;
-  input array<Integer> ass2;
-  input tuple<list<Integer>,list<Integer>> inFold;
-  output tuple<list<Integer>,list<Integer>> outFold;
+  input tuple<array<Integer>,BackendDAE.IncidenceMatrix> inTpl;
+  input tuple<list<Integer>,list<Integer>,list<Integer>> inFold;
+  output tuple<list<Integer>,list<Integer>,list<Integer>> outFold;
 algorithm
-  outFold := matchcontinue(eindx,vars,ass2,inFold)
+  outFold := matchcontinue(eindx,vars,inTpl,inFold)
     local
+      BackendDAE.IncidenceMatrix m;
+      array<Integer> ass2;
       Integer vindx;
-      list<Integer> unassignedEqns,eqnsLst;
+      list<Integer> unassignedEqns,eqnsLst,varlst,discEqns;
       BackendDAE.Var v;
-      Boolean b;
-    case(_,_,_,(unassignedEqns,eqnsLst))
+      list<BackendDAE.Var> vlst;
+      Boolean b,ba;
+      list<Boolean> blst;
+/*    case(_,_,(ass2,m),(unassignedEqns,eqnsLst))
       equation
         vindx = ass2[eindx];
         true = intGt(vindx,0);
@@ -257,12 +261,27 @@ algorithm
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
       then
        ((unassignedEqns,eqnsLst));
-    case(_,_,_,(unassignedEqns,eqnsLst))
+*/    case(_,_,(ass2,m),(unassignedEqns,eqnsLst,discEqns))
+      equation
+        vindx = ass2[eindx];
+        ba = intLt(vindx,1);
+        varlst = m[eindx];
+        varlst = List.map(varlst,intAbs);
+        vlst = List.map1r(varlst,BackendVariable.getVarAt,vars);
+        blst = List.map(vlst,BackendVariable.isVarDiscrete);
+        // if there is a continues variable than b is false
+        b = Util.boolAndList(blst);
+        eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
+        unassignedEqns = List.consOnTrue(b, eindx, unassignedEqns);
+        discEqns = List.consOnTrue(b, eindx, discEqns);
+      then
+       ((unassignedEqns,eqnsLst,discEqns));       
+    case(_,_,(ass2,_),(unassignedEqns,eqnsLst,discEqns))
       equation
         vindx = ass2[eindx];
         false = intGt(vindx,0);
       then
-       ((eindx::unassignedEqns,eindx::eqnsLst));
+       ((eindx::unassignedEqns,eindx::eqnsLst,discEqns));
   end matchcontinue;  
 end unassignedContinuesEqns;
 
