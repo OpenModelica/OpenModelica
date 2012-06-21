@@ -281,23 +281,7 @@ algorithm
     // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1)))
       then ((e, (vars,vars1)));
-    
-    // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
-      equation
-        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkEquationsVarsExp,(vars,vars1));
-      then
-        ((e, (vars,vars1)));
-
-    // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1)))
-      equation
-        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
-        ((_,(vars,vars1))) = Expression.traverseExp(e1,checkEquationsVarsExp,(vars,vars1));
-      then
-        ((e, (vars,vars1)));
-    
+        
     // case for functionpointers    
     case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
       then
@@ -306,15 +290,15 @@ algorithm
     // already there
     case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
       equation
-         (_,_) = BackendVariable.getVar(cr, vars1);
+         (_::_,_) = BackendVariable.getVar(cr, vars1);
       then
         ((e, (vars,vars1)));
 
     // add it
     case ((e as DAE.CREF(componentRef = cr),(vars,vars1)))
       equation
-         (var::_,_) = BackendVariable.getVar(cr, vars);
-         vars1 = BackendVariable.addVar(var,vars1);
+         (backendVars,_) = BackendVariable.getVar(cr, vars);
+         vars1 = BackendVariable.addVars(backendVars,vars1);
       then
         ((e, (vars,vars1)));
     

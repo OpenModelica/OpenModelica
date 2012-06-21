@@ -7491,8 +7491,8 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-  sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  //sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
@@ -7577,8 +7577,8 @@ protected
 algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  //outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
-  outDAE := reduceIndexDAE(inDAE,inMatchingOptions,(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
+  //outDAE := reduceIndexDAE(inDAE,inMatchingOptions,(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
 end transformBackendDAE;
 
 public function transformDAE
@@ -7916,8 +7916,8 @@ algorithm
     case (true,_,_,_)
       equation
 //        sode = transformDAE(inDAE,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),matchingAlgorithm,daeHandler);
-        //sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
-        sode = reduceIndexDAE(inDAE,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+        sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
+        //sode = reduceIndexDAE(inDAE,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
     case (false,_,_,_)
@@ -8013,8 +8013,8 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-  sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
+  sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  //sode := reduceIndexDAE(optdae,NONE(),(Matching.PFPlus,"PFPlus"),(IndexReduction.dynamicStateSelection,"dynamicStateSelection"));
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
