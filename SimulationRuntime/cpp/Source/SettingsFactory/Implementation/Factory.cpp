@@ -5,6 +5,7 @@
 #include "GlobalSettings.h"
 #include "Solver/Interfaces/ISolverSettings.h"
 #include "LibrariesConfig.h"
+#define BOOST_NO_WCHAR
 
 SettingsFactory::SettingsFactory(void)
 {
@@ -29,7 +30,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   cout<<"Read Settings from "<< settingsfile_path << std::endl;
    //load global settings or use default settings
   _global_settings =  boost::shared_ptr<IGlobalSettings>(new GlobalSettings());
-  _global_settings->load( settingsfile_path.c_str());
+  _global_settings->load( settingsfile_path.string());
   std::string solver_dll;
   //Load solver dll
    if(_global_settings->getSelectedSolver().compare("Euler")==0)
@@ -65,11 +66,11 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
    fs::path solver_default_name(SOLVER_LIB);
   fs::path solver_default_path = libraries_path;
   solver_default_path/=solver_default_name;
-   if(!load_single_library(types,solver_default_path.c_str()))
-    throw std::invalid_argument(solver_default_path.native()  + " library could not be loaded");
+   if(!load_single_library(types,solver_default_path.string()))
+    throw std::invalid_argument(solver_default_path.string()  + " library could not be loaded");
 
-  if(!load_single_library(types,solver_path.c_str()))
-    throw std::invalid_argument(solver_path.native()  + " library could not be loaded");
+  if(!load_single_library(types,solver_path.string()))
+    throw std::invalid_argument(solver_path.string()  + " library could not be loaded");
   //get solver factory
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter;
   std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >& factories(types.get());
@@ -82,7 +83,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
   _solver_settings = boost::shared_ptr<ISolverSettings>(iter->second.create(_global_settings.get())); 
   cout<<"Read Settings from "<< solversettingsfile_path << std::endl;
  
- _solver_settings->load( solversettingsfile_path.c_str());
+ _solver_settings->load( solversettingsfile_path.string());
   
   //return global and solver settings 
   tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > settings_pair(_global_settings,_solver_settings);

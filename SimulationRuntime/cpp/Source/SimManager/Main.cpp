@@ -36,11 +36,11 @@ int main(int argc, const char* argv[])
   fs::path default_system_path = libraries_path;
   default_system_path/=default_system_name;
   
- if(!load_single_library(types,  default_system_path.c_str()))
+ if(!load_single_library(types,  default_system_path.string()))
       throw std::invalid_argument("System default library could not be loaded");
 
     
-    if(!load_single_library(types,  modelica_system_path.c_str()))
+    if(!load_single_library(types,  modelica_system_path.string()))
       throw std::invalid_argument("ModelicaSystem library could not be loaded");
     std::map<std::string, factory<IDAESystem,IGlobalSettings&> >::iterator iter;
     std::map<std::string, factory<IDAESystem,IGlobalSettings&> >& factories(types.get());

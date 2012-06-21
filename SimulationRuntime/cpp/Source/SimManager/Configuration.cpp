@@ -10,7 +10,7 @@ Configuration::Configuration(fs::path libraries_path)
   fs::path settings_name(SETTINGSFACTORY_LIB);
   fs::path settings_path = libraries_path;
   settings_path/=settings_name;
-  if(!load_single_library(types,settings_path.c_str()))
+  if(!load_single_library(types,settings_path.string()))
     throw std::invalid_argument("Settings factory library could not be loaded");
   std::map<std::string, factory<ISettingsFactory> >::iterator iter;
   std::map<std::string, factory<ISettingsFactory> >& factories(types.get());
@@ -60,8 +60,8 @@ IDAESolver* Configuration::createSolver(IDAESystem* system)
   fs::path solver_path = _libraries_path;
   solver_path/=solver_name;
 
-  if(!load_single_library(types,solver_path.c_str()))
-    throw std::invalid_argument(solver_path.native()  +  "library could not be loaded");
+  if(!load_single_library(types,solver_path.string()))
+    throw std::invalid_argument(solver_path.string()  +  "library could not be loaded");
   std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >::iterator iter;
   std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >& factories(types.get());
   iter = factories.find(solver);
