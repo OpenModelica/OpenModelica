@@ -75,7 +75,7 @@ int main(int argc, const char* argv[])
     // Get the status of the solver (is the interation done sucessfully?) 
     IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
     //Todo: use flags for simulation outputs
-	//solver->writeSimulationInfo(std::cout);
+    //solver->writeSimulationInfo(std::cout);
     //solver->reportErrorMessage(std::cout);
     return 0;
   }
