@@ -174,10 +174,9 @@ algorithm
 end add;
 
 public function addNoUpdCheck
-"
-  Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple already exists, the function updates the Value.
-"
+  "Add a Key-Value tuple to hashtable, without checking if it already exists.
+   This function is thus more efficient than add if you already know that the
+   Key-Value tuple doesn't already exist in the hashtable."
   input tuple<Key,Value> entry;
   input HashTable hashTable;
   output HashTable outHashTable;

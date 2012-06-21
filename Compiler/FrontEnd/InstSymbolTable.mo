@@ -132,12 +132,14 @@ protected constant Component BUILTIN_TIME_COMP = InstTypes.TYPED_COMPONENT(
   Absyn.dummyInfo);
 
 public function create
+  "Creates an empty symboltable with a default bucket size."
   output SymbolTable outSymbolTable;
 algorithm
   outSymbolTable := createSized(BaseHashTable.defaultBucketSize);
 end create;
 
 public function createSized
+  "Creates an empty symboltable of the given size."
   input Integer inSize;
   output SymbolTable outSymbolTable;
 protected
@@ -149,6 +151,10 @@ algorithm
 end createSized;
 
 public function build
+  "Creates a new symboltable and populates it with the elements from a given
+   class. Duplicate elements from extends are removed during this phase, so the
+   class with the duplicate elements removed is returned along with the new
+   symboltable."
   input Class inClass;
   output Class outClass;
   output SymbolTable outSymbolTable;
@@ -167,6 +173,7 @@ algorithm
         bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
         symtab = createSized(bucket_size);
         (cls, symtab) = addClass(inClass, symtab);
+        // Add the special variable time to the symboltable.
         (symtab, _) = addOptionalComponent(Absyn.IDENT("time"),
           BUILTIN_TIME_COMP, NONE(), symtab);
       then
@@ -176,6 +183,7 @@ algorithm
 end build;
 
 protected function add
+  "Adds a component to the symboltable, or updates an already existing component."
   input Absyn.Path inName;
   input Component inComponent;
   input SymbolTable inSymbolTable;
@@ -190,6 +198,8 @@ algorithm
 end add;
 
 protected function addUnique
+  "Adds a component to the symboltable. Fails if the component is already
+   present in the symboltable."
   input Absyn.Path inName;
   input Component inComponent;
   input SymbolTable inSymbolTable;
@@ -204,6 +214,9 @@ algorithm
 end addUnique;
 
 protected function addNoUpdCheck
+  "Adds a component to the symboltable, without checking if it already exists.
+   This makes this function more efficient than add if you already know that the
+   component hasn't been added to the symboltable already."
   input Absyn.Path inName;
   input Component inComponent;
   input SymbolTable inSymbolTable;
@@ -218,6 +231,7 @@ algorithm
 end addNoUpdCheck;
 
 protected function get
+  "Fetches a component from the symboltable based on it's name."
   input Absyn.Path inName;
   input SymbolTable inSymbolTable;
   output Component outComponent;
@@ -227,13 +241,16 @@ algorithm
       HashTable ht;
       SymbolTable rest_st;
 
+    // Search the first scope.
     case (_, ht :: rest_st) then BaseHashTable.get(inName, ht);
+    // Search the next scope if it wasn't found in the first.
     case (_, _ :: rest_st) then get(inName, rest_st);
     
   end matchcontinue;
 end get;
 
 public function addClass
+  "Adds the elements of a given class to the symboltable."
   input Class inClass;
   input SymbolTable inSymbolTable;
   output Class outClass;
@@ -246,8 +263,10 @@ algorithm
       list<list<Statement>> al, ial;
       SymbolTable st;
 
+    // A basic type doesn't have any elements, nothing to add.
     case (InstTypes.BASIC_TYPE(), st) then (inClass, st);
 
+    // A complex class, add it's elements to the symboltable.
     case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
       equation
         (comps, st) = addElements(comps, st);
@@ -258,6 +277,9 @@ algorithm
 end addClass;
 
 public function addElements
+  "Adds a list of elements to the symboltable. Returns a list of the elements
+   that was added to the symboltable, with duplicate elements from extends
+   removed, as well as the updated symboltable."
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
   output list<Element> outElements;
@@ -268,6 +290,7 @@ algorithm
 end addElements;
 
 protected function addElements2
+  "Tail-recursive implementation of addElements."
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
   input list<Element> inAccumEl;
@@ -285,8 +308,11 @@ algorithm
 
     case (el :: rest_el, st, _)
       equation
+        // Try to add the element to the symboltable.
         (el, st, added) = addElement(el, st);
+        // Add the element to the accumulation list if it was added.
         accum_el = List.consOnTrue(added, el, inAccumEl);
+        // Add the rest of the elements.
         (rest_el, st) = addElements2(rest_el, st, accum_el);
       then
         (rest_el, st);
@@ -295,6 +321,9 @@ algorithm
 end addElements2;
 
 public function addElement
+  "Adds an element to the symboltable. Returns the element with duplicate
+   elements from extends removed, the updated symboltable and a boolean which
+   tells if the element was added to the symboltable or not."
   input Element inElement;
   input SymbolTable inSymbolTable;
   output Element outElement;
@@ -312,7 +341,9 @@ algorithm
 
     case (InstTypes.ELEMENT(comp, cls), st)
       equation
+        // Try to add the component.
         (st, added) = addComponent(comp, st);
+        // Add the component's class if the component was added.
         (cls, st) = addClassOnTrue(cls, st, added);
       then
         (InstTypes.ELEMENT(comp, cls), st, added);
@@ -333,6 +364,8 @@ algorithm
 end addElement;
 
 public function addClassOnTrue
+  "If the condition is true, adds the given class to the symboltable. Otherwise
+   does nothing."
   input Class inClass;
   input SymbolTable inSymbolTable;
   input Boolean inCondition;
@@ -355,6 +388,8 @@ algorithm
 end addClassOnTrue;
 
 public function addComponent
+  "Tries to add a component to the symboltable. Returns the updated symboltable
+   and a boolean which tells whether the component was added or not."
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
@@ -367,13 +402,18 @@ algorithm
       SymbolTable st;
       Boolean added;
 
+    // PACKAGE isn't really a component, so we don't add it. But it's class
+    // should be added, so return true anyway.
     case (InstTypes.PACKAGE(name = _), st)
       then (st, true);
 
+    // For any other type of component, try to add it.
     case (_, st)
       equation
+        // Try to find the component in the symboltable.
         name = InstUtil.getComponentName(inComponent);
         comp = lookupNameOpt(name, st);
+        // Let addOptionalComponent handle the rest.
         (st, added) = addOptionalComponent(name, inComponent, comp, st);
       then
         (st, added);
@@ -388,6 +428,9 @@ algorithm
 end addComponent;
 
 protected function addOptionalComponent
+  "Adds a component to the symboltable, if it doesn't already exist in the
+   symboltable. This is indicated by inOldComponent, which is NONE if it doesn't
+   already exist, otherwise SOME."
   input Absyn.Path inName;
   input Component inNewComponent;
   input Option<Component> inOldComponent;
@@ -401,12 +444,15 @@ algorithm
       Component comp;
       SymbolTable st;
 
+    // The component doesn't already exist, add it to the symboltable.
     case (_, comp, NONE(), st)
       equation
         st = addNoUpdCheck(inName, comp, st);
       then
         (st, true);
 
+    // The component already exists. Check that it's equivalent with the old
+    // component, and return the symboltable unchanged.
     case (_, _, SOME(comp), st)
       equation
         //checkEqualComponents
@@ -417,6 +463,8 @@ algorithm
 end addOptionalComponent;
 
 public function addIterator
+  "Opens a new scope, or reuses an old iterator scope, and adds the given
+  component to that scope. This is used for e.g. adding for loop iterators."
   input Absyn.Path inName;
   input Component inComponent;
   input SymbolTable inSymbolTable;
@@ -427,9 +475,14 @@ algorithm
       HashTable ht;
       SymbolTable st;
       
+    // The symboltable consists of at least two scopes, try to add the component
+    // to the symboltable with addUnique. This means that we reuse iterator
+    // scopes as long as we don't get any conflicting iterator names, to avoid
+    // having a lot of unnecessary scopes.
     case (_, _, _ :: _ :: _)
       then addUnique(inName, inComponent, inSymbolTable);
 
+    // If the previous case failed, add a new scope and add the component to it.
     else
       equation
         ht = BaseHashTable.emptyHashTableWork(11,
@@ -443,6 +496,8 @@ algorithm
 end addIterator;
 
 public function updateComponent
+  "Updates a component in the symboltable, or adds the component if it doesn't
+   already exists."
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
@@ -470,6 +525,9 @@ algorithm
 end updateComponent;
 
 public function addInstCondElement
+  "Adds an instantiated conditional elements to the symboltable. Returns the
+   element with any duplicate elements from extends removed, the updated
+   symboltable and a boolean which tells if the element was added or not."
   input Element inElement;
   input SymbolTable inSymbolTable;
   output Element outElement;
@@ -487,9 +545,12 @@ algorithm
 
     case (InstTypes.ELEMENT(comp, cls), st)
       equation
+        // Look up the component in the symboltable.
         name = InstUtil.getComponentName(comp);
         opt_comp = lookupNameOpt(name, st);
+        // Try to add the component to the symboltable.
         (st, added) = addInstCondComponent(name, comp, opt_comp, st);
+        // Add the element's class if the component was added.
         (cls, st) = addClassOnTrue(cls, st, added);
       then
         (InstTypes.ELEMENT(comp, cls), st, added);
@@ -498,6 +559,9 @@ algorithm
 end addInstCondElement;
     
 protected function addInstCondComponent
+  "Adds an instantiated conditional component to the symboltable. inOldComponent
+   is optionally the already existing component, or NONE if the component didn't
+   already exist."
   input Absyn.Path inName;
   input Component inNewComponent;
   input Option<Component> inOldComponent;
@@ -511,12 +575,20 @@ algorithm
       Component comp;
       SymbolTable st;
 
+    // The component already exists in the symboltable as a conditional
+    // component, in which case we should replace it with the instantiated
+    // component.
     case (_, _, SOME(InstTypes.CONDITIONAL_COMPONENT(name = _)), st)
       equation
         st = addNoUpdCheck(inName, inNewComponent, st);
       then
         (st, true);
 
+    // The component already exists in the symboltable, but not as a conditional
+    // component. This means that it's already been updated due to a duplicate
+    // element from an extends. In that case we should make sure that the new
+    // component is equivalent to the old one, and return the symboltable
+    // unchagned.
     case (_, _, SOME(comp), st)
       equation
         //checkEqualComponents
@@ -533,6 +605,8 @@ algorithm
 end addInstCondComponent;
 
 public function lookupCref
+  "Looks up a component reference in the symboltable and returns the referenced
+   component. Note that subscripts are ignored."
   input DAE.ComponentRef inCref;
   input SymbolTable inSymbolTable;
   output Component outComponent;
@@ -544,6 +618,9 @@ algorithm
 end lookupCref;
 
 public function lookupCrefResolveOuter
+  "Looks up a component reference in the symboltable and returns the referenced
+   component. It also resolves outer references, so that in the case of an outer
+   reference the inner component is returned."
   input DAE.ComponentRef inCref;
   input SymbolTable inSymbolTable;
   output Component outComponent;
@@ -555,12 +632,14 @@ algorithm
       SymbolTable st;
       DAE.ComponentRef cref;
 
+    // Try to find the cref as a normal component.
     case (_, st)
       equation
         comp = lookupCref(inCref, st);
       then
         (comp, st);
 
+    // Previous case failed, try to look it up as an outer reference.
     else 
       equation
         (cref, st) = InstUtil.replaceCrefOuterPrefix(inCref, inSymbolTable);
@@ -572,6 +651,7 @@ algorithm
 end lookupCrefResolveOuter;
 
 public function lookupName
+  "Looks up a name in the symboltable."
   input Absyn.Path inName;
   input SymbolTable inSymbolTable;
   output Component outComponent;
@@ -580,6 +660,8 @@ algorithm
 end lookupName;
 
 public function lookupNameOpt
+  "Looks up a name in the symboltable. Return SOME if the component could be
+   found, otherwise NONE."
   input Absyn.Path inName;
   input SymbolTable inSymbolTable;
   output Option<Component> outComponent;
@@ -599,6 +681,8 @@ algorithm
 end lookupNameOpt;
 
 public function resolveOuterRef
+  "Returns the inner component referenced by an outer component. Only works if
+  the outer component has an inner reference, i.e. after typing."
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output Component outComponent;
@@ -615,6 +699,9 @@ algorithm
 end resolveOuterRef;
 
 public function updateInnerReference
+  "Updates the reference to an inner component for an outer component. Returns
+  the name of the inner component, the inner component itself if the inner
+  reference was updated, and the updated symboltable."
   input Component inOuterComponent;
   input SymbolTable inSymbolTable;
   output Absyn.Path outInnerName;
@@ -628,6 +715,7 @@ algorithm
       Component outer_comp, inner_comp;
       SymbolTable st;
 
+    // No inner reference set, find the inner component and set the reference.
     case (InstTypes.OUTER_COMPONENT(name = outer_name, innerName = NONE()), st)
       equation
         (inner_name, inner_comp) = findInnerComponent(outer_name, st); 
@@ -636,6 +724,7 @@ algorithm
       then
         (inner_name, SOME(inner_comp), st);
         
+    // Reference already set, just return the name of it.
     case (InstTypes.OUTER_COMPONENT(innerName = SOME(inner_name)), st)
       then (inner_name, NONE(), st);
 
@@ -643,6 +732,8 @@ algorithm
 end updateInnerReference;
 
 protected function findInnerComponent
+  "Finds the corresponding inner component for an outer component in the
+   symboltable, and returns the name and component for the inner component."
   input Absyn.Path inOuterName;
   input SymbolTable inSymbolTable;
   output Absyn.Path outInnerName;
@@ -655,20 +746,29 @@ algorithm
       Absyn.Path prefix, inner_name, path;
       Component comp;
 
+    // Try to find the inner component in the symboltable.
     case (_, _)
       equation
+        // Split the name into a list of strings.
         pathl = Absyn.pathToStringList(inOuterName);
+        // Reverse the list. The first element is now the component's name, the
+        // rest is the enclosing scopes in the instance hierarchy. We ignore the
+        // first scope, since otherwise we'll just find the outer component again.
         comp_name :: _ :: pathl = listReverse(pathl);
         (inner_name, comp) = findInnerComponent2(comp_name, pathl, inSymbolTable);
       then
         (inner_name, comp);
 
+    // A non-qualified name means that the outer component is at the top level,
+    // so no inner component can exist. When checking a model we should somehow
+    // add dummy inner components, otherwise this is an error.
     case (Absyn.IDENT(name = _), _)
       equation
         print("Outer component at top level\n");
       then
         fail();
 
+    // Couldn't find the inner component, print an error.
     else
       equation
         print("Couldn't find corresponding inner component for " +&
@@ -680,6 +780,11 @@ algorithm
 end findInnerComponent;
 
 protected function findInnerComponent2
+  "Helper function to findInnerComponent. Tries to find an inner component with
+   the name inComponentName and a subprefix of inPrefix. The search is done by
+   shortening the prefix until a match is found or the search fails. E.g. for an
+   outer component a.b.c.d we will search for a.b.d, a.d and d, until we find an
+   inner component."
   input String inComponentName;
   input list<String> inPrefix;
   input SymbolTable inSymbolTable;
@@ -693,6 +798,7 @@ algorithm
       Absyn.Path path;
       Component comp;
 
+    // Empty prefix, see if there's an inner component with a non-qualified name.
     case (_, {}, _)
       equation
         path = Absyn.IDENT(inComponentName);
@@ -701,15 +807,21 @@ algorithm
       then
         (path, comp);
 
+    // Some prefix, join the prefix with the component name and see if it
+    // corresponds to an inner component.
     case (_, _ :: _, _)
       equation
         pathl = inComponentName :: inPrefix;
         path = Absyn.stringListPathReversed(pathl);
         comp = get(path, inSymbolTable);
+        // TODO: If we find a component with this name that's not inner, is that
+        // an error?
         true = InstUtil.isInnerComponent(comp);
       then
         (path, comp);
         
+    // Previous case failed, but we have some prefix. Remove the first part of
+    // the prefix and try again.
     case (_, _ :: pathl, _)
       equation
         (path, comp) = findInnerComponent2(inComponentName, pathl, inSymbolTable);
@@ -720,6 +832,8 @@ algorithm
 end findInnerComponent2;
 
 public function showCyclicDepError
+  "Used to print an error message in case we detect any cyclic dependencies
+   during typing."
   input SymbolTable inSymbolTable;
 algorithm
   _ := matchcontinue(inSymbolTable)
@@ -750,6 +864,8 @@ algorithm
 end showCyclicDepError;
 
 protected function findCyclicDependencies
+  "Helper function to showCyclicDepError. Uses the graph algorithms to find all
+   expressions that are cyclically dependent."
   input SymbolTable inSymbolTable;
   output list<DAE.Exp> outDeps;
 protected
@@ -766,6 +882,7 @@ algorithm
 end findCyclicDependencies;
   
 protected function buildDependencyGraph
+  "Helper function to findCyclicDependencies. Used to build the dependency graph."
   input list<tuple<Absyn.Path, Component>> inComponents;
   input list<tuple<DAE.Exp, list<DAE.Exp>>> inAccumGraph;
   output list<tuple<DAE.Exp, list<DAE.Exp>>> outGraph;
@@ -798,6 +915,7 @@ algorithm
 end buildDependencyGraph;
   
 public function addBindingDependency
+  "Helper function to buildDependencyGraph. Adds a dependency for a binding."
   input Binding inBinding;
   input Absyn.Path inComponentName;
   input list<tuple<DAE.Exp, list<DAE.Exp>>> inAccumGraph;
@@ -823,6 +941,8 @@ algorithm
 end addBindingDependency;
 
 protected function getDependenciesFromExp
+  "Helper function to addBindingDependency. Extracts all dependencies from an
+   expression."
   input DAE.Exp inExp;
   output list<DAE.Exp> outDeps;
 algorithm
@@ -830,6 +950,7 @@ algorithm
 end getDependenciesFromExp;
 
 protected function expDependencyTraverser
+  "Traversal function used by getDependenciesFromExp."
   input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
   output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
 algorithm
@@ -847,6 +968,7 @@ algorithm
 end expDependencyTraverser;
 
 protected function nodeEqual
+  "Checks if two nodes in the dependency graph are equal."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   output Boolean outIsEqual;
@@ -864,6 +986,7 @@ algorithm
 end nodeEqual;
 
 public function dumpSymbolTableKeys
+  "Prints all keys in the symboltable to the standard output."
   input SymbolTable inSymbolTable;
 algorithm
   _ := matchcontinue(inSymbolTable)
@@ -885,6 +1008,7 @@ algorithm
 end dumpSymbolTableKeys;
   
 public function dumpSymbolTable
+  "Prints the symboltable to standard output."
   input SymbolTable inSymbolTable;
 algorithm
   _ := match(inSymbolTable)
