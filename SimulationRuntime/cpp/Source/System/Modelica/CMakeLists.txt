@@ -18,7 +18,7 @@ set (MODELICA_SYSTEM_LIB ${libModelicaSystemName})
   )
 
 
-install (TARGETS Modelica DESTINATION bin)
+#install (TARGETS Modelica DESTINATION bin)
 install (FILES 
 				
 				${PROJECT_BINARY_DIR}/ModelicaConfic.inc
