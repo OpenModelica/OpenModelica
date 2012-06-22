@@ -429,29 +429,7 @@ public function printListStr
     output String outString;
   end FuncTypeType_aToString;
 algorithm
-  outString := matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
-    local
-      Ident s,srest,sep;
-      Type_a h;
-      FuncTypeType_aToString r;
-      list<Type_a> t;
-    
-    case ({},_,_) then "";
-    
-    case ({h},r,_)
-      equation
-        s = r(h);
-      then
-        s;
-    
-    case ((h :: t),r,sep)
-      equation
-        s = r(h);
-        srest = printListStr(t, r, sep);
-        s = stringAppendList({s, sep, srest});
-      then
-        s;
-  end matchcontinue;
+  outString := stringDelimitList(List.map(inTypeALst,inFuncTypeTypeAToString),inString);
 end printListStr;
 
 public function debugPrintSubscriptStr "

@@ -529,12 +529,13 @@ public function printComponentRefStr
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentRef)
+  outString := match (inComponentRef)
     local
-      DAE.Ident s,str,strrest;
+      DAE.Ident s,str,strrest,strseb;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       DAE.Type ty;
+      Boolean b;
     
     // Optimize -- a function call less
     case (DAE.CREF_IDENT(ident = s,identType = ty,subscriptLst = {}))
@@ -548,28 +549,20 @@ algorithm
         str;
     
     // Qualified - Modelica output - does not handle names with underscores
-    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
-      equation
-        true = Config.modelicaOutput();
-        str = printComponentRef2Str(s, subs);
-        strrest = printComponentRefStr(cr);
-        str = stringAppendList({str, "__", strrest});
-      then
-        str;
-    
     // Qualified - non Modelica output
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        false = Config.modelicaOutput();
+        b = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str = stringAppendList({str, ".", strrest});
+        strseb = Util.if_(b,"__",".");
+        str = stringAppendList({str, strseb, strrest});
       then
         str;
     
     // Wild 
     case DAE.WILD() then "_";
-  end matchcontinue;
+  end match;
 end printComponentRefStr;
 
 public function printComponentRef2Str
@@ -579,32 +572,27 @@ public function printComponentRef2Str
   input list<DAE.Subscript> inSubscriptLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inIdent,inSubscriptLst)
+  outString := match (inIdent,inSubscriptLst)
     local
-      DAE.Ident s,str;
+      DAE.Ident s,str,strseba,strsebb;
       list<DAE.Subscript> l;
+      Boolean b;
     
     // no subscripts
     case (s,{}) then s;
     
     // some subscripts, Modelica output
-    case (s,l)
-      equation
-        true = Config.modelicaOutput();
-        str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        str = stringAppendList({s, "_L", str, "_R"});
-      then
-        str;
-    
     // some subscripts, non Modelica output
     case (s,l)
       equation
-        false = Config.modelicaOutput();
+        b = Config.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        str = stringAppendList({s, "[", str, "]"});
+        ((strseba,strsebb)) = Util.if_(b,("_L","_R"),("[","]")); 
+        str = stringAppendList({s, strseba, str, strsebb});
       then
         str;
-  end matchcontinue;
+    
+  end match;
 end printComponentRef2Str;
 
 public function debugPrintComponentRefTypeStr "Function: debugPrintComponentRefTypeStr
