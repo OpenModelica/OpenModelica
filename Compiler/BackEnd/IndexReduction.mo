@@ -1380,9 +1380,8 @@ algorithm
     case (_,_,_,_,_,_,_,_)
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
-        cvars1 = BackendEquation.equationsLstVars(eqnslst, hov, BackendDAEUtil.emptyVars());
         eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars1,BackendVariable.numVariables(cvars1),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,BackendDAEUtil.emptyVars());
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,BackendDAEUtil.emptyVars());
         // get derivatives one order less
         lov = lowerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so);
         // call again with original equations of derived equations 
@@ -1680,39 +1679,6 @@ algorithm
         list<Integer> unassigned;  
     case(_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        m = incidenceMatrixfromEnhanced2(me);
-        mT = incidenceMatrixfromEnhanced2(meT);  
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
-        Matching.matchingExternalsetIncidenceMatrix(eqnsSize,varSize,mT);
-        BackendDAEEXT.matching(eqnsSize,varSize,3,-1,1.0,1);
-        vec1 = arrayCreate(eqnsSize,-1);
-        vec2 = arrayCreate(varSize,-1);
-        BackendDAEEXT.getAssignment(vec2,vec1);         
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec1);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec2);
-/*        (states,_) = checkAssignment(1,varSize,vec2,vars,{},{});
-        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
-        rang = eqnsSize-listLength(states);
-        true = intEq(rang,0);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize-rang,"\n"));        
-        (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
-      then
-        (hov1,dummystates,lov,isyst,ishared); 
-*/
-        (dstates,states) = checkAssignment(1,varSize,vec2,vars,{},{});
-        {} = Matching.getUnassigned(eqnsSize, vec1, {});
-        
-        Debug.fcall(Flags.BLT_DUMP, print, ("dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));     
-        Debug.fcall(Flags.BLT_DUMP, print, ("States:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));                
-        
-        (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives2(dstates,states,{},me,meT,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov);
-      then
-        (hov1,dummystates,lov,syst,shared);          
-    case(_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
         m = incidenceMatrixfromEnhanced(me);
         mT = incidenceMatrixfromEnhanced(meT);  
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
@@ -1853,12 +1819,14 @@ algorithm
         
         Debug.fcall(Flags.BLT_DUMP, print, ("StatesSet:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((crset,ComponentReference.printComponentRefStr,"\n","\n")));
+        
         // get Partial derivative of system for states
         eqn = BackendDAEUtil.equationNth(eqns, 0);
         BackendDAE.RESIDUAL_EQUATION(exp=exp) = BackendEquation.equationToResidualForm(eqn);
         explst = List.map1(crstates,differentiateExp,exp);
         Debug.fcall(Flags.BLT_DUMP, print, ("Partial Derivaives:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((explst,ExpressionDump.printExpStr,"\n","\n")));
+        
         // generate condition equation
         contExp = generateCondition(1,listLength(states),listArray(explst));
         ((contstartExp,_)) = Expression.traverseExp(contExp, changeVarToStartValue, BackendVariable.daeVars(isyst));
@@ -2298,45 +2266,6 @@ algorithm
     else then iRow;
   end match;
 end incidenceMatrixElementElementfromEnhanced1;
-
-protected function incidenceMatrixfromEnhanced2
-"function: incidenceMatrixfromEnhanced2
-  author: Frenkel TUD 2012-05
-  converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
-  input BackendDAE.AdjacencyMatrixEnhanced me;
-  output BackendDAE.IncidenceMatrix m;
-algorithm
-  m := Util.arrayMap(me,incidenceMatrixElementfromEnhanced2);
-end incidenceMatrixfromEnhanced2;
-
-protected function incidenceMatrixElementfromEnhanced2
-"function: incidenceMatrixElementfromEnhanced2
-  author: Frenkel TUD 2012-05
-  helper for incidenceMatrixfromEnhanced2"
-  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
-  output BackendDAE.IncidenceMatrixElement oRow;
-algorithm
-//  oRow := List.map(List.sort(iRow,AdjacencyMatrixElementEnhancedCMP), incidenceMatrixElementElementfromEnhanced);
-  oRow := List.fold(iRow, incidenceMatrixElementElementfromEnhanced2, {});
-  oRow := listReverse(oRow);
-end incidenceMatrixElementfromEnhanced2;
-
-protected function incidenceMatrixElementElementfromEnhanced2
-"function: incidenceMatrixElementElementfromEnhanced2
-  author: Frenkel TUD 2012-05
-  converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
-  input tuple<Integer, BackendDAE.Solvability> inTpl;
-  input list<Integer> iRow;
-  output list<Integer> oRow;
-algorithm
-  oRow := match(inTpl,iRow)
-    local Integer i;
-    case ((i,BackendDAE.SOLVABILITY_SOLVED()),_) then i::iRow;
-    case ((i,BackendDAE.SOLVABILITY_CONSTONE()),_) then i::iRow;
-    case ((i,BackendDAE.SOLVABILITY_CONST()),_) then i::iRow;
-    else then iRow;
-  end match;
-end incidenceMatrixElementElementfromEnhanced2;
 
 protected function checkAssignment
 "function: checkAssignment
