@@ -545,6 +545,39 @@ algorithm
   end match;
 end consOnBool;
 
+public function consN
+  "concate n time inElement to the list:
+  n = 5, inElement=1, list={1,2} -> list={1,1,1,1,1,1,2}"
+  input Integer size;
+  input ElementType inElement;
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := matchcontinue(size,inElement,inList)
+    case(0,_,_) then inList;
+    case(_,_,_)
+      equation
+        true = intGt(size,0);
+      then
+        consN_impl(size,inElement,inList);
+    else then inList;
+  end matchcontinue;
+end consN;
+
+protected function consN_impl
+  "concate n time inElement to the list:
+  n = 5, inElement=1, list={1,2} -> list={1,1,1,1,1,1,2}"
+  input Integer size;
+  input ElementType inElement;
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := match(size,inElement,inList)
+    case(0,_,_) then inList;
+    else then consN(size-1,inElement,inElement::inList);
+  end match;
+end consN_impl;
+
 public function appendNoCopy
   "This function handles special cases such as empty lists so it does not copy
    if any of the arguments are empty lists."
