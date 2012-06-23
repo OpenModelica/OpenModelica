@@ -3403,7 +3403,7 @@ algorithm
       BackendDAE.Equation e;
       list<DAE.Exp> expl1;
       list<DAE.ComponentRef> cr_lst,cr_lst1;
-    case ((e as BackendDAE.ALGORITHM(out=expl1) ,cr_lst))
+    case ((e as BackendDAE.ALGORITHMWRAPPER(out=expl1) ,cr_lst))
       equation
         // why?
         //true = BackendEquation.equationAlgorithm(e);
@@ -4008,7 +4008,7 @@ algorithm
         // Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(algorithms=algs), helpVarInfo, false, true,_)
       equation
-        BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source)  = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.ALGORITHMWRAPPER(indx,algInputs,DAE.CREF(varOutput,_)::_,source)  = BackendDAEUtil.equationNth(eqns, eqNum-1);
         v = BackendVariable.getVarAt(vars,varNum); 
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
@@ -4023,7 +4023,7 @@ algorithm
         // Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(algorithms=algs), helpVarInfo, false, false,_)
       equation
-        BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.ALGORITHMWRAPPER(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         v = BackendVariable.getVarAt(vars,varNum); 
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
@@ -4037,7 +4037,7 @@ algorithm
         // inverse Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(algorithms=algs), helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
-        BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.ALGORITHMWRAPPER(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         v = BackendVariable.getVarAt(vars,varNum);
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
@@ -4049,7 +4049,7 @@ algorithm
         // Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(algorithms=algs), helpVarInfo, true, false,_)
       equation
-        BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.ALGORITHMWRAPPER(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         v = BackendVariable.getVarAt(vars,varNum);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
@@ -4064,7 +4064,7 @@ algorithm
         // inverse Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(algorithms=algs), helpVarInfo, true, skipDiscInAlgorithm,_)
       equation
-        BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.ALGORITHMWRAPPER(indx,algInputs,DAE.CREF(varOutput,_)::_,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         v = BackendVariable.getVarAt(vars,varNum);
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
@@ -4302,7 +4302,7 @@ algorithm
       BackendDAE.Equation e;
       list<BackendDAE.Equation> rest,arg,arg1;
     case ({},_,_,_) then ((inAccEqs,inAccSize));
-    case (BackendDAE.COMPLEX_EQUATION(index=indx)::rest,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=indx)::rest,_,_,_)
       equation
         true = intEq(indx,inIndex);
       then
@@ -4446,7 +4446,7 @@ algorithm
         (SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,entrylst1,uniqueEqIndex+1);
         
         // An array equation
-    case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), _, _, _, _,_,_)
+    case ((BackendDAE.ARRAY_EQUATIONWRAPPER(index=aindx) :: rest), _, _, _, _,_,_)
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2, source=source) = aeqns[aindx+1];
         tp = Expression.typeof(e1);
@@ -4462,7 +4462,7 @@ algorithm
         (SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,entrylst2,uniqueEqIndex+1);
         
         // An complex equation
-    case ((BackendDAE.COMPLEX_EQUATION(index=aindx) :: rest), _, _, _, _,_,_)
+    case ((BackendDAE.COMPLEX_EQUATIONWRAPPER(index=aindx) :: rest), _, _, _, _,_,_)
       equation
         BackendDAE.COMPLEXEQUATION(size=size,left=e1, right=e2, source=source) = ce[aindx];
         ((eqns,indx)) = stripComplexEquationWrapper(rest,aindx,{},1);
@@ -4497,7 +4497,7 @@ algorithm
       then
         fail();
         
-    case ((BackendDAE.ALGORITHM(index = indx,out=explst,source=source) :: rest), _, _, _, _,_,_)
+    case ((BackendDAE.ALGORITHMWRAPPER(index = indx,out=explst,source=source) :: rest), _, _, _, _,_,_)
       equation
         alg = algs[indx + 1];
         explst = List.map(explst,replaceDerOpInExp);
@@ -5731,7 +5731,7 @@ algorithm
       DAE.ElementSource source;
       SimEqSystem equation_;
       
-    case (BackendDAE.COMPLEX_EQUATION(index=indx)::_,ce,BackendDAE.VAR(varName = cr)::_,helpVarInfo,_)
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=indx)::_,ce,BackendDAE.VAR(varName = cr)::_,helpVarInfo,_)
       equation
         BackendDAE.COMPLEXEQUATION(i,e1,e2,source) = ce[indx];
         // We need to strip subs from the name since they are removed in cr.
@@ -5846,7 +5846,7 @@ algorithm
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
       
-    case (genDiscrete,BackendDAE.ARRAY_EQUATION(index=indx)::_,ae,BackendDAE.VAR(varName = cr)::_,helpVarInfo,_)
+    case (genDiscrete,BackendDAE.ARRAY_EQUATIONWRAPPER(index=indx)::_,ae,BackendDAE.VAR(varName = cr)::_,helpVarInfo,_)
       equation
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         // We need to strip subs from the name since they are removed in cr.
@@ -5858,7 +5858,7 @@ algorithm
       then
         ({equation_},{equation_},uniqueEqIndex);
         
-    case (genDiscrete,BackendDAE.ARRAY_EQUATION(index=indx)::_,ae,vars,helpVarInfo,_)
+    case (genDiscrete,BackendDAE.ARRAY_EQUATIONWRAPPER(index=indx)::_,ae,vars,helpVarInfo,_)
       equation
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
@@ -5916,7 +5916,7 @@ algorithm
       DAE.ElementSource source;
       
       // normal call
-    case (BackendDAE.ALGORITHM(index=indx,out=algOutExpVars)::_,_,_,false,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index=indx,out=algOutExpVars)::_,_,_,false,_)
       equation
         alg = al[indx + 1];
         solvedVars = List.map(vars,BackendVariable.varCref);
@@ -5928,7 +5928,7 @@ algorithm
         ({SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
         
         // remove discrete Vars
-    case (BackendDAE.ALGORITHM(index=indx,out=algOutExpVars)::_,_,_,true,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index=indx,out=algOutExpVars)::_,_,_,true,_)
       equation
         alg = al[indx + 1];
         solvedVars = List.map(vars,BackendVariable.varCref);
@@ -5941,7 +5941,7 @@ algorithm
         ({SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
         
         // Error message, inverse algorithms not supported yet
-    case (BackendDAE.ALGORITHM(index=indx,out=algOutExpVars,source=source)::_,_,_,skipDiscinAlgorithm,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index=indx,out=algOutExpVars,source=source)::_,_,_,skipDiscinAlgorithm,_)
       equation
         alg = al[indx + 1];
         solvedVars = List.map(vars,BackendVariable.varCref);
@@ -6162,7 +6162,7 @@ algorithm
       
     case (BackendDAE.RESIDUAL_EQUATION(exp_, source),_,_) then (SES_RESIDUAL(iuniqueEqIndex,exp_, source),iuniqueEqIndex+1);
       
-    case (BackendDAE.ALGORITHM(index=indx),_,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index=indx),_,_)
       equation
         alg = algs[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
@@ -8647,12 +8647,12 @@ algorithm
       list<BackendDAE.Equation> res;
       Integer i,i1;
     case ({},_) then ();
-    case ((BackendDAE.ALGORITHM(index = i) :: res),NONE())
+    case ((BackendDAE.ALGORITHMWRAPPER(index = i) :: res),NONE())
       equation
         singleAlgorithmSectionList(res,SOME(i));
       then
         ();
-    case ((BackendDAE.ALGORITHM(index = i) :: res),SOME(i1))
+    case ((BackendDAE.ALGORITHMWRAPPER(index = i) :: res),SOME(i1))
       equation
         true = intEq(i,i1);
         singleAlgorithmSectionList(res,SOME(i1));
@@ -8670,9 +8670,9 @@ algorithm
     local 
       BackendDAE.Equation e;
       Integer i,i1;
-    case ((e as BackendDAE.ALGORITHM(index = i),NONE()))
+    case ((e as BackendDAE.ALGORITHMWRAPPER(index = i),NONE()))
     then ((e,true,SOME(i)));
-    case ((e as BackendDAE.ALGORITHM(index = i),SOME(i1)))
+    case ((e as BackendDAE.ALGORITHMWRAPPER(index = i),SOME(i1)))
       equation
         true = intEq(i,i1);
       then
@@ -8708,9 +8708,9 @@ algorithm
     local 
       BackendDAE.Equation e;
       Integer i,i1;
-    case ((e as BackendDAE.ARRAY_EQUATION(index = i),NONE()))
+    case ((e as BackendDAE.ARRAY_EQUATIONWRAPPER(index = i),NONE()))
     then ((e,true,SOME(i)));
-    case ((e as BackendDAE.ARRAY_EQUATION(index = i),SOME(i1)))
+    case ((e as BackendDAE.ARRAY_EQUATIONWRAPPER(index = i),SOME(i1)))
       equation
         true = intEq(i,i1);
       then
@@ -11250,14 +11250,14 @@ algorithm oeqns := matchcontinue(eqns, dlow)
        //rec = List.unionElt(eq,rec);
       then
         rec;
-     case( (eq as BackendDAE.ALGORITHM(index=_)) ::rest , dlow)
+     case( (eq as BackendDAE.ALGORITHMWRAPPER(index=_)) ::rest , dlow)
      equation
        //str = DAELow.equationStr(eq);
        rec = flattenEqns(rest,dlow);
        rec = List.unionElt(eq,rec);
       then
         rec;
-     case( (eq as BackendDAE.ARRAY_EQUATION(index=_)) ::rest , dlow)
+     case( (eq as BackendDAE.ARRAY_EQUATIONWRAPPER(index=_)) ::rest , dlow)
      equation
        //str = DAELow.equationStr(eq);
        rec = flattenEqns(rest,dlow);
@@ -11362,19 +11362,19 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
- case(derExp, (eq as BackendDAE.ARRAY_EQUATION(index=_))::eqs,inEqnsOrg)
+ case(derExp, (eq as BackendDAE.ARRAY_EQUATIONWRAPPER(index=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall(Flags.CPP_VAR,print, "\nFound  array equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
-  case(derExp, (eq as BackendDAE.IF_EQUATION(indx=_))::eqs,inEqnsOrg)
+  case(derExp, (eq as BackendDAE.IF_EQUATION(conditions=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall(Flags.CPP_VAR,print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
- case(derExp, (eq as BackendDAE.ALGORITHM(index=_))::eqs,inEqnsOrg)
+ case(derExp, (eq as BackendDAE.ALGORITHMWRAPPER(index=_))::eqs,inEqnsOrg)
     equation
       Debug.fcall(Flags.CPP_VAR,print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);

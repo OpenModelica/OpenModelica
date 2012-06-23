@@ -223,11 +223,11 @@ algorithm
       then
         BackendDAE.EQUATION(e1_1,e2_1,source);
 
-    case(BackendDAE.ARRAY_EQUATION(i,explst,source),_)
+    case(BackendDAE.ARRAY_EQUATIONWRAPPER(i,explst,source),_)
       equation
         (explst_1,source) = inlineExps(explst,fns,source);
       then
-        BackendDAE.ARRAY_EQUATION(i,explst_1,source);
+        BackendDAE.ARRAY_EQUATIONWRAPPER(i,explst_1,source);
 
     case(BackendDAE.SOLVED_EQUATION(cref,e,source),_)
       equation
@@ -241,12 +241,12 @@ algorithm
       then
         BackendDAE.RESIDUAL_EQUATION(e_1,source);
 
-    case(BackendDAE.ALGORITHM(i,explst1,explst2,source),_)
+    case(BackendDAE.ALGORITHMWRAPPER(i,explst1,explst2,source),_)
       equation
         (explst1_1,source) = inlineExps(explst1,fns,source);
         (explst2_1,source) = inlineExps(explst2,fns,source);
       then
-        BackendDAE.ALGORITHM(i,explst1_1,explst2_1,source);
+        BackendDAE.ALGORITHMWRAPPER(i,explst1_1,explst2_1,source);
 
     case(BackendDAE.WHEN_EQUATION(weq,source),_)
       equation
@@ -254,11 +254,11 @@ algorithm
       then
         BackendDAE.WHEN_EQUATION(weq_1,source);
   
-    case(BackendDAE.COMPLEX_EQUATION(index=i,crefOrDerCref=explst,source=source),_)
+    case(BackendDAE.COMPLEX_EQUATIONWRAPPER(index=i,crefOrDerCref=explst,source=source),_)
       equation
         (explst_1,source) = inlineExps(explst,fns,source);
       then
-        BackendDAE.COMPLEX_EQUATION(i,explst_1,source);
+        BackendDAE.COMPLEX_EQUATIONWRAPPER(i,explst_1,source);
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEq failed");

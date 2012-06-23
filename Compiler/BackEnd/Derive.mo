@@ -116,7 +116,7 @@ algorithm
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         true = intEq(index,-1);
         //e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
@@ -125,11 +125,11 @@ algorithm
         // e2_2 = ExpressionSimplify.simplify(e2_1);
       then
         // because der(Record) is not jet implemented -> fail()
-        //(BackendDAE.COMPLEX_EQUATION(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
+        //(BackendDAE.COMPLEX_EQUATIONWRAPPER(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
         fail();
    
     // Array Equations    
-    case (BackendDAE.ARRAY_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Equation
         i_1 = index+1;
@@ -149,12 +149,12 @@ algorithm
         // only add algorithm if it is not already derived 
         (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
       then
-        //(BackendDAE.ARRAY_EQUATION(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
+        //(BackendDAE.ARRAY_EQUATIONWRAPPER(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
         // Until the array equations will be unrolled we should return true to add an equation for every element
-        (BackendDAE.ARRAY_EQUATION(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
+        (BackendDAE.ARRAY_EQUATIONWRAPPER(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
     
     // diverivative of function with multiple outputs
-    case (BackendDAE.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,shared as BackendDAE.SHARED(functionTree=funcs),al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.ALGORITHMWRAPPER(index = index,in_=in_,out=out,source=source),timevars,shared as BackendDAE.SHARED(functionTree=funcs),al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
@@ -166,13 +166,13 @@ algorithm
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,shared));
         // inputs
-        ((in_1,_)) = BackendDAECreate.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}));
+        ((in_1,_)) = BackendDAECreate.lowerAlgorithmInputsOutputs1(timevars,{DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
         // only add algorithm if it is not already derived 
         (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}),listLength(out1),inDerivedAlgs);
        then
-        (BackendDAE.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
+        (BackendDAE.ALGORITHMWRAPPER(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     
-    case (BackendDAE.COMPLEX_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_)
       equation
         se1 = intString(index);
         //se1 = ExpressionDump.printExpStr(e1);

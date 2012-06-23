@@ -117,10 +117,17 @@ uniontype Equation "- Equation"
     .DAE.ElementSource source "origin of equation";
   end EQUATION;
 
-  record ARRAY_EQUATION
+  record ARRAY_EQUATIONWRAPPER
     Integer index "index ; index in arrayequations 0..n-1" ;
     list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
     .DAE.ElementSource source "origin of equation";
+  end ARRAY_EQUATIONWRAPPER;
+
+  record ARRAY_EQUATION
+    list<Integer> dimSize "dimSize ; dimension sizes" ;
+    .DAE.Exp left "left ; lhs" ;
+    .DAE.Exp right "right ; rhs" ;
+    .DAE.ElementSource source "the element source";
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
@@ -135,28 +142,40 @@ uniontype Equation "- Equation"
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
+    Integer size "size of equation" ;
+    .DAE.Algorithm alg;
+    .DAE.ElementSource source "origin of algorithm";
+  end ALGORITHM;
+  
+  record ALGORITHMWRAPPER
     Integer index      "Index in algorithms, 0..n-1" ;
     list< .DAE.Exp> in_  "Inputs CREF or der(CREF)" ;
     list< .DAE.Exp> out  "Outputs CREF or der(CREF)" ;
     .DAE.ElementSource source "origin of algorithm";
-  end ALGORITHM;
+  end ALGORITHMWRAPPER;  
 
   record WHEN_EQUATION
     WhenEquation whenEquation "whenEquation" ;
     .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;
 
-  record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
+  record COMPLEX_EQUATIONWRAPPER "complex equations: recordX = function call(x, y, ..);"
     Integer index "Index in algorithm clauses";
     list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
     .DAE.ElementSource source "origin of equation";
+  end COMPLEX_EQUATIONWRAPPER;
+  
+  record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
+     Integer size "size of equation" ;
+    .DAE.Exp left "left ; lhs" ;
+    .DAE.Exp right "right ; rhs" ;
+    .DAE.ElementSource source "the element source";  
   end COMPLEX_EQUATION;
   
-  
   record IF_EQUATION " an if-equation"
-    Integer indx "" ;
-    Integer eindx "" ;
-    list< .DAE.Exp> expl "" ;
+    list< .DAE.Exp> conditions "Condition";
+    list<list<Equation>> eqnstrue "Equations of true branch";
+    list<Equation> eqnsfalse "Equations of false branch";
     .DAE.ElementSource source "origin of equation";
   end IF_EQUATION;
 

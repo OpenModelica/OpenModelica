@@ -1558,7 +1558,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
       equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
@@ -1654,7 +1654,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.ALGORITHM(index = i),indexS,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index = i),indexS,_)
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
@@ -3704,7 +3704,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
       equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
@@ -3808,7 +3808,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.ALGORITHM(index = i),indexS,_)
+    case (BackendDAE.ALGORITHMWRAPPER(index = i),indexS,_)
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);

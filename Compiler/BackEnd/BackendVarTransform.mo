@@ -1009,23 +1009,23 @@ algorithm
       Boolean b1,b2;
 
     case ({},_) then {};
-    case ((BackendDAE.ARRAY_EQUATION(indx,expl,source)::es),repl)
+    case ((BackendDAE.ARRAY_EQUATIONWRAPPER(indx,expl,source)::es),repl)
       equation
         (expl1,true) = replaceExpList(expl,repl,NONE(),{},false);
         /* TODO: Add symbolic operation to source */
         expl2 = ExpressionSimplify.simplifyList(expl1,{});
         es_1 = replaceEquations(es,repl);
       then
-         (BackendDAE.ARRAY_EQUATION(indx,expl2,source)::es_1);
+         (BackendDAE.ARRAY_EQUATIONWRAPPER(indx,expl2,source)::es_1);
 
-    case ((BackendDAE.COMPLEX_EQUATION(indx,expl,source)::es),repl)
+    case ((BackendDAE.COMPLEX_EQUATIONWRAPPER(indx,expl,source)::es),repl)
       equation
         (expl1,true) = replaceExpList(expl,repl,NONE(),{},false);
         /* TODO: Add symbolic operation to source */
         expl2 = ExpressionSimplify.simplifyList(expl1,{});
         es_1 = replaceEquations(es,repl);
       then
-         (BackendDAE.COMPLEX_EQUATION(indx,expl2,source)::es_1);
+         (BackendDAE.COMPLEX_EQUATIONWRAPPER(indx,expl2,source)::es_1);
 
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl)
       equation
@@ -1042,7 +1042,7 @@ algorithm
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source) :: es_1);
 
-    case (((BackendDAE.ALGORITHM(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
+    case (((BackendDAE.ALGORITHMWRAPPER(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
       equation
         (expl,b1) = replaceExpList(expl,repl,NONE(),{},false);
         (expl1,true) = replaceExpList(expl1,repl,NONE(),{},b1);
@@ -1053,7 +1053,7 @@ algorithm
         // inputs and ouputs are updated from DAELow.updateAlgorithmInputsOutputs       
         es_1 = replaceEquations(es, repl);
       then
-        (BackendDAE.ALGORITHM(indx,expl,expl1,source) :: es_1);
+        (BackendDAE.ALGORITHMWRAPPER(indx,expl,expl1,source) :: es_1);
 
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation

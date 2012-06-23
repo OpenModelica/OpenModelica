@@ -996,11 +996,11 @@ algorithm
       Integer i,i1;
       Option<Integer> oi;
     case ({},SOME(i)) then SOME(i);
-    case (BackendDAE.ALGORITHM(index = i)::eqnlst,NONE())
+    case (BackendDAE.ALGORITHMWRAPPER(index = i)::eqnlst,NONE())
       equation
         oi = singleAlgorithmEquation(eqnlst,SOME(i));
     then oi;
-    case (BackendDAE.ALGORITHM(index = i)::eqnlst,SOME(i1))
+    case (BackendDAE.ALGORITHMWRAPPER(index = i)::eqnlst,SOME(i1))
       equation
         true = intEq(i,i1);
         oi = singleAlgorithmEquation(eqnlst,SOME(i));
@@ -1021,11 +1021,11 @@ algorithm
       Integer i,i1;
       Option<Integer> oi;
     case ({},SOME(i)) then SOME(i);
-    case (BackendDAE.ARRAY_EQUATION(index = i)::eqnlst,NONE())
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = i)::eqnlst,NONE())
       equation
         oi = singleArrayEquation(eqnlst,SOME(i));
     then oi;
-    case (BackendDAE.ARRAY_EQUATION(index = i)::eqnlst,SOME(i1))
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = i)::eqnlst,SOME(i1))
       equation
         true = intEq(i,i1);
         oi = singleArrayEquation(eqnlst,SOME(i));
@@ -1047,11 +1047,11 @@ algorithm
       Integer i,i1;
       Option<Integer> oi;
     case ({},SOME(i)) then SOME(i);
-    case (BackendDAE.COMPLEX_EQUATION(index = i)::eqnlst,NONE())
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = i)::eqnlst,NONE())
       equation
         oi = singleComplexEquation(eqnlst,SOME(i));
     then oi;
-    case (BackendDAE.COMPLEX_EQUATION(index = i)::eqnlst,SOME(i1))
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = i)::eqnlst,SOME(i1))
       equation
         true = intEq(i,i1);
         oi = singleComplexEquation(eqnlst,SOME(i));
@@ -2574,7 +2574,7 @@ algorithm
     case ((e,_,_)::rest,syst as BackendDAE.EQSYSTEM(orderedEqs=eqnsarr),ae,arrayListeqns)
       equation
         e_1 = e - 1;
-        BackendDAE.ARRAY_EQUATION(index=i) = BackendDAEUtil.equationNth(eqnsarr, e_1);
+        BackendDAE.ARRAY_EQUATIONWRAPPER(index=i) = BackendDAEUtil.equationNth(eqnsarr, e_1);
         {} = arrayListeqns[i+1];
         meqn = ae[i+1];
         eqns = BackendDAEOptimize.getScalarArrayEqns(meqn);
@@ -3022,7 +3022,7 @@ algorithm
       BackendDAE.EquationArray eqnsarr;
       array<BackendDAE.MultiDimEquation> ae;
       BackendDAE.MultiDimEquation me;
-    case (orgeqn as BackendDAE.ARRAY_EQUATION(index=i),eqnsarr,ae,inFunctions)
+    case (orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i),eqnsarr,ae,inFunctions)
       equation
         SOME(orgeqn) = Inline.inlineEqOpt(SOME(orgeqn),(SOME(inFunctions),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}));
         SOME(orgeqn) = Inline.inlineEqOpt(SOME(orgeqn),(SOME(inFunctions),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}));
@@ -3793,7 +3793,7 @@ algorithm
     case ((ep,l,b)::rest,repl,BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching),shared as BackendDAE.SHARED(arrayEqs=ae))
       equation
         e_1 = ep - 1;
-        (orgeqn as BackendDAE.ARRAY_EQUATION(index=i)) = BackendDAEUtil.equationNth(eqnsarr, e_1);        
+        (orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i)) = BackendDAEUtil.equationNth(eqnsarr, e_1);        
         BackendDAE.MULTIDIM_EQUATION(dims,exp1,exp2,source) = ae[i+1];
         (exp1,_) = BackendVarTransform.replaceExp(exp1, repl,NONE());
         (exp2,_) = BackendVarTransform.replaceExp(exp2, repl,NONE());   
@@ -3866,7 +3866,7 @@ algorithm
     case ((e,ep,l)::rest,repl,BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching),shared as BackendDAE.SHARED(arrayEqs=ae,eventInfo=BackendDAE.EVENT_INFO(wclst,zc)))
       equation
         e_1 = ep - 1;
-        (orgeqn as BackendDAE.ARRAY_EQUATION(index=i)) = BackendDAEUtil.equationNth(eqnsarr, e_1);        
+        (orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i)) = BackendDAEUtil.equationNth(eqnsarr, e_1);        
         BackendDAE.MULTIDIM_EQUATION(dims,exp1,exp2,source) = ae[i+1];
         (exp1,_) = BackendVarTransform.replaceExp(exp1, repl,NONE());
         (exp2,_) = BackendVarTransform.replaceExp(exp2, repl,NONE());   
@@ -4731,7 +4731,7 @@ algorithm
         jac = calculateJacobian(eqn,ae,al,crlst);
       then
         (e_2::jac);
-    case (eqn as BackendDAE.ARRAY_EQUATION(index=i,crefOrDerCref=elst),ae,al,(cr,_)::crlst)
+    case (eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i,crefOrDerCref=elst),ae,al,(cr,_)::crlst)
       equation
         BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2) = ae[i+1]; 
         e = Expression.expSub(e1,e2);
@@ -4740,7 +4740,7 @@ algorithm
         jac = calculateJacobian(eqn,ae,al,crlst);
       then
         (e_2::jac); 
-    case (eqn as BackendDAE.ALGORITHM(index=i,out=elst),ae,al,(cr,_)::crlst)
+    case (eqn as BackendDAE.ALGORITHMWRAPPER(index=i,out=elst),ae,al,(cr,_)::crlst)
       equation
         blst = List.map1(elst,Expression.expHasCref,cr);
         b = Util.boolOrList(blst);
@@ -4794,7 +4794,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Integer i;
     case ({},_) then ();
-    case ((orgeqn as BackendDAE.ARRAY_EQUATION(index=i))::rest,ae)
+    case ((orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i))::rest,ae)
       equation
         BackendDAE.MULTIDIM_EQUATION(left=exp1,right=exp2) = ae[i+1];
         print("  "); print(BackendDump.equationStr(orgeqn)); print("\n");         
@@ -4855,7 +4855,7 @@ algorithm
     case ((e,l,_)::rest,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae))
       equation
         e_1 = e - 1;
-        (orgeqn as BackendDAE.ARRAY_EQUATION(index=i)) = BackendDAEUtil.equationNth(eqns, e_1); 
+        (orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i)) = BackendDAEUtil.equationNth(eqns, e_1); 
         BackendDAE.MULTIDIM_EQUATION(left=exp1,right=exp2) = ae[i+1];
         print("  "); print(intString(l)); print("  ");  print(BackendDump.equationStr(orgeqn)); print("\n");         
         print("  "); print(ExpressionDump.printExpStr(exp1)); print(" = "); print(ExpressionDump.printExpStr(exp2)); print("\n");
@@ -4911,7 +4911,7 @@ algorithm
     case ((e,ep,l),(BackendDAE.EQSYSTEM(orderedEqs=eqns),BackendDAE.SHARED(arrayEqs=ae)))
       equation
         e_1 = ep - 1;
-        (orgeqn as BackendDAE.ARRAY_EQUATION(index=i)) = BackendDAEUtil.equationNth(eqns, e_1); 
+        (orgeqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i)) = BackendDAEUtil.equationNth(eqns, e_1); 
         BackendDAE.MULTIDIM_EQUATION(left=exp1,right=exp2) = ae[i+1];
         print("  "); print(intString(ep)); print("  ");  print(BackendDump.equationStr(orgeqn)); print("\n");         
         print("  "); print(ExpressionDump.printExpStr(exp1)); print(" = "); print(ExpressionDump.printExpStr(exp2)); print("\n");
@@ -5469,7 +5469,7 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source),inAlgs,ae,ce,wclst,ext_arg_2);
-    case (BackendDAE.ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
       equation
         (expl1,(ops,ext_arg_1)) = BackendEquation.traverseBackendDAEExpList(expl,func,({},inTypeA));
         i = ds+1;
@@ -5478,7 +5478,7 @@ algorithm
         ((e2_1,(ops,ext_arg_3))) = func((e2,(ops,ext_arg_2)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
-      then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1,ce,wclst,ext_arg_3);  /* array equation */
+      then (BackendDAE.ARRAY_EQUATIONWRAPPER(ds,expl1,source),inAlgs,ae1,ce,wclst,ext_arg_3);  /* array equation */
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source),inAlgs,ae,ce,wclst,func,inTypeA)
       equation
         e1 = Expression.crefExp(cr);
@@ -5493,13 +5493,13 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e1_1,source),inAlgs,ae,ce,wclst,ext_arg_1);
-    case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
+    case (BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = in_,out = out,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
       equation
         (in_1,(ops,ext_arg_1)) = BackendEquation.traverseBackendDAEExpList(in_,func,({},inTypeA));
         (out1,(ops,ext_arg_2)) = BackendEquation.traverseBackendDAEExpList(out,func,(ops,ext_arg_1));
         (algs,(ops,ext_arg_3)) = traverseBackendDAEExpsEqnAlgs(indx,inAlgs,func,(ops,ext_arg_2));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-      then (BackendDAE.ALGORITHM(indx,in_1,out1,source),algs,ae,ce,wclst,ext_arg_3);  /* Algorithms */
+      then (BackendDAE.ALGORITHMWRAPPER(indx,in_1,out1,source),algs,ae,ce,wclst,ext_arg_3);  /* Algorithms */
     case (BackendDAE.WHEN_EQUATION(whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae,ce,wclst,func,inTypeA)
       equation
@@ -5522,7 +5522,7 @@ algorithm
         (wclst2,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst1,func,({} /* TODO: Save me?*/,ext_arg_2));
       then
         (res,algs,ae1,ce1,wclst2,ext_arg_3);
-    case (BackendDAE.COMPLEX_EQUATION(index=i,crefOrDerCref = expl,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=i,crefOrDerCref = expl,source = source),inAlgs,ae,ce,wclst,func,inTypeA)
       equation
         (expl1,(ops,ext_arg_1)) = BackendEquation.traverseBackendDAEExpList(expl,func,({},inTypeA));
         BackendDAE.COMPLEXEQUATION(size=indx,left=e1,right = e2,source=source1) = ce[i];
@@ -5531,7 +5531,7 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         ce1 = arrayUpdate(ce,i,BackendDAE.COMPLEXEQUATION(indx,e1_1,e2_1,source1));        
       then
-        (BackendDAE.COMPLEX_EQUATION(i,expl,source),inAlgs,ae,ce1,wclst,ext_arg_2);
+        (BackendDAE.COMPLEX_EQUATIONWRAPPER(i,expl,source),inAlgs,ae,ce1,wclst,ext_arg_2);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation failed!"});

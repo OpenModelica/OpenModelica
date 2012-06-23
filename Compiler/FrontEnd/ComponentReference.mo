@@ -534,15 +534,14 @@ algorithm
       DAE.Ident s,str,strrest,strseb;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
-      DAE.Type ty;
       Boolean b;
     
     // Optimize -- a function call less
-    case (DAE.CREF_IDENT(ident = s,identType = ty,subscriptLst = {}))
+    case (DAE.CREF_IDENT(ident = s,subscriptLst = {}))
       then s;
     
     // idents with subscripts 
-    case DAE.CREF_IDENT(ident = s,identType = ty, subscriptLst = subs)
+    case DAE.CREF_IDENT(ident = s,subscriptLst = subs)
       equation
         str = printComponentRef2Str(s, subs);
       then

@@ -41,8 +41,8 @@ encapsulated package BackendDAECreate
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import Algorithm;
 
-protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -1670,7 +1670,7 @@ algorithm
         expl1 = BackendDAEUtil.statesAndVarsExp(e1, vars);
         expl2 = BackendDAEUtil.statesAndVarsExp(e2, vars);
         expl = listAppend(expl1, expl2);
-        complexEqs = List.fill(BackendDAE.COMPLEX_EQUATION(aindx,expl,source), i);
+        complexEqs = List.fill(BackendDAE.COMPLEX_EQUATIONWRAPPER(aindx,expl,source), i);
         lst = listAppend(complexEqs,lst);
       then
         (lst,indx);
@@ -1867,7 +1867,7 @@ algorithm
         numnodes_1 = numnodes - 1;
         res = lowerMultidimeqn2(expl, numnodes_1, indx, source);
       then
-        (BackendDAE.ARRAY_EQUATION(indx,expl,source) :: res);
+        (BackendDAE.ARRAY_EQUATIONWRAPPER(indx,expl,source) :: res);
   end matchcontinue;
 end lowerMultidimeqn2;
 
@@ -1976,14 +1976,14 @@ algorithm
       list<DAE.Exp> inputs,outputs;
     case (inputs as (_::_),{},0,aindx)
       then
-        ({},{BackendDAE.ALGORITHM(aindx,inputs,{},DAE.emptyElementSource)});
+        ({},{BackendDAE.ALGORITHMWRAPPER(aindx,inputs,{},DAE.emptyElementSource)});
     case (_,_,0,_) then ({},{});
     case (inputs,outputs,numnodes,aindx)
       equation
         numnodes_1 = numnodes - 1;
         (res,res1) = lowerAlgorithm2(inputs, outputs, numnodes_1, aindx);
       then
-        (BackendDAE.ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource) :: res,res1);
+        (BackendDAE.ALGORITHMWRAPPER(aindx,inputs,outputs,DAE.emptyElementSource) :: res,res1);
   end matchcontinue;
 end lowerAlgorithm2;
 
@@ -1997,25 +1997,38 @@ public function lowerAlgorithmInputsOutputs
   input BackendDAE.Variables inVariables;
   input DAE.Algorithm inAlgorithm;
   output tuple<list<DAE.Exp>,list<DAE.Exp>> outTplExpExpLst;
+protected
+  list<Algorithm.Statement> ss;
 algorithm
-  outTplExpExpLst := match (inVariables,inAlgorithm)
+  DAE.ALGORITHM_STMTS(statementLst = ss) := inAlgorithm;
+  outTplExpExpLst := lowerAlgorithmInputsOutputs1(inVariables, ss);
+end lowerAlgorithmInputsOutputs;
+
+public function lowerAlgorithmInputsOutputs1
+"function: lowerAlgorithmInputsOutputs1
+  helper for lowerAlgorithmInputsOutputs."
+  input BackendDAE.Variables inVariables;
+  input list<Algorithm.Statement> statementLst;
+  output tuple<list<DAE.Exp>,list<DAE.Exp>> outTplExpExpLst;
+algorithm
+  outTplExpExpLst := match (inVariables,statementLst)
     local
       list<DAE.Exp> inputs1,outputs1,inputs2,outputs2,inputs,outputs;
       BackendDAE.Variables vars;
       Algorithm.Statement s;
       list<Algorithm.Statement> ss;
-    case (_,DAE.ALGORITHM_STMTS(statementLst = {})) then (({},{}));
-    case (vars,DAE.ALGORITHM_STMTS(statementLst = (s :: ss)))
+    case (_,{}) then (({},{}));
+    case (vars,s :: ss)
       equation
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
-        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
+        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs1(vars, ss);
         inputs = List.unionOnTrue(inputs1, inputs2, Expression.expEqual);
         outputs = List.unionOnTrue(outputs1, outputs2, Expression.expEqual);
         inputs = List.fold1(outputs,List.removeOnTrue,Expression.expEqual,inputs);
       then
         ((inputs,outputs));
   end match;
-end lowerAlgorithmInputsOutputs;
+end lowerAlgorithmInputsOutputs1;
 
 protected function lowerStatementInputsOutputs
 "function: lowerStatementInputsOutputs
@@ -2072,7 +2085,7 @@ algorithm
       then (inputs,outputs);
     case(vars,DAE.STMT_IF(exp = e, statementLst = stmts, else_ = elsebranch))
       equation
-        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs1(vars,stmts);
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
         inputs = List.unionOnTrueList({inputs1, inputs2,inputs3}, Expression.expEqual);
@@ -2080,7 +2093,7 @@ algorithm
       then (inputs,outputs);
    case(vars, DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = stmts))
       equation
-        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs1(vars, stmts);
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
         // Split the output variables into variables that depend on the loop
         // variable and variables that don't.
@@ -2097,13 +2110,13 @@ algorithm
       then (inputs, outputs);
     case(vars, DAE.STMT_WHILE(exp = e, statementLst = stmts))
       equation
-        ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+        ((inputs1,outputs)) = lowerAlgorithmInputsOutputs1(vars, stmts);
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
         inputs =  List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
       then (inputs, outputs);
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE()))
       equation
-        ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs1,outputs)) = lowerAlgorithmInputsOutputs1(vars,statements);
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
         inputs =  List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
       then
@@ -2111,7 +2124,7 @@ algorithm
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
       equation
         (inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
-        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs1(vars,statements);
         inputs3 = BackendDAEUtil.statesAndVarsExp(e, vars);
         inputs =  List.unionOnTrueList({inputs1, inputs2, inputs3}, Expression.expEqual);
         outputs = List.unionOnTrueList({outputs1, outputs2}, Expression.expEqual);
@@ -2138,19 +2151,19 @@ algorithm
     // MetaModelica extension. KS  
     case(vars, DAE.STMT_FAILURE(body = statements))
       equation
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs1(vars,statements);
       then (inputs,outputs);
      case(vars, DAE.STMT_TRY(tryBody = statements))
       equation
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs1(vars,statements);
       then (inputs,outputs);
      case(vars, DAE.STMT_CATCH(catchBody = statements))
       equation
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs1(vars,statements);
       then (inputs,outputs);
      case(vars, DAE.STMT_CATCH(catchBody = statements))
       equation
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs1(vars,statements);
       then (inputs,outputs);
     case(vars, DAE.STMT_THROW(source=_)) then ({}, {});
     case(_, _)
@@ -2180,7 +2193,7 @@ algorithm
     case(vars,DAE.ELSEIF(e,stmts,elseBranch))
       equation
         (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
-        ((inputs2, outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs2, outputs2)) = lowerAlgorithmInputsOutputs1(vars,stmts);
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
         inputs = List.unionOnTrueList({inputs1, inputs2, inputs3}, Expression.expEqual);
         outputs = List.unionOnTrue(outputs1, outputs2, Expression.expEqual);
@@ -2188,7 +2201,7 @@ algorithm
 
     case(vars,DAE.ELSE(stmts))
       equation
-        ((inputs, outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs, outputs)) = lowerAlgorithmInputsOutputs1(vars,stmts);
       then (inputs,outputs);
   end match;
 end lowerElseAlgorithmInputsOutputs;
@@ -2718,7 +2731,7 @@ algorithm
         (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
         (accAlg,accResDiff,accArr);
-    case (((eqn as BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* complex equation */
+    case (((eqn as BackendDAE.COMPLEX_EQUATIONWRAPPER(crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* complex equation */
       equation
         // fails if not all call results are true
         isalg = List.mapAllValueBool(expl, isAlgebraic, true);
@@ -2727,7 +2740,7 @@ algorithm
         (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
         (accAlg,accResDiff,accArr);
-    case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* array equation */
+    case (((eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* array equation */
       equation
         // fails if not all call results are true
         isalg = List.mapAllValueBool(expl, isAlgebraic, true);
@@ -3214,7 +3227,7 @@ algorithm
         (res1,eq_reslst,mdeqs_res1,wc_reslst,algs,ces_res) = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count, {}, 0,{},countZC,res,0,ces);
       then
         (res1,BackendDAE.EQUATION(eres1,eres2,source_)::eq_reslst,mdeqs_res1,wc_reslst,algs,ces_res);
-    case (v,knvars,((e as BackendDAE.COMPLEX_EQUATION(index= ind)) :: xs),mdeqs,eq_count,{},_,{},countZC,zcs,_,ces)
+    case (v,knvars,((e as BackendDAE.COMPLEX_EQUATIONWRAPPER(index= ind)) :: xs),mdeqs,eq_count,{},_,{},countZC,zcs,_,ces)
       equation
         // Find the correct multidim equation from the index
         BackendDAE.COMPLEXEQUATION(size=index_,left=e1,right=e2,source=source) = listNth(ces,ind);        
@@ -3226,7 +3239,7 @@ algorithm
         (res1,eq_reslst,mdeqs_res1,wc_reslst,algs,ces_res) = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count, {}, 0,{},countZC,res,0,ces);
       then
         (res1,e::eq_reslst,mdeqs_res1,wc_reslst,algs,ces_res);
-    case (v,knvars,((e as BackendDAE.ARRAY_EQUATION(index = ind)) :: xs),mdeqs,eq_count,{},_,{},countZC,zcs,_,ces)
+    case (v,knvars,((e as BackendDAE.ARRAY_EQUATIONWRAPPER(index = ind)) :: xs),mdeqs,eq_count,{},_,{},countZC,zcs,_,ces)
       equation
         // Find the correct multidim equation from the index
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimsize,left=e1,right=e2,source=source) = listNth(mdeqs,ind);

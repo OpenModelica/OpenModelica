@@ -83,11 +83,11 @@ algorithm
   local 
     Integer i1,i2;
     
-    case(BackendDAE.ARRAY_EQUATION(index=i1),BackendDAE.ARRAY_EQUATION(index=i2)) equation
+    case(BackendDAE.ARRAY_EQUATIONWRAPPER(index=i1),BackendDAE.ARRAY_EQUATIONWRAPPER(index=i2)) equation
       true = i1 == i2;
     then true;
     
-    case(BackendDAE.ALGORITHM(index=i1),BackendDAE.ALGORITHM(index=i2)) equation
+    case(BackendDAE.ALGORITHMWRAPPER(index=i1),BackendDAE.ALGORITHMWRAPPER(index=i2)) equation
       true = i1 == i2;
     then true;
     
@@ -128,7 +128,7 @@ algorithm
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});
       then str;
-    case(BackendDAE.ARRAY_EQUATION(index=indx),(md,_,_,vars,knvars)) equation
+    case(BackendDAE.ARRAY_EQUATIONWRAPPER(index=indx),(md,_,_,vars,knvars)) equation
       ae = md[indx+1];
       str = "Missing[\"ArrayEquation\",\"" +& dumpArrayEqnStr(ae)+&"\"]"; 
     then str;        
@@ -137,14 +137,14 @@ algorithm
       str = stringAppendList({s1,"== 0"});
     then str;
         
-    case (BackendDAE.ALGORITHM(index=indx),(_,algs,_,vars,knvars)) equation
+    case (BackendDAE.ALGORITHMWRAPPER(index=indx),(_,algs,_,vars,knvars)) equation
       alg = algs[indx+1];
       str = "Missing[\"Algorithm\",\""+&escapeMmaString(dumpSingleAlgorithmStr(alg))+&"\"]";
     then str;
     case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(_,_,_,vars,knvars)) equation
       str = "Missing[\"When\",\""+&escapeMmaString(whenEquationStr(whenEq))+&"\"]";     
     then str;
-    case (BackendDAE.COMPLEX_EQUATION(index=indx),(_,algs,complexEqs,vars,knvars))  
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=indx),(_,algs,complexEqs,vars,knvars))  
       equation
         complexEq=complexEqs[indx];
         str=printComplexEqn(complexEq,vars,knvars);

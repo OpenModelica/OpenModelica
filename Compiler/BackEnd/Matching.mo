@@ -4553,7 +4553,7 @@ algorithm
       Integer i,v,i_1,e;
       list<Integer> rest;
       BackendDAE.Equation eqn;
-    case ((eqn as BackendDAE.ARRAY_EQUATION(index=i),(e,arr,ass1,ass2)))
+    case ((eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=i),(e,arr,ass1,ass2)))
       equation
         i_1 = i+1;
         v::rest = arr[i_1];

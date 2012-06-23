@@ -502,7 +502,7 @@ algorithm
     list<DAE.ComponentRef> crs;
     list<DAE.Exp> expl;
     
-    case(BackendDAE.ALGORITHM(_,_,expl,_)) equation
+    case(BackendDAE.ALGORITHMWRAPPER(_,_,expl,_)) equation
       crs = List.flatten(List.map(expl,Expression.extractCrefsFromExp));
       true = List.reduce(List.map(crs,isCorrelationVarCref),boolAnd);
     then true;

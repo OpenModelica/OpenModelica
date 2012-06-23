@@ -410,7 +410,7 @@ algorithm
         print("\n");
       then
         ();
-     case (BackendDAE.COMPLEX_EQUATION(i,expList,source)::res,printExpTree) /* header */
+     case (BackendDAE.COMPLEX_EQUATIONWRAPPER(i,expList,source)::res,printExpTree) /* header */
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("COMPLEX_EQUATION(" +& intString(i) +& "): ");
@@ -446,7 +446,7 @@ algorithm
         print("\n");
       then
         ();
-    case (BackendDAE.ARRAY_EQUATION(i,expList,source)::res,printExpTree)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(i,expList,source)::res,printExpTree)
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("ARRAY_EQUATION(" +& intString(i) +& "): ");
@@ -456,7 +456,7 @@ algorithm
         print("\n");
       then
         ();
-     case (BackendDAE.ALGORITHM(_,expList,expList2,source)::res,printExpTree)
+     case (BackendDAE.ALGORITHMWRAPPER(_,expList,expList2,source)::res,printExpTree)
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("ALGORITHM: ");
@@ -1287,14 +1287,14 @@ algorithm
         res = stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.COMPLEX_EQUATION(index = indx,crefOrDerCref = expl))
+    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
         var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
         res = stringAppendList({"Complex eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl))
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
         var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
@@ -1332,7 +1332,7 @@ algorithm
         res = stringAppendList({s1,"= 0"});
       then
         res;
-    case (BackendDAE.ALGORITHM(index = i, in_ = inps, out = outs))
+    case (BackendDAE.ALGORITHMWRAPPER(index = i, in_ = inps, out = outs))
       equation
         is = intString(i);
         intsStr = stringDelimitList(List.map(inps, ExpressionDump.printExpStr), ", ");

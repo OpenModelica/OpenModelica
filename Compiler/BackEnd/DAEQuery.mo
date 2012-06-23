@@ -131,7 +131,7 @@ algorithm
       then
         res;
     
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
         var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
@@ -164,7 +164,7 @@ algorithm
       then
         res;
     
-    case (BackendDAE.ALGORITHM(index = i),_)
+    case (BackendDAE.ALGORITHMWRAPPER(index = i),_)
       equation
         is = intString(i);
         res = stringAppendList({"Algorithm no: ",is,"\n"});
@@ -475,7 +475,7 @@ algorithm
         res;
     
     // array equation
-    case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl))
+    case (vars,BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl))
       equation
         lst3 = List.map1(expl, incidenceRowExp, vars);
         res = List.flatten(lst3);
@@ -523,7 +523,7 @@ algorithm
    // If algorithm later on needs to be inverted, i.e. solved for
    // different variables than calculated, a non linear solver or
    // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs)) 
+    case (vars,BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = inputs,out = outputs)) 
       equation
         lstlst1 = List.map1(inputs, incidenceRowExp, vars);
         lstlst2 = List.map1(outputs, incidenceRowExp, vars);

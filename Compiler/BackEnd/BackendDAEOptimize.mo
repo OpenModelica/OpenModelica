@@ -271,7 +271,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       Integer index,pos,i;
       list<Integer> updateeqns;
-    case ((e as BackendDAE.ARRAY_EQUATION(index=index),(arraylisteqns,pos,updateeqns)))
+    case ((e as BackendDAE.ARRAY_EQUATIONWRAPPER(index=index),(arraylisteqns,pos,updateeqns)))
       equation
         i = index+1;
         eqn::eqns = arraylisteqns[i];
@@ -1347,32 +1347,32 @@ algorithm
       Integer index;
       list<DAE.Exp> in_,out,crefOrDerCref;
       DAE.ElementSource source;
-    case ((BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+    case ((BackendDAE.ARRAY_EQUATIONWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         SOME(crefOrDerCref) = crefOrDerCrefarray[index+1];
       then
-        ((BackendDAE.ARRAY_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
-    case ((e as BackendDAE.ARRAY_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+        ((BackendDAE.ARRAY_EQUATIONWRAPPER(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.ARRAY_EQUATIONWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         NONE() = crefOrDerCrefarray[index+1];
       then
         ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
-    case ((BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+    case ((BackendDAE.ALGORITHMWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         SOME((in_,out)) = inouttplarray[index+1];
       then
-        ((BackendDAE.ALGORITHM(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
-    case ((e as BackendDAE.ALGORITHM(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+        ((BackendDAE.ALGORITHMWRAPPER(index,in_,out,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.ALGORITHMWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         NONE() = inouttplarray[index+1];
       then
         ((e,(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
-    case ((BackendDAE.COMPLEX_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+    case ((BackendDAE.COMPLEX_EQUATIONWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         SOME(crefOrDerCref) = crefOrDerCrefcomplex[index];
       then
-        ((BackendDAE.COMPLEX_EQUATION(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
-    case ((e as BackendDAE.COMPLEX_EQUATION(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
+        ((BackendDAE.COMPLEX_EQUATIONWRAPPER(index,crefOrDerCref,source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)));
+    case ((e as BackendDAE.COMPLEX_EQUATIONWRAPPER(index=index,source=source),(repl,crefOrDerCrefarray,inouttplarray,crefOrDerCrefcomplex)))
       equation
         NONE() = crefOrDerCrefcomplex[index];
       then
@@ -6618,7 +6618,7 @@ algorithm
       derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.ARRAY_EQUATION(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
+    case(currEquation as BackendDAE.ARRAY_EQUATIONWRAPPER(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed: ARRAY_EQUATION-case"});
     then fail();
       
@@ -6633,7 +6633,7 @@ algorithm
       derivedEqns = List.map1(exps, createResidualEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.ALGORITHM(index=index, in_={}, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
+    case(currEquation as BackendDAE.ALGORITHMWRAPPER(index=index, in_={}, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
     equation
       derivedOut = List.map9(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       //derivedIn = List.transposeList(derivedIn);
@@ -6648,7 +6648,7 @@ algorithm
       derivedEqns = List.threadMap3(derivedOut, vars, createAlgorithmEqnEmptyIn,index,algorithmsLookUp, source);
     then derivedEqns;
 
-    case(currEquation as BackendDAE.ALGORITHM(index=index, in_=in_, out={}, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
+    case(currEquation as BackendDAE.ALGORITHMWRAPPER(index=index, in_=in_, out={}, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
     equation
       derivedIn = List.map9(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       derivedIn = List.transposeList(derivedIn);
@@ -6664,7 +6664,7 @@ algorithm
     then derivedEqns;
 
 
-    case(currEquation as BackendDAE.ALGORITHM(index=index, in_=in_, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
+    case(currEquation as BackendDAE.ALGORITHMWRAPPER(index=index, in_=in_, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, _, _, _)
     equation
       derivedIn = List.map9(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       derivedOut = List.map9(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
@@ -6680,7 +6680,7 @@ algorithm
       derivedEqns = List.thread3Map3(derivedIn, derivedOut, vars, createAlgorithmEqn,index,algorithmsLookUp, source);
     then derivedEqns;
 
-    case(currEquation as BackendDAE.COMPLEX_EQUATION(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
+    case(currEquation as BackendDAE.COMPLEX_EQUATIONWRAPPER(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed: COMPLEX_EQUATION-case"});
     then fail();
       
@@ -6733,7 +6733,7 @@ algorithm outEqn := match(inOuts,inCref,inIndex,inAlgorithmsLookUp,Source)
       //s1 = ExpressionDump.printExpListStr(inOuts);
       //print("### Create Algorithm eIn: (" +& s1 +& ") = f({}) \n");
       newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
-   then BackendDAE.ALGORITHM(newAlgIndex, {}, inOuts, Source);
+   then BackendDAE.ALGORITHMWRAPPER(newAlgIndex, {}, inOuts, Source);
  end match;
 end createAlgorithmEqnEmptyIn;
 
@@ -6754,7 +6754,7 @@ algorithm outEqn := match(inIns,inCref,inIndex,inAlgorithmsLookUp,Source)
       //s1 = ExpressionDump.printExpListStr(inIns);
       //print("### Create Algorithm eOut: ({}) = f(" +& s1 +& ") \n");
       newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
-   then BackendDAE.ALGORITHM(newAlgIndex, inIns, {}, Source);
+   then BackendDAE.ALGORITHMWRAPPER(newAlgIndex, inIns, {}, Source);
  end match;
 end createAlgorithmEqnEmptyOut;
 
@@ -6776,7 +6776,7 @@ algorithm outEqn := match(inIns,inOuts,inCref,inIndex,inAlgorithmsLookUp,Source)
       //s2 = ExpressionDump.printExpListStr(inOuts);
       //print("### Create Algorithm : (" +& s2 +& ") = f(" +& s1 +& ") \n");
       newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
-   then BackendDAE.ALGORITHM(newAlgIndex, inIns, inOuts, Source);
+   then BackendDAE.ALGORITHMWRAPPER(newAlgIndex, inIns, inOuts, Source);
  end match;
 end createAlgorithmEqn;
 
@@ -9369,8 +9369,8 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print,"dh/dz extra:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
-        Debug.fcall(Flags.TEARING_DUMP, print,"TVars:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,"\n","\n")); 
+        Debug.fcall(Flags.TEARING_DUMP, print,"TVars: ");
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,", ","\n")); 
         //  print("dh/dz:\n");
         //  BackendDump.dumpEqns(List.flatten(hlst));
         h = generateHEquations(hlst,tvarexps,h0,{});
@@ -9404,8 +9404,8 @@ algorithm
         eqns = BackendEquation.daeEqns(subsyst);
         vars = BackendVariable.daeVars(subsyst);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
-        Debug.fcall(Flags.TEARING_DUMP, print,"TVars:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,"\n","\nOther Equations:\n"));        
+        Debug.fcall(Flags.TEARING_DUMP, print,"TVars: ");
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,", ","\nOther Equations:\n"));        
         (eqns,repl,k0) = solveOtherEquations(othercomps,eqns,vars,ass2,ishared,BackendVarTransform.emptyReplacementsSized(size),{});
         // replace other vars in residual equations with there expression, use reverse order from othercomps
         Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
@@ -9917,19 +9917,19 @@ algorithm
         countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEARRAY(eqns=e::_)::rest,_,BackendDAE.SHARED(arrayEqs=ae),_)
       equation 
-         BackendDAE.ARRAY_EQUATION(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         BackendDAE.ARRAY_EQUATIONWRAPPER(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          tpl = BackendDAEUtil.traverseBackendDAEExpsArrayEqn(ae[e], countOperationsExp, inTpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl); 
     case (BackendDAE.SINGLEALGORITHM(eqns=e::_)::rest,_,BackendDAE.SHARED(algorithms=al),_)
       equation
-         BackendDAE.ALGORITHM(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         BackendDAE.ALGORITHMWRAPPER(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          tpl = BackendDAEUtil.traverseAlgorithmExps(al[e], countOperationsExp, inTpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=e::_)::rest,_,BackendDAE.SHARED(complEqs=complEqs),_)
       equation 
-         BackendDAE.COMPLEX_EQUATION(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         BackendDAE.COMPLEX_EQUATIONWRAPPER(index=e) = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          tpl = BackendDAEUtil.traverseBackendDAEExpsComplexEqn(complEqs[e], countOperationsExp, inTpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl); 

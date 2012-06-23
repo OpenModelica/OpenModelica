@@ -1992,7 +1992,7 @@ algorithm
         list<DAE.ComponentRef> cindex2;
         HashTable.HashTable ht;
     case({},ht) then  ht;
-    case( (eq1 as BackendDAE.ALGORITHM(in_=expl1,out=expl2)) :: eqs,ht)
+    case( (eq1 as BackendDAE.ALGORITHMWRAPPER(in_=expl1,out=expl2)) :: eqs,ht)
       equation
         ht = findArraysPartiallyIndexed2(expl1,ht,HashTable.emptyHashTable());
         ht = findArraysPartiallyIndexed2(expl2,ht,HashTable.emptyHashTable());
@@ -2000,7 +2000,7 @@ algorithm
       then
         ht;
        
-    case((eq1 as BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl1)) :: eqs,ht)
+    case((eq1 as BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl1)) :: eqs,ht)
       equation
         ht = findArraysPartiallyIndexed2(expl1,ht,HashTable.emptyHashTable());
         ht = findArrayVariables(expl1,ht) "finds all array variables, including earlier special case for v = foo(..)";        

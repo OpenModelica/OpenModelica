@@ -503,7 +503,7 @@ algorithm
    list<DAE.Exp> outputs;
    tuple<array<DAE.Algorithm>,Variables,list<Integer>> tpl;
    list<Integer> doneAlgs;
-   case((eqn as BackendDAE.ALGORITHM(index=aindex,out=outputs),(algs,vars,doneAlgs)))
+   case((eqn as BackendDAE.ALGORITHMWRAPPER(index=aindex,out=outputs),(algs,vars,doneAlgs)))
    equation
      //expand every algorithm equation only once
      true = not listMember(aindex,doneAlgs);
@@ -1801,12 +1801,12 @@ algorithm
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
     
-    case(BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl),vars,knvars) equation
+    case(BackendDAE.COMPLEX_EQUATIONWRAPPER(crefOrDerCref = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true 
       List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
     then true;
     
-    case(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),vars,knvars) equation
+    case(BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true 
       List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
     then true;
@@ -1820,7 +1820,7 @@ algorithm
       b = isDiscreteExp(e1,vars,knvars);
     then b;
     
-    case(BackendDAE.ALGORITHM(in_ = expl),vars,knvars) equation
+    case(BackendDAE.ALGORITHMWRAPPER(in_ = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true
       List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
     then true;
@@ -3940,6 +3940,8 @@ algorithm
       list<WhenClause> wc;
       Integer numberOfEqs,numberofVars;
       list<BackendDAE.IncidenceMatrixElement> lstT;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;
     
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
@@ -3947,9 +3949,8 @@ algorithm
         numberOfEqs = equationSize(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
-        arr = arrayCreate(numberOfEqs, {});
         arrT = arrayCreate(numberofVars, {});
-        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixDispatch(vars, eqns, wc, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, 0, {}, {});
       then
         (arr,arrT);
     
@@ -3983,47 +3984,54 @@ end applyIndexType;
 protected function incidenceMatrixDispatch
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
-  input Variables inVariables;
+  input Variables vars;
   input EquationArray inEqsArr;
   input list<WhenClause> inWhenClause;
-  input BackendDAE.IncidenceMatrix inIncidenceArray;
+  input list<BackendDAE.IncidenceMatrixElement> inIncidenceArray;
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   input Integer index;
   input Integer numberOfEqs;
   input Boolean stop;
   input BackendDAE.IndexType inIndexType;
+  input Integer inRowSize;
+  input list<list<Integer>> imapEqnIncRow;
+  input list<Integer> imapIncRowEqn;
   output BackendDAE.IncidenceMatrix outIncidenceArray;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
+  output array<list<Integer>> omapEqnIncRow;
+  output array<Integer> omapIncRowEqn;
 algorithm
-  (outIncidenceArray,outIncidenceArrayT) := match (inVariables, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
+  (outIncidenceArray,outIncidenceArrayT,omapEqnIncRow,omapIncRowEqn) := 
+    match (vars, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType, inRowSize, imapEqnIncRow, imapIncRowEqn)
     local
-      list<BackendDAE.Value> row;
-      Variables vars;
+      list<Integer> row,rowindxs,mapIncRowEqn;
       BackendDAE.Equation e;
-      EquationArray eqArr;
-      list<WhenClause> wc;
-      BackendDAE.IncidenceMatrix iArr;
+      list<BackendDAE.IncidenceMatrixElement> iArr;
       BackendDAE.IncidenceMatrix iArrT;
-      Integer i,n;
+      Integer i1,rowSize,rowSize1,size;
+      list<list<Integer>> mapEqnIncRow;
     
     // i = n (we reach the end)
-    case (vars, eqArr, wc, iArr, iArrT, i, n, false, inIndexType) then (iArr,iArrT);
+    case (_, _, _, iArr, iArrT, _, _, false, _, _, _, _) then (listArray(listReverse(iArr)),iArrT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
     
     // i < n 
-    case (vars, eqArr, wc, iArr, iArrT, i, n, true, inIndexType)
+    case (_, _, _, iArr, iArrT, _, _, true, _, _, _, _)
       equation
         // get the equation
-        e = equationNth(eqArr, i);
+        e = equationNth(inEqsArr, index);
         // compute the row
-        row = incidenceRow(vars, e, wc, inIndexType);
-        // only absolute indexes?
-        row = applyIndexType(row, inIndexType);
+        (row,size) = incidenceRow(vars, e, inWhenClause, inIndexType);
+        rowSize = inRowSize + size;
+        rowindxs = List.intRange2(inRowSize+1, rowSize);
+        i1 = index+1;
+        mapIncRowEqn = List.consN(size,i1,imapIncRowEqn);        
         // put it in the arrays
-        iArr = arrayUpdate(iArr, i+1, row);
-        iArrT = fillincidenceMatrixT(row,i+1,iArrT);
-        (iArr,iArrT) = incidenceMatrixDispatch(vars, eqArr, wc, iArr, iArrT, i + 1, n, intLt(i + 1, n), inIndexType);
+        iArr = List.consN(size,row,iArr);
+        iArrT = fillincidenceMatrixT(row,rowindxs,iArrT);
+        // next equation
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = incidenceMatrixDispatch(vars, inEqsArr, inWhenClause, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
       then
-        (iArr,iArrT);
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn);
     
     /* Unreachable due to tail recursion, which we really need
     case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
@@ -4039,43 +4047,46 @@ protected function fillincidenceMatrixT
 "@author: Frenkel TUD 2011-04
   inserts the equation numbers"
   input BackendDAE.IncidenceMatrixElement eqns;
-  input BackendDAE.Value e;
+  input list<Integer> eqnsindxs;
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 algorithm
-  outIncidenceArrayT := matchcontinue (eqns, e, inIncidenceArrayT)
+  outIncidenceArrayT := matchcontinue (eqns, eqnsindxs, inIncidenceArrayT)
     local
       BackendDAE.IncidenceMatrixElement row,rest,newrow;
-      BackendDAE.Value v,vabs,en;
+      Integer v,vabs,en;
       BackendDAE.IncidenceMatrixT mT,mT1;
     
-    case ({},e,inIncidenceArrayT) then inIncidenceArrayT;
+    case ({},_,_) then inIncidenceArrayT;
     
-    case (v::rest,e,inIncidenceArrayT)
+    case (v::rest,_,_)
       equation
         true = intLt(0, v);
         row = inIncidenceArrayT[v];
         // put it in the array
-        mT = arrayUpdate(inIncidenceArrayT, v, e::row);
-        mT1 = fillincidenceMatrixT(rest, e, mT);
+        newrow = listAppend(eqnsindxs,row);
+        mT = arrayUpdate(inIncidenceArrayT, v, newrow);
+        mT1 = fillincidenceMatrixT(rest, eqnsindxs, mT);
       then
         mT1;
         
-    case (v::rest,e,inIncidenceArrayT)
+    case (v::rest,_,_)
       equation
         false = intLt(0, v);
         vabs = intAbs(v);
         row = inIncidenceArrayT[vabs];
-        en = 0 - e;
+        newrow = List.map(eqnsindxs,intNeg);
+        newrow = listAppend(newrow,row);
         // put it in the array
-        mT = arrayUpdate(inIncidenceArrayT, vabs, en::row);
-        mT1 = fillincidenceMatrixT(rest, e, mT);
+        mT = arrayUpdate(inIncidenceArrayT, vabs, newrow);
+        mT1 = fillincidenceMatrixT(rest, eqnsindxs, mT);
       then
         mT1;        
     
-    case (v::rest,e,inIncidenceArrayT)
+    case (v::_,_,_)
       equation
-        print("- BackendDAEUtil.fillincidenceMatrixT failed\n");
+        vabs = intAbs(v);
+        print("- BackendDAEUtil.fillincidenceMatrixT failed for Var " +& intString(vabs) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -4091,61 +4102,76 @@ public function incidenceRow
   input list<WhenClause> inWhenClause;
   input BackendDAE.IndexType inIndexType;
   output list<Integer> outIntegerLst;
+  output Integer rowSize; 
 algorithm
-  outIntegerLst := matchcontinue (inVariables,inEquation,inWhenClause,inIndexType)
+  (outIntegerLst,rowSize) := 
+   matchcontinue (inVariables,inEquation,inWhenClause,inIndexType)
     local
-      list<BackendDAE.Value> lst1,lst2,res;
+      list<Integer> lst1,lst2,res,dimsize;
       Variables vars;
       DAE.Exp e1,e2,e,expCref;
-      list<list<BackendDAE.Value>> lstlst1,lstlst2,lstlst3,lstres;
+      list<list<Integer>> lstlst1,lstlst2,lstlst3,lstres;
       list<DAE.Exp> expl,inputs,outputs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
-      BackendDAE.Value indx;
       list<WhenClause> wc;
-      Integer wc_index;
+      Integer wc_index,size,indx;
       String eqnstr;
+      DAE.Algorithm alg;
     
     // EQUATION
-    case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,inIndexType)
+    case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_)
       equation
         lst1 = incidenceRowExp(e1, vars, {},inIndexType);
         res = incidenceRowExp(e2, vars, lst1,inIndexType);
       then
-        res;
+        (res,1);
     
     // COMPLEX_EQUATION
-    case (vars,BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl),_,inIndexType)
+    case (vars,BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2),_,_)
+      equation
+        lst1 = incidenceRowExp(e1, vars, {},inIndexType);
+        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+      then
+        (res,size);    
+    case (vars,BackendDAE.COMPLEX_EQUATIONWRAPPER(crefOrDerCref = expl),_,_)
       equation
         res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
       then
-        res;
+        (res,1);
     
     // ARRAY_EQUATION
-    case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_,inIndexType)
+    case (vars,BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2),_,_)
+      equation
+        size = List.reduce(dimsize, intMul);
+        lst1 = incidenceRowExp(e1, vars, {},inIndexType);
+        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+      then
+        (res,size);    
+    case (vars,BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl),_,_)
       equation
         res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
       then
-        res;
+        (res,1);
     
     // SOLVED_EQUATION
-    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,inIndexType)
+    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,_)
       equation
         expCref = Expression.crefExp(cr);
         lst1 = incidenceRowExp(expCref, vars, {},inIndexType);
         res = incidenceRowExp(e, vars, lst1,inIndexType);
       then
-        res;
+        (res,1);
     
     // RESIDUAL_EQUATION
-    case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,inIndexType)
+    case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,_)
       equation
         res = incidenceRowExp(e, vars, {},inIndexType);
       then
-        res;
+        (res,1);
     
     // WHEN_EQUATION
-    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,inIndexType)
+    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,_)
       equation
         expl = BackendEquation.getWhenCondition(wc,wc_index);
         lst1 = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
@@ -4154,21 +4180,35 @@ algorithm
         lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
         res = incidenceRowExp(e2, vars, lst2,inIndexType);
       then
-        res;
+        (res,1);
     
     // ALGORITHM For now assume that algorithm will be solvable for 
     // correct variables. I.e. find all variables in algorithm and add to lst.
     // If algorithm later on needs to be inverted, i.e. solved for
     // different variables than calculated, a non linear solver or
     // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs),_,inIndexType)
+    case (vars,BackendDAE.ALGORITHM(size=size,alg=alg),_,_)
+      equation
+        ((_,res,_)) = traverseAlgorithmExps(alg, incidenceRowAlgorithm, (vars, {},inIndexType));
+      then
+        (res,size);     
+    case (vars,BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = inputs,out = outputs),_,_)
       equation
         lst1 = incidenceRow1(inputs, incidenceRowExp, vars, {},inIndexType);
         res = incidenceRow1(outputs, incidenceRowExp, vars, lst1,inIndexType);
       then
-        res;
+        (res,1);
+        
+    // if Equation
+    // TODO : how to handle this?
+    case(vars,BackendDAE.IF_EQUATION(conditions=expl),_,_)
+      equation
+        res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
+        print("Warning: BackendDAEUtil.incidenceRow does not handle if-equations propper!\n");
+      then
+        (res,1);
     
-    case (vars,inEquation,_,_)
+    case (_,_,_,_)
       equation
         eqnstr = BackendDump.equationStr(inEquation);
         print("- BackendDAE.incidenceRow failed for eqn: ");
@@ -4178,6 +4218,20 @@ algorithm
         fail();
   end matchcontinue;
 end incidenceRow;
+
+protected function incidenceRowAlgorithm
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,BackendDAE.IndexType>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,BackendDAE.IndexType>> outTpl;
+protected
+  DAE.Exp e;
+  BackendDAE.Variables vars;
+  BackendDAE.IndexType ity;
+  list<Integer> lst;
+algorithm
+  (e,(vars,lst,ity)) := inTpl;
+  lst := incidenceRowExp(e,vars,lst,ity);
+  outTpl := (e,(vars,lst,ity));
+end incidenceRowAlgorithm;
 
 public function incidenceRow1
   "Tail recursive implementation."
@@ -4243,8 +4297,10 @@ algorithm
   case(inExp,inVariables,inIntegerLst,inIndexType)      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
-      then
-        vallst;
+      // only absolute indexes?
+      vallst = applyIndexType(vallst, inIndexType);      
+    then
+      vallst;
   end match;
 end incidenceRowExp;
 
@@ -4754,7 +4810,7 @@ algorithm
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
-        row = incidenceRow(vars, eqn,wc,BackendDAE.NORMAL());
+        (row,_) = incidenceRow(vars, eqn,wc,BackendDAE.NORMAL());
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(row, abse, m, {});
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
@@ -5129,14 +5185,14 @@ algorithm
       then  
         adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
     // COMPLEX_EQUATION
-    case (vars,BackendDAE.COMPLEX_EQUATION(crefOrDerCref = expl),_,_,_,_,_,_)
+    case (vars,BackendDAE.COMPLEX_EQUATIONWRAPPER(crefOrDerCref = expl),_,_,_,_,_,_)
       equation
         lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
       then
         adjacencyRowEnhanced1(lst,Expression.makeSum(expl),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
     
     // ARRAY_EQUATION
-    case (vars,BackendDAE.ARRAY_EQUATION(index=i,crefOrDerCref = expl),_,_,_,_,_,_)
+    case (vars,BackendDAE.ARRAY_EQUATIONWRAPPER(index=i,crefOrDerCref = expl),_,_,_,_,_,_)
       equation
         lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
         BackendDAE.MULTIDIM_EQUATION(left=e1, right=e2) = ae[i+1];
@@ -5177,7 +5233,7 @@ algorithm
     // If algorithm later on needs to be inverted, i.e. solved for
     // different variables than calculated, a non linear solver or
     // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs),_,_,_,_,_,_)
+    case (vars,BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = inputs,out = outputs),_,_,_,_,_,_)
       equation
         lst = incidenceRow1(inputs, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
         lst = incidenceRow1(outputs, adjacencyRowExpEnhanced, vars, lst,(mark,rowmark));
@@ -5872,9 +5928,9 @@ algorithm
       then
         (SOME(eqns),inEntrylst);
     // algorithms give no jacobian
-    case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE(),inEntrylst);
+    case (BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = in_,out = out),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE(),inEntrylst);
     // array equations
-    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
+    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl),vars,ae,ce,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
         t = Expression.typeof(e1);
@@ -6120,7 +6176,7 @@ algorithm
       then
         ((eqn,res,(vars,arreqn,b and res)));
     // check rhs for for ARRAY_EQUATION nodes. check rhs for for RESIDUAL_EQUATION nodes.
-    case ((eqn as BackendDAE.ARRAY_EQUATION(index = indx),(vars,arreqn,b)))
+    case ((eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx),(vars,arreqn,b)))
       equation
         BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2) = arreqn[indx + 1];
         new_exp = Expression.expSub(e1, e2);
@@ -7477,7 +7533,6 @@ protected
   tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   BackendDAE.EqSystem syst;
 algorithm
-  //_ := IndexReduction.tryDeterminant(inDAE);
   preOptModules := getPreOptModules(strPreOptModules);
   pastOptModules := getPastOptModules(strPastOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
