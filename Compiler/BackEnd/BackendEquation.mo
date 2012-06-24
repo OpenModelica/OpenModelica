@@ -1532,12 +1532,18 @@ end equationSource;
 
 public function equationSize "Retrieve the size from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
-  output Integer size;
+  output Integer osize;
 algorithm
-  size := match eq
-    local list<Integer> ds;
+  osize := match eq
+    local 
+      list<Integer> ds;
+      Integer size;
     case BackendDAE.EQUATION(source=_) then 1;
-    case BackendDAE.ARRAY_EQUATION(dimSize=ds) then List.fold(ds,intMul,1);
+    case BackendDAE.ARRAY_EQUATION(dimSize=ds)
+      equation
+        size = List.fold(ds,intMul,1);
+      then
+        size;
     case BackendDAE.ARRAY_EQUATIONWRAPPER(source=_) then 1;
     case BackendDAE.SOLVED_EQUATION(source=_) then 1;
     case BackendDAE.RESIDUAL_EQUATION(source=_) then 1;

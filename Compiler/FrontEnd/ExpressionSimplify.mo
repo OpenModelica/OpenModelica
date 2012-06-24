@@ -125,13 +125,14 @@ public function condsimplify "function condsimplify
   output Boolean hasChanged;
 algorithm
   (outExp,hasChanged) := match(cond,inExp)
+    local DAE.Exp e;
     case(true,_) 
       equation
         (outExp,hasChanged) = simplifyWithOptions(inExp,optionSimplifyOnly);
       then
         (outExp,hasChanged);
-    else
-      then (inExp,cond);
+    case(false,e)
+      then (e,false);
   end match;
 end condsimplify;
 
