@@ -1657,11 +1657,10 @@ public function listEquation "function: listEquation
   input list<BackendDAE.Equation> lst;
   output EquationArray outEquationArray;
 protected
-  BackendDAE.Value len,size,arrsize;
+  Integer len,size,arrsize;
   Real rlen,rlen_1;
   array<Option<BackendDAE.Equation>> optarr,eqnarr,newarr;
   list<Option<BackendDAE.Equation>> eqn_optlst;
-  Integer size;
 algorithm
   len := listLength(lst);
   rlen := intReal(len);
