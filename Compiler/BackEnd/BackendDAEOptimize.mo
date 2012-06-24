@@ -8045,7 +8045,7 @@ algorithm
           {s1,s2}, Absyn.dummyInfo);
         
         partitionEquations(BackendDAEUtil.equationArraySize(arr),arr,ixs,ea);
-        partitionVars(BackendDAEUtil.equationArraySize(arr),arr,vars,ixs,mT,va);
+        partitionVars(i2,arr,vars,ixs,mT,va);
         el = arrayList(ea);
         vl = arrayList(va);
         (systs,true) = List.threadMapFold(el,vl,createEqSystem,true);

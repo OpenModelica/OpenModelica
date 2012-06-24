@@ -1866,7 +1866,7 @@ public function addOperation
 algorithm
   oeq := match (eq,op)
     local
-      Integer i1,i2;
+      Integer i1,i2,size;
       DAE.Exp e1,e2;
       list<DAE.Exp> es,es1,es2,conditions;
       DAE.ElementSource source;
@@ -1874,10 +1874,16 @@ algorithm
       DAE.ComponentRef cr1;
       list<BackendDAE.Equation> eqnsfalse;
       list<list<BackendDAE.Equation>> eqnstrue;
+      list<Integer> ds;
+      DAE.Algorithm alg;
     case (BackendDAE.EQUATION(e1,e2,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.EQUATION(e1,e2,source);
+    case (BackendDAE.ARRAY_EQUATION(ds,e1,e2,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.ARRAY_EQUATION(ds,e1,e2,source);
     case (BackendDAE.ARRAY_EQUATIONWRAPPER(i1,es1,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
@@ -1890,6 +1896,10 @@ algorithm
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.RESIDUAL_EQUATION(e1,source);
+    case (BackendDAE.ALGORITHM(size,alg,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.ALGORITHM(size,alg,source);
     case (BackendDAE.ALGORITHMWRAPPER(i1,es1,es2,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
@@ -1898,6 +1908,10 @@ algorithm
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.WHEN_EQUATION(whenEquation,source);
+    case (BackendDAE.COMPLEX_EQUATION(size,e1,e2,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.COMPLEX_EQUATION(size,e1,e2,source);
     case (BackendDAE.COMPLEX_EQUATIONWRAPPER(i1,es1,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
