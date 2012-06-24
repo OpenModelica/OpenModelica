@@ -3267,6 +3267,37 @@ algorithm
   outExps := (exp,exp::acc);
 end expressionCollector;
 
+
+public function replaceCref
+"function: replaceCref
+  Replace a componentref with a expression"
+  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> inTpl;
+  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> outTpl;
+protected
+  DAE.Exp exp;
+  tuple<DAE.ComponentRef,DAE.Exp> tpl;
+algorithm
+  (exp,tpl) := inTpl;
+  outTpl := traverseExp(exp,replaceCrefWork,tpl);
+end replaceCref;
+
+protected function replaceCrefWork
+  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> inTpl;
+  output tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> otpl;
+algorithm
+  otpl := matchcontinue inTpl
+    local
+      DAE.Exp target;
+      DAE.ComponentRef cr,cr1;
+    case ((DAE.CREF(componentRef=cr),(cr1,target)))
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
+      then
+        ((target,(cr1,target)));
+    else then inTpl;
+  end matchcontinue;
+end replaceCrefWork;
+
 /***************************************************/
 /* traverse DAE.Exp */
 /***************************************************/

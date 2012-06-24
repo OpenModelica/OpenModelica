@@ -117,6 +117,24 @@ algorithm
   (outExp,hasChanged) := simplifyWithOptions(inExp,optionSimplifyOnly);
 end simplify;
 
+public function condsimplify "function condsimplify
+  Simplifies expressions on condition"
+  input Boolean cond;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+  output Boolean hasChanged;
+algorithm
+  (outExp,hasChanged) := match(cond,inExp)
+    case(true,_) 
+      equation
+        (outExp,hasChanged) = simplifyWithOptions(inExp,optionSimplifyOnly);
+      then
+        (outExp,hasChanged);
+    else
+      then (inExp,cond);
+  end match;
+end condsimplify;
+
 public function simplifyWithOptions "Simplifies expressions"
   input DAE.Exp inExp;
   input Options options;
@@ -4438,6 +4456,28 @@ algorithm
       then simplifyList(rest_expl,exp::acc);
   end match;
 end simplifyList;
+
+public function simplifyList1
+  input list<DAE.Exp> expl;
+  input list<DAE.Exp> acc;
+  input list<Boolean> accb;
+  output list<DAE.Exp> outExpl;
+  output list<Boolean> outBool;
+algorithm
+  (outExpl,outBool) := match (expl,acc,accb)
+    local
+      DAE.Exp exp;
+      Boolean b;
+      list<DAE.Exp> rest_expl;
+    case ({},_,_) then (listReverse(acc),listReverse(accb));
+    case (exp::rest_expl,_,_)
+      equation
+        (exp,b) = simplify1(exp);
+        (outExpl,outBool) = simplifyList1(rest_expl,exp::acc,b::accb);
+      then
+        (outExpl,outBool);
+  end match;
+end simplifyList1;
 
 protected function checkZeroLengthArrayOp
   "If this succeeds, and either argument to the operation is empty, the whole operation is empty"

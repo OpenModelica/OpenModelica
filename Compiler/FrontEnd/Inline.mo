@@ -157,16 +157,16 @@ algorithm
   outEquationArray := matchcontinue(inEquationArray,inElementList)
     local
       Functiontuple fns;
-      Integer i1,i2;
+      Integer i1,i2,size;
       array<Option<BackendDAE.Equation>> eqarr,eqarr_1;
       list<Option<BackendDAE.Equation>> eqlst,eqlst_1;
-    case(BackendDAE.EQUATION_ARRAY(i1,i2,eqarr),fns)
+    case(BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),fns)
       equation
         eqlst = arrayList(eqarr);
         eqlst_1 = List.map1(eqlst,inlineEqOpt,fns);
         eqarr_1 = listArray(eqlst_1);
       then
-        BackendDAE.EQUATION_ARRAY(i1,i2,eqarr_1);
+        BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr_1);
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
@@ -210,11 +210,14 @@ algorithm
   outEquation := matchcontinue(inEquation,fns)
     local
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      Integer i;
+      Integer i,size;
       list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
       DAE.ComponentRef cref;
       BackendDAE.WhenEquation weq,weq_1;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
+      list<Integer> dimSize;
+      DAE.Algorithm alg;
+      list<DAE.Statement> stmts,stmts1;      
 
     case(BackendDAE.EQUATION(e1,e2,source),_)
       equation
@@ -222,6 +225,13 @@ algorithm
         (e2_1,source) = inlineExp(e2,fns,source);
       then
         BackendDAE.EQUATION(e1_1,e2_1,source);
+
+    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source),_)
+      equation
+        (e1_1,source) = inlineExp(e1,fns,source);
+        (e2_1,source) = inlineExp(e2,fns,source);
+      then
+        BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source);
 
     case(BackendDAE.ARRAY_EQUATIONWRAPPER(i,explst,source),_)
       equation
@@ -241,6 +251,13 @@ algorithm
       then
         BackendDAE.RESIDUAL_EQUATION(e_1,source);
 
+    case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_)
+      equation
+        stmts1 = List.map1(stmts,inlineStatement,fns);
+        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts));
+      then
+        BackendDAE.ALGORITHM(size,alg,source);
+
     case(BackendDAE.ALGORITHMWRAPPER(i,explst1,explst2,source),_)
       equation
         (explst1_1,source) = inlineExps(explst1,fns,source);
@@ -253,6 +270,13 @@ algorithm
         (weq_1,source) = inlineWhenEq(weq,fns,source);
       then
         BackendDAE.WHEN_EQUATION(weq_1,source);
+  
+    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source),_)
+      equation
+        (e1_1,source) = inlineExp(e1,fns,source);
+        (e2_1,source) = inlineExp(e2,fns,source);
+      then
+        BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source);  
   
     case(BackendDAE.COMPLEX_EQUATIONWRAPPER(index=i,crefOrDerCref=explst,source=source),_)
       equation
@@ -338,10 +362,29 @@ public function inlineVarOpt
 "functio: inlineVarOpt
   inlines calls in a variable option"
   input Option<BackendDAE.Var> inVarOption;
-  input Functiontuple inElementList;
+  input Functiontuple fns;
   output Option<BackendDAE.Var> outVarOption;
 algorithm
-  outVarOption := matchcontinue(inVarOption,inElementList)
+  outVarOption := match(inVarOption,fns)
+    local
+      BackendDAE.Var var;
+    case(NONE(),_) then NONE();
+    case(SOME(var),_)
+      equation
+        var = inlineVar(var,fns);
+      then
+        SOME(var);
+  end match;
+end inlineVarOpt;
+
+public function inlineVar
+"functio: inlineVar
+  inlines calls in a variable"
+  input BackendDAE.Var inVar;
+  input Functiontuple inElementList;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue(inVar,inElementList)
     local
       Functiontuple fns;
       DAE.ComponentRef varName;
@@ -357,33 +400,32 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      Option<BackendDAE.Var> var;
-      DAE.ElementSource source "the origin of the element";
+      BackendDAE.Var var;
+      DAE.ElementSource source;
 
-    case(NONE(),_) then NONE();
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
       equation
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
-    case(SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
       then
-        SOME(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix));
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix);
     case(var,_) then var;
   end matchcontinue;
-end inlineVarOpt;
+end inlineVar;
 
 public function inlineMultiDimEqs
 "function: inlineMultiDimEqs
@@ -1003,7 +1045,7 @@ algorithm
       equation
         ((e_1,(fns,b))) = Expression.traverseExp(e,inlineCall,(fns,false));
         source = DAEUtil.condAddSymbolicTransformation(b,source,DAE.OP_INLINE(e,e_1));
-        (e_2,b) = ExpressionSimplify.simplify(e_1);
+        (e_2,b) = ExpressionSimplify.condsimplify(b,e_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
       then
         (e_2,source);
@@ -1040,7 +1082,7 @@ algorithm
   end matchcontinue;
 end forceInlineExp;
 
-protected function inlineExps "
+public function inlineExps "
 function: inlineExp
   inlines calls in an DAE.Exp"
   input list<DAE.Exp> inExps;

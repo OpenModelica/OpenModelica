@@ -124,7 +124,7 @@ algorithm
         false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       then
         ();
-    case (BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(numberOfElement = i2))::{}))
+    case (BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(size = i2))::{}))
       equation
         true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
         //Check for correct size
@@ -1657,20 +1657,22 @@ public function listEquation "function: listEquation
   input list<BackendDAE.Equation> lst;
   output EquationArray outEquationArray;
 protected
-  BackendDAE.Value len,size;
+  BackendDAE.Value len,size,arrsize;
   Real rlen,rlen_1;
   array<Option<BackendDAE.Equation>> optarr,eqnarr,newarr;
   list<Option<BackendDAE.Equation>> eqn_optlst;
+  Integer size;
 algorithm
   len := listLength(lst);
   rlen := intReal(len);
   rlen_1 := rlen *. 1.4;
-  size := realInt(rlen_1);
-  optarr := arrayCreate(size, NONE());
+  arrsize := realInt(rlen_1);
+  optarr := arrayCreate(arrsize, NONE());
   eqn_optlst := List.map(lst, Util.makeOption);
   eqnarr := listArray(eqn_optlst);
   newarr := Util.arrayCopy(eqnarr, optarr);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(len,size,newarr);
+  size := BackendEquation.equationLstSize(lst);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size,len,arrsize,newarr);
 end listEquation;
 
 public function varList
@@ -2407,11 +2409,24 @@ end systemSize;
 public function equationSize "function: equationSize
   author: PA
 
-  Returns the number of equations in an EquationArray, which 
-  corresponds to the number of equations in a system.
-  NOTE: Array equations and algorithms are represented several times
-  in the array so the number of elements of the array corresponds to
-  the equation system size."
+  Returns the size of the equations in an EquationArray, which not 
+  corresponds to the number of equations in a system."
+  input EquationArray inEquationArray;
+  output Integer outInteger;
+algorithm
+  outInteger:=
+  match (inEquationArray)
+    local BackendDAE.Value n;
+    case (BackendDAE.EQUATION_ARRAY(size = n)) then n;
+  end match;
+end equationSize;
+
+public function equationArraySize "function: equationArraySize
+  author: PA
+
+  Returns the number of equations in an EquationArray, which not 
+  corresponds to the number of equations in a system but not
+  to the size of the system"
   input EquationArray inEquationArray;
   output Integer outInteger;
 algorithm
@@ -2420,7 +2435,7 @@ algorithm
     local BackendDAE.Value n;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
   end match;
-end equationSize;
+end equationArraySize;
 
 protected function generateArrayElements
   "Takes a list of identical CREF or ASUB expressions, a list of ICONST indices
@@ -3946,11 +3961,11 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
         // get the size
-        numberOfEqs = equationSize(eqns);
+        numberOfEqs = equationArraySize(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
         arrT = arrayCreate(numberofVars, {});
-        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixDispatch(vars, eqns, wc, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, 0, {}, {});
+        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
       then
         (arr,arrT);
     
@@ -3961,6 +3976,48 @@ algorithm
         fail();
   end matchcontinue;
 end incidenceMatrix;
+
+public function incidenceMatrixScalar
+"function: incidenceMatrixScalar
+  author: PA, adrpo
+  Calculates the incidence matrix, i.e. which variables are present in each equation.
+  You can ask for absolute indexes or normal (negative for der) via the IndexType"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.IndexType inIndexType;
+  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+algorithm
+  (outIncidenceMatrix,outIncidenceMatrixT) := matchcontinue (syst, shared, inIndexType)
+    local
+      BackendDAE.IncidenceMatrix arr;
+      BackendDAE.IncidenceMatrixT arrT;
+      Variables vars;
+      EquationArray eqns;
+      list<WhenClause> wc;
+      Integer numberOfEqs,numberofVars;
+      list<BackendDAE.IncidenceMatrixElement> lstT;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;
+    
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
+      equation
+        // get the size
+        numberOfEqs = equationArraySize(eqns);
+        numberofVars = BackendVariable.varsSize(vars);
+        // create the array to hold the incidence matrix
+        arrT = arrayCreate(numberofVars, {});
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixDispatchScalar(vars, eqns, wc, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, 0, {}, {});
+      then
+        (arr,arrT);
+    
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.incidenceMatrixScalar failed"});
+      then
+        fail();
+  end matchcontinue;
+end incidenceMatrixScalar;
 
 public function applyIndexType
 "@author: adrpo
@@ -3982,6 +4039,60 @@ algorithm
 end applyIndexType;
 
 protected function incidenceMatrixDispatch
+"@author: adrpo
+  Calculates the incidence matrix as an array of list of integers"
+  input Variables vars;
+  input EquationArray inEqsArr;
+  input list<WhenClause> inWhenClause;
+  input list<BackendDAE.IncidenceMatrixElement> inIncidenceArray;
+  input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
+  input Integer index;
+  input Integer numberOfEqs;
+  input Boolean stop;
+  input BackendDAE.IndexType inIndexType;
+  output BackendDAE.IncidenceMatrix outIncidenceArray;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
+algorithm
+  (outIncidenceArray,outIncidenceArrayT) := 
+    match (vars, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
+    local
+      list<Integer> row,rowindxs,mapIncRowEqn;
+      BackendDAE.Equation e;
+      list<BackendDAE.IncidenceMatrixElement> iArr;
+      BackendDAE.IncidenceMatrix iArrT;
+      Integer i1,rowSize,rowSize1,size;
+      list<list<Integer>> mapEqnIncRow;
+    
+    // i = n (we reach the end)
+    case (_, _, _, iArr, iArrT, _, _, false, _) then (listArray(listReverse(iArr)),iArrT);
+    
+    // i < n 
+    case (_, _, _, iArr, iArrT, _, _, true, _)
+      equation
+        // get the equation
+        e = equationNth(inEqsArr, index);
+        // compute the row
+        (row,_) = incidenceRow(vars, e, inWhenClause, inIndexType);
+        i1 = index+1;       
+        // put it in the arrays
+        iArr = row::iArr;
+        iArrT = fillincidenceMatrixT(row,{i1},iArrT);
+        // next equation
+        (outIncidenceArray,iArrT) = incidenceMatrixDispatch(vars, inEqsArr, inWhenClause, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType);
+      then
+        (outIncidenceArray,iArrT);
+    
+    /* Unreachable due to tail recursion, which we really need
+    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
+      equation
+        print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
+      then
+        fail();
+    */
+  end match;
+end incidenceMatrixDispatch;
+
+protected function incidenceMatrixDispatchScalar
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
   input Variables vars;
@@ -4029,19 +4140,19 @@ algorithm
         iArr = List.consN(size,row,iArr);
         iArrT = fillincidenceMatrixT(row,rowindxs,iArrT);
         // next equation
-        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = incidenceMatrixDispatch(vars, inEqsArr, inWhenClause, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = incidenceMatrixDispatchScalar(vars, inEqsArr, inWhenClause, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
       then
         (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn);
     
     /* Unreachable due to tail recursion, which we really need
     case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
       equation
-        print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
+        print("- BackendDAEUtil.incidenceMatrixDispatchScalar failed\n");
       then
         fail();
     */
   end match;
-end incidenceMatrixDispatch;
+end incidenceMatrixDispatchScalar;
 
 protected function fillincidenceMatrixT
 "@author: Frenkel TUD 2011-04
@@ -5036,10 +5147,10 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(knownVars=kvars,arrayEqs=ae,complEqs=complEqs,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
       equation
         // get the size
-        numberOfEqs = equationSize(eqns);
+        numberOfEqs = equationArraySize(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the Adjacency matrix
-        arr = arrayCreate(numberOfEqs, {});
+        arr = arrayCreate(equationSize(eqns), {});
         arrT = arrayCreate(numberofVars, {});
         // create the array to mark if a variable is allready found in the equation
         rowmark = arrayCreate(numberofVars, 0);
@@ -7775,7 +7886,7 @@ algorithm
   // reduce index
   (systs,shared,args) := mapReduceIndexDAE(systs,shared,inMatchingOptions,matchingAlgorithm,{},{});
   // do late inline 
-  (BackendDAE.DAE(systs,shared),_) := BackendDAEOptimize.lateInline(BackendDAE.DAE(systs,shared));
+  (BackendDAE.DAE(systs,shared),_) := BackendDAEOptimize.lateInlineFunction(BackendDAE.DAE(systs,shared));
   // do state selection
   (systs,shared) := mapStateSelectionDAE(systs,shared,args,stateDeselection,{});
   outDAE := BackendDAE.DAE(systs,shared);
@@ -8270,7 +8381,7 @@ protected
   list<tuple<pastoptimiseDAEModule,String,Boolean>> allPastOptModules;
   list<String> strPastOptModules;
 algorithm
-  allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline",false),
+  allPastOptModules := {(BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
   (BackendDAEOptimize.removeSimpleEquationsFastPast,"removeSimpleEquationsFast",false),
   (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls",false),

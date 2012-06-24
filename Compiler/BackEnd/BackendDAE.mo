@@ -389,6 +389,7 @@ end VariableArray;
 public
 uniontype EquationArray "- Equation Array"
   record EQUATION_ARRAY
+    Integer size "size of the Equations in scalar form";
     Integer numberOfElement "numberOfElement ; no. elements" ;
     Integer arrSize "arrSize ; array size" ;
     array<Option<Equation>> equOptArr "equOptArr" ;

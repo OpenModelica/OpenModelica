@@ -1280,6 +1280,8 @@ algorithm
       list<DAE.Exp> expl,inps,outs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
+      DAE.Algorithm alg;
+      DAE.ElementSource source;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1287,6 +1289,13 @@ algorithm
         res = stringAppendList({s1," = ",s2});
       then
         res;
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        res = stringAppendList({s1," = ",s2});
+      then
+        res;        
     case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
@@ -1294,6 +1303,13 @@ algorithm
         res = stringAppendList({"Complex eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        res = stringAppendList({s1," = ",s2});
+      then
+        res;          
     case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
@@ -1332,6 +1348,11 @@ algorithm
         res = stringAppendList({s1,"= 0"});
       then
         res;
+    case (BackendDAE.ALGORITHM(alg = alg,source = source))
+      equation
+        res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+      then
+        res;        
     case (BackendDAE.ALGORITHMWRAPPER(index = i, in_ = inps, out = outs))
       equation
         is = intString(i);

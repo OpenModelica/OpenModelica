@@ -456,7 +456,7 @@ protected
   BackendDAE.Variables vars;
  algorithm
    BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs=eqns) := eqs;
-   notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationSize(eqns) > 0;
+   notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationArraySize(eqns) > 0;
  end eqnSystemNotZero;
 
 protected function stripCorrelationStatement "help function"

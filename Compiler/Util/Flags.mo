@@ -547,7 +547,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(14, "indexReductionMeth
     "Sets the index reduction method to use.");
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "lateInline",
+    "lateInlineFunction",
     "inlineArrayEqn",
     "constantLinearSystem",
 //    "removeSimpleEquations",
@@ -560,7 +560,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     "simplifyTimeIndepFuncCalls"
   }),
   SOME(STRING_DESC_OPTION({
-    ("lateInline", "perform function inlining for function with annotation LateInline=true"),
+    ("lateInlineFunction", "perform function inlining for function with annotation LateInline=true"),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeEqualFunctionCalls", "DESCRIBE ME"),
@@ -653,6 +653,10 @@ constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
 
+constant ConfigFlag NOWRAPPEREQNS = CONFIG_FLAG(40,
+  "nowrappereqns", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  "temporarily flag for implementation redesign, do not use it");
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
 // sorted by index (and thus have unique indices).
@@ -695,7 +699,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT
+  PLOT_SILENT,
+  NOWRAPPEREQNS
 };
 
 public function new

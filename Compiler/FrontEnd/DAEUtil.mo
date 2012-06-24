@@ -5872,6 +5872,31 @@ algorithm
   outSource := condAddSymbolicTransformation(add,source,DAE.SUBSTITUTION({exp2},exp1));
 end addSymbolicTransformationSubstitution;
 
+public function addSymbolicTransformationSimplifyLst
+  input list<Boolean> add;
+  input DAE.ElementSource isource;
+  input list<DAE.Exp> explst1;
+  input list<DAE.Exp> explst2;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match(add,isource,explst1,explst2)
+    local
+      list<Boolean> brest;
+      list<DAE.Exp> rexplst1,rexplst2;
+      DAE.Exp exp1,exp2;
+      DAE.ElementSource source;
+    case({},_,_,_) then isource;
+    case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
+      equation
+        source = addSymbolicTransformation(isource, DAE.SIMPLIFY(exp1,exp2));
+      then
+        addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
+    case(false::brest,_,_::rexplst1,_::rexplst2)
+      then
+        addSymbolicTransformationSimplifyLst(brest,isource,rexplst1,rexplst2);
+  end match;  
+end addSymbolicTransformationSimplifyLst;
+
 public function addSymbolicTransformationSimplify
   input Boolean add;
   input DAE.ElementSource source;

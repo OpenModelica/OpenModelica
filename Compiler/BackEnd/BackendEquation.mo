@@ -152,13 +152,13 @@ public function copyEquationArray
   input BackendDAE.EquationArray inEquations;
   output BackendDAE.EquationArray outEquations;
 protected
-  BackendDAE.Value n,size;
+  Integer n,size,arrsize;
   array<Option<BackendDAE.Equation>> arr,arr_1;
 algorithm
-  BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) := inEquations;
-  arr_1 := arrayCreate(size, NONE());
+  BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr) := inEquations;
+  arr_1 := arrayCreate(arrsize, NONE());
   arr_1 := Util.arrayCopy(arr, arr_1);
-  outEquations := BackendDAE.EQUATION_ARRAY(n,size,arr_1);
+  outEquations := BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
 end copyEquationArray;
 
 public function equationsLstVarsWithoutRelations
@@ -572,14 +572,23 @@ algorithm
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;
-      Integer index;
+      Integer index,size;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      list<Integer> dimSize;
+      DAE.Algorithm alg;
+      list<DAE.Statement> stmts,stmts1;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),func,inTypeA)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.EQUATION(e_1,e_2,source),ext_arg_2);
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),func,inTypeA)
+      equation
+        ((e_1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+      then
+        (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source),ext_arg_2);        
     case (BackendDAE.ARRAY_EQUATIONWRAPPER(index=index,crefOrDerCref = expl,source=source),func,inTypeA)
       equation
         (exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
@@ -615,12 +624,24 @@ algorithm
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
       then
         (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
+    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),func,inTypeA)
+      equation
+        (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts));
+      then
+        (BackendDAE.ALGORITHM(size,alg,source),ext_arg_1);        
     case (BackendDAE.ALGORITHMWRAPPER(index = index,in_ = expl,out = exps,source=source),func,inTypeA)
       equation
         (expl1,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
         (exps1,ext_arg_2) = traverseBackendDAEExpList(exps,func,ext_arg_1);
       then
         (BackendDAE.ALGORITHMWRAPPER(index,expl1,exps1,source),ext_arg_2);
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),func,inTypeA)
+      equation
+        ((e_1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+      then
+        (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source),ext_arg_2);        
     case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=index,crefOrDerCref = expl,source=source),func,inTypeA)
       equation
         (exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
@@ -927,13 +948,13 @@ algorithm
   (outEquationArray,outTypeA) :=
   matchcontinue (inEquationArray,func,inTypeA)
     local
-      Integer numberOfElement, arrSize;
+      Integer numberOfElement, arrSize, size;
       array<Option<BackendDAE.Equation>> equOptArr;
       Type_a ext_arg;
-    case ((BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,arrSize=arrSize,equOptArr = equOptArr)),func,inTypeA)
+    case ((BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr = equOptArr)),func,inTypeA)
       equation
         (equOptArr,ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
-      then (BackendDAE.EQUATION_ARRAY(numberOfElement,arrSize,equOptArr),ext_arg);
+      then (BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr),ext_arg);
     case (_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
@@ -1177,33 +1198,36 @@ algorithm
   outEquationArray:=
   matchcontinue (inEquation,inEquationArray)
     local
-      BackendDAE.Value n_1,n,size,expandsize,expandsize_1,newsize;
+      Integer n_1,n,arrsize,expandsize,expandsize_1,newsize,size;
       array<Option<BackendDAE.Equation>> arr_1,arr,arr_2;
       BackendDAE.Equation e;
       Real rsize,rexpandsize;
-    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
+    case (e,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr))
       equation
-        (n < size) = true "Have space to add array elt." ;
+        (n < arrsize) = true "Have space to add array elt." ;
         n_1 = n + 1;
         arr_1 = arrayUpdate(arr, n_1, SOME(e));
+        size = equationSize(e) + size;
       then
-        BackendDAE.EQUATION_ARRAY(n_1,size,arr_1);
-    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr)) /* Do NOT Have space to add array elt. Expand array 1.4 times */
+        BackendDAE.EQUATION_ARRAY(size,n_1,arrsize,arr_1);
+    case (e,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr)) /* Do NOT Have space to add array elt. Expand array 1.4 times */
       equation
-        (n < size) = false;
-        rsize = intReal(size);
+        (n < arrsize) = false;
+        rsize = intReal(arrsize);
         rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
+        newsize = expandsize_1 + arrsize;
         arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n_1, SOME(e));
+        size = equationSize(e) + size;
       then
-        BackendDAE.EQUATION_ARRAY(n_1,newsize,arr_2);
-    case (e,BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
+        BackendDAE.EQUATION_ARRAY(size,n_1,newsize,arr_2);
+    case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr))
       equation
-        print("- BackendEquation.equationAdd failed\n");
+        print("- BackendEquation.equationAdd failed\nArraySize: " +& intString(arrsize) +& 
+            "\nnumberOfElement " +& intString(n) +& "\nSize " +& intString(size));
       then
         fail();
   end matchcontinue;
@@ -1266,13 +1290,15 @@ algorithm
   outEquationArray := match (inEquationArray,inInteger,inEquation)
     local
       array<Option<BackendDAE.Equation>> arr_1,arr;
-      BackendDAE.Value n,size,pos;
+      Integer n,arrsize,pos,size;
       BackendDAE.Equation eqn;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),pos,eqn)
+    case (BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr),pos,eqn)
       equation
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(eqn));
+        pos = pos+1;
+        size = size - equationOptSize(arr[pos]) + equationSize(eqn);
+        arr_1 = arrayUpdate(arr, pos, SOME(eqn));
       then
-        BackendDAE.EQUATION_ARRAY(n,size,arr_1);
+        BackendDAE.EQUATION_ARRAY(size,n,arrsize,arr_1);
   end match;
 end equationSetnth;
 
@@ -1492,14 +1518,71 @@ public function equationSource "Retrieve the source from a BackendDAE.BackendDAE
 algorithm
   source := match eq
     case BackendDAE.EQUATION(source=source) then source;
+    case BackendDAE.ARRAY_EQUATION(source=source) then source;
     case BackendDAE.ARRAY_EQUATIONWRAPPER(source=source) then source;
     case BackendDAE.SOLVED_EQUATION(source=source) then source;
     case BackendDAE.RESIDUAL_EQUATION(source=source) then source;
     case BackendDAE.WHEN_EQUATION(source=source) then source;
+    case BackendDAE.ALGORITHM(source=source) then source;
     case BackendDAE.ALGORITHMWRAPPER(source=source) then source;
+    case BackendDAE.COMPLEX_EQUATION(source=source) then source;
     case BackendDAE.COMPLEX_EQUATIONWRAPPER(source=source) then source;
   end match;
 end equationSource;
+
+public function equationSize "Retrieve the size from a BackendDAE.BackendDAE equation"
+  input BackendDAE.Equation eq;
+  output Integer size;
+algorithm
+  size := match eq
+    local list<Integer> ds;
+    case BackendDAE.EQUATION(source=_) then 1;
+    case BackendDAE.ARRAY_EQUATION(dimSize=ds) then List.fold(ds,intMul,1);
+    case BackendDAE.ARRAY_EQUATIONWRAPPER(source=_) then 1;
+    case BackendDAE.SOLVED_EQUATION(source=_) then 1;
+    case BackendDAE.RESIDUAL_EQUATION(source=_) then 1;
+    case BackendDAE.WHEN_EQUATION(source=_) then 1;
+    case BackendDAE.ALGORITHM(size=size) then size;
+    case BackendDAE.ALGORITHMWRAPPER(source=_) then 1;
+    case BackendDAE.COMPLEX_EQUATION(size=size) then size;
+    case BackendDAE.COMPLEX_EQUATIONWRAPPER(source=_) then 1;
+  end match;
+end equationSize;
+
+public function equationOptSize
+  input Option<BackendDAE.Equation> oeqn;
+  output Integer size;
+algorithm
+  size := match(oeqn)
+    local BackendDAE.Equation eqn;
+    case(NONE()) then 0;
+    case(SOME(eqn)) then equationSize(eqn);
+  end match;
+end equationOptSize;
+
+public function equationLstSize
+  input list<BackendDAE.Equation> inEqns;
+  output Integer size;
+algorithm
+  size := equationLstSize_impl(inEqns,0);
+end equationLstSize;
+
+protected function equationLstSize_impl
+  input list<BackendDAE.Equation> inEqns;
+  input Integer isize;
+  output Integer size;
+algorithm
+  size := match(inEqns,isize)
+    local
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest;
+    case({},_) then isize;
+    case(eqn::rest,_)
+      then
+        equationLstSize_impl(rest,isize+equationSize(eqn));
+   end match;
+end equationLstSize_impl;
+
 
 public function generateEQUATION "
 Author: Frenkel TUD 2010-05"

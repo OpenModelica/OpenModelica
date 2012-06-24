@@ -286,15 +286,15 @@ end replaceScalarArrayEqns;
  * inline functions stuff
  */
 
-public function lateInline
-"function lateInlineDAE"
+public function lateInlineFunction
+"function lateInlineFunction"
     input BackendDAE.BackendDAE inDAE;
     output BackendDAE.BackendDAE outDAE;
     output Boolean outRunMatching;
 algorithm
   outDAE := Inline.inlineCalls({DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
   outRunMatching := false;
-end lateInline;
+end lateInlineFunction;
 
 /* 
  * remove simply equations stuff
@@ -1559,7 +1559,7 @@ algorithm
       Boolean b;
     case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,vars,inouttpllst)))
       equation
-        (statementLst_1,b) = BackendVarTransform.replaceStatementLst(statementLst,repl);
+        (statementLst_1,b) = BackendVarTransform.replaceStatementLst(statementLst,repl,{},false);
         (alg,(repl,vars,inouttpllst)) =  replaceAlgorithmTraverser1(b,statementLst_1,(repl,vars,inouttpllst));
       then
         ((alg,(repl,vars,inouttpllst)));
@@ -8044,8 +8044,8 @@ algorithm
           Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
           {s1,s2}, Absyn.dummyInfo);
         
-        partitionEquations(BackendDAEUtil.equationSize(arr),arr,ixs,ea);
-        partitionVars(BackendDAEUtil.equationSize(arr),arr,vars,ixs,mT,va);
+        partitionEquations(BackendDAEUtil.equationArraySize(arr),arr,ixs,ea);
+        partitionVars(BackendDAEUtil.equationArraySize(arr),arr,vars,ixs,mT,va);
         el = arrayList(ea);
         vl = arrayList(va);
         (systs,true) = List.threadMapFold(el,vl,createEqSystem,true);
