@@ -1537,8 +1537,8 @@ algorithm
       Boolean b,b1,b2;
       case (DAE.BCONST(true),statementLst,_,_,es,repl,_,_)
         equation
-          (statementLst_1,b) = replaceStatementLst(statementLst, repl,inAcc,inBAcc);
-          (es_1,b) = replaceStatementLst(es, repl,statementLst_1,b);         
+          statementLst = listAppend(statementLst,es);
+          (es_1,b) = replaceStatementLst(statementLst, repl,inAcc,true);
         then (es_1,b);
       case (DAE.BCONST(false),_,else_ as DAE.NOELSE(),source,es,repl,_,_)
         equation
@@ -1550,15 +1550,15 @@ algorithm
         then (es_1,b);
       case (DAE.BCONST(false),_,else_ as DAE.ELSE(statementLst=statementLst_e),source,es,repl,_,_)
         equation
-          (statementLst_1,b) = replaceStatementLst(statementLst_e, repl,inAcc,true);
-          (es_1,b) = replaceStatementLst(es, repl,statementLst_1,b);         
+          statementLst = listAppend(statementLst_e,es);
+          (es_1,b) = replaceStatementLst(es, repl,statementLst,true);         
         then (es_1,b);
       case (exp,statementLst,else_,source,es,repl,_,_)
         equation
           (statementLst_1,b1) = replaceStatementLst(statementLst, repl,{},false);
           (else_1,b2) = replaceElse(else_,repl);
-          b = b1 or b2;
-          (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_IF(exp,statementLst_1,else_1,source)::inAcc,b);
+          true = b1 or b2;
+          (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_IF(exp,statementLst_1,else_1,source)::inAcc,true);
         then (es_1,b);
       case (exp,statementLst,else_,source,es,repl,_,_)
         equation
