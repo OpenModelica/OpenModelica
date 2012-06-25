@@ -585,7 +585,7 @@ end Correlation;
 
 
 encapsulated package Connections
-  import OpenModelica.Code.VariableName;
+  import OpenModelica.$Code.VariableName;
 
   function branch
     input VariableName node1;
@@ -700,14 +700,14 @@ end SimulationResult; */
 
 encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions"
 
-type Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
+type $Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
 Besides, it has special semantics."
 
 type TypeName "A path, for example the name of a class, e.g. A.B.C or .A.B" end TypeName;
 type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
 type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName" end VariableNames;
 
-end Code;
+end $Code;
 
 package Internal "Contains internal implementations, e.g. overloaded builtin functions"
   
@@ -843,9 +843,9 @@ end Internal;
 
 package Scripting
   
-import OpenModelica.Code.TypeName;
-import OpenModelica.Code.VariableName;
-import OpenModelica.Code.VariableNames;
+import OpenModelica.$Code.TypeName;
+import OpenModelica.$Code.VariableName;
+import OpenModelica.$Code.VariableNames;
 
 record CheckSettingsResult
   String OPENMODELICAHOME,OPENMODELICALIBRARY,OMC_PATH,OMDEV_PATH;
@@ -1710,7 +1710,7 @@ annotation(preferredView="text");
 end translateGraphics;
 
 function codeToString
-  input Code className;
+  input $Code className;
   output String string;
 external "builtin";
 annotation(preferredView="text");

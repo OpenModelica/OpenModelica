@@ -14762,18 +14762,18 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsModification(rest);
-        res = stringAppend("Code(),", str);
+        res = stringAppend("$Code(),", str);
       then
         res;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsModification(rest);
-        res = stringAppend("Code(),", str);
+        res = stringAppend("$Code(),", str);
       then
         res;
     case ({Absyn.COMPONENTITEM(comment = NONE())})
       equation
-        res = "Code()";
+        res = "$Code()";
       then
         res;
   end matchcontinue;

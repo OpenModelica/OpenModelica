@@ -4589,7 +4589,7 @@ algorithm
     case (Absyn.CODE(code = cod))
       equation
         res = printCodeStr(cod);
-        res_1 = stringAppendList({"Code(",res,")"});
+        res_1 = stringAppendList({"$Code(",res,")"});
       then
         res_1;
     

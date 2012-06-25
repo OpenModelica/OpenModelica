@@ -859,7 +859,7 @@ uniontype MatchType
 end MatchType;
 
 
-uniontype CodeNode "The Code uniontype is used for Meta-programming. It originates from the Code quoting mechanism. See paper in Modelica2003 conference"
+uniontype CodeNode "The Code uniontype is used for Meta-programming. It originates from the $Code quoting mechanism. See paper in Modelica2003 conference"
   record C_TYPENAME "Cannot be parsed; used by Static for API calls"
     Path path;
   end C_TYPENAME;

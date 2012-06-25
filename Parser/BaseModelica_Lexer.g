@@ -287,7 +287,7 @@ fragment
 NL: '\r\n' | '\n' | '\r';
 
 /* OpenModelica extensions */
-CODE : 'Code' | '$Code';
+CODE : '$Code';
 CODE_NAME : '$TypeName';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
@@ -366,6 +366,7 @@ END_WHILE : 'end' EAT_WS_COMMENT 'while';
 END_IDENT : 'end' EAT_WS_COMMENT
     ( IDENT2 {SETTEXT($IDENT2.text);}
     | QIDENT {SETTEXT($QIDENT.text);}
+    | CODE {SETTEXT($CODE.text);}
     )
   ;
 T_END : 'end' EAT_WS_COMMENT?;

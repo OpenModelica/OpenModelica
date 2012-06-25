@@ -1081,7 +1081,7 @@ algorithm
       String name;
     case (ty,_)
       equation
-        {Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Code",Absyn.IDENT(name))))} = Types.getTypeSource(ty);
+        {Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("$Code",Absyn.IDENT(name))))} = Types.getTypeSource(ty);
       then Util.assoc(name,{
         ("TypeName",      DAE.T_CODE(DAE.C_TYPENAME(),DAE.emptyTypeSource)),
         ("VariableName",  DAE.T_CODE(DAE.C_VARIABLENAME(),DAE.emptyTypeSource)),
