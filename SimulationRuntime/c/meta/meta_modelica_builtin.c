@@ -697,6 +697,11 @@ modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modeli
   return arr;
 }
 
+modelica_metatype boxptr_arrayUpdate(modelica_metatype arr, modelica_integer ix, modelica_metatype val)
+{
+  return arrayUpdate(arr,MMC_UNTAGFIXNUM(ix),val);
+}
+
 modelica_metatype arrayCopy(modelica_metatype arr)
 {
   mmc_GC_add_roots(&arr, 1, 0, "");
