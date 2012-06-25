@@ -675,6 +675,8 @@ template functionInitSample(list<SampleCondition> sampleConditions)
   void function_sampleInit(DATA *data)
   {
     <%if timeEventCode then "int i = 0; // Current index"%>
+    <%varDecls%>
+
     <%timeEventCode%>
   }
   >>
