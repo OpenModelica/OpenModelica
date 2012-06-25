@@ -1015,9 +1015,9 @@ QString OMCProxy::getComponentModifierValue(QString modelName, QString name)
 bool OMCProxy::setComponentModifierValue(QString modelName, QString name, QString value)
 {
   if (value.compare("=") == 0)
-    sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(()))");
+    sendCommand("setComponentModifierValue(" + modelName + "," + name + ", $Code(()))");
   else
-    sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(" + value + "))");
+    sendCommand("setComponentModifierValue(" + modelName + "," + name + ", $Code(" + value + "))");
   if (getResult().toLower().contains("ok"))
     return true;
   else
