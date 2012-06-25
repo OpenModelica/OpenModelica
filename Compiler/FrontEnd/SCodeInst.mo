@@ -134,6 +134,7 @@ algorithm
         //print(InstUtil.printClass(cls));
         (cls, symtab) = InstSymbolTable.build(cls);
         (cls, symtab) = assignParamTypes(cls, symtab);
+        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions), Typing.typeFunction, (functions, symtab));
         (cls, symtab) = Typing.typeClass(cls, symtab);
 
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
@@ -1787,8 +1788,9 @@ algorithm
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), inEnv, InstTypes.emptyPrefix, INST_ALL(), functions);
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
+        // print("inputs: " +& stringDelimitList(List.map(inputs,InstUtil.printElement),",") +& "\n");
         stmts = List.flatten(algorithms);
         outFunction = InstTypes.FUNCTION(path,inputs,outputs,locals,stmts);
         functions = BaseHashTable.addUnique((path,outFunction),functions);

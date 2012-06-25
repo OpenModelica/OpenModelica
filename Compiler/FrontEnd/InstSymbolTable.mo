@@ -495,6 +495,17 @@ algorithm
   end matchcontinue;
 end addIterator;
 
+public function addFunctionScope
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  HashTable ht;
+algorithm
+  ht := BaseHashTable.emptyHashTableWork(257,
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+  outSymbolTable := ht :: inSymbolTable;
+end addFunctionScope;
+
 public function updateComponent
   "Updates a component in the symboltable, or adds the component if it doesn't
    already exists."
