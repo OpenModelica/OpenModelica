@@ -30,7 +30,7 @@
 \begin{document}
 
 
-What follows is a list of the OMC APIs with their syntax and examples.
+What follows is a list of the OMC APIs with their syntax and examples. See also testsuite/interactive/* for more examples.
 
  	\begin{modelicaExamples}
 	% 	Standard API
@@ -544,7 +544,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\tab end mymodel;\\
 		end test;\\
 		\end{mocode}
-		\functionex{addComponent(c1, Modelica.Electrical.Analog.Basic.Capacitor, test.mymodel, annotate=Code(()))}
+		\functionex{addComponent(c1, Modelica.Electrical.Analog.Basic.Capacitor, test.mymodel, annotate=\$Code(()))}
 		{true}
 
 		\begin{mocode}
@@ -676,9 +676,9 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			end test;\\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
-			{\{Code()\}}
+			{\{\$Code()\}}
 
-			\functionex{setComponentModifierValue(test.mymodel, r1, Code(=2))}
+			\functionex{setComponentModifierValue(test.mymodel, r1, \$Code(=2))}
 			{Ok}
 
 			\begin{mocode}
@@ -687,9 +687,9 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\dots \\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
-			{\{Code(=2)\}}
+			{\{\$Code(=2)\}}
 
-			\functionex{setComponentModifierValue(test.mymodel, r1.start, Code(=2))}
+			\functionex{setComponentModifierValue(test.mymodel, r1.start, \$Code(=2))}
 			{Ok}
 
 			\begin{mocode}
@@ -697,7 +697,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2)=2;\\
 			\dots \\
 			\end{mocode}
-			\functionex{setComponentModifierValue(test.mymodel, r1, Code(=Resistor(R=2)))}
+			\functionex{setComponentModifierValue(test.mymodel, r1, \$Code(=Resistor(R=2)))}
 			{Ok}
 
 			\begin{mocode}
@@ -706,9 +706,9 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\dots \\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
-			{\{Code((start=2)=Resistor(R=2))\}}
+			{\{\$Code((start=2)=Resistor(R=2))\}}
 
-			\functionex{setComponentModifierValue(test.mymodel, r1.min, Code(=10))}
+			\functionex{setComponentModifierValue(test.mymodel, r1.min, \$Code(=10))}
 			{Ok}
 
 			\begin{mocode}
@@ -720,7 +720,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			{\{start, min\}}
 
 			\functionex{getNthComponentModification(test.mymodel, 1)}
-			{\{Code((start=2, min=10)=Resistor(R=2))\}}
+			{\{\$Code((start=2, min=10)=Resistor(R=2))\}}
 
 			\functionex{getComponentModifierValue(test.mymodel, r1)}
 			{Resistor(R=2)}
@@ -731,7 +731,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\functionex{getComponentModifierValue(test.mymodel, r1.min)}
 			{=10}
 
-			\functionex{setComponentModifierValue(test.mymodel, r1.min, Code(()))}
+			\functionex{setComponentModifierValue(test.mymodel, r1.min, \$Code(()))}
 			{Ok}
 
 			\begin{mocode}
@@ -739,7 +739,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2)=Resistor(R=2);\\
 			\dots \\
 			\end{mocode}
-			\functionex{setComponentModifierValue(test.mymodel, r1, Code(()))}
+			\functionex{setComponentModifierValue(test.mymodel, r1, \$Code(()))}
 			{Ok}
 
 			\begin{mocode}
@@ -747,7 +747,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2);\\
 			\dots \\
 			\end{mocode}
-			\functionex{setComponentModifierValue(test.mymodel, r1.start, Code(()))}
+			\functionex{setComponentModifierValue(test.mymodel, r1.start, \$Code(()))}
 			{Ok}
 
 			\begin{mocode}
