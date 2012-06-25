@@ -401,6 +401,7 @@ algorithm
       Option<Component> comp;
       SymbolTable st;
       Boolean added;
+      HashTable scope;
 
     // PACKAGE isn't really a component, so we don't add it. But it's class
     // should be added, so return true anyway.
@@ -408,11 +409,11 @@ algorithm
       then (st, true);
 
     // For any other type of component, try to add it.
-    case (_, st)
+    case (_, st as scope::_)
       equation
         // Try to find the component in the symboltable.
         name = InstUtil.getComponentName(inComponent);
-        comp = lookupNameOpt(name, st);
+        comp = lookupNameOpt(name, {scope});
         // Let addOptionalComponent handle the rest.
         (st, added) = addOptionalComponent(name, inComponent, comp, st);
       then
