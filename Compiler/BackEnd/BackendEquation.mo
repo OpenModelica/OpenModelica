@@ -1404,10 +1404,11 @@ algorithm
       array<BackendDAE.MultiDimEquation> arrayEqs;
       array<BackendDAE.ComplexEquation> complEqs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst,entrylst1;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst,explst1;
       list<DAE.ElementSource> sources;
       DAE.ElementSource source;
       String str;
+      list<list<DAE.Subscript>> subslst;
       
     case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
@@ -1422,6 +1423,20 @@ algorithm
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
       then ((eqn,(v, arrayEqs,complEqs,entrylst,rhs_exp_2::explst,source::sources)));
+       
+    case ((eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
+      equation
+        new_exp = Expression.expSub(e1,e2);
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        explst1 = List.map1r(subslst,Expression.applyExpSubscripts,new_exp);
+        explst1 = List.map1(explst1,BackendDAEUtil.getEqnsysRhsExp,v);
+        explst1 = List.map(explst1,Expression.negate);
+        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst = listAppend(explst1,explst);
+        sources = List.consN(equationSize(eqn), source, sources);
+      then ((eqn,(v, arrayEqs,complEqs,entrylst,explst,sources)));       
         
     case ((eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=index,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation

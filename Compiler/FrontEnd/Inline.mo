@@ -182,7 +182,7 @@ function: inlineEqOpt
   input Functiontuple inElementList;
   output Option<BackendDAE.Equation> outEquationOption;
 algorithm
-  outEquationOption := matchcontinue(inEquationOption,inElementList)
+  outEquationOption := match(inEquationOption,inElementList)
     local
       BackendDAE.Equation eqn;
 
@@ -192,12 +192,7 @@ algorithm
         eqn = inlineEq(eqn,inElementList);
       then
         SOME(eqn);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEqOpt failed");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end inlineEqOpt;
 
 public function inlineEq "
@@ -392,7 +387,7 @@ algorithm
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
-      DAE.Exp e,e_1,startv,startv_1;
+      DAE.Exp startv,startv_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Integer index;
@@ -402,27 +397,21 @@ algorithm
       DAE.Stream streamPrefix;
       BackendDAE.Var var;
       DAE.ElementSource source;
+      Option<DAE.Exp> bind;
 
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
       equation
-        (e_1,source) = inlineExp(e,fns,source);
+        (bind,source) = inlineExpOpt(bind,fns,source);
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
       equation
-        startv = DAEUtil.getStartAttrFail(values);
-        (startv_1,source) = inlineExp(startv,fns,source);
-        values1 = DAEUtil.setStartAttr(values,startv_1);
+        (bind,source) = inlineExpOpt(bind,fns,source);
       then
-        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
-      equation
-        (e_1,source) = inlineExp(e,fns,source);
-      then
-        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix);
     case(var,_) then var;
   end matchcontinue;
 end inlineVar;
@@ -1024,6 +1013,29 @@ algorithm
     case (a_else,fns,source) then (a_else,source);
   end matchcontinue;
 end inlineElse;
+
+public function inlineExpOpt "
+function: inlineExpOpt
+  inlines calls in an DAE.Exp"
+  input Option<DAE.Exp> inExpOption;
+  input Functiontuple inElementList;
+  input DAE.ElementSource inSource;
+  output Option<DAE.Exp> outExpOption;
+  output DAE.ElementSource outSource;
+algorithm
+  (outExpOption,outSource) := match(inExpOption,inElementList,inSource)
+    local
+      DAE.Exp exp;
+      DAE.ElementSource source;
+
+    case(NONE(),_,_) then (NONE(),inSource);
+    case(SOME(exp),_,_)
+      equation
+        (exp,source) = inlineExp(exp,inElementList,inSource);
+      then
+        (SOME(exp),source);
+  end match;
+end inlineExpOpt;
 
 public function inlineExp "
 function: inlineExp

@@ -1282,6 +1282,8 @@ algorithm
       BackendDAE.WhenEquation weqn;
       DAE.Algorithm alg;
       DAE.ElementSource source;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse,eqns;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1363,8 +1365,46 @@ algorithm
                                       outsStr, ")" /*,"\n"*/});
       then
         res;
+    case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse, source=source))
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = stringDelimitList(List.map(eqns,equationStr),"\n");
+        s3 = stringAppendList({"if ",s1," then\n",s2});        
+        res = ifequationStr(expl,eqnstrue,eqnsfalse,s3);
+      then
+        res;        
   end matchcontinue;
 end equationStr;
+
+protected function ifequationStr
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> eqnstrue;
+  input list<BackendDAE.Equation> eqnsfalse;
+  input String iString;
+  output String outString;
+algorithm
+  outString := match(conditions,eqnstrue,eqnsfalse,iString)
+    local
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns;
+      String seqns,s,se;
+      DAE.Exp e;
+      list<DAE.Exp> elst;
+    case ({},_,_,_)
+      equation
+        seqns = stringDelimitList(List.map(eqnsfalse,equationStr),"\n");
+        s = stringAppendList({"else\n",iString,seqns,"end if"});
+      then
+        s;
+    case(e::elst,eqns::eqnslst,_,_)
+      equation
+        se = ExpressionDump.printExpStr(e);
+        seqns = stringDelimitList(List.map(eqns,equationStr),"\n");
+        s = stringAppendList({"elseif ",se," then\n",seqns,"end if"});
+      then
+        ifequationStr(elst,eqnslst,eqnsfalse,s);
+  end match;
+end ifequationStr;
 
 protected function dumpExtObjCls "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses cls;
