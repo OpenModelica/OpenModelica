@@ -1423,7 +1423,7 @@ algorithm
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
       then ((eqn,(v, arrayEqs,complEqs,entrylst,rhs_exp_2::explst,source::sources)));
-       
+/*       
     case ((eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
         new_exp = Expression.expSub(e1,e2);
@@ -1437,7 +1437,7 @@ algorithm
         explst = listAppend(explst1,explst);
         sources = List.consN(equationSize(eqn), source, sources);
       then ((eqn,(v, arrayEqs,complEqs,entrylst,explst,sources)));       
-        
+*/        
     case ((eqn as BackendDAE.ARRAY_EQUATIONWRAPPER(index=index,source=source),(v, arrayEqs,complEqs,entrylst,explst,sources)))
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
