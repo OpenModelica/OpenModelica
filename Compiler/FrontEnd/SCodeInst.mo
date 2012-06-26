@@ -57,6 +57,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Graph;
 protected import InstSymbolTable;
 protected import InstUtil;
 protected import List;
@@ -1775,6 +1776,7 @@ algorithm
       list<list<Statement>> algorithms;
       list<Statement> stmts;
       FunctionHashTable functions;
+      list<Statement> initBindings;
 
     case (_, _, _, _, functions)
       equation
@@ -1790,7 +1792,14 @@ algorithm
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
-        // print("inputs: " +& stringDelimitList(List.map(inputs,InstUtil.printElement),",") +& "\n");
+        initBindings = {};
+        (outputs,initBindings) = List.mapFold(outputs,stripInitBinding,initBindings);
+        (locals,initBindings) = List.mapFold(locals,stripInitBinding,initBindings);
+        (initBindings,{}) = Graph.topologicalSort(
+          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getLocalAssignmentName))),
+          statementLhsEqual);
+        algorithms = initBindings::algorithms;
+        
         stmts = List.flatten(algorithms);
         outFunction = InstTypes.FUNCTION(path,inputs,outputs,locals,stmts);
         functions = BaseHashTable.addUnique((path,outFunction),functions);
@@ -1799,6 +1808,106 @@ algorithm
 
   end matchcontinue;
 end instFunction;
+
+protected function statementLhsEqual
+  input Statement left;
+  input Statement right;
+  output Boolean b;
+algorithm
+  b := stringEq(getLocalAssignmentName(left),getLocalAssignmentName(right));
+end statementLhsEqual;
+
+protected function getLocalAssignmentName
+  "x := ... => x. Fails for qualified assignments"
+  input Statement stmt;
+  output String name;
+algorithm
+  InstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name))) := stmt;
+end getLocalAssignmentName;
+
+protected function getStatementDependencies
+  "Returns the dependencies given an element.
+  Assumes reduction/loop indexes/etc have been replaced by unique indices."
+  input Statement inStmt;
+  input tuple<list<Statement>,list<String>> inAllElements;
+  output list<Statement> outDependencies;
+algorithm
+  outDependencies := match (inStmt, inAllElements)
+    local
+      DAE.Exp exp;
+      list<String> deps,allPossible;
+      list<Statement> allStatements;
+      Absyn.Info info;
+      String name;
+
+    case (InstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),rhs=exp,info=info), (allStatements,allPossible))
+      equation
+        ((_, deps)) = Expression.traverseExp(exp,getExpDependencies,{});
+        Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
+        deps = List.intersectionOnTrue(allPossible,deps,stringEq);
+      then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
+        List.select1(allStatements,selectStatement,deps);
+
+  end match;
+end getStatementDependencies;
+
+protected function selectStatement
+  input Statement stmt;
+  input list<String> deps;
+  output Boolean select;
+protected
+  String name;
+algorithm
+  name := getLocalAssignmentName(stmt);
+  select := listMember(name,deps);
+end selectStatement;
+
+protected function selectStatement2
+end selectStatement2;
+
+protected function getExpDependencies
+  input tuple<DAE.Exp,list<String>> inTpl;
+  output tuple<DAE.Exp,list<String>> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      list<String> lst;
+      String name;
+      DAE.Exp exp;
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),lst)) then ((exp,name::lst));
+    case ((exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=name)),lst)) then ((exp,name::lst));
+    else inTpl;
+  end match;
+end getExpDependencies;
+
+protected function stripInitBinding
+  input Element inElt;
+  input list<Statement> inBindings;
+  output Element outElt;
+  output list<Statement> outBindings;
+algorithm
+  (outElt,outBindings) := match (inElt,inBindings)
+    local
+      Absyn.Info info,bindingInfo;
+      String name;
+      Class cls;
+      DAE.Type baseType;
+      array<Dimension> dimensions;
+      Prefixes prefixes;
+      ParamType paramType;
+      DAE.Exp bindingExp;
+      Absyn.Info bindingsInfo;
+      Component comp;
+      Element elt;
+      
+    case (InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,InstTypes.UNTYPED_BINDING(bindingExp=bindingExp,info=bindingInfo),info),cls),_)
+      equation
+        comp = InstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,InstTypes.UNBOUND(),info);
+        elt = InstTypes.ELEMENT(comp,cls);
+      then (elt,InstTypes.ASSIGN_STMT(DAE.CREF(DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {}),DAE.T_UNKNOWN_DEFAULT),bindingExp,bindingInfo)::inBindings);
+    else (inElt,inBindings);
+  end match;
+end stripInitBinding;
 
 protected function instFunctionName
   input Item inItem;

@@ -1526,23 +1526,16 @@ algorithm
       SymbolTable st;
     case (path,(ht,st))
       equation
-        // print("TODO: Open Scope!\n");
         InstTypes.FUNCTION(inputs=inputs,outputs=outputs,locals=locals,algorithms=al) = BaseHashTable.get(path,ht);
         st = InstSymbolTable.addFunctionScope(st);
-        // TODO: Get the result of addElements...
-        // print(Absyn.pathString(path) +& " (typing) inputs: " +& stringDelimitList(List.map(inputs,InstUtil.printElement),",") +& "\n");
         (_,st) = InstSymbolTable.addElements(inputs, st);
         (_,st) = InstSymbolTable.addElements(outputs, st);
-        // print(Absyn.pathString(path) +& " (typing) outputs: " +& stringDelimitList(List.map(outputs,InstUtil.printElement),",") +& "\n");
         (_,st) = InstSymbolTable.addElements(locals, st);
-        // print(Absyn.pathString(path) +& " (typing) locals: " +& stringDelimitList(List.map(locals,InstUtil.printElement),",") +& "\n");
-        // InstSymbolTable.dumpSymbolTable(st);
         (inputs, st) = List.mapFold(inputs, typeElement, st);
         (outputs, st) = List.mapFold(outputs, typeElement, st);
         (locals, st) = List.mapFold(locals, typeElement, st);
         al = typeStatements(al, st);
         ht = BaseHashTable.add((path,InstTypes.FUNCTION(path,inputs,outputs,locals,al)),ht);
-        // InstSymbolTable.dumpSymbolTable(st);
         _::st = st;
       then ((ht,st));
     else
