@@ -132,6 +132,7 @@ algorithm
       DAE.Exp dst,dst_1;
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
+      String s;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
@@ -159,7 +160,8 @@ algorithm
         REPLACEMENTS(ht_1,invHt_1,eht_1);
     case (_,_,_)
       equation
-        print("-add_replacement failed\n");
+        s = ComponentReference.printComponentRefStr(inSrc);
+        print("-BackendVarTransform.addReplacement failed for " +& s);
       then
         fail();
   end matchcontinue;
@@ -399,6 +401,7 @@ algorithm
       list<DAE.Subscript> subscriptLst;
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs;
+      String s;
     case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
@@ -434,8 +437,25 @@ algorithm
         // Create a list of crefs from names
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);        
-      then erepl;        
-    case (extendrepl,DAE.CREF_IDENT(ident=_),_) then extendrepl;
+      then erepl;      
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        failure(_ = BaseHashTable.get(precr,extendrepl));
+        // update Replacements
+        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
+      then erepl;          
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
+      equation
+        precr = ComponentReference.makeCrefIdent(ident,ty,{});
+        precr1 = ComponentReference.joinCrefs(pcr,precr);
+        failure(_ = BaseHashTable.get(precr1,extendrepl));
+        // update Replacements
+        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
+      then erepl;
+    case (extendrepl,DAE.CREF_IDENT(ident=_),_)
+      then 
+        extendrepl;
     case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
@@ -474,12 +494,11 @@ algorithm
         failure(_ = BaseHashTable.get(precr1,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precr1));
          // Create a list of crefs from names
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
-        erepl1 = List.fold1r(crefs,addExtendReplacement,SOME(precrn1),erepl1);        
+        erepl1 = List.fold1r(crefs,addExtendReplacement,SOME(precrn1),erepl);        
       then erepl1;
     // all other
     case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
@@ -495,7 +514,8 @@ algorithm
       then erepl;
     case (extendrepl,cr,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.addExtendReplacement failed");
+        s = ComponentReference.printComponentRefStr(cr);
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.addExtendReplacement failed for " +& s);
       then extendrepl;
   end matchcontinue;
 end addExtendReplacement;
@@ -1681,9 +1701,9 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
+  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 end BackendVarTransform;
