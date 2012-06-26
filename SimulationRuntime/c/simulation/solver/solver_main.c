@@ -70,6 +70,8 @@ rungekutta_step(DATA* simData, SOLVER_INFO* solverInfo);
 
 void checkTermination(DATA* simData);
 
+int writeOutputVars(char* names, DATA* data);
+
 int
 solver_main_step(int flag, DATA* simData, SOLVER_INFO* solverInfo) {
   switch (flag) {
@@ -106,7 +108,7 @@ solver_main_step(int flag, DATA* simData, SOLVER_INFO* solverInfo) {
 int solver_main(DATA* simData, double start, double stop, double step,
     long outputSteps, double tolerance, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
-    int flag)
+    int flag, const char* outputVariablesAtEnd)
 {
   int i;
 
@@ -450,6 +452,12 @@ int solver_main(DATA* simData, double start, double stop, double step,
   }
   communicateStatus("Finished", 1);
 
+  /* we have output variables in the command line -output a,b,c */
+  if (outputVariablesAtEnd)
+  {
+    writeOutputVars(strdup(outputVariablesAtEnd), simData);
+  }
+
   /* save dassl stats before print */
 
   if (DEBUG_FLAG(LOG_STATS)) {
@@ -604,3 +612,75 @@ void checkTermination(DATA* simData)
   fflush(NULL);
 }
 
+int writeOutputVars(char* names, DATA* data)
+{
+  int i = 0;
+  char *p = strtok(names, ",");
+
+  fprintf(stdout, "time=%.20g", data->localData[0]->timeValue);
+
+  while (p)
+  {
+    for (i = 0; i < data->modelData.nVariablesReal; i++)
+      if (!strcmp(p, data->modelData.realVarsData[i].info.name))
+        fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
+    for (i = 0; i < data->modelData.nVariablesInteger; i++)
+      if (!strcmp(p, data->modelData.integerVarsData[i].info.name))
+        fprintf(stdout, ",%s=%i", p, (data->localData[0])->integerVars[i]);
+    for (i = 0; i < data->modelData.nVariablesBoolean; i++)
+      if (!strcmp(p, data->modelData.booleanVarsData[i].info.name))
+        fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
+    for (i = 0; i < data->modelData.nVariablesString; i++)
+      if (!strcmp(p, data->modelData.stringVarsData[i].info.name))
+        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[i]);
+
+    for (i = 0; i < data->modelData.nAliasReal; i++)
+      if (!strcmp(p, data->modelData.realAlias[i].info.name))
+      {
+       if (data->modelData.realAlias[i].negate)
+         fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+       else
+         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+      }
+    for (i = 0; i < data->modelData.nAliasInteger; i++)
+      if (!strcmp(p, data->modelData.integerAlias[i].info.name))
+      {
+        if (data->modelData.integerAlias[i].negate)
+          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+        else
+          fprintf(stdout, ",%s=%i", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+      }
+    for (i = 0; i < data->modelData.nAliasBoolean; i++)
+      if (!strcmp(p, data->modelData.booleanAlias[i].info.name))
+      {
+        if (data->modelData.booleanAlias[i].negate)
+          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+        else
+          fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+      }
+    for (i = 0; i < data->modelData.nAliasString; i++)
+      if (!strcmp(p, data->modelData.stringAlias[i].info.name))
+        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
+
+    /* parameters */
+    for (i = 0; i < data->modelData.nParametersReal; i++)
+      if (!strcmp(p, data->modelData.realParameterData[i].info.name))
+        fprintf(stdout, ",%s=%.20g", p, data->modelData.realParameterData[i].attribute.initial);
+
+    for (i = 0; i < data->modelData.nParametersInteger; i++)
+      if (!strcmp(p, data->modelData.integerParameterData[i].info.name))
+        fprintf(stdout, ",%s=%i", p, data->modelData.integerParameterData[i].attribute.initial);
+
+    for (i = 0; i < data->modelData.nParametersBoolean; i++)
+      if (!strcmp(p, data->modelData.booleanParameterData[i].info.name))
+        fprintf(stdout, ",%s=%i", p, data->modelData.booleanParameterData[i].attribute.initial);
+
+    for (i = 0; i < data->modelData.nParametersString; i++)
+      if (!strcmp(p, data->modelData.stringParameterData[i].info.name))
+        fprintf(stdout, ",%s=\"%s\"", p, data->modelData.stringParameterData[i].attribute.initial);
+
+    /* move to next */
+    p = strtok(NULL, ",");
+  }
+  fprintf(stdout, "\n"); fflush(stdout);
+}

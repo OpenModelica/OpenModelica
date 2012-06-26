@@ -114,7 +114,7 @@ extern const int ERROR_NONLINSYS = -1;
 extern const int ERROR_LINSYS = -2;
 
 /* function with template for linear model */
-int callSolver(DATA*, string, string, string, double, double, double, long, double, string, string, string, double);
+int callSolver(DATA*, string, string, string, double, double, double, long, double, string, string, string, double, string);
 
 int isInteractiveSimulation();
 
@@ -147,7 +147,7 @@ void setTermMsg(const char *msg)
 }
 
 
-/* \brief determine verboselevel by investigating flag -lv=flags
+/* \brief determine verboselevel by investigating flag -lv flags
  *
  * Flags are or'ed to a returnvalue.
  * Valid flags: LOG_EVENTS, LOG_NONLIN_SYS
@@ -304,7 +304,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 {
   int retVal = -1;
 
-  /* linear model option is set : -l <lintime> */
+  /* linear model option is set : <-l lintime> */
   int create_linearmodel = flagSet("l", argc, argv);
   string* lintime = (string*) getFlagValue("l", argc, argv);
 
@@ -368,6 +368,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string init_file = "";
   string init_time_string = "";
   double init_time = 0;
+  string outputVariablesAtEnd = "";
 
   if(flagSet("iim", argc, argv))
     init_initMethod = *getFlagValue("iim", argc, argv);
@@ -381,9 +382,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     init_time = atof(init_time_string.c_str());
   }
 
+  if (flagSet("output", argc, argv))
+  {
+    outputVariablesAtEnd = *getFlagValue("output", argc, argv);
+  }
+
   retVal = callSolver(data, method, outputFormat, result_file_cstr, start, stop,
       stepSize, outputSteps, tolerance, init_initMethod, init_optiMethod,
-      init_file, init_time);
+      init_file, init_time, outputVariablesAtEnd);
 
   if(retVal == 0 && create_linearmodel)
   {
@@ -418,9 +424,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 int callSolver(DATA* simData, string method, string outputFormat,
     string result_file_cstr, double start, double stop, double stepSize,
     long outputSteps, double tolerance, string init_initMethod,
-    string init_optiMethod, string init_file, double init_time)
+    string init_optiMethod, string init_file, double init_time,
+    string outputVariablesAtEnd)
 {
   int retVal = -1;
+  const char* outVars = (outputVariablesAtEnd[0] == '\0') ? NULL : outputVariablesAtEnd.c_str();
 
   long maxSteps = 4 * outputSteps;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
@@ -445,39 +453,39 @@ int callSolver(DATA* simData, string method, string outputFormat,
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (method == std::string("euler")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
   } else if (method == std::string("rungekutta")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (method == std::string("dassljac")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (method == std::string("dasslnum")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     num_jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (method == std::string("dopri5")) {
        if (DEBUG_FLAG(LOG_SOLVER)) {
        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
        }
-       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 6);
+       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 6, outVars);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
@@ -488,7 +496,7 @@ int callSolver(DATA* simData, string method, string outputFormat,
       if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
   } else if (method == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
@@ -500,7 +508,7 @@ int callSolver(DATA* simData, string method, string outputFormat,
       if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
 #ifdef _OMC_QSS_LIB
   } else if (method == std::string("qss")) {
@@ -511,7 +519,7 @@ int callSolver(DATA* simData, string method, string outputFormat,
 #endif
   } else {
     cout << "Unrecognized solver: " << method
-        << "; valid solvers are dassl,euler,rungekutta,dopri5,inline-euler or inline-rungekutta."
+        << "; valid solvers are dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta,qss."
         << endl; fflush(NULL);
     retVal = 1;
   }
@@ -529,10 +537,43 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
   if(flagSet("?", argc, argv) || flagSet("help", argc, argv))
   {
-    cout << "usage: " << argv[0]
-         << " <-f initfile> <-r result file> <-m solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta}> <-interactive> <-port value>"
-         << " <-iim init method:{none,state}> <-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> <-iif init file> <iit init time>"
-         << " -lv [LOG_STATS][,LOG_INIT][,LOG_RES_INIT][,LOG_SOLVER][,LOG_EVENTS][,LOG_NONLIN_SYS][,LOG_ZEROCROSSINGS][,LOG_DEBUG]"
+    cout << "usage: " << argv[0] << "\n\t"
+         << "<-f setup file> "
+             "\n\t\t[specify a new setup XML file to the generated simulation code]" << "\n\t"
+         << "<-r result file> "
+             "\n\t\t[specify a new result file than the default Model_res.mat]" << "\n\t"
+         << "<-m|s solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta,qss}> "
+             "\n\t\t[specify the solver]" << "\n\t"
+         << "<-interactive> <-port value> "
+             "\n\t\t[specify interactive simulation and port]" << "\n\t"
+         << "<-iim initialization method:{none,state}> "
+             "\n\t\t[specify the initialization method]" << "\n\t"
+         << "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> "
+             "\n\t\t[specify the initialization optimization method]" << "\n\t"
+         << "<-iif initialization file> "
+             "\n\t\t[specify an external file for the initialization of the model]" << "\n\t"
+         << "<-iit initialization time> "
+             "\n\t\t[specify a time for the initialization of the model]" << "\n\t"
+         << "<-override var1=start1,var2=start2,par3=start3,\n\t           "
+             "startTime=val1,stopTime=val2,stepSize=val3,tolerance=val4,\n\t           "
+             "solver=\"see -m\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\"> "
+             "\n\t\t[override the variables or the simulation settings in the XML setup file]" << "\n\t"
+         << "<-output a,b,c>"
+             "\n\t\t[output the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value]" << "\n\t"
+         << "<-noemit>"
+             "\n\t\t[do not emit any results to the result file]" << "\n\t"
+         << "<-jac> " <<
+             "\n\t\t[specify jacobian]" << "\n\t"
+         << "<-numjac> " <<
+             "\n\t\t[specify numerical jacobian]" << "\n\t"
+         << "<-l linear time> "
+             "\n\t\t[specify a time where the linearization of the model should be performed]" << "\n\t"
+         << "<-mt> "
+             "\n\t\t[this command line parameter is DEPRECATED!]" << "\n\t"
+         << "<-measureTimePlotFormat svg|jpg|ps|gif|...> "
+             "\n\t\t[specify the output format of the measure time functionality]" << "\n\t"
+         << "<-lv [LOG_STATS][,LOG_INIT][,LOG_RES_INIT][,LOG_SOLVER][,LOG_EVENTS][,LOG_NONLIN_SYS][,LOG_ZEROCROSSINGS][,LOG_DEBUG]> "
+             "\n\t\t[specify the logging level]" << "\n\t"
          << endl;
     EXIT(0);
   }

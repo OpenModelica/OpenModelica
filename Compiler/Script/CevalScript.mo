@@ -3086,7 +3086,7 @@ protected function buildOpenTURNSInterface "builds the OpenTURNS interface by ca
 algorithm
   (outCache,scriptFile,outSt):= matchcontinue(inCache,inEnv,vals,inSt,inMsg)
   local
-    String templateFile,modelName;
+    String templateFile,modelName,str;
     Absyn.Program p,ptot;
     list<SCode.Element> p_1;
     Absyn.Path className;
@@ -3101,6 +3101,10 @@ algorithm
       (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
       //print("instantiated class\n");
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+      // get all the variable names with a distribution
+      // TODO FIXME
+      // sort all variable names in the distribution order
+      // TODO FIXME
       funcs = Env.getFunctionTree(cache);
       dlow = BackendDAECreate.lower(dae,funcs,true);      
       //print("lowered class\n");      

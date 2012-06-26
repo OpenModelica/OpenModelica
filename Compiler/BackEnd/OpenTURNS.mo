@@ -311,14 +311,15 @@ algorithm
   (distributions,distributionVarLst) := generateDistributions(inDaelow);
   (correlationMatrix) := generateCorrelationMatrix(inDaelow,listLength(distributionVarLst),List.map(distributionVarLst,Util.tuple21));
   collectionDistributions := generateCollectionDistributions(inDaelow,distributionVarLst);
-  inputDescriptions  := generateInputDescriptions(inDaelow);
-  pythonFileName := System.stringReplace(templateFile,"template",modelName);
+  inputDescriptions := stringDelimitList(List.map(distributionVarLst, getName), ", "); //generateInputDescriptions(inDaelow); 
+  
+  pythonFileName    := System.stringReplace(templateFile,"template",modelName);
 
   // Replace template markers
   pythonFileContent := System.stringReplace(templateFileContent,"<%distributions%>",distributions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%correlationMatrix%>",correlationMatrix);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%collectionDistributions%>",collectionDistributions);
-  pythonFileContent := System.stringReplace(pythonFileContent,"<%inputDescriptions%>",inputDescriptions);  
+  pythonFileContent := System.stringReplace(pythonFileContent,"<%inputDescriptions%>",inputDescriptions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%wrapperName%>",modelLastName +& cStrWrapperSuffix);
 
   //Write file
@@ -367,6 +368,11 @@ algorithm
   varLst := List.select(varLst,BackendVariable.varHasDistributionAttribute);
   dists := List.map(varLst,BackendVariable.varDistribution);
   (sLst,distributionVarLst) := List.map1_2(List.threadTuple(dists,List.map(varLst,BackendVariable.varCref)),generateDistributionVariable,dae2);
+
+  // reverse to get them in the proper order
+  distributionVarLst := listReverse(distributionVarLst);
+  sLst := listReverse(sLst);
+  
   header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model\n";
   distributions := stringDelimitList(header::sLst,"\n");
 end generateDistributions;
@@ -612,9 +618,16 @@ protected
 algorithm
   collectionVarName := "collectionMarginals";
   collectionDistributions := "# Initialization of the distribution collection:\n"
-  +&collectionVarName+&" = DistributionCollection()\n"
-  +&stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");   
+  +& collectionVarName+&" = DistributionCollection()\n"
+  +& stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");   
 end generateCollectionDistributions;
+
+protected function getName "help function"
+  input tuple<String,String> distVarTpl;
+  output String outStr;
+algorithm
+ outStr := "\"" +& Util.tuple21(distVarTpl) +& "\"";
+end getName;
 
 protected function generateCollectionDistributions2 "help function"
   input tuple<String,String> distVarTpl;
