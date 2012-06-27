@@ -249,7 +249,7 @@ algorithm
     case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_)
       equation
         stmts1 = List.map1(stmts,inlineStatement,fns);
-        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts));
+        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
       then
         BackendDAE.ALGORITHM(size,alg,source);
 

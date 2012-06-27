@@ -544,6 +544,27 @@ algorithm
   end match;
 end getReplacement;
 
+public function getAllReplacements "
+Author BZ 2009-04
+Extract all crefs -> exp to two separate lists.
+"
+input VariableReplacements inVariableReplacements;
+output list<DAE.ComponentRef> crefs;
+output list<DAE.Exp> dsts;
+algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
+    local
+      HashTable2.HashTable ht;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
+    case (REPLACEMENTS(hashTable = ht))
+      equation
+        tplLst = BaseHashTable.hashTableList(ht);
+        crefs = List.map(tplLst,Util.tuple21);
+        dsts = List.map(tplLst,Util.tuple22);
+      then
+        (crefs,dsts);
+  end matchcontinue;
+end getAllReplacements;
+
 public function getExtendReplacement "function: getExtendReplacement
 
   Retrives a replacement variable given a set of replacement rules and a
@@ -1112,7 +1133,7 @@ algorithm
     case ((BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source) :: es),repl,_)
       equation
         (stmts1,b1) = replaceStatementLst(stmts,repl,{},false);
-        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts));
+        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
       then
         replaceEquations2(es, repl,BackendDAE.ALGORITHM(size,alg,source)::inAcc);
 

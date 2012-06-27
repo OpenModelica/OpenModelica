@@ -3120,6 +3120,36 @@ algorithm
       DAE.Exp exp1,exp2,val;
       Real re1,re2,re3;
       String str,s1,s2;
+      Option<DAE.Exp> oexp;
+      DAE.Type ty;
+    
+    case (DAE.ADD(ty = _),DAE.RANGE(ty=ty,start = exp1,step=oexp,stop=exp2),_)
+      equation
+        exp1 = simplifyBinaryConst(inOperator1, exp1, inExp3);
+        exp2 = simplifyBinaryConst(inOperator1, exp2, inExp3);
+      then
+        DAE.RANGE(ty,exp1,oexp,exp2);    
+
+    case (DAE.ADD(ty = _),_,DAE.RANGE(ty=ty,start = exp1,step=oexp,stop=exp2))
+      equation
+        exp1 = simplifyBinaryConst(inOperator1, inExp2, exp1);
+        exp2 = simplifyBinaryConst(inOperator1, inExp2, exp2);
+      then
+        DAE.RANGE(ty,exp1,oexp,exp2);       
+    
+    case (DAE.SUB(ty = _),DAE.RANGE(ty=ty,start = exp1,step=oexp,stop=exp2),_)
+      equation
+        exp1 = simplifyBinaryConst(inOperator1, exp1, inExp3);
+        exp2 = simplifyBinaryConst(inOperator1, exp2, inExp3);
+      then
+        DAE.RANGE(ty,exp1,oexp,exp2);    
+
+    case (DAE.SUB(ty = _),_,DAE.RANGE(ty=ty,start = exp1,step=oexp,stop=exp2))
+      equation
+        exp1 = simplifyBinaryConst(inOperator1, inExp2, exp1);
+        exp2 = simplifyBinaryConst(inOperator1, inExp2, exp2);
+      then
+        DAE.RANGE(ty,exp1,oexp,exp2);     
     
     case (DAE.ADD(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
@@ -3622,6 +3652,7 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       Boolean b;
       Real r,r1,r2,r3;
+      Option<DAE.Exp> oexp;
     
     // constants
     case (oper,e1,e2)
@@ -3960,6 +3991,36 @@ algorithm
     // false OR e => e
     case (DAE.OR(_),e1 as DAE.BCONST(b),e2) then Util.if_(b,e1,e2);
     case (DAE.OR(_),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e2,e1);
+      
+      
+    case (DAE.ADD(ty=_),DAE.RANGE(ty=ty,start = e1,step=oexp,stop=e2),_)
+      equation
+        e1 = simplifyBinary(inOperator2, e1, inExp4);
+        e2 = simplifyBinary(inOperator2, e2, inExp4);
+      then
+        DAE.RANGE(ty,e1,oexp,e2);    
+
+    case (DAE.ADD(ty=_),_,DAE.RANGE(ty=ty,start = e1,step=oexp,stop=e2))
+      equation
+        e1 = simplifyBinary(inOperator2, inExp3, e1);
+        e2 = simplifyBinary(inOperator2, inExp3, e2);
+      then
+        DAE.RANGE(ty,e1,oexp,e2);         
+      
+    case (DAE.SUB(ty=_),DAE.RANGE(ty=ty,start = e1,step=oexp,stop=e2),_)
+      equation
+        e1 = simplifyBinary(inOperator2, e1, inExp4);
+        e2 = simplifyBinary(inOperator2, e2, inExp4);
+      then
+        DAE.RANGE(ty,e1,oexp,e2);    
+
+    case (DAE.SUB(ty=_),_,DAE.RANGE(ty=ty,start = e1,step=oexp,stop=e2))
+      equation
+        e1 = simplifyBinary(inOperator2, inExp3, e1);
+        e2 = simplifyBinary(inOperator2, inExp3, e2);
+      then
+        DAE.RANGE(ty,e1,oexp,e2);        
+      
   end matchcontinue;
 end simplifyBinary;
 
