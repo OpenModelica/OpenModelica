@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
+  
 encapsulated package CheckModel "  
   file:        CheckModel.mo
   package:     CheckModel
@@ -79,11 +79,11 @@ algorithm
   (ovarSize,oeqnSize,oeqnslst) := match(inElements,ivarSize,ieqnSize,ieqnslst)
     local 
       DAE.Element elem;
-	    list<DAE.Element>  rest,eqns,daeElts; 
-	    Integer varSize,eqnSize,size;
-	    DAE.Exp e1,ce;
-	    DAE.ComponentRef cr;
-	    DAE.ElementSource source;
+      list<DAE.Element>  rest,eqns,daeElts; 
+      Integer varSize,eqnSize,size;
+      DAE.Exp e1,ce;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
     case ({},_,_,_) then (ivarSize,ieqnSize,ieqnslst);
 
     // external Objects 
@@ -99,7 +99,7 @@ algorithm
         (varSize,eqnSize,eqns) = countVarEqnSize(rest,ivarSize,ieqnSize,ieqnslst);
       then
         (varSize,eqnSize,eqns); 
-	
+  
     // variable Variables
     case (DAE.VAR(componentRef=cr,kind = DAE.VARIABLE(),binding=SOME(e1),source=source)::rest,_,_,_)
       equation
@@ -114,21 +114,21 @@ algorithm
         ce = Expression.crefExp(cr);
         (varSize,eqnSize,eqns) = countVarEqnSize(rest,ivarSize+1,ieqnSize+1,DAE.EQUATION(ce,e1,source)::ieqnslst);
       then
-        (varSize,eqnSize,eqns); 	
-	  
-	  // variable Variables
-	  case (DAE.VAR(kind = DAE.VARIABLE())::rest,_,_,_)
+        (varSize,eqnSize,eqns);   
+    
+    // variable Variables
+    case (DAE.VAR(kind = DAE.VARIABLE())::rest,_,_,_)
       equation
         (varSize,eqnSize,eqns) = countVarEqnSize(rest,ivarSize+1,ieqnSize,ieqnslst);
       then
         (varSize,eqnSize,eqns);
-	
+  
     // discrete Variables
     case (DAE.VAR(kind = DAE.DISCRETE())::rest,_,_,_)
       equation
         (varSize,eqnSize,eqns) = countVarEqnSize(rest,ivarSize+1,ieqnSize,ieqnslst);
       then
-        (varSize,eqnSize,eqns);	
+        (varSize,eqnSize,eqns);  
         
     // equations
     case((elem as DAE.EQUATION(exp=e1))::rest,_,_,_)
@@ -280,7 +280,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CheckModel.countVarEqnSize failed on: " +& DAEDump.dumpElementsStr({elem}));
       then
-        fail();		
+        fail();    
   end match;
 end countVarEqnSize;
 
@@ -708,9 +708,9 @@ algorithm
       then
         simpleEquations(ea1,ea2,0);
                
-	  else 
-	    then 
-	      0;  
+    else 
+      then 
+        0;  
   end matchcontinue;
 end simpleEquation;
 

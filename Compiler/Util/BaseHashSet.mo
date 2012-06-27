@@ -364,7 +364,7 @@ algorithm
       ValueArray varr;
     case((_,varr,_,_,_))
       then
-	    valueArrayList(varr);
+      valueArrayList(varr);
   end match;
 end hashSetList;
 
