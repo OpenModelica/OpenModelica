@@ -38,6 +38,7 @@ Algorithm.mo \
 Builtin.mo \
 Ceval.mo \
 CevalFunction.mo \
+CheckModel.mo \
 ClassInf.mo \
 ClassLoader.mo \
 ComponentReference.mo \
@@ -127,6 +128,7 @@ Derive.mo \
 ExpressionSolve.mo \
 GraphML.mo \
 PartFn.mo \
+OnRelaxation.mo \
 SimCode.mo \
 TaskGraph.mo \
 XMLDump.mo \
@@ -162,11 +164,13 @@ Unparsing.mo
 UTIL = \
 AvlTree.mo \
 BaseHashTable.mo \
+BaseHashSet.mo \
 Config.mo \
 Debug.mo \
 Error.mo \
 Flags.mo \
 Graph.mo \
+HashSet.mo \
 HashTable.mo \
 HashTable2.mo \
 HashTable3.mo \
