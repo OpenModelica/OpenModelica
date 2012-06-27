@@ -1599,6 +1599,7 @@ algorithm
       Integer nr;
       list<Integer> lstInt;
       list<Var> varLst;
+       list<DAE.Type> typs;
     
     // count the variables in array
     case DAE.T_ARRAY(dims = ad)
@@ -1614,6 +1615,14 @@ algorithm
         nr = List.reduce(lstInt, intAdd);
       then
         nr;
+        
+    case DAE.T_TUPLE(tupleType=typs)
+      equation
+        lstInt = List.map(typs,sizeOf);
+        nr = List.reduce(lstInt, intAdd);
+      then
+        nr;
+        
     
     // for all other consider it just 1 variable
     case _ then 1;
@@ -3267,21 +3276,9 @@ algorithm
   outExps := (exp,exp::acc);
 end expressionCollector;
 
-
 public function replaceCref
 "function: replaceCref
   Replace a componentref with a expression"
-  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> inTpl;
-  input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> outTpl;
-protected
-  DAE.Exp exp;
-  tuple<DAE.ComponentRef,DAE.Exp> tpl;
-algorithm
-  (exp,tpl) := inTpl;
-  outTpl := traverseExp(exp,replaceCrefWork,tpl);
-end replaceCref;
-
-protected function replaceCrefWork
   input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> inTpl;
   output tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> otpl;
 algorithm
@@ -3296,7 +3293,7 @@ algorithm
         ((target,(cr1,target)));
     else then inTpl;
   end matchcontinue;
-end replaceCrefWork;
+end replaceCref;
 
 /***************************************************/
 /* traverse DAE.Exp */
