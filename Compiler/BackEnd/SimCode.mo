@@ -2361,14 +2361,21 @@ algorithm
      then (uniqueEqIndex,odeEquations,algebraicEquations,allEquations);
     case (true,(syst as BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))::systs,_,_,_,odeEquations,algebraicEquations,allEquations)
       equation
-        (contBlocks, discBlocks) = splitOutputBlocks(syst, shared, comps);
+         stateeqnsmark = arrayCreate(BackendDAEUtil.systemSize(syst), 0);        
+        stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1, ass2);
+        (odeEquations1,algebraicEquations1,allEquations1,uniqueEqIndex) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo,iuniqueEqIndex);
+        odeEquations = odeEquations1::odeEquations;
+        algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
+        allEquations = listAppend(allEquations,allEquations1);
+        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(false,systs,shared,helpVarInfo,uniqueEqIndex,odeEquations,algebraicEquations,allEquations);
+        /*(contBlocks, discBlocks) = splitOutputBlocks(syst, shared, comps);
         (odeEquations1,_,uniqueEqIndex) = createEquations(false, false, true, false, false, syst, shared, comps, helpVarInfo,iuniqueEqIndex);
         (algebraicEquations1,_,uniqueEqIndex) = createEquations(true, false, true, false, false, syst, shared, discBlocks, helpVarInfo,uniqueEqIndex);
         (allEquations1,_,uniqueEqIndex) = createEquations(true, false, true, false, false, syst, shared, comps, helpVarInfo,uniqueEqIndex);
         odeEquations = odeEquations1::odeEquations;
         algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
         allEquations = listAppend(allEquations,allEquations1);
-        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(true,systs,shared,helpVarInfo,uniqueEqIndex,odeEquations,algebraicEquations,allEquations);
+        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(true,systs,shared,helpVarInfo,uniqueEqIndex,odeEquations,algebraicEquations,allEquations);*/
      then (uniqueEqIndex,odeEquations,algebraicEquations,allEquations);       
   end matchcontinue;
 end createEquationsForSystems;

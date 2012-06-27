@@ -311,10 +311,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/,simCode)
+         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/,simCode)
        ;separator="\n")      
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/,simCode)
+         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/,simCode)
        ;separator="\n")   
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -3237,10 +3237,10 @@ template boundParameters(list<SimEqSystem> parameterEquations,Text &varDecls,Sim
   
   let &tmp = buffer ""
   let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, simCode)
     ;separator="\n")
   let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, simCode)
     ;separator="\n")    
   <<
     
@@ -3520,7 +3520,7 @@ template functionInitial(list<SimEqSystem> startValueEquations,Text &varDecls,Si
   
 
   let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls,simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls,simCode)
     ;separator="\n")
   <<
     
@@ -5270,97 +5270,6 @@ case SES_ALGORITHM(__) then
   ;separator="\n") 
 end equationAlgorithm;
 
-template algStatement(DAE.Statement it, Context context, Text &varDecls,SimCode simCode) ::=
-  match it
-  case STMT_ASSIGN(exp1 = CREF(componentRef = WILD(__)), exp = e) then
-    let &preExp = buffer "" 
-    let expPart = daeExp(e, context, &preExp, &varDecls, simCode)
-    <<
-    <%preExp%>
-    <%expPart%>
-    >>
-  case STMT_ASSIGN(exp1 = CREF(__)) then
-    let &preExp = buffer ""
-    let expPart = daeExp(exp, context, &preExp,&varDecls, simCode)
-    <<
-    <%preExp%>
-    <%scalarLhsCref(exp1, context, &preExp, &varDecls, simCode)%> = <%expPart%>;
-    >>  
-  case STMT_ASSIGN(__) then
-    let &preExp = buffer ""
-    let expPart1 = daeExp(exp1, context, &preExp, &varDecls,simCode)
-    let expPart2 = daeExp(exp, context, &preExp, &varDecls,simCode)
-    <<
-    <%preExp%>
-    <%expPart1%> = <%expPart2%>;
-    >>  
-  case STMT_ASSIGN_ARR(componentRef = CREF_IDENT(subscriptLst=subs as (_ :: _))) then
-     let &preExp = buffer ""
-     let expPart = daeExp(exp, context, &preExp,&varDecls, simCode)
-     let spec = daeExpCrefRhsIndexSpec(subs, context, &preExp, &varDecls, simCode)
-     <<
-     <%preExp%>
-     <%componentRef.ident%>.AssignSpec(<%spec%>, <%expPart%>.A);
-     >>
-  case STMT_ASSIGN_ARR(__) then
-     let &preExp = buffer ""
-     let expPart = daeExp(exp, context, &preExp, &varDecls,simCode)
-     <<
-     <%preExp%>
-     <%contextCref(componentRef, context,simCode)%>=<%expPart%>;
-     >>  
-  case STMT_IF(__) then
-    let &preExp = buffer ""
-    let condExp = daeExp(exp, context, &preExp,&varDecls, simCode)
-    <<
-    <%preExp%>
-    if (<%condExp%>) {
-      <%statementLst |> it => algStatement(it, context,&varDecls,simCode) ;separator="\n"%>
-    }
-    <%elseExpr(else_, context,&preExp, &varDecls, simCode)%>
-    >>
-
-  case STMT_FOR(range=rng as RANGE(__)) then
-    let identType = expType(type_, iterIsArray) //TODO: ?? what is this for ... no array typed iterator is possible ???
-    let identTypeShort = expTypeShort(type_)
-    let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls,simCode)
-                   ;separator="\n")
-    algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls,simCode)
-  
-  case STMT_WHILE(__)  then
-    let &preExp = buffer ""
-    let var = daeExp(exp, context, &preExp,&varDecls, simCode)
-    <<
-    while (1) {
-    <%preExp%>
-    if (!<%var%>) break;
-      <%statementLst |> stmt => algStatement(stmt, context,&varDecls,simCode) ;separator="\n"%>
-    }
-    >>
-     
-  case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/,simCode)
-  case STMT_ASSERT(__)         then 
-   let &preExp = buffer "" 
-   let condExp = daeExp(cond, context, &preExp,&varDecls, simCode)
-   let msgExp = daeExp(msg, context, &preExp,&varDecls, simCode)
-  'Assert(<%condExp%>,<%msgExp%>);'
-  
-  case STMT_TERMINATE(__)      then "STMT_TERMINATE_NI"
-  case STMT_WHEN(__)           then algStmtWhen(it, context,&varDecls, simCode)
-  case STMT_FOR(__)            
-     then 
-   algStmtForGeneric(it, context,&varDecls, simCode)
-  case STMT_BREAK(__)          then 'break; //break stmt<%\n%>'
-  case STMT_FAILURE(__)        then "STMT_FAILURE_NI"
-  case STMT_TRY(__)            then "STMT_TRY_NI"
-  case STMT_CATCH(__)          then "STMT_CATCH_NI"
-  case STMT_THROW(__)          then "STMT_THROW_NI"
-  case STMT_RETURN(__)         then "STMT_RETURN_NI"
-  case STMT_NORETCALL(__)      then "STMT_NORETCALL_NI"
-  case STMT_REINIT(__)         then "STMT_REINIT_NI"
-  case _ then "NOT_IMPLEMENTED_ALG_STATEMENT"
-      
-end algStatement;
 
 
 
@@ -5467,23 +5376,7 @@ template contextIteratorName(Ident name, Context context)
 end contextIteratorName;
 
 
-template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
- "Generates a when algorithm statement."
-::=
-match context
-case SIMULATION(genDiscrete=true) then
-  match when
-  case STMT_WHEN(__) then
-    <<
-    
-    if (<%helpVarIndices |> idx => edgeHelpVar(idx) ;separator=" || "%>) {
-      <% statementLst |> stmt =>  algStatement(stmt, context, &varDecls,simCode)
-         ;separator="\n" %>
-    }
-    <%algStatementWhenElse(elseWhen, &varDecls,simCode)%>
-    >>
-  end match
-end algStmtWhen;
+
 
 template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to algStmtWhen."
@@ -6204,10 +6097,10 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let continous = (continousEquations |> eqs => (eqs |> eq =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/,simCode))
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   let paraEquations = (parameterEquations |> eq =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/,simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/,simCode)
     ;separator="\n") 
   let discrete = (discreteEquations |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode)
@@ -6240,7 +6133,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/,simCode))
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   let reinit = (whenClauses |> when hasindex i0 =>
@@ -6467,7 +6360,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/, /*&tmp*/ simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, /*&tmp*/ simCode)
       ;separator="\n")
   <<
   <%&tmp%>
@@ -6578,5 +6471,240 @@ case _ then
     }
   >>
 end generateMatrix;
+
+
+
+//Generation of Algorithm section
+template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCode simCode)
+::=
+  let res = match stmt
+  case s as STMT_ASSIGN(exp1=PATTERN(__)) then "STMT_ASSIGN Pattern not supported yet"
+  case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/,simCode)
+  case s as STMT_ASSIGN_ARR(__)     then "STMT ASSIGN ARR"
+  case s as STMT_TUPLE_ASSIGN(__)   then "STMT TUPLE ASSIGN"
+  case s as STMT_IF(__)             then "STMT IF"
+  case s as STMT_FOR(__)            then "STMT FOR"
+  case s as STMT_WHILE(__)          then "STMT WHILE"
+  case s as STMT_ASSERT(__)         then "STMT ASSERT"
+  case s as STMT_TERMINATE(__)      then "STMT TERMINATE"
+  case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
+  case s as STMT_BREAK(__)          then "STMT BREAK"
+  case s as STMT_FAILURE(__)        then "STMT FAILURE"
+  case s as STMT_TRY(__)            then "STMT TRY"
+  case s as STMT_CATCH(__)          then "STMT CATCH"
+  case s as STMT_THROW(__)          then "STMT THROW"
+  case s as STMT_RETURN(__)         then "STMT RETURN"
+  case s as STMT_NORETCALL(__)      then "STMT NORETCALL"
+  case s as STMT_REINIT(__)         then "STMT REINIT"
+  else error(sourceInfo(), 'ALG_STATEMENT NYI')
+  <<
+  <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
+  <%res%>
+  <%endModelicaLine()%>
+  >>
+
+end algStatement;
+
+template modelicaLine(Info info)
+::=
+  match info
+  case INFO(columnNumberStart=0) then "/* Dummy Line */"
+  else <<
+  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
+  >>
+end modelicaLine;
+
+template endModelicaLine()
+::=
+  <<
+  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>
+  >>
+end endModelicaLine;
+
+template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, /*BUFP*/SimCode simCode)
+ "Generates an assigment algorithm statement."
+::=
+  match stmt
+  case STMT_ASSIGN(exp1=CREF(componentRef=WILD(__)), exp=e) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    >>
+  case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
+  case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
+    let &preExp = buffer "" /*BUFD*/
+    let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    <%varPart%> = (modelica_fnptr) <%expPart%>;
+    >>
+    /* Records need to be traversed, assigning each component by itself */
+  case STMT_ASSIGN(exp1=CREF(componentRef=cr,ty = T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+    let &preExp = buffer ""
+    let rec = daeExp(exp, context, &preExp, &varDecls,simCode)
+    <<
+    <%preExp%>
+    <% varLst |> var as TYPES_VAR(__) =>
+      match var.ty
+      case T_ARRAY(__) then
+        copyArrayData(var.ty, '<%rec%>.<%var.name%>', appendStringCref(var.name,cr), context)
+      else
+        let varPart = contextCref(appendStringCref(var.name,cr),context,simCode)
+        '<%varPart%> = <%rec%>.<%var.name%>;'
+    ; separator="\n"
+    %>
+    >>
+  case STMT_ASSIGN(exp1=CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))))) then
+    let &preExp = buffer ""
+    let rec = daeExp(exp, context, &preExp, &varDecls,simCode)
+    <<
+    <%preExp%>
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+      let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls,simCode)
+        '<%re%> = <%rec%>.<%var.name%>;'
+    ; separator="\n"    
+    %>
+    Record = func;
+    >>
+  case STMT_ASSIGN(exp1=CREF(__)) then
+    let &preExp = buffer "" /*BUFD*/
+    let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    <%varPart%> = <%expPart%>;
+    >>
+  case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then
+    (match expTypeFromExpShort(exp)
+      case "metatype" then
+        // MetaModelica Array
+        (match exp case ASUB(exp=arr, sub={idx}) then
+        let &preExp = buffer ""
+        let arr1 = daeExp(arr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        <<
+        <%preExp%>
+        arrayUpdate(<%arr1%>,<%idx1%>,<%val1%>);
+        >>)
+        // Modelica Array
+      else
+        let &preExp = buffer "" /*BUFD*/
+        let varPart = daeExpAsub(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        let expPart = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+        <<
+        <%preExp%>
+        <%varPart%> = <%expPart%>;
+        >>
+    )
+  case STMT_ASSIGN(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let expPart2 = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    <%expPart1%> = <%expPart2%>;
+    >>
+end algStmtAssign;
+
+template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
+  Context context)
+
+::=
+  let type = expTypeArray(ty)
+  let cref = contextArrayCref(cr, context)
+  match context
+  case FUNCTION_CONTEXT(__) then
+    'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
+  else
+    'copy_<%type%>_data_mem(&<%exp%>, &<%cref%>);'
+end copyArrayData;
+
+template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a when algorithm statement."
+::=
+match context
+case SIMULATION(__) then
+  match when
+  case STMT_WHEN(__) then
+    let preIf = algStatementWhenPre(when, &varDecls /*BUFD*/,simCode)
+    let statements = (statementLst |> stmt =>
+        algStatement(stmt, context, &varDecls /*BUFD*/,simCode)
+      ;separator="\n")
+    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/,simCode)
+    <<
+      <%preIf%>
+      if (<%helpVarIndices |> idx => '_event_handling[<%idx%>] && !_event_handling.pre(_event_handling[<%idx%>],"h<%idx%>") ' ;separator=" || "%>) {
+        <%statements%>
+      }
+      <%else%>
+    >>
+   end match
+end match
+end algStmtWhen;
+
+
+template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Helper to algStmtWhen."
+::=
+  match stmt
+  case STMT_WHEN(exp=ARRAY(array=el)) then
+    let restPre = match elseWhen case SOME(ew) then
+        algStatementWhenPre(ew, &varDecls /*BUFD*/,simCode)
+      else
+        ""
+    let &preExp = buffer "" /*BUFD*/
+
+
+    let assignments = algStatementWhenPreAssigns(el, helpVarIndices,
+                                               &preExp /*BUFC*/,
+                                               &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    <%assignments%>
+    <%restPre%>
+    >>
+  case when as STMT_WHEN(__) then
+    match helpVarIndices
+    case {i} then
+      let restPre = match when.elseWhen case SOME(ew) then
+          algStatementWhenPre(ew, &varDecls /*BUFD*/,simCode)
+        else
+          ""
+      let &preExp = buffer "" /*BUFD*/
+
+      let res = daeExp(when.exp, contextSimulationDiscrete,
+                     &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      <<
+      <%preExp%>
+      _event_handling.setHelpVar(<%i%>,<%res%>);
+      <%restPre%>
+      >>
+end algStatementWhenPre;
+
+
+
+template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &preExp /*BUFP*/, Text &varDecls ,SimCode simCode)
+ "Helper to algStatementWhenPre.
+  The lists exps and ints should be of the same length. Iterating over two
+  lists like this is not so well supported in Susan, so it looks a bit ugly."
+::=
+  match exps
+  case {} then ""
+  case (firstExp :: restExps) then
+    match ints
+    case (firstInt :: restInts) then
+      let rest = algStatementWhenPreAssigns(restExps, restInts,
+
+                                          &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
+                              &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      <<
+      data->simulationInfo.helpVars[<%firstInt%>] = <%firstExpPart%>;
+      <%rest%>
+      >>
+end algStatementWhenPreAssigns;
 
 end CodegenCpp;
