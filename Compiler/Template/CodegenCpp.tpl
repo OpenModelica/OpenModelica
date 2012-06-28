@@ -1795,7 +1795,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let algvars = MemberVariableAlgloop(modelInfo)
   let constructorParams = ConstructorParamAlgloop(modelInfo)
   match eq
-      case SES_LINEAR(__)
+      case SES_LINEAR(__) 
     case SES_NONLINEAR(__) then
   <<
   class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
@@ -3819,18 +3819,29 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
         end match
   case e as SES_MIXED(cont = eq_sys)
     then 
-      let num = index
-      match simCode
+       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then    
-              let()= textFile(algloopHeaderFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h')
-              let()= textFile(algloopCppFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.cpp')
+              let()= textFile(algloopHeaderFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.h')
+              let()= textFile(algloopCppFile(simCode, eq_sys), '<%lastIdentOfPath(modelInfo.name)%>Algloop<%algloopfilesindex(eq_sys)%>.cpp')
             " "
         end match
   else
     " "
  end algloopfiles2;
 
-
+template algloopfilesindex(SimEqSystem eq)
+"Generates an index for algloopfile.
+  "
+::=
+  match eq
+  case SES_LINEAR(__)
+  case e as SES_NONLINEAR(__)
+  case e as SES_MIXED(__)
+    then 
+      <<<%index%>>>
+  else
+    " "
+ end algloopfilesindex;
 
 template algloopcppfilenames(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
@@ -4562,31 +4573,31 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     
    case CALL(path=IDENT(name="String"),
              expLst={s, format}) then
-    let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
+    let tvar = tempDecl("string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = lexical_cast<std::string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
     
    case CALL(path=IDENT(name="String"),
              expLst={s, minlen, leftjust}) then
-    let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
+    let tvar = tempDecl("string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
   
   case CALL(path=IDENT(name="String"),
             expLst={s, minlen, leftjust, signdig}) then
-    let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
+    let tvar = tempDecl("string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let &preExp += '<%tvar%> = double_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = lexical_cast<string>(<%sExp%>);<%\n%>'
     '<%tvar%>'
     
   case CALL(path=IDENT(name="delay"),
@@ -4688,7 +4699,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   let &preExpMsg = buffer ""
   let condVar = daeExp(condition, context, &preExpCond, &varDecls,simCode)
   let msgVar = daeExp(message, context, &preExpMsg, &varDecls,simCode)
-  <<
+/* <<
   <%preExpCond%>
   if (!<%condVar%>) {
     <%preExpMsg%>
@@ -4696,6 +4707,13 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
     MODELICA_ASSERT(info, <%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>);
   }
   >>
+  */
+  <<
+  <%preExpCond%>
+  <%preExpMsg%>
+  Assert(<%condVar%>,<%msgVar%>);
+   >>
+ 
 end assertCommon;
 
 template infoArgs(Info info)
@@ -6482,10 +6500,10 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_ASSIGN_ARR(__)     then "STMT ASSIGN ARR"
   case s as STMT_TUPLE_ASSIGN(__)   then "STMT TUPLE ASSIGN"
-  case s as STMT_IF(__)             then "STMT IF"
+  case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_FOR(__)            then "STMT FOR"
   case s as STMT_WHILE(__)          then "STMT WHILE"
-  case s as STMT_ASSERT(__)         then "STMT ASSERT"
+  case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls ,simCode)
   case s as STMT_TERMINATE(__)      then "STMT TERMINATE"
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
   case s as STMT_BREAK(__)          then "STMT BREAK"
@@ -6495,7 +6513,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_THROW(__)          then "STMT THROW"
   case s as STMT_RETURN(__)         then "STMT RETURN"
   case s as STMT_NORETCALL(__)      then "STMT NORETCALL"
-  case s as STMT_REINIT(__)         then "STMT REINIT"
+  case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/,simCode)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
   <<
   <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
@@ -6521,7 +6539,7 @@ template endModelicaLine()
   >>
 end endModelicaLine;
 
-template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, /*BUFP*/SimCode simCode)
+template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimCode simCode)
  "Generates an assigment algorithm statement."
 ::=
   match stmt
@@ -6706,5 +6724,50 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &pr
       <%rest%>
       >>
 end algStatementWhenPreAssigns;
+
+template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls,SimCode simCode)
+ "Generates an assert algorithm statement."
+::=
+match stmt
+case STMT_ASSERT(source=SOURCE(info=info)) then
+  assertCommon(cond, msg, context, &varDecls, info,simCode)
+end algStmtAssert;
+
+
+template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates an assigment algorithm statement."
+::=
+  match stmt
+  case STMT_REINIT(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    /*<<
+    $P$PRE<%expPart1%> = <%expPart1%>;
+    <%preExp%>
+    <%expPart1%> = <%expPart2%>;
+    >>*/
+    <<
+    _event_handling.save(<%expPart1%>,"<%expPart1%>");
+     <%preExp%>
+    <%expPart1%> = <%expPart2%>;
+    >>
+end algStmtReinit;
+
+template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates an if algorithm statement."
+::=
+match stmt
+case STMT_IF(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let condExp = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  <<
+  <%preExp%>
+  if (<%condExp%>) {
+    <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/,simCode) ;separator="\n"%>
+  }
+   <%elseExpr(else_, context,&preExp , &varDecls /*BUFD*/,simCode)%>
+  >>
+end algStmtIf;
 
 end CodegenCpp;
