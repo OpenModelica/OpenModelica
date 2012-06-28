@@ -1718,4 +1718,11 @@ algorithm
   end match;
 end printEquation;
 
+public function isArrayAllocation
+  input InstTypes.Statement stmt;
+  output Boolean b;
+algorithm
+  b := match stmt case InstTypes.FUNCTION_ARRAY_INIT(name=_) then true; else false; end match;
+end isArrayAllocation;
+
 end InstUtil;

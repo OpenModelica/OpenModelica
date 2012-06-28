@@ -1862,7 +1862,7 @@ algorithm
         Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
-        List.select1(allStatements,selectStatement,deps);
+        List.select2(allStatements,selectStatement,deps,SOME(name));
     case (InstTypes.FUNCTION_ARRAY_INIT(name,dimensions,info), (allStatements,allPossible))
       equation
         dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
@@ -1871,7 +1871,7 @@ algorithm
         Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
-        List.select1(allStatements,selectStatement,deps);
+        List.select2(allStatements,selectStatement,deps,NONE());
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SCodeInst.getStatementDependencies failed"});
@@ -1882,16 +1882,14 @@ end getStatementDependencies;
 protected function selectStatement
   input Statement stmt;
   input list<String> deps;
+  input Option<String> oname "If this is SOME(name), return true only if the statement is an array allocation.";
   output Boolean select;
 protected
   String name;
 algorithm
   name := getInitStatementName(stmt);
-  select := listMember(name,deps);
+  select := listMember(name,deps) or (InstUtil.isArrayAllocation(stmt) and stringEq(name,Util.getOptionOrDefault(oname,"")));
 end selectStatement;
-
-protected function selectStatement2
-end selectStatement2;
 
 protected function getExpDependencies
   input tuple<DAE.Exp,list<String>> inTpl;
