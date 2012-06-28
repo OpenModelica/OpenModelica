@@ -95,6 +95,8 @@ algorithm
       list<DAE.ComponentRef> crlst;
       DAE.Algorithm alg;
       HashSet.HashSet hs;
+      DAE.Type tp;
+      DAE.Dimensions dims;
       
     case ({},_,_,_,_) then (ivarSize,ieqnSize,ieqnslst,ihs);
 
@@ -186,16 +188,20 @@ algorithm
         (varSize,eqnSize,eqns,hs);
         
     // effort variable equality equations
-    case ((elem as DAE.EQUEQUATION(cr1 = _))::rest,_,_,_,_)
+    case ((elem as DAE.EQUEQUATION(cr1 = cr))::rest,_,_,_,_)
       equation
-        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+1,elem::ieqnslst,ihs);
+        tp = ComponentReference.crefTypeConsiderSubs(cr);
+        size = Expression.sizeOf(tp);        
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);    
         
     // a solved equation 
-    case ((elem as DAE.DEFINE(componentRef = _))::rest,_,_,_,_)
+    case ((elem as DAE.DEFINE(componentRef = cr))::rest,_,_,_,_)
       equation
-        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+1,elem::ieqnslst,ihs);
+        tp = ComponentReference.crefTypeConsiderSubs(cr);
+        size = Expression.sizeOf(tp);        
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);
         
@@ -215,9 +221,9 @@ algorithm
         (varSize,eqnSize,eqns,hs);
         
     // array equations
-    case ((elem as DAE.ARRAY_EQUATION(exp = e1))::rest,_,_,_,_)
+    case ((elem as DAE.ARRAY_EQUATION(dimension=dims))::rest,_,_,_,_)
       equation
-        size = Expression.sizeOf(Expression.typeof(e1));
+        size =  List.fold(Expression.dimensionsSizes(dims),intMul,1);
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs); 
@@ -232,8 +238,8 @@ algorithm
     // when equations
     case (DAE.WHEN_EQUATION(equations = daeElts)::rest,_,_,_,_)
       equation
-        (varSize,eqnSize,_,_) = countVarEqnSize(daeElts,ivarSize,ieqnSize,{},ihs);
-        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,varSize,eqnSize,ieqnslst,ihs);
+        (_,size,_,_) = countVarEqnSize(daeElts,0,0,{},ihs);
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);
         
@@ -247,8 +253,8 @@ algorithm
     // if equation
     case (DAE.IF_EQUATION(equations2 = daeElts::_)::rest,_,_,_,_)
       equation
-        (varSize,eqnSize,_,_) = countVarEqnSize(daeElts,ivarSize,ieqnSize,{},ihs);
-        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,varSize,eqnSize,ieqnslst,ihs);
+        (_,size,_,_) = countVarEqnSize(daeElts,0,0,{},ihs);
+        (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);
     // initial if equation
@@ -565,6 +571,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type tp;
       Integer size;
+      DAE.Dimensions dims;
+      
     case ({},_,_) then isimpleEqnSize;
       
     // equations
@@ -600,7 +608,7 @@ algorithm
         countSympleEqnSize(rest,isimpleEqnSize+size,ihs);
         
     // array equations
-    case ((elem as DAE.ARRAY_EQUATION(exp = e1, array = e2))::rest,_,_)
+    case ((elem as DAE.ARRAY_EQUATION(dimension=dims,exp = e1, array = e2))::rest,_,_)
       equation
         size = simpleEquation(e1,e2,ihs);
       then

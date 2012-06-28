@@ -1599,7 +1599,9 @@ algorithm
       Integer nr;
       list<Integer> lstInt;
       list<Var> varLst;
-       list<DAE.Type> typs;
+      list<DAE.Type> typs;
+      Type ty;
+      list<String> strlst;
     
     // count the variables in array
     case DAE.T_ARRAY(dims = ad)
@@ -1622,8 +1624,19 @@ algorithm
         nr = List.reduce(lstInt, intAdd);
       then
         nr;
-        
-    
+
+    case DAE.T_ENUMERATION(index=NONE(),names=strlst)
+      then
+        listLength(strlst);
+
+    case DAE.T_FUNCTION(funcResultType=ty)
+      then
+        sizeOf(ty);
+
+    case DAE.T_METATYPE(ty=ty)
+      then
+        sizeOf(ty);
+
     // for all other consider it just 1 variable
     case _ then 1;
   end matchcontinue;
@@ -6343,11 +6356,11 @@ returns true if expression is an array.
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := matchcontinue(inExp)
+  outB := match(inExp)
     case(DAE.ARRAY(array = _ )) then true;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=_))) then true;
-    case(_) then false;
-  end matchcontinue;
+    else then false;
+  end match;
 end isArray;
 
 public function isMatrix " function: isMatrix
@@ -6356,11 +6369,11 @@ returns true if expression is an matrix.
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := matchcontinue(inExp)
+  outB := match(inExp)
     case(DAE.MATRIX(ty = _ )) then true;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(ty=_))) then true;
-    case(_) then false;
-  end matchcontinue;
+    else then false;
+  end match;
 end isMatrix;
 
 public function isUnary " function: isUnary
