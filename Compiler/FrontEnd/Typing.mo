@@ -1440,17 +1440,20 @@ algorithm
     local
       DAE.Exp lhs,rhs,exp;
       Absyn.Info info;
-      DAE.Type lty,rty;
+      DAE.Type lty,rty,ty;
       SymbolTable st;
       list<tuple<DAE.Exp,list<Statement>>> branches;
+      String name;
     case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),st,_)
       equation
         (lhs,lty,_) = typeExp(lhs, NO_EVAL(), st);
         (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), st);
         // rhs = typeCheck(rhs,lty,rty)
       then typeAssignment(lhs,rhs,info,inAcc);
-    case (InstTypes.FUNCTION_ARRAY_INIT(info=_),st,_)
-      then inStmt /* It's an array of dimensions; already typed? Let us hope so */ :: inAcc;
+    case (InstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),st,_)
+      equation
+        InstTypes.TYPED_COMPONENT(ty=ty) = InstSymbolTable.lookupCref(DAE.CREF_IDENT(name,ty,{}),st);
+      then InstTypes.FUNCTION_ARRAY_INIT(name,ty,info) :: inAcc;
     case (InstTypes.NORETCALL_STMT(exp=exp, info=info),st,_)
       equation
         // Let's try skipping evaluation. Maybe helps some external functions

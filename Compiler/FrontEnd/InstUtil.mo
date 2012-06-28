@@ -532,6 +532,13 @@ public function wrapDimension
 algorithm
   outDimension := InstTypes.UNTYPED_DIMENSION(inDimension, false);
 end wrapDimension;
+
+public function wrapTypedDimension
+  input DAE.Dimension inDimension;
+  output Dimension outDimension;
+algorithm
+  outDimension := InstTypes.TYPED_DIMENSION(inDimension);
+end wrapTypedDimension;
   
 public function unwrapDimension
   input Dimension inDimension;

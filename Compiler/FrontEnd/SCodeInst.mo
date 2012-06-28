@@ -1863,9 +1863,8 @@ algorithm
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
         List.select2(allStatements,selectStatement,deps,SOME(name));
-    case (InstTypes.FUNCTION_ARRAY_INIT(name,dimensions,info), (allStatements,allPossible))
+    case (InstTypes.FUNCTION_ARRAY_INIT(name,DAE.T_ARRAY(dims=dims),info), (allStatements,allPossible))
       equation
-        dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
         exps = Expression.dimensionsToExps(dims,{});
         ((_, deps)) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
         Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
@@ -1947,8 +1946,9 @@ algorithm
       Absyn.Info info,bindingInfo;
       String name;
       Class cls;
-      DAE.Type baseType;
+      DAE.Type baseType,ty;
       array<Dimension> dimensions;
+      list<DAE.Dimension> dims;
       Prefixes prefixes;
       ParamType paramType;
       DAE.Exp bindingExp;
@@ -1959,7 +1959,8 @@ algorithm
       
     case (elt as InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),cls),_)
       equation
-        bindings = Util.if_(arrayLength(dimensions)>0,InstTypes.FUNCTION_ARRAY_INIT(name, dimensions, info)::inBindings,inBindings);
+        dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
+        bindings = Util.if_(arrayLength(dimensions)>0,InstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,inBindings);
       then (elt,bindings);
     else (inElt,inBindings);
   end match;

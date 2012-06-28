@@ -1741,16 +1741,14 @@ algorithm
       then
         ();
     
-    case (DAE.STMT_ARRAY_INIT(name = name, ty = ty, dims = dims),i)
+    case (DAE.STMT_ARRAY_INIT(name = name, ty = ty),i)
       equation
         indent(i);
         Print.printBuf("/* ");
         Print.printBuf(name);
         Print.printBuf(" := array_alloc(");
         Print.printBuf(Types.unparseType(ty));
-        Print.printBuf("[");
-        Print.printBuf(Types.printDimensionsStr(dims));
-        Print.printBuf("]) */;\n");
+        Print.printBuf(") */;\n");
       then
         ();
 

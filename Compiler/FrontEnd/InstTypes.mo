@@ -316,8 +316,7 @@ public uniontype Statement
   
   record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
     String name;
-    array<Dimension> dimensions;
-    /* Type? */
+    DAE.Type ty;
     Absyn.Info info;
   end FUNCTION_ARRAY_INIT;
 

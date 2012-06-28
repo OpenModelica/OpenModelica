@@ -847,10 +847,9 @@ algorithm
       then
         accum_el;
 
-    case (InstTypes.FUNCTION_ARRAY_INIT(name = name, dimensions = dimensions), _, _, _)
+    case (InstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty), _, _, _)
       equation
-        dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
-        accum_el = DAE.STMT_ARRAY_INIT(name,DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyElementSource) :: inAccumEl;
+        accum_el = DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl;
       then
         accum_el;
         
