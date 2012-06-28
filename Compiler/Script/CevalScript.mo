@@ -70,6 +70,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import Builtin;
+protected import CheckModel;
 protected import ClassInf;
 protected import ClassLoader;
 protected import Config;
@@ -3834,7 +3835,7 @@ algorithm
       Absyn.Class c;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    
+ 
     // handle normal models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -3842,23 +3843,8 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         (cache,env,dae,st) = runFrontEnd(cache,env,className,st,false);
 
-        //UnitParserExt.clear();
-        //UnitAbsynBuilder.registerUnits(ptot);
-        //UnitParserExt.commit();
+        (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
 
-        dae  = DAEUtil.transformationsBeforeBackend(cache,env, dae);
-        // adrpo: do not store instantiated class as we don't use it later!
-        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        funcs = Env.getFunctionTree(cache);
-        (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, dlow);
-        eqns = BackendEquation.daeEqns(syst);
-        eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(syst);
-        varSize = BackendVariable.varsSize(vars);
-        (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        (m,_) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
@@ -3868,7 +3854,7 @@ algorithm
         retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
-        (cache,Values.STRING(retStr),st);
+        (cache,Values.STRING(retStr),st); 
 
     // handle functions
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
