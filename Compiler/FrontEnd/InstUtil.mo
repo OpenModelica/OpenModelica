@@ -533,6 +533,18 @@ algorithm
   outDimension := InstTypes.UNTYPED_DIMENSION(inDimension, false);
 end wrapDimension;
   
+public function unwrapDimension
+  input Dimension inDimension;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := match inDimension
+    local
+      DAE.Dimension dim;
+    case InstTypes.UNTYPED_DIMENSION(dimension=dim) then dim;
+    case InstTypes.TYPED_DIMENSION(dimension=dim) then dim;
+  end match;
+end unwrapDimension;
+
 public function makeIterator
   input Absyn.Path inName;
   input DAE.Type inType;

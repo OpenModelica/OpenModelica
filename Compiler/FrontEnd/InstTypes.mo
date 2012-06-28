@@ -313,6 +313,13 @@ public uniontype Statement
     DAE.Exp rhs "The expression";
     Absyn.Info info;
   end ASSIGN_STMT;
+  
+  record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
+    String name;
+    array<Dimension> dimensions;
+    /* Type? */
+    Absyn.Info info;
+  end FUNCTION_ARRAY_INIT;
 
   record FOR_STMT
     String index "The name of the index/iterator variable.";

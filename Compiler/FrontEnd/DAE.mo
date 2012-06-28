@@ -624,6 +624,13 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record STMT_BREAK
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_BREAK;
+  
+  record STMT_ARRAY_INIT "For function initialization"
+    String name;
+    Type ty;
+    list<Dimension> dims;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_ARRAY_INIT;
 
   // MetaModelica extension. KS
   record STMT_FAILURE

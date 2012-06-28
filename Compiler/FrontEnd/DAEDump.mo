@@ -1581,11 +1581,13 @@ algorithm
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
       Integer i,i_1;
-      String s1,s2,s3,str,id;
+      String s1,s2,s3,str,id,name;
       list<String> es;
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
+      list<DAE.Dimension> dims;
       DAE.Statement stmt;
+      DAE.Type ty;
       Algorithm.Else else_;
     
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
@@ -1739,6 +1741,19 @@ algorithm
       then
         ();
     
+    case (DAE.STMT_ARRAY_INIT(name = name, ty = ty, dims = dims),i)
+      equation
+        indent(i);
+        Print.printBuf("/* ");
+        Print.printBuf(name);
+        Print.printBuf(" := array_alloc(");
+        Print.printBuf(Types.unparseType(ty));
+        Print.printBuf("[");
+        Print.printBuf(Types.printDimensionsStr(dims));
+        Print.printBuf("]) */;\n");
+      then
+        ();
+
     case (_,i)
       equation
         indent(i);

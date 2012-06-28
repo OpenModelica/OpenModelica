@@ -66,6 +66,11 @@ protected type Statement = InstTypes.Statement;
 replaceable type ElementType subtypeof Any;
 replaceable type AccumType subtypeof Any;
 
+protected uniontype ExpandKind
+  record EXPAND_MODEL end EXPAND_MODEL;
+  record EXPAND_FUNCTION "Does not expand/scalarize arrays" end EXPAND_FUNCTION;
+end ExpandKind;
+
 partial function ExpandScalarFunc
   input ElementType inElement;
   input list<list<DAE.Subscript>> inSubscripts;
@@ -176,9 +181,9 @@ algorithm
     
     case (InstTypes.COMPLEX_CLASS(components = comps, equations = eq, algorithms = al), _, _)
       equation
-        el = List.fold1(comps, expandElement, inSubscripts, inAccumEl);
+        el = List.fold2(comps, expandElement, EXPAND_MODEL(), inSubscripts, inAccumEl);
         el = List.fold1(eq, expandEquation, inSubscripts, el);
-        el = List.fold2(al, expandStatements, inSubscripts, false /* not initial */, el);
+        el = List.fold3(al, expandStatements, EXPAND_MODEL(), inSubscripts, false /* not initial */, el);
       then
         el;
 
@@ -187,11 +192,12 @@ end expandClass;
 
 protected function expandElement
   input InstTypes.Element inElement;
+  input ExpandKind inKind;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
 algorithm
-  outElements := match(inElement, inSubscripts, inAccumEl)
+  outElements := match(inElement, inKind, inSubscripts, inAccumEl)
     local
       InstTypes.Component comp;
       list<DAE.Element> el;
@@ -201,32 +207,32 @@ algorithm
       DAE.Type ty;
       DAE.Dimensions dims;
 
-    case (InstTypes.ELEMENT(component = comp, cls = InstTypes.BASIC_TYPE()), _, _)
+    case (InstTypes.ELEMENT(component = comp, cls = InstTypes.BASIC_TYPE()), _, _, _)
       equation
-        el = expandComponent(comp, inSubscripts, inAccumEl);
+        el = expandComponent(comp, inKind, inSubscripts, inAccumEl);
       then
         el;
 
     case (InstTypes.ELEMENT(component = InstTypes.TYPED_COMPONENT(ty =
-        DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _)
+        DAE.T_ARRAY(ty = ty, dims = dims)), cls = cls), _, _, _)
       equation
-        el = expandArray(cls, dims, {} :: inSubscripts, inAccumEl, expandClass);
+        el = expandArray(cls, inKind, dims, {} :: inSubscripts, inAccumEl, expandClass);
       then
         el;
 
-    case (InstTypes.ELEMENT(component = comp, cls = cls), _, _)
+    case (InstTypes.ELEMENT(component = comp, cls = cls), _, _, _)
       equation
         el = expandClass(cls, {} :: inSubscripts, inAccumEl);
       then
         el;
 
-    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _, _)
+    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _, _, _)
       equation
         el = expandClass(cls, inSubscripts, inAccumEl);
       then
         el;
 
-    case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, _)
+    case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, _, _)
       equation
         path = InstUtil.getComponentName(comp);
         err_msg = "SCodeExpand.expandElement got unresolved conditional component " +& 
@@ -240,11 +246,12 @@ end expandElement;
 
 protected function expandComponent
   input InstTypes.Component inComponent;
+  input ExpandKind inKind;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Element> inAccumEl;
   output list<DAE.Element> outElements;
 algorithm
-  outElements := match(inComponent, inSubscripts, inAccumEl)
+  outElements := match(inComponent, inKind, inSubscripts, inAccumEl)
     local
       Absyn.Path name;
       DAE.Dimensions dims;
@@ -252,20 +259,20 @@ algorithm
       InstTypes.Component comp;
       String err_msg;
 
-    case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _)
+    case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, _)
       equation
         comp = unliftComponentType(inComponent);
-        el = expandArray(comp, dims, {} :: inSubscripts, inAccumEl, expandScalar);
+        el = expandArray(comp, inKind, dims, {} :: inSubscripts, inAccumEl, expandScalar);
       then
         el;
 
-    case (InstTypes.TYPED_COMPONENT(ty = _), _, _)
+    case (InstTypes.TYPED_COMPONENT(ty = _), _, _, _)
       equation
         el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
       then
         el;
         
-    case (InstTypes.UNTYPED_COMPONENT(name = name), _, _)
+    case (InstTypes.UNTYPED_COMPONENT(name = name), _, _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got untyped component " +&
           Absyn.pathString(name) +& "\n";
@@ -273,7 +280,7 @@ algorithm
       then
         fail();
 
-    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got unresolved conditional component " +&
           Absyn.pathString(name) +& "\n";
@@ -281,7 +288,7 @@ algorithm
       then
         inAccumEl;
 
-    case (InstTypes.OUTER_COMPONENT(name = _), _, _)
+    case (InstTypes.OUTER_COMPONENT(name = _), _, _, _)
       then inAccumEl;
 
   end match;
@@ -289,6 +296,7 @@ end expandComponent;
 
 protected function expandArray
   input ElementType inElement;
+  input ExpandKind inKind;
   input list<DAE.Dimension> inDimensions;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<AccumType> inAccumEl;
@@ -296,34 +304,41 @@ protected function expandArray
   output list<AccumType> outElements;
 algorithm
   outElements := 
-  match(inElement, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
+  match(inElement, inKind, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
-      Integer dim;
+      Integer dim,start;
+      DAE.Dimension first_dim;
       list<DAE.Dimension> rest_dims;
       list<AccumType> el;
+      DAE.Subscript sub;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       String dim_str;
+      DAE.Exp exp;
 
-    case (_, {}, subs :: rest_subs, _, _)
+    case (_, _, {}, subs :: rest_subs, _, _)
       equation
         subs = listReverse(subs);
         el = inScalarFunc(inElement, subs :: rest_subs, inAccumEl);
       then
         el;
         
-    case (_, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
+    case (_, _, DAE.DIM_INTEGER(integer = dim) :: rest_dims, _, _, _)
       equation
-        el = expandArrayIntDim(inElement, 1, dim, rest_dims, inSubscripts,
+        start = Util.if_(isExpandFunction(inKind),dim,1);
+        el = expandArrayIntDim(inElement, inKind, start, dim, rest_dims, inSubscripts,
             inAccumEl, inScalarFunc);
       then
         el;
 
-    case (_, DAE.DIM_ENUM(enumTypeName = _) :: _, _, _, _)
+    case (_, _, DAE.DIM_ENUM(enumTypeName = _) :: _, _, _, _)
       equation
         print("SCodeExpand.expandArray TODO: implement support for enum dims.\n");
       then
         fail();
+
+    case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, subs :: rest_subs, _, _)
+      then expandArrayExpDim(inElement, exp, rest_dims, inSubscripts, inAccumEl, inScalarFunc);
 
     else
       equation
@@ -337,6 +352,7 @@ end expandArray;
 
 protected function expandArrayIntDim
   input ElementType inElement;
+  input ExpandKind inKind;
   input Integer inIndex;
   input Integer inDimSize;
   input list<DAE.Dimension> inDimensions;
@@ -346,30 +362,54 @@ protected function expandArrayIntDim
   output list<AccumType> outElements;
 algorithm
   outElements := 
-  matchcontinue(inElement, inIndex, inDimSize, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
+  matchcontinue(inElement, inKind, inIndex, inDimSize, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       list<AccumType> el;
       String err_msg;
 
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = (inIndex > inDimSize);
       then
         inAccumEl;
 
-    case (_, _, _, _, subs :: rest_subs, _, _)
+    case (_, _, _, _, _, subs :: rest_subs, _, _)
       equation
         subs = DAE.INDEX(DAE.ICONST(inIndex)) :: subs;
-        el = expandArray(inElement, inDimensions, subs :: rest_subs,
+        el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
             inAccumEl, inScalarFunc);
       then
-        expandArrayIntDim(inElement, inIndex + 1, inDimSize, inDimensions,
+        expandArrayIntDim(inElement, inKind, inIndex + 1, inDimSize, inDimensions,
           inSubscripts, el, inScalarFunc);
 
   end matchcontinue;
 end expandArrayIntDim;      
+
+protected function expandArrayExpDim
+  input ElementType inElement;
+  input DAE.Exp inExp;
+  input list<DAE.Dimension> inDimensions;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<AccumType> inAccumEl;
+  input ExpandScalarFunc inScalarFunc;
+  output list<AccumType> outElements;
+algorithm
+  outElements :=  match (inElement, inExp, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
+    local
+      list<DAE.Subscript> subs;
+      list<list<DAE.Subscript>> rest_subs;
+      list<AccumType> el;
+      String err_msg;
+
+    case (_, _, _, subs :: rest_subs, _, _)
+      equation
+        subs = DAE.INDEX(inExp) :: subs;
+      then expandArray(inElement, EXPAND_FUNCTION(), inDimensions, subs :: rest_subs, inAccumEl, inScalarFunc);
+
+  end match;
+end expandArrayExpDim;
 
 protected function expandScalar
   input InstTypes.Component inComponent;
@@ -640,7 +680,7 @@ algorithm
       equation
         ty1 = Expression.typeof(lhs);
         dims = Types.getDimensions(ty1);
-        accum_el = expandArray((lhs, rhs), dims, {} :: inSubscripts, inAccumEl,
+        accum_el = expandArray((lhs, rhs), EXPAND_MODEL(), dims, {} :: inSubscripts, inAccumEl,
           expandEqEquation);
       then
         accum_el;
@@ -762,6 +802,7 @@ end subscriptArrayElements;
 
 protected function expandStatements
   input list<Statement> inStmts;
+  input ExpandKind inKind;
   input list<list<DAE.Subscript>> inSubscripts;
   input Boolean isInitial;
   input list<DAE.Element> inAccumEl;
@@ -771,7 +812,7 @@ protected
   DAE.Algorithm alg;
   DAE.Element el;
 algorithm
-  dstmt := listReverse(List.fold1(inStmts, expandStatement, inSubscripts, {}));
+  dstmt := listReverse(List.fold2(inStmts, expandStatement, inKind, inSubscripts, {}));
   alg := DAE.ALGORITHM_STMTS(dstmt);
   el := Util.if_(isInitial,DAE.INITIALALGORITHM(alg,DAE.emptyElementSource),DAE.ALGORITHM(alg,DAE.emptyElementSource));
   outElements := Util.if_(List.isEmpty(dstmt),inAccumEl,el::inAccumEl);
@@ -779,11 +820,12 @@ end expandStatements;
 
 protected function expandStatement
   input Statement inStmt;
+  input ExpandKind inKind;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<DAE.Statement> inAccumEl;
   output list<DAE.Statement> outElements;
 algorithm
-  outElements := matchcontinue(inStmt, inSubscripts, inAccumEl)
+  outElements := matchcontinue(inStmt, inKind, inSubscripts, inAccumEl)
     local
       DAE.Exp rhs, lhs, exp;
       DAE.Statement eq;
@@ -793,26 +835,35 @@ algorithm
       list<DAE.Statement> accum_el;
       list<DAE.Dimension> dims;
       list<tuple<DAE.Exp,list<Statement>>> branches;
+      array<InstTypes.Dimension> dimensions;
+      String name;
 
-    case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _)
+    case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _, _)
       equation
         ty1 = Expression.typeof(lhs);
         dims = Types.getDimensions(ty1);
-        accum_el = expandArray((lhs, rhs), dims, {} :: inSubscripts, inAccumEl,
+        accum_el = expandArray((lhs, rhs), inKind, dims, {} :: inSubscripts, inAccumEl,
           expandAssignment);
       then
         accum_el;
+
+    case (InstTypes.FUNCTION_ARRAY_INIT(name = name, dimensions = dimensions), _, _, _)
+      equation
+        dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
+        accum_el = DAE.STMT_ARRAY_INIT(name,DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyElementSource) :: inAccumEl;
+      then
+        accum_el;
         
-    case (InstTypes.NORETCALL_STMT(exp = exp), _, _)
+    case (InstTypes.NORETCALL_STMT(exp = exp), _, _, _)
       equation
         ty = Expression.typeof(exp);
         dims = Types.getDimensions(ty);
-        accum_el = expandArray(exp, dims, {} :: inSubscripts, inAccumEl, expandNoretcall);
+        accum_el = expandArray(exp, inKind, dims, {} :: inSubscripts, inAccumEl, expandNoretcall);
       then accum_el;
 
-    case (InstTypes.IF_STMT(branches = branches), _, _)
+    case (InstTypes.IF_STMT(branches = branches), _, _, _)
       equation
-        accum_el = expandArray(branches, {}, {} :: inSubscripts, inAccumEl, expandIfStmt);
+        accum_el = expandArray(branches, inKind, {}, {} :: inSubscripts, inAccumEl, expandIfStmt);
       then accum_el;
 
     else
@@ -915,13 +966,20 @@ algorithm
     case InstTypes.FUNCTION(path=path,inputs=inputs,outputs=outputs,locals=locals,algorithms=al)
       equation
         el = {};
-        el = List.fold1(inputs, expandElement, {}, el);
-        el = List.fold1(outputs, expandElement, {}, el);
-        el = List.fold1(locals, expandElement, {}, el);
-        el = expandStatements(al, {}, false /* not initial */, el);
+        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, el);
+        el = List.fold2(outputs, expandElement, EXPAND_FUNCTION(), {}, el);
+        el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
+        el = expandStatements(al, EXPAND_FUNCTION(), {}, false /* not initial */, el);
         el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
   end match;
 end expandFunction;
+
+protected function isExpandFunction
+  input ExpandKind inKind;
+  output Boolean b;
+algorithm
+  b := match inKind case EXPAND_FUNCTION() then true; else false; end match;
+end isExpandFunction;
 
 end SCodeExpand;

@@ -1795,8 +1795,10 @@ algorithm
         initBindings = {};
         (outputs,initBindings) = List.mapFold(outputs,stripInitBinding,initBindings);
         (locals,initBindings) = List.mapFold(locals,stripInitBinding,initBindings);
+        (outputs,initBindings) = List.mapFold(outputs,dimensionDeps,initBindings);
+        (locals,initBindings) = List.mapFold(locals,dimensionDeps,initBindings);
         (initBindings,{}) = Graph.topologicalSort(
-          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getLocalAssignmentName))),
+          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getInitStatementName))),
           statementLhsEqual);
         algorithms = initBindings::algorithms;
         
@@ -1805,6 +1807,10 @@ algorithm
         functions = BaseHashTable.addUnique((path,outFunction),functions);
       then
         (path, outFunction, functions);
+    else
+      equation
+        print("SCodeInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +& "\n");
+      then fail();
 
   end matchcontinue;
 end instFunction;
@@ -1814,16 +1820,23 @@ protected function statementLhsEqual
   input Statement right;
   output Boolean b;
 algorithm
-  b := stringEq(getLocalAssignmentName(left),getLocalAssignmentName(right));
+  b := stringEq(getInitStatementName(left),getInitStatementName(right));
 end statementLhsEqual;
 
-protected function getLocalAssignmentName
+protected function getInitStatementName
   "x := ... => x. Fails for qualified assignments"
   input Statement stmt;
   output String name;
 algorithm
-  InstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name))) := stmt;
-end getLocalAssignmentName;
+  name := match stmt
+    case InstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name))) then name;
+    case InstTypes.FUNCTION_ARRAY_INIT(name=name) then name;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SCodeInst.getInitStatementName failed"});
+      then fail();
+  end match;
+end getInitStatementName;
 
 protected function getStatementDependencies
   "Returns the dependencies given an element.
@@ -1839,6 +1852,9 @@ algorithm
       list<Statement> allStatements;
       Absyn.Info info;
       String name;
+      array<InstTypes.Dimension> dimensions;
+      list<DAE.Dimension> dims;
+      list<DAE.Exp> exps;
 
     case (InstTypes.ASSIGN_STMT(lhs=DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name)),rhs=exp,info=info), (allStatements,allPossible))
       equation
@@ -1847,7 +1863,19 @@ algorithm
         deps = List.intersectionOnTrue(allPossible,deps,stringEq);
       then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
         List.select1(allStatements,selectStatement,deps);
-
+    case (InstTypes.FUNCTION_ARRAY_INIT(name,dimensions,info), (allStatements,allPossible))
+      equation
+        dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
+        exps = Expression.dimensionsToExps(dims,{});
+        ((_, deps)) = Expression.traverseExp(DAE.LIST(exps),getExpDependencies,{});
+        Error.assertionOrAddSourceMessage(not listMember(name,deps),Error.INTERNAL_ERROR,{"getStatementDependencies: self-dependence in deps"},info);
+        deps = List.intersectionOnTrue(allPossible,deps,stringEq);
+      then // O(n^2), but function init-bindings are usually too small to warrant a hashtable
+        List.select1(allStatements,selectStatement,deps);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SCodeInst.getStatementDependencies failed"});
+      then fail();
   end match;
 end getStatementDependencies;
 
@@ -1858,7 +1886,7 @@ protected function selectStatement
 protected
   String name;
 algorithm
-  name := getLocalAssignmentName(stmt);
+  name := getInitStatementName(stmt);
   select := listMember(name,deps);
 end selectStatement;
 
@@ -1899,6 +1927,7 @@ algorithm
       Absyn.Info bindingsInfo;
       Component comp;
       Element elt;
+      list<Statement> bindings;
       
     case (InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,InstTypes.UNTYPED_BINDING(bindingExp=bindingExp,info=bindingInfo),info),cls),_)
       equation
@@ -1908,6 +1937,35 @@ algorithm
     else (inElt,inBindings);
   end match;
 end stripInitBinding;
+
+protected function dimensionDeps
+  input Element inElt;
+  input list<Statement> inBindings;
+  output Element outElt;
+  output list<Statement> outBindings;
+algorithm
+  (outElt,outBindings) := match (inElt,inBindings)
+    local
+      Absyn.Info info,bindingInfo;
+      String name;
+      Class cls;
+      DAE.Type baseType;
+      array<Dimension> dimensions;
+      Prefixes prefixes;
+      ParamType paramType;
+      DAE.Exp bindingExp;
+      Absyn.Info bindingsInfo;
+      Component comp;
+      Element elt;
+      list<Statement> bindings;
+      
+    case (elt as InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),cls),_)
+      equation
+        bindings = Util.if_(arrayLength(dimensions)>0,InstTypes.FUNCTION_ARRAY_INIT(name, dimensions, info)::inBindings,inBindings);
+      then (elt,bindings);
+    else (inElt,inBindings);
+  end match;
+end dimensionDeps;
 
 protected function instFunctionName
   input Item inItem;

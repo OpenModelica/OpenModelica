@@ -7944,5 +7944,20 @@ algorithm
   end match;
 end isNotWild;
 
+public function dimensionsToExps "Takes a list of dimensions and select the expressions dimensions, returning a list of expressions"
+  input list<DAE.Dimension> dims;
+  input list<DAE.Exp> acc;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := match (dims,acc)
+    local
+      list<DAE.Dimension> rest;
+      DAE.Exp exp;
+    case ({},_) then listReverse(acc);
+    case (DAE.DIM_EXP(exp)::rest,_) then dimensionsToExps(rest,exp::acc);
+    case (_::rest,_) then dimensionsToExps(rest,acc);
+  end match;
+end dimensionsToExps;
+
 end Expression;
 
