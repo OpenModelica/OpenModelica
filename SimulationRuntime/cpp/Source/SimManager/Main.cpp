@@ -7,10 +7,10 @@ namespace fs = boost::filesystem;
 
 
 
-int nargc=3;
+int nargc=4;
 int lib_index= 1;
 int modelica_index = 2;
-
+int modelname_index = 3;
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
@@ -26,6 +26,7 @@ int main(int argc, const char* argv[])
     fs::path modelica_path = fs::path( argv[modelica_index] ) ;
     libraries_path.make_preferred();
     modelica_path.make_preferred();
+	string resultsfilename(argv[modelname_index]);
     //std::cout << libraries_path << "  end" << std::endl;
     try
     {
@@ -33,6 +34,7 @@ int main(int argc, const char* argv[])
         Configuration config(libraries_path);
 
         IGlobalSettings* global_settings = config.getGlobalSettings();
+		global_settings->setResultsFileName(resultsfilename);
         //Load Modelica sytem library
         
 

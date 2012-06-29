@@ -12,7 +12,7 @@ class HistoryImpl: public IHistory,
 public: 
 
   HistoryImpl(IGlobalSettings& globalSettings)
-  :ResultsPolicy<dim_1,dim_2,dim_3>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath())
+  :ResultsPolicy<dim_1,dim_2,dim_3>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
   {
 
   }

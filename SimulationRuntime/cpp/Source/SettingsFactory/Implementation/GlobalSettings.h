@@ -2,35 +2,37 @@
 #include "SettingsFactory/Interfaces/IGlobalSettings.h"
 //#include "../Interfaces/APi.h"
 
-class  /*BOOST_EXTENSION_GLOBALSETTINGS_DECL*/ GlobalSettings : public IGlobalSettings
+class  GlobalSettings : public IGlobalSettings
 {
-
+	
 public: 
   GlobalSettings(void);
   ~GlobalSettings(void);
   ///< Start time of integration (default: 0.0)
-  /*DLL_EXPORT*/ virtual double getStartTime();
-  /*DLL_EXPORT*/ virtual void setStartTime(double);
+  virtual double getStartTime();
+  virtual void setStartTime(double);
   ///< End time of integraiton (default: 1.0)
-  /*DLL_EXPORT*/ virtual double getEndTime();
-  /*DLL_EXPORT*/ virtual void getEndTime(double);
+  virtual double getEndTime();
+  virtual void getEndTime(double);
   ///< Output step size (default: 20 ms)
-  /*DLL_EXPORT*/ virtual double gethOutput();
-  /*DLL_EXPORT*/ virtual void sethOutput(double);
+  virtual double gethOutput();
+   virtual void sethOutput(double);
   ///< Write out results ([false,true]; default: true)
-  /*DLL_EXPORT*/ virtual bool getResultsOutput();
-  /*DLL_EXPORT*/ virtual void setResultsOutput(bool);
+   virtual bool getResultsOutput();
+   virtual void setResultsOutput(bool);
   ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
-  /*DLL_EXPORT*/ virtual bool getInfoOutput();
-  /*DLL_EXPORT*/ virtual void setInfoOutput(bool);
+   virtual bool getInfoOutput();
+  virtual void setInfoOutput(bool);
   ///path for simulation results in textfile
-  /*DLL_EXPORT*/ virtual string getOutputPath();  
-  /*DLL_EXPORT*/ virtual void setOutputPath(string);
+   virtual string getOutputPath();  
+   virtual void setOutputPath(string);
   //solver used for simulation
-  /*DLL_EXPORT*/ virtual string getSelectedSolver();  
-  /*DLL_EXPORT*/ virtual void setSelectedSolver(string);
+   virtual string getSelectedSolver();  
+   virtual void setSelectedSolver(string);
+   virtual void setResultsFileName(string);
+  virtual string getResultsFileName();
   //initializes the settings object by an xml file
-  /*DLL_EXPORT*/ void load(std::string xml_file);
+   void load(std::string xml_file);
 private:
   double
     _startTime,     ///< Start time of integration (default: 0.0)
@@ -42,7 +44,8 @@ private:
     _infoOutput;      ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
   string 
     _output_path,
-    selected_solver;
+    selected_solver,
+   _resultsfile_name;
 
   
    //Serialization of settings class

@@ -14,7 +14,7 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 class IGlobalSettings
 {
-
+  enum {CSV, MAT};
 public: 
   virtual  ~IGlobalSettings() {}
   ///< Start time of integration (default: 0.0)
@@ -37,4 +37,6 @@ public:
   virtual string  getSelectedSolver()=0;  
   virtual void setSelectedSolver(string)=0;   
   virtual void load(std::string xml_file)=0;
+  virtual void setResultsFileName(string)=0;
+  virtual string getResultsFileName()=0;
 };

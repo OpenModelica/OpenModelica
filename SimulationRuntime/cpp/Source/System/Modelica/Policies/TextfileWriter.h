@@ -3,7 +3,7 @@
 // Output
 #include <fstream>
 using std::ios;
-#define RESULTS_FILE "results.txt"
+#define SEPERATOR ","
 /**
 Policy class to write simulation results in a text file
 */
@@ -11,12 +11,13 @@ template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
 struct TextFileWriter
 {
 public:
-  TextFileWriter(unsigned long size,string output_path)
+  TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
+	,_file_name(file_name)
   {
     _output_path=output_path;
     stringstream res_output_path;
-    res_output_path <<   output_path  <<RESULTS_FILE;
+    res_output_path <<   output_path  <<_file_name;
     _output_stream.open(res_output_path.str().c_str(), ios::out);
   }
   ~TextFileWriter()
@@ -52,10 +53,10 @@ public:
   void write(const vector<string>& s_list)
   {
     string s;
-    _output_stream<<"time"<<"\t";
+    _output_stream<<"\"time\""<<SEPERATOR;
     BOOST_FOREACH(s, s_list) 
     {
-      _output_stream<<s<<"\t";
+      _output_stream<<"\""<<s<<"\""<<SEPERATOR;
 
     }
     _output_stream<<std::endl;
@@ -69,15 +70,15 @@ public:
   
   void write(const ublas::vector<double>& v_list,const ublas::vector<double>& v2_list,double time)
   {
-    _output_stream<<time<<"\t";
+    _output_stream<<time<<SEPERATOR;
     double v,v2;
     BOOST_FOREACH(v, v_list) 
     {
-      _output_stream<<v<<"\t";
+      _output_stream<<v<<SEPERATOR;
     }
     BOOST_FOREACH(v2, v2_list) 
     {
-      _output_stream<<v2<<"\t";
+      _output_stream<<v2<<SEPERATOR;
     }
     _output_stream<<std::endl;
   }
@@ -104,6 +105,6 @@ protected:
   std::fstream _output_stream;
   unsigned int    _curser_position;       ///< Controls current Curser-Position
   string _output_path;
-  
+  string _file_name;
 
 };

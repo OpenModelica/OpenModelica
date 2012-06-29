@@ -10,6 +10,7 @@ GlobalSettings::GlobalSettings()
 , _resultsOutput    (true)  
 , _infoOutput   (true)
 , selected_solver("Euler")
+,_resultsfile_name("results.txt")
 {
   
 }
@@ -53,6 +54,16 @@ void GlobalSettings::setResultsOutput(bool output)
 {
   _resultsOutput  =output;
 }
+
+ void  GlobalSettings::setResultsFileName(string name)
+ {
+	 _resultsfile_name = name;
+ }
+ string  GlobalSettings::getResultsFileName()
+ {
+	 return _resultsfile_name;
+ }
+
 ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
 bool GlobalSettings::getInfoOutput()
 {
