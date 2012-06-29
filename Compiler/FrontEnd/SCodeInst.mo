@@ -1192,7 +1192,12 @@ algorithm
             "rooted",
             "transpose",
             "skew",
-            "identity"
+            "identity",
+            "min",
+            "max",
+            "cross",
+            "diagonal",
+            "abs"
             });
       then 
         b; 
@@ -1282,6 +1287,54 @@ algorithm
       then
         (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther),functions);    
     
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+            
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cross"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "diagonal"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "abs"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "noEvent"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+    
     // hopefully all the other ones have an complete entry in ModelicaBuiltin.mo
     case (Absyn.CALL(function_ = acref, 
         functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, functions)
@@ -1291,7 +1344,7 @@ algorithm
         (named_args,functions) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, functions);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
         
  end match;
 end instBuiltinFunctionCall;
@@ -1534,15 +1587,17 @@ algorithm
     case Absyn.POW_EW() then DAE.POW_ARR2(DAE.T_UNKNOWN_DEFAULT);
     case Absyn.UPLUS_EW() then DAE.ADD(DAE.T_UNKNOWN_DEFAULT);
     case Absyn.UMINUS_EW() then DAE.UMINUS(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.AND() then DAE.AND(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.OR() then DAE.OR(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.NOT() then DAE.NOT(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.LESS() then DAE.LESS(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.LESSEQ() then DAE.LESSEQ(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.GREATER() then DAE.GREATER(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.GREATEREQ() then DAE.GREATEREQ(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.EQUAL() then DAE.EQUAL(DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.NEQUAL() then DAE.NEQUAL(DAE.T_UNKNOWN_DEFAULT);
+    // logical have boolean type
+    case Absyn.AND() then DAE.AND(DAE.T_BOOL_DEFAULT);
+    case Absyn.OR() then DAE.OR(DAE.T_BOOL_DEFAULT);
+    case Absyn.NOT() then DAE.NOT(DAE.T_BOOL_DEFAULT);
+    // relational have boolean type too
+    case Absyn.LESS() then DAE.LESS(DAE.T_BOOL_DEFAULT);
+    case Absyn.LESSEQ() then DAE.LESSEQ(DAE.T_BOOL_DEFAULT);
+    case Absyn.GREATER() then DAE.GREATER(DAE.T_BOOL_DEFAULT);
+    case Absyn.GREATEREQ() then DAE.GREATEREQ(DAE.T_BOOL_DEFAULT);
+    case Absyn.EQUAL() then DAE.EQUAL(DAE.T_BOOL_DEFAULT);
+    case Absyn.NEQUAL() then DAE.NEQUAL(DAE.T_BOOL_DEFAULT);
   end match;
 end instOperator;
 
@@ -1941,7 +1996,7 @@ algorithm
         (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
     
     // inst functions
     case (_, _, _, _, _, _, functions)
@@ -1951,7 +2006,7 @@ algorithm
         (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
 
   end matchcontinue;
 end instFunctionCall;
@@ -1981,11 +2036,13 @@ algorithm
       FunctionHashTable functions;
       list<Statement> initBindings;
 
+    /*
     case (_, _, _, _, functions)
       equation
         path = Absyn.crefToPath(inName);
         outFunction = BaseHashTable.get(path,functions);
       then (path, outFunction, functions);
+    */
 
     // records, treat them the same as functions add bindings as algorithm statements
     case (_, _, _, _, functions)
@@ -1997,6 +2054,7 @@ algorithm
         (cls as InstTypes.COMPLEX_CLASS(components = inputs, algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
         initBindings = {};
+        inputs = listReverse(inputs);
         (inputs,initBindings) = List.mapFold(inputs,dimensionDeps,initBindings);
         (initBindings,{}) = Graph.topologicalSort(
           Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getInitStatementName))),
@@ -2004,7 +2062,7 @@ algorithm
         algorithms = initBindings::algorithms;
         stmts = List.flatten(algorithms);
         outFunction = InstTypes.RECORD(path,inputs,stmts);
-        functions = BaseHashTable.addUnique((path,outFunction),functions);
+        functions = BaseHashTable.add((path,outFunction),functions);
       then
         (path, outFunction, functions);
 
@@ -2030,7 +2088,7 @@ algorithm
         
         stmts = List.flatten(algorithms);
         outFunction = InstTypes.FUNCTION(path,inputs,outputs,locals,stmts);
-        functions = BaseHashTable.addUnique((path,outFunction),functions);
+        functions = BaseHashTable.add((path,outFunction),functions);
       then
         (path, outFunction, functions);
 
@@ -2457,6 +2515,8 @@ protected function fillFunctionSlots
 protected
   list<FunctionSlot> slots;
 algorithm
+  //print("Function: " +& Absyn.pathString(inFuncName) +& ":\n");
+  //print(Util.stringDelimitListNonEmptyElts(List.map(inInputs, InstUtil.printElement), "\n\t") +& "\n");  
   slots := makeFunctionSlots(inInputs, inPositionalArgs, {}, inFuncName, inInfo);
   slots := List.fold(inNamedArgs, fillFunctionSlot, slots);
   outArgs := List.map(slots, extractFunctionSlotExp);
@@ -2588,9 +2648,9 @@ algorithm
         inSlot :: slots;
 
     // Found a matching slot that is already filled, show error.
-    case (true, _, InstTypes.SLOT(name = name, arg = SOME(_)), _)
+    case (true, _, InstTypes.SLOT(name = name, arg = SOME(arg)), _)
       equation
-        print("Slot " +& name +& " is already filled!\n");
+        print("Slot " +& name +& " is already filled with: " +& ExpressionDump.printExpStr(arg) +& "\n");
       then
         fail();
 

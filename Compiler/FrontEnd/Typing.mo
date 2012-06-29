@@ -574,6 +574,19 @@ algorithm
   end match;
 end typeExpOpt;
 
+protected function selectType
+"@author: adrpo
+ select the second type if the first type is T_UNKNOWN"
+ input DAE.Type inTy1;
+ input DAE.Type inTy2;
+ output DAE.Type outTy;
+algorithm
+  outTy := match(inTy1,inTy2)
+    case (DAE.T_UNKNOWN(_), _) then inTy2;
+    case (_, _) then inTy1;
+  end match;
+end selectType;
+
 public function typeExp
   input DAE.Exp inExp;
   input EvalPolicy inEvalPolicy;
@@ -586,7 +599,7 @@ algorithm
     local
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cref;
-      DAE.Type ty;
+      DAE.Type ty,tyOp;
       SymbolTable st;
       DAE.Operator op;
       Component comp;
@@ -618,6 +631,10 @@ algorithm
       equation
         (e1, ty, st) = typeExp(e1, ep, st);
         (e2, ty, st) = typeExp(e2, ep, st);
+        // get the type of the operator, not the types of 
+        // the last operand as for == it DOES NOT HOLD
+        tyOp = Expression.typeofOp(op);
+        ty = selectType(tyOp, ty);
       then
         (DAE.BINARY(e1, op, e2), ty, st);
 
@@ -625,12 +642,16 @@ algorithm
       equation
         (e1, ty, st) = typeExp(e1, ep, st);
         (e2, ty, st) = typeExp(e2, ep, st);
+        tyOp = Expression.typeofOp(op);
+        ty = selectType(tyOp, ty);
       then
         (DAE.LBINARY(e1, op, e2), ty, st);
 
     case (DAE.LUNARY(operator = op, exp = e1), ep, st)
       equation
         (e1, ty, st) = typeExp(e1, ep, st);
+        tyOp = Expression.typeofOp(op);
+        ty = selectType(tyOp, ty);
       then
         (DAE.LUNARY(op, e1), ty, st);
 
@@ -1546,7 +1567,8 @@ algorithm
     else
       equation
         print("typeFunction failed " +& Absyn.pathString(path) +& "\n");
-      then fail();
+      then 
+        (inTpl);
   end matchcontinue;
 end typeFunction;
 
