@@ -57,11 +57,11 @@ void GlobalSettings::setResultsOutput(bool output)
 
  void  GlobalSettings::setResultsFileName(string name)
  {
-	 _resultsfile_name = name;
+     _resultsfile_name = name;
  }
  string  GlobalSettings::getResultsFileName()
  {
-	 return _resultsfile_name;
+     return _resultsfile_name;
  }
 
 ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)

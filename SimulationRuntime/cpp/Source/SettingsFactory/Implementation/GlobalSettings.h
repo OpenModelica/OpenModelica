@@ -4,7 +4,7 @@
 
 class  GlobalSettings : public IGlobalSettings
 {
-	
+    
 public: 
   GlobalSettings(void);
   ~GlobalSettings(void);

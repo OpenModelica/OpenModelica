@@ -4,6 +4,7 @@
 #include <fstream>
 using std::ios;
 #define SEPERATOR ","
+#define EXTENSION ","
 /**
 Policy class to write simulation results in a text file
 */
@@ -13,7 +14,7 @@ struct TextFileWriter
 public:
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
-	,_file_name(file_name)
+    ,_file_name(file_name)
   {
     _output_path=output_path;
     stringstream res_output_path;
