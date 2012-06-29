@@ -45,7 +45,6 @@ public import Values;
 
 protected import Absyn;
 protected import BackendDAEUtil;
-protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;

@@ -49,7 +49,6 @@ protected import BackendVariable;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
-protected import Expression;
 protected import Flags;
 protected import IndexReduction;
 protected import List;
@@ -6132,7 +6131,7 @@ algorithm
       then ();
     else
       equation
-        arg = IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared);
+        arg = IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared,listArray({}),listArray({}));
         (_,_,_) = matchingAlgorithm(isyst,ishared,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
         testMatchingAlgorithm(index-1,matchingAlgorithm,isyst,ishared,inMatchingOptions);
       then

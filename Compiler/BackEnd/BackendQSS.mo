@@ -49,11 +49,9 @@ public import Util;
 public import ExpressionDump;
 public import Expression;
 public import BackendDAEUtil;
-public import BackendDump;
 
 
 protected import BackendVariable;
-protected import BackendDAETransform;
 protected import ComponentReference;
 protected import List;
 

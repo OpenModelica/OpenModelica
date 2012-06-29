@@ -53,7 +53,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import List;
 protected import System;
-protected import Util;
 
 protected constant String matlabStringDelim = "'";
 

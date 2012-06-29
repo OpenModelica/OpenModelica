@@ -600,7 +600,10 @@ int read_modelica_complex(type_description **descptr, modelica_complex *data)
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_COMPLEX:
+#if defined(_MSC_VER) 
+#else
     *data = desc->data.complex;
+#endif
     return 0;
   default:
     break;
@@ -616,7 +619,10 @@ void write_modelica_complex(type_description *desc, const modelica_complex *data
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_COMPLEX;
+#if defined(_MSC_VER) 
+#else
   desc->data.complex = *data;
+#endif
 }
 
 /* function pointer functions - added by stefan */

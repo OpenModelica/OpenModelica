@@ -54,12 +54,19 @@ typedef enum {
 } ModelState;
 
 typedef struct {
+	char* initMethod;
+	char* optiMethod;
+	char* initFile;
+} ModelInitialisation;
+
+typedef struct {
     fmiString instanceName;
     fmiString GUID;
     fmiCallbackFunctions functions;
     fmiBoolean loggingOn;
     fmiEventInfo eventInfo;
     ModelState state;
+    ModelInitialisation initialisation;
     DATA* fmuData;
 } ModelInstance;
 

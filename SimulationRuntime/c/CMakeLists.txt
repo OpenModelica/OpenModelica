@@ -220,7 +220,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   SET(OMC_MODELNAME ${model})  
   SET(OMC_MODELDIR ${dir})  
   # generate model.mos 
-  FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/c_runtime)
+  FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/SimulationRuntime/fmi/export)
   CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}_FMU.mos)
   
   # Variablen fuer openmodelica2sarturis
@@ -240,9 +240,9 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
@@ -302,9 +302,9 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
   
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
