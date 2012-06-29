@@ -917,6 +917,18 @@ algorithm
   end matchcontinue;
 end componentNamesFromElts;
 
+public function isRecord
+"function: isRecord
+  Return true if Class is a record."
+  input Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inClass)
+    case CLASS(restriction = R_RECORD()) then true;
+    case _ then false;
+  end matchcontinue;
+end isRecord;
+
 public function isFunction
 "function: isFunction
   Return true if Class is a function."

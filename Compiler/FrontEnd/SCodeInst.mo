@@ -70,6 +70,7 @@ protected import SCodeMod;
 protected import System;
 protected import Types;
 protected import Typing;
+protected import TypeCheck;
 protected import Util;
 
 public type Binding = InstTypes.Binding;
@@ -141,6 +142,9 @@ algorithm
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
         (cls, symtab) = Typing.typeClass(cls, symtab);
         cls = Typing.typeSections(cls, symtab);
+        
+        // typechecking
+        (cls, symtab) = TypeCheck.check(cls, symtab);
 
         System.stopTimer();
         //print("\nclass " +& name +& "\n");
@@ -1156,6 +1160,202 @@ algorithm
   end match;
 end instExpOpt;
 
+protected function isBuiltinFunctionName
+"@author: adrpo
+ check if the name is a builtin function or operator
+ TODO FIXME, add all of them"
+  input Absyn.ComponentRef functionName;
+  output Boolean isBuiltinFname;
+algorithm
+  isBuiltinFname := matchcontinue(functionName)
+    local
+      String name;
+      Boolean b;
+      Absyn.ComponentRef fname;
+    
+    case (Absyn.CREF_FULLYQUALIFIED(fname))
+      then
+        isBuiltinFunctionName(fname);
+    
+    case (Absyn.CREF_IDENT(name, {}))
+      equation
+        b = listMember(name, 
+          {
+            "noEvent",
+            "smooth",
+            "sample",
+            "pre",
+            "edge",
+            "change",
+            "reinit",
+            "size",
+            "rooted",
+            "transpose",
+            "skew",
+            "identity"
+            });
+      then 
+        b; 
+    
+    case (_) then false;
+  end matchcontinue;	
+end isBuiltinFunctionName;
+
+protected function instBuiltinFunctionCall
+"@author: adrpo
+ build all the builtin calls that are not complete in ModelicaBuiltin.mo
+ TODO FIXME, add all"
+  input Absyn.Exp inExp;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Absyn.Info inInfo;
+  input FunctionHashTable inFunctions;
+  output DAE.Exp outExp;
+  output FunctionHashTable outFunctions;
+algorithm
+  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
+    local
+      Integer ival;
+      Real rval;
+      String sval;
+      Boolean bval;
+      Absyn.ComponentRef acref;
+      DAE.ComponentRef dcref;
+      Absyn.Exp aexp1, aexp2;
+      DAE.Exp dexp1, dexp2;
+      Absyn.Operator aop;
+      DAE.Operator dop;
+      list<Absyn.Exp> aexpl, afargs;
+      list<DAE.Exp> dexpl, dfargs;
+      list<list<Absyn.Exp>> mat_expl;
+      list<Absyn.NamedArg> anamed_args;
+      Absyn.Path path;
+      Option<Absyn.Exp> oaexp;
+      Option<DAE.Exp> odexp;
+      FunctionHashTable functions;
+      Absyn.Path call_path;
+      DAE.ComponentRef cref;
+      list<DAE.Exp> pos_args, args;
+      list<tuple<String, DAE.Exp>> named_args;
+      Class func;
+      list<Element> inputs, outputs; 
+      
+
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
+      equation
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.SIZE(dexp1, SOME(dexp2)),functions);
+
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "smooth"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther),functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rooted"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther),functions);
+
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "transpose"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther),functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "skew"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther),functions);    
+    
+    // hopefully all the other ones have an complete entry in ModelicaBuiltin.mo
+    case (Absyn.CALL(function_ = acref, 
+        functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, functions)
+      equation
+        (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), functions) = instFunction(acref, inEnv, inPrefix, inInfo, functions);
+        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (named_args,functions) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, functions);
+        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        
+ end match;
+end instBuiltinFunctionCall;
+
+protected function instFunctionCallDispatch
+  input Absyn.Exp inExp;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Absyn.Info inInfo;
+  input FunctionHashTable inFunctions;
+  output DAE.Exp outExp;
+  output FunctionHashTable outFunctions;
+algorithm
+  (outExp,outFunctions) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inFunctions)
+    local
+      Integer ival;
+      Real rval;
+      String str;
+      Boolean bval;
+      Absyn.ComponentRef funcName;
+      DAE.ComponentRef dcref;
+      Absyn.Exp aexp1, aexp2;
+      DAE.Exp dexp1, dexp2;
+      Absyn.Operator aop;
+      DAE.Operator dop;
+      list<Absyn.Exp> aexpl, afargs;
+      list<DAE.Exp> dexpl, dfargs;
+      list<list<Absyn.Exp>> mat_expl;
+      list<Absyn.NamedArg> named_args;
+      Absyn.Path path;
+      Option<Absyn.Exp> oaexp;
+      Option<DAE.Exp> odexp;
+      FunctionHashTable functions;
+
+    // handle builtin
+    case (Absyn.CALL(function_ = funcName), _, _, _, _)
+      equation
+        true = isBuiltinFunctionName(funcName);
+        (dexp1,functions) = instBuiltinFunctionCall(inExp, inEnv, inPrefix, inInfo, inFunctions);
+      then
+        (dexp1,functions);
+
+    // handle normal calls
+    case (Absyn.CALL(function_ = funcName, 
+        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
+      equation
+        false = isBuiltinFunctionName(funcName);
+        (dexp1,functions) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, functions);
+      then
+        (dexp1,functions);
+    
+    // failure
+    case (Absyn.CALL(function_ = funcName), _, _, _, functions)
+      equation
+        bval = isBuiltinFunctionName(funcName);
+        str = Util.if_(bval, "*builtin*", "*regular*");
+        print("Failed to instantiate call to " +& str +& " function: " +& Dump.printExpStr(inExp) +& " at position:" +&
+        Error.infoStr(inInfo) +& "!\n");
+      then
+        fail();
+
+ end matchcontinue;
+end instFunctionCallDispatch;
+
 protected function instExp
   input Absyn.Exp inExp;
   input Env inEnv;
@@ -1256,18 +1456,9 @@ algorithm
       then
         (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl),functions);
 
-    case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
+    case (Absyn.CALL(function_ = _), _, _, _, _)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
-      then
-        (DAE.SIZE(dexp1, SOME(dexp2)),functions);
-
-    case (Absyn.CALL(function_ = acref, 
-        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
-      equation
-        (dexp1,functions) = instFunctionCall(acref, afargs, named_args, inEnv, inPrefix, inInfo, functions);
+        (dexp1,functions) = instFunctionCallDispatch(inExp, inEnv, inPrefix, inInfo, inFunctions);
       then
         (dexp1,functions);
 
@@ -1732,16 +1923,27 @@ protected function instFunctionCall
   output DAE.Exp outCallExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outCallExp,outFunctions) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
+  (outCallExp,outFunctions) := matchcontinue(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Path call_path;
       DAE.ComponentRef cref;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
       Class func;
-      list<Element> inputs, outputs; 
+      list<Element> inputs,outputs; 
       FunctionHashTable functions;
-      
+    
+    // inst records
+    case (_, _, _, _, _, _, functions)
+      equation
+        (call_path, InstTypes.RECORD(components=inputs), functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
+        (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, functions);
+        (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
+        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+    
+    // inst functions
     case (_, _, _, _, _, _, functions)
       equation
         (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
@@ -1751,7 +1953,7 @@ algorithm
       then
         (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
 
-  end match;
+  end matchcontinue;
 end instFunctionCall;
 
 protected function instFunction
@@ -1768,6 +1970,7 @@ algorithm
     local
       Absyn.Path path;
       Item item;
+      SCode.Element scls;
       SCodeLookup.Origin origin;
       Env env;
       Class cls;
@@ -1784,10 +1987,33 @@ algorithm
         outFunction = BaseHashTable.get(path,functions);
       then (path, outFunction, functions);
 
+    // records, treat them the same as functions add bindings as algorithm statements
     case (_, _, _, _, functions)
       equation
         path = Absyn.crefToPath(inName);
-        (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
+        (item as SCodeEnv.CLASS(cls = scls), _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
+        true = SCode.isRecord(scls); 
+        path = instFunctionName(item, path, origin, env, inPrefix);
+        (cls as InstTypes.COMPLEX_CLASS(components = inputs, algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
+        initBindings = {};
+        (inputs,initBindings) = List.mapFold(inputs,dimensionDeps,initBindings);
+        (initBindings,{}) = Graph.topologicalSort(
+          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getInitStatementName))),
+          statementLhsEqual);
+        algorithms = initBindings::algorithms;
+        stmts = List.flatten(algorithms);
+        outFunction = InstTypes.RECORD(path,inputs,stmts);
+        functions = BaseHashTable.addUnique((path,outFunction),functions);
+      then
+        (path, outFunction, functions);
+
+    // functions
+    case (_, _, _, _, functions)
+      equation
+        path = Absyn.crefToPath(inName);
+        (item as SCodeEnv.CLASS(cls = scls), _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
+        false = SCode.isRecord(scls);
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
@@ -1807,11 +2033,12 @@ algorithm
         functions = BaseHashTable.addUnique((path,outFunction),functions);
       then
         (path, outFunction, functions);
+
     else
       equation
-        print("SCodeInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +& "\n");
+        print("SCodeInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
+        " at position: " +& Error.infoStr(inInfo) +& "\n");
       then fail();
-
   end matchcontinue;
 end instFunction;
 
@@ -1979,6 +2206,10 @@ algorithm
       String name;
       Absyn.Path path;
 
+    // Fully qualified path should stay the same
+    case (_, Absyn.FULLYQUALIFIED(_), _, _, _)
+      then inPath;
+
     // The name of a builtin function should not be prefixed.
     case (_, _, SCodeLookup.BUILTIN_ORIGIN(), _, _)
       then inPath;
@@ -2056,7 +2287,7 @@ protected function getFunctionParameters2
   output list<Element> outOutputs;
   output list<Element> outLocals;
 algorithm
-  (outInputs, outOutputs, outLocals) := match(inElements, inAccumInputs, inAccumOutputs, inAccumLocals)
+  (outInputs, outOutputs, outLocals) := matchcontinue(inElements, inAccumInputs, inAccumOutputs, inAccumLocals)
     local
       Prefixes prefs;
       Absyn.Path name;
@@ -2065,6 +2296,8 @@ algorithm
       Element el;
       list<Element> rest_el;
       list<Element> inputs, outputs, locals;
+
+    case ({}, _, _, _) then (inAccumInputs, inAccumOutputs, inAccumLocals);
 
     case ((el as InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(
         name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
@@ -2077,9 +2310,20 @@ algorithm
       then
         (inputs, outputs, locals);
 
-    case ({}, _, _, _) then (inAccumInputs, inAccumOutputs, inAccumLocals);
-
-  end match;
+    // ignore EXTENDS -> TODO FIXME should we ignore them??
+    case ((el as InstTypes.EXTENDED_ELEMENTS(baseClass = _)) :: rest_el, inputs, outputs, locals)
+      equation
+        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
+      then
+        (inputs, outputs, locals);
+    
+    // ignore CONDITIONAL components
+    case ((el as InstTypes.CONDITIONAL_ELEMENT(component = _)) :: rest_el, inputs, outputs, locals)
+      equation
+        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
+      then
+        (inputs, outputs, locals);
+  end matchcontinue;
 end getFunctionParameters2;
 
 protected function getFunctionParameters3
@@ -2163,7 +2407,7 @@ protected function validateFormalParameter
   input Prefixes inPrefixes;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inName, inPrefixes, inInfo)
+  _ := matchcontinue(inName, inPrefixes, inInfo)
     local
       String name;
 
@@ -2176,9 +2420,9 @@ algorithm
       then
         fail();
 
-    else ();
+    else ();        
          
-  end match;
+  end matchcontinue;
 end validateFormalParameter;
 
 protected function validateLocalFunctionVariable
@@ -2235,14 +2479,25 @@ algorithm
       list<DAE.Exp> rest_args;
       list<FunctionSlot> slots;
 
+    // ignore cond components
+    case (InstTypes.CONDITIONAL_ELEMENT(component = _) :: rest_inputs, _, slots, _, _)
+      then
+        makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
+    
+    // ignore extends 
+    case (InstTypes.EXTENDED_ELEMENTS(baseClass = _) :: rest_inputs, _, slots, _, _)
+      then
+        makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
+
     // Last vararg input and no positional arguments means we're done.
     case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes =
-        InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _, _, _)
+        InstTypes.PREFIXES(varArgs = _ /* InstTypes.IS_VARARG() */)))}, {}, _, _, _)
       then listReverse(inAccumSlots);
 
     // If the last input of the function is a vararg, handle it first
     case (rest_inputs as (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG()))) :: {}),  _::_, slots, _, _)
+        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = _ 
+        /* InstTypes.IS_VARARG() */))) :: {}),  _::_, slots, _, _)
       equation
         (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
         default_value = InstUtil.getBindingExpOpt(binding);
@@ -2257,7 +2512,7 @@ algorithm
         default_value = InstUtil.getBindingExpOpt(binding);
         slots = InstTypes.SLOT(param_name, arg, default_value) :: slots;
       then
-        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);  
+        makeFunctionSlots(rest_inputs, rest_args, slots, inFuncName, inInfo);
         
     // No more inputs and positional arguments means we're done.
     case ({}, {}, _, _, _) then listReverse(inAccumSlots);

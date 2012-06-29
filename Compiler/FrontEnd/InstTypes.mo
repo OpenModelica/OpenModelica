@@ -78,6 +78,7 @@ public uniontype Class
 end Class;
 
 public uniontype Function
+  
   record FUNCTION "A function has inputs,output and locals without binding. These are resolved to statements in the algorithm section"
     Absyn.Path path;
     list<Element> inputs;
@@ -85,6 +86,13 @@ public uniontype Function
     list<Element> locals;
     list<Statement> algorithms "TODO: Add default bindings";
   end FUNCTION;
+  
+  record RECORD "A record has locals with bindings"
+    Absyn.Path path;
+    list<Element> components;
+    list<Statement> algorithms "TODO: Add default bindings";
+  end RECORD;
+    
 end Function;
 
 public uniontype Dimension

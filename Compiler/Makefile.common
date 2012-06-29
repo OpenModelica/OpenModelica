@@ -2,7 +2,7 @@
 #
 # Common part of Makefile for omc. Contains sourcenames.
 #
-# David Kågedal <x97davka@ida.liu.se>
+# David Kï¿½gedal <x97davka@ida.liu.se>
 #
 # $Id$
 #
@@ -99,6 +99,7 @@ SCodeFlat.mo \
 SCodeFlatDump.mo \
 SCodeUtil.mo \
 Static.mo \
+TypeCheck.mo \
 Types.mo \
 Typing.mo \
 UnitAbsyn.mo \
