@@ -1083,18 +1083,18 @@ Author: Frenkel TUD 2012-06"
   output list<BackendDAE.Equation> outEqns; 
 algorithm 
   outEqns := matchcontinue(inExp1,inExp2,isource,functionTree,inEqns)
-	  local
-	    DAE.Exp e1,e2;
-	    DAE.ElementSource source;
-	    DAE.ComponentRef cr1,cr2;
-	    Expression.Type tp;
-	    Integer size;
-	    list<DAE.Exp> expvarlst,expvarlst1,explst;
-	    Boolean b1,b2;
-	    list<DAE.Var> varLst; 
-	    Absyn.Path path,fname,path1;
-	    DAE.Dimensions dims;
-	    
+    local
+      DAE.Exp e1,e2;
+      DAE.ElementSource source;
+      DAE.ComponentRef cr1,cr2;
+      Expression.Type tp;
+      Integer size;
+      list<DAE.Exp> expvarlst,expvarlst1,explst;
+      Boolean b1,b2;
+      list<DAE.Var> varLst; 
+      Absyn.Path path,fname,path1;
+      DAE.Dimensions dims;
+      
     // a=b
     case (DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),DAE.CREF(componentRef=cr2),source,_,_)
       equation
@@ -1127,7 +1127,7 @@ algorithm
       equation
         SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(functionTree,path);
       then
-        lowerextendedRecordEqns(expvarlst,explst,source,functionTree,inEqns);	    
+        lowerextendedRecordEqns(expvarlst,explst,source,functionTree,inEqns);      
 
     // complex types to complex equations  
     case (e1,e2,source,_,_)
@@ -1137,32 +1137,32 @@ algorithm
         size = Expression.sizeOf(tp);
       then
         BackendDAE.COMPLEX_EQUATION(size,e1,e2,source)::inEqns;
-	    
-	  // array types to array equations  
-	  case (e1,e2,source,_,_)
-	    equation 
+      
+    // array types to array equations  
+    case (e1,e2,source,_,_)
+      equation 
         tp = Expression.typeof(e1);
         true = DAEUtil.expTypeArray(tp);
         dims = Expression.arrayDimension(tp);
       then
         lowerArrayEqn(dims,e1,e2,source,inEqns);
-	  // other types  
-	  case (e1,e2,source,_,_)
-	    equation
-	      tp = Expression.typeof(e1);
-	      b1 = DAEUtil.expTypeComplex(tp);
-	      b2 = DAEUtil.expTypeArray(tp);
-	      false = b1 or b2;
-	      //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
-	    then
-	      BackendDAE.EQUATION(e1,e2,source)::inEqns;
-	  else
+    // other types  
+    case (e1,e2,source,_,_)
+      equation
+        tp = Expression.typeof(e1);
+        b1 = DAEUtil.expTypeComplex(tp);
+        b2 = DAEUtil.expTypeArray(tp);
+        false = b1 or b2;
+        //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
+      then
+        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+    else
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- BackendDAECreate.lowerextendedRecordEqn failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
       then
-        fail();	    
+        fail();      
   end matchcontinue;
 end lowerextendedRecordEqn;
 

@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
+  
 encapsulated package BackendDAEUtil
 " file:        BackendDAEUtil.mo
   package:     BackendDAEUtil 
@@ -473,22 +473,22 @@ protected function expandAlgorithmsbyInitStmtsHelper
 algorithm
   outTpl := matchcontinue(inTpl)
     local
-	    DAE.Algorithm alg;
-	    DAE.Algorithm algExpanded;
-	    BackendDAE.Equation eqn;
-	    Variables vars;
-	    Integer aindex,size;
-	    list<DAE.Exp> outputs;
-	    DAE.ElementSource source;
-	    list<DAE.ComponentRef> crlst;
-	  case((eqn as BackendDAE.ALGORITHM(size=size,alg=alg,source=source),vars))
-	    equation
-	      crlst = CheckModel.algorithmOutputs(alg);
-	      outputs = List.map(crlst,Expression.crefExp);
-	      algExpanded = expandAlgorithmStmts(alg,outputs,vars);
-	    then 
-	      ((BackendDAE.ALGORITHM(size,algExpanded,source), vars));
-	  else
+      DAE.Algorithm alg;
+      DAE.Algorithm algExpanded;
+      BackendDAE.Equation eqn;
+      Variables vars;
+      Integer aindex,size;
+      list<DAE.Exp> outputs;
+      DAE.ElementSource source;
+      list<DAE.ComponentRef> crlst;
+    case((eqn as BackendDAE.ALGORITHM(size=size,alg=alg,source=source),vars))
+      equation
+        crlst = CheckModel.algorithmOutputs(alg);
+        outputs = List.map(crlst,Expression.crefExp);
+        algExpanded = expandAlgorithmStmts(alg,outputs,vars);
+      then 
+        ((BackendDAE.ALGORITHM(size,algExpanded,source), vars));
+    else
       then inTpl;     
   end matchcontinue;
 end expandAlgorithmsbyInitStmtsHelper;

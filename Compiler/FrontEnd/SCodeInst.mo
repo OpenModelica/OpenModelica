@@ -1203,7 +1203,7 @@ algorithm
         b; 
     
     case (_) then false;
-  end matchcontinue;	
+  end matchcontinue;  
 end isBuiltinFunctionName;
 
 protected function instBuiltinFunctionCall
