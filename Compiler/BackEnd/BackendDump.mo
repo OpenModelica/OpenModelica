@@ -394,7 +394,8 @@ algorithm
       list<BackendDAE.Equation> res;
       list<DAE.Exp> expList,expList2;
       Integer i;
-      DAE.ElementSource source "the element source";
+      DAE.ElementSource source;
+      DAE.Algorithm alg;
 
      case ({},_) then ();
      case (BackendDAE.EQUATION(e1,e2,source)::res,printExpTree) /* header */
@@ -410,12 +411,15 @@ algorithm
         print("\n");
       then
         ();
-     case (BackendDAE.COMPLEX_EQUATIONWRAPPER(i,expList,source)::res,printExpTree) /* header */
+     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source)::res,printExpTree) /* header */
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
-        print("COMPLEX_EQUATION(" +& intString(i) +& "): ");
-        strList = List.map(expList,ExpressionDump.printExpStr);
-        str = stringDelimitList(strList," | ");
+        print("COMPLEX_EQUATION: ");
+        str = ExpressionDump.printExpStr(e1);
+        print(str);
+        print("\n");
+        str = ExpressionDump.dumpExpStr(e1,0);
+        str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
       then
@@ -446,27 +450,24 @@ algorithm
         print("\n");
       then
         ();
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(i,expList,source)::res,printExpTree)
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,printExpTree)
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
-        print("ARRAY_EQUATION(" +& intString(i) +& "): ");
-        strList = List.map(expList,ExpressionDump.printExpStr);
-        str = stringDelimitList(strList," | ");
+        print("ARRAY_EQUATION: ");
+        str = ExpressionDump.printExpStr(e1);
+        print(str);
+        print("\n");
+        str = ExpressionDump.dumpExpStr(e1,0);
+        str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
       then
         ();
-     case (BackendDAE.ALGORITHMWRAPPER(_,expList,expList2,source)::res,printExpTree)
+     case (BackendDAE.ALGORITHM(alg=alg,source=source)::res,printExpTree)
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("ALGORITHM: ");
-        strList = List.map(expList,ExpressionDump.printExpStr);
-        str = stringDelimitList(strList," | ");
-        print(str);
-        print("\n");
-        strList = List.map(expList2,ExpressionDump.printExpStr);
-        str = stringDelimitList(strList," | ");
-        print(str);
+        dumpAlgorithms({alg},0);
         print("\n");
       then
         ();
@@ -726,21 +727,17 @@ algorithm
       String varlen_str,eqnlen_str,s;
       list<BackendDAE.Equation> reqnsl,ieqnsl;
       list<String> ss;
-      list<BackendDAE.MultiDimEquation> ae_lst;
       BackendDAE.Variables vars2,vars3;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray reqns,ieqns;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> algs;
       array<DAE.Constraint> constrs;
-      array<BackendDAE.ComplexEquation> complEqs;
       list<BackendDAE.ZeroCrossing> zc;
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
-    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,constrs,complEqs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp,symjacs))
+    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,constrs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp,symjacs))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);
@@ -800,22 +797,9 @@ algorithm
         s = stringDelimitList(ss, ",\n");
         print(s);
         print("\n");
-        print("Array Equations :\n");
-        print("===============\n");
-        ae_lst = arrayList(ae);
-        dumpArrayEqns(ae_lst,0);
-
-        print("Algorithms:\n");
-        print("===============\n");
-        dumpAlgorithms(arrayList(algs),0);
-        
         print("Constraints:\n");
         print("===============\n");
-        dumpConstraints(arrayList(constrs),0);
-
-        print("Complex Equations:\n");
-        print("===============\n");
-        dumpComplexEquations(arrayList(complEqs),1);        
+        dumpConstraints(arrayList(constrs),0);       
       then
         ();
   end match;
@@ -965,57 +949,6 @@ algorithm
   end match;
 end dumpJacobianStr2;
 
-public function dumpArrayEqns
-"function: dumpArrayEqns
-  helper function to dump"
-  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
-  input Integer inInteger;
-algorithm
-  _ := match (inMultiDimEquationLst,inInteger)
-    local
-      String s1,s2,s,is;
-      DAE.Exp e1,e2;
-      list<BackendDAE.MultiDimEquation> es;
-    case ({},_) then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),inInteger)
-      equation
-        is = intString(inInteger);
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s = stringAppendList({is," : ",s1," = ",s2,"\n"});
-        print(s);
-        dumpArrayEqns(es,inInteger + 1);
-      then
-        ();
-  end match;
-end dumpArrayEqns;
-
-
-protected function dumpComplexEquations
-"function: dumpComplexEquations
-  helper function to dump"
-  input list<BackendDAE.ComplexEquation> inComplexEquationLst;
-  input Integer inInteger;
-algorithm
-  _ := match (inComplexEquationLst,inInteger)
-    local
-      String s1,s2,s,is;
-      DAE.Exp e1,e2;
-      list<BackendDAE.ComplexEquation> es;
-    case ({},_) then ();
-    case ((BackendDAE.COMPLEXEQUATION(left = e1,right = e2) :: es),inInteger)
-      equation
-        is = intString(inInteger);
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s = stringAppendList({is," : ",s1," = ",s2,"\n"});
-        print(s);
-        dumpComplexEquations(es,inInteger + 1);
-      then
-        ();
-  end match;
-end dumpComplexEquations;
-
 public function dumpEqnsSolved
 "function: dumpEqnsSolved
   This function dumps the equations in the order they have to be calculate."
@@ -1044,13 +977,10 @@ algorithm
     local
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
-      BackendDAE.StrongComponents comps;    
-      array<BackendDAE.MultiDimEquation> arrayEqs;
-      array< .DAE.Algorithm> algorithms;
-      array<BackendDAE.ComplexEquation> complEqs;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(_,_,comps)),BackendDAE.SHARED(arrayEqs=arrayEqs,algorithms=algorithms,complEqs=complEqs))
+      BackendDAE.StrongComponents comps;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(_,_,comps)),_)
       equation
-        dumpEqnsSolved2(comps,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(comps,eqns,vars);
        then
         ();
     else
@@ -1067,12 +997,9 @@ protected function dumpEqnsSolved2
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars;
-  input array<BackendDAE.MultiDimEquation> arrayEqs;
-  input array< .DAE.Algorithm> algorithms;
-  input array<BackendDAE.ComplexEquation> complEqs;
 algorithm
   _ := 
-  matchcontinue (inComps,eqns,vars,arrayEqs,algorithms,complEqs)
+  matchcontinue (inComps,eqns,vars)
     local
       Integer e,v;
       list<Integer> elst,vlst;
@@ -1082,81 +1009,78 @@ algorithm
       BackendDAE.Equation eqn;
       list<BackendDAE.Var> varlst;
       list<BackendDAE.Equation> eqnlst;
-      BackendDAE.MultiDimEquation aeqn;
-      DAE.Algorithm alg;
-      BackendDAE.ComplexEquation ceqn;
-    case ({},_,_,_,_,_)  then (); 
-    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_,_,_,_) 
+    case ({},_,_)  then (); 
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_) 
       equation
         print("SingleEquation: " +& intString(e) +& "\n");
         var = BackendVariable.getVarAt(vars,v);
         dumpVars({var});
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn}); 
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)::rest,_,_,_,_,_) 
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)::rest,_,_) 
       equation
         print("Mixed EquationSystem:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
         dumpEqns(eqnlst);        
-        dumpEqnsSolved2({comp},eqns,vars,arrayEqs,algorithms,complEqs);
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2({comp},eqns,vars);
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,eqns,vars,_,_,_) 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,eqns,vars) 
       equation
         print("Equationsystem:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
         dumpEqns(eqnlst);
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.SINGLEARRAY(arrayIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst)::rest,eqns,vars) 
       equation
-        print("ArrayEquation: " +& intString(e) +& "\n");
+        print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        aeqn = arrayEqs[e+1];
-        dumpArrayEqns({aeqn},e);  
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        eqnlst = BackendEquation.getEqns(elst,eqns); 
+        dumpEqns(eqnlst); 
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLEALGORITHM(algorithmIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst)::rest,eqns,vars) 
       equation
-        print("Algorithm: " +& intString(e) +& "\n");
+        print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        alg = algorithms[e+1];
-        dumpAlgorithms({alg},e);    
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        eqnlst = BackendEquation.getEqns(elst,eqns); 
+        dumpEqns(eqnlst);   
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=e,vars=vlst)::rest,eqns,vars,_,_,_) 
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst,vars=vlst)::rest,eqns,vars) 
       equation
-        print("ComplexEquation: " +& intString(e) +& "\n");
+        print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        ceqn = complEqs[e];
-        dumpComplexEquations({ceqn},e);     
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        eqnlst = BackendEquation.getEqns(elst,eqns); 
+        dumpEqns(eqnlst);    
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (_::rest,_,_,_,_,_) 
+    case (_::rest,_,_) 
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDump.dumpEqnsSolved2 failed!");
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-  case (_::rest,_,_,_,_,_) 
+  case (_::rest,_,_) 
       equation
-        dumpEqnsSolved2(rest,eqns,vars,arrayEqs,algorithms,complEqs);
+        dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
   end matchcontinue;  
@@ -1298,13 +1222,6 @@ algorithm
         res = stringAppendList({s1," = ",s2});
       then
         res;        
-    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
-      equation
-        indx_str = intString(indx);
-        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
-        res = stringAppendList({"Complex eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
-      then
-        res;
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1312,13 +1229,6 @@ algorithm
         res = stringAppendList({s1," = ",s2});
       then
         res;          
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl))
-      equation
-        indx_str = intString(indx);
-        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
-        res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
-      then
-        res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1355,16 +1265,6 @@ algorithm
         res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
       then
         res;        
-    case (BackendDAE.ALGORITHMWRAPPER(index = i, in_ = inps, out = outs))
-      equation
-        is = intString(i);
-        intsStr = stringDelimitList(List.map(inps, ExpressionDump.printExpStr), ", ");
-        outsStr = stringDelimitList(List.map(outs, ExpressionDump.printExpStr), ", ");
-        res = stringAppendList({"Algorithm no: ", is, " for inputs: (", 
-                                      intsStr, ") => outputs: (", 
-                                      outsStr, ")" /*,"\n"*/});
-      then
-        res;
     case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse, source=source))
       equation
         s1 = ExpressionDump.printExpStr(e1);

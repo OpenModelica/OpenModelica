@@ -46,11 +46,12 @@ import Env;
 
 protected
 import CevalScript;
+import CheckModel;
 import SimCode;
 import Interactive;
 import System;
 import Settings;
-import BackendDump;
+//import BackendDump;
 import BackendDAEUtil;
 import List;
 import BackendVariable;
@@ -438,17 +439,14 @@ algorithm
 end generateCorrelationMatrix;
 
 protected function stripCorrelationFromDae "removes the correlation vector and it's corresponding algorithm section from the DAE.
-This means that it must remove from three places, the variables, the equations and the algorithms"
+This means that it must remove from two places, the variables and the equations"
   input BackendDAE.BackendDAE dae; 
   output BackendDAE.BackendDAE strippedDae;
 protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
-  array<DAE.Algorithm> algs;
 algorithm
-  algs := BackendDAEUtil.getAlgorithms(dae);
-  algs := stripCorrelationStatement(algs);
-  BackendDAE.DAE(eqs,shared) := BackendDAEUtil.setAlgorithms(dae,algs);
+  BackendDAE.DAE(eqs,shared) := dae;
   eqs := List.map(eqs,stripCorrelationVarsAndEqns);
   eqs := List.select(eqs,eqnSystemNotZero);
   strippedDae := BackendDAE.DAE(eqs,shared);
@@ -465,17 +463,6 @@ protected
    notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationArraySize(eqns) > 0;
  end eqnSystemNotZero;
 
-protected function stripCorrelationStatement "help function"
-  input array<DAE.Algorithm> algs;
-  output array<DAE.Algorithm> outAlgs;
-protected
-  list<DAE.Algorithm> algLst;
-algorithm
-  algLst := arrayList(algs);
-  (_,algLst) := List.splitOnTrue(algLst,hasCorrelationStatement);
-  outAlgs := listArray(algLst);
-end stripCorrelationStatement;
-  
 protected function stripCorrelationVarsAndEqns " help function "
   input BackendDAE.EqSystem eqsys;
   output BackendDAE.EqSystem outEqsys;
@@ -506,12 +493,11 @@ algorithm
   res := matchcontinue(eqn)
   local 
     list<DAE.ComponentRef> crs;
-    list<DAE.Exp> expl;
-    
-    case(BackendDAE.ALGORITHMWRAPPER(_,_,expl,_)) equation
-      crs = List.flatten(List.map(expl,Expression.extractCrefsFromExp));
-      true = List.reduce(List.map(crs,isCorrelationVarCref),boolAnd);
-    then true;
+    DAE.Algorithm alg;
+
+    case(BackendDAE.ALGORITHM(alg=alg))
+       then 
+         hasCorrelationStatement(alg);
     case(_) then false;
   end matchcontinue;
 end equationIsCorrelationBinding;

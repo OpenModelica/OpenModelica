@@ -1072,22 +1072,6 @@ algorithm
       list<DAE.Statement> stmts,stmts1;
 
     case ({},_,_) then listReverse(inAcc);
-    case ((BackendDAE.ARRAY_EQUATIONWRAPPER(indx,expl,source)::es),repl,_)
-      equation
-        (expl1,true) = replaceExpList(expl,repl,NONE(),{},false);
-        /* TODO: Add symbolic operation to source */
-        expl2 = ExpressionSimplify.simplifyList(expl1,{});
-      then
-        replaceEquations2(es,repl,BackendDAE.ARRAY_EQUATIONWRAPPER(indx,expl2,source)::inAcc);
-
-    case ((BackendDAE.COMPLEX_EQUATIONWRAPPER(indx,expl,source)::es),repl,_)
-      equation
-        (expl1,true) = replaceExpList(expl,repl,NONE(),{},false);
-        /* TODO: Add symbolic operation to source */
-        expl2 = ExpressionSimplify.simplifyList(expl1,{});
-      then
-        replaceEquations2(es,repl,BackendDAE.COMPLEX_EQUATIONWRAPPER(indx,expl2,source)::inAcc);
-
     case ((BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source) :: es),repl,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,NONE());
@@ -1101,7 +1085,6 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
       then
         replaceEquations2(es,repl,BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source)::inAcc);
-
     case ((BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source) :: es),repl,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,NONE());
@@ -1115,7 +1098,6 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
       then
         replaceEquations2(es,repl,BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source)::inAcc);
-
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,NONE());
@@ -1129,26 +1111,12 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
       then
         replaceEquations2(es, repl,BackendDAE.EQUATION(e1_2,e2_2,source)::inAcc);
-
     case ((BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source) :: es),repl,_)
       equation
         (stmts1,b1) = replaceStatementLst(stmts,repl,{},false);
         alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
       then
         replaceEquations2(es, repl,BackendDAE.ALGORITHM(size,alg,source)::inAcc);
-
-    case (((BackendDAE.ALGORITHMWRAPPER(index=indx,in_=expl,out=expl1,source = source)) :: es),repl,_)
-      equation
-        (expl,b1) = replaceExpList(expl,repl,NONE(),{},false);
-        (expl1,true) = replaceExpList(expl1,repl,NONE(),{},b1);
-        /* TODO: Add symbolic operation to source */
-        expl = ExpressionSimplify.simplifyList(expl,{});
-        expl1 = ExpressionSimplify.simplifyList(expl1,{}) "who decided to do this crap twice?";
-        // original algorithm is done by replaceAlgorithms
-        // inputs and ouputs are updated from DAELow.updateAlgorithmInputsOutputs       
-      then
-        replaceEquations2(es, repl,BackendDAE.ALGORITHMWRAPPER(indx,expl,expl1,source)::inAcc);
-
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl,_)
       equation
         (e_1,true) = replaceExp(e, repl,NONE());
@@ -1156,7 +1124,6 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
         replaceEquations2(es, repl,BackendDAE.SOLVED_EQUATION(cr,e_2,source)::inAcc);
-
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: es),repl,_)
       equation
         (e_1,true) = replaceExp(e, repl,NONE());
@@ -1164,13 +1131,11 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
         replaceEquations2(es, repl,BackendDAE.RESIDUAL_EQUATION(e_2,source)::inAcc);
-
     case ((BackendDAE.WHEN_EQUATION(whenEqn,source) :: es),repl,_)
       equation
         whenEqn1 = replaceWhenEquation(whenEqn,repl);
       then
         replaceEquations2(es, repl,BackendDAE.WHEN_EQUATION(whenEqn1,source)::inAcc);
-
     case ((a :: es),repl,_)
       then
         replaceEquations2(es, repl,a::inAcc);
@@ -1232,65 +1197,6 @@ algorithm
 
   end matchcontinue;
 end replaceWhenEquation;
-
-public function replaceMultiDimEquations "function: replaceMultiDimEquations
-  This function takes a list of equations ana a set of variable replacements
-  and applies the replacements on all array equations.
-  The function returns the updated list of array equations"
-  input list<BackendDAE.MultiDimEquation> inBackendDAEEquationLst;
-  input VariableReplacements inVariableReplacements;
-  output list<BackendDAE.MultiDimEquation> outBackendDAEEquationLst;
-algorithm
-  outBackendDAEEquationLst:=
-  match (inBackendDAEEquationLst,inVariableReplacements)
-    local
-      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
-      list<BackendDAE.MultiDimEquation> es_1,es;
-      VariableReplacements repl;
-      list<Integer> dims;
-      DAE.ElementSource source "the origin of the element";
-      Boolean b1,b2;
-
-    case ({},_) then {};
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims,source=source) :: es),repl)
-      equation
-        (e1_1,b1) = replaceExp(e1, repl,NONE());
-        (e2_1,b2) = replaceExp(e2, repl,NONE());
-        (e1_2,_) = ExpressionSimplify.condsimplify(b1,e1_1);
-        (e2_2,_) = ExpressionSimplify.condsimplify(b2,e2_1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_2);
-        es_1 = replaceMultiDimEquations(es, repl);
-      then
-        (BackendDAE.MULTIDIM_EQUATION(dims,e1_2,e2_2,source) :: es_1);
-  end match;
-end replaceMultiDimEquations;
-
-public function replaceAlgorithms "function: replaceAlgorithms
-  This function takes a list of algorithms and a set of variable replacements
-  and applies the replacements on all array equations.
-  The function returns the updated list of array equations"
-  input list<DAE.Algorithm> inAlgorithmLst;
-  input VariableReplacements inVariableReplacements;
-  output list<DAE.Algorithm> outAlgorithmLst;
-  output Boolean replacementPerformed;
-algorithm
-  (outAlgorithmLst,replacementPerformed) :=
-  match (inAlgorithmLst,inVariableReplacements)
-    local
-      VariableReplacements repl;
-      list<DAE.Statement> statementLst,statementLst_1;
-      list<DAE.Algorithm> es,es_1;
-      Boolean b1,b2;
-    case ({},_) then ({},false);
-    case ((DAE.ALGORITHM_STMTS(statementLst=statementLst) :: es),repl)
-      equation
-        (statementLst_1,b1) = replaceStatementLst(statementLst,repl,{},false);
-        (es_1,b2) = replaceAlgorithms(es,repl);
-      then
-        (DAE.ALGORITHM_STMTS(statementLst_1)  :: es_1, b1 or b2);
-  end match;
-end replaceAlgorithms;
 
 public function replaceStatementLst "function: replaceStatementLst
 
@@ -1625,39 +1531,6 @@ algorithm
         then (es_1,b1);
    end matchcontinue;
 end replaceSTMT_IF; 
-
-public function replaceComplexEquations "function: replaceComplexEquations
-  This function takes a list of equations ana a set of variable replacements
-  and applies the replacements on all complex equations.
-  The function returns the updated list of complex equations"
-  input list<BackendDAE.ComplexEquation> inBackendDAEEquationLst;
-  input VariableReplacements inVariableReplacements;
-  output list<BackendDAE.ComplexEquation> outBackendDAEEquationLst;
-algorithm
-  outBackendDAEEquationLst:=
-  match (inBackendDAEEquationLst,inVariableReplacements)
-    local
-      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
-      list<BackendDAE.ComplexEquation> es_1,es;
-      VariableReplacements repl;
-      Integer size;
-      DAE.ElementSource source;
-      Boolean b1,b2;
-
-    case ({},_) then {};
-    case ((BackendDAE.COMPLEXEQUATION(size = size,left = e1,right = e2,source=source) :: es),repl)
-      equation
-        (e1_1,b1) = replaceExp(e1, repl,NONE());
-        (e2_1,b2) = replaceExp(e2, repl,NONE());
-        (e1_2,_) = ExpressionSimplify.condsimplify(b1,e1_1);
-        (e2_2,_) = ExpressionSimplify.condsimplify(b2,e2_1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_2);
-        es_1 = replaceComplexEquations(es, repl);
-      then
-        (BackendDAE.COMPLEXEQUATION(size,e1_2,e2_2,source) :: es_1);
-  end match;
-end replaceComplexEquations;
 
 public function dumpReplacements
 "function: dumpReplacements

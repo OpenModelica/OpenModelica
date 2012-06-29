@@ -84,7 +84,6 @@ public import DAE;
 public import Values;
 public import SCode;
 
-protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDAETransform;
@@ -265,6 +264,7 @@ protected import ClassInf;
   protected constant String INITIAL            = "initial";
   protected constant String ZERO_CROSSING      = "zeroCrossing";
   protected constant String ARRAY_OF_EQUATIONS = "arrayOfEquations";//This is used also in the dumpEquation method.
+  protected constant String COMPLEX_EQUATION   = "complexequations";
 
   protected constant String EQUATION  = "equation";
   protected constant String EQUATION_ = "Equation";
@@ -489,70 +489,6 @@ algorithm
     end match;
 end dumpAbsynPathLst2;
 
-
-public function dumpAlgorithms "
-This function dumps the list of DAE.Algorithm
-within using a XML format. If at least one Algorithm
-is present the output is:
-<ALGORITHMS DIMENSION=...>
-  ...
-</ALGORITHMS>
-"
-  input list<DAE.Algorithm> algs;
-algorithm
-  _:= matchcontinue(algs)
-    local
-      Integer len;
-    case {} then ();
-    case algs
-      equation
-        len = listLength(algs);
-        len >= 1 = false;
-    then();
-    case algs
-      equation
-        len = listLength(algs);
-        len >= 1 = true;
-        dumpStrOpenTagAttr(ALGORITHMS,DIMENSION,intString(len));
-        dumpAlgorithms2(algs,0);
-        dumpStrCloseTag(ALGORITHMS);
-    then();
-  end matchcontinue;
-end dumpAlgorithms;
-
-public function dumpAlgorithms2 "
-This function dumps a list of DAE.Algorithm in
-XML format. The output is something like:
-<ALGORITHM LABEL=Algorithm_ID>
-  ...
-</ALGORITHM>
-<ALGORITHM LABEL=Algorithm_ID+1>
-  ...
-</ALGORITHM>
-  ...
-"
-  input list<DAE.Algorithm> ialgs;
-  input Integer inAlgNo;
-algorithm
-  _ := match(ialgs,inAlgNo)
-    local
-      list<Algorithm.Statement> stmts;
-      Integer algNo,algNo_1;
-      list<DAE.Algorithm> algs;
-      
-    case({},_) then ();
-    case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
-      equation
-        dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)})));
-        dumpStrCloseTag(ALGORITHM);
-        algNo_1=algNo+1;
-        dumpAlgorithms2(algs,algNo_1);
-      then ();
-  end match;
-end dumpAlgorithms2;
-
-
 public function dumpConstraints "
 This function dumps the list of DAE.Constraint
 within using a XML format. If at least one Algorithm
@@ -615,136 +551,6 @@ algorithm
       then ();
   end match;
 end dumpConstraints2;
-
-public function dumpArrayEqns "
-This function dumps an array of Equation using an XML format.
-It takes as input the list of MultiDimEquation and a String
-for the content.
-If the list is empty then is doesn't print anything, otherwise
-the output is like:
-<Content Dimesion=...>
-  ...
-</Content>
-"
-  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
-  input String inContent;
-  input Boolean addMathMLCode;
-  input Boolean dumpResiduals;
-algorithm
-  _:=
-  matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
-    local
-      Integer len;
-    case ({},_,_,_) then ();
-    case (inMultiDimEquationLst,inContent,_,_)
-      equation
-        len = listLength(inMultiDimEquationLst);
-        len >= 1 = false;
-      then();
-    case (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
-      equation
-        len = listLength(inMultiDimEquationLst);
-        len >= 1 = true;
-        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpArrayEqns2(inMultiDimEquationLst,addMathMLCode,dumpResiduals);
-        dumpStrCloseTag(inContent);
-      then ();
-  end matchcontinue;
-end dumpArrayEqns;
-
-
-protected function dumpArrayEqns2 "
-This is the help function of the dumpArrayEquns function.
-It takes the list of MultiDimEquation and print out the
-list in a XML format.
-The output, if the list is not empty is something like this:
-<ARRAY_EQUATION String=ExpressionDump.printExpStr(firstEquation)>
-  <MathML>
-    <MATH>
-      ...
-    </MATH>
-  </MathML>
-</ARRAY_EQUATION>
-...
-<ARRAY_EQUATION String=ExpressionDump.printExpStr(lastEquation)>
-  <MathML>
-    <MATH>
-      ...
-    </MATH>
-  </MathML>
-</ARRAY_EQUATION>
-"
-  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
-  input Boolean addMathMLCode;
-  input Boolean dumpResiduals;
-algorithm
-  _:=
-  match (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
-    local
-      String s1,s2,s;
-      DAE.Exp e1,e2;
-      list<BackendDAE.MultiDimEquation> es;
-    case ({},_,_) then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," = ",s2,"\n"});
-        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
-        dumpStrOpenTag(MathML);
-        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
-        dumpStrOpenTag(MathMLApply);
-        dumpStrVoidTag(MathMLEquivalent);
-        dumpExp2(e1);
-        dumpExp2(e2);
-        dumpStrCloseTag(MathMLApply);
-        dumpStrCloseTag(MATH);
-        dumpStrCloseTag(MathML);
-        dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,true,false);
-      then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,false)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," = ",s2,"\n"});
-        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
-        dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,false,false);
-      then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),true,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," - (",s2,") = 0\n"});
-        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
-        dumpStrOpenTag(MathML);
-        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
-        dumpStrOpenTag(MathMLApply);
-        dumpStrVoidTag(MathMLEquivalent);
-        dumpStrOpenTag(MathMLApply);
-        dumpStrOpenTag(MathMLMinus);
-        dumpExp2(e1);
-        dumpExp2(e2);
-        dumpStrCloseTag(MathMLApply);
-        dumpExp2(DAE.RCONST(0.0));
-        dumpStrCloseTag(MathMLApply);
-        dumpStrCloseTag(MATH);
-        dumpStrCloseTag(MathML);
-        dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,true,true);
-      then ();
-    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),false,true)
-      equation
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s = stringAppendList({s1," - (",s2,") = 0\n"});
-        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
-        dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,false,true);
-      then ();
-  end match;
-end dumpArrayEqns2;
 
 protected function dumpBltInvolvedEquations
 "function: dumpBltInvolvedEquations"
@@ -1169,10 +975,7 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjCls;
 
       list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
-      list<BackendDAE.MultiDimEquation> ae_lst;
       BackendDAE.EquationArray eqns,reqns,ieqns;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> algs;
       array<DAE.Constraint> constrs;
       list<BackendDAE.ZeroCrossing> zc;
 
@@ -1187,7 +990,7 @@ algorithm
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,ae,algs,constrs,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs)),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,ieqns,reqns,constrs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendDAEUtil.varList(vars_knownVars);
@@ -1211,9 +1014,7 @@ algorithm
         ieqnsl = BackendDAEUtil.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
-        ae_lst = arrayList(ae);
-        dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
-        dumpAlgorithms(arrayList(algs));
+
         dumpConstraints(arrayList(constrs));
         functionsElems = DAEUtil.getFunctionList(funcs);
         dumpFunctions(functionsElems);
@@ -1524,12 +1325,14 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s1,s2,res,is,var_str,indexS;
+      String s,s1,s2,res,is,var_str,indexS;
       DAE.Exp e1,e2,e;
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       Boolean addMMLCode;
+      list<DAE.Statement> stmts;
+      DAE.ElementSource source;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
@@ -1558,19 +1361,58 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s = stringAppendList({s1," = ",s2,"\n"});
+        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(ARRAY_EQUATION);
+      then ();        
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
-        dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
-        dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
-        dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
-        dumpStrOpenTag(VARIABLE);
-        var_str=stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
-        dumpStrCloseTag(VARIABLE);
-        dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
-        dumpStrCloseTag(ADDITIONAL_INFO);
+        Print.printBuf(res);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),indexS,true)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s = stringAppendList({s1," = ",s2,"\n"});
+        dumpStrOpenTagAttr(COMPLEX_EQUATION, EXP_STRING, s);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(COMPLEX_EQUATION);
+      then ();         
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,addMMLCode)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        res = stringAppendList({s1," = ",s2});
+        dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(COMPLEX_EQUATION);
+      then ();        
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1654,16 +1496,12 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.ALGORITHMWRAPPER(index = i),indexS,_)
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
-        is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
-        dumpStrTagContent(stringAppend(ALGORITHM,ID_),is);
-        dumpStrTagAttrNoChild(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
-        //dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
-        //dumpStrCloseTag(ANCHOR);
+        Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
-      then ();
+      then ();        
     else
       equation
         res = "in XMLDump.dumpEquation - Unknown equation";
@@ -2459,7 +2297,7 @@ end dumpListSeparator;
 
 public function dumpLstExp "
 This function dumps an array of Equation using an XML format.
-It takes as input the list of MultiDimEquation and a String
+It takes as input the list and a String
 for the content.
 If the list is empty then is doesn't print anything, otherwise
 the output is like:
@@ -3666,12 +3504,14 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s1,s2,res,is,var_str,indexS;
+      String s,s1,s2,res,is,var_str,indexS;
       DAE.Exp e1,e2,e;
       BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       Boolean addMMLCode;
+      list<DAE.Statement> stmts;
+      DAE.ElementSource source;
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,true)
       equation
@@ -3704,19 +3544,66 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
+        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(DAE.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(ARRAY_EQUATION);
+      then ();        
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
-        dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
-        dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
-        dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
-        dumpStrOpenTag(VARIABLE);
-        var_str=stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
-        dumpStrCloseTag(VARIABLE);
-        dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
-        dumpStrCloseTag(ADDITIONAL_INFO);
-        dumpStrCloseTag(ARRAY_OF_EQUATIONS);
+        Print.printBuf(res);
+        dumpStrCloseTag(ARRAY_OF_EQUATIONS);        
       then ();
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),indexS,true)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
+        dumpStrOpenTagAttr(COMPLEX_EQUATION, EXP_STRING, s);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(DAE.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(COMPLEX_EQUATION);
+      then ();         
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,false)
+      equation
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
+        dumpStrOpenTagAttr(COMPLEX_EQUATION,ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(COMPLEX_EQUATION);        
+      then ();        
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3808,16 +3695,12 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (BackendDAE.ALGORITHMWRAPPER(index = i),indexS,_)
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
-        is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
-        dumpStrTagContent(stringAppend(ALGORITHM,ID_),is);
-        dumpStrTagAttrNoChild(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
-        //dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
-        //dumpStrCloseTag(ANCHOR);
+        Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
-      then ();
+      then (); 
   end match;
 end dumpResidual;
 

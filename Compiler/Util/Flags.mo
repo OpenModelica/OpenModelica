@@ -500,6 +500,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks", 
     "expandDerOperator", 
+    "inlineArrayEqn",
     "removeSimpleEquationsFast"}),
   SOME(STRING_DESC_OPTION({
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
@@ -542,19 +543,16 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(14, "indexReductionMeth
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", "simple index reduction method, select dummy states based on heuristics"),
-    ("DummyDerivativeNew", "simple index reduction method, select dummy states based on heuristics"),
-    ("DynamicStateSelection", "index reduction method based on analysation of the jacobian.")})),
+    ("DummyDerivativeNew", "simple index reduction method, select dummy states based on heuristics")})),
     "Sets the index reduction method to use.");
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
+//    "relaxSystem",
+//    "tearingSystem",
     "inlineArrayEqn",
     "constantLinearSystem",
-//    "removeSimpleEquations",
-//    "tearingSystem",
     "removeSimpleEquations",
-//    "relaxSystem",
-//    "removeSimpleEquations",
 //    "countOperations",
     "removeUnusedFunctions",
     "simplifyTimeIndepFuncCalls"
@@ -653,10 +651,6 @@ constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
 
-constant ConfigFlag NOWRAPPEREQNS = CONFIG_FLAG(40,
-  "nowrappereqns", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  "temporarily flag for implementation redesign, do not use it");
-
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
 // sorted by index (and thus have unique indices).
@@ -699,8 +693,7 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT,
-  NOWRAPPEREQNS
+  PLOT_SILENT
 };
 
 public function new

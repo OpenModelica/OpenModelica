@@ -131,13 +131,21 @@ algorithm
       then
         res;
     
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = indx,crefOrDerCref = expl), _)
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2), _)
       equation
-        indx_str = intString(indx);
-        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
-        res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        res = stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
+        
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2), _)
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        res = stringAppendList({"'", s1," = ",s2, ";'"});
+      then
+        res;        
     
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
@@ -164,10 +172,9 @@ algorithm
       then
         res;
     
-    case (BackendDAE.ALGORITHMWRAPPER(index = i),_)
+    case (BackendDAE.ALGORITHM(alg=_),_)
       equation
-        is = intString(i);
-        res = stringAppendList({"Algorithm no: ",is,"\n"});
+        res = stringAppendList({"Algorithm\n"});
       then
         res;
   end match;
@@ -459,11 +466,12 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e;
       list<list<String>> lst3;
-      list<DAE.Exp> expl,inputs,outputs;
+      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
       BackendDAE.Value indx;
       list<list<String>> lstlst1,lstlst2,lstres;
+      DAE.Algorithm alg;
     
     // equation
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
@@ -475,12 +483,22 @@ algorithm
         res;
     
     // array equation
-    case (vars,BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl))
+    case (vars,BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
       equation
-        lst3 = List.map1(expl, incidenceRowExp, vars);
-        res = List.flatten(lst3);
+        lst1 = incidenceRowExp(e1, vars);
+        lst2 = incidenceRowExp(e2, vars);
+        res = listAppend(lst1, lst2);
       then
         res;
+    
+    // complex equation
+    case (vars,BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
+      equation
+        lst1 = incidenceRowExp(e1, vars);
+        lst2 = incidenceRowExp(e2, vars);
+        res = listAppend(lst1, lst2);
+      then
+        res;    
     
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
@@ -523,11 +541,10 @@ algorithm
    // If algorithm later on needs to be inverted, i.e. solved for
    // different variables than calculated, a non linear solver or
    // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHMWRAPPER(index = indx,in_ = inputs,out = outputs)) 
+    case (vars,BackendDAE.ALGORITHM(alg=alg)) 
       equation
-        lstlst1 = List.map1(inputs, incidenceRowExp, vars);
-        lstlst2 = List.map1(outputs, incidenceRowExp, vars);
-        lstres = listAppend(lstlst1, lstlst2);
+        expl = Algorithm.getAllExps(alg);
+        lstres = List.map1(expl, incidenceRowExp, vars);
         res_1 = List.flatten(lstres);
       then
         res_1;

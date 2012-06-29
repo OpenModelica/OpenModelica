@@ -743,27 +743,27 @@ public function arrayReplaceAtWithFill "
   insert the value at the position.
   Example:
     arrayReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
-  input Type_a inTypeA1;
-  input Integer inInteger2;
-  input array<Type_a> inTypeAArray3;
-  input Type_a inTypeA4;
+  input Integer inPos;
+  input Type_a inTypeReplace;
+  input Type_a inTypeFill;
+  input array<Type_a> inTypeAArray;
   output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
-  matchcontinue (inTypeA1,inInteger2,inTypeAArray3,inTypeA4)
+  matchcontinue (inPos,inTypeReplace,inTypeFill,inTypeAArray)
     local
       Integer alen,pos;
       array<Type_a> res,arr,newarr,res_1;
       Type_a x,fillv;
-    case (x,pos,arr,fillv)
+    case (pos,x,fillv,arr)
       equation
         alen = arrayLength(arr) "Replacing element with index in range of the array" ;
         (pos <= alen) = true;
         res = arrayUpdate(arr, pos , x);
       then
         res;
-    case (x,pos,arr,fillv)
+    case (pos,x,fillv,arr)
       equation
         //Replacing element out of range of array, create new array, and copy elts.
         newarr = arrayCreate(pos, fillv);

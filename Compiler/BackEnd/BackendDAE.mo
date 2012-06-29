@@ -117,12 +117,6 @@ uniontype Equation "- Equation"
     .DAE.ElementSource source "origin of equation";
   end EQUATION;
 
-  record ARRAY_EQUATIONWRAPPER
-    Integer index "index ; index in arrayequations 0..n-1" ;
-    list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
-    .DAE.ElementSource source "origin of equation";
-  end ARRAY_EQUATIONWRAPPER;
-
   record ARRAY_EQUATION
     list<Integer> dimSize "dimSize ; dimension sizes" ;
     .DAE.Exp left "left ; lhs" ;
@@ -147,24 +141,11 @@ uniontype Equation "- Equation"
     .DAE.ElementSource source "origin of algorithm";
   end ALGORITHM;
   
-  record ALGORITHMWRAPPER
-    Integer index      "Index in algorithms, 0..n-1" ;
-    list< .DAE.Exp> in_  "Inputs CREF or der(CREF)" ;
-    list< .DAE.Exp> out  "Outputs CREF or der(CREF)" ;
-    .DAE.ElementSource source "origin of algorithm";
-  end ALGORITHMWRAPPER;  
-
   record WHEN_EQUATION
     WhenEquation whenEquation "whenEquation" ;
     .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;
 
-  record COMPLEX_EQUATIONWRAPPER "complex equations: recordX = function call(x, y, ..);"
-    Integer index "Index in algorithm clauses";
-    list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
-    .DAE.ElementSource source "origin of equation";
-  end COMPLEX_EQUATIONWRAPPER;
-  
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
      Integer size "size of equation" ;
     .DAE.Exp left "left ; lhs" ;
@@ -268,10 +249,7 @@ uniontype Shared "Data shared for all equation-systems"
     AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
-    array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     array< .DAE.Constraint> constraints "constraints (Optimica extension)";
-    array<ComplexEquation> complEqs "array for complex equations";
     .DAE.FunctionTree functionTree "functions for Backend";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -343,26 +321,6 @@ uniontype AliasVariableType
   record ALIAS end ALIAS;
   record NEGATEDALIAS end NEGATEDALIAS;
 end AliasVariableType;
-
-public
-uniontype MultiDimEquation "- Multi Dimensional Equation"
-  record MULTIDIM_EQUATION
-    list<Integer> dimSize "dimSize ; dimension sizes" ;
-    .DAE.Exp left "left ; lhs" ;
-    .DAE.Exp right "right ; rhs" ;
-    .DAE.ElementSource source "the element source";
-  end MULTIDIM_EQUATION;
-end MultiDimEquation;
-
-public
-uniontype ComplexEquation "- Complex Equation"
-  record COMPLEXEQUATION
-     Integer size "size of equation" ;
-    .DAE.Exp left "left ; lhs" ;
-    .DAE.Exp right "right ; rhs" ;
-    .DAE.ElementSource source "the element source";
-  end COMPLEXEQUATION;
-end ComplexEquation;
 
 public
 uniontype CrefIndex "- Component Reference Index"
@@ -530,10 +488,10 @@ uniontype DAEHandlerJop
 end DAEHandlerJop;
 
 public
-type DAEHandlerArg = tuple<StateOrder,ConstraintEquations>;
+type DAEHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>>;
 
 public
-type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,list<tuple<Integer,Integer,Integer>>,list<tuple<Integer,Integer,Integer>>> "StateOrder,ConstraintEqns,DerivedAlgs,DerivesArrayEqns";
+type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns";
 
 
 public

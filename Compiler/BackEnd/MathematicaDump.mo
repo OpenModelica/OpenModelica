@@ -17,20 +17,16 @@ package MathematicaDump "Copyright (C) MathCore Engineering AB, 2005 "
 public function dumpMmaDAEStr "
 Dumps the equations, initial equations variables and parameters on a form suitable
 for reading into Mathematica"
-input tuple<BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>,list<BackendDAE.Equation>,
-    array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>> inTuple "(vars, knvars, eqsn, ieqns)";
+input tuple<BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>,list<BackendDAE.Equation>> inTuple "(vars, knvars, eqsn, ieqns)";
 output String res;
 algorithm
   res := matchcontinue(inTuple)
     local 
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.Equation> eqns,ieqns;
-      array<BackendDAE.MultiDimEquation> arrEqns;
-      array<DAE.Algorithm> aalgs;
-      array<BackendDAE.ComplexEquation> complex;
       String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s2,s3,s4,res;
       list<String> params,inputs,states,algs,outputs,inputsStates;
-    case((vars,knvars,eqns,ieqns,arrEqns,aalgs,complex)) equation
+    case((vars,knvars,eqns,ieqns)) equation
         
         (states,algs,outputs,inputsStates) = printMmaVarsStr(vars);
         (params,inputs) = printMmaParamsStr(knvars);
@@ -48,8 +44,8 @@ algorithm
         allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
         //print(" vars: " +& allVarStr +& "\n"); 
         
-        s3 = printMmaEqnsStr(eqns,(arrEqns,aalgs,complex,vars,knvars));
-        s4 = printMmaEqnsStr(ieqns,(arrEqns,aalgs,complex,vars,knvars));
+        s3 = printMmaEqnsStr(eqns,(vars,knvars));
+        s4 = printMmaEqnsStr(ieqns,(vars,knvars));
         res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
         //print(" Eqns-1-: " +& s3 +& "\n");
         //print(" Eqns-2-: " +& s4 +& "\n");
@@ -59,7 +55,7 @@ end dumpMmaDAEStr;
 
 protected function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
   input list<BackendDAE.Equation> inEqns;
-  input tuple<array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.Variables,BackendDAE.Variables> inTuple;
+  input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple;
   output String res;
 algorithm
   res := matchcontinue(inEqns,inTuple)
@@ -67,37 +63,15 @@ algorithm
       String s1;
       list<BackendDAE.Equation> eqns;
     case (eqns,inTuple) equation
-      eqns = List.unionOnTrue({},eqns,sameMultiEquation);
       s1 = Util.stringDelimitListNonEmptyElts(List.map1(eqns,printMmaEqnStr,inTuple),",");
       res = stringAppendList({"{",s1,"}"});
     then res;
   end matchcontinue;
 end printMmaEqnsStr;
 
-protected function sameMultiEquation "returns true if two equations refer to the same ARRAY_EQUATION or ALGORITHM"
-  input BackendDAE.Equation eqn1;
-  input BackendDAE.Equation eqn2;
-  output Boolean res;
-algorithm
-  res := matchcontinue(eqn1,eqn2)
-  local 
-    Integer i1,i2;
-    
-    case(BackendDAE.ARRAY_EQUATIONWRAPPER(index=i1),BackendDAE.ARRAY_EQUATIONWRAPPER(index=i2)) equation
-      true = i1 == i2;
-    then true;
-    
-    case(BackendDAE.ALGORITHMWRAPPER(index=i1),BackendDAE.ALGORITHMWRAPPER(index=i2)) equation
-      true = i1 == i2;
-    then true;
-    
-    case(_,_) then false;
-  end matchcontinue;
-end sameMultiEquation; 
-
 protected function printMmaEqnStr "help function to printMmaEqnsStr"
   input BackendDAE.Equation eqn;
-  input tuple<array<BackendDAE.MultiDimEquation>,array<DAE.Algorithm>,array<BackendDAE.ComplexEquation>,BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
+  input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
   output String str;
 algorithm
   str := matchcontinue(eqn,inTuple)
@@ -106,71 +80,47 @@ algorithm
     BackendDAE.Variables vars,knvars;
     String s1,s2;
     Integer indx;
-    array<DAE.Algorithm> algs;
-    array<BackendDAE.MultiDimEquation> md;
-    BackendDAE.MultiDimEquation ae;
     DAE.Algorithm alg;
-    array<BackendDAE.ComplexEquation> complexEqs;
-    BackendDAE.ComplexEquation complexEq;
     BackendDAE.WhenEquation whenEq;
     
     case(BackendDAE.EQUATION(
           exp = DAE.CALL( path = Absyn.IDENT("der"),
           expLst = {DAE.CREF(DAE.CREF_IDENT("$dummy",_,_),_)})
           ),_) then "";
-    case(BackendDAE.EQUATION(e1,e2,_),(_,_,_,vars,knvars)) equation
+    case(BackendDAE.EQUATION(e1,e2,_),(vars,knvars)) equation
       s1 = printExpMmaStr(e1,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});
       then str;
-    case(BackendDAE.SOLVED_EQUATION(cr,e2,_),(_,_,_,vars,knvars)) equation
+    case(BackendDAE.SOLVED_EQUATION(cr,e2,_),(vars,knvars)) equation
       s1 = printComponentRefMmaStr(cr,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});
       then str;
-    case(BackendDAE.ARRAY_EQUATIONWRAPPER(index=indx),(md,_,_,vars,knvars)) equation
-      ae = md[indx+1];
-      str = "Missing[\"ArrayEquation\",\"" +& dumpArrayEqnStr(ae)+&"\"]"; 
-    then str;        
-    case(BackendDAE.RESIDUAL_EQUATION(exp = e1),(_,_,_,vars,knvars)) equation
+    case(BackendDAE.ARRAY_EQUATION(left=e1,right=e2),(vars,knvars)) equation
+      s1 = printExpMmaStr(e1,vars,knvars);
+      s2 = printExpMmaStr(e2,vars,knvars);
+      str = stringAppendList({s1,"==",s2});
+      then str;   
+    case(BackendDAE.RESIDUAL_EQUATION(exp = e1),(vars,knvars)) equation
       s1 = printExpMmaStr(e1,vars,knvars);
       str = stringAppendList({s1,"== 0"});
     then str;
         
-    case (BackendDAE.ALGORITHMWRAPPER(index=indx),(_,algs,_,vars,knvars)) equation
-      alg = algs[indx+1];
+    case (BackendDAE.ALGORITHM(alg=alg),(vars,knvars)) equation
       str = "Missing[\"Algorithm\",\""+&escapeMmaString(dumpSingleAlgorithmStr(alg))+&"\"]";
     then str;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(_,_,_,vars,knvars)) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(vars,knvars)) equation
       str = "Missing[\"When\",\""+&escapeMmaString(whenEquationStr(whenEq))+&"\"]";     
     then str;
-    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index=indx),(_,algs,complexEqs,vars,knvars))  
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,knvars))  
       equation
-        complexEq=complexEqs[indx];
-        str=printComplexEqn(complexEq,vars,knvars);
-      then 
-        str;   
-  end matchcontinue;
-end printMmaEqnStr;
-
-function printComplexEqn
-  input BackendDAE.ComplexEquation eqIn;
-  input BackendDAE.Variables varsIn;
-  input BackendDAE.Variables knvarsIn;
-  output String outStr;
-algorithm
-  outStr:=matchcontinue(eqIn,varsIn,knvarsIn)
-    local DAE.Exp e1,e2;
-      String s1,s2,str;
-      BackendDAE.Variables vars,knvars;
-    case(BackendDAE.COMPLEXEQUATION(_,e1,e2,_),vars,knvars)
-     equation 
       s1 = printExpMmaStr(e1,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
-      str = stringAppendList({s1,"==",s2}); 
-    then str;
+      str = stringAppendList({s1,"==",s2});
+      then str;  
   end matchcontinue;
-end printComplexEqn;         
+end printMmaEqnStr;
 
 
 /* Printing of equations and variables on Mathematica format*/
@@ -686,30 +636,6 @@ protected
 algorithm 
   s := stringDelimitList(List.map2(es, printExpMmaStr, vars,knvars),",");
 end printRowMmaStr;
-
-
-protected function dumpArrayEqnStr "function: dumpArrayEqnsStr
- 
- dumps array equation to string
-"
-  input BackendDAE.MultiDimEquation ae;
-  output String str;
-algorithm 
-  str :=
-  matchcontinue (ae)
-    local
-      String s1,s2,s;
-      DAE.Exp e1,e2;
-      list<BackendDAE.MultiDimEquation> es;
-    case (BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2))
-      equation 
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2); 
-        str = s1 +& " = "+& s2;
-      then
-        str;
-  end matchcontinue;
-end dumpArrayEqnStr;
 
 protected function escapeMmaString "help function to e.g printMmaEqnStr, escapes characters in strings generated to mathematica"
   input String str;

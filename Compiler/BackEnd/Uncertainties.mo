@@ -2,6 +2,7 @@ package Uncertainties
   
   import DAE;
   import Absyn;
+  import Algorithm;
   import BackendDAE;
   import BackendVariable;
   import List;
@@ -32,7 +33,6 @@ package Uncertainties
   import BackendDump;
   import ExpressionSimplify;
   import MathematicaDump;
-  import BackendDAEEXT;
   
   
   public function dumpComponents "function: dumpComponents
@@ -392,9 +392,6 @@ algorithm
       BackendDAE.Variables vars,kvars;
       list<Integer> eqnIndexList, varIndexList, allVarIndexList, refineVarIndexList, elimVarIndexList,approximatedEquations,equationToExtract,otherEquations,squareBlockEquations,removedVars;
       BackendDAE.EquationArray eqns,ieqns;
-      array<BackendDAE.ComplexEquation> complex;
-      array<BackendDAE.MultiDimEquation> arrEqns;
-      array<DAE.Algorithm> algs;
       list<BackendDAE.Equation> eqnLst,ieqnLst;
       list<BackendDAE.EqSystem> eqsyslist; 
       String modelName,outputFileName;
@@ -452,14 +449,14 @@ algorithm
         //print("\n");
         
         
-        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_,shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs))) 
+        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_))::_,shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns))) 
                     = eliminateVariablesDAE(elimVarIndexList,dlow_1);
         
         //BackendDump.dump(dlow_1);
         ////////////////////////////////////////////////////////////////
         
      
-        comps = BackendDAETransform.tarjanAlgorithm(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,{})));
+        comps = BackendDAETransform.tarjanAlgorithm(m,mt,ass1,ass2);
         
         //print("All components:\n");
         //dumpComponents(comps);
@@ -543,7 +540,7 @@ algorithm
         varIndexList = List.flatten(arrayList(m));
         
         
-        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount),orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns,arrayEqs=arrEqns,algorithms=algs,complEqs=complex))) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
+        (dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = vars as BackendDAE.VARIABLES(numberOfVars = varCount),orderedEqs=eqns)::_,BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns))) = getSubSystemDaeForVars(equationToExtract, varIndexList, dlow_1);
         
         //print("Equations after removing non influencial blocks: \n"); 
         //BackendDump.dumpEqns(BackendDAEUtil.equationList(eqns));
@@ -575,7 +572,7 @@ algorithm
         //print(System.readEnv("TEMP")+&"\\uncertainties.out");
         
         System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",
-          MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst,arrEqns,algs,complex)));           
+          MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst)));           
              
         resstr="Done...";
       then
@@ -764,11 +761,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       //EventInfo ei;
-      //ComplexEquations ce,ice;
       //ExternalObjectClasses extObjCls;
       HashTable.HashTable s;
-      //MultiDimEquation arr_md_eqns,iarr_md_eqns;
-     // DAE.Algorithm algarr,ialgarr;
       //list<IfEquation> ifeqns,iifeqns;
       HashTable.HashTable crefDouble;
       BackendDAE.IncidenceMatrix m;
@@ -835,10 +829,7 @@ algorithm
     BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
-    array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     array<DAE.Constraint> constraints "constraints" ;
-    array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -848,7 +839,7 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,functionTree=funcs,
+                                   removedEqs=removedEqs,functionTree=funcs,
                                    eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),eqns,false) 
     equation
        syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching);                              
@@ -858,10 +849,10 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,constraints=constraints,complEqs=complEqs,
+                                   removedEqs=removedEqs,constraints=constraints,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),eqns,true) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,arrayEqs,algorithms,constraints,complEqs,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -899,10 +890,7 @@ algorithm
     BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
-    array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     array<DAE.Constraint> constraints "constraints" ;
-    array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -912,13 +900,13 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,constraints=constraints,complEqs=complEqs,
+                                   removedEqs=removedEqs,constraints=constraints,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
        orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl));
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constraints,complEqs,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -1332,10 +1320,7 @@ algorithm
     BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array<BackendDAE.MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
-    array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     array<DAE.Constraint> constraints "constraints" ;
-    array<BackendDAE.ComplexEquation> complEqs;
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -1343,10 +1328,10 @@ algorithm
     BackendDAE.SymbolicJacobians symjacs;
     
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,constraints=constraints,complEqs=complEqs,eventInfo=eventInfo,
+                                   removedEqs=removedEqs,constraints=constraints,eventInfo=eventInfo,
                                    functionTree=funcs,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),knownVars) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constraints,complEqs,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(systList,shared); 
        
@@ -1988,22 +1973,22 @@ algorithm
         DAE.Exp e1,e2;
         list<DAE.ComponentRef> crefs,cindex;
         DAE.ComponentRef c1;
-        list<DAE.Exp> expl1,expl2;
+        list<DAE.Exp> expl;
         list<DAE.ComponentRef> cindex2;
         HashTable.HashTable ht;
+        DAE.Algorithm alg;
     case({},ht) then  ht;
-    case( (eq1 as BackendDAE.ALGORITHMWRAPPER(in_=expl1,out=expl2)) :: eqs,ht)
+    case( BackendDAE.ALGORITHM(alg=alg) :: eqs,ht)
       equation
-        ht = findArraysPartiallyIndexed2(expl1,ht,HashTable.emptyHashTable());
-        ht = findArraysPartiallyIndexed2(expl2,ht,HashTable.emptyHashTable());
+        expl = Algorithm.getAllExps(alg);
         ht = findArraysPartiallyIndexed1(eqs,ht);
       then
         ht;
        
-    case((eq1 as BackendDAE.ARRAY_EQUATIONWRAPPER(crefOrDerCref = expl1)) :: eqs,ht)
+    case((eq1 as BackendDAE.ARRAY_EQUATION(left=e1,right=e2)) :: eqs,ht)
       equation
-        ht = findArraysPartiallyIndexed2(expl1,ht,HashTable.emptyHashTable());
-        ht = findArrayVariables(expl1,ht) "finds all array variables, including earlier special case for v = foo(..)";        
+        ht = findArraysPartiallyIndexed2({e1,e2},ht,HashTable.emptyHashTable());
+        ht = findArrayVariables({e1,e2},ht) "finds all array variables, including earlier special case for v = foo(..)";        
         ht = findArraysPartiallyIndexed1(eqs,ht);
       then
         ht;

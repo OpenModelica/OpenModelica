@@ -87,13 +87,7 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
-      array<BackendDAE.MultiDimEquation> arrayEqs;
-      list<BackendDAE.MultiDimEquation> mdelst;
-      array<Algorithm.Algorithm> algorithms;
-      list<Algorithm.Algorithm> alglst;
       array<DAE.Constraint> constrs;
-      array<BackendDAE.ComplexEquation> ce,ce1;
-      list<BackendDAE.ComplexEquation> celst;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       Functiontuple tpl;
@@ -101,7 +95,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree functionTree;
-    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,arrayEqs=arrayEqs,algorithms=algorithms,complEqs=ce,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
+    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
       equation
         tpl = (SOME(functionTree),itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
@@ -109,15 +103,9 @@ algorithm
         externalObjects = inlineVariables(externalObjects,tpl);
         initialEqs = inlineEquationArray(initialEqs,tpl);
         removedEqs = inlineEquationArray(removedEqs,tpl);
-        mdelst = List.map1(arrayList(arrayEqs),inlineMultiDimEqs,tpl);
-        arrayEqs = listArray(mdelst);
-        alglst = List.map1(arrayList(algorithms),inlineAlgorithm,tpl);
-        algorithms = listArray(alglst);
-        celst = List.map1(arrayList(ce),inlineComplexEqs,tpl);
-        ce1 = listArray(celst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then  
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,constrs,ce1,functionTree,eventInfo,extObjClasses,btp,symjacs));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,functionTree,eventInfo,extObjClasses,btp,symjacs));
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
@@ -228,12 +216,6 @@ algorithm
       then
         BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source);
 
-    case(BackendDAE.ARRAY_EQUATIONWRAPPER(i,explst,source),_)
-      equation
-        (explst_1,source) = inlineExps(explst,fns,source);
-      then
-        BackendDAE.ARRAY_EQUATIONWRAPPER(i,explst_1,source);
-
     case(BackendDAE.SOLVED_EQUATION(cref,e,source),_)
       equation
         (e_1,source) = inlineExp(e,fns,source);
@@ -253,13 +235,6 @@ algorithm
       then
         BackendDAE.ALGORITHM(size,alg,source);
 
-    case(BackendDAE.ALGORITHMWRAPPER(i,explst1,explst2,source),_)
-      equation
-        (explst1_1,source) = inlineExps(explst1,fns,source);
-        (explst2_1,source) = inlineExps(explst2,fns,source);
-      then
-        BackendDAE.ALGORITHMWRAPPER(i,explst1_1,explst2_1,source);
-
     case(BackendDAE.WHEN_EQUATION(weq,source),_)
       equation
         (weq_1,source) = inlineWhenEq(weq,fns,source);
@@ -272,12 +247,6 @@ algorithm
         (e2_1,source) = inlineExp(e2,fns,source);
       then
         BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source);  
-  
-    case(BackendDAE.COMPLEX_EQUATIONWRAPPER(index=i,crefOrDerCref=explst,source=source),_)
-      equation
-        (explst_1,source) = inlineExps(explst,fns,source);
-      then
-        BackendDAE.COMPLEX_EQUATIONWRAPPER(i,explst_1,source);
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEq failed");
@@ -415,62 +384,6 @@ algorithm
     case(var,_) then var;
   end matchcontinue;
 end inlineVar;
-
-public function inlineMultiDimEqs
-"function: inlineMultiDimEqs
-  inlines function calls in multi dim equations"
-  input BackendDAE.MultiDimEquation inMultiDimEquation;
-  input Functiontuple inElementList;
-  output BackendDAE.MultiDimEquation outMultiDimEquation;
-algorithm
-  outMultiDimEquation := matchcontinue(inMultiDimEquation,inElementList)
-    local
-      Functiontuple fns;
-      list<Integer> ilst;
-      DAE.Exp e1,e1_1,e2,e2_1;
-      DAE.ElementSource source;
-
-    case(BackendDAE.MULTIDIM_EQUATION(ilst,e1,e2,source),fns)
-      equation
-        (e1_1,source) = inlineExp(e1,fns,source);
-        (e2_1,source) = inlineExp(e2,fns,source);
-      then
-        BackendDAE.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineMultiDimEqs failed");
-      then
-        fail();
-  end matchcontinue;
-end inlineMultiDimEqs;
-
-public function inlineComplexEqs
-"function: inlineComplexEqs
-  inlines function calls in complex equations"
-  input BackendDAE.ComplexEquation inComplexEquation;
-  input Functiontuple inElementList;
-  output BackendDAE.ComplexEquation outComplexEquation;
-algorithm
-  outComplexEquation := matchcontinue(inComplexEquation,inElementList)
-    local
-      Functiontuple fns;
-      Integer i;
-      DAE.Exp e1,e1_1,e2,e2_1;
-      DAE.ElementSource source;
-
-    case(BackendDAE.COMPLEXEQUATION(i,e1,e2,source),fns)
-      equation
-        (e1_1,source) = inlineExp(e1,fns,source);
-        (e2_1,source) = inlineExp(e2,fns,source);
-      then
-        BackendDAE.COMPLEXEQUATION(i,e1_1,e2_1,source);
-    case(_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineComplexEqs failed");
-      then
-        fail();
-  end matchcontinue;
-end inlineComplexEqs;
 
 public function inlineEventInfo
 "function: inlineEventInfo

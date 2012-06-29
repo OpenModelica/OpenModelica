@@ -65,7 +65,6 @@ public import SimCode;
 protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAECreate;
-protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -819,8 +818,6 @@ algorithm
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<BackendDAE.ComplexEquation> ce;
       list<DAE.Exp> expVars,options;
       array<list<Integer>> m,mt;
       Option<array<list<Integer>>> om,omt;
@@ -1103,9 +1100,7 @@ algorithm
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
-        ae = BackendEquation.daeArrayEqns(optdae);
-        ce = BackendEquation.daeComplexEqns(optdae);
-        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, ce, m, mt,false);
+        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));

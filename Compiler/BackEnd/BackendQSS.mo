@@ -153,8 +153,6 @@ algorithm
       array<BackendDAE.Value> a1,a2;
       BackendDAE.Variables v,kn;
       BackendDAE.EquationArray e,se,ie;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> alg;
   case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
       orderedVarsList = BackendDAEUtil.varList(v);

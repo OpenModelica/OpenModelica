@@ -52,7 +52,7 @@ public import Types;
 public import Values;
 
 // protected imports
-protected import BackendDAECreate;
+protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -73,37 +73,25 @@ public function differentiateEquationTime "function: differentiateEquationTime
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Shared shared;
-  input array<DAE.Algorithm> al;
-  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
-  input array<BackendDAE.MultiDimEquation> inMultiEqn;
-  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output BackendDAE.Equation outEquation;
-  output array<DAE.Algorithm> outal;
-  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
-  output array<BackendDAE.MultiDimEquation> outArrayEqs;
-  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
-  output Boolean outAdd;
 algorithm
-  (outEquation,outal,outDerivedAlgs,outArrayEqs,outDerivedMultiEqn,outAdd) := matchcontinue (inEquation,inVariables,shared,al,inDerivedAlgs,inMultiEqn,inDerivedMultiEqn)
+  outEquation := matchcontinue (inEquation,inVariables,shared)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       BackendDAE.Variables timevars;
       DAE.ElementSource source,source1,sourceStmt;
-      Integer index,i_1,index1;
+      Integer index,i_1,index1,size;
       list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1;
       DAE.Type exptyp;
-      array<DAE.Algorithm> a1;
-      list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
       Boolean add;
-      array<BackendDAE.MultiDimEquation> ae,ae1;
-      list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
       String msg,se1,se2;
       DAE.SymbolicOperation op1,op2;
       DAE.FunctionTree funcs;
+      DAE.Algorithm alg;
     
     // equations
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,_) /* time varying variables */
       equation
         e1_1 = differentiateExpTime(e1, (timevars,shared));
         e2_1 = differentiateExpTime(e2, (timevars,shared));
@@ -113,78 +101,60 @@ algorithm
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
+        BackendDAE.EQUATION(e1_2,e2_2,source);
     
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
-      equation
-        true = intEq(index,-1);
-        //e1_1 = differentiateExpTime(e1, (timevars,shared,inFunctions));
-        //e2_1 = differentiateExpTime(e2, (timevars,shared,inFunctions));
-        // e1_2 = ExpressionSimplify.simplify(e1_1);
-        // e2_2 = ExpressionSimplify.simplify(e2_1);
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
+      //equation
+      //  e1_1 = differentiateExpTime(e1, (timevars,shared));
+      //  e2_1 = differentiateExpTime(e2, (timevars,shared));
+      //  (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+      //  (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+      //  op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
+      //  op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+      //  source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
+        //BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source);
         // because der(Record) is not jet implemented -> fail()
-        //(BackendDAE.COMPLEX_EQUATIONWRAPPER(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
-        fail();
+        fail();            
    
-    // Array Equations    
-    case (BackendDAE.ARRAY_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,shared,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    // Array Equations   
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
       equation
-        // get Equation
-        i_1 = index+1;
-        BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
         e1_1 = differentiateExpTime(e1, (timevars,shared));
         e2_1 = differentiateExpTime(e2, (timevars,shared));
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-        ((_,(crefOrDerCref1,derCref1,_))) = Expression.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
-        ((_,(crefOrDerCref2,derCref2,_))) = Expression.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
-        crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
-        crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
-        crefOrDerCref3 = List.unionOnTrue(crefOrDerCref11,crefOrDerCref21,Expression.expEqual);
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
-        // only add algorithm if it is not already derived 
-        (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
       then
-        //(BackendDAE.ARRAY_EQUATIONWRAPPER(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
-        // Until the array equations will be unrolled we should return true to add an equation for every element
-        (BackendDAE.ARRAY_EQUATIONWRAPPER(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
-    
+        BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source);     
     // diverivative of function with multiple outputs
-    case (BackendDAE.ALGORITHMWRAPPER(index = index,in_=in_,out=out,source=source),timevars,shared as BackendDAE.SHARED(functionTree=funcs),al,inDerivedAlgs,ae,inDerivedMultiEqn)
+    case (BackendDAE.ALGORITHM(size = size,alg=alg,source=source),timevars,shared as BackendDAE.SHARED(functionTree=funcs))
       equation
         // get Allgorithm
-        DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
+        DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = alg;
         e1_1 = differentiateFunctionTime(e1,(timevars,shared));
-        (e1_2,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
-        (e2,_) = ExpressionSimplify.simplify(e1_2);
+        (e2,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,expExpLst,(timevars,shared));
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e2);
         source = DAEUtil.addSymbolicTransformation(source,op1);
-        // outputs
-        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,shared));
-        // inputs
-        ((in_1,_)) = BackendDAECreate.lowerAlgorithmInputsOutputs1(timevars,{DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
-        // only add algorithm if it is not already derived 
-        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}),listLength(out1),inDerivedAlgs);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
        then
-        (BackendDAE.ALGORITHMWRAPPER(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
-    
-    case (BackendDAE.COMPLEX_EQUATIONWRAPPER(index = index,crefOrDerCref=crefOrDerCref,source = source),_,_,_,_,_,_)
+        BackendDAE.ALGORITHM(size,alg,source);
+ 
+    case (BackendDAE.COMPLEX_EQUATION(source = source),_,_)
       equation
-        se1 = intString(index);
-        //se1 = ExpressionDump.printExpStr(e1);
-        //se2 = ExpressionDump.printExpStr(e2);
+        se1 = BackendDump.equationStr(inEquation);
         msg = stringAppendList({"- Derive.differentiateEquationTime on complex equations ",se1," not impl yet. "});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
-    case (inEquation,_,_,_,_,_,_)
+    case (inEquation,_,_)
       equation
-        msg = "- Derive.differentiateEquationTime failed.";
+        msg = "- Derive.differentiateEquationTime failed for " +& BackendDump.equationStr(inEquation) +& "\n";
         source = BackendEquation.equationSource(inEquation);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then

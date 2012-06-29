@@ -3466,8 +3466,6 @@ algorithm
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns;
-      array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
@@ -3495,20 +3493,17 @@ algorithm
       BackendDAE.Variables ordvars,knvars,exobj,knvars1;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns;
-      array<BackendDAE.MultiDimEquation> arreqns;
-      array<DAE.Algorithm> algorithms;
       array<DAE.Constraint> constrs;
-      array<BackendDAE.ComplexEquation> complEqs;
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp,symjacs))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,funcs,einfo,eoc,btp,symjacs))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,constrs,complEqs,funcs,einfo,eoc,btp,symjacs);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addKnVarDAE;
 
