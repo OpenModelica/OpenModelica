@@ -1673,13 +1673,14 @@ public function printEquation
 algorithm
   outString := match(inEquation)
     local
-      DAE.Exp exp1, exp2;
+      DAE.Exp exp1, exp2, cond, msg;
       DAE.Type ty1, ty2;
       DAE.ComponentRef cref1, cref2;
       Connect.Face face1, face2;
       String index, res, eql_str, range_str;
-      String exp_str1, exp_str2, ty_str1, ty_str2, face_str1, face_str2;
+      String exp_str1, exp_str2, ty_str1, ty_str2, face_str1, face_str2, str1, str2;
       list<Equation> eql;
+      list<tuple<DAE.Exp, list<InstTypes.Equation>>> branches;
 
     case (InstTypes.EQUALITY_EQUATION(lhs = exp1, rhs = exp2))
       equation
@@ -1720,7 +1721,47 @@ algorithm
         res = res +& eql_str +& "\n  end for;\n";
       then
         res;
+        
+    case (InstTypes.IF_EQUATION(branches, _))
+      equation
+        res = "if equation;";
+      then
+        res;
 
+    case (InstTypes.WHEN_EQUATION(branches, _))
+      equation
+        res = "when equation;";
+      then
+        res;
+        
+    case (InstTypes.ASSERT_EQUATION(cond, msg, _))
+      equation
+        res = "assert(" +& 
+                ExpressionDump.printExpStr(cond) +& ", " +& 
+                ExpressionDump.printExpStr(msg) +& ")";
+      then
+        res;
+
+    case (InstTypes.TERMINATE_EQUATION(msg, _))
+      equation
+        res = "terminate(" +& ExpressionDump.printExpStr(msg) +& ")";
+      then
+        res;
+
+    case (InstTypes.REINIT_EQUATION(cref1, exp1, _))
+      equation
+        str1 = ComponentReference.printComponentRefStr(cref1);
+        str2 = ExpressionDump.printExpStr(exp1);
+        res = "reinit(" +& str1 +& ", " +& str2 +& ")";
+      then
+        res;
+
+    case (InstTypes.NORETCALL_EQUATION(exp1, _))
+      equation
+        res = ExpressionDump.printExpStr(exp1);
+      then
+        res;
+            
     else "UNKNOWN EQUATION";
   end match;
 end printEquation;

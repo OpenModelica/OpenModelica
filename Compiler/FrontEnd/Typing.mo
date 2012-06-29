@@ -1574,7 +1574,7 @@ algorithm
       equation
         print("typeFunction failed " +& Absyn.pathString(path) +& "\n");
       then 
-        (inTpl);
+        fail();
   end matchcontinue;
 end typeFunction;
 

@@ -258,6 +258,7 @@ algorithm
       list<DAE.Element> el;
       InstTypes.Component comp;
       String err_msg;
+      Absyn.Info info;
 
     case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, _)
       equation
@@ -272,18 +273,18 @@ algorithm
       then
         el;
         
-    case (InstTypes.UNTYPED_COMPONENT(name = name), _, _, _)
+    case (InstTypes.UNTYPED_COMPONENT(name = name, info = info), _, _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got untyped component " +&
-          Absyn.pathString(name) +& "\n";
+          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         fail();
 
-    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name, info = info), _, _, _)
       equation
         err_msg = "SCodeExpand.expandComponent got unresolved conditional component " +&
-          Absyn.pathString(name) +& "\n";
+          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         inAccumEl;
@@ -611,7 +612,7 @@ algorithm
           ComponentReference.printComponentRefStr(inCref) +& "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        fail();
+        inCref;
 
     case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
@@ -620,7 +621,7 @@ algorithm
           ComponentReference.printComponentRefStr(inCref) +& "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        fail();
+        inCref;
 
   end match;
 end subscriptCref2;
@@ -674,13 +675,22 @@ protected function expandEquation
 algorithm
   outElements := matchcontinue(inEquation, inSubscripts, inAccumEl)
     local
-      DAE.Exp rhs, lhs;
+      DAE.Exp rhs, lhs, exp, msg;
       DAE.Element eq;
       DAE.ComponentRef cref1, cref2;
       DAE.Type ty1, ty2;
       list<list<DAE.Subscript>> subs;
       list<DAE.Element> accum_el;
       list<DAE.Dimension> dims;
+      Absyn.Path path;
+      Absyn.Info info;
+      list<DAE.Exp> expLst;
+      String index          "The name of the index/iterator variable.";
+      DAE.Type indexType    "The type of the index/iterator variable.";
+      Option<DAE.Exp> range "The range expression to loop over.";
+      list<Equation> body   "The body of the for loop.";
+      list<tuple<DAE.Exp, list<Equation>>> branches;
+      
 
     case (InstTypes.EQUALITY_EQUATION(lhs = lhs, rhs = rhs), _, _)
       equation
@@ -696,12 +706,67 @@ algorithm
         print("Skipping expansion of connect\n");
       then
         inAccumEl;
-
+        
+    case (InstTypes.FOR_EQUATION(index, indexType, range, body, info), _, _)
+      equation
+        accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
+        accum_el = listAppend(accum_el, inAccumEl);
+      then
+        accum_el;
+        
+    case (InstTypes.IF_EQUATION(branches, info), _, _)
+      equation
+         //accum_el = DAE.IF_EQUATION();
+         print("Skipping if equation\n");
+         accum_el = inAccumEl;
+      then
+        accum_el;
+        
+    case (InstTypes.WHEN_EQUATION(branches, info), _, _)
+      equation
+         //accum_el = DAE.IF_EQUATION();
+         print("Skipping when equation\n");
+         accum_el = inAccumEl;
+      then
+        accum_el;
+        
+    case (InstTypes.ASSERT_EQUATION(condition = exp, message = msg, info = info), _, _)
+      equation
+        ty1 = Expression.typeof(exp);
+        dims = Types.getDimensions(ty1);
+        accum_el = DAE.ASSERT(exp, msg, DAE.emptyElementSource)::inAccumEl;
+      then
+        accum_el;
+        
+    case (InstTypes.TERMINATE_EQUATION(message = msg, info = info), _, _)
+      equation
+        ty1 = Expression.typeof(msg);
+        dims = Types.getDimensions(ty1);
+        accum_el = DAE.TERMINATE(msg, DAE.emptyElementSource)::inAccumEl;
+      then
+        accum_el;
+        
+    case (InstTypes.REINIT_EQUATION(cref = cref1, reinitExp = exp, info = info), _, _)
+      equation
+        ty1 = Expression.typeof(exp);
+        dims = Types.getDimensions(ty1);
+        accum_el = DAE.REINIT(cref1, exp, DAE.emptyElementSource)::inAccumEl;
+      then
+        accum_el;
+        
+    case (InstTypes.NORETCALL_EQUATION(exp = exp as DAE.CALL(path, expLst, _)), _, _)
+      equation
+        ty1 = Expression.typeof(exp);
+        dims = Types.getDimensions(ty1);
+        accum_el = DAE.NORETCALL(path, expLst, DAE.emptyElementSource)::inAccumEl;
+      then
+        accum_el;
+        
     else
       equation
-        print("SCodeExpand.expandEquation failed\n");
+        print("SCodeExpand.expandEquation failed on equation:\n" +& InstUtil.printEquation(inEquation) +& "\n");
       then
-        fail();
+        inAccumEl;
 
   end matchcontinue;
 end expandEquation; 
