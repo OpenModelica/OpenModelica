@@ -915,9 +915,9 @@ algorithm
 
     case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _, _)
       equation
-        ty1 = Expression.typeof(lhs);
-        dims = Types.getDimensions(ty1);
-        accum_el = expandArray((lhs, rhs), inKind, dims, {} :: inSubscripts, inAccumEl,
+        /* ty1 = Expression.typeof(lhs);
+        dims = Types.getDimensions(ty1); */
+        accum_el = expandArray((lhs, rhs), inKind, {}, {} :: inSubscripts, inAccumEl,
           expandAssignment);
       then
         accum_el;
