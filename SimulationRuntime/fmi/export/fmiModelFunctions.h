@@ -126,10 +126,6 @@
 #define fmiTerminate                  fmiFullName(_fmiTerminate)
 #define fmiSetExternalFunction        fmiFullName(_fmiSetExternalFunction)
 
-#define fmiSetInitMethod              fmiFullName(_fmiSetInitMethod)
-#define fmiSetOptiMethod              fmiFullName(_fmiSetOptiMethod)
-#define fmiSetInitFile                fmiFullName(_fmiSetInitFile)
-
 
 /* Version number */
 #define fmiVersion "1.0"
@@ -214,10 +210,6 @@ extern "C" {
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
    DllExport fmiStatus fmiTerminate                 (fmiComponent c);
    DllExport fmiStatus fmiSetExternalFunction       (fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[]);
-
-   DllExport fmiStatus fmiSetInitMethod             (fmiComponent c, fmiString initMethod);
-   DllExport fmiStatus fmiSetOptiMethod             (fmiComponent c, fmiString optiMethod);
-   DllExport fmiStatus fmiSetInitFile               (fmiComponent c, fmiString initFile);
 #ifdef __cplusplus
 }
 #endif

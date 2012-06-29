@@ -93,7 +93,6 @@ const char* fmiGetVersion() {
 
 fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
     fmiCallbackFunctions functions, fmiBoolean loggingOn) {
-  size_t i;
   ModelInstance* comp;
   if (!functions.logger)
     return NULL;
@@ -148,14 +147,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp->eventInfo.terminateSimulation = fmiFalse;
   comp->eventInfo.upcomingTimeEvent = fmiFalse;
   comp->eventInfo.nextEventTime = 0;
-
-
-  comp->initialisation.initMethod = (fmiString)functions.allocateMemory(100, sizeof(fmiString));
-  comp->initialisation.optiMethod = (fmiString)functions.allocateMemory(100, sizeof(fmiString));
-  comp->initialisation.initFile = (fmiString)functions.allocateMemory(255, sizeof(fmiString));
-  strcpy(comp->initialisation.initMethod,"state");
-  strcpy(comp->initialisation.optiMethod,"nelder_mead_ex");
-  strcpy(comp->initialisation.initFile,"");
 
   return comp;
 }
@@ -519,54 +510,6 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 // FMI functions: initialization, event handling, stepping and termination
 // ---------------------------------------------------------------------------
 
-fmiStatus fmiSetInitMethod(fmiComponent c, fmiString initMethod)
-{
-  ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiSetInitMethod", modelInstantiated))
-    return fmiError;
-  if (strlen(initMethod) > 100) {
-	  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiError, "log",
-	      "fmiSetInitMethod: sorry strings larger than 100 characters are not supported.");
-    return fmiError;
-  }
-  strcpy(comp->initialisation.initMethod,initMethod);
-  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiSetInitMethod: %c", comp->initialisation.initMethod);
-  return fmiOK;
-}
-
-fmiStatus fmiSetOptiMethod(fmiComponent c, fmiString optiMethod)
-{
-  ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiSetOptiMethod", modelInstantiated))
-    return fmiError;
-  if (strlen(optiMethod) > 100) {
-	  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiError, "log",
-	      "fmiSetOptiMethod: sorry strings larger than 100 characters are not supported.");
-    return fmiError;
-  }
-  strcpy(comp->initialisation.optiMethod,optiMethod);
-  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiSetOptiMethod: %c", comp->initialisation.optiMethod);
-  return fmiOK;
-}
-
-fmiStatus fmiSetInitFile(fmiComponent c, fmiString initFile)
-{
-  ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiSetInitFile", modelInstantiated))
-    return fmiError;
-  if (strlen(initFile) > 255) {
-	  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiError, "log",
-	      "fmiSetInitFile: sorry strings larger than 255 characters are not supported.");
-    return fmiError;
-  }
-  strcpy(comp->initialisation.initFile,initFile);
-  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-      "fmiSetInitFile: %c", comp->initialisation.initFile);
-  return fmiOK;
-}
-
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
     fmiEventInfo* eventInfo) {
   ModelInstance* comp = (ModelInstance *)c;
@@ -590,7 +533,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 
-  if (initialization(comp->fmuData, comp->initialisation.initMethod, comp->initialisation.optiMethod,comp->initialisation.initFile,0)){
+  if (initialization(comp->fmuData, "state", "nelder_mead_ex","",0)){
     comp->state = modelError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiInitialization: failed");
@@ -607,8 +550,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 }
 
 fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
-  int needtoiterate=0;
-  double nextSampleEvent=0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiEventUpdate", modelInitialized))
     return fmiError;
@@ -618,6 +559,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
 
+  int needtoiterate=0;
 
   storePreValues(comp->fmuData);
   functionDAE(comp->fmuData, &needtoiterate);
@@ -665,6 +607,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       "fmiEventUpdate: intermediateResults = %d", intermediateResults);
 
   //Get Next Event TIme
+  double nextSampleEvent=0;
   nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
   if (nextSampleEvent == -1){
     eventInfo->upcomingTimeEvent = fmiFalse;
