@@ -47,7 +47,7 @@ public import InstTypes;
 
 protected import Dump;
 protected import Error;
-protected import InstUtil;
+protected import InstDump;
 protected import List;
 protected import SCodeDump;
 protected import SCodeInst;
@@ -198,7 +198,7 @@ algorithm
 
     case ((name, mod), _, _)
       equation
-        pre_str = InstUtil.printPrefix(inPrefix);
+        pre_str = InstDump.prefixStr(inPrefix);
         info = getModifierInfo(mod);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {name, pre_str}, info);
@@ -580,7 +580,7 @@ algorithm
     case (InstTypes.MODIFIER(binding = InstTypes.RAW_BINDING(bindingExp = _), info = info1),
           InstTypes.MODIFIER(binding = InstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
       equation
-        comp_str = InstUtil.printPrefix(inPrefix);
+        comp_str = InstDump.prefixStr(inPrefix);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
         Error.addSourceMessage(Error.DUPLICATE_MODIFICATIONS, 
           {inElementName, comp_str}, info1);
@@ -740,7 +740,7 @@ algorithm
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);
         submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
-        bind_str = InstUtil.printBinding(binding);
+        bind_str = InstDump.bindingStr(binding);
       then
         "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
 

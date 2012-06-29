@@ -40,6 +40,7 @@ encapsulated package Typing
 "
 
 public import Absyn;
+public import Connect2;
 public import DAE;
 public import HashTablePathToFunction;
 public import InstSymbolTable;
@@ -48,7 +49,7 @@ public import SCode;
 
 protected import BaseHashTable;
 protected import ComponentReference;
-protected import Connect;
+protected import ConnectUtil2;
 protected import DAEUtil;
 protected import Error;
 protected import Expression;
@@ -59,13 +60,14 @@ protected import List;
 protected import Types;
 protected import Util;
 
-public type Element = InstTypes.Element;
-public type Equation = InstTypes.Equation;
+public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
+public type Component = InstTypes.Component;
+public type Connections = Connect2.Connections;
 public type DaePrefixes = InstTypes.DaePrefixes;
 public type Dimension = InstTypes.Dimension;
-public type Binding = InstTypes.Binding;
-public type Component = InstTypes.Component;
+public type Element = InstTypes.Element;
+public type Equation = InstTypes.Equation;
 public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
@@ -914,55 +916,88 @@ public function typeSections
   input Class inClass;
   input SymbolTable inSymbolTable;
   output Class outClass;
+  output Connections outConnections;
 algorithm
-  outClass := match(inClass, inSymbolTable)
+  (outClass, outConnections) := typeSections2(inClass, inSymbolTable,
+    Connect2.NO_CONNECTIONS());
+end typeSections;
+
+public function typeSections2
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  input Connections inConnections;
+  output Class outClass;
+  output Connections outConnections;
+algorithm
+  (outClass, outConnections) := match(inClass, inSymbolTable, inConnections)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
+      Connections conn;
 
-    case (InstTypes.BASIC_TYPE(), _) then inClass;
+    case (InstTypes.BASIC_TYPE(), _, _) then (inClass, inConnections);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st, conn)
       equation
-        comps = List.map1(comps, typeSectionsInElement, st);
-        eq = typeEquations(eq, st);
-        ieq = typeEquations(ieq, st);
+        (comps, conn) = typeSectionsInElements(comps, st, conn);
+        (eq, conn) = typeEquations(eq, st, conn);
+        // Connections are not allowed in initial equation sections, so we
+        // shouldn't get any connections back from typeEquations here.
+        (ieq, Connect2.NO_CONNECTIONS()) =
+          typeEquations(ieq, st, Connect2.NO_CONNECTIONS());
         al = typeAlgorithms(al, st);
         ial = typeAlgorithms(ial, st);
       then
-        InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
+        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), conn);
 
   end match;
-end typeSections;
+end typeSections2;
 
+protected function typeSectionsInElements
+  input list<Element> inElements;
+  input SymbolTable inSymbolTable;
+  input Connections inConnections;
+  output list<Element> outElements;
+  output Connections outConnections;
+algorithm
+  (outElements, outConnections) := List.map1Fold(inElements,
+    typeSectionsInElement, inSymbolTable, inConnections);
+  //(outElements, outConnections) := List.map2FoldSplit(inElements,
+  //  typeSectionsInElement, ConnectUtil2.mergeConnections, inSymbolTable,
+  //  inConnections);
+end typeSectionsInElements;
+    
 protected function typeSectionsInElement
   input Element inElement;
   input SymbolTable inSymbolTable;
+  input Connections inConnections;
   output Element outElement;
+  output Connections outConnections;
 algorithm
-  outElement := match(inElement, inSymbolTable)
+  (outElement, outConnections) := match(inElement, inSymbolTable, inConnections)
     local
       Component comp;
       Class cls;
       Absyn.Path bc;
       DAE.Type ty;
       SymbolTable st;
+      Connections conn;
 
-    case (InstTypes.ELEMENT(comp, cls), st)
+    case (InstTypes.ELEMENT(comp, cls), st, conn)
       equation
-        cls = typeSections(cls, st);
+        (cls, conn) = typeSections2(cls, st, conn);
       then
-        InstTypes.ELEMENT(comp, cls);
+        (InstTypes.ELEMENT(comp, cls), conn);
 
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st)
+    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, conn)
       equation
-        cls = typeSections(cls, st);
+        (cls, conn) = typeSections2(cls, st, conn);
       then
-        InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
+        (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), conn);
 
-    case (InstTypes.CONDITIONAL_ELEMENT(_), st)
+    case (InstTypes.CONDITIONAL_ELEMENT(_), st, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Typing.typeSectionsInElement got a conditional element!"});
@@ -975,28 +1010,61 @@ end typeSectionsInElement;
 protected function typeEquations
   input list<Equation> inEquations;
   input SymbolTable inSymbolTable;
+  input Connections inConnections;
   output list<Equation> outEquations;
+  output Connections outConnections;
 algorithm
-  outEquations := List.fold1(inEquations, typeEquation, inSymbolTable, {});
-  outEquations := listReverse(outEquations);
+  (outEquations, outConnections) :=
+    typeEquations2(inEquations, inSymbolTable, {}, inConnections);
 end typeEquations;
+
+protected function typeEquations2
+  input list<Equation> inEquations;
+  input SymbolTable inSymbolTable;
+  input list<Equation> inAccumEql;
+  input Connections inConnections;
+  output list<Equation> outEquations;
+  output Connections outConnections;
+algorithm
+  (outEquations, outConnections) :=
+  match(inEquations, inSymbolTable, inAccumEql, inConnections)
+    local
+      Equation eq;
+      list<Equation> rest_eq, acc_eq;
+      SymbolTable st;
+      Connections conn;
+      
+    case (eq :: rest_eq, st, acc_eq, _)
+      equation
+        (acc_eq, conn) = typeEquation(eq, st, acc_eq, inConnections);
+        (acc_eq, conn) = typeEquations2(rest_eq, st, acc_eq, conn);
+      then
+        (acc_eq, conn);
+
+    case ({}, _, _, _) then (listReverse(inAccumEql), inConnections);
+
+  end match;
+end typeEquations2;
 
 protected function typeEquation
   input Equation inEquation;
   input SymbolTable inSymbolTable;
   input list<Equation> inAccumEql;
+  input Connections inConnections;
   output list<Equation> outAccumEql;
+  output Connections outConnections;
 algorithm
-  outAccumEql := match(inEquation, inSymbolTable, inAccumEql)
+  (outAccumEql, outConnections) :=
+  match(inEquation, inSymbolTable, inAccumEql, inConnections)
     local
       DAE.Exp rhs, lhs, exp1, exp2;
       list<DAE.Exp> args;
       SymbolTable st;
       Absyn.Info info;
       DAE.ComponentRef cref1, cref2;
-      Connect.Face face1, face2;
+      Connect2.Face face1, face2;
       Prefix prefix;
-      String index;
+      String index, name;
       list<Equation> eql;
       DAE.Type ty;
       list<tuple<DAE.Exp, list<Equation>>> branches;
@@ -1005,73 +1073,95 @@ algorithm
       Component iter;
       Equation eq;
       Boolean cond;
+      Connections conn;
 
-    case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el)
+    case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
       equation
         (rhs, _, _) = typeExp(rhs, EVAL_CONST(), st);
         (lhs, _, _) = typeExp(lhs, EVAL_CONST(), st);
+        eq = InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
       then
-        InstTypes.EQUALITY_EQUATION(lhs, rhs, info) :: acc_el;
+        (eq :: acc_el, inConnections);
 
-    case (InstTypes.CONNECT_EQUATION(cref1, _, _, cref2, _, _, prefix, info), st, acc_el)
+    case (InstTypes.CONNECT_EQUATION(cref1, _, _, cref2, _, _, prefix, info),
+        st, acc_el, conn)
       equation
-        acc_el = typeConnection(cref1, cref2, prefix, st, info, acc_el);
+        conn = typeConnection(cref1, cref2, prefix, st, info, conn);
       then
-        acc_el;
+        (acc_el, conn);
 
-    case (InstTypes.FOR_EQUATION(index, _, SOME(exp1), eql, info), st, acc_el)
+    case (InstTypes.FOR_EQUATION(index, _, SOME(exp1), eql, info), st, acc_el, conn)
       equation
         (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
         iter_name = Absyn.IDENT(index);
         iter = InstUtil.makeIterator(iter_name, ty, info);
         st = InstSymbolTable.addIterator(iter_name, iter, st);
-        eql = typeEquations(eql, st);
+        (eql, conn) = typeEquations(eql, st, conn);
+        eq = InstTypes.FOR_EQUATION(index, ty, SOME(exp1), eql, info);
       then
-        InstTypes.FOR_EQUATION(index, ty, SOME(exp1), eql, info) :: acc_el;
+        (eq :: acc_el, conn);
 
-    case (InstTypes.FOR_EQUATION(index, _, NONE(), eql, info), st, acc_el)
+    case (InstTypes.FOR_EQUATION(index, _, NONE(), eql, info), st, acc_el, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Implicit for ranges are not yet implemented"},info);
       then fail();
 
-    case (InstTypes.IF_EQUATION(branches, info), st, acc_el)
+    case (InstTypes.IF_EQUATION(branches, info), st, acc_el, _)
       equation
-        branches = List.map1(branches, typeBranch, st);
+        (branches, conn) = typeBranches(branches, st);
+        eq = InstTypes.IF_EQUATION(branches, info);
+        // TODO: Check conn here, connections are not allowed inside
+        // if-equations with non-parametric conditions.
       then
-        InstTypes.IF_EQUATION(branches, info) :: acc_el;
+        (eq :: acc_el, conn);
 
-    case (InstTypes.WHEN_EQUATION(branches, info), st, acc_el)
+    case (InstTypes.WHEN_EQUATION(branches, info), st, acc_el, _)
       equation
-        branches = List.map1(branches, typeBranch, st);
+        (branches, conn) = typeBranches(branches, st);
+        // TODO: Check conn here, connections are not allowed inside when.
+        // TOOD: Check restrictions on branches, section 8.3.5.2 in specification.
+        checkConnectsInWhen(conn, info);
+        eq = InstTypes.WHEN_EQUATION(branches, info);
       then
-        InstTypes.WHEN_EQUATION(branches, info) :: acc_el;
+        (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
-    case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el)
+    case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el, _)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
         (exp2, _, _) = typeExp(exp2, EVAL_CONST(), st);
+        eq = InstTypes.ASSERT_EQUATION(exp1, exp2, info);
       then
-        InstTypes.ASSERT_EQUATION(exp1, exp2, info) :: acc_el;
+        (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
-    case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el)
+    case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el, _)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        eq = InstTypes.TERMINATE_EQUATION(exp1, info);
       then
-        InstTypes.TERMINATE_EQUATION(exp1, info) :: acc_el;
+        (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
-    case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el)
+    case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el, _)
       equation
         (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        eq = InstTypes.REINIT_EQUATION(cref1, exp1, info);
       then
-        InstTypes.REINIT_EQUATION(cref1, exp1, info) :: acc_el;
+        (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
-    case (InstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el)
+    case (InstTypes.NORETCALL_EQUATION(DAE.CALL(path = Absyn.QUALIFIED(name = "Connections",
+        path = Absyn.IDENT(name = name)), expLst = args), info), st, acc_el, _)
+      equation
+        conn = typeConnectionsEquation(name, args, st, info);
+      then
+        (acc_el, conn);
+
+    case (InstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el, _)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        eq = InstTypes.NORETCALL_EQUATION(exp1, info);
       then
-        InstTypes.NORETCALL_EQUATION(exp1, info) :: acc_el;
+        (eq :: acc_el, Connect2.NO_CONNECTIONS());
         
     else
       equation
@@ -1083,19 +1173,80 @@ algorithm
   end match;
 end typeEquation;
 
+protected function checkConnectsInWhen
+  input Connections inConnections;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inConnections, inInfo)
+    case (Connect2.NO_CONNECTIONS(), _) then ();
+
+    else
+      equation
+        print("Connections are not allowed in when equations\n.");
+      then
+        fail();
+
+  end match;
+end checkConnectsInWhen;
+
+protected function typeConnectionsEquation
+  "This function types the functions in the builtin Connections package, and
+   adds them to the connection graph."
+  input String inName;
+  input list<DAE.Exp> inArgs;
+  input SymbolTable inSymbolTable;
+  input Absyn.Info inInfo;
+  output Connections outConnections;
+algorithm
+  outConnections := match(inName, inArgs, inSymbolTable, inInfo)
+    local
+      DAE.ComponentRef cref1, cref2;
+      SymbolTable st;
+      DAE.Exp prio;
+
+    case ("branch", {DAE.CREF(componentRef = cref1),
+        DAE.CREF(componentRef = cref2)}, st, _)
+      equation
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
+        (DAE.CREF(componentRef = cref2), _, _) = typeCref(cref2, NO_EVAL(), st);
+      then
+        ConnectUtil2.makeBranch(cref1, cref2, inInfo);
+
+    case ("root", {DAE.CREF(componentRef = cref1)}, st, _)
+      equation
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
+      then
+        ConnectUtil2.makeRoot(cref1, inInfo);
+
+    case ("potentialRoot", {DAE.CREF(componentRef = cref1), prio}, st, _)
+      equation
+        (prio, _, _) = typeExp(prio, EVAL_CONST_PARAM(), st);
+      then
+        ConnectUtil2.makePotentialRoot(cref1, prio, inInfo);
+
+    // Modelica allows you to omit crefs from the lhs, so isRoot may be called
+    // as a non-returning call. It won't do anything though. Perhaps we should
+    // tell the user that this is stupid?
+    case ("isRoot", _, _, _)
+      then Connect2.NO_CONNECTIONS();
+
+  end match;
+end typeConnectionsEquation;
+
 protected function typeConnection
   input DAE.ComponentRef inLhs;
   input DAE.ComponentRef inRhs;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
-  input list<Equation> inAccumEql;
-  output list<Equation> outAccumEql;
+  input Connections inConnections;
+  output Connections outConnections;
 algorithm
-  outAccumEql := match(inLhs, inRhs, inPrefix, inSymbolTable, inInfo, inAccumEql)
+  outConnections :=
+  match(inLhs, inRhs, inPrefix, inSymbolTable, inInfo, inConnections)
     local
       DAE.ComponentRef lhs, rhs;
-      Connect.Face lhs_face, rhs_face;
+      Connect2.Face lhs_face, rhs_face;
       DAE.Type lhs_ty, rhs_ty;
       Boolean lhs_id, rhs_id, is_deleted;
 
@@ -1107,34 +1258,11 @@ algorithm
           typeConnectorCref(inRhs, inPrefix, inSymbolTable, inInfo);
         is_deleted = lhs_id or rhs_id;
       then
-        makeConnection(lhs, lhs_face, lhs_ty, rhs, rhs_face, rhs_ty, is_deleted,
-          inInfo, inAccumEql);
+        ConnectUtil2.addConnectionCond(is_deleted, lhs, lhs_face, rhs, rhs_face,
+          inInfo, inConnections);
 
   end match;
 end typeConnection;
-
-protected function makeConnection
-  input DAE.ComponentRef inLhs;
-  input Connect.Face inLhsFace;
-  input DAE.Type inLhsType;
-  input DAE.ComponentRef inRhs;
-  input Connect.Face inRhsFace;
-  input DAE.Type inRhsType;
-  input Boolean inIsDeleted;
-  input Absyn.Info inInfo;
-  input list<Equation> inAccumEql;
-  output list<Equation> outAccumEql;
-algorithm
-  outAccumEql := match(inLhs, inLhsFace, inLhsType, inRhs, inRhsFace, inRhsType,
-      inIsDeleted, inInfo, inAccumEql)
-
-    case (_, _, _, _, _, _, true, _, _) then inAccumEql;
-
-    else InstTypes.CONNECT_EQUATION(inLhs, inLhsFace, inLhsType, inRhs,
-      inRhsFace, inRhsType, InstTypes.emptyPrefix, inInfo) :: inAccumEql;
-
-  end match;
-end makeConnection;
 
 protected function typeConnectorCref
   input DAE.ComponentRef inCref;
@@ -1142,7 +1270,7 @@ protected function typeConnectorCref
   input SymbolTable inSymbolTable;
   input Absyn.Info inInfo;
   output DAE.ComponentRef outCref;
-  output Connect.Face outFace;
+  output Connect2.Face outFace;
   output DAE.Type outType;
   output Boolean outIsDeleted;
 algorithm
@@ -1151,7 +1279,7 @@ algorithm
     local
       DAE.ComponentRef cref;
       Option<Component> comp, pre_comp;
-      Connect.Face face;
+      Connect2.Face face;
       Boolean is_deleted;
       DAE.Type ty;
 
@@ -1171,14 +1299,14 @@ protected function typeConnectorCref2
   input Option<Component> inComponent;
   input Option<Component> inPrefixComponent;
   input Absyn.Info inInfo;
-  output Connect.Face outFace;
+  output Connect2.Face outFace;
   output DAE.Type outType;
   output Boolean outIsDeleted;
 algorithm
   (outFace, outType, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
     local
       Absyn.Path name;
-      Connect.Face face;
+      Connect2.Face face;
       Component comp;
       DAE.Type ty;
 
@@ -1186,21 +1314,22 @@ algorithm
       equation
         print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");
       then
-        (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
+        (Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
 
     case (_, SOME(InstTypes.DELETED_COMPONENT(_)), _, _)
       equation
         print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");      
       then
-        (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
+        (Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
 
     // A component that should be added to an expandable connector. It can only
     // be outside, since only connectors on the form m.c are inside.
     case (_, NONE(), SOME(_), _)
-      then (Connect.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
+      then (Connect2.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
 
     case (_, SOME(comp), _, _)
       equation
+        // TODO: Resolve outer references here?
         checkComponentIsConnector(comp, inPrefixComponent, inCref, inInfo);
         face = getConnectorFace(inPrefixComponent);
         ty = InstUtil.getComponentType(comp);
@@ -1333,24 +1462,24 @@ protected function getConnectorFace
    connector, otherwise inside. This function takes the optional component
    returned from lookupConnectorCref instead of a cref though."
   input Option<Component> inPrefixComponent;
-  output Connect.Face outFace;
+  output Connect2.Face outFace;
 algorithm
   outFace := matchcontinue(inPrefixComponent)
     local
       Component comp;
       Boolean is_conn;
-      Connect.Face face;
+      Connect2.Face face;
 
     // No prefix component means a simple identifier, i.e. the connector element
     // itself is the first identifier.
-    case NONE() then Connect.OUTSIDE();
+    case NONE() then Connect2.OUTSIDE();
 
     // A prefix component, face depends on if it's a connector or not.
     case SOME(comp)
       equation
         is_conn = InstUtil.isConnectorComponent(comp);
         // Connector => outside, not connector => inside.
-        face = Util.if_(is_conn, Connect.OUTSIDE(), Connect.INSIDE());
+        face = Util.if_(is_conn, Connect2.OUTSIDE(), Connect2.INSIDE());
       then
         face;
 
@@ -1421,22 +1550,35 @@ algorithm
   end matchcontinue;
 end rangeToIteratorType;
 
+protected function typeBranches
+  input list<tuple<DAE.Exp, list<Equation>>> inBranches;
+  input SymbolTable inSymbolTable;
+  output list<tuple<DAE.Exp, list<Equation>>> outBranches;
+  output Connections outConnections;
+algorithm
+  (outBranches, outConnections) := List.map1Fold(inBranches, typeBranch,
+      inSymbolTable, Connect2.NO_CONNECTIONS()); 
+end typeBranches;
+
 protected function typeBranch
   input tuple<DAE.Exp, list<Equation>> inBranch;
   input SymbolTable inSymbolTable;
+  input Connections inConnections;
   output tuple<DAE.Exp, list<Equation>> outBranch;
+  output Connections outConnections;
 algorithm
-  outBranch := match(inBranch, inSymbolTable)
+  (outBranch, outConnections) := match(inBranch, inSymbolTable, inConnections)
     local
       DAE.Exp cond_exp;
       list<Equation> branch_body;
+      Connections conn;
 
-    case ((cond_exp, branch_body), _)
+    case ((cond_exp, branch_body), _, conn)
       equation
         (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), inSymbolTable);
-        branch_body = typeEquations(branch_body, inSymbolTable);
+        (branch_body, conn) = typeEquations(branch_body, inSymbolTable, conn);
       then
-        ((cond_exp, branch_body));
+        ((cond_exp, branch_body), conn);
 
   end match;
 end typeBranch;

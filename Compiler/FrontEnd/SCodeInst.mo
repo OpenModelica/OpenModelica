@@ -40,6 +40,7 @@ encapsulated package SCodeInst
 "
 
 public import Absyn;
+public import Connect2;
 public import DAE;
 public import InstTypes;
 public import HashTablePathToFunction;
@@ -49,7 +50,6 @@ public import SCodeEnv;
 protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
-protected import Connect;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -57,6 +57,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import InstDump;
 protected import Graph;
 protected import InstSymbolTable;
 protected import InstUtil;
@@ -68,6 +69,7 @@ protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeMod;
 protected import System;
+protected import Tpl;
 protected import Types;
 protected import Typing;
 protected import TypeCheck;
@@ -77,6 +79,7 @@ public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
 public type Condition = InstTypes.Condition;
+public type Connections = Connect2.Connections;
 public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
@@ -115,6 +118,7 @@ algorithm
       list<Absyn.Path> consts;
       list<Element> const_el;
       FunctionHashTable functions;
+      Connections conn;
 
     case (_, _, _)
       equation
@@ -141,15 +145,18 @@ algorithm
 
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
         (cls, symtab) = Typing.typeClass(cls, symtab);
-        cls = Typing.typeSections(cls, symtab);
+        (cls, conn) = Typing.typeSections(cls, symtab);
         
         // typechecking
         (cls, symtab) = TypeCheck.check(cls, symtab);
 
         System.stopTimer();
-        //print("\nclass " +& name +& "\n");
-        //print(InstUtil.printClass(cls));
-        //print("\nend " +& name +& "\n");
+
+        //print(InstDump.modelStr(name, cls));
+
+        //print("\n\nConnections:\n");
+        //print(InstDump.connectionsStr(conn));
+        //print("\n");
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
@@ -631,7 +638,7 @@ algorithm
     case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
-        {"SCodeInst.instElementList_dispatch ran out of extends!."});
+          {"SCodeInst.instElementList_dispatch ran out of extends!."});
       then
         fail();
 
@@ -704,7 +711,7 @@ algorithm
         // Check that it's legal to instantiate the class.
         SCodeCheck.checkInstanceRestriction(item, prefix, info);
 
-        // Merge the class modifications with this elements' modifications.
+        // Merge the class modifications with this element's modifications.
         dim_count = listLength(ad);
         mod = SCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
         cmod = SCodeMod.propagateMod(inClassMod, dim_count);
@@ -3006,8 +3013,8 @@ algorithm
         (dcref1,functions) = instCref2(cref1, inEnv, inPrefix, info, functions);
         (dcref2,functions) = instCref2(cref2, inEnv, inPrefix, info, functions);
       then
-        (InstTypes.CONNECT_EQUATION(dcref1, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
-          dcref2, Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), functions);
+        (InstTypes.CONNECT_EQUATION(dcref1, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
+          dcref2, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), functions);
 
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
         info = info), _, _, functions)
@@ -3571,7 +3578,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("SCodeInst.instConditionalComponent failed on " +&
-          InstUtil.printComponent(inComponent) +& "\n");
+          InstDump.componentStr(inComponent) +& "\n");
       then
         fail();
 

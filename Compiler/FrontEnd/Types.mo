@@ -7147,6 +7147,23 @@ algorithm
   end matchcontinue;
 end printTypeSourceStr;
         
+public function isOverdeterminedType
+  "Returns true if the given type is overdetermined, i.e. a type or record with
+   an equalityConstraint function, otherwise false."
+  input Type inType;
+  output Boolean outIsOverdetermined;
+algorithm
+  outIsOverdetermined := match(inType)
+    local
+      ClassInf.State cct;
+
+    case DAE.T_COMPLEX(complexClassType = cct, equalityConstraint = SOME(_))
+      then ClassInf.isTypeOrRecord(cct);
+
+    case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) then true;
+  end match;
+end isOverdeterminedType;
+
 end Types;
 
 /*

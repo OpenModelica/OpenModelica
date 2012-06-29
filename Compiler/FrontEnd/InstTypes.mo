@@ -40,7 +40,7 @@ encapsulated package InstTypes
 "
 
 public import Absyn;
-public import Connect;
+public import Connect2;
 public import DAE;
 public import SCode;
 public import SCodeEnv;
@@ -263,10 +263,10 @@ public uniontype Equation
 
   record CONNECT_EQUATION
     DAE.ComponentRef lhs "The left hand side component.";
-    Connect.Face lhsFace "The face of the lhs component, inside or outside.";
+    Connect2.Face lhsFace "The face of the lhs component, inside or outside.";
     DAE.Type lhsType     "The type of the lhs component.";
     DAE.ComponentRef rhs "The right hand side component.";
-    Connect.Face rhsFace "The face of the rhs component, inside or outside.";
+    Connect2.Face rhsFace "The face of the rhs component, inside or outside.";
     DAE.Type rhsType     "The type of the rhs component.";
     Prefix prefix;
     Absyn.Info info;

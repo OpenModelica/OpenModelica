@@ -701,5 +701,16 @@ algorithm
   res := listMember(name,basicTypeMods);
 end isBasicTypeComponentName;
 
+public function isTypeOrRecord
+  input State inState;
+  output Boolean outIsTypeOrRecord;
+algorithm
+  outIsTypeOrRecord := match(inState)
+    case TYPE(path = _) then true;
+    case RECORD(path = _) then true;
+    else false;
+  end match;
+end isTypeOrRecord;
+
 end ClassInf;
 

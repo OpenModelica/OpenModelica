@@ -46,7 +46,7 @@ public import SCodeEnv;
 protected import Config;
 protected import Dump;
 protected import Error;
-protected import InstUtil;
+protected import InstDump;
 protected import List;
 protected import SCodeDump;
 protected import Util;
@@ -624,7 +624,7 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
       equation
         res_str = SCodeDump.restrictionStringPP(res);
-        pre_str = InstUtil.printPrefix(inPrefix);
+        pre_str = InstDump.prefixStr(inPrefix);
         Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
           {res_str, pre_str}, inInfo);
       then

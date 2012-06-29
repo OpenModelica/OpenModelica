@@ -43,7 +43,9 @@ ClassInf.mo \
 ClassLoader.mo \
 ComponentReference.mo \
 Connect.mo \
+Connect2.mo \
 ConnectUtil.mo \
+ConnectUtil2.mo \
 ConnectionGraph.mo \
 Constants.mo \
 DAE.mo \
@@ -63,6 +65,7 @@ Inline.mo \
 InnerOuter.mo \
 Inst.mo \
 Instance.mo \
+InstDump.mo \
 InstExtends.mo \
 InstInfo.mo \
 InstSection.mo \
@@ -152,6 +155,7 @@ CodegenQSS.mo \
 CodegenCpp.mo \
 CodegenCSharp.mo \
 DAEDumpTpl.mo \
+InstDumpTpl.mo \
 ExpressionDumpTpl.mo \
 SCodeDumpTpl.mo \
 SimCodeDump.mo \

@@ -7281,4 +7281,50 @@ algorithm
   end match;
 end map1FoldSplit_tail;
 
+public function accumulateMap
+  "Takes a list and a function. The function is applied to each element in the
+   list, and the function is itself responsible for adding elements to the
+   result list."
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outList;
+ 
+  partial function MapFunc
+    input ElementInType inElement;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+  end MapFunc;
+algorithm
+  outList := accumulateMap_impl(inList, inMapFunc, {});
+end accumulateMap;
+
+protected function accumulateMap_impl
+  "The actual implementation of accumulateMap."
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+ 
+  partial function MapFunc
+    input ElementInType inElement;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+  end MapFunc;
+algorithm
+  outList := match(inList, inMapFunc, inAccumList)
+    local
+      ElementInType e;
+      list<ElementInType> rest_e;
+      list<ElementOutType> accum;
+
+    case (e :: rest_e, _, accum)
+      equation
+        accum = inMapFunc(e, accum);
+      then
+        accumulateMap_impl(rest_e, inMapFunc, accum);
+
+    case ({}, _, _) then inAccumList;
+  end match;
+end accumulateMap_impl;
+
 end List;

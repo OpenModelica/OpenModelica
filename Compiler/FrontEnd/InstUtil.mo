@@ -98,10 +98,14 @@ algorithm
       list<list<Statement>> al, ial;
       Class cls;
       DAE.Type ty;
+      list<DAE.Var> vars;
 
     case (elems, eq, ieq, al, ial, _, false)
-      then (InstTypes.COMPLEX_CLASS(elems, eq, ieq, al, ial), 
-        DAE.T_COMPLEX(inState, {}, NONE(), DAE.emptyTypeSource));
+      equation
+        vars = List.accumulateMap(elems, makeDaeVarsFromElement);
+        ty = DAE.T_COMPLEX(inState, vars, NONE(), DAE.emptyTypeSource);
+      then
+        (InstTypes.COMPLEX_CLASS(elems, eq, ieq, al, ial), ty);
 
     case (_, {}, {}, {}, {}, _, true)
       equation
@@ -112,6 +116,76 @@ algorithm
 
   end match;
 end makeClass;
+
+protected function makeDaeVarsFromElement
+  input Element inElement;
+  input list<DAE.Var> inAccumVars;
+  output list<DAE.Var> outVars;
+algorithm
+  outVars := match(inElement, inAccumVars)
+    local
+      Component comp;
+      Class cls;
+      list<DAE.Var> vars;
+      DAE.Var var;
+
+    case (InstTypes.ELEMENT(component = comp, cls = cls), vars)
+      equation
+        var = componentToDaeVar(comp);
+        vars = var :: vars;
+      then
+        makeDaeVarsFromClass(cls, vars);
+
+    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), vars)
+      then makeDaeVarsFromClass(cls, vars);
+
+  end match;
+end makeDaeVarsFromElement;
+
+protected function makeDaeVarsFromClass
+  input Class inClass;
+  input list<DAE.Var> inAccumVars;
+  output list<DAE.Var> outVars;
+algorithm
+  outVars := match(inClass, inAccumVars)
+    local
+      list<Element> elems;
+
+    case (InstTypes.BASIC_TYPE(), _) then inAccumVars;
+    case (InstTypes.COMPLEX_CLASS(components = elems), _)
+      then List.accumulateMap(elems, makeDaeVarsFromElement);
+
+  end match;
+end makeDaeVarsFromClass;
+    
+protected function componentToDaeVar
+  input Component inComponent;
+  output DAE.Var outVar;
+algorithm
+  outVar := match(inComponent)
+    local
+      Absyn.Path path;
+      DAE.Type ty;
+      String name;
+
+    case InstTypes.UNTYPED_COMPONENT(name = path)
+      equation
+        name = Absyn.pathLastIdent(path);
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+          DAE.UNBOUND(), NONE());
+
+    case InstTypes.TYPED_COMPONENT(name = path, ty = ty)
+      equation
+        name = Absyn.pathLastIdent(path);
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, DAE.UNBOUND(), NONE());
+
+    else DAE.TYPES_VAR("dummy", DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+        DAE.UNBOUND(), NONE());
+
+  end match;
+end componentToDaeVar;
 
 public function makeDerivedClassType
   input DAE.Type inType;
@@ -1532,239 +1606,6 @@ algorithm
     else true;
   end matchcontinue;
 end conditionFalse;
-
-public function printBinding
-  input Binding inBinding;
-  output String outString;
-algorithm
-  outString := match(inBinding)
-    local
-      Absyn.Exp aexp;
-      DAE.Exp dexp;
-      DAE.Type ty;
-
-    case (InstTypes.RAW_BINDING(bindingExp = aexp))
-      then " = " +& Dump.printExpStr(aexp);
-
-    case (InstTypes.UNTYPED_BINDING(bindingExp = dexp))
-      then " = " +& ExpressionDump.printExpStr(dexp);
-
-    case (InstTypes.TYPED_BINDING(bindingExp = dexp, bindingType = ty))
-      then " = (" +& Types.unparseType(ty) +& ") " +&
-        ExpressionDump.printExpStr(dexp);
-
-    else "";
-  end match;
-end printBinding;
-
-public function printComponent
-  input Component inComponent;
-  output String outString;
-algorithm
-  outString := match(inComponent)
-    local
-      Absyn.Path path, inner_path;
-      Binding binding;
-      DAE.Type ty;
-
-    case InstTypes.UNTYPED_COMPONENT(name = path, binding = binding)
-      then "  " +& Absyn.pathString(path) +& printBinding(binding);
-
-    case InstTypes.TYPED_COMPONENT(name = path, ty = ty, binding = binding)
-      then "  " +& Types.unparseType(ty) +& " " +& Absyn.pathString(path) +&
-        printBinding(binding);
-
-    case InstTypes.CONDITIONAL_COMPONENT(name = path) 
-      then "  conditional " +& Absyn.pathString(path);
-
-    case InstTypes.DELETED_COMPONENT(name = path)
-      then "  deleted " +& Absyn.pathString(path);
-
-    case InstTypes.OUTER_COMPONENT(name = path, innerName = SOME(inner_path))
-      then "  outer " +& Absyn.pathString(path) +& " -> " +& Absyn.pathString(inner_path);
-
-    case InstTypes.OUTER_COMPONENT(name = path)
-      then "  outer " +& Absyn.pathString(path);
-
-    case InstTypes.PACKAGE(name = path)
-      then "  package " +& Absyn.pathString(path);
-
-    else "#UNKNOWN COMPONENT#";
-  end match;
-end printComponent;
-
-public function printPrefix
-  input Prefix inPrefix;
-  output String outString;
-algorithm
-  outString := match(inPrefix)
-    local
-      String id;
-      DAE.Dimensions dims;
-      Prefix rest_pre;
-
-    case {} then "";
-    case {(id, dims)} then id +& 
-        List.toString(dims, ExpressionDump.dimensionString, "", "[", ", ", "]", false);
-    case ((id, dims) :: rest_pre) then printPrefix(rest_pre) +& "." +& id +&
-        List.toString(dims, ExpressionDump.dimensionString, "", "[", ", ", "]", false);
-
-  end match;
-end printPrefix;
-
-public function printElement
-  input Element inElement;
-  output String outString;
-algorithm
-  outString := match(inElement)
-    local
-      Component comp;
-      list<Element> el;
-      Class cls;
-      String comp_str, cls_str, delim;
-
-    case InstTypes.ELEMENT(component = comp, cls = cls)
-      equation
-        comp_str = printComponent(comp);
-        cls_str = printClass(cls);
-      then
-        Util.stringDelimitListNonEmptyElts({comp_str, cls_str}, "\n");
-
-    case InstTypes.CONDITIONAL_ELEMENT(component = comp)
-      then printComponent(comp);
-
-    case InstTypes.EXTENDED_ELEMENTS(cls = cls)
-      then printClass(cls);
-
-  end match;
-end printElement;
-
-public function printClass
-  input Class inClass;
-  output String outString;
-algorithm
-  outString := match(inClass)
-    local
-      list<Element> comps;
-      list<Equation> eq, ieq;
-      String comps_str, eq_str, ieq_str, str;
-
-    case InstTypes.BASIC_TYPE() then "";
-
-    case InstTypes.COMPLEX_CLASS(components = comps, equations = eq, 
-        initialEquations = ieq)
-      equation
-        comps_str = Util.stringDelimitListNonEmptyElts(
-          List.map(comps, printElement), "\n");
-        ieq_str = stringDelimitList(List.map(ieq, printEquation), "\n  ");
-        ieq_str = Util.stringAppendNonEmpty("\ninitial equation\n  ", ieq_str);
-        eq_str = stringDelimitList(List.map(eq, printEquation), "\n  ");
-        eq_str = Util.stringAppendNonEmpty("\nequation\n  ", eq_str);
-        str = comps_str +& ieq_str +& eq_str;
-      then
-        str;
-
-  end match;
-end printClass;
-
-public function printEquation
-  input Equation inEquation;
-  output String outString;
-algorithm
-  outString := match(inEquation)
-    local
-      DAE.Exp exp1, exp2, cond, msg;
-      DAE.Type ty1, ty2;
-      DAE.ComponentRef cref1, cref2;
-      Connect.Face face1, face2;
-      String index, res, eql_str, range_str;
-      String exp_str1, exp_str2, ty_str1, ty_str2, face_str1, face_str2, str1, str2;
-      list<Equation> eql;
-      list<tuple<DAE.Exp, list<InstTypes.Equation>>> branches;
-
-    case (InstTypes.EQUALITY_EQUATION(lhs = exp1, rhs = exp2))
-      equation
-        exp_str1 = ExpressionDump.printExpStr(exp1);
-        exp_str2 = ExpressionDump.printExpStr(exp2);
-        ty_str1 = Types.unparseType(Expression.typeof(exp1));
-        ty_str2 = Types.unparseType(Expression.typeof(exp2));
-      then
-        exp_str1 +& " {" +& ty_str1 +& "} = {" +& ty_str2 +& "} " +& exp_str2 +& ";";
-
-    case (InstTypes.CONNECT_EQUATION(lhs = cref1, lhsFace = face1,
-        rhs = cref2, rhsFace = face2))
-      equation
-        exp_str1 = ComponentReference.printComponentRefStr(cref1);
-        exp_str2 = ComponentReference.printComponentRefStr(cref2);
-        face_str1 = ConnectUtil.printFaceStr(face1);
-        face_str2 = ConnectUtil.printFaceStr(face2);
-      then
-        "connect(" +& exp_str1 +& " <" +& face_str1 +& ">, " +& exp_str2 +& " <"
-          +& face_str2 +& ">);";
-
-    case (InstTypes.FOR_EQUATION(index = index, indexType = ty1, 
-        range = SOME(exp1), body = eql))
-      equation
-        ty_str1 = Types.unparseType(ty1);
-        range_str = ExpressionDump.printExpStr(exp1);
-        res = "for {" +& ty_str1 +& "} " +& index +& " in " +& range_str +& " loop\n  ";
-        eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
-        res = res +& eql_str +& "\n  end for;\n";
-      then
-        res;
-
-    case (InstTypes.FOR_EQUATION(index = index, indexType = ty1, range = NONE(), body = eql))
-      equation
-        ty_str1 = Types.unparseType(ty1);
-        res = "for {" +& ty_str1 +& "} " +& index +& " loop\n  ";
-        eql_str = stringDelimitList(List.map(eql, printEquation), "\n");
-        res = res +& eql_str +& "\n  end for;\n";
-      then
-        res;
-        
-    case (InstTypes.IF_EQUATION(branches, _))
-      equation
-        res = "if equation;";
-      then
-        res;
-
-    case (InstTypes.WHEN_EQUATION(branches, _))
-      equation
-        res = "when equation;";
-      then
-        res;
-        
-    case (InstTypes.ASSERT_EQUATION(cond, msg, _))
-      equation
-        res = "assert(" +& 
-                ExpressionDump.printExpStr(cond) +& ", " +& 
-                ExpressionDump.printExpStr(msg) +& ")";
-      then
-        res;
-
-    case (InstTypes.TERMINATE_EQUATION(msg, _))
-      equation
-        res = "terminate(" +& ExpressionDump.printExpStr(msg) +& ")";
-      then
-        res;
-
-    case (InstTypes.REINIT_EQUATION(cref1, exp1, _))
-      equation
-        str1 = ComponentReference.printComponentRefStr(cref1);
-        str2 = ExpressionDump.printExpStr(exp1);
-        res = "reinit(" +& str1 +& ", " +& str2 +& ")";
-      then
-        res;
-
-    case (InstTypes.NORETCALL_EQUATION(exp1, _))
-      equation
-        res = ExpressionDump.printExpStr(exp1);
-      then
-        res;
-            
-    else "UNKNOWN EQUATION";
-  end match;
-end printEquation;
 
 public function isArrayAllocation
   input InstTypes.Statement stmt;

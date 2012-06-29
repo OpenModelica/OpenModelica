@@ -53,6 +53,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import InstDump;
 protected import InstUtil;
 protected import List;
 protected import SCode;
@@ -764,7 +765,8 @@ algorithm
         
     else
       equation
-        print("SCodeExpand.expandEquation failed on equation:\n" +& InstUtil.printEquation(inEquation) +& "\n");
+        print("SCodeExpand.expandEquation failed on equation:\n" +&
+            InstDump.equationStr(inEquation) +& "\n");
       then
         inAccumEl;
 

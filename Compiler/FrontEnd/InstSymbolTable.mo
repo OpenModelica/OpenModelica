@@ -52,6 +52,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import Graph;
+protected import InstDump;
 protected import InstUtil;
 protected import List;
 protected import System;
@@ -146,7 +147,7 @@ protected
   HashTable table;
 algorithm
   table := BaseHashTable.emptyHashTableWork(inSize,
-    (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, InstDump.componentStr));
   outSymbolTable := {table};
 end createSized;
 
@@ -487,7 +488,7 @@ algorithm
     else
       equation
         ht = BaseHashTable.emptyHashTableWork(11,
-          (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+          (hashFunc, Absyn.pathEqual, Absyn.pathString, InstDump.componentStr));
         st = ht :: inSymbolTable;
         st = add(inName, inComponent, st);
       then
@@ -503,7 +504,7 @@ protected
   HashTable ht;
 algorithm
   ht := BaseHashTable.emptyHashTableWork(257,
-    (hashFunc, Absyn.pathEqual, Absyn.pathString, InstUtil.printComponent));
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, InstDump.componentStr));
   outSymbolTable := ht :: inSymbolTable;
 end addFunctionScope;
 
