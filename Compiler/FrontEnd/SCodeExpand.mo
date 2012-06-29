@@ -340,7 +340,10 @@ algorithm
         fail();
 
     case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, subs :: rest_subs, _, _)
-      then expandArrayExpDim(inElement, exp, rest_dims, inSubscripts, inAccumEl, inScalarFunc);
+      then expandArrayExpDim(inElement, DAE.INDEX(exp), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
+
+    case (_, EXPAND_FUNCTION(), DAE.DIM_UNKNOWN() :: rest_dims, subs :: rest_subs, _, _)
+      then expandArrayExpDim(inElement, DAE.WHOLEDIM(), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
 
     else
       equation
@@ -391,14 +394,14 @@ end expandArrayIntDim;
 
 protected function expandArrayExpDim
   input ElementType inElement;
-  input DAE.Exp inExp;
+  input DAE.Subscript inSub;
   input list<DAE.Dimension> inDimensions;
   input list<list<DAE.Subscript>> inSubscripts;
   input list<AccumType> inAccumEl;
   input ExpandScalarFunc inScalarFunc;
   output list<AccumType> outElements;
 algorithm
-  outElements :=  match (inElement, inExp, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
+  outElements :=  match (inElement, inSub, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
@@ -407,7 +410,7 @@ algorithm
 
     case (_, _, _, subs :: rest_subs, _, _)
       equation
-        subs = DAE.INDEX(inExp) :: subs;
+        subs = inSub :: subs;
       then expandArray(inElement, EXPAND_FUNCTION(), inDimensions, subs :: rest_subs, inAccumEl, inScalarFunc);
 
   end match;
@@ -908,7 +911,6 @@ algorithm
       list<DAE.Statement> accum_el;
       list<DAE.Dimension> dims;
       list<tuple<DAE.Exp,list<Statement>>> branches;
-      array<InstTypes.Dimension> dimensions;
       String name;
 
     case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _, _)
@@ -920,9 +922,11 @@ algorithm
       then
         accum_el;
 
-    case (InstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty), _, _, _)
+    case (InstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty as DAE.T_ARRAY(dims=dims)), _, _, _)
       equation
-        accum_el = DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl;
+        accum_el = Util.if_(not Expression.arrayContainWholeDimension(dims),
+          DAE.STMT_ARRAY_INIT(name,ty,DAE.emptyElementSource) :: inAccumEl,
+          inAccumEl);
       then
         accum_el;
         

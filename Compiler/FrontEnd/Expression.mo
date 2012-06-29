@@ -7105,7 +7105,7 @@ algorithm
       DAE.Dimensions rest_dims;
     case ({}) then false;
     case (DAE.DIM_UNKNOWN() :: rest_dims) then true;
-    case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
+    case (_ :: rest_dims) then arrayContainWholeDimension(rest_dims);
   end matchcontinue;
 end arrayContainWholeDimension;
 

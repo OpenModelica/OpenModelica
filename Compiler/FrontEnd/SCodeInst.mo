@@ -141,10 +141,10 @@ algorithm
         (cls, symtab) = InstSymbolTable.build(cls);
         (cls, symtab) = assignParamTypes(cls, symtab);
         ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions), Typing.typeFunction, (functions, symtab));
-        (cls, symtab) = Typing.typeClass(cls, symtab);
+        (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
 
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
-        (cls, symtab) = Typing.typeClass(cls, symtab);
+        (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
         (cls, conn) = Typing.typeSections(cls, symtab);
         
         // typechecking
@@ -2252,7 +2252,9 @@ algorithm
     case (elt as InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(name=Absyn.IDENT(name),dimensions=dimensions,info=info),cls),_)
       equation
         dims = List.map(arrayList(dimensions),InstUtil.unwrapDimension);
-        bindings = Util.if_(arrayLength(dimensions)>0,InstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,inBindings);
+        bindings = Util.if_(arrayLength(dimensions)>0,
+          InstTypes.FUNCTION_ARRAY_INIT(name, DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT,dims,DAE.emptyTypeSource), info)::inBindings,
+          inBindings);
       then (elt,bindings);
     else (inElt,inBindings);
   end match;

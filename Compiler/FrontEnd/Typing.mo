@@ -75,6 +75,11 @@ public type Prefix = InstTypes.Prefix;
 public type Statement = InstTypes.Statement;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
+public uniontype Context
+  record CONTEXT_MODEL end CONTEXT_MODEL;
+  record CONTEXT_FUNCTION end CONTEXT_FUNCTION;
+end Context;
+
 public uniontype EvalPolicy
   record NO_EVAL end NO_EVAL;
   record EVAL_CONST end EVAL_CONST;
@@ -83,22 +88,23 @@ end EvalPolicy;
 
 public function typeClass
   input Class inClass;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inSymbolTable)
+  (outClass, outSymbolTable) := match(inClass, inContext, inSymbolTable)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
 
-    case (InstTypes.BASIC_TYPE(), st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(), _, st) then (inClass, st);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _, st)
       equation
-        (comps, st) = List.mapFold(comps, typeElement, st);
+        (comps, st) = List.map1Fold(comps, typeElement, inContext, st);
       then
         (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
 
@@ -107,11 +113,12 @@ end typeClass;
 
 protected function typeElement
   input Element inElement;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Element outElement;
   output SymbolTable outSymbolTable;
 algorithm
-  (outElement, outSymbolTable) := match(inElement, inSymbolTable)
+  (outElement, outSymbolTable) := match(inElement, inContext, inSymbolTable)
     local
       Component comp;
       Class cls;
@@ -119,23 +126,23 @@ algorithm
       SymbolTable st;
       DAE.Type ty;
 
-    case (InstTypes.ELEMENT(comp as InstTypes.UNTYPED_COMPONENT(name = name), cls), st)
+    case (InstTypes.ELEMENT(comp as InstTypes.UNTYPED_COMPONENT(name = name), cls), _, st)
       equation
         comp = InstSymbolTable.lookupName(name, st); 
-        (comp, st) = typeComponent(comp, st);
-        (cls, st) = typeClass(cls, st);
+        (comp, st) = typeComponent(comp, inContext, st);
+        (cls, st) = typeClass(cls, inContext, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.ELEMENT(comp, cls), st)
+    case (InstTypes.ELEMENT(comp, cls), _, st)
       equation
-        (cls, st) = typeClass(cls, st);
+        (cls, st) = typeClass(cls, inContext, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), st)
+    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), _, st)
       equation
-        (cls, st) = typeClass(cls, st);
+        (cls, st) = typeClass(cls, inContext, st);
       then
         (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), st);
 
@@ -146,11 +153,12 @@ end typeElement;
 
 protected function typeComponent
   input Component inComponent;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
-  (outComponent, outSymbolTable) := match(inComponent, inSymbolTable)
+  (outComponent, outSymbolTable) := match(inComponent, inContext, inSymbolTable)
     local
       Absyn.Path name, inner_name;
       DAE.Type ty;
@@ -160,30 +168,30 @@ algorithm
       Component comp, inner_comp;
       SCode.Variability var;
 
-    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding), st)
+    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding), _, st)
       equation
-        (ty, st) = typeComponentDims(inComponent, st);
+        (ty, st) = typeComponentDims(inComponent, inContext, st);
         (comp, st ) = typeComponentBinding(inComponent, SOME(ty), st);
       then
         (comp, st);
 
-    case (InstTypes.TYPED_COMPONENT(name = _), st) then (inComponent, st);
+    case (InstTypes.TYPED_COMPONENT(name = _), _, st) then (inComponent, st);
 
-    case (InstTypes.OUTER_COMPONENT(innerName = SOME(name)), st)
+    case (InstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, st)
       equation
         comp = InstSymbolTable.lookupName(name, st);
-        (comp, st) = typeComponent(comp, st);
+        (comp, st) = typeComponent(comp, inContext, st);
       then
         (comp, st);
 
-    case (InstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), st)
+    case (InstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, st)
       equation
         (_, SOME(inner_comp), st) = InstSymbolTable.updateInnerReference(inComponent, st);
-        (inner_comp, st) = typeComponent(inner_comp, st);
+        (inner_comp, st) = typeComponent(inner_comp, inContext, st);
       then
         (inner_comp, st);
 
-    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
       equation
         print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
       then
@@ -194,11 +202,12 @@ end typeComponent;
 
 protected function typeComponentDims
   input Component inComponent;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outType, outSymbolTable) := matchcontinue(inComponent, inSymbolTable)
+  (outType, outSymbolTable) := matchcontinue(inComponent, inContext, inSymbolTable)
     local
       DAE.Type ty;
       SymbolTable st;
@@ -206,19 +215,24 @@ algorithm
       list<DAE.Dimension> typed_dims;
       Absyn.Path name;
 
-    case (InstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims), st)
+    case (InstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims), _, st)
       equation
         true = intEq(0, arrayLength(dims));
       then
         (ty, st);
 
-    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, dimensions = dims), st)
+    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, dimensions = dims), _, st)
       equation
-        (typed_dims, st) = typeDimensions(dims, name, st);
+        (typed_dims, st) = typeDimensions(dims, name, inContext, st);
       then
         (DAE.T_ARRAY(ty, typed_dims, DAE.emptyTypeSource), st);
         
-    case (InstTypes.TYPED_COMPONENT(ty = ty), st) then (ty, st);
+    case (InstTypes.TYPED_COMPONENT(ty = ty), _, st) then (ty, st);
+    
+    else
+      equation
+        print("Typing.typeComponentDims failed\n");
+      then fail();
 
   end matchcontinue;
 end typeComponentDims;
@@ -226,11 +240,12 @@ end typeComponentDims;
 protected function typeComponentDim
   input Component inComponent;
   input Integer inIndex;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output DAE.Dimension outDimension;
   output SymbolTable outSymbolTable;
 algorithm
-  (outDimension, outSymbolTable) := match(inComponent, inIndex, inSymbolTable)
+  (outDimension, outSymbolTable) := match(inComponent, inIndex, inContext, inSymbolTable)
     local
       list<DAE.Dimension> dims;
       DAE.Dimension typed_dim;
@@ -239,16 +254,16 @@ algorithm
       Dimension dim;
       Absyn.Path name;
 
-    case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, st)
+    case (InstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, st)
       equation
         typed_dim = listGet(dims, inIndex);
       then
         (typed_dim, st);
 
-    case (InstTypes.UNTYPED_COMPONENT(name = name, dimensions = dims_arr), _, st)
+    case (InstTypes.UNTYPED_COMPONENT(name = name, dimensions = dims_arr), _, _, st)
       equation
         dim = arrayGet(dims_arr, inIndex);
-        (typed_dim, st) = typeDimension(dim, name, st, dims_arr, inIndex);
+        (typed_dim, st) = typeDimension(dim, name, inContext, st, dims_arr, inIndex);
       then
         (typed_dim, st);
 
@@ -258,6 +273,7 @@ end typeComponentDim;
 protected function typeDimensions
   input array<Dimension> inDimensions;
   input Absyn.Path inComponentName;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output list<DAE.Dimension> outDimensions;
   output SymbolTable outSymbolTable;
@@ -266,12 +282,13 @@ protected
 algorithm
   len := arrayLength(inDimensions);
   (outDimensions, outSymbolTable) := 
-  typeDimensions2(inDimensions, inComponentName, inSymbolTable, 1, len, {});
+  typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, 1, len, {});
 end typeDimensions;
 
 protected function typeDimensions2
   input array<Dimension> inDimensions;
   input Absyn.Path inComponentName;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   input Integer inIndex;
   input Integer inLength;
@@ -280,14 +297,14 @@ protected function typeDimensions2
   output SymbolTable outSymbolTable;
 algorithm
   (outDimensions, outSymbolTable) :=
-  matchcontinue(inDimensions, inComponentName, inSymbolTable, inIndex, inLength, inAccDims)
+  matchcontinue(inDimensions, inComponentName, inContext, inSymbolTable, inIndex, inLength, inAccDims)
     local
       Dimension dim;
       DAE.Dimension typed_dim;
       SymbolTable st;
       list<DAE.Dimension> dims;
 
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         true = inIndex > inLength;
       then
@@ -297,8 +314,8 @@ algorithm
       equation
         dim = arrayGet(inDimensions, inIndex);
         (typed_dim, st) = 
-          typeDimension(dim, inComponentName, inSymbolTable, inDimensions, inIndex);
-        (dims, st) = typeDimensions2(inDimensions, inComponentName, st, inIndex + 1,
+          typeDimension(dim, inComponentName, inContext, inSymbolTable, inDimensions, inIndex);
+        (dims, st) = typeDimensions2(inDimensions, inComponentName, inContext, st, inIndex + 1,
           inLength, typed_dim :: inAccDims);
       then
         (dims, st);
@@ -309,6 +326,7 @@ end typeDimensions2;
 protected function typeDimension
   input Dimension inDimension;
   input Absyn.Path inComponentName;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   input array<Dimension> inDimensions;
   input Integer inIndex;
@@ -316,7 +334,7 @@ protected function typeDimension
   output SymbolTable outSymbolTable;
 algorithm
   (outDimension, outSymbolTable) := 
-  match(inDimension, inComponentName, inSymbolTable, inDimensions, inIndex)
+  match(inDimension, inComponentName, inContext, inSymbolTable, inDimensions, inIndex)
     local
       SymbolTable st;
       DAE.Dimension dim;
@@ -325,13 +343,13 @@ algorithm
       Dimension typed_dim;
       Component comp;
 
-    case (InstTypes.UNTYPED_DIMENSION(isProcessing = true), _, _, _, _)
+    case (InstTypes.UNTYPED_DIMENSION(isProcessing = true), _, _, _, _, _)
       equation
         print("Found dimension loop\n");
       then
         fail();
 
-    case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, st, _, _)
+    case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
         (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), st);
@@ -342,7 +360,7 @@ algorithm
       then
         (dim, st);
 
-    case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, st, _, _)
+    case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
         comp = InstSymbolTable.lookupName(inComponentName, st);
@@ -354,13 +372,19 @@ algorithm
       then
         (dim, st);
 
-    case (InstTypes.UNTYPED_DIMENSION(dimension = dim), _, st, _, _)
+    case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_FUNCTION(), st, _, _)
+      equation
+        _ = arrayUpdate(inDimensions, inIndex, InstTypes.TYPED_DIMENSION(dim));
+      then
+        (dim, st);
+
+    case (InstTypes.UNTYPED_DIMENSION(dimension = dim), _, _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.TYPED_DIMENSION(dim));
       then 
         (dim, st);
 
-    case (InstTypes.TYPED_DIMENSION(dimension = dim), _, st, _, _) then (dim, st);
+    case (InstTypes.TYPED_DIMENSION(dimension = dim), _, _, st, _, _) then (dim, st);
 
     else
       equation
@@ -661,7 +685,7 @@ algorithm
       equation
         (DAE.ICONST(dim_int), _, st) = typeExp(e2, EVAL_CONST_PARAM(), st);
         comp = InstSymbolTable.lookupCref(cref, st);
-        (dim, st) = typeComponentDim(comp, dim_int, st);
+        (dim, st) = typeComponentDim(comp, dim_int, CONTEXT_MODEL() /* TODO: Propagate here, too */, st);
         e1 = dimensionExp(dim);
       then
         (e1, DAE.T_INTEGER_DEFAULT, st);
@@ -800,7 +824,7 @@ algorithm
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, st)
       equation
         (InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
-          typeComponent(inComponent, st);
+          typeComponent(inComponent, CONTEXT_MODEL(), st);
         exp = InstUtil.getBindingExp(binding);
         // TODO: Apply cref subscripts to the expression.
       then
@@ -808,14 +832,14 @@ algorithm
 
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, _, st)
       equation
-        (ty, st) = typeComponentDims(inComponent, st);
+        (ty, st) = typeComponentDims(inComponent, CONTEXT_MODEL(), st);
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
     case (_, InstTypes.OUTER_COMPONENT(name = _), se, ep, st)
       equation
-        (inner_comp, st) = typeComponent(inComponent, st);
+        (inner_comp, st) = typeComponent(inComponent, CONTEXT_MODEL(), st);
         inner_name = InstUtil.getComponentName(inner_comp);
         inner_cref = InstUtil.removeCrefOuterPrefix(inner_name, inCref);
         (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, st);
@@ -1705,9 +1729,9 @@ algorithm
         (_,st) = InstSymbolTable.addElements(inputs, st);
         (_,st) = InstSymbolTable.addElements(outputs, st);
         (_,st) = InstSymbolTable.addElements(locals, st);
-        (inputs, st) = List.mapFold(inputs, typeElement, st);
-        (outputs, st) = List.mapFold(outputs, typeElement, st);
-        (locals, st) = List.mapFold(locals, typeElement, st);
+        (inputs, st) = List.map1Fold(inputs, typeElement, CONTEXT_FUNCTION(), st);
+        (outputs, st) = List.map1Fold(outputs, typeElement, CONTEXT_FUNCTION(), st);
+        (locals, st) = List.map1Fold(locals, typeElement, CONTEXT_FUNCTION(), st);
         al = typeStatements(al, st);
         ht = BaseHashTable.add((path,InstTypes.FUNCTION(path,inputs,outputs,locals,al)),ht);
         _::st = st;
