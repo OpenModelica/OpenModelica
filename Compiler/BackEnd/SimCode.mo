@@ -5920,7 +5920,7 @@ algorithm
       // [initial equations]
       // initial_equation
       residual_equations = {};
-      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToResidualForm, {});
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToScalarResidualForm, {});
       initialEqs_lst = replaceDerOpInEquationList(initialEqs_lst);
       initialEqs_lst = listReverse(initialEqs_lst);
       initialEqs_lst = List.filterOnTrue(initialEqs_lst, filterNonConstant);

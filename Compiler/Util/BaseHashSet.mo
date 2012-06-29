@@ -278,6 +278,22 @@ algorithm
   end matchcontinue;
 end delete;
 
+public function has
+"Returns true if Key is in the HashSet."
+  input Key key;
+  input HashSet hashSet;
+  output Boolean b;
+algorithm
+  b:= matchcontinue(key,hashSet)
+    case(_,_)
+      equation
+        _ = get(key,hashSet);
+      then
+        true;
+    else
+      then false;
+  end matchcontinue;
+end has;
 
 public function get
 "Returns Key from the HashSet. Fails if not present"

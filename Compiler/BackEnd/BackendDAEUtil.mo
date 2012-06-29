@@ -5471,6 +5471,112 @@ end traverseStmtsElse;
  knots of a bigraph. Additional information about the solvability
  of a variable are availible.
 ******************************************************************/    
+
+public function getAdjacencyMatrixEnhancedScalar
+"function: getAdjacencyMatrixEnhancedScalar
+  author: Frenkel TUD 2012-05
+  Calculates the Adjacency matrix, i.e. which variables are present in each equation
+  and add some information how the variable occure in the equation(see BackendDAE.BackendDAE.Solvability)."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.AdjacencyMatrixEnhanced outIncidenceMatrix;
+  output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceMatrixT;
+  output array<list<Integer>> outMapEqnIncRow;
+  output array<Integer> outMapIncRowEqn;  
+algorithm
+  (outIncidenceMatrix,outIncidenceMatrixT,outMapEqnIncRow,outMapIncRowEqn) := 
+  matchcontinue (syst, shared)
+    local
+      BackendDAE.AdjacencyMatrixEnhanced arr;
+      BackendDAE.AdjacencyMatrixTEnhanced arrT;
+      BackendDAE.Variables vars,kvars;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.WhenClause> wc;
+      Integer numberOfEqs,numberofVars;
+      array<Integer> rowmark "array to mark if a variable is allready found in the equation, and to mark if it is unsolvable(marked negative) in the equation";
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;
+    
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(knownVars=kvars,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
+      equation
+        // get the size
+        numberOfEqs = equationArraySize(eqns);
+        numberofVars = BackendVariable.varsSize(vars);
+        // create the array to hold the Adjacency matrix
+         arrT = arrayCreate(numberofVars, {});
+        // create the array to mark if a variable is allready found in the equation
+        rowmark = arrayCreate(numberofVars, 0);
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = adjacencyMatrixDispatchEnhancedScalar(vars, eqns, wc, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs),rowmark,kvars ,0,{},{});
+      then
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn);
+    
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.getAdjacencyMatrixEnhanced failed"});
+      then
+        fail();
+  end matchcontinue;
+end getAdjacencyMatrixEnhancedScalar;   
+    
+protected function adjacencyMatrixDispatchEnhancedScalar
+"@author: Frenkel TUD 2012-05
+  Calculates the adjacency matrix and the transposed 
+  adjacency matrix."
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqArr; 
+  input list<BackendDAE.WhenClause> wc;
+  input list<BackendDAE.AdjacencyMatrixElementEnhanced> inIncidenceArray;
+  input BackendDAE.AdjacencyMatrixTEnhanced inIncidenceArrayT;
+  input Integer index;
+  input Integer numberOfEqs;
+  input Boolean stop;
+  input array<Integer> rowmark;
+  input BackendDAE.Variables kvars;
+  input Integer inRowSize;
+  input list<list<Integer>> imapEqnIncRow;
+  input list<Integer> imapIncRowEqn;  
+  output BackendDAE.AdjacencyMatrixEnhanced outIncidenceArray;
+  output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceArrayT;
+  output array<list<Integer>> omapEqnIncRow;
+  output array<Integer> omapIncRowEqn;  
+algorithm
+  (outIncidenceArray,outIncidenceArrayT,omapEqnIncRow,omapIncRowEqn) := 
+    match (vars, eqArr, wc, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, rowmark, kvars, inRowSize, imapEqnIncRow, imapIncRowEqn)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      BackendDAE.Equation e;
+      list<BackendDAE.AdjacencyMatrixElementEnhanced> iArr;
+      BackendDAE.AdjacencyMatrixTEnhanced iArrT;
+      Integer i1,rowSize,rowSize1,size;
+      list<list<Integer>> mapEqnIncRow;
+      list<Integer> mapIncRowEqn,rowindxs;
+    
+    // index = numberOfEqs (we reach the end)
+    case (_, _, _, _, _, _, _,  false, _, _, _, _, _) 
+      then 
+        (listArray(inIncidenceArray),inIncidenceArrayT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
+    
+    // index < numberOfEqs 
+    case (_, _, _, iArr, _, _, _, true, _, _, _, _ , _)
+      equation
+        // get the equation
+        e = equationNth(eqArr, index);
+        // compute the row
+        i1 = index+1;
+        (row,size) = adjacencyRowEnhanced(vars, e, wc, i1, rowmark, kvars);
+        rowSize = inRowSize + size;
+        rowindxs = List.intRange2(inRowSize+1, rowSize);
+        i1 = index+1;
+        mapIncRowEqn = List.consN(size,i1,imapIncRowEqn);        
+        // put it in the arrays
+        iArr = List.consN(size,row,iArr);        
+        iArrT = fillincAdjacencyMatrixTEnhanced(row,rowindxs,inIncidenceArrayT);
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = adjacencyMatrixDispatchEnhancedScalar(vars, eqArr, wc, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), rowmark, kvars, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
+      then
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn);
+  end match;
+end adjacencyMatrixDispatchEnhancedScalar;    
+    
     
 public function getAdjacencyMatrixEnhanced
 "function: getAdjacencyMatrixEnhanced
@@ -5550,10 +5656,10 @@ algorithm
         e = equationNth(eqArr, index);
         // compute the row
         i1 = index+1;
-        row = adjacencyRowEnhanced(vars, e, wc, i1, rowmark, kvars);
+        (row,_) = adjacencyRowEnhanced(vars, e, wc, i1, rowmark, kvars);
         // put it in the arrays
         iArr = arrayUpdate(inIncidenceArray, i1, row);
-        iArrT = fillincAdjacencyMatrixTEnhanced(row,i1,inIncidenceArrayT);
+        iArrT = fillincAdjacencyMatrixTEnhanced(row,{i1},inIncidenceArrayT);
         (iArr,iArrT) = adjacencyMatrixDispatchEnhanced(vars, eqArr, wc, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), rowmark, kvars);
       then
         (iArr,iArrT);
@@ -5565,38 +5671,42 @@ protected function fillincAdjacencyMatrixTEnhanced
   helper for adjacencyMatrixDispatchEnhanced. 
   Inserts the rows in the transposed adiacenca matrix."
   input BackendDAE.AdjacencyMatrixElementEnhanced eqns;
-  input BackendDAE.Value e;
+  input list<Integer> eqnsindxs;
   input BackendDAE.AdjacencyMatrixTEnhanced inIncidenceArrayT;
   output BackendDAE.AdjacencyMatrixTEnhanced outIncidenceArrayT;
 algorithm
-  outIncidenceArrayT := matchcontinue (eqns, e, inIncidenceArrayT)
+  outIncidenceArrayT := matchcontinue (eqns, eqnsindxs, inIncidenceArrayT)
     local
       BackendDAE.AdjacencyMatrixElementEnhanced row,rest,newrow;
       BackendDAE.Value v,vabs,en;
       BackendDAE.AdjacencyMatrixTEnhanced mT,mT1;
       BackendDAE.Solvability solva;
+      list<Integer> eqnsindxs1;
     
-    case ({},e,inIncidenceArrayT) then inIncidenceArrayT;
+    case ({},_,_) then inIncidenceArrayT;
     
     case ((v,solva)::rest,_,_)
       equation
         true = intLt(0, v);
         row = inIncidenceArrayT[v];
+        newrow = List.map1(eqnsindxs,Util.makeTuple,solva);
+        newrow = listAppend(newrow,row);
         // put it in the array
-        mT = arrayUpdate(inIncidenceArrayT, v, (e,solva)::row);
+        mT = arrayUpdate(inIncidenceArrayT, v, newrow);
       then
-        fillincAdjacencyMatrixTEnhanced(rest, e, mT);
+        fillincAdjacencyMatrixTEnhanced(rest, eqnsindxs, mT);
         
     case ((v,solva)::rest,_,_)
       equation
         false = intLt(0, v);
         vabs = intAbs(v);
         row = inIncidenceArrayT[vabs];
-        en = 0 - e;
+        eqnsindxs1 = List.map(eqnsindxs,intNeg);
+        newrow = List.map1(eqnsindxs1,Util.makeTuple,solva);
         // put it in the array
-        mT = arrayUpdate(inIncidenceArrayT, vabs, (en,solva)::row);
+        mT = arrayUpdate(inIncidenceArrayT, vabs, newrow);
       then  
-        fillincAdjacencyMatrixTEnhanced(rest, e, mT);
+        fillincAdjacencyMatrixTEnhanced(rest, eqnsindxs, mT);
     
     case (_,_,_)
       equation
@@ -5618,10 +5728,11 @@ protected function adjacencyRowEnhanced
   input array<Integer> rowmark;
   input BackendDAE.Variables kvars;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+  output Integer size;
 algorithm
-  outRow := matchcontinue (inVariables,inEquation,inWhenClause,mark,rowmark,kvars)
+  (outRow,size) := matchcontinue (inVariables,inEquation,inWhenClause,mark,rowmark,kvars)
     local
-      list<Integer> lst;
+      list<Integer> lst,ds;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e,expCref;
       list<DAE.Exp> expl,inputs,outputs;
@@ -5630,30 +5741,35 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       Integer indx,wc_index;
       String eqnstr;
-      Integer i;
+      Integer i,size;
       DAE.Algorithm alg;
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
     
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_,_)
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
         lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
-      then  
-        adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
+      then
+        (row,1);
     // COMPLEX_EQUATION
-    case (vars,BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),_,_,_,_)
+    case (vars,BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2),_,_,_,_)
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
         lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
-        adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});    
+        (row,size);    
     // ARRAY_EQUATION
-    case (vars,BackendDAE.ARRAY_EQUATION(left=e1,right=e2),_,_,_,_)
+    case (vars,BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2),_,_,_,_)
       equation
         lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
         lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
+        size = List.fold(ds,intMul,1);
       then
-        adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});        
+        (row,size);        
     
     // SOLVED_EQUATION
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,_,_,_)
@@ -5661,14 +5777,16 @@ algorithm
         expCref = Expression.crefExp(cr);
         lst = adjacencyRowExpEnhanced(expCref, vars, {},(mark,rowmark));
         lst = adjacencyRowExpEnhanced(e, vars, lst,(mark,rowmark));
+        row = adjacencyRowEnhanced1(lst,expCref,e,vars,kvars,mark,rowmark,{});
       then
-        adjacencyRowEnhanced1(lst,expCref,e,vars,kvars,mark,rowmark,{});
+        (row,1);
     // RESIDUAL_EQUATION
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,_,_,_)
       equation
         lst = adjacencyRowExpEnhanced(e, vars, {},(mark,rowmark));
+        row = adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
       then
-        adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});    
+        (row,1);    
     // WHEN_EQUATION
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,_,_,_)
       equation
@@ -5680,20 +5798,22 @@ algorithm
         e1 = Expression.crefExp(cr);
         lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
         lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
-        adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
+        (row,1);
     
     // ALGORITHM For now assume that algorithm will be solvable for 
     // correct variables. I.e. find all variables in algorithm and add to lst.
     // If algorithm later on needs to be inverted, i.e. solved for
     // different variables than calculated, a non linear solver or
     // analysis of algorithm itself needs to be implemented.
-    case (vars,BackendDAE.ALGORITHM(alg=alg),_,_,_,_)
+    case (vars,BackendDAE.ALGORITHM(size=size,alg=alg),_,_,_,_)
       equation
         expl = Algorithm.getAllExps(alg);
         lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
-      then
-        adjacencyRowEnhanced1(lst,Expression.makeSum(expl),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
+        row = adjacencyRowEnhanced1(lst,Expression.makeSum(expl),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
+      then 
+        (row,size);
             
     else
       equation
@@ -6240,7 +6360,8 @@ algorithm
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
       Variables vars;
       EquationArray eqns;
-      array<list<BackendDAE.Value>> m,mt;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
     case (vars,eqns,m,mt,differentiateIfExp)
       equation
         eqn_lst = equationList(eqns);
@@ -6269,6 +6390,26 @@ algorithm
     case (inTpl) then inTpl;
   end matchcontinue;
 end traverseequationToResidualForm;
+
+public function traverseequationToScalarResidualForm "function: traverseequationToScalarResidualForm
+  author: Frenkel TUD 2010-11
+  helper for calculateJacobian"
+  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      list<BackendDAE.Equation> eqns,reqn;
+      BackendDAE.Equation eqn;
+    case ((eqn,eqns))
+      equation
+        reqn = BackendEquation.equationToScalarResidualForm(eqn);
+        eqns = listAppend(reqn,eqns);
+      then
+        ((eqn,eqns));
+    case (inTpl) then inTpl;
+  end matchcontinue;
+end traverseequationToScalarResidualForm;
 
 protected function calculateJacobianRows "function: calculateJacobianRows
   author: PA
@@ -6373,7 +6514,7 @@ algorithm
         ad = List.map(ds,Util.makeOption);
         subslst = arrayDimensionsToRange(ad);
         subslst = rangesToSubscripts(subslst);
-        expl = List.map1r(subslst,Expression.applyExpSubscripts,e);      
+        expl = List.map1r(subslst,Expression.applyExpSubscripts,e);
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);

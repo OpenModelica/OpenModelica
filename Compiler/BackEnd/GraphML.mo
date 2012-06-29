@@ -40,6 +40,7 @@ encapsulated package GraphML
 
 protected import Util;
 protected import List;
+protected import System;
 
 /*************************************************
  * types 
@@ -180,41 +181,60 @@ public function dumpGraph
  print the graph"
   input Graph inGraph;
   input String name;
+protected
+  String str;
 algorithm
-  dumpStart();
-  dumpGraph_Internal(inGraph,"  ");
-  dumpEnd();
-  //System.writeFile(name,str);           
+  str := dumpStart();
+  str := dumpGraph_Internal(inGraph,"  ",str);
+  str := dumpEnd(str);
+  System.writeFile(name,str);           
 end dumpGraph;
+
+public function printGraph
+"function printGraph
+ autor: Frenkel TUD 2011-08
+ print the graph"
+  input Graph inGraph;
+  input String name;
+algorithm
+  print(dumpStart());
+  print(dumpGraph_Internal(inGraph,"  ",""));
+  print(dumpEnd(""));           
+end printGraph;
 
 /*************************************************
  * protected 
  ************************************************/
 
 protected function dumpStart
+  output String os;
 algorithm
-  print("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
-  print("<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n");
-  print("  <!--Created by yFiles for Java 2.8-->\n");
-  print("  <key for=\"graphml\" id=\"d0\" yfiles.type=\"resources\"/>\n");
-  print("  <key for=\"port\" id=\"d1\" yfiles.type=\"portgraphics\"/>\n");
-  print("  <key for=\"port\" id=\"d2\" yfiles.type=\"portgeometry\"/>\n");
-  print("  <key for=\"port\" id=\"d3\" yfiles.type=\"portuserdata\"/>\n");
-  print("  <key attr.name=\"url\" attr.type=\"string\" for=\"node\" id=\"d4\"/>\n");
-  print("  <key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n");
-  print("  <key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n");
-  print("  <key attr.name=\"Beschreibung\" attr.type=\"string\" for=\"graph\" id=\"d7\"/>\n");
-  print("  <key attr.name=\"url\" attr.type=\"string\" for=\"edge\" id=\"d8\"/>\n");
-  print("  <key attr.name=\"description\" attr.type=\"string\" for=\"edge\" id=\"d9\"/>\n");
-  print("  <key for=\"edge\" id=\"d10\" yfiles.type=\"edgegraphics\"/>\n");
+  os := stringAppendList({
+   "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n",
+   "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n",
+   "  <!--Created by yFiles for Java 2.8-->\n",
+   "  <key for=\"graphml\" id=\"d0\" yfiles.type=\"resources\"/>\n",
+   "  <key for=\"port\" id=\"d1\" yfiles.type=\"portgraphics\"/>\n",
+   "  <key for=\"port\" id=\"d2\" yfiles.type=\"portgeometry\"/>\n",
+   "  <key for=\"port\" id=\"d3\" yfiles.type=\"portuserdata\"/>\n",
+   "  <key attr.name=\"url\" attr.type=\"string\" for=\"node\" id=\"d4\"/>\n",
+   "  <key attr.name=\"description\" attr.type=\"string\" for=\"node\" id=\"d5\"/>\n",
+   "  <key for=\"node\" id=\"d6\" yfiles.type=\"nodegraphics\"/>\n",
+   "  <key attr.name=\"Beschreibung\" attr.type=\"string\" for=\"graph\" id=\"d7\"/>\n",
+   "  <key attr.name=\"url\" attr.type=\"string\" for=\"edge\" id=\"d8\"/>\n",
+   "  <key attr.name=\"description\" attr.type=\"string\" for=\"edge\" id=\"d9\"/>\n",
+   "  <key for=\"edge\" id=\"d10\" yfiles.type=\"edgegraphics\"/>\n"});
 end dumpStart; 
 
 protected function dumpEnd
+  input String is;
+  output String os;
 algorithm
-  print("  <data key=\"d0\">\n");
-  print("    <y:Resources/>\n");
-  print("  </data>\n");
-  print("</graphml>\n");
+  os := stringAppendList({is,
+   "  <data key=\"d0\">\n",
+   "    <y:Resources/>\n",
+   "  </data>\n",
+   "</graphml>\n"});
 end dumpEnd; 
 
 protected function appendString
@@ -226,54 +246,59 @@ end appendString;
 
 protected function dumpGraph_Internal
   input Graph inGraph;
+  input String inStringDelemiter;
   input String inString;
+  output String oString;
 algorithm
-  _ := match (inGraph,inString)
+  oString := match (inGraph,inStringDelemiter,inString)
     local
-      String id,sd,t;
+      String id,sd,t,s;
       Boolean directed;
       list<Node> nodes;
       list<Edge> edges;
-     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),inString)
+     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),_,_)
        equation
          sd = Util.if_(directed,"directed","undirected");
-         t = appendString(inString);
-         print(inString +& "<graph edgedefault=\"" +& sd +& "\" id=\"" +& id +& "\">\n");
-         List.map1_0(nodes,dumpNode,t);
-         List.map1_0(edges,dumpEdge,t);
-         print(t +& "<data key=\"d7\"/>\n");         
-         print(inString +& "</graph>\n");
+         t = appendString(inStringDelemiter);
+         s = stringAppendList({inString,inStringDelemiter,"<graph edgedefault=\"", sd , "\" id=\"" , id , "\">\n"});
+         s = List.fold1(nodes,dumpNode,t,s);
+         s = List.fold1(edges,dumpEdge,t,s);
+         s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});         
+         s = stringAppendList({s,inStringDelemiter , "</graph>\n"});
        then
-        ();     
+        s;     
    end match;
 end dumpGraph_Internal;  
 
 protected function dumpNode
   input Node inNode;
   input String inString;
+  input String iAcc;
+  output String oAcc;
 algorithm
-  _ := match (inNode,inString)
+  oAcc := match (inNode,inString,iAcc)
   local 
-    String id,t,text,st_str,color;
+    String id,t,text,st_str,color,s;
     ShapeType st;
-     case(NODE(id=id,text=text,color=color,shapeType=st) ,inString)
+     case(NODE(id=id,text=text,color=color,shapeType=st) ,_,_)
        equation
-        print(inString +& "<node id=\"" +& id +& "\">\n");
         t = appendString(inString);
-        print(t +& "<data key=\"d5\"/>\n");
-        print(t +& "<data key=\"d6\">\n");
-        print("        <y:ShapeNode>\n");
-        print("          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n");
-        print("          <y:Fill color=\"#" +& color +& "\" transparent=\"false\"/>\n");
-        print("          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n");
-        print("          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">" +& text +&"</y:NodeLabel>\n");
         st_str = getShapeTypeString(st);
-        print("          <y:Shape type=\"" +& st_str +& "\"/>\n");
-        print("        </y:ShapeNode>\n");
-        print(t +& "</data>\n");
-        print(inString +& "</node>\n");
+        s = stringAppendList({iAcc,
+           inString , "<node id=\"" , id , "\">\n",
+           t , "<data key=\"d5\"/>\n",
+           t , "<data key=\"d6\">\n",
+           "        <y:ShapeNode>\n",
+           "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
+           "          <y:Fill color=\"#" , color , "\" transparent=\"false\"/>\n",
+           "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
+           "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">" , text ,"</y:NodeLabel>\n",
+           "          <y:Shape type=\"" , st_str , "\"/>\n",
+           "        </y:ShapeNode>\n",
+           t , "</data>\n",
+           inString ,"</node>\n"});
        then
-        ();     
+        s;     
    end match;
 end dumpNode;  
 
@@ -298,35 +323,38 @@ end getShapeTypeString;
 protected function dumpEdge
   input Edge inEdge;
   input String inString;
+  input String iAcc;
+  output String oAcc;
 algorithm
-  _ := match (inEdge,inString)
+  oAcc := match (inEdge,inString,iAcc)
   local 
-    String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str;  
+    String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;  
     LineType lt;
     Option<ArrowType> sarrow,tarrow;
     Option<EdgeLabel> label;
-   case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow)),inString)
+   case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow)),_,_)
      equation
-      print(inString +& "<edge id=\"" +& id +& "\" source=\"" +& source +& "\" target=\"" +& target +& "\">\n");
-      t = appendString(inString);
-      print(t +& "<data key=\"d8\"/>\n");
-      print(t +& "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n");
-      print(t +& "<data key=\"d10\">\n");
-      print("        <y:PolyLineEdge>\n");
-      print("          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n");
-      lt_str = getLineTypeString(lt);
-      print("          <y:LineStyle color=\"#" +& color +& "\" type=\"" +& lt_str +& "\" width=\"2.0\"/>\n");
-      sl_str = getEdgeLabelString(label);
-      print(sl_str);      
-      sa_str = getArrowTypeString(sarrow);
-      ta_str = getArrowTypeString(tarrow);
-      print("          <y:Arrows source=\"" +& sa_str +& "\" target=\"" +& ta_str +& "\"/>\n");
-      print("          <y:BendStyle smoothed=\"false\"/>\n");
-      print("        </y:PolyLineEdge>\n");
-      print(t +& "</data>\n");
-      print(inString +& "</edge>\n");      
+       t = appendString(inString);
+       lt_str = getLineTypeString(lt);
+       sl_str = getEdgeLabelString(label);
+       sa_str = getArrowTypeString(sarrow);
+       ta_str = getArrowTypeString(tarrow);
+       s = stringAppendList({iAcc,
+           inString , "<edge id=\"" , id , "\" source=\"" , source , "\" target=\"" , target , "\">\n",
+           t , "<data key=\"d8\"/>\n",
+           t , "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
+           t , "<data key=\"d10\">\n",
+           "        <y:PolyLineEdge>\n",
+           "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
+           "          <y:LineStyle color=\"#" , color , "\" type=\"" , lt_str , "\" width=\"2.0\"/>\n",
+           sl_str,      
+           "          <y:Arrows source=\"" , sa_str , "\" target=\"" , ta_str , "\"/>\n",
+           "          <y:BendStyle smoothed=\"false\"/>\n",
+           "        </y:PolyLineEdge>\n",
+           t , "</data>\n",
+           inString , "</edge>\n"});      
      then
-      ();   
+      s;   
    end match;
 end dumpEdge; 
 

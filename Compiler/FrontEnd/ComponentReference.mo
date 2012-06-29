@@ -1004,6 +1004,15 @@ algorithm
   ocr := cr;
 end crefEqualReturn;
 
+public function crefEqualWithoutLastSubs
+  "Checks if two crefs are equal, without considering their last subscripts."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean res;
+algorithm
+  res := crefEqualNoStringCompare(crefStripLastSubs(cr1),crefStripLastSubs(cr2));
+end crefEqualWithoutLastSubs;
+
 public function crefEqualWithoutSubs
   "Checks if two crefs are equal, without considering their subscripts."
   input DAE.ComponentRef cr1;

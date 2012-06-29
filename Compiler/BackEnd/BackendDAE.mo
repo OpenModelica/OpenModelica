@@ -404,8 +404,12 @@ uniontype IndexType
   record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
 end IndexType;
 
+
 public
-type IncidenceMatrixElement = list<Integer>;
+type IncidenceMatrixElementEntry = Integer;
+
+public
+type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
 
 public
 type IncidenceMatrix = array<IncidenceMatrixElement>;
@@ -434,7 +438,10 @@ uniontype Solvability
 end Solvability;
 
 public
-type AdjacencyMatrixElementEnhanced = list<tuple<Integer,Solvability>>;
+type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability>;
+
+public
+type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
 
 public
 type AdjacencyMatrixEnhanced = array<AdjacencyMatrixElementEnhanced>;

@@ -1272,6 +1272,21 @@ algorithm
   end match;
 end expCref;
 
+public function expCrefNegCref
+"function: expCrefNegCref
+  Returns the componentref if DAE.Exp is a CREF or -CREF"
+  input DAE.Exp inExp;
+  output ComponentRef outComponentRef;
+algorithm
+  outComponentRef:=
+  match (inExp)
+    local ComponentRef cr;
+    case (DAE.CREF(componentRef = cr)) then cr;
+    case (DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr))) then cr;
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr))) then cr;
+  end match;
+end expCrefNegCref;
+
 public function expCrefTuple
 "function: expCrefTuple
   Returns the componentref if the expression in inTuple is a CREF."

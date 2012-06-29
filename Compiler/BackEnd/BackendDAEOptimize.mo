@@ -105,6 +105,42 @@ algorithm
   (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,inlineArrayEqn1,false);
 end inlineArrayEqn;
 
+public function inlineArrayEqnShared
+"function: inlineArrayEqnShared"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inDAE)
+    local
+      BackendDAE.Variables ordvars,knvars,exobj,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
+      array<DAE.Constraint> constrs;
+      DAE.FunctionTree funcTree;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
+      list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+      BackendDAE.BackendDAEType btp; 
+      BackendDAE.EqSystems systs,systs1;  
+      BackendDAE.Shared shared;
+      list<BackendDAE.Var> ordvarslst;
+      list<BackendDAE.Equation> eqnslst;
+    case (_) then inDAE;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)))
+      equation
+        eqnslst = BackendDAEUtil.equationList(inieqns);
+        eqnslst = getScalarArrayEqns(eqnslst,{});
+        inieqns = BackendDAEUtil.listEquation(eqnslst);
+        eqnslst = BackendDAEUtil.equationList(remeqns);
+        eqnslst = getScalarArrayEqns(eqnslst,{});
+        remeqns = BackendDAEUtil.listEquation(eqnslst);
+      then BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs));
+  end match;
+end inlineArrayEqnShared;
+
 protected function inlineArrayEqn1
 "function: inlineArrayEqn1
 autor: Frenkel TUD 2011-5"
@@ -7970,6 +8006,8 @@ algorithm
       BackendDAE.JacobianType jacType;
       BackendDAE.AdjacencyMatrixEnhanced me;
       BackendDAE.AdjacencyMatrixTEnhanced meT;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;      
       
     case (_,_,{})
       then (isyst,ishared,false);
@@ -7983,10 +8021,10 @@ algorithm
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
         vars = BackendDAEUtil.listVar1(var_lst);
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.NORMAL());
+        (subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.NORMAL());
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
           
-        (me,meT) =  BackendDAEUtil.getAdjacencyMatrixEnhanced(subsyst,shared);
+        (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,shared);
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
         //  IndexReduction.dumpSystemGraphMLEnhanced(subsyst,shared,me,meT);
@@ -8033,7 +8071,7 @@ algorithm
         //  print("OtherEquationsOrder:\n"); 
         //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
         // handle system in case of liniear and other cases 
-        (syst,shared,b) = tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx);
+        (syst,shared,b) = tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
         Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(b,"Ok system torn\n","System not torn\n"));
         (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
       then
@@ -8760,13 +8798,15 @@ protected function tearingSystemNew4
   input array<Integer> ass2;
   input list<list<Integer>> othercomps;
   input list<Integer> eindex;
-  input list<Integer> vindx;    
+  input list<Integer> vindx;   
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn; 
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output Boolean outRunMatching;
 algorithm
   (osyst,oshared,outRunMatching):=
-    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx)
+    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn)
     local
       list<Integer> tvars,residual,ores;
       list<list<Integer>> othercomps;
@@ -8787,7 +8827,7 @@ algorithm
       list<BackendDAE.Var> vlst,states;
       BackendDAE.BinTree bt;
 
-    case (BackendDAE.JAC_TIME_VARYING(),_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
+    case (BackendDAE.JAC_TIME_VARYING(),_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_,_,_)
     //case (_,_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.TEARING_DUMP, print,"handle linear torn System\n");
@@ -8860,7 +8900,7 @@ algorithm
       then
         (syst,ishared,true);
   
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
         // solve other equations for other vars
@@ -8885,7 +8925,7 @@ algorithm
         syst = replaceTornEquationsinSystem(residual,listArray(eindex),eqns,isyst);
       then
         (syst,ishared,true);           
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (isyst,ishared,false);        
   end matchcontinue;  

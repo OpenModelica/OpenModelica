@@ -1970,6 +1970,14 @@ algorithm
 end getNominalAssert;
 
 
+public function varSortFunc "A sorting function (greatherThan) for Variables based on crefs"
+  input BackendDAE.Var v1;
+  input BackendDAE.Var v2;
+  output Boolean greaterThan;
+algorithm
+  greaterThan := ComponentReference.crefSortFunc(varCref(v1),varCref(v2));
+end varSortFunc;
+
 /* =======================================================
  *
  *  Section for functions that deals with VariablesArray 

@@ -3494,6 +3494,7 @@ algorithm
   (vec2,mapIncRowEqn) := atpl;
   eqn := BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
   //str := BackendDump.equationStr(eqn);
+  //str := intString(mapIncRowEqn[inNode]) +& ": " +&  str;
   str := intString(inNode);
   color := Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
   outGraph := GraphML.addNode("n" +& intString(inNode),str,color,GraphML.RECTANGLE(),inGraph); 

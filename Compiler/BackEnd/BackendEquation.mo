@@ -1159,6 +1159,26 @@ algorithm
   end match;
 end equationAddDAE;
 
+public function equationsAddDAE
+"function: equationAddDAE
+  author: Frenkel TUD 2011-05"
+  input list<BackendDAE.Equation> inEquations;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (inEquations,syst)
+    local
+      BackendDAE.Variables ordvars;
+      BackendDAE.EquationArray eqns,eqns1;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
+      equation
+        eqns1 = List.fold(inEquations,equationAdd,eqns);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
+  end match;
+end equationsAddDAE;
+
 public function equationSetnthDAE
   "Note: Does not update the incidence matrix (just like equationSetnth).
   Call BackendDAEUtil.updateIncidenceMatrix if the inc.matrix changes."
@@ -1219,6 +1239,26 @@ algorithm
   outEqns := List.map1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
 end getEqns;
   
+public function equationDeleteDAE
+"function: equationDeleteDAE
+  author: Frenkel TUD 2011-05"
+  input list<Integer> inIntLst;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (inIntLst,syst)
+    local
+      BackendDAE.Variables ordvars;
+      BackendDAE.EquationArray eqns,eqns1;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
+      equation
+        eqns1 = equationDelete(eqns,inIntLst);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
+  end match;
+end equationDeleteDAE;  
+  
 public function equationDelete "function: equationDelete
   author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."
@@ -1241,6 +1281,68 @@ algorithm
         outEquationArray;
   end match;   
 end equationDelete;
+
+public function equationToScalarResidualForm "function: equationToScalarResidualForm
+  author: Frenkel TUD 2012-06
+  This function transforms an equation to its scalar residual form.
+  For instance, a=b is transformed to a-b=0, and the instance {a[1],a[2]}=b to a[1]=b[1] and a[2]=b[2]"
+  input BackendDAE.Equation inEquation;
+  output list<BackendDAE.Equation> outEquations;
+algorithm
+  outEquations := matchcontinue (inEquation)
+    local
+      DAE.Exp e,e1,e2,exp;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
+      BackendDAE.Equation backendEq;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      list<DAE.Exp> explst;
+      list<BackendDAE.Equation> eqns;
+      list<list<DAE.Subscript>> subslst;
+    
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
+      equation
+        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
+        exp = Expression.expSub(e1,e2);
+        (e,_) = ExpressionSimplify.simplify(exp);
+      then
+        {BackendDAE.RESIDUAL_EQUATION(e,source)};
+    
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source = source))
+      equation
+        e1 = Expression.crefExp(cr);
+        exp = Expression.expSub(e1,e2);
+        (e,_) = ExpressionSimplify.simplify(exp);
+      then
+        {BackendDAE.RESIDUAL_EQUATION(e,source)};
+    
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source))
+      equation
+        exp = Expression.expSub(e1,e2);
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        explst = List.map1r(subslst,Expression.applyExpSubscripts,exp);
+        explst = ExpressionSimplify.simplifyList(explst, {});
+        eqns = List.map1(explst,generateRESIDUAL_EQUATION,source);
+      then eqns;          
+      
+    case (backendEq as BackendDAE.COMPLEX_EQUATION(source = source)) then {backendEq};
+    
+    case (backendEq as BackendDAE.RESIDUAL_EQUATION(exp = _,source = source)) then {backendEq};
+    
+    case (backendEq as BackendDAE.ALGORITHM(alg = _)) then {backendEq};
+    
+    case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation = _)) then {backendEq};
+    
+    case (backendEq)
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToScalarResidualForm failed");
+      then
+        fail();
+  end matchcontinue;
+end equationToScalarResidualForm;
 
 public function equationToResidualForm "function: equationToResidualForm
   author: PA
@@ -1266,7 +1368,6 @@ algorithm
     
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source = source))
       equation
-        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
         e1 = Expression.crefExp(cr);
         exp = Expression.expSub(e1,e2);
         (e,_) = ExpressionSimplify.simplify(exp);
@@ -1275,16 +1376,14 @@ algorithm
     
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2,source = source))
       equation
-        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
         exp = Expression.expSub(e1,e2);
-        (e,_) = ExpressionSimplify.simplify(exp);
+        (e,_) = ExpressionSimplify.simplify(exp);        
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);    
     
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2,source = source))
       equation
-        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
-        exp = Expression.expSub(e1,e2);
+         exp = Expression.expSub(e1,e2);
         (e,_) = ExpressionSimplify.simplify(exp);
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);     
@@ -1473,13 +1572,21 @@ Author: Frenkel TUD 2010-05"
   input tuple<DAE.Exp,DAE.Exp> inTpl;
   input DAE.ElementSource Source;
   output BackendDAE.Equation outEqn;
-algorithm outEqn := match(inTpl,Source)
-  local
-    DAE.Exp e1,e2;
-    DAE.ElementSource source;
-  case ((e1,e2),source) then BackendDAE.EQUATION(e1,e2,source);
- end match;
+protected
+  DAE.Exp e1,e2;
+algorithm 
+  (e1,e2) := inTpl;
+  outEqn :=BackendDAE.EQUATION(e1,e2,Source);
 end generateEQUATION;
+
+public function generateRESIDUAL_EQUATION "
+Author: Frenkel TUD 2010-05"
+  input DAE.Exp inExp;
+  input DAE.ElementSource Source;
+  output BackendDAE.Equation outEqn;
+algorithm 
+  outEqn := BackendDAE.RESIDUAL_EQUATION(inExp,Source);
+end generateRESIDUAL_EQUATION;
 
 public function daeEqns
   input BackendDAE.EqSystem syst;
