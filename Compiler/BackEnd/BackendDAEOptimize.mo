@@ -4165,7 +4165,7 @@ algorithm
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         v = BackendDAEUtil.listVar1(var_lst);
         ((_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(v,{},{}));
-        //beqs = listReverse(beqs);
+        beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
         (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
