@@ -565,54 +565,60 @@ protected function subscriptCref
 algorithm
   outCref := match(inCref, inSubscripts)
     case (_, {{}}) then inCref;
-    else subscriptCref2(inCref, inSubscripts);
+    else subscriptCref2(inCref, inSubscripts, inCref, inSubscripts);
   end match;
 end subscriptCref;
 
 protected function subscriptCref2
   input DAE.ComponentRef inCref;
   input list<list<DAE.Subscript>> inSubscripts;
+  input DAE.ComponentRef inCrefFull;
+  input list<list<DAE.Subscript>> inSubscriptsFull;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inSubscripts)
+  outCref := match(inCref, inSubscripts, inCrefFull, inSubscriptsFull)
     local
-      String id;
+      String id, str;
       DAE.Type ty;
       DAE.ComponentRef cref;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
 
-    case (DAE.CREF_IDENT(id, ty, {}), {subs})
+    case (DAE.CREF_IDENT(id, ty, {}), {subs}, _, _)
       then DAE.CREF_IDENT(id, ty, subs);
 
-    case (DAE.CREF_IDENT(id, ty, subs), {_})
+    case (DAE.CREF_IDENT(id, ty, subs), {_}, _, _)
       then DAE.CREF_IDENT(id, ty, subs);
 
-    case (DAE.CREF_QUAL(id, ty, {}, cref), subs :: rest_subs)
+    case (DAE.CREF_QUAL(id, ty, {}, cref), subs :: rest_subs, _, _)
       equation
-        cref = subscriptCref2(cref, rest_subs);
+        cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
       then
         DAE.CREF_QUAL(id, ty, subs, cref);
 
-    case (DAE.CREF_QUAL(id, ty, subs, cref), _ :: rest_subs)
+    case (DAE.CREF_QUAL(id, ty, subs, cref), _ :: rest_subs, _, _)
       equation
-        cref = subscriptCref2(cref, rest_subs);
+        cref = subscriptCref2(cref, rest_subs, inCrefFull, inSubscriptsFull);
       then
         DAE.CREF_QUAL(id, ty, subs, cref);
 
-    case (DAE.WILD(), _) then inCref;
+    case (DAE.WILD(), _, _, _) then inCref;
 
-    case (_, {})
+    case (_, {}, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeExpand.subscriptCref ran out of subscripts!\n"});
+        str = "SCodeExpand.subscriptCref ran out of subscripts on cref: " +&  
+          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
+          ComponentReference.printComponentRefStr(inCref) +& "!\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
 
-    case (DAE.CREF_IDENT(ident = _), _)
+    case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeExpand.subscriptCref got too many subscripts!\n"});
+        str = "SCodeExpand.subscriptCref got too many subscripts on cref: " +&  
+          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
+          ComponentReference.printComponentRefStr(inCref) +& "!\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
 

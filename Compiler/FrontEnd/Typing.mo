@@ -1188,6 +1188,12 @@ algorithm
       then
         (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
 
+    case (_, SOME(InstTypes.DELETED_COMPONENT(_)), _, _)
+      equation
+        print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");      
+      then
+        (Connect.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
+
     // A component that should be added to an expandable connector. It can only
     // be outside, since only connectors on the form m.c are inside.
     case (_, NONE(), SOME(_), _)
