@@ -5941,6 +5941,7 @@ algorithm
       initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToResidualForm, {});
       initialEqs_lst = replaceDerOpInEquationList(initialEqs_lst);
       initialEqs_lst = listReverse(initialEqs_lst);
+      initialEqs_lst = List.filterOnTrue(initialEqs_lst, filterNonConstant);
       initialEqs_lst = List.filter(initialEqs_lst, failUnlessResidual);
       (tmpResiduals,_) = List.mapFold(initialEqs_lst, dlowEqToSimEqSystem, 0);
       residual_equations = listAppend(residual_equations, tmpResiduals);
@@ -6056,6 +6057,50 @@ algorithm
         (SES_ALGORITHM(iuniqueEqIndex,algStatements),iuniqueEqIndex+1);
   end match;
 end dlowAlgToSimEqSystem;
+
+protected function filterNonConstant
+  input BackendDAE.Equation eq;
+  output Boolean b;
+algorithm
+  b := matchcontinue (eq)
+    local
+      DAE.Exp exp,e1,e2;
+      Boolean b1;
+      DAE.ElementSource source;
+    case (BackendDAE.RESIDUAL_EQUATION(exp=exp)) then (not Expression.isConst(exp));
+
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2, source = source))
+      equation
+        true = Expression.isConst(e1);
+        true = Expression.isConst(e2);
+        b1 = Expression.expEqual(e1, e2);
+        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
+      then
+        false;
+    
+    case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2,source = source))
+      equation
+        true = Expression.isConst(e1);
+        true = Expression.isConst(e2);
+        b1 = Expression.expEqual(e1, e2);
+        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
+      then
+        false;
+    
+    case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2,source = source))
+      equation
+        true = Expression.isConst(e1);
+        true = Expression.isConst(e2);
+        b1 = Expression.expEqual(e1, e2);
+        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
+      then
+        false;     
+    else
+     then
+       true;
+  end matchcontinue;
+end filterNonConstant;
+
 
 protected function failUnlessResidual
   input BackendDAE.Equation eq;
