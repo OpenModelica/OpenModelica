@@ -804,7 +804,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp,symjacs),(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn))
       equation
         // do late Inline also in orgeqnslst
-        (orgEqnsLst,_) = traverseOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),inlineEqn,{});
+        orgEqnsLst = traverseOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),Inline.inlineEq,{});
         // replace all der(x) with dx
         (orgEqnsLst,wclst,_) = traverseOrgEqnsExp(orgEqnsLst,wclst,so,replaceDerStatesStates,{});
         shared = BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp,symjacs);
@@ -854,24 +854,6 @@ algorithm
   end matchcontinue;
 end dynamicStateSelection;
 
-protected function inlineEqn
-  input tuple<BackendDAE.Equation, Inline.Functiontuple> inTpl;
-  output tuple<BackendDAE.Equation, Inline.Functiontuple> outTpl;
-algorithm
-  outTpl :=
-  matchcontinue inTpl
-    local  
-      Inline.Functiontuple fnt;
-      BackendDAE.Equation e;
-    case ((e,fnt))
-      equation
-         e = Inline.inlineEq(e,fnt);
-       then
-        ((e,fnt));
-    case inTpl then inTpl;
-  end matchcontinue;
-end inlineEqn;
-
 protected function countOrgEqns
 "function: countOrgEqns
   author: Frenkel TUD 2012-06
@@ -902,27 +884,26 @@ protected function traverseOrgEqns
   input FuncEqnType func;
   input BackendDAE.ConstraintEquations inAcc;
   output BackendDAE.ConstraintEquations outOrgEqns;
-  output Type_a outA;
   partial function FuncEqnType
-    input tuple<BackendDAE.Equation, Type_a> inTpl;
-    output tuple<BackendDAE.Equation, Type_a> outTpl;
+    input BackendDAE.Equation inEqn;
+    input Type_a type_a;
+    output BackendDAE.Equation outEqn;
   end FuncEqnType;  
   replaceable type Type_a subtypeof Any;  
 algorithm
-  (outOrgEqns,outA) :=
+  outOrgEqns :=
   match (inOrgEqns,inA,func,inAcc)
     local
       Integer e;
       list<BackendDAE.Equation> orgeqns;
-      BackendDAE.ConstraintEquations rest,orgeqnslst;
+      BackendDAE.ConstraintEquations rest;
       Type_a a;
-    case ({},_,_,_) then (listReverse(inAcc),inA);
+    case ({},_,_,_) then listReverse(inAcc);
     case ((e,orgeqns)::rest,_,_,_)
       equation
-        (orgeqns,a) = BackendEquation.traverseBackendDAEEqnList(orgeqns,func,inA);
-        (orgeqnslst,a) = traverseOrgEqns(rest,a,func,(e,orgeqns)::inAcc);
+        orgeqns = List.map1(orgeqns, func, inA);
       then
-        (orgeqnslst,a);
+        traverseOrgEqns(rest,inA,func,(e,orgeqns)::inAcc);
   end match;
 end traverseOrgEqns;
 
@@ -2821,7 +2802,7 @@ algorithm
         //BackendDAE.DAE({syst},shared as BackendDAE.SHARED(arrayEqs=ae)) = BackendDAEOptimize.inlineArrayEqn(BackendDAE.DAE({syst},shared));
 
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (orgEqnsLst,_) = traverseOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),inlineEqn,{});
+        orgEqnsLst = traverseOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),Inline.inlineEq,{});
         (orgEqnsLst,wclst,_) = traverseOrgEqnsExp(orgEqnsLst,wclst,so,replaceDerStatesStates,{});
         
         Debug.fcall(Flags.BLT_DUMP, BackendDAETransform.dumpStateOrder, so); 

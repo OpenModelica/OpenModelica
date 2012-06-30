@@ -987,35 +987,6 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEOptEqnWithUpdate;
 
-public function traverseBackendDAEEqnList"function: traverseBackendDAEEqnList
-  author: Frenkel TUD 2012-06
-  traverse all all Equations of a List. It is possible to change the equations"
-  replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.Equation> inEquations;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output list<BackendDAE.Equation> outEquations;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<BackendDAE.Equation, Type_a> inTpl;
-    output tuple<BackendDAE.Equation, Type_a> outTpl;
-  end FuncExpType;
-algorithm
-  (outEquations,outTypeA) := match(inEquations,func,inTypeA)
-  local 
-       BackendDAE.Equation e,e1;
-       list<BackendDAE.Equation> res,eqns;
-       Type_a ext_arg_1,ext_arg_2;
-    case({},func,inTypeA) then ({},inTypeA);
-    case(e::res,func,inTypeA)
-     equation
-      ((e1,ext_arg_1)) = func((e,inTypeA));
-      (eqns,ext_arg_2)  = traverseBackendDAEEqnList(res,func,ext_arg_1);
-    then 
-      (e1::eqns,ext_arg_2);
-    end match;
-end traverseBackendDAEEqnList;
-
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;

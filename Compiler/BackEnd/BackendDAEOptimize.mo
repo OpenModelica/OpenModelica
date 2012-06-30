@@ -8043,7 +8043,7 @@ algorithm
         ass2 = arrayCreate(size,-1);
         
         columark = arrayCreate(size,-1);
-        tvars = tearingSystemNew2(me,meT,size,vars,eqns,shared,ass1,ass2,columark,1,{});
+        tvars = tearingSystemNew2(me,meT,size,vars,shared,ass1,ass2,columark,1,{});
         ass1 = List.fold(tvars,unassignTVars,ass1);
         // unmatched equations are residual equations
         residual = Matching.getUnassigned(size,ass2,{});
@@ -8557,7 +8557,6 @@ protected function tearingSystemNew2
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input Integer size;
   input BackendDAE.Variables vars;
-  input BackendDAE.EquationArray eqns;
   input BackendDAE.Shared ishared;
   input array<Integer> ass1; 
   input array<Integer> ass2;
@@ -8566,7 +8565,7 @@ protected function tearingSystemNew2
   input list<Integer> inTVars;
   output list<Integer> outTVars;
 algorithm
-  outTVars := matchcontinue(m,mt,size,vars,eqns,ishared,ass1,ass2,columark,mark,inTVars)
+  outTVars := matchcontinue(m,mt,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
       Integer tvar;
       list<Integer> unassigned;
@@ -8576,7 +8575,7 @@ algorithm
       list<BackendDAE.Equation> elst;
       BackendDAE.Variables vars1;
       BackendDAE.EquationArray eqns1;      
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         // select tearing var
         tvar = selectTearingVar(vars,ass1,ass2,m,mt);
@@ -8600,7 +8599,7 @@ algorithm
         // check for unassigned vars, if there some rerun 
         unassigned = Matching.getUnassigned(size,ass1,{});
       then
-        tearingSystemNew3(unassigned,m,mt,size,vars,eqns,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        tearingSystemNew3(unassigned,m,mt,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
     else
       equation
         print("BackendDAEOptimize.tearingSystemNew2 failed!");
@@ -8654,7 +8653,6 @@ protected function tearingSystemNew3
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input Integer size;
   input BackendDAE.Variables vars;
-  input BackendDAE.EquationArray eqns;
   input BackendDAE.Shared ishared;
   input array<Integer> ass1; 
   input array<Integer> ass2;
@@ -8663,12 +8661,12 @@ protected function tearingSystemNew3
   input list<Integer> inTVars;
   output list<Integer> outTVars;
 algorithm
-  outTVars := match(unassigend,m,mt,size,vars,eqns,ishared,ass1,ass2,columark,mark,inTVars)
+  outTVars := match(unassigend,m,mt,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
       Integer tvar;
       list<Integer> vareqns,unassigned;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then inTVars;
-    else then tearingSystemNew2(m,mt,size,vars,eqns,ishared,ass1,ass2,columark,mark,inTVars);
+    case ({},_,_,_,_,_,_,_,_,_,_) then inTVars;
+    else then tearingSystemNew2(m,mt,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
   end match; 
 end tearingSystemNew3;
 
@@ -8830,7 +8828,7 @@ algorithm
     //case (_,_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.TEARING_DUMP, print,"handle linear torn System\n");
-        size = listLength(eindex);
+        size = listLength(vindx);
         eqns = BackendEquation.daeEqns(subsyst);
         vars = BackendVariable.daeVars(subsyst);
         // add temp variables for other vars at point zero (k0)
