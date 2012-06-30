@@ -4991,7 +4991,6 @@ algorithm
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(const jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
-        simVars = listReverse(simVars);
         ((_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{}));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
@@ -5033,7 +5032,6 @@ algorithm
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(time varying jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
-        simVars = listReverse(simVars);
         ((_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{}));
         beqs = listReverse(beqs);
         simJac = List.map1(jac, jacToSimjac, v);

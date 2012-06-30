@@ -4111,7 +4111,6 @@ algorithm
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);        
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
-        var_lst = listReverse(var_lst);
         (syst,shared,movedVars) = solveLinearSystem(syst,shared,eqn_lst,var_lst,jac,inMovedVars);
         remeqnlst = listAppend(eindex,inEqnlst);
         (syst,shared,b,remeqnlst1,movedVars1) = constantLinearSystem1(syst,shared,comps,remeqnlst,movedVars);
