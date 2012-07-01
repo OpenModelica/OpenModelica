@@ -5935,7 +5935,7 @@ algorithm
       residual_equations = listAppend(residual_equations, tmpResiduals);
       
       // [initial algorithms]
-      // is still missing
+      // is still missing but algorithms from initial equations are generate in parameter eqns.
       residual_algorithms = {};
       
       numberOfInitialEquations = listLength(residual_equations);
@@ -6161,8 +6161,8 @@ algorithm
       array<Algorithm.Algorithm> algs;
       array<DAE.Constraint> constrs;
       BackendDAE.EquationArray ie,pe,emptyeqns,remeqns;
-      list<SimEqSystem> simvarasserts;
-      list<DAE.Algorithm> varasserts,varasserts1;
+      list<SimEqSystem> simvarasserts,inalgs;
+      list<DAE.Algorithm> varasserts,varasserts1,ialgs;
       BackendDAE.BackendDAE paramdlow,paramdlow1;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.AliasVariables alisvars;
@@ -6220,11 +6220,15 @@ algorithm
                                                                              
         (helpVarInfo, BackendDAE.DAE({syst},shared),_) = generateHelpVarInfo(paramdlow);
         (parameterEquations,_,uniqueEqIndex) = createEquations(false, false, true, false, false, syst, shared, comps, helpVarInfo,iuniqueEqIndex);
-        
+    
+        ialgs = BackendEquation.traverseBackendDAEEqns(ie,traverseAlgorithmFinder,{});
+        ialgs = listReverse(ialgs);
+        (inalgs,uniqueEqIndex) = List.mapFold(ialgs,dlowAlgToSimEqSystem,uniqueEqIndex);
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
         (simvarasserts,uniqueEqIndex) = List.mapFold(varasserts,dlowAlgToSimEqSystem,uniqueEqIndex);
         
+        parameterEquations = listAppend(parameterEquations, inalgs);
         parameterEquations = listAppend(parameterEquations, simvarasserts);
         parameterEquations = listAppend(parameterEquations, acc);
       then
@@ -6236,6 +6240,24 @@ algorithm
       then fail();
   end matchcontinue;
 end createParameterEquations;
+
+protected function traverseAlgorithmFinder "function: traverseAlgorithmFinder
+  author: Frenkel TUD 2010-12
+  collect all used algorithms"
+  input tuple<BackendDAE.Equation, list<DAE.Algorithm>> inTpl;
+  output tuple<BackendDAE.Equation, list<DAE.Algorithm>> outTpl;
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      BackendDAE.Equation eqn;
+      DAE.Algorithm alg;
+      list<DAE.Algorithm> algs;
+      case ((eqn as BackendDAE.ALGORITHM(alg=alg),algs))
+        then
+          ((eqn,alg::algs));
+    case (inTpl) then inTpl;
+  end matchcontinue;
+end traverseAlgorithmFinder;
 
 protected function createInitialAssignmentsFromStart
   input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.AliasVariables>> inTpl;
