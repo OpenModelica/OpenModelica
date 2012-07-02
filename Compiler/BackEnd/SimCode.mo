@@ -5682,6 +5682,7 @@ algorithm
     local
       Integer indx;
       list<Integer> ds;
+      list<Option<Integer>> ad;
       DAE.Exp e1,e2;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
@@ -5702,6 +5703,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Integer uniqueEqIndex;
+      String str;
+      list<list<DAE.Subscript>> subslst;
 
     
 
@@ -5743,11 +5746,38 @@ algorithm
         (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         (equations_,noDiscequations,uniqueEqIndex) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex);
       then
-        (equations_,noDiscequations,uniqueEqIndex);      
+        (equations_,noDiscequations,uniqueEqIndex);    
+    case (genDiscrete,BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source)::_,vars,helpVarInfo,_)
+      equation
+        e1 = replaceDerOpInExp(e1);
+        e2 = replaceDerOpInExp(e2);
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        ea1 = List.map1r(subslst,Expression.applyExpSubscripts,e1);
+        ea2 = List.map1r(subslst,Expression.applyExpSubscripts,e2);
+        ealst = List.threadTuple(ea1,ea2);
+        re = List.map1(ealst,BackendEquation.generateEQUATION,source);
+        eqns_1 = BackendDAEUtil.listEquation(re);
+        av = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        evars = BackendDAEUtil.listVar({});
+        constrs = listArray({});
+        funcs = DAEUtil.avlTreeNew();
+        vars1 = BackendDAEUtil.listVar(vars);
+        syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM(),{});
+        subsystem_dae = BackendDAE.DAE({syst},shared);
+        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
+        (equations_,noDiscequations,uniqueEqIndex) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex);
+      then
+        (equations_,noDiscequations,uniqueEqIndex);  
         // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"array equations currently only supported on form v = functioncall(...)"});
+        str = BackendDump.dumpEqnsStr(inEquations);
+        str = "for Eqn: " +& str +& "\narray equations currently only supported on form v = functioncall(...)";
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
   end matchcontinue;
@@ -8524,8 +8554,8 @@ algorithm
         e = Expression.expSub(e1,e2);
         (res,_) = ExpressionSimplify.simplify(e);
         (f,rhs) = Expression.getTermsContainingX(res,Expression.crefExp(v));
-        (vTerm as DAE.CREF(_,_),_) = ExpressionSimplify.simplify(f);
-        (rhs,_) = ExpressionSimplify.simplify(Expression.negate(rhs));
+        (vTerm,_) = ExpressionSimplify.simplify(f);
+        (e22,rhs) = solveTrivialArrayEquation2(vTerm,rhs);
       then 
         (vTerm,rhs);
         
@@ -8533,6 +8563,34 @@ algorithm
     case(v,e1,e2) then (e1,e2);
   end matchcontinue;
 end solveTrivialArrayEquation;
+
+protected function solveTrivialArrayEquation2
+"function: solveTrivialArrayEquation2
+  author: Frenkel TUD - 2012-07
+  helper for solveTrivialArrayEquation"
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outE1;
+  output DAE.Exp outE2;
+algorithm
+  (outE1,outE2) := match(e1,e2)
+    local
+      DAE.Exp lhs,rhs;
+    case(DAE.CREF(componentRef=_),_)
+      equation
+        (rhs,_) = ExpressionSimplify.simplify(Expression.negate(e2));
+      then 
+        (e1,rhs);
+
+    case(DAE.UNARY(exp=lhs as DAE.CREF(componentRef=_)),_)
+      equation
+        (rhs,_) = ExpressionSimplify.simplify(e2);
+          BackendDump.debugStrExpStrExpStr(("Solved result: ",lhs," = ",rhs,"\n"));
+      then 
+        (lhs,rhs);
+
+  end match;
+end solveTrivialArrayEquation2;
 
 protected function getVectorizedCrefFromExp
 "function: getVectorizedCrefFromExp
