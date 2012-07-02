@@ -529,6 +529,14 @@ algorithm
       HashSet.HashSet ht;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
+    // Scip Whild
+    case((e as DAE.CREF(componentRef=DAE.WILD()),ht))
+      then
+        ((e,false,ht));    
+    // Scip time
+    case((e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time",subscriptLst={})),ht))
+      then
+        ((e,false,ht));    
     case((e as DAE.CREF(componentRef=cr),ht))
       equation
         crlst = ComponentReference.expandCref(cr,true);

@@ -2342,8 +2342,8 @@ end equationNth;
 public function systemSize 
 "function: equationSize
   author: Frenkel TUD
-  Returns the size of the dae system, which 
-  corresponds to the number of equations in a system."
+  Returns the size of the dae system, the size of the equations in an EquationArray,
+  which not corresponds to the number of equations in a system."
   input BackendDAE.EqSystem dae;
   output Integer n;
 algorithm
