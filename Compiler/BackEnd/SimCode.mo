@@ -4370,7 +4370,7 @@ algorithm
         subslst = BackendDAEUtil.rangesToSubscripts(subslst);
         explst = List.map1r(subslst,Expression.applyExpSubscripts,res_exp);
         (eqSystemsRest,uniqueEqIndex) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(explst,makeSES_RESIDUAL,source,uniqueEqIndex);
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(listReverse(explst),makeSES_RESIDUAL,source,uniqueEqIndex);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);                
       then 
         (eqSystemsRest,uniqueEqIndex+1);     

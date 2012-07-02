@@ -6689,16 +6689,18 @@ algorithm
         ((e,_)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
         e_1 = Derive.differentiateExp(e, dcr, differentiateIfExp);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
+        es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
       then
-        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,source,(eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,source)) :: iAcc);   
+        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,source,es);   
     case (_,_,_,vindx :: vindxs,_,_,_)
       equation
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
         e_1 = Derive.differentiateExp(inExp, cr, differentiateIfExp);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
+        es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
       then
-        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,source,(eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,source)) :: iAcc);
+        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,source,es);
     case (_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6708,6 +6710,25 @@ algorithm
         fail();        
   end matchcontinue;
 end calculateJacobianRow2;
+
+protected function calculateJacobianRow3
+  input Integer eqn_indx;
+  input Integer vindx;
+  input DAE.Exp inExp;
+  input DAE.ElementSource source;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
+  output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
+algorithm
+  outLst := matchcontinue(eqn_indx,vindx,inExp,source,iAcc)
+    case (_,_,_,_,_)
+      equation
+        true = Expression.isZero(inExp);
+      then
+        iAcc;
+    else
+      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source)) :: iAcc;
+  end matchcontinue;
+end calculateJacobianRow3;
 
 public function analyzeJacobian "function: analyzeJacobian
   author: PA

@@ -1417,7 +1417,7 @@ algorithm
         explst1 = List.map1(explst1,BackendDAEUtil.getEqnsysRhsExp,v);
         explst1 = List.map(explst1,Expression.negate);
         explst1 = ExpressionSimplify.simplifyList(explst1, {});
-        explst = listAppend(explst1,explst);
+        explst = listAppend(listReverse(explst1),explst);
         sources = List.consN(equationSize(eqn), source, sources);
       then ((eqn,(v,explst,sources)));       
        
