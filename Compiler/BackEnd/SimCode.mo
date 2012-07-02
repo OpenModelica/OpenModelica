@@ -8585,7 +8585,6 @@ algorithm
     case(DAE.UNARY(exp=lhs as DAE.CREF(componentRef=_)),_)
       equation
         (rhs,_) = ExpressionSimplify.simplify(e2);
-          BackendDump.debugStrExpStrExpStr(("Solved result: ",lhs," = ",rhs,"\n"));
       then 
         (lhs,rhs);
 

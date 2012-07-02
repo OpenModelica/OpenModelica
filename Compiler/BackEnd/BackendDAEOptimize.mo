@@ -8805,7 +8805,7 @@ algorithm
   (osyst,oshared,outRunMatching):=
     matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn)
     local
-      list<Integer> tvars,residual,ores;
+      list<Integer> tvars,residual,ores,residual1,othercomps1,eindex1;
       list<list<Integer>> othercomps;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -8823,6 +8823,7 @@ algorithm
       list<DAE.Exp> tvarexps;
       list<BackendDAE.Var> vlst,states;
       BackendDAE.BinTree bt;
+      array<Boolean> eqnmark;
 
     case (BackendDAE.JAC_TIME_VARYING(),_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_,_,_)
     //case (_,_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
@@ -8834,13 +8835,17 @@ algorithm
         // add temp variables for other vars at point zero (k0)
         // replace tearing vars with zero and other wars with temp variables to get equations for point zero (g(z0,k0)=g0)
         repl = List.fold1(tvars,getZeroTVarReplacements,vars,BackendVarTransform.emptyReplacementsSized(size));
-        (g0,k0,repl) = getOtherEquationsPointZero(othercomps,eqns,vars,ass2,repl,{},{});
+        (k0,repl) = getZeroVarReplacements(othercomps,vars,ass2,repl,{});
+        eqnmark = arrayCreate(arrayLength(ass2),false);
+        (g0,othercomps1) = getOtherEquationsPointZero(othercomps,vars,eqns,repl,eqnmark,mapIncRowEqn,{},{});
         Debug.fcall(Flags.TEARING_DUMP, print,"k0:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpVars,k0);
         Debug.fcall(Flags.TEARING_DUMP, print,"g0:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g0);
         // replace tearing vars with zero and other wars with temp variables to get residual equations for point zero (h(z0,k0)=h0)
-        h0 = List.map3(residual,getEquationsPointZero,eqns,repl,vars);
+        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
+        residual1 = List.unique(residual1);       
+        h0 = List.map3(residual1,getEquationsPointZero,eqns,repl,vars);
         Debug.fcall(Flags.TEARING_DUMP, print,"h0:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,h0);
         // calculate dh/dz = derivedEquations 
@@ -8858,8 +8863,8 @@ algorithm
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDerCalls, vars);
         derivedEquations = deriveAll(eqnslst,tvarcrefs,functionTree,BackendDAEUtil.listVar({}),kvars1,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar({}),vars,tvarcrefs,("$WRT",true),{});
         derivedEquationsArr = listArray(derivedEquations);
-        glst = getOtherDerivedEquations(othercomps,derivedEquationsArr,{});
-        hlst = List.map1(residual,collectArrayElements,derivedEquationsArr);
+        glst = List.map1r(othercomps1,arrayGet,derivedEquationsArr);
+        hlst = List.map1r(residual1,arrayGet,derivedEquationsArr);
         g = List.flatten(glst);
         g = BackendVarTransform.replaceEquations(g, repl);
         //pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendDAEUtil.listVar(listAppend(BackendDAEUtil.varList(sysvars),knvarlst)));
@@ -8883,15 +8888,16 @@ algorithm
         numvars = BackendVariable.numVariables(varst1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrIntStr,("Found ",numvars," Tearing Vars in the Residual Equations\n"));
         true = intEq(listLength(tvars),numvars);
+        // replace new residual equations in original system
+        syseqns = BackendEquation.daeEqns(isyst);
+        eindex1 = List.map1(eindex,intSub,1);
+        syseqns = BackendEquation.equationDelete(syseqns, eindex1);
         // all additional vars and equations
         sysvars = BackendVariable.addVars(k0,sysvars);
         sysvars = BackendVariable.addVars(pdvarlst,sysvars);
-        syseqns = BackendEquation.daeEqns(isyst);
         syseqns = BackendEquation.addEquations(g0, syseqns);
         syseqns = BackendEquation.addEquations(g, syseqns);
-        // replace new residual equations in original system
-        ores = List.map1(residual,collectArrayElements,listArray(eindex));
-        syseqns = replaceHEquationsinSystem(ores,h,syseqns);
+        syseqns = BackendEquation.addEquations(h, syseqns);
         syst = BackendDAE.EQSYSTEM(sysvars,syseqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(syst);
       then
@@ -8910,16 +8916,18 @@ algorithm
         (eqns,repl,k0) = solveOtherEquations(othercomps,eqns,vars,ass2,ishared,BackendVarTransform.emptyReplacementsSized(size),{});
         // replace other vars in residual equations with there expression, use reverse order from othercomps
         Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
-        eqns = List.fold2(residual,replaceOtherVarinResidualEqns,repl,BackendDAEUtil.listVar1(k0),eqns);
+        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
+        residual1 = List.unique(residual1);         
+        eqns = List.fold2(residual1,replaceOtherVarinResidualEqns,repl,BackendDAEUtil.listVar1(k0),eqns);
         // check if all tearing vars part of the system
         vlst = List.map1r(tvars,BackendVariable.getVarAt,vars);
-        eqnslst = BackendEquation.getEqns(residual,eqns);
+        eqnslst = BackendEquation.getEqns(residual1,eqns);
         varst1 = BackendEquation.equationsLstVars(eqnslst, BackendDAEUtil.listVar1(vlst), BackendDAEUtil.emptyVars());
         numvars = BackendVariable.numVariables(varst1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrIntStr,("Found ",numvars," Tearing Vars in the Residual Equations\n"));
         true = intEq(listLength(tvars),numvars);       
         // replace new residual equations in original system
-        syst = replaceTornEquationsinSystem(residual,listArray(eindex),eqns,isyst);
+        syst = replaceTornEquationsinSystem(residual1,listArray(eindex),eqns,isyst);
       then
         (syst,ishared,true);           
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -8997,19 +9005,6 @@ algorithm
         generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.EQUATION(e1,e2,source)::iEqns);
   end match;
 end generateHEquations;
-
-protected function collectArrayElements
-"function collectArrayElements
-  author: Frenkel TUD 2012-05
-  function to collect from a list of integer elements of an array.
-  ust with List.map1(lst,collectArrayElements,arr);"
-  replaceable type Type_a subtypeof Any;
-  input Integer indx;
-  input array<Type_a> inArr;
-  output Type_a outA;
-algorithm
-  outA := inArr[indx];
-end collectArrayElements;
 
 protected function getOtherDerivedEquations
   input list<list<Integer>> othercomps; 
@@ -9105,23 +9100,21 @@ algorithm
   outEqn::_ := BackendVarTransform.replaceEquations({outEqn}, inRepl);
 end getEquationsPointZero;
 
-protected function getOtherEquationsPointZero
-" function: getOtherEquationsPointZero
-  author: Frenkel TUD 2011-05
-  try to solve the equations"
+
+protected function getZeroVarReplacements
+" function: getZeroVarReplacements
+  author: Frenkel TUD 2012-07
+  add for the other variables the zero var replacement cr->$ZERO.cr."
   input list<list<Integer>> othercomps;
-  input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
   input array<Integer> ass2;
   input BackendVarTransform.VariableReplacements inRepl;
-  input list<BackendDAE.Equation> inEqsLst;
   input list<BackendDAE.Var> inVarLst;
-  output list<BackendDAE.Equation> outEqsLst;
   output list<BackendDAE.Var> outVarLst;
   output BackendVarTransform.VariableReplacements outRepl;
 algorithm
-  (outEqsLst,outVarLst,outRepl) :=
-  matchcontinue (othercomps,inEqns,inVars,ass2,inRepl,inEqsLst,inVarLst)
+  (outVarLst,outRepl) :=
+  match (othercomps,inVars,ass2,inRepl,inVarLst)
     local
       list<list<Integer>> rest;
       BackendDAE.EquationArray eqns;
@@ -9133,10 +9126,9 @@ algorithm
       list<BackendDAE.Equation> eqsLst;
       list<BackendDAE.Var> varLst;
       BackendDAE.Var var;      
-    case ({},_,_,_,_,_,_) then (inEqsLst,inVarLst,inRepl);
-    case ({c}::rest,_,_,_,_,_,_)
+    case ({},_,_,_,_) then (inVarLst,inRepl);
+    case ({c}::rest,_,_,_,_)
       equation
-        eqn = BackendDAEUtil.equationNth(inEqns, c-1);
         v = ass2[c];
         var = BackendVariable.getVarAt(inVars, v);
         cr = BackendVariable.varCref(var);
@@ -9147,11 +9139,58 @@ algorithm
         var = BackendVariable.copyVarNewName(cr1,var);
         var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
         var = BackendVariable.setVarAttributes(var, NONE());
-        (eqn,_) = BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inVars);
-        eqn::_ = BackendVarTransform.replaceEquations({eqn}, repl);
-        (eqsLst,varLst,repl) = getOtherEquationsPointZero(rest,inEqns,inVars,ass2,repl,eqn::inEqsLst,var::inVarLst);
+        (varLst,repl) = getZeroVarReplacements(rest,inVars,ass2,repl,var::inVarLst);
       then
-        (eqsLst,varLst,repl);
+        (varLst,repl);
+  end match;
+end getZeroVarReplacements;
+
+protected function getOtherEquationsPointZero
+" function: getOtherEquationsPointZero
+  author: Frenkel TUD 2011-05
+  try to solve the equations"
+  input list<list<Integer>> othercomps;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqns;
+  input BackendVarTransform.VariableReplacements inRepl;
+  input array<Boolean> eqnmark;
+  input array<Integer> mapIncRowEqn;  
+  input list<BackendDAE.Equation> inEqsLst;
+  input list<Integer> inComps;
+  output list<BackendDAE.Equation> outEqsLst;
+  output list<Integer> outComps;
+algorithm
+  (outEqsLst,outComps) :=
+  matchcontinue (othercomps,inVars,inEqns,inRepl,eqnmark,mapIncRowEqn,inEqsLst,inComps)
+    local
+      list<list<Integer>> rest;
+      BackendDAE.EquationArray eqns;
+      Integer e,c;
+      DAE.Exp varexp;
+      BackendDAE.Equation eqn;
+      DAE.ComponentRef cr,cr1;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqsLst;
+      list<BackendDAE.Var> varLst;
+      BackendDAE.Var var;      
+    case ({},_,_,_,_,_,_,_) then (listReverse(inEqsLst),listReverse(inComps));
+    case ({c}::rest,_,_,_,_,_,_,_)
+      equation
+        false = eqnmark[c];
+        _ = arrayUpdate(eqnmark,c,true);
+        e = mapIncRowEqn[c];
+        eqn = BackendDAEUtil.equationNth(inEqns, e-1);
+        (eqn,_) = BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inVars);
+        eqn::_ = BackendVarTransform.replaceEquations({eqn}, inRepl);
+       (outEqsLst,outComps) = getOtherEquationsPointZero(rest,inVars,inEqns,inRepl,eqnmark,mapIncRowEqn,eqn::inEqsLst,e::inComps);
+      then
+        (outEqsLst,outComps);
+    case ({c}::rest,_,_,_,_,_,_,_)
+      equation
+        true = eqnmark[c];
+        (outEqsLst,outComps) = getOtherEquationsPointZero(rest,inVars,inEqns,inRepl,eqnmark,mapIncRowEqn,inEqsLst,inComps);
+      then
+        (outEqsLst,outComps);        
   end matchcontinue;
 end getOtherEquationsPointZero;
 
