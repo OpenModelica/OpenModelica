@@ -2072,6 +2072,18 @@ algorithm
   out := (a,b);
 end makeTuple;
 
+public function make3Tuple
+  input Type_a a;
+  input Type_b b;
+  input Type_c c;
+  output tuple<Type_a,Type_b,Type_c> out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  out := (a,b,c);
+end make3Tuple;
+
 public function mulListIntegerOpt
   input list<Option<Integer>> ad;
   input Integer acc "accumulator, should be given 1";

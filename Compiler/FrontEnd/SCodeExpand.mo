@@ -43,6 +43,7 @@ public import HashTablePathToFunction;
 public import InstTypes;
 
 protected import Absyn;
+protected import Algorithm;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEDump;
@@ -184,7 +185,7 @@ algorithm
       equation
         el = List.fold2(comps, expandElement, EXPAND_MODEL(), inSubscripts, inAccumEl);
         el = List.fold1(eq, expandEquation, inSubscripts, el);
-        el = List.fold3(al, expandStatements, EXPAND_MODEL(), inSubscripts, false /* not initial */, el);
+        el = expandArray((al,EXPAND_MODEL(),false /* not initial */), EXPAND_MODEL(), {}, {}::inSubscripts, el, expandStatementsList);
       then
         el;
 
@@ -877,22 +878,43 @@ algorithm
 end subscriptArrayElements;
 
 protected function expandStatements
-  input list<Statement> inStmts;
-  input ExpandKind inKind;
+  input tuple<list<Statement>,ExpandKind,Boolean> inTpl;
   input list<list<DAE.Subscript>> inSubscripts;
-  input Boolean isInitial;
   input list<DAE.Element> inAccumEl;
-  output list<DAE.Element> outElements;
+  output list<DAE.Element> outAccumEl;
 protected
+  ExpandKind kind;
+  list<Statement> stmt;
+  Boolean isInitial;
   list<DAE.Statement> dstmt;
   DAE.Algorithm alg;
   DAE.Element el;
 algorithm
-  dstmt := listReverse(List.fold2(inStmts, expandStatement, inKind, inSubscripts, {}));
+  (stmt,kind,isInitial) := inTpl;
+  dstmt := listReverse(List.fold2(stmt, expandStatement, kind, inSubscripts, {}));
   alg := DAE.ALGORITHM_STMTS(dstmt);
   el := Util.if_(isInitial,DAE.INITIALALGORITHM(alg,DAE.emptyElementSource),DAE.ALGORITHM(alg,DAE.emptyElementSource));
-  outElements := Util.if_(List.isEmpty(dstmt),inAccumEl,el::inAccumEl);
+  outAccumEl := Util.if_(List.isEmpty(dstmt),inAccumEl,el::inAccumEl);
 end expandStatements;
+
+protected function expandStatementsList
+  input tuple<list<list<Statement>>,ExpandKind,Boolean> inTpl;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Element> inAccumEl;
+  output list<DAE.Element> outAccumEl;
+protected
+  ExpandKind kind;
+  list<list<Statement>> stmt;
+  Boolean isInitial;
+  list<DAE.Statement> dstmt;
+  DAE.Algorithm alg;
+  DAE.Element el;
+  list<tuple<list<Statement>,ExpandKind,Boolean>> tpls;
+algorithm
+  (stmt,kind,isInitial) := inTpl;
+  tpls := List.map2(stmt,Util.make3Tuple,kind,isInitial);
+  outAccumEl := List.fold1(tpls, expandStatements, inSubscripts, inAccumEl);
+end expandStatementsList;
 
 protected function expandStatement
   input Statement inStmt;
@@ -904,23 +926,29 @@ algorithm
   outElements := matchcontinue(inStmt, inKind, inSubscripts, inAccumEl)
     local
       DAE.Exp rhs, lhs, exp;
-      DAE.Statement eq;
+      list<DAE.Exp> sub_expl;
+      DAE.Statement el;
       DAE.ComponentRef cref1, cref2;
       DAE.Type ty1, ty2, ty;
+      list<Statement> body;
+      list<DAE.Subscript> comp_subs;
       list<list<DAE.Subscript>> subs;
-      list<DAE.Statement> accum_el;
+      list<DAE.Statement> dbody,accum_el;
       list<DAE.Dimension> dims;
       list<tuple<DAE.Exp,list<Statement>>> branches;
+      list<tuple<DAE.Exp,list<DAE.Statement>>> dbranches;
       String name;
 
-    case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, _, _)
+    case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, subs as comp_subs :: _, _)
       equation
-        /* ty1 = Expression.typeof(lhs);
-        dims = Types.getDimensions(ty1); */
-        accum_el = expandArray((lhs, rhs), inKind, {}, {} :: inSubscripts, inAccumEl,
-          expandAssignment);
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        lhs = subscriptExp(lhs, sub_expl, subs);
+        /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
+        rhs = subscriptExp(rhs, sub_expl, subs);
+        (rhs, _) = ExpressionSimplify.simplify(rhs);
       then
-        accum_el;
+        DAE.STMT_ASSIGN(DAE.T_ANYTYPE_DEFAULT, lhs, rhs, DAE.emptyElementSource)::inAccumEl;
 
     case (InstTypes.FUNCTION_ARRAY_INIT(name = name, ty = ty as DAE.T_ARRAY(dims=dims)), _, _, _)
       equation
@@ -930,17 +958,30 @@ algorithm
       then
         accum_el;
         
-    case (InstTypes.NORETCALL_STMT(exp = exp), _, _, _)
+    case (InstTypes.NORETCALL_STMT(exp = exp), _, subs as comp_subs :: _, _)
       equation
-        ty = Expression.typeof(exp);
-        dims = Types.getDimensions(ty);
-        accum_el = expandArray(exp, inKind, dims, {} :: inSubscripts, inAccumEl, expandNoretcall);
-      then accum_el;
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        exp = subscriptExp(exp, sub_expl, subs);
+        (exp, _) = ExpressionSimplify.simplify(exp);
+      then DAE.STMT_NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
 
-    case (InstTypes.IF_STMT(branches = branches), _, _, _)
+    case (InstTypes.IF_STMT(branches = branches), _, subs as comp_subs :: _, _)
       equation
-        accum_el = expandArray(branches, inKind, {}, {} :: inSubscripts, inAccumEl, expandIfStmt);
-      then accum_el;
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        dbranches = List.map3(branches,expandBranch,inKind,subs,sub_expl);
+        dbody = Algorithm.makeIfFromBranches(dbranches,DAE.emptyElementSource);
+      then listAppend(dbody,inAccumEl);
+
+    case (InstTypes.FOR_STMT(index=name,indexType=ty,range=SOME(exp),body=body), _, subs as comp_subs :: _, _)
+      equation
+        subs = listReverse(subs);
+        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        exp = subscriptExp(exp, sub_expl, subs);
+        (exp, _) = ExpressionSimplify.simplify(exp);
+        dbody = List.fold2(body,expandStatement,inKind,subs,{});
+      then DAE.STMT_FOR(ty,false /*???*/,name,exp,dbody,DAE.emptyElementSource)::inAccumEl;
 
     else
       equation
@@ -951,83 +992,22 @@ algorithm
   end matchcontinue;
 end expandStatement;
 
-protected function expandAssignment
-  input tuple<DAE.Exp, DAE.Exp> inTuple;
+protected function expandBranch
+  input tuple<DAE.Exp,list<Statement>> branch;
+  input ExpandKind inKind;
   input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Statement> inAccumEl;
-  output list<DAE.Statement> outAccumEl;
+  input list<DAE.Exp> sub_expl;
+  output tuple<DAE.Exp,list<DAE.Statement>> dbranch;
+protected
+  DAE.Exp exp;
+  list<Statement> stmt;
+  list<DAE.Statement> dstmt;
 algorithm
-  outAccumEl := match(inTuple, inSubscripts, inAccumEl)
-    local
-      DAE.Exp lhs, rhs;
-      list<list<DAE.Subscript>> subs;
-      list<DAE.Subscript> comp_subs;
-      DAE.Statement eq;
-      list<DAE.Exp> sub_expl;
-
-    case ((lhs, rhs), subs as comp_subs :: _, _)
-      equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
-        lhs = subscriptExp(lhs, sub_expl, subs);
-        /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
-        rhs = subscriptExp(rhs, sub_expl, subs);
-        (rhs, _) = ExpressionSimplify.simplify(rhs);
-        eq = DAE.STMT_ASSIGN(DAE.T_ANYTYPE_DEFAULT, lhs, rhs, DAE.emptyElementSource);
-      then
-        eq :: inAccumEl;
-        
-  end match;
-end expandAssignment;
-
-protected function expandNoretcall
-  input DAE.Exp inExp;
-  input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Statement> inAccumEl;
-  output list<DAE.Statement> outAccumEl;
-algorithm
-  outAccumEl := match(inExp, inSubscripts, inAccumEl)
-    local
-      list<list<DAE.Subscript>> subs;
-      list<DAE.Subscript> comp_subs;
-      DAE.Statement eq;
-      list<DAE.Exp> sub_expl;
-      DAE.Exp exp;
-
-    case (exp, subs as comp_subs :: _, _)
-      equation
-        subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
-        exp = subscriptExp(exp, sub_expl, subs);
-        (exp, _) = ExpressionSimplify.simplify(exp);
-        eq = DAE.STMT_NORETCALL(exp, DAE.emptyElementSource);
-      then
-        eq :: inAccumEl;
-        
-  end match;
-end expandNoretcall;
-
-protected function expandIfStmt
-  input list<tuple<DAE.Exp,list<Statement>>> branches;
-  input list<list<DAE.Subscript>> inSubscripts;
-  input list<DAE.Statement> inAccumEl;
-  output list<DAE.Statement> outAccumEl;
-algorithm
-  outAccumEl := match(branches, inSubscripts, inAccumEl)
-    local
-      list<list<DAE.Subscript>> subs;
-      list<DAE.Subscript> comp_subs;
-      DAE.Statement eq;
-      list<DAE.Exp> sub_expl;
-
-    case (branches, subs as comp_subs :: _, _)
-      equation
-        print("TODO: Expand if-stmt\n");
-      then
-        inAccumEl;
-        
-  end match;
-end expandIfStmt;
+  (exp,stmt) := branch;
+  exp := subscriptExp(exp, sub_expl, inSubscripts);
+  dstmt := List.fold2(stmt,expandStatement,inKind,inSubscripts,{});
+  dbranch := (exp,dstmt);
+end expandBranch;
 
 protected function expandFunction
   input InstTypes.Function inFunction;
@@ -1045,7 +1025,7 @@ algorithm
         el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, el);
         el = List.fold2(outputs, expandElement, EXPAND_FUNCTION(), {}, el);
         el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
-        el = expandStatements(al, EXPAND_FUNCTION(), {}, false /* not initial */, el);
+        el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
         el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
   end match;

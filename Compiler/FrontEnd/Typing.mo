@@ -1658,6 +1658,9 @@ algorithm
         branches = List.map1(branches, typeBranchStatement, st);
       then
         InstTypes.IF_STMT(branches, info) :: inAcc;
+    case (InstTypes.FOR_STMT(info=_),st,_)
+      then
+        inStmt :: inAcc;
     else
       equation
         print("Unknown statement in Typing.typeStatement\n");

@@ -458,6 +458,47 @@ algorithm
   end matchcontinue;
 end makeIf;
 
+public function makeIfFromBranches "
+  Create an if-statement from branches, optimizing as needed."
+  input list<tuple<DAE.Exp,list<Statement>>> branches;
+  input DAE.ElementSource source;
+  output list<Statement> outStatements;
+algorithm
+  outStatements := matchcontinue (branches,source)
+    local
+      Else else_;
+      DAE.Exp e;
+      list<Statement> br;
+      list<tuple<DAE.Exp,list<Statement>>> rest;
+    case ({},_) then {};
+    case ((e,br)::rest,_)
+      equation
+        else_ = makeElseFromBranches(rest);
+      then {DAE.STMT_IF(e,br,else_,source)};
+  end matchcontinue;
+end makeIfFromBranches;
+
+protected function makeElseFromBranches "Creates the ELSE part of the DAE.STMT_IF."
+  input list<tuple<DAE.Exp, list<Statement>>> inTpl;
+  output Else outElse;
+algorithm
+  outElse := match inTpl
+    local
+      list<Statement> fb,b;
+      Else else_;
+      DAE.Exp e;
+      list<tuple<DAE.Exp, list<Statement>>> xs;
+      Ident e_str,t_str;
+      DAE.Type t;
+    case {} then DAE.NOELSE();
+    case {(DAE.BCONST(true),b)} then DAE.ELSE(b);
+    case ((e,b)::xs)
+      equation
+        else_ = makeElseFromBranches(xs);
+      then DAE.ELSEIF(e,b,else_);
+  end match;
+end makeElseFromBranches;
+
 public function optimizeIf
   "Every time we re-create/walk an if-statement, we optimize a bit :)"
   input DAE.Exp icond;

@@ -137,7 +137,7 @@ algorithm
         (const_el,functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
         cls = InstUtil.addElementsToClass(const_el, cls);
 
-        //print(InstUtil.printClass(cls));
+        //print(InstDump.modelStr(name, cls));
         (cls, symtab) = InstSymbolTable.build(cls);
         (cls, symtab) = assignParamTypes(cls, symtab);
         ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions), Typing.typeFunction, (functions, symtab));
