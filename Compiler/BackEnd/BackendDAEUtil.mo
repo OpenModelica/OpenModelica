@@ -8051,7 +8051,7 @@ algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
-  _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   Debug.execStat("preOpt SimplifyAllExp",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
@@ -8066,7 +8066,7 @@ algorithm
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
   Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  _ := traverseBackendDAEExps(indexed_dlow,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(indexed_dlow,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   sode2 := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := expandAlgorithmsbyInitStmts(sode2);
