@@ -12,7 +12,11 @@ $ make # or make omc if you only want the omc core and not the qtclients
 How to compile on Linux/BSD (all from source)
 ===================================================
 
-You need:
+$ ./configure --prefix=/usr/local
+$ make
+$ sudo make install
+
+But first you need to install dependencies:
     rml+mmc (http://www.ida.liu.se/~pelab/rml/)
         Just grab it from subversion:
         svn co https://openmodelica.org/svn/MetaModelica/trunk mmc
@@ -40,7 +44,7 @@ OMOptim uses some packages for its optimization algorithms
     paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3)
 Note:
     FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS.
-    The rml-mmc package needs some manual changes, too. It's not worth it ;)
+    The rml-mmc package needs some manual changes, too.
 
 How to compile on Ubuntu Linux (using available binary packages for dependencies)
 =================================================================================
@@ -97,17 +101,8 @@ Setting your environment for compiling OpenModelica
   If you plan to use mico corba with OMC you need to:
   - set the PATH to path/to/mico/bin (for the idl compiler and mico-cpp)
   - set the LD_LIBRARY_PATH to path/to/installed/mico/lib (for mico libs)
-  - set the PATH: $ export PATH=${PATH}/path/to/installed/mico/bin
+  - set the PATH: $ export PATH=${PATH}:/path/to/installed/mico/bin
     + this is for executables: idl, mico-cpp and mico-config
-
-  For the deprecated Qt-based plotting functionality you will need to:
-  - Configure with-sendData-Qt
-  - Have Qt installed and qmake on the PATH.
-        NOTE: if you don't, you won't be able to plot
-              using plot and plotParameteric but it will work with
-              plot2 and plotParametric2 functions.
-  - Add coin3d/bin and soqt/bin to the PATH variable
-  - Add coin3d/lib and soqt/lib to the LD_LIBRARY_PATH variable
 
 To Compile OpenModelica
   run:
@@ -119,7 +114,7 @@ To Compile OpenModelica
 
     $ make omc       (to build omc and simulation runtime)
     $ make mosh      (to build OMShell-terminal)
-    $ make qtclients (to build Qt based clients: OMShell, ext, OMNotebook)
+    $ make qtclients (to build Qt based clients: OMShell, ext, OMNotebook; requires CORBA)
 
   After the compilation the results are in the path/to/trunk/build.
   To run the testsuite:
@@ -131,7 +126,7 @@ To Compile OpenModelica
 
   If you run into problems read the GENERAL NOTES below and if that
   does not help, subscribe to the OpenModelicaInterest list:
-    http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html#Forum
+    https://www.openmodelica.org/index.php/home/mailing-list
   and then sent us an email at [OpenModelicaInterest@ida.liu.se].
 
 How to run
@@ -205,45 +200,7 @@ GENERAL NOTES:
   ln -s libg2c.so.0 libg2c.so
   Otherwise the testsuite will fail when generating simulation code.
 
-- to run models and the testsuite you need to have
-  "./" in your $PATH variable.
-  In general this is considered in Linux a security threat, so make
-  sure you have the "./" LAST in your path, after the normal binary
-  directories which should be first.
-
-- On some Ubuntu 9.10 64 bit systems undefined references errors
-  for /usr/lib//liblpsolve55.a might be present.
-  More in particular, the error output is:
-  "
-  ...
-  /usr/lib//liblpsolve55.a(lp_MDO.o): In function `getMDO':
-  (.text+0x77e): undefined reference to `colamd_recommended'
-  /usr/lib//liblpsolve55.a(lp_MDO.o): In function `getMDO':
-  (.text+0x7c0): undefined reference to `colamd_set_defaults'
-  /usr/lib//liblpsolve55.a(lp_MDO.o): In function `getMDO':
-  (.text+0x814): undefined reference to `colamd'
-  /usr/lib//liblpsolve55.a(lp_MDO.o): In function `getMDO':
-  (.text+0x892): undefined reference to `symamd'
-  collect2: ld returned 1 exit status
-  ...
-  "
-  To solve this problem is necessary to add a '-lcolamd' flag when
-  calling g++ in Compiler/omc_release/Makefile.
-  After this change the g++ compilation line should look like:
-  "
-  ...
-  $(PROG): $(SRCO) subdirs $(top_builddir)/c_runtime/sendData/*.cpp
-	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS) -lcolamd 
-  ...
-  "
-
 - On some Linux systems when running simulate(Model, ...) the
-  executable for the Model enters an infinite loop. To fix this:
-    $ cd /path/to/OpenModelica/c_runtime
-    $ emacs Makefile
-        add -ffloat-store to CFLAGS: CFLAGS= -ffloat-store ...
-    $ make clean ; make
-    $ cd ../Examples
-    $ ../build/bin/omc sim_dcmotor.mos
+  executable for the Model enters an infinite loop. To fix this, add -ffloat-store to CFLAGS
 
-Last updated 2011-03-24
+Last updated 2012-07-04

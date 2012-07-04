@@ -1968,7 +1968,6 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
   System Documentation for more details.
   Writes the visulizations objects into the file \"model_name.visualize\"
-  Don't require sendData support.
   
   Example command sequence:
   simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,\"B.mat\");visualize(A,\"B.mat\", true);
@@ -1982,7 +1981,6 @@ annotation(preferredView="text");
 end visualize;
 
 function plotParametric "Launches a plotParametric window using OMPlot. Returns true on success.
-  Don't require sendData support.
   
   Example command sequences:
   simulate(A);plotParametric2(x,y);
