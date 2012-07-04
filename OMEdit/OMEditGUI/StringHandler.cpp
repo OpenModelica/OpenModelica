@@ -471,7 +471,6 @@ QStringList StringHandler::unparseArrays(QString value)
   size_t braceopen = 0;
   size_t mainbraceopen = 0;
   size_t i = 0;
-  size_t count = 0;
   value = StringHandler::removeFirstLastCurlBrackets(value);
   size_t length = value.size();
   int subbraceopen = 0;
@@ -492,15 +491,9 @@ QStringList StringHandler::unparseArrays(QString value)
     if (value.at(i) == '}' && braceopen == 1 && qopen == 0 && subbraceopen == 0)
     {
       //closing of a group
-      char * tmp = new char [i -mainbraceopen +5];
       int copylength = i- mainbraceopen+1;
-      strncpy (tmp, value.toStdString().data() + mainbraceopen , copylength);
-      tmp [copylength] = 0;
       braceopen = 0;
-      //printf("arr[%d]=%s;\n", count, tmp);
-      lst.append(QString(tmp));
-      delete tmp;
-      count ++;
+      lst.append(value.mid(mainbraceopen, copylength));
       continue;
     }
     if (value.at(i) == '}')
