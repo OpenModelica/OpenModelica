@@ -36,10 +36,9 @@ void match_dfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
   int stack_col, ptr, temp, next_augment_no, i, j, row, col, eptr, stack_last,
   stack_end;
   memset(visited, 0, sizeof(int) * m);
-
   next_augment_no = 1;
   for(i = 0; i < n; i++) {
-    if(match[i] == -1 && col_ptrs[i] != col_ptrs[i+1]) {
+    if((match[i] == -1) && (col_ptrs[i] != col_ptrs[i+1])) {
       stack[0] = i; stack_last = 0;
       colptrs[i] = col_ptrs[i];
       stack_end = n;
@@ -63,7 +62,6 @@ void match_dfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
 
         row = col_ids[ptr]; visited[row] = next_augment_no;
         col = row_match[row];
-
         if(col == -1) {
           while(row != -1){
             col = stack[stack_last--];
@@ -87,7 +85,6 @@ void match_dfs(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, i
       }
     }
   }
-
   free(visited);
   free(colptrs);
   free(stack);
@@ -1339,7 +1336,6 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
   } else if(matching_id == do_pr_fifo_fair) {
     match_pr_fifo_fair(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m, relabel_period);
   }
-
   if(matching_id >= do_hk || cheap_id != do_old_cheap) {
     free(row_ids);
     free(row_ptrs);

@@ -1100,11 +1100,10 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
-        subsystem_dae = BackendDAE.DAE({syst},shared);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, mt,true);
         // Jacobian of a Linear System is always linear 
-        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+        jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)

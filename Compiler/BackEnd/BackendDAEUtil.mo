@@ -5555,7 +5555,7 @@ algorithm
     // index = numberOfEqs (we reach the end)
     case (_, _, _, _, _, _, _,  false, _, _, _, _, _) 
       then 
-        (listArray(inIncidenceArray),inIncidenceArrayT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
+        (listArray(listReverse(inIncidenceArray)),inIncidenceArrayT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
     
     // index < numberOfEqs 
     case (_, _, _, iArr, _, _, _, true, _, _, _, _ , _)
@@ -6736,28 +6736,28 @@ public function analyzeJacobian "function: analyzeJacobian
   Analyze the jacobian to find out if the jacobian of system of equations
   can be solved at compiletime or runtime or if it is a nonlinear system
   of equations."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.Variables vars;
+  input EquationArray eqns;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output BackendDAE.JacobianType outJacobianType;
 algorithm
   outJacobianType:=
-  matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLstOption)
+  matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
     local
-      Variables vars;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
-    case (_,SOME(jac))
+    case (_,_,SOME(jac))
       equation
         true = jacobianConstant(jac);
-        true = rhsConstant(inBackendDAE);
+        true = rhsConstant(vars,eqns);
       then
         BackendDAE.JAC_CONSTANT();
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}),SOME(jac))
+    case (_,_,SOME(jac))
       equation
         true = jacobianNonlinear(vars, jac);
       then
         BackendDAE.JAC_NONLINEAR();
-    case (_,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
-    case (_,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
+    case (_,_,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
+    case (_,_,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
   end matchcontinue;
 end analyzeJacobian;
 
@@ -6765,21 +6765,20 @@ protected function rhsConstant "function: rhsConstant
   author: PA
   Determines if the right hand sides of an equation system,
   represented as a BackendDAE, is constant."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.Variables vars; 
+  input EquationArray eqns;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inBackendDAE)
+  matchcontinue (vars,eqns)
     local
       Boolean res;
-      EquationArray eqns;
-      BackendDAE.Variables vars;    
-    case ((BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})))
+    case (_,_)
       equation
         0 = equationSize(eqns);
       then
         true;
-    case ((BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{})))
+    case (_,_)
       equation
         ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,true));
       then

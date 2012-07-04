@@ -271,7 +271,7 @@ public function getAssignment
 end getAssignment;
 
 public function setAssignment
-"function: getAssignment
+"function: setAssignment
   author: Frenkel TUD 2012-04"
   input Integer lenass1;
   input Integer lenass2;

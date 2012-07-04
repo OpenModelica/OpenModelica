@@ -8053,7 +8053,7 @@ algorithm
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvars,intString,", ","\nResidualEquations:\n"));
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(residual,intString,", ","\n")); 
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE());
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"System.graphml");
         // check if tearing make sense
         tornsize = listLength(tvars);
         true = intLt(tornsize,size);
@@ -8594,7 +8594,7 @@ algorithm
           vars1 = BackendDAEUtil.listVar1(vlst);
           eqns1 = BackendDAEUtil.listEquation(elst);
           subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-          IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE());
+          IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
         */
 
         // check for unassigned vars, if there some rerun 
@@ -8891,14 +8891,11 @@ algorithm
         true = intEq(listLength(tvars),numvars);
         // replace new residual equations in original system
         syseqns = BackendEquation.daeEqns(isyst);
-        eindex1 = List.map1(eindex,intSub,1);
-        syseqns = BackendEquation.equationDelete(syseqns, eindex1);
         // all additional vars and equations
         sysvars = BackendVariable.addVars(k0,sysvars);
         sysvars = BackendVariable.addVars(pdvarlst,sysvars);
         syseqns = BackendEquation.addEquations(g0, syseqns);
-        syseqns = BackendEquation.addEquations(g, syseqns);
-        syseqns = BackendEquation.addEquations(h, syseqns);
+        syseqns = replaceHEquationsinSystem(eindex,listAppend(g,h),syseqns);     
         syst = BackendDAE.EQSYSTEM(sysvars,syseqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(syst);
       then
@@ -8938,25 +8935,27 @@ algorithm
 end tearingSystemNew4;
 
 protected function replaceHEquationsinSystem
-  input list<Integer> eindx;
-  input list<BackendDAE.Equation> HEqns;
+  input list<Integer> inEqnIndxes;
+  input list<BackendDAE.Equation> inEqns;
   input BackendDAE.EquationArray iEqns;
   output BackendDAE.EquationArray oEqns;
 algorithm
-  oEqns := match(eindx,HEqns,iEqns)
+  oEqns := match(inEqnIndxes,inEqns,iEqns)
     local
-      Integer e;
-      list<Integer> rest;
+      Integer i;
+      list<Integer> indxs;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqnlst;
-      BackendDAE.EquationArray eqns;
-    case ({},_,_) then iEqns;
-    case (e::rest,eqn::eqnlst,_)
-      equation
-        eqns = BackendEquation.equationSetnth(iEqns, e-1, eqn);
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.EquationArray eqnsarray;
+    case ({},_,_) 
       then
-        replaceHEquationsinSystem(rest,eqnlst,eqns);
-  end match;
+       List.fold(inEqns,BackendEquation.equationAdd,iEqns); 
+    case (i::indxs,eqn::eqns,_)
+      equation
+        eqnsarray = BackendEquation.equationSetnth(iEqns,i-1,eqn);
+      then
+        replaceHEquationsinSystem(indxs,eqns,eqnsarray);
+  end match; 
 end replaceHEquationsinSystem;
 
 protected function equationToExp

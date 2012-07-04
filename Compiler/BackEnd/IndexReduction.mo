@@ -3311,8 +3311,9 @@ public function dumpSystemGraphML
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Option<array<Integer>> inids;
+  input String filename;
 algorithm
-  _ := match(isyst,ishared,inids)
+  _ := match(isyst,ishared,inids,filename)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -3322,47 +3323,53 @@ algorithm
       list<Integer> eqnsids;
       Integer neqns;
       array<Integer> vec1,vec2,vec3,mapIncRowEqn;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE())      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
+        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
+        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
-        neqns = BackendDAEUtil.systemSize(isyst);
+        neqns = BackendDAEUtil.equationArraySize(eqns);
+        //neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
         ((_,_,graph)) = List.fold(eqnsids,addEdgesGraph,(1,m,graph));
-        GraphML.dumpGraph(graph,"System.graphml");
+        GraphML.dumpGraph(graph,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,NONE())      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
+        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
-        neqns = BackendDAEUtil.systemSize(isyst);
+        //neqns = BackendDAEUtil.equationArraySize(eqns);
+        neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         graph = List.fold2(eqnsids,addEqnGraphMatch,eqns,(vec2,mapIncRowEqn),graph);
         //graph = List.fold3(eqnsids,addEqnGraphMatch,eqns,vec2,mapIncRowEqn,graph);
         ((_,_,_,graph)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,graph));
-        GraphML.dumpGraph(graph,"System.graphml");
+        GraphML.dumpGraph(graph,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,SOME(vec3))      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=vec1,ass2=vec2)),_,SOME(vec3),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
         (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
-        neqns = BackendDAEUtil.systemSize(isyst);
+        neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
         ((_,_,_,_,graph)) = List.fold(eqnsids,addDirectedNumEdgesGraph,(1,m,vec2,vec3,graph));
-        GraphML.dumpGraph(graph,"System.graphml");
+        GraphML.dumpGraph(graph,filename);
      then
        ();
   end match;
@@ -3383,13 +3390,15 @@ algorithm
     case ((v as BackendDAE.VAR(varName=cr),(id,g)))
       equation
         true = BackendVariable.isStateVar(v);
-        g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
       then ((v,(id+1,g)));      
     case ((v as BackendDAE.VAR(varName=cr),(id,g)))
       equation
-        g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
       then ((v,(id+1,g)));
     case inTpl then inTpl;
   end matchcontinue;
@@ -3414,13 +3423,15 @@ algorithm
         true = BackendVariable.isStateVar(v);
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
       then ((v,(id+1,vec1,g)));      
     case ((v as BackendDAE.VAR(varName=cr),(id,vec1,g)))
       equation
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
       then ((v,(id+1,vec1,g)));
     case inTpl then inTpl;
   end matchcontinue;
@@ -3439,6 +3450,7 @@ algorithm
   eqn := BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
   str := BackendDump.equationStr(eqn);
   //str := intString(inNode);
+  str := intString(inNode) +& ": " +& BackendDump.equationStr(eqn);
   outGraph := GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),inGraph); 
 end addEqnGraph;
 
@@ -3474,9 +3486,9 @@ protected
 algorithm
   (vec2,mapIncRowEqn) := atpl;
   eqn := BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
-  //str := BackendDump.equationStr(eqn);
-  //str := intString(mapIncRowEqn[inNode]) +& ": " +&  str;
-  str := intString(inNode);
+  str := BackendDump.equationStr(eqn);
+  str := intString(mapIncRowEqn[inNode]) +& ": " +&  str;
+  //str := intString(inNode);
   color := Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
   outGraph := GraphML.addNode("n" +& intString(inNode),str,color,GraphML.RECTANGLE(),inGraph); 
 end addEqnGraphMatch;

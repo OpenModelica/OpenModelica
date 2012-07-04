@@ -655,7 +655,7 @@ algorithm
   match (inEqSystem)
     local
       list<BackendDAE.Var> vars;
-      BackendDAE.Value varlen,eqnlen;
+      Integer varlen,eqnlen,eqnssize;
       String varlen_str,eqnlen_str,s;
       list<BackendDAE.Equation> eqnsl;
       list<String> ss;
@@ -680,6 +680,9 @@ algorithm
         eqnlen = listLength(eqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
+        eqnssize = BackendDAEUtil.equationSize(eqns);
+        print(", ");
+        print(intString(eqnssize));
         print(")\n");
         print("=========\n");
         dumpEqns(eqnsl);
@@ -1200,7 +1203,7 @@ algorithm
     local
       String s1,s2,s3,res,indx_str,is,var_str,intsStr,outsStr;
       DAE.Exp e1,e2,e;
-      BackendDAE.Value indx,i;
+      Integer indx,i;
       list<DAE.Exp> expl,inps,outs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
@@ -1221,14 +1224,14 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
       then
-        res;        
+        res;
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
       then
-        res;          
+        res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1236,7 +1239,6 @@ algorithm
         res = stringAppendList({s1," := ",s2});
       then
         res;
-        
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn))))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1264,7 +1266,7 @@ algorithm
       equation
         res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
       then
-        res;        
+        res;
     case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse, source=source))
       equation
         s1 = ExpressionDump.printExpStr(e1);
@@ -1272,7 +1274,7 @@ algorithm
         s3 = stringAppendList({"if ",s1," then\n  ",s2});        
         res = ifequationStr(expl,eqnstrue,eqnsfalse,s3);
       then
-        res;        
+        res;
   end matchcontinue;
 end equationStr;
 

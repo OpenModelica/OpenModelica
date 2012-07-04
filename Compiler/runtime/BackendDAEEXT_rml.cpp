@@ -409,8 +409,8 @@ RML_BEGIN_LABEL(BackendDAEEXT__setAssignment)
   int i=0;
 
   nelts = RML_HDRSLOTS(RML_GETHDR(rmlA2));
-  if (n > 0) {
-  n = nass1;
+  if (nelts > 0) {
+    n = nass1;
     if(match) {
       free(match);
     }

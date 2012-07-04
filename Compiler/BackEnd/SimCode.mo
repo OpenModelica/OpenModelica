@@ -4632,9 +4632,8 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,constrs,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
-        subsystem_dae = BackendDAE.DAE({syst},shared);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, mt,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+        jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
         (equations_,uniqueEqIndex) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,jac, jac_tp, helpVarInfo,iuniqueEqIndex);
@@ -4698,7 +4697,7 @@ algorithm
         rf = List.flatten(r);
         tf = List.flatten(t);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+        jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
         (equation_,uniqueEqIndex) = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,subsystem_dae_2, jac, jac_tp, helpVarInfo,iuniqueEqIndex);
       then
         ({equation_},{equation_},uniqueEqIndex);

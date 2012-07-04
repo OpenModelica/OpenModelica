@@ -3716,7 +3716,7 @@ algorithm
     case (cr,_) /* check if array or record */
       equation
         crlst = ComponentReference.expandCref(cr,true);
-        (vLst,indxs) = getVarLst(crlst,inVariables,{},{});
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
         (vLst,indxs);
     /* failure
@@ -3752,13 +3752,11 @@ algorithm
         (varlst,ilst) = getVarLst(crlst,inVariables,v::iVarLst,indx::iIntegerLst);
       then
         (varlst,ilst); 
-    case (cr::crlst,_,_,_)
+    case (_::crlst,_,_,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendVariable.getVarLst failed on " +&
-          ComponentReference.printComponentRefStr(cr));
+        (varlst,ilst) = getVarLst(crlst,inVariables,iVarLst,iIntegerLst);
       then
-        fail();
+        (varlst,ilst); 
   end matchcontinue;
 end getVarLst;
 
