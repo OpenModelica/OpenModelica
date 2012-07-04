@@ -48,6 +48,7 @@ public import SCode;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
+protected import Debug;
 protected import Print;
 protected import Util;
 protected import Expression;
@@ -1580,7 +1581,7 @@ algorithm
     local
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
-      Integer i,i_1;
+      Integer i,i_1,index;
       String s1,s2,s3,str,id,name;
       list<String> es;
       list<DAE.Exp> expl;
@@ -1635,11 +1636,12 @@ algorithm
       then
         ();
     
-    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,index=index,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
+        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -1814,7 +1816,7 @@ algorithm
       String s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str,e1_str,e2_str;
       DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
-      Integer i,i_1;
+      Integer i,i_1,index;
       list<String> es;
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
@@ -1867,21 +1869,15 @@ algorithm
       then
         str;
     
-    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = stringAppend(s1, "for ");
-        s3 = stringAppend(s2, id);
-        s4 = stringAppend(s3, " in ");
-        s5 = ExpressionDump.printExpStr(e);
-        s6 = stringAppend(s4, s5);
-        s7 = stringAppend(s6, " loop\n");
+        s2 = /* Util.if_(index == -1, "", */ "/* iter index " +& intString(index) +& " */" /* ) */;
+        s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
-        s8 = ppStmtListStr(stmts, i_1);
-        s9 = stringAppend(s7, s8);
-        s10 = indentStr(i);
-        s11 = stringAppend(s9, s10);
-        str = stringAppend(s11, "end for;\n");
+        s4 = ppStmtListStr(stmts, i_1);
+        s5 = indentStr(i);
+        str = stringAppendList({s1,"for ",id,s2," in ",s3," loop\n",s4,s5,"end for;\n"});
       then
         str;
     

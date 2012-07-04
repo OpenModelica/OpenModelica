@@ -6639,6 +6639,7 @@ algorithm
       list<DAE.Exp> lhsTuple;
       list<DAE.Exp> derivedLHSTuple;
       DAE.ElementSource source_;
+      Integer index;
     case({}, _, _, _, _, _, _, _, _,_, _) then {};
       
     //remove dicrete Equation
@@ -6702,14 +6703,14 @@ algorithm
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;
       
-    case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
+    case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, index=index, range=exp, statementLst=statementLst, source=source)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
     equation
       cref = ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
       controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       controlVars = listAppend(controlVars, {controlVar});
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName);
 
-      derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, exp, derivedStatements1, source)};
+      derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, index, exp, derivedStatements1, source)};
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName);
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;

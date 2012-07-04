@@ -589,12 +589,19 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
+      Integer ix;
 
     case (DAE.CREF_IDENT(id, ty, {}), {subs}, _, _)
       then DAE.CREF_IDENT(id, ty, subs);
 
     case (DAE.CREF_IDENT(id, ty, subs), {_}, _, _)
       then DAE.CREF_IDENT(id, ty, subs);
+
+    case (DAE.CREF_ITER(id, ix, ty, {}), {subs}, _, _)
+      then DAE.CREF_ITER(id, ix, ty, subs);
+
+    case (DAE.CREF_ITER(id, ix, ty, subs), {_}, _, _)
+      then DAE.CREF_ITER(id, ix, ty, subs);
 
     case (DAE.CREF_QUAL(id, ty, {}, cref), subs :: rest_subs, _, _)
       equation
@@ -938,6 +945,7 @@ algorithm
       list<tuple<DAE.Exp,list<Statement>>> branches;
       list<tuple<DAE.Exp,list<DAE.Statement>>> dbranches;
       String name;
+      Integer index;
 
     case (InstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, subs as comp_subs :: _, _)
       equation
@@ -974,14 +982,14 @@ algorithm
         dbody = Algorithm.makeIfFromBranches(dbranches,DAE.emptyElementSource);
       then listAppend(dbody,inAccumEl);
 
-    case (InstTypes.FOR_STMT(index=name,indexType=ty,range=SOME(exp),body=body), _, subs as comp_subs :: _, _)
+    case (InstTypes.FOR_STMT(name=name,index=index,indexType=ty,range=SOME(exp),body=body), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
         sub_expl = List.map(comp_subs, Expression.subscriptExp);
         exp = subscriptExp(exp, sub_expl, subs);
         (exp, _) = ExpressionSimplify.simplify(exp);
         dbody = List.fold2(body,expandStatement,inKind,subs,{});
-      then DAE.STMT_FOR(ty,false /*???*/,name,exp,dbody,DAE.emptyElementSource)::inAccumEl;
+      then DAE.STMT_FOR(ty,false /*???*/,name,index,exp,dbody,DAE.emptyElementSource)::inAccumEl;
 
     else
       equation

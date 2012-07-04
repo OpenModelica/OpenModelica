@@ -5052,7 +5052,7 @@ algorithm
       then crefInfoList;
         
     // for statment
-    case(crefInfoList, DAE.STMT_FOR(iterType, _, iter, exp1, stmtList, DAE.SOURCE(info = info))::restStmts) 
+    case(crefInfoList, DAE.STMT_FOR(type_=iterType, iter=iter, range=exp1, statementLst=stmtList, source=DAE.SOURCE(info = info))::restStmts) 
       equation
         //check the range exp.
         crefInfoList = collectParallelVariablesinExps(crefInfoList,{exp1},info);

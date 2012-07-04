@@ -459,6 +459,7 @@ algorithm
       list<Integer> ilst;
       DAE.Statement stmt,stmt_1;
       DAE.ElementSource source;
+      Integer ix;
     case({},dae) then ({},dae);
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation
@@ -482,13 +483,13 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_IF(e_1,stmts_1,els_1,source) :: cdr_1,dae);
-    case(DAE.STMT_FOR(ty,b,i,e,stmts,source) :: cdr,dae)
+    case(DAE.STMT_FOR(ty,b,i,ix,e,stmts,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_FOR(ty,b,i,e_1,stmts_1,source) :: cdr_1,dae);
+        (DAE.STMT_FOR(ty,b,i,ix,e_1,stmts_1,source) :: cdr_1,dae);
     case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
@@ -1178,6 +1179,7 @@ algorithm
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
+      Integer ix;
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
@@ -1207,13 +1209,13 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_IF(e_1,stmts_1,el_1,source) :: cdr_1;
-    case(DAE.STMT_FOR(ty,b,i,e,stmts,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_FOR(ty,b,i,ix,e,stmts,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_FOR(ty,b,i,e_1,stmts_1,source) :: cdr_1;
+        DAE.STMT_FOR(ty,b,i,ix,e_1,stmts_1,source) :: cdr_1;
     case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));

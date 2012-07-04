@@ -159,6 +159,13 @@ package DAE
       list<Subscript> subscriptLst;
     end CREF_IDENT;
 
+    record CREF_ITER
+      Ident ident;
+      Integer index;
+      Type identType;
+      list<Subscript> subscriptLst;
+    end CREF_ITER;
+
     record WILD end WILD;
   end ComponentRef;
 

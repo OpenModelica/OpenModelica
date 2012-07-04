@@ -52,6 +52,7 @@ protected import Flags;
 protected import List;
 protected import SCodeLookup;
 protected import Util;
+protected import System;
 
 protected type Item = SCodeEnv.Item;
 protected type Extends = SCodeEnv.Extends;
@@ -353,7 +354,7 @@ algorithm
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));
@@ -441,14 +442,14 @@ algorithm
 
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
         
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (stmt, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
@@ -659,7 +660,7 @@ algorithm
     case ((exp as Absyn.CALL(functionArgs = 
         Absyn.FOR_ITER_FARG(iterators = iters)), (env, info)))
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, env);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
       then
         ((exp, (env, info)));
 
@@ -684,7 +685,7 @@ algorithm
     
     case ((exp as Absyn.MATCHEXP(matchTy = _), tup as (env, info)))
       equation
-        env = SCodeEnv.extendEnvWithMatch(exp, env);
+        env = SCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
       then
         ((exp, (env, info)));
     else then inTuple;
@@ -702,12 +703,12 @@ algorithm
       Absyn.Info info;
 
     case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
+        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
 
     case ((e as Absyn.MATCHEXP(matchTy = _), 
-        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
+        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
 

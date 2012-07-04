@@ -56,6 +56,8 @@ protected import SCodeUtil;
 
 public type Import = Absyn.Import;
 
+public constant Integer tmpTickIndex = 2;
+
 public uniontype ImportTable
   record IMPORT_TABLE
     // Imports should not be inherited, but removing them from the environment
@@ -108,7 +110,7 @@ end ExtendsTable;
 public uniontype FrameType
   record NORMAL_SCOPE end NORMAL_SCOPE;
   record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
-  record IMPLICIT_SCOPE end IMPLICIT_SCOPE;
+  record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
 end FrameType;
 
 public uniontype Frame
@@ -1136,12 +1138,13 @@ end extendEnvWithEnum;
 public function extendEnvWithIterators
   "Extends the environment with a new scope and adds a list of iterators to it."
   input Absyn.ForIterators inIterators;
+  input Integer iterIndex;
   input Env inEnv;
   output Env outEnv;
 protected
   Frame frame;
 algorithm
-  frame := newFrame(SOME("$for$"), IMPLICIT_SCOPE());
+  frame := newFrame(SOME("$for$"), IMPLICIT_SCOPE(iterIndex));
   outEnv := List.fold(inIterators, extendEnvWithIterator, frame :: inEnv);
 end extendEnvWithIterators;
 
@@ -1166,13 +1169,14 @@ public function extendEnvWithMatch
   "Extends the environment with a match-expression, i.e. opens a new scope and
   adds the local declarations in the match to it."
   input Absyn.Exp inMatchExp;
+  input Integer iterIndex;
   input Env inEnv;
   output Env outEnv;
 protected
   Frame frame;
   list<Absyn.ElementItem> local_decls;
 algorithm
-  frame := newFrame(SOME("$match$"), IMPLICIT_SCOPE());
+  frame := newFrame(SOME("$match$"), IMPLICIT_SCOPE(iterIndex));
   Absyn.MATCHEXP(localDecls = local_decls) := inMatchExp;
   outEnv := List.fold(local_decls, extendEnvWithElementItem, 
     frame :: inEnv);
@@ -1331,7 +1335,7 @@ algorithm
       Absyn.Path path;
       Env rest;
 
-    case (FRAME(frameType = IMPLICIT_SCOPE()) :: rest)
+    case (FRAME(frameType = IMPLICIT_SCOPE(iterIndex=_)) :: rest)
       then getEnvPath(rest);
 
     case ({FRAME(name = SOME(name))})
@@ -1792,7 +1796,7 @@ algorithm
   outString := match(inFrame)
     case NORMAL_SCOPE() then "Normal";
     case ENCAPSULATED_SCOPE() then "Encapsulated";
-    case IMPLICIT_SCOPE() then "Implicit";
+    case IMPLICIT_SCOPE(iterIndex=_) then "Implicit";
   end match;
 end printFrameTypeStr;
 

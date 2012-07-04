@@ -329,7 +329,8 @@ public uniontype Statement
   end FUNCTION_ARRAY_INIT;
 
   record FOR_STMT
-    String index "The name of the index/iterator variable.";
+    String name "The name of the iterator variable.";
+    Integer index "The index of the scope of the iterator variable.";
     DAE.Type indexType "The type of the index/iterator variable.";
     Option<DAE.Exp> range "The range expression to loop over.";
     list<Statement> body "The body of the for loop.";

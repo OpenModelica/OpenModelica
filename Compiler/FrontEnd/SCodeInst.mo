@@ -1767,6 +1767,12 @@ algorithm
       String id;
       Absyn.Path path;
       Env prefix_env;
+      Integer iterIndex;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      
+    case (DAE.CREF_IDENT(id,ty,subs), _, _, SCodeEnv.FRAME(frameType=SCodeEnv.IMPLICIT_SCOPE(iterIndex=iterIndex)) :: _, false)
+      then DAE.CREF_ITER(id,iterIndex,ty,subs);
 
     // This case is for a non-global local cref, i.e. the first identifier in the
     // cref is pointing at a local instance and not a local class. In this case
@@ -3022,7 +3028,7 @@ algorithm
         info = info), _, _, functions)
       equation
         env = SCodeEnv.extendEnvWithIterators(
-          {Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+          {Absyn.ITERATOR(for_index, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
         (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
         (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
@@ -3031,7 +3037,7 @@ algorithm
     case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
         info = info), _, _, functions)
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
         (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
         (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), functions);
@@ -3147,6 +3153,7 @@ algorithm
       list<tuple<DAE.Exp,list<Statement>>> inst_branches;
       list<Statement> ibody;
       String for_index;
+      Integer index;
       FunctionHashTable functions;
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, functions)
       equation
@@ -3156,18 +3163,20 @@ algorithm
 
     case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, functions)
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
         (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
         (ibody,functions) = instStatements(body, env, inPrefix, functions);
       then
-        (InstTypes.FOR_STMT(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info),functions);
+        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info),functions);
 
     case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, functions)
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, inEnv);
+        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
         (ibody,functions) = instStatements(body, env, inPrefix, functions);
       then
-        (InstTypes.FOR_STMT(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info),functions);
+        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info),functions);
 
     case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, functions)
       equation

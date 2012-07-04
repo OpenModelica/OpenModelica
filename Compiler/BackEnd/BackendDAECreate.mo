@@ -2583,7 +2583,7 @@ algorithm
   (outTplStmtTypeA) := match(inStmts,func,iextraArg,knvars)
     local
       DAE.Exp e_1,e_2,e,e2,iteratorExp;
-      Integer le;
+      Integer le,ix;
       list<DAE.Exp> expl1,expl2,iteratorexps;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
@@ -2641,14 +2641,14 @@ algorithm
         ((xs_1,extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_IF(e_1,stmts2,algElse,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
       equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
         iteratorExp = Expression.crefExp(cr);
         iteratorexps = extendRange(e,knvars);
         ((stmts2, extraArg)) = traverseStmtsForExps(iteratorExp, iteratorexps,e, stmts, knvars, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((DAE.STMT_FOR(tp,b1,id1,e,stmts2,source) :: xs_1,extraArg));
+      then ((DAE.STMT_FOR(tp,b1,id1,ix,e,stmts2,source) :: xs_1,extraArg));
         
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
       equation

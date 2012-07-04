@@ -1224,6 +1224,7 @@ algorithm
       Boolean iterIsArray;
       DAE.Ident ident;
       list<Integer> helpVarIndices;
+      Integer index;
       Boolean b,b1,b2,b3;
           
     case ({},_,_,_) then (listReverse(inAcc),inBAcc);
@@ -1280,7 +1281,7 @@ algorithm
         (es_1,b);
         //(DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1,b2);
     
-    case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)::es),repl,_,_)
+    case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,source=source)::es),repl,_,_)
       equation
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,{},false);
         (e1_1,b2) = replaceExp(e1, repl,NONE());
@@ -1288,7 +1289,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source)::inAcc,true);
+        (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
     

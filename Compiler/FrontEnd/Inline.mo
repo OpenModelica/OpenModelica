@@ -802,6 +802,7 @@ algorithm
       list<Algorithm.Statement> stmts,stmts_1;
       Boolean b;
       Ident i;
+      Integer ix;
       list<Integer> ilst;
       DAE.ElementSource source;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
@@ -828,12 +829,12 @@ algorithm
         (a_else_1,source) = inlineElse(a_else,fns,source);
       then
         DAE.STMT_IF(e_1,stmts_1,a_else_1,source);
-    case(DAE.STMT_FOR(t,b,i,e,stmts,source),fns)
+    case(DAE.STMT_FOR(t,b,i,ix,e,stmts,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
         stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_FOR(t,b,i,e_1,stmts_1,source);
+        DAE.STMT_FOR(t,b,i,ix,e_1,stmts_1,source);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);

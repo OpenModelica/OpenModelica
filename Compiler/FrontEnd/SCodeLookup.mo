@@ -521,7 +521,7 @@ algorithm
 
     // Look in the next scope only if the current scope is an implicit scope
     // (for example a for or match/matchcontinue scope).
-    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: rest_env, _)
+    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: rest_env, _)
       equation
         (opt_item, opt_path, opt_env) = 
           lookupInLocalScope(inName, rest_env, inVisitedScopes);

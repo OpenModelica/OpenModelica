@@ -596,7 +596,7 @@ algorithm
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
-        DAE.STMT_FOR(t,isArray,i,e,stmts,source);
+        DAE.STMT_FOR(t,isArray,i,-1,e,stmts,source);
     
     case (_,e,DAE.PROP(type_ = t),_,source)
       equation

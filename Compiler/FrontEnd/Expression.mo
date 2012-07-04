@@ -5222,6 +5222,7 @@ algorithm
       Type ty;
       list<DAE.Subscript> subs,subs_1;
       Type_a arg;
+      Integer ix;
 
     case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), rel, arg)
       equation
@@ -5238,7 +5239,19 @@ algorithm
       then
         (cr, arg);
 
+    case (inCref as DAE.CREF_ITER(ident = name, index = ix, identType = ty, subscriptLst = subs), rel, arg)
+      equation
+        (subs_1, arg) = traverseExpSubs(subs, rel, arg);
+        cr = Util.if_(referenceEq(subs,subs_1),inCref,DAE.CREF_ITER(name, ix, ty, subs_1));
+      then
+        (cr, arg);
+
     case (DAE.WILD(), _, arg) then (inCref, arg);
+    
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Expression.traverseExpCref: Unknown cref"});
+      then fail();
   end match;
 end traverseExpCref;
 

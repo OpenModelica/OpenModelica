@@ -54,6 +54,7 @@ protected import SCodeCheck;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeUtil;
+protected import System;
 protected import Util;
 
 protected type Item = SCodeEnv.Item;
@@ -398,7 +399,7 @@ algorithm
     local
       String name;
 
-    case (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()), _) then ();
+    case (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)), _) then ();
 
     case (SCodeEnv.FRAME(name = SOME(name)), _)
       equation
@@ -1356,7 +1357,7 @@ algorithm
         
     case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _)
       equation
-        env = SCodeEnv.extendEnvWithIterators(iters, inEnv);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
       then
         env;
 
@@ -1374,7 +1375,7 @@ algorithm
 
     case (Absyn.MATCHEXP(matchTy = _), _, _)
       equation
-        env = SCodeEnv.extendEnvWithMatch(inExp, inEnv);
+        env = SCodeEnv.extendEnvWithMatch(inExp, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
       then
         env;
 
@@ -1425,12 +1426,12 @@ algorithm
     // Remove any scopes added by the enter function.
 
     case ((e as Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
+        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
 
     case ((e as Absyn.MATCHEXP(matchTy = _), 
-        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: env, info)))
+        (SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info)))
       then
         ((e, (env, info)));
 
@@ -1464,7 +1465,7 @@ algorithm
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
         ((equ, env));
@@ -1539,14 +1540,14 @@ algorithm
 
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));
     
      case ((stmt as SCode.ALG_PARFOR(index = iter_name, parforBody = parforBody, info = info), env))
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, env);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), env);
         (_, _) = SCode.traverseStatementExps(stmt, (traverseExp, (env, info)));
       then
         ((stmt, env));

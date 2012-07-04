@@ -3575,6 +3575,7 @@ algorithm
       Boolean b1;
       String id1;
       list<Integer> li;
+      Integer index;
     case ({},_) then ({});
       
     case ((DAE.STMT_ASSIGN(exp1 = e) :: rest),vars)
@@ -3608,11 +3609,11 @@ algorithm
         xs = removediscreteAssingments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source) :: xs;
         
-    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: rest),vars)
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=index,range=e,statementLst=stmts, source = source)) :: rest),vars)
       equation
         stmts = removediscreteAssingments(stmts,vars);
         xs = removediscreteAssingments(rest,vars);
-      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source) :: xs;
+      then DAE.STMT_FOR(tp,b1,id1,index,e,stmts,source) :: xs;
         
     case (((DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: rest),vars)
       equation

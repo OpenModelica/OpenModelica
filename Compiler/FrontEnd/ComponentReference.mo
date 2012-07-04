@@ -535,6 +535,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       Boolean b;
+      Integer ix;
     
     // Optimize -- a function call less
     case (DAE.CREF_IDENT(ident = s,subscriptLst = {}))
@@ -546,6 +547,17 @@ algorithm
         str = printComponentRef2Str(s, subs);
       then
         str;
+
+    // Optimize -- a function call less
+    case (DAE.CREF_ITER(ident = s,index=ix,subscriptLst = {}))
+      then s +& "/* iter index " +& intString(ix) +& " */";
+    
+    // idents with subscripts 
+    case DAE.CREF_ITER(ident = s,index=ix,subscriptLst = subs)
+      equation
+        str = printComponentRef2Str(s, subs);
+      then
+        str +& "/* iter index " +& intString(ix) +& " */";
     
     // Qualified - Modelica output - does not handle names with underscores
     // Qualified - non Modelica output

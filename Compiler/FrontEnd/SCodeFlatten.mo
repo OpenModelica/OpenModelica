@@ -117,6 +117,7 @@ algorithm
     case (_, prog)
       equation
         //System.startTimer();
+        System.tmpTickResetIndex(0,SCodeEnv.tmpTickIndex);
 
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);

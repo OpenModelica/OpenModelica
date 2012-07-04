@@ -4141,6 +4141,7 @@ algorithm
       Boolean b1;
       String id1,str;
       list<Integer> li;
+      Integer ix;
       DAE.ElementSource source;
       Algorithm.Else algElse;
       Type_a extraArg;
@@ -4189,12 +4190,12 @@ algorithm
         stmts1 = Algorithm.optimizeIf(e_1,stmts2,algElse,source);
       then (listAppend(stmts1, xs_1),extraArg);
         
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1,extraArg);
+      then (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,extraArg);
         
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func,extraArg)
       equation

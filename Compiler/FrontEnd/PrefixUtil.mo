@@ -1054,6 +1054,7 @@ algorithm
       DAE.ComponentRef cRef;
       Boolean bool;
       DAE.Else elseBranch;
+      Integer ix;
 
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
 
@@ -1084,11 +1085,11 @@ algorithm
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);
 
-    case (localCache,localEnv,ih,DAE.STMT_FOR(t,bool,id,e,sList,source) :: rest,localAccList,pre)
+    case (localCache,localEnv,ih,DAE.STMT_FOR(t,bool,id,ix,e,sList,source) :: rest,localAccList,pre)
       equation
         (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
         (localCache,sList) = prefixStatements(localCache,localEnv,ih,sList,{},pre);
-        elem = DAE.STMT_FOR(t,bool,id,e,sList,source);
+        elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
         localAccList = listAppend(localAccList,List.create(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);

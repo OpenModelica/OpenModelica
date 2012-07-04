@@ -653,6 +653,7 @@ algorithm
       Option<DAE.Statement> ew,ew_1;
       list<Integer> li;
       Algorithm.Else el,el_1;
+      Integer ix;
     case ({},_,_) then ({},false);
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
@@ -698,7 +699,7 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,true);
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
         (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
         (e_1,b2) = replaceExp(e, repl, condExpFunc);
@@ -706,7 +707,7 @@ algorithm
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1,true);
+        (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,true);
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
         (stmts2,b1) = replaceEquationsStmts(stmts,repl,condExpFunc);
