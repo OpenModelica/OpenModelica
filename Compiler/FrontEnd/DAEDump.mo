@@ -1872,7 +1872,7 @@ algorithm
     case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
-        s2 = /* Util.if_(index == -1, "", */ "/* iter index " +& intString(index) +& " */" /* ) */;
+        s2 = Util.if_(index == -1, "", "/* iter index " +& intString(index) +& " */");
         s3 = ExpressionDump.printExpStr(e);
         i_1 = i + 2;
         s4 = ppStmtListStr(stmts, i_1);
