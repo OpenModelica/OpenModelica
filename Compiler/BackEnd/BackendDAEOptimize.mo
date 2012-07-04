@@ -8895,7 +8895,10 @@ algorithm
         sysvars = BackendVariable.addVars(k0,sysvars);
         sysvars = BackendVariable.addVars(pdvarlst,sysvars);
         syseqns = BackendEquation.addEquations(g0, syseqns);
-        syseqns = replaceHEquationsinSystem(eindex,listAppend(g,h),syseqns);     
+        syseqns = BackendEquation.addEquations(g, syseqns);
+        // replace new residual equations in original system
+        ores = List.map1r(residual1,arrayGet,listArray(eindex));
+        syseqns = replaceHEquationsinSystem(ores,h,syseqns);
         syst = BackendDAE.EQSYSTEM(sysvars,syseqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(syst);
       then
@@ -8935,27 +8938,25 @@ algorithm
 end tearingSystemNew4;
 
 protected function replaceHEquationsinSystem
-  input list<Integer> inEqnIndxes;
-  input list<BackendDAE.Equation> inEqns;
+  input list<Integer> eindx;
+  input list<BackendDAE.Equation> HEqns;
   input BackendDAE.EquationArray iEqns;
   output BackendDAE.EquationArray oEqns;
 algorithm
-  oEqns := match(inEqnIndxes,inEqns,iEqns)
+  oEqns := match(eindx,HEqns,iEqns)
     local
-      Integer i;
-      list<Integer> indxs;
+      Integer e;
+      list<Integer> rest;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.EquationArray eqnsarray;
-    case ({},_,_) 
-      then
-       List.fold(inEqns,BackendEquation.equationAdd,iEqns); 
-    case (i::indxs,eqn::eqns,_)
+      list<BackendDAE.Equation> eqnlst;
+      BackendDAE.EquationArray eqns;
+    case ({},_,_) then iEqns;
+    case (e::rest,eqn::eqnlst,_)
       equation
-        eqnsarray = BackendEquation.equationSetnth(iEqns,i-1,eqn);
+        eqns = BackendEquation.equationSetnth(iEqns, e-1, eqn);
       then
-        replaceHEquationsinSystem(indxs,eqns,eqnsarray);
-  end match; 
+        replaceHEquationsinSystem(rest,eqnlst,eqns);
+  end match;
 end replaceHEquationsinSystem;
 
 protected function equationToExp
