@@ -65,13 +65,13 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
    virtual void giveJacobianSparsityPattern(SparcityPattern pattern) ;
 
   // Provide Jacobian
-   virtual void giveJacobian(SparseMatrix matrix);
+   virtual void giveJacobian(SparseMatrix& matrix);
 
   // Provide pattern for mass matrix
    virtual void giveMassSparsityPattern(SparcityPattern pattern) ;
 
   // Provide mass matrix 
-   virtual void giveMassMatrix(SparseMatrix matrix);
+   virtual void giveMassMatrix(SparseMatrix& matrix);
 
   // Provide pattern for global constraint jacobian 
    virtual void giveConstraintSparsityPattern(SparcityPattern pattern);
@@ -136,5 +136,5 @@ private:
 
 
   HistoryImplType* _historyImpl;
-
+  SparseMatrix _jacobian;
 };

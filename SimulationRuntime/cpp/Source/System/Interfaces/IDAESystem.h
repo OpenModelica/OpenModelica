@@ -1,9 +1,6 @@
 #pragma once
-
-
-//#include "API.h"
-//#include <ostream>                  // Use stream for output
-//using std::ostream;
+#include <boost/numeric/ublas/matrix_sparse.hpp>
+namespace uBlas = boost::numeric::ublas;
 
 /*****************************************************************************/
 /**
@@ -20,7 +17,8 @@ Copyright (c) 2008, OSMC
 *****************************************************************************/
 /// typedef for sparse matrices
 typedef double* SparcityPattern;
-typedef double* SparseMatrix;
+typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+
 class IDAESystem 
 {
 public:
@@ -48,13 +46,13 @@ public:
   virtual void giveJacobianSparsityPattern(SparcityPattern pattern) = 0;
 
   /// Provide Jacobian
-  virtual void giveJacobian(SparseMatrix matrix) = 0;
+  virtual void giveJacobian(SparseMatrix& matrix) = 0;
 
   /// Provide pattern for mass matrix
   virtual void giveMassSparsityPattern(SparcityPattern pattern) = 0;
 
   /// Provide mass matrix
-  virtual void giveMassMatrix(SparseMatrix matrix) = 0;
+  virtual void giveMassMatrix(SparseMatrix& matrix) = 0;
 
   /// Provide pattern for global constraint jacobian
   virtual void giveConstraintSparsityPattern(SparcityPattern pattern) = 0;

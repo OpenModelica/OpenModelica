@@ -23,7 +23,7 @@ Modelica::Modelica(IGlobalSettings& globalSettings)
   //Instantiate auxiliary object for event handling functionality
   _event_handling.resetHelpVar =  boost::bind(&Modelica::resetHelpVar, this, _1);
   _historyImpl = new HistoryImplType(globalSettings);
-  
+ 
   
 } 
 
@@ -142,7 +142,7 @@ void Modelica::giveJacobianSparsityPattern(SparcityPattern pattern)
   throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented"); 
 }
 
-void Modelica::giveJacobian(SparseMatrix matrix)
+void Modelica::giveJacobian(SparseMatrix& matrix)
 {
   throw std::runtime_error("giveJacobian is not yet implemented");  
 }
@@ -152,7 +152,7 @@ void Modelica::giveMassSparsityPattern(SparcityPattern pattern)
   throw std::runtime_error("giveMassSparsityPattern is not yet implemented"); 
 }
 
-void Modelica::giveMassMatrix(SparseMatrix matrix)
+void Modelica::giveMassMatrix(SparseMatrix& matrix)
 {
   throw std::runtime_error("giveMassMatrix is not yet implemented");  
 }
