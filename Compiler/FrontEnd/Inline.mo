@@ -203,7 +203,9 @@ algorithm
       DAE.ElementSource source;
       list<Integer> dimSize;
       DAE.Algorithm alg;
-      list<DAE.Statement> stmts,stmts1;      
+      list<DAE.Statement> stmts,stmts1;   
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnslst;   
 
     case(BackendDAE.EQUATION(e1,e2,source),_)
       equation
@@ -250,6 +252,14 @@ algorithm
         (e2_1,source) = inlineExp(e2,fns,source);
       then
         BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source);  
+
+    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source),_)
+      equation
+        (explst,source) = inlineExps(explst,fns,source);
+        eqnslst = List.map1List(eqnslst,inlineEq,fns);
+        eqns = List.map1(eqns,inlineEq,fns);
+      then
+        BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source);         
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEq failed");
