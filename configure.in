@@ -437,15 +437,17 @@ fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qwt])
-  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt. Default searches PREFIX/include/{qwt,qwt-qt4}], [], [with_qwt=yes])
+  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt5. Default searches PREFIX/include/{qwt5,qwt,qwt-qt4}], [], [with_qwt=yes])
 
   if test x"$with_qwt" = "xyes"; then
     with_qwt_checked=""
     with_qwt_suffix=""
-    for f in {/usr,/opt,$PREFIX}/include/{qwt,qwt-qt4}/; do
+    for f in {/usr,/opt,$PREFIX}/include/{qwt5,qwt,qwt-qt4}/; do
       test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
     done
     echo $with_qwt | grep -q -- -qt4 && with_qwt_suffix="-qt4"
+    with_qwt_res=$with_qwt
+    grep -q 'QWT_VERSION *0x05@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h" || with_qwt="bad"
   fi
 
   if test x"$with_qwt" = "xno"; then
@@ -453,6 +455,8 @@ if test -n "$QMAKE"; then
     AC_MSG_RESULT([disabled])
   elif test x"$with_qwt" = "xyes"; then
     AC_MSG_ERROR([not found (searched $with_qwt_checked)])
+  elif test x"$with_qwt" = "xbad"; then
+    AC_MSG_ERROR([$with_qwt_res/qwt_global.h is not a qwt5 header])
   else
     AC_MSG_RESULT($with_qwt)
   fi
