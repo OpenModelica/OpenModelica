@@ -275,81 +275,83 @@ constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(56, "dumpParamrepl",
   "dump the found replacements for remove parameters");
 constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(57, "dumpPPrepl",
   "dump the found replacements for protected parameters");
-constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(58, "debugAlias",
+constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(58, "dumpEArepl",
+  "dump the found replacements for evaluate annotations (evaluate=true) parameters");
+constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(59, "debugAlias",
   "dump the found alias variables");
-constant DebugFlag TEARING_DUMP = DEBUG_FLAG(59, "tearingdump",
+constant DebugFlag TEARING_DUMP = DEBUG_FLAG(60, "tearingdump",
   "Dumps tearing information.");
-constant DebugFlag JAC_DUMP = DEBUG_FLAG(60, "jacdump",
+constant DebugFlag JAC_DUMP = DEBUG_FLAG(61, "jacdump",
   "");
-constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(61, "jacdump2",
+constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(62, "jacdump2",
   "");
-constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(62, "jacdumpeqn",
+constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(63, "jacdumpeqn",
   "");
-constant DebugFlag FAILTRACE_JAC = DEBUG_FLAG(63, "failtraceJac",
+constant DebugFlag FAILTRACE_JAC = DEBUG_FLAG(64, "failtraceJac",
   "");
-constant DebugFlag VAR_INDEX = DEBUG_FLAG(64, "varIndex",
+constant DebugFlag VAR_INDEX = DEBUG_FLAG(65, "varIndex",
   "");
-constant DebugFlag VAR_INDEX2 = DEBUG_FLAG(65, "varIndex2",
+constant DebugFlag VAR_INDEX2 = DEBUG_FLAG(66, "varIndex2",
   "");
-constant DebugFlag BLT_DUMP = DEBUG_FLAG(66, "bltdump",
+constant DebugFlag BLT_DUMP = DEBUG_FLAG(67, "bltdump",
   "Dumps information from index reduction.");
-constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(67, "dummyselect",
+constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(68, "dummyselect",
   "Dumps information from dummy state selection heuristic");
-constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(68, "dumpdaelow",
+constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(69, "dumpdaelow",
   "Dumps the equation system at the beginning of the back end.");
-constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(69, "dumpindxdae",
+constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(70, "dumpindxdae",
   "Dumps the equation system after index reduction and optimisation.");
-constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(70, "optdaedump",
+constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(71, "optdaedump",
   "Dumps information from the optimisation modules.");
-constant DebugFlag EXEC_HASH = DEBUG_FLAG(71, "execHash",
+constant DebugFlag EXEC_HASH = DEBUG_FLAG(72, "execHash",
   "");
-constant DebugFlag EXEC_FILES = DEBUG_FLAG(72, "execFiles",
+constant DebugFlag EXEC_FILES = DEBUG_FLAG(73, "execFiles",
   "");
-constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(73, "paramdlowdump",
+constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(74, "paramdlowdump",
   "");
-constant DebugFlag CPP = DEBUG_FLAG(74, "cpp",
+constant DebugFlag CPP = DEBUG_FLAG(75, "cpp",
   "");
-constant DebugFlag CPP_VAR = DEBUG_FLAG(75, "cppvar",
+constant DebugFlag CPP_VAR = DEBUG_FLAG(76, "cppvar",
   "");
-constant DebugFlag CPP_VAR_INDEX = DEBUG_FLAG(76, "cppvarindex",
+constant DebugFlag CPP_VAR_INDEX = DEBUG_FLAG(77, "cppvarindex",
   "");
-constant DebugFlag CPP_SIM1 = DEBUG_FLAG(77, "cppsim1",
+constant DebugFlag CPP_SIM1 = DEBUG_FLAG(78, "cppsim1",
   "");
-constant DebugFlag TCVT = DEBUG_FLAG(78, "tcvt",
+constant DebugFlag TCVT = DEBUG_FLAG(79, "tcvt",
   "");
-constant DebugFlag CGRAPH = DEBUG_FLAG(79, "cgraph",
+constant DebugFlag CGRAPH = DEBUG_FLAG(80, "cgraph",
   "Prints out connection graph information.");
-constant DebugFlag DUMPTR = DEBUG_FLAG(80, "dumptr",
+constant DebugFlag DUMPTR = DEBUG_FLAG(81, "dumptr",
   "");
-constant DebugFlag DUMPIH = DEBUG_FLAG(81, "dumpIH",
+constant DebugFlag DUMPIH = DEBUG_FLAG(82, "dumpIH",
   "");
-constant DebugFlag REC_CONST = DEBUG_FLAG(82, "recconst",
+constant DebugFlag REC_CONST = DEBUG_FLAG(83, "recconst",
   "");
-constant DebugFlag UPDMOD = DEBUG_FLAG(83, "updmod",
+constant DebugFlag UPDMOD = DEBUG_FLAG(84, "updmod",
   "Prints information about modification updates.");
-constant DebugFlag SEI = DEBUG_FLAG(84, "sei",
+constant DebugFlag SEI = DEBUG_FLAG(85, "sei",
   "");
-constant DebugFlag STATIC = DEBUG_FLAG(85, "static",
+constant DebugFlag STATIC = DEBUG_FLAG(86, "static",
   "");
-constant DebugFlag PERF_TIMES = DEBUG_FLAG(86, "perfTimes",
+constant DebugFlag PERF_TIMES = DEBUG_FLAG(87, "perfTimes",
   "");
-constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(87, "checkSimplify",
+constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(88, "checkSimplify",
   "Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed.");
-constant DebugFlag SCODE_INST = DEBUG_FLAG(88, "scodeInst",
+constant DebugFlag SCODE_INST = DEBUG_FLAG(89, "scodeInst",
   "Enables experimental SCode instantiation phase.");
-constant DebugFlag DELAY_BREAK_LOOP = DEBUG_FLAG(89, "delayBreakLoop",
+constant DebugFlag DELAY_BREAK_LOOP = DEBUG_FLAG(90, "delayBreakLoop",
   "Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization.");
-constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(90, "writeToBuffer",
+constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(91, "writeToBuffer",
   "Enables writing simulation results to buffer.");
-constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(91, "backenddaeinfo",
+constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(92, "backenddaeinfo",
   "Enables dumping of backend information about system (Number of equations before backend,...).");
-constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(92, "gendebugsymbols",
+constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(93, "gendebugsymbols",
   "Generate code with debugging symbols.");
-constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(93, "stateselection",
+constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(94, "stateselection",
   "Enables dumping of selected states. Works only in combination with backenddaeinfo.");
-constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(94, "dumpderrepl",
+constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(95, "dumpderrepl",
   "Enables dumping of selected states. Works only in combination with backenddaeinfo.");
-constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(95, "dumpeqninorder",
+constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(96, "dumpeqninorder",
   "Enables dumping of the equations in the order they are calculated");
 
 
@@ -415,6 +417,7 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_FP_REPL,
   DUMP_PARAM_REPL,
   DUMP_PP_REPL,
+  DUMP_EA_REPL,
   DEBUG_ALIAS,
   TEARING_DUMP,
   JAC_DUMP,
@@ -496,6 +499,7 @@ constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
 protected constant String removeSimpleEquationDesc = "Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).";
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "evaluateParameters",
     "removeFinalParameters", 
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks", 
@@ -511,6 +515,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("removeProtectedParameters", "replace all parameters with protected=true in the system"),
     ("removeUnusedParameter", "strips all parameter not present int the equations from the system"),
     ("removeUnusedVariables", "strips all variables not present int the equations from the system"),
+    ("evaluateParameters","evaluates parameter with evalute=true annotation"),
     ("partitionIndependentBlocks", "Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)"),
     ("collapseIndependentBlocks", "Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)"),
     ("expandDerOperator", "DESCRIBE ME"),
@@ -549,9 +554,10 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
 //    "relaxSystem",
-//    "tearingSystem",
+//    "evaluateParameters",
     "inlineArrayEqn",
     "constantLinearSystem",
+//    "tearingSystem",
     "removeSimpleEquations",
 //    "countOperations",
     "removeUnusedFunctions",
@@ -567,6 +573,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     ("constantLinearSystem", "Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time"),
     ("tearingSystem","DESCRIBE ME"),
 //    ("relaxSystem","DESCRIBE ME"),
+    ("evaluateParameters","evaluates parameter with evalute=true annotation"),
     ("coundOperations","count the mathematic operations of the system"),
     ("dumpComponentsGraphStr", "DESCRIBE ME"),
     ("generateSymbolicJacobian", "Generates symbolic jacobian"),

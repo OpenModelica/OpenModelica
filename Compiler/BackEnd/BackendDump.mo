@@ -1301,14 +1301,14 @@ algorithm
     case ({},_,_,_)
       equation
         seqns = stringDelimitList(List.map(eqnsfalse,equationStr),"\n  ");
-        s = stringAppendList({iString,"\nelse\n  ",seqns,"end if"});
+        s = stringAppendList({iString,"\nelse\n  ",seqns,"\nend if"});
       then
         s;
     case(e::elst,eqns::eqnslst,_,_)
       equation
         se = ExpressionDump.printExpStr(e);
         seqns = stringDelimitList(List.map(eqns,equationStr),"\n  ");
-        s = stringAppendList({iString,"\nelseif ",se," then\n  ",seqns,"end if"});
+        s = stringAppendList({iString,"\nelseif ",se," then\n  ",seqns,"\nend if"});
       then
         ifequationStr(elst,eqnslst,eqnsfalse,s);
   end match;
@@ -1376,7 +1376,7 @@ algorithm
       DAE.VarDirection dir;
       DAE.Exp e;
       list<Absyn.Path> paths;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;

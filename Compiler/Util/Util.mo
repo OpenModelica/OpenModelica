@@ -827,6 +827,19 @@ algorithm
   out := listArray(l3);
 end arrayAppend;
 
+public function arrayCons
+"function for concate an element on an array of list"
+  input Integer index;
+  input Type_a element;
+  input array<list<Type_a>> arr;
+  output array<list<Type_a>> out;
+replaceable type Type_a subtypeof Any;
+  list<Type_a> l;
+algorithm
+  l := arr[index];
+  out := arrayUpdate(arr,index,element::l);
+end arrayCons;
+
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."

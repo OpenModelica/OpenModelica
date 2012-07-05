@@ -66,13 +66,13 @@ extern "C" {
                       dcomplex_t const* a, int const* lda, int const* ipiv, 
                       dcomplex_t* b, int const* ldb, int* info);
 
-  void LAPACK_SGETRI (int const* n, float* a, int const* lda,	int const* ipiv, 
+  void LAPACK_SGETRI (int const* n, float* a, int const* lda,  int const* ipiv, 
               float* work, int const* lwork, int* info);
-  void LAPACK_DGETRI (int const* n, double* a, int const* lda,	int const* ipiv, 
+  void LAPACK_DGETRI (int const* n, double* a, int const* lda,  int const* ipiv, 
               double* work, int const* lwork, int* info);
-  void LAPACK_CGETRI (int const* n, fcomplex_t* a, int const* lda,	int const* ipiv, 
+  void LAPACK_CGETRI (int const* n, fcomplex_t* a, int const* lda,  int const* ipiv, 
               fcomplex_t* work, int const* lwork, int* info);
-  void LAPACK_ZGETRI (int const* n, dcomplex_t* a, int const* lda,	int const* ipiv, 
+  void LAPACK_ZGETRI (int const* n, dcomplex_t* a, int const* lda,  int const* ipiv, 
               dcomplex_t* work, int const* lwork, int* info);
 
   /* symmetric/Hermitian positive definite */

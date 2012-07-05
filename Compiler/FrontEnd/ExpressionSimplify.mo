@@ -4541,6 +4541,30 @@ algorithm
   end match;
 end simplifyList1;
 
+public function condsimplifyList1
+  input list<Boolean> blst;
+  input list<DAE.Exp> expl;
+  input list<DAE.Exp> acc;
+  input list<Boolean> accb;
+  output list<DAE.Exp> outExpl;
+  output list<Boolean> outBool;
+algorithm
+  (outExpl,outBool) := match (blst,expl,acc,accb)
+    local
+      DAE.Exp exp;
+      Boolean b;
+      list<Boolean> rest_blst;
+      list<DAE.Exp> rest_expl;
+    case ({},_,_,_) then (listReverse(acc),listReverse(accb));
+    case (b::rest_blst,exp::rest_expl,_,_)
+      equation
+        (exp,b) = condsimplify(b,exp);
+        (outExpl,outBool) = condsimplifyList1(rest_blst,rest_expl,exp::acc,b::accb);
+      then
+        (outExpl,outBool);
+  end match;
+end condsimplifyList1;
+
 protected function checkZeroLengthArrayOp
   "If this succeeds, and either argument to the operation is empty, the whole operation is empty"
   input DAE.Operator op;

@@ -902,6 +902,36 @@ algorithm
   end match;
 end replaceExpList;
 
+public function replaceExpList1
+  input list<DAE.Exp> iexpl;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  input list<DAE.Exp> iacc1;
+  input list<Boolean> iacc2;
+  output list<DAE.Exp> outExpl;
+  output list<Boolean> replacementPerformed;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  (outExpl,replacementPerformed) := match (iexpl,repl,cond,iacc1,iacc2)
+    local
+      DAE.Exp exp;
+      Boolean c;
+      list<Boolean> acc2;
+      list<DAE.Exp> expl, acc1;
+      
+    case ({},_,_,acc1,acc2) then (listReverse(acc1),listReverse(acc2));
+    case (exp::expl,repl,cond,acc1,acc2)
+      equation
+        (exp,c) = replaceExp(exp,repl,cond);
+        (acc1,acc2) = replaceExpList1(expl,repl,cond,exp::acc1,c::acc2);
+      then (acc1,acc2);
+  end match;
+end replaceExpList1;
+
+
 protected function replaceExpIters
   input list<DAE.ReductionIterator> inIters;
   input VariableReplacements repl;
@@ -1046,6 +1076,9 @@ algorithm
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts,stmts1;
+      list<Boolean> blst;
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnslst;
 
     case ({},_,_) then listReverse(inAcc);
     case ((BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source) :: es),repl,_)
@@ -1112,7 +1145,21 @@ algorithm
         whenEqn1 = replaceWhenEquation(whenEqn,repl);
       then
         replaceEquations2(es, repl,BackendDAE.WHEN_EQUATION(whenEqn1,source)::inAcc);
+ 
+   case ((BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source) :: es),repl,_)
+      equation
+        (expl1,blst) = replaceExpList1(expl, repl, NONE(), {}, {});
+        source = DAEUtil.addSymbolicTransformationSubstitutionLst(blst,source,expl,expl1);
+        (expl2,blst) = ExpressionSimplify.condsimplifyList1(blst,expl1,{},{});
+        source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,expl1,expl2);
+        eqnslst = List.map2(eqnslst,replaceEquations2,repl,{});
+        eqns = replaceEquations2(eqns,repl,{});
+      then
+        replaceEquations2(es,repl,BackendDAE.IF_EQUATION(expl2,eqnslst,eqns,source)::inAcc);
+        
     case ((a :: es),repl,_)
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.replaceEquations2 skipped equation!");
       then
         replaceEquations2(es, repl,a::inAcc);
   end matchcontinue;

@@ -7353,7 +7353,7 @@ algorithm
         ext_arg_1;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVarsWithUpdate failed");
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate failed"});
       then
         fail();
   end matchcontinue;
@@ -7810,7 +7810,7 @@ algorithm
       then outTypeA;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate failed"});
       then
         fail();
   end matchcontinue;
@@ -8776,6 +8776,7 @@ algorithm
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters",false),
           (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
           (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
+          (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
           (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
           (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
           (BackendDAECreate.expandDerOperator,"expandDerOperator",false),
@@ -8812,6 +8813,7 @@ algorithm
   (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
   (BackendDAEOptimize.tearingSystemNew,"tearingSystem",false),
   (OnRelaxation.relaxSystem,"relaxSystem",false),
+  (BackendDAEOptimize.evaluateParametersPast,"evaluateParameters",false),
   (BackendDAEOptimize.countOperations,"countOperations",false),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
   (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),

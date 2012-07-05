@@ -1015,10 +1015,8 @@ algorithm
         (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
-        beqnslstlst = List.map2(eqnslstlst,lowerEqns,functionTree,{});
-        beqnslst = List.fold1(eqnslst,lowerEqn,functionTree,{});
       then
-        BackendDAE.IF_EQUATION(explst1, beqnslstlst, beqnslst,source)::inEqns;                         
+        lowerIfEquation(explst1,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
 
     case (DAE.INITIAL_IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_)
       equation
@@ -1028,10 +1026,8 @@ algorithm
         (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
-        beqnslstlst = List.map2(eqnslstlst,lowerEqns,functionTree,{});
-        beqnslst = List.fold1(eqnslst,lowerEqn,functionTree,{});
       then
-        BackendDAE.IF_EQUATION(explst1, beqnslstlst, beqnslst,source)::inEqns;
+        lowerIfEquation(explst1,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
           
     case (_,_,_)
       equation
@@ -1042,6 +1038,59 @@ algorithm
                          
   end match;
 end lowerEqn;
+
+protected function lowerIfEquation
+  input list<DAE.Exp> conditions;
+  input list<list<DAE.Element>> theneqns;
+  input list<DAE.Element> elseenqs;
+  input list<DAE.Exp> conditions1;
+  input list<list<DAE.Element>> theneqns1;
+  input DAE.ElementSource source;
+  input DAE.FunctionTree functionTree;  
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqn := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,functionTree,inEqns)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> explst;
+      list<list<DAE.Element>> eqnslst;
+      list<DAE.Element> eqns; 
+
+      list<list<BackendDAE.Equation>> beqnslst;
+      list<BackendDAE.Equation> beqns; 
+      
+    // no true case left with condition<>false
+    case ({},{},_,{},{},_,_,_) 
+      equation
+        beqns = List.fold1(elseenqs,lowerEqn,functionTree,inEqns);
+      then 
+        beqns;   
+    // true case left with condition<>false
+    case ({},{},_,_,_,_,_,_)
+      equation 
+        explst = listReverse(conditions1);  
+        eqnslst = listReverse(theneqns1);  
+        beqnslst = List.map2(eqnslst,lowerEqns,functionTree,{});
+        beqns = List.fold1(elseenqs,lowerEqn,functionTree,{});        
+      then 
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,source)::inEqns;
+    // if true use it
+    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+      equation
+        beqns = List.fold1(eqns,lowerEqn,functionTree,inEqns);
+      then 
+        beqns; 
+    // if false skip it
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
+      then
+        lowerIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,functionTree,inEqns);
+    // all other cases
+    case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
+      then
+        lowerIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,functionTree,inEqns);
+  end matchcontinue;
+end lowerIfEquation;
 
 protected function lowerEqns
 "Author: Frenkel TUD 2012-06"

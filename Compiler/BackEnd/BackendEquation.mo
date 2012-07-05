@@ -536,19 +536,7 @@ public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEq
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquations,outTypeA) := match(inEquations,func,inTypeA)
-  local 
-       BackendDAE.Equation e,e1;
-       list<BackendDAE.Equation> res,eqns;
-       Type_a ext_arg_1,ext_arg_2;
-    case({},func,inTypeA) then ({},inTypeA);
-    case(e::res,func,inTypeA)
-     equation
-      (e1,ext_arg_1) = traverseBackendDAEExpsEqn(e,func,inTypeA);
-      (eqns,ext_arg_2)  = traverseBackendDAEExpsEqnList(res,func,ext_arg_1);
-    then 
-      (e1::eqns,ext_arg_2);
-    end match;
+  (outEquations,outTypeA) := List.map1Fold(inEquations,traverseBackendDAEExpsEqn,func,inTypeA);
 end traverseBackendDAEExpsEqnList;
 
 public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
@@ -568,7 +556,7 @@ algorithm
   (outEquation,outTypeA):= match (inEquation,func,inTypeA)
     local
       DAE.Exp e1,e2,e_1,e_2;
-      list<DAE.Exp> expl,expl1,exps,exps1;
+      list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
@@ -578,6 +566,8 @@ algorithm
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts,stmts1;
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnslst;      
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),func,inTypeA)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
@@ -631,7 +621,15 @@ algorithm
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source),ext_arg_2);        
+        (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source),ext_arg_2); 
+        
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),func,inTypeA)
+      equation
+        (expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+        (eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
+        (eqns,ext_arg_2) = List.map1Fold(eqns,traverseBackendDAEExpsEqn,func,ext_arg_2);
+      then
+        (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_2);         
   end match;
 end traverseBackendDAEExpsEqn;
 
@@ -763,7 +761,9 @@ algorithm
         (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source),bres,ext_arg_2);
     case (BackendDAE.IF_EQUATION(conditions = expl, eqnstrue = eqnstrue, eqnsfalse = eqnsfalse,source=source),func,inTypeA)
       equation
-        //(exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+        //(expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+        //(eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
+        //(eqnsfalse,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,func,ext_arg_2);
       then
         (BackendDAE.IF_EQUATION(expl,eqnstrue,eqnsfalse,source),false,inTypeA);        
   end match;

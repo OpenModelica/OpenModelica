@@ -2747,7 +2747,7 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation1Fold;
 
-public function evaluateParameter
+protected function evaluateParameter
 "function: evaluateParameter"
   input DAE.Exp inExp;
   input HashTable2.HashTable inPV;
@@ -5862,6 +5862,31 @@ algorithm
     else source;
   end match;
 end condAddSymbolicTransformation;
+
+public function addSymbolicTransformationSubstitutionLst
+  input list<Boolean> add;
+  input DAE.ElementSource isource;
+  input list<DAE.Exp> explst1;
+  input list<DAE.Exp> explst2;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match(add,isource,explst1,explst2)
+    local
+      list<Boolean> brest;
+      list<DAE.Exp> rexplst1,rexplst2;
+      DAE.Exp exp1,exp2;
+      DAE.ElementSource source;
+    case({},_,_,_) then isource;
+    case(true::brest,_,exp1::rexplst1,exp2::rexplst2)
+      equation
+        source = addSymbolicTransformationSubstitution(true,isource, exp1,exp2);
+      then
+        addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
+    case(false::brest,_,_::rexplst1,_::rexplst2)
+      then
+        addSymbolicTransformationSubstitutionLst(brest,isource,rexplst1,rexplst2);
+  end match;  
+end addSymbolicTransformationSubstitutionLst;
 
 public function addSymbolicTransformationSubstitution
   input Boolean add;
