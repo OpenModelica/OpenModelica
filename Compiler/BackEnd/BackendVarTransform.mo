@@ -1176,7 +1176,7 @@ protected function optimizeIfEquation
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqn := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;

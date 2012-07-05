@@ -834,6 +834,7 @@ public function arrayCons
   input array<list<Type_a>> arr;
   output array<list<Type_a>> out;
 replaceable type Type_a subtypeof Any;
+protected
   list<Type_a> l;
 algorithm
   l := arr[index];
