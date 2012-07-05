@@ -123,7 +123,7 @@ algorithm
   reqnarr := BackendDAEUtil.listEquation(reqns);
   ieqnarr := BackendDAEUtil.listEquation(ieqns);
   constrarra := listArray(constrs);
-  einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
+  einfo := BackendDAE.EVENT_INFO(whenclauses_1,{});
   aliasVars := BackendDAEUtil.emptyAliasVariables();
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
@@ -1298,8 +1298,9 @@ algorithm
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
       String scond;
+      DAE.ElementSource source;
 
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE()),i,_,whenList)
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE(),source=source),i,_,whenList)
       equation
         (res,reinit) = lowerWhenEqn2(listReverse(eqnl), i, functionTree, {}, {});
         equation_count = listLength(res);
@@ -1308,6 +1309,7 @@ algorithm
         extra = Util.if_(hasReinit, 1, 0);
         tot_count = equation_count + extra;
         i_1 = i + tot_count;
+        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         whenClauseList1 = makeWhenClauses(equation_count, cond, {});
         whenClauseList2 = makeWhenClauses(extra, cond, reinit);
         whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
@@ -1315,7 +1317,7 @@ algorithm
       then
         (res,i_1,whenClauseList4);
 
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart)),i,_,whenList)
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart),source=source),i,_,whenList)
       equation
         (elseEqnLst,nextWhenIndex,elseClauseList) = lowerWhenEqn(elsePart,i,functionTree,whenList);
         (trueEqnLst,reinit) = lowerWhenEqn2(listReverse(eqnl), nextWhenIndex, functionTree, {}, {});
@@ -1324,6 +1326,7 @@ algorithm
         hasReinit = (reinit_count > 0);
         extra = Util.if_(hasReinit, 1, 0);
         tot_count = equation_count + extra;
+        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         whenClauseList1 = makeWhenClauses(equation_count, cond, {});
         whenClauseList2 = makeWhenClauses(extra, cond, reinit);
         whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
@@ -1380,6 +1383,13 @@ algorithm
       then
         (eqnl,reinit);
 
+    case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i,_,_,_)
+      equation
+        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+      then
+        (eqnl,reinit);
+
     case ((DAE.ASSERT(condition=cond,message = e,source = source) :: xs),i,_,_,_)
       equation
         (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
@@ -1401,14 +1411,7 @@ algorithm
         (eqnl,reinit) = lowerWhenEqn2(xs, i, functionTree, iEquationLst, BackendDAE.TERMINATE(e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
-    
-    case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i,_,_,_)
-      equation
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
-      then
-        (eqnl,reinit);
-    
+        
     // failure  
     case ((el::xs), i,_,_,_)
       equation
