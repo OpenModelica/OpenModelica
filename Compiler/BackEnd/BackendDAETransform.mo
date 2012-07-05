@@ -3323,6 +3323,8 @@ algorithm
       list<Integer> dimSize;
       list<DAE.SymbolicOperation> ops;
       list<DAE.Statement> statementLst;
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnslst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source),wclst,_,_)
       equation
@@ -3389,7 +3391,16 @@ algorithm
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
-        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source),wclst,ext_arg_2);                
+        (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source),wclst,ext_arg_2);   
+        
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),wclst,_,_)
+      equation
+        (expl,(ops,ext_arg_1)) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(expl,func,({},inTypeA),{});
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
+        (eqnslst,wclst,ext_arg_1) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(eqnslst,wclst,func,ext_arg_1,{});
+        (eqns,wclst,ext_arg_1) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns,wclst,func,ext_arg_1,{});
+      then
+        (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),wclst,ext_arg_1);                     
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation failed!"});
@@ -3397,6 +3408,96 @@ algorithm
         fail();
   end matchcontinue;
 end traverseBackendDAEExpsEqnWithSymbolicOperation;
+
+protected function traverseBackendDAEExpsLstEqnWithSymbolicOperation
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> inExps;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<DAE.Exp> iAcc;
+  output list<DAE.Exp> outExps;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;  
+algorithm
+  (outExps,outTypeA) := match (inExps,func,inTypeA,iAcc)
+    local  
+      DAE.Exp exp;
+      list<DAE.Exp> rest,exps;
+      Type_a arg;
+    case({},_,_,_) then (listReverse(iAcc),inTypeA);
+    case(exp::rest,_,_,_)
+      equation
+        ((exp,arg)) = func((exp,inTypeA));
+        (exps,arg) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(rest,func,arg,exp::iAcc); 
+      then
+        (exps,arg);
+  end match;
+end traverseBackendDAEExpsLstEqnWithSymbolicOperation;
+
+protected function traverseBackendDAEExpsEqnLstWithSymbolicOperation
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.Equation> inEqns;
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.Equation> iAcc;
+  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.WhenClause> outWhenClauseLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> inTpl;
+    output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> outTpl;
+  end FuncExpType;  
+algorithm
+  (outEqns,outWhenClauseLst,outTypeA) := match (inEqns,inWhenClauseLst,func,inTypeA,iAcc)
+    local  
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest,eqns;
+      list<BackendDAE.WhenClause> wc;
+      Type_a arg;
+    case({},_,_,_,_) then (listReverse(iAcc),inWhenClauseLst,inTypeA);
+    case(eqn::rest,_,_,_,_)
+      equation
+        (eqn,wc,arg) = traverseBackendDAEExpsEqnWithSymbolicOperation(eqn,inWhenClauseLst,func,inTypeA);
+        (eqns,wc,arg) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(rest,wc,func,arg,eqn::iAcc); 
+      then
+        (eqns,wc,arg);
+  end match;
+end traverseBackendDAEExpsEqnLstWithSymbolicOperation;
+
+protected function traverseBackendDAEExpsEqnLstLstWithSymbolicOperation
+  replaceable type Type_a subtypeof Any;
+  input list<list<BackendDAE.Equation>> inEqns;
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<list<BackendDAE.Equation>> iAcc;
+  output list<list<BackendDAE.Equation>> outEqns;
+  output list<BackendDAE.WhenClause> outWhenClauseLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> inTpl;
+    output tuple<DAE.Exp, tuple<list<DAE.SymbolicOperation>,Type_a>> outTpl;
+  end FuncExpType;  
+algorithm
+  (outEqns,outWhenClauseLst,outTypeA) := match (inEqns,inWhenClauseLst,func,inTypeA,iAcc)
+    local  
+      list<BackendDAE.Equation> eqn;
+      list<list<BackendDAE.Equation>> rest,eqnslst;
+      list<BackendDAE.WhenClause> wc;
+      Type_a arg;
+    case({},_,_,_,_) then (listReverse(iAcc),inWhenClauseLst,inTypeA);
+    case(eqn::rest,_,_,_,_)
+      equation
+        (eqn,wc,arg) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqn,inWhenClauseLst,func,inTypeA,{});
+        (eqnslst,wc,arg) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(rest,wc,func,arg,eqn::iAcc); 
+      then
+        (eqnslst,wc,arg);
+  end match;
+end traverseBackendDAEExpsEqnLstLstWithSymbolicOperation;
 
 protected function traverseBackendDAEExpsWhenClause
 "function: traverseBackendDAEExpsWhenClause

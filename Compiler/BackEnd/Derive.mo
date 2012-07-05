@@ -89,6 +89,8 @@ algorithm
       DAE.SymbolicOperation op1,op2;
       DAE.FunctionTree funcs;
       DAE.Algorithm alg;
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnslst;
     
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,_) /* time varying variables */
@@ -143,6 +145,14 @@ algorithm
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
        then
         BackendDAE.ALGORITHM(size,alg,source);
+ 
+    // equations
+    case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),timevars,_) /* time varying variables */
+      equation
+        eqnslst = List.map2List(eqnslst,differentiateEquationTime,timevars,shared);
+        eqns = List.map2(eqns,differentiateEquationTime,timevars,shared);
+      then
+        BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source); 
  
     case (BackendDAE.COMPLEX_EQUATION(source = source),_,_)
       equation
