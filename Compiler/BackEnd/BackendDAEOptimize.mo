@@ -2891,23 +2891,12 @@ public function removeFinalParameters
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapEqSystem(dae,removeFinalParametersWork);
-end removeFinalParameters;
-
-protected function removeFinalParametersWork
-"function: removeFinalParameters
-  autor Frenkel TUD"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := match (syst,shared)
+  odae := match (dae)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables vars,knvars,exobj,knvars1;
+      BackendDAE.Variables knvars,exobj,knvars1;
       BackendDAE.AliasVariables av,varsAliases;
-      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      BackendDAE.EquationArray remeqns,remeqns1,inieqns,inieqns1;
       array<DAE.Constraint> constrs;
       Env.Cache cache;
       Env.Env env;      
@@ -2915,20 +2904,40 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendVarTransform.VariableReplacements repl,repl1,repl2;
-      list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
       BackendDAE.BackendDAEType btp;
-      BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation
         repl = BackendVarTransform.emptyReplacements();
-        lsteqns = BackendDAEUtil.equationList(eqns);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
-        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
+        systs = List.map1(systs,removeFinalParametersWork,repl2);
+      then
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+  end match;
+end removeFinalParameters;
+
+protected function removeFinalParametersWork
+"function: removeFinalParametersWork
+  autor Frenkel TUD"
+  input BackendDAE.EqSystem syst;
+  input BackendVarTransform.VariableReplacements repl;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (syst,repl)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns,eqns1;
+      list<BackendDAE.Equation> eqns_1,lsteqns;
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),_)
+      equation
+        lsteqns = BackendDAEUtil.equationList(eqns);
+        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl);
         eqns1 = BackendDAEUtil.listEquation(eqns_1);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching);
   end match;
 end removeFinalParametersWork;
 
@@ -3154,10 +3163,9 @@ algorithm
   outDAE := match (inDAE)
     local
       DAE.FunctionTree funcs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Variables vars,vars_1,knvars,exobj,knvars_1,knvars_2;
+      BackendDAE.Variables knvars,exobj,knvars_1,knvars_2;
       BackendDAE.AliasVariables av,varsAliases;
-      BackendDAE.EquationArray eqns,eqns1,remeqns,remeqns1,inieqns,inieqns1;
+      BackendDAE.EquationArray remeqns,remeqns1,inieqns,inieqns1;
       array<DAE.Constraint> constrs;
       Env.Cache cache;
       Env.Env env;      
@@ -3165,21 +3173,42 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendVarTransform.VariableReplacements repl,repl1;
-      list<BackendDAE.Equation> eqns_1,seqns,lsteqns,reqns,ieqns;
       BackendDAE.BackendDAEType btp;
-      BackendDAE.Matching matching;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation      
         repl = BackendVarTransform.emptyReplacements();
-        lsteqns = BackendDAEUtil.equationList(eqns);
         repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
         Debug.fcall(Flags.DUMP_PP_REPL, BackendVarTransform.dumpReplacements, repl1);
-        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl1);
-        eqns1 = BackendDAEUtil.listEquation(eqns_1);
+        systs = List.map1(systs,removeProtectedParameterswork,repl1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)));
+        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)));
   end match;
 end removeProtectedParameters;
+
+protected function removeProtectedParameterswork
+"function: removeProtectedParameterswork
+  autor Frenkel TUD"
+  input BackendDAE.EqSystem isyst;
+  input BackendVarTransform.VariableReplacements repl;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (isyst,repl)
+    local
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Variables vars,vars_1;
+      BackendDAE.EquationArray eqns,eqns1;
+      list<BackendDAE.Equation> eqns_1,lsteqns;
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_)
+      equation      
+        lsteqns = BackendDAEUtil.equationList(eqns);
+        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl);
+        eqns1 = BackendDAEUtil.listEquation(eqns_1);
+      then
+        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching);
+  end match;
+end removeProtectedParameterswork;
 
 protected function protectedParametersFinder
 "autor: Frenkel TUD 2011-03"
