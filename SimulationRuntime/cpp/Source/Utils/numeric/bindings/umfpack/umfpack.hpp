@@ -19,9 +19,9 @@
 
 
 #include <boost/noncopyable.hpp> 
-#include <boost/numeric/bindings/traits/traits.hpp>
-#include <boost/numeric/bindings/traits/sparse_traits.hpp>
-#include <boost/numeric/bindings/umfpack/umfpack_overloads.hpp>
+#include "Utils/numeric/bindings/traits/traits.hpp"
+#include "Utils/numeric/bindings/traits/sparse_traits.hpp"
+#include "Utils/numeric/bindings/umfpack/umfpack_overloads.hpp"
 
 
 namespace boost { namespace numeric { namespace bindings {  namespace umfpack {

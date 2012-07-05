@@ -14,7 +14,7 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_DETAIL_GENERATE_CONST_HPP
 #define BOOST_NUMERIC_BINDINGS_TRAITS_DETAIL_GENERATE_CONST_HPP
 
-#include <boost/numeric/bindings/traits/config.hpp> 
+#include "Utils/numeric/bindings/traits/config.hpp"
 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
 

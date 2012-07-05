@@ -14,7 +14,7 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_H
 #define BOOST_NUMERIC_BINDINGS_TRAITS_H
 
-#include <boost/numeric/bindings/traits/vector_traits.hpp>
-#include <boost/numeric/bindings/traits/matrix_traits.hpp>
+#include "Utils/numeric/bindings/traits/vector_traits.hpp"
+#include "Utils/numeric/bindings/traits/matrix_traits.hpp"
 
 #endif 

@@ -17,10 +17,10 @@
 #ifndef BOOST_NUMERIC_BINDINGS_UMFPACK_OVERLOADS_HPP
 #define BOOST_NUMERIC_BINDINGS_UMFPACK_OVERLOADS_HPP
 
-#include <boost/numeric/bindings/umfpack/umfpack_inc.hpp>
-#include <boost/numeric/bindings/traits/type.hpp>
-#include <boost/numeric/bindings/traits/detail/array.hpp>
-#include <boost/numeric/bindings/traits/detail/utils.hpp>
+#include "Utils/numeric/bindings/umfpack/umfpack_inc.hpp"
+#include "Utils/numeric/bindings/traits/type.hpp"
+#include "Utils/numeric/bindings/traits/detail/array.hpp"
+#include "Utils/numeric/bindings/traits/detail/utils.hpp"
 
 namespace boost { namespace numeric { namespace bindings { 
 

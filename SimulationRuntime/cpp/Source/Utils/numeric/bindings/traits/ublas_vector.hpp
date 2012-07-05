@@ -14,7 +14,7 @@
 #ifndef BOOST_NUMERIC_BINDINGS_TRAITS_UBLAS_VECTOR_H
 #define BOOST_NUMERIC_BINDINGS_TRAITS_UBLAS_VECTOR_H
 
-#include <boost/numeric/bindings/traits/vector_traits.hpp>
+#include <Utils/numeric/bindings/traits/vector_traits.hpp>
 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
 
