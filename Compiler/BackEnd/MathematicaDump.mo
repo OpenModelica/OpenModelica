@@ -670,18 +670,18 @@ algorithm
   str := matchcontinue(whenEq) 
   local
     Integer indx;
-    //DAE.Exp cond;
-    DAE.ComponentRef cond;
+    DAE.Exp cond;
+    DAE.ComponentRef cr;
     //BackendDAE.Equation eqn;
     DAE.Exp eqn;
     BackendDAE.WhenEquation elseEqn;
     
-    case(BackendDAE.WHEN_EQ(indx,cond,eqn,NONE())) equation
-      str = "when "+&ComponentReference.crefStr(cond)+&" then\n"+&ExpressionDump.printExpStr(eqn)+&"\nend when"; //TODO: I'm not sure if the WHEN_EQ data is the same still
+    case(BackendDAE.WHEN_EQ(cond,indx,cr,eqn,NONE())) equation
+      str = "when "+&ExpressionDump.printExpStr(cond)+&" then\n"+&ComponentReference.crefStr(cr)+&":="+&ExpressionDump.printExpStr(eqn)+&"\nend when"; //TODO: I'm not sure if the WHEN_EQ data is the same still
     then str;
     
-    case(BackendDAE.WHEN_EQ(indx,cond,eqn,SOME(elseEqn))) equation
-      str = "when "+&ComponentReference.crefStr(cond)+&" then\n"+&ExpressionDump.printExpStr(eqn)+&"\n else"+&whenEquationStr(elseEqn);
+    case(BackendDAE.WHEN_EQ(cond,indx,cr,eqn,SOME(elseEqn))) equation
+      str = "when "+&ExpressionDump.printExpStr(cond)+&" then\n"+&ComponentReference.crefStr(cr)+&":="+&ExpressionDump.printExpStr(eqn)+&"\n else"+&whenEquationStr(elseEqn);
     then str;      
   end matchcontinue;
 end whenEquationStr;

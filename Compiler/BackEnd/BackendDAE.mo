@@ -167,7 +167,8 @@ end Equation;
 public
 uniontype WhenEquation "- When Equation"
   record WHEN_EQ
-    Integer index         "Index in when clauses" ;
+    .DAE.Exp condition     "The when-condition" ;
+    Integer index          "Index in when clauses" ;
     .DAE.ComponentRef left "Left hand side of equation" ;
     .DAE.Exp right         "Right hand side of equation" ;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";

@@ -6655,7 +6655,7 @@ algorithm
       Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
     then {};
         
-    case(currEquation as BackendDAE.WHEN_EQUATION(_, _), vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
+    case(currEquation as BackendDAE.WHEN_EQUATION(size=_), vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
       Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
     then {};
 

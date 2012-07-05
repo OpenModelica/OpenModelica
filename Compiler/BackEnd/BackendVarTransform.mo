@@ -1142,7 +1142,7 @@ algorithm
         replaceEquations2(es, repl,BackendDAE.RESIDUAL_EQUATION(e_2,source)::inAcc);
     case ((BackendDAE.WHEN_EQUATION(size,whenEqn,source) :: es),repl,_)
       equation
-        whenEqn1 = replaceWhenEquation(whenEqn,repl);
+        (whenEqn1,source) = replaceWhenEquation(whenEqn,repl,source);
       then
         replaceEquations2(es, repl,BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc);
  
@@ -1212,55 +1212,81 @@ end optimizeIfEquation;
 protected function replaceWhenEquation "Replaces variables in a when equation"
   input BackendDAE.WhenEquation whenEqn;
   input VariableReplacements repl;
+  input DAE.ElementSource isource;
   output BackendDAE.WhenEquation outWhenEqn;
+  output DAE.ElementSource osource;
 algorithm
-  outWhenEqn := matchcontinue(whenEqn,repl)
+  (outWhenEqn,osource) := matchcontinue(whenEqn,repl,isource)
   local Integer i;
     DAE.ComponentRef cr,cr1;
-    DAE.Exp e,e1,e2;
-    DAE.Type tp;
+    DAE.Exp e,e1,e2,cre,cre1,cond,cond1,cond2;
+    DAE.Operator op;
     BackendDAE.WhenEquation elsePart,elsePart2;
-    Boolean b1;
+    Boolean b1,b2;
+    DAE.ElementSource source;
 
-    case (BackendDAE.WHEN_EQ(i,cr,e,NONE()),repl)
+    case (BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),_,_)
       equation
-        (e1,b1) = replaceExp(e, repl,NONE());
-        /* TODO: Add symbolic operation to source */
-        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        (DAE.CREF(cr1,_),_) = replaceExp(Expression.crefExp(cr),repl,NONE());
-      then 
-        BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
-
-    // Replacements makes cr negative, a = -b
-    case (BackendDAE.WHEN_EQ(i,cr,e,NONE()),repl)
-      equation
-        (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)),_) = replaceExp(Expression.crefExp(cr),repl,NONE());
-        /* TODO: Add symbolic operation to source */
-        (e1,b1) = replaceExp(e, repl,NONE());
-        e1 = DAE.UNARY(DAE.UMINUS(tp),e1);
-        (e2,_) = ExpressionSimplify.simplify(e1);
-      then 
-        BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
-
-    case (BackendDAE.WHEN_EQ(i,cr,e,SOME(elsePart)),repl)
-      equation
-        elsePart2 = replaceWhenEquation(elsePart,repl);
-        /* TODO: Add symbolic operation to source */
         (e1,b1) = replaceExp(e, repl,NONE());
         (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
-        (DAE.CREF(cr1,_),_) = replaceExp(Expression.crefExp(cr),repl,NONE());
-      then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,isource,e,e2);
+        (cond1,b2) = replaceExp(cond, repl,NONE());
+        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);
+        cre = Expression.crefExp(cr);
+        (cre1 as DAE.CREF(componentRef=cr1),b1) = replaceExp(cre,repl,NONE());
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
+      then 
+        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,NONE()),source);
 
     // Replacements makes cr negative, a = -b
-    case (BackendDAE.WHEN_EQ(i,cr,e,SOME(elsePart)),repl)
+    case (BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),_,_)
       equation
-        elsePart2 = replaceWhenEquation(elsePart,repl);
-        /* TODO: Add symbolic operation to source */
-        (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)),_) = replaceExp(Expression.crefExp(cr),repl,NONE());
+        cre = Expression.crefExp(cr);
+        (DAE.UNARY(operator=op,exp=cre1 as DAE.CREF(componentRef=cr1)),b1) = replaceExp(cre,repl,NONE());
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,isource,cre,cre1);
         (e1,b1) = replaceExp(e, repl,NONE());
-        e1 = DAE.UNARY(DAE.UMINUS(tp),e1);
+        e1 = DAE.UNARY(op,e1);
         (e2,_) = ExpressionSimplify.simplify(e1);
-      then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
+        (cond1,b2) = replaceExp(cond, repl,NONE());
+        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);        
+      then 
+        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,NONE()),source);
+
+    case (BackendDAE.WHEN_EQ(cond,i,cr,e,SOME(elsePart)),_,_)
+      equation
+        (elsePart2,source) = replaceWhenEquation(elsePart,repl,isource);
+        (e1,b1) = replaceExp(e, repl,NONE());
+        (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
+        (cond1,b2) = replaceExp(cond, repl,NONE());
+        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);    
+        cre = Expression.crefExp(cr);   
+        (cre1 as DAE.CREF(componentRef=cr1),b1) = replaceExp(cre,repl,NONE());
+         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);        
+      then 
+        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,SOME(elsePart2)),source);
+
+    // Replacements makes cr negative, a = -b
+    case (BackendDAE.WHEN_EQ(cond,i,cr,e,SOME(elsePart)),_,_)
+      equation
+        (elsePart2,source) = replaceWhenEquation(elsePart,repl,isource);
+        /* TODO: Add symbolic operation to source */
+        cre = Expression.crefExp(cr);
+        (DAE.UNARY(operator=op,exp=cre1 as DAE.CREF(componentRef=cr1)),b1) = replaceExp(cre,repl,NONE());
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
+        (e1,b1) = replaceExp(e, repl,NONE());
+        e1 = DAE.UNARY(op,e1);
+        (e2,_) = ExpressionSimplify.simplify(e1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e,e2);
+        (cond1,b2) = replaceExp(cond, repl,NONE());
+        (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);         
+      then 
+        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,SOME(elsePart2)),source);
 
   end matchcontinue;
 end replaceWhenEquation;

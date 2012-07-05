@@ -87,7 +87,7 @@ algorithm
       DAE.Exp e;
     case (wc, ind)
       equation
-        BackendDAE.WHEN_CLAUSE(condition=DAE.ARRAY(_,_,condlst)) = listNth(wc, ind);
+        BackendDAE.WHEN_CLAUSE(condition=DAE.ARRAY(array=condlst)) = listNth(wc, ind);
       then condlst;
     case (wc, ind)
       equation
@@ -555,7 +555,7 @@ public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
 algorithm
   (outEquation,outTypeA):= match (inEquation,func,inTypeA)
     local
-      DAE.Exp e1,e2,e_1,e_2;
+      DAE.Exp e1,e2,e_1,e_2,cond;
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr,cr1;
@@ -593,23 +593,25 @@ algorithm
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+        ((cond,ext_arg_2)) = func((cond,ext_arg_2));
       then
-       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),ext_arg_2);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,NONE()),source),ext_arg_2);
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
+        ((cond,ext_arg_2)) = func((cond,ext_arg_2));
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),func,inTypeA)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
@@ -688,7 +690,7 @@ public function traverseBackendDAEExpsEqnOutEqn
 algorithm
   (outEquation,outflag,outTypeA):= match (inEquation,func,inTypeA)
     local
-      DAE.Exp e1,e2,e_1,e_2;
+      DAE.Exp e1,e2,e_1,e_2,cond;
       list<DAE.Exp> expl,exps;
       DAE.Type tp;
       DAE.ComponentRef cr,cr1;
@@ -697,7 +699,7 @@ algorithm
       Integer index,size;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       BackendDAE.Equation eq;
-      Boolean b1,b2,b3,bres;
+      Boolean b1,b2,b3,b4,bres;
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<list<BackendDAE.Equation>> eqnstrue;
@@ -730,25 +732,27 @@ algorithm
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),b1,ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        bres = Util.boolOrList({b1,b2});
-      then
-       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),bres,ext_arg_2);
-    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
-      equation
-        tp = Expression.typeof(e2);
-        e1 = Expression.makeCrefExp(cr,tp);
-        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
-        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b3,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
+        ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
         bres = Util.boolOrList({b1,b2,b3});
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,NONE()),source),bres,ext_arg_2);
+    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr,tp);
+        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+        ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b4,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
+        bres = Util.boolOrList({b1,b2,b3,b4});
+      then
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source),func,inTypeA)
       then
         (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);

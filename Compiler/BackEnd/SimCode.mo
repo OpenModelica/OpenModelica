@@ -2914,7 +2914,7 @@ algorithm
       
     case(cr,daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs=eqs)::{}),e::eqns) 
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr2,exp,_)) = BackendDAEUtil.equationNth(eqs,intAbs(e)-1);
+        BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left=cr2,right=exp)) = BackendDAEUtil.equationNth(eqs,intAbs(e)-1);
         //We can asume the same component refs are solved in any else-branch.
         b1 = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         b2 = Expression.expContains(exp,Expression.crefExp(cr));
@@ -3820,7 +3820,7 @@ algorithm
       list<SimEqSystem> resEqs;
       list<BackendDAE.WhenClause> wcl;
       DAE.ComponentRef left,varOutput;
-      DAE.Exp e1,e2,varexp,exp_,right;
+      DAE.Exp e1,e2,varexp,exp_,right,cond;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       BackendDAE.WhenEquation whenEquation,elseWhen;
       String algStr,message,eqStr;
@@ -3863,7 +3863,7 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.WHEN_EQ(wcIndex, left, right, NONE()) = whenEquation;
+        BackendDAE.WHEN_EQ(cond,wcIndex, left, right, NONE()) = whenEquation;
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
@@ -3875,7 +3875,7 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.WHEN_EQ(wcIndex, left, right, SOME(elseWhen)) = whenEquation;
+        BackendDAE.WHEN_EQ(cond,wcIndex, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
@@ -4026,13 +4026,13 @@ algorithm
     local
       Integer wcIndex;
       DAE.ComponentRef left;
-      DAE.Exp  right;
+      DAE.Exp  right,cond;
       BackendDAE.WhenEquation elseWhenEquation;
       SimEqSystem simElseWhenEq;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.Exp> conditions;
       // when eq without else
-    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo, source)
+    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond,index=wcIndex, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo, source)
       equation
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
@@ -4040,7 +4040,7 @@ algorithm
         SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
         
         // when eq with else
-    case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
+    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond,index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
       equation
         simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
@@ -8210,13 +8210,13 @@ algorithm
     local
       Integer nextHelpInd, ind;
       Expression.ComponentRef cr;
-      DAE.Exp exp;
+      DAE.Exp exp,cond;
       String res1,res2,res;
       Option<BackendDAE.WhenEquation> elsePart;
       list<DAE.Exp> conditionList;
       list<HelpVarInfo> helpVars1,helpVars2, helpVars;
       list<BackendDAE.WhenClause> whenClauseList;
-    case (SOME(BackendDAE.WHEN_EQ(ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
+    case (SOME(BackendDAE.WHEN_EQ(cond,ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
       equation
         conditionList = getConditionList(whenClauseList, ind);
         (res1,helpVars1) = buildWhenConditionChecks3(conditionList, ind, nextHelpInd,isElseWhen);
@@ -11154,7 +11154,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
       rec = List.unionElt(eq,rec);
       then
         rec;
-     case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,_,_,_))) ::rest , dlow)
+     case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=_))) ::rest , dlow)
      equation
        str = BackendDump.equationStr(eq);
        Debug.fcall(Flags.CPP_VAR,print,"Found When eq " +& str +& "\n");

@@ -4200,15 +4200,17 @@ algorithm
     local
       list<Integer> lst1,lst2,res,dimsize;
       Variables vars;
-      DAE.Exp e1,e2,e,expCref;
+      DAE.Exp e1,e2,e,expCref,cond;
       list<list<Integer>> lstlst1,lstlst2,lstlst3,lstres;
       list<DAE.Exp> expl,inputs,outputs;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation we;
+      BackendDAE.WhenEquation we,elsewe;
       list<WhenClause> wc;
       Integer wc_index,size,indx;
       String eqnstr;
       list<DAE.Statement> statementLst;
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns;
     
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_)
@@ -4252,16 +4254,28 @@ algorithm
         (res,1);
     
     // WHEN_EQUATION
-    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,_)
+    case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=NONE())),wc,_)
       equation
         expl = BackendEquation.getWhenCondition(wc,wc_index);
         lst1 = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
-        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = Expression.crefExp(cr);
+        lst1 = incidenceRowExp(cond, vars, lst1,inIndexType);
         lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
         res = incidenceRowExp(e2, vars, lst2,inIndexType);
       then
-        (res,1);
+        (res,size);
+    case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=SOME(elsewe))),wc,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst1 = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
+        e1 = Expression.crefExp(cr);
+        lst1 = incidenceRowExp(cond, vars, lst1,inIndexType);
+        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
+        res = incidenceRowExp(e2, vars, lst2,inIndexType);
+        res = incidenceRowWhen(vars,elsewe,wc,inIndexType,res);
+      then
+        (res,size);
+
     
     // ALGORITHM For now assume that algorithm will be solvable for 
     // correct variables. I.e. find all variables in algorithm and add to lst.
@@ -4276,10 +4290,11 @@ algorithm
         
     // if Equation
     // TODO : how to handle this?
-    case(vars,BackendDAE.IF_EQUATION(conditions=expl),_,_)
+    case(vars,BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_)
       equation
         res = incidenceRow1(expl, incidenceRowExp, vars, {},inIndexType);
         print("Warning: BackendDAEUtil.incidenceRow does not handle if-equations propper!\n");
+
       then
         (res,1);
     
@@ -4293,6 +4308,58 @@ algorithm
         fail();
   end matchcontinue;
 end incidenceRow;
+
+protected function incidenceRowWhen
+"function: incidenceRowWhen
+  author: Frenkel TUD
+  Helper function to incidenceMatrix. Calculates the indidence row
+  in the matrix for a when equation."
+  input Variables inVariables;
+  input BackendDAE.WhenEquation inEquation;
+  input list<WhenClause> inWhenClause;
+  input BackendDAE.IndexType inIndexType;
+  input list<Integer> inRow;
+  output list<Integer> outIntegerLst;
+algorithm
+  outIntegerLst := 
+   match (inVariables,inEquation,inWhenClause,inIndexType,inRow)
+    local
+      list<Integer> lst1,lst2,res,dimsize;
+      Variables vars;
+      DAE.Exp e1,e2,e,expCref,cond;
+      list<list<Integer>> lstlst1,lstlst2,lstlst3,lstres;
+      list<DAE.Exp> expl,inputs,outputs;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation we,elsewe;
+      list<WhenClause> wc;
+      Integer wc_index,size,indx;
+      String eqnstr;
+      list<DAE.Statement> statementLst;
+
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=NONE()),wc,_,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst1 = incidenceRow1(expl, incidenceRowExp, vars, inRow,inIndexType);
+        e1 = Expression.crefExp(cr);
+        lst1 = incidenceRowExp(cond, vars, lst1,inIndexType);
+        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
+        res = incidenceRowExp(e2, vars, lst2,inIndexType);
+      then
+        res;
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=SOME(elsewe)),wc,_,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst1 = incidenceRow1(expl, incidenceRowExp, vars, inRow,inIndexType);
+        e1 = Expression.crefExp(cr);
+        lst1 = incidenceRowExp(cond, vars, lst1,inIndexType);
+        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
+        res = incidenceRowExp(e2, vars, lst2,inIndexType);
+        res = incidenceRowWhen(vars,elsewe,wc,inIndexType,res);
+      then
+        res;
+      
+  end match;
+end incidenceRowWhen;
 
 protected function incidenceRowAlgorithm
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,BackendDAE.IndexType>> inTpl;
@@ -5755,16 +5822,18 @@ algorithm
     local
       list<Integer> lst,ds;
       BackendDAE.Variables vars;
-      DAE.Exp e1,e2,e,expCref;
+      DAE.Exp e1,e2,e,expCref,cond;
       list<DAE.Exp> expl,inputs,outputs;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation we;
+      BackendDAE.WhenEquation we,elsewe;
       list<BackendDAE.WhenClause> wc;
       Integer indx,wc_index;
       String eqnstr;
       Integer i,size;
       DAE.Algorithm alg;
       BackendDAE.AdjacencyMatrixElementEnhanced row;
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns;
     
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_,_)
@@ -5809,19 +5878,33 @@ algorithm
       then
         (row,1);    
     // WHEN_EQUATION
-    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc,_,_,_)
+    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=NONE())),wc,_,_,_)
       equation
         expl = BackendEquation.getWhenCondition(wc,wc_index);
         lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
         // mark all negative because the when condition cannot used to solve a variable 
         _ = List.fold1(lst,markNegativ,rowmark,mark);
-        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = Expression.crefExp(cr);
         lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
         (row,1);
+    case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=SOME(elsewe))),wc,_,_,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        // mark all negative because the when condition cannot used to solve a variable 
+        _ = List.fold1(lst,markNegativ,rowmark,mark);
+        e1 = Expression.crefExp(cr);
+        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowWhenEnhanced(vars,elsewe,wc,mark,rowmark,kvars,lst);
+        row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
+      then
+        (row,size);        
     
     // ALGORITHM For now assume that algorithm will be solvable for 
     // correct variables. I.e. find all variables in algorithm and add to lst.
@@ -5836,6 +5919,15 @@ algorithm
       then 
         (row,size);
             
+    // if Equation
+    // TODO : how to handle this?
+    case(vars,BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_,_)
+      equation
+        print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
+
+      then
+        ({},1);            
+            
     else
       equation
         eqnstr = BackendDump.equationStr(inEquation);
@@ -5845,6 +5937,62 @@ algorithm
         fail();
   end matchcontinue;
 end adjacencyRowEnhanced;    
+
+protected function adjacencyRowWhenEnhanced
+"function: adjacencyRowWhenEnhanced
+  author: Frenkel TUD
+  Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
+  in the matrix for one equation."
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.WhenEquation inEquation; 
+  input list<BackendDAE.WhenClause> inWhenClause;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.Variables kvars;
+  input list<Integer> iRow;
+  output list<Integer> outRow;
+algorithm
+  outRow := match (inVariables,inEquation,inWhenClause,mark,rowmark,kvars,iRow)
+    local
+      list<Integer> lst;
+      Variables vars;
+      DAE.Exp e1,e2,cond;
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation elsewe;
+      list<WhenClause> wc;
+      Integer wc_index;
+
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=NONE()),wc,_,_,_,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
+        // mark all negative because the when condition cannot used to solve a variable 
+        lst = adjacencyRowExpEnhanced(cond, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        _ = List.fold1(lst,markNegativ,rowmark,mark);
+        lst = listAppend(lst,iRow);
+        e1 = Expression.crefExp(cr);
+        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+      then
+        lst; 
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,index=wc_index,left=cr,right=e2,elsewhenPart=SOME(elsewe)),wc,_,_,_,_)
+      equation
+        expl = BackendEquation.getWhenCondition(wc,wc_index);
+        lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
+        // mark all negative because the when condition cannot used to solve a variable 
+        lst = adjacencyRowExpEnhanced(cond, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        _ = List.fold1(lst,markNegativ,rowmark,mark);
+        lst = listAppend(lst,iRow);
+        e1 = Expression.crefExp(cr);
+        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowWhenEnhanced(vars,elsewe,wc,mark,rowmark,kvars,lst);
+      then
+        lst;  
+      
+  end match;
+end adjacencyRowWhenEnhanced;
 
 protected function markNegativ
 "function: markNegativ

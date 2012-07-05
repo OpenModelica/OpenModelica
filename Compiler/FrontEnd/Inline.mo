@@ -238,11 +238,11 @@ algorithm
       then
         BackendDAE.ALGORITHM(size,alg,source);
 
-    case(BackendDAE.WHEN_EQUATION(weq,source),_)
+    case(BackendDAE.WHEN_EQUATION(size,weq,source),_)
       equation
         (weq_1,source) = inlineWhenEq(weq,fns,source);
       then
-        BackendDAE.WHEN_EQUATION(weq_1,source);
+        BackendDAE.WHEN_EQUATION(size,weq_1,source);
   
     case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source),_)
       equation
@@ -272,21 +272,23 @@ algorithm
       Functiontuple fns;
       Integer i;
       DAE.ComponentRef cref;
-      DAE.Exp e,e_1;
+      DAE.Exp e,e_1,cond;
       BackendDAE.WhenEquation weq,weq_1;
       DAE.ElementSource source;
       
-    case (BackendDAE.WHEN_EQ(i,cref,e,NONE()),fns,source)
+    case (BackendDAE.WHEN_EQ(cond,i,cref,e,NONE()),fns,source)
       equation
         (e_1,source) = inlineExp(e,fns,source);
+        (cond,source) = inlineExp(cond,fns,source);
       then
-        (BackendDAE.WHEN_EQ(i,cref,e_1,NONE()),source);
-    case (BackendDAE.WHEN_EQ(i,cref,e,SOME(weq)),fns,source)
+        (BackendDAE.WHEN_EQ(cond,i,cref,e_1,NONE()),source);
+    case (BackendDAE.WHEN_EQ(cond,i,cref,e,SOME(weq)),fns,source)
       equation
         (e_1,source) = inlineExp(e,fns,source);
+        (cond,source) = inlineExp(cond,fns,source);
         (weq_1,source) = inlineWhenEq(weq,fns,source);
       then
-        (BackendDAE.WHEN_EQ(i,cref,e_1,SOME(weq_1)),source);
+        (BackendDAE.WHEN_EQ(cond,i,cref,e_1,SOME(weq_1)),source);
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineWhenEq failed");
