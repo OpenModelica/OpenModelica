@@ -370,10 +370,9 @@ public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
 
 protected import Debug;
 protected import Flags;
-protected import SCodeCheck;
 protected import SCodeFlattenImports;
 protected import SCodeFlattenRedeclare;
-protected import Dump;
+//protected import Dump;
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment

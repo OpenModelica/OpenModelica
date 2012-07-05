@@ -76,7 +76,7 @@ protected import ValuesUtil;
 protected import System;
 protected import ErrorExt;
 protected import SCodeDump;
-protected import DAEDump;
+//protected import DAEDump;
 
 public
 type Ident = DAE.Ident "an identifier";

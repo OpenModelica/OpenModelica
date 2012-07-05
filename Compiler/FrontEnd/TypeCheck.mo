@@ -39,25 +39,9 @@ encapsulated package TypeCheck
   Functions used by SCodeInst for type checking and type conversion where needed.
 "
 
-public import Absyn;
-public import DAE;
-public import HashTablePathToFunction;
 public import InstSymbolTable;
 public import InstTypes;
-public import SCode;
 
-protected import BaseHashTable;
-protected import ComponentReference;
-protected import Connect;
-protected import DAEUtil;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import InstUtil;
-protected import List;
-protected import Types;
-protected import Util;
 
 public type Element = InstTypes.Element;
 public type Equation = InstTypes.Equation;

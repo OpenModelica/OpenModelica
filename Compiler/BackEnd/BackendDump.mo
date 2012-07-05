@@ -740,7 +740,8 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
-    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,constrs,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp,symjacs))
+    case (BackendDAE.SHARED(knownVars=vars2,externalObjects=vars3,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,constraints=constrs,
+          functionTree=funcs,eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjClasses=extObjCls,backendDAEType=btp,symjacs=symjacs))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);

@@ -53,7 +53,6 @@ protected import List;
 protected import SCodeCheck;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
-protected import SCodeUtil;
 protected import System;
 protected import Util;
 

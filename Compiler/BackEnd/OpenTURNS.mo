@@ -46,7 +46,6 @@ import Env;
 
 protected
 import CevalScript;
-import CheckModel;
 import SimCode;
 import Interactive;
 import System;
@@ -105,7 +104,7 @@ algorithm
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
   
-  strippedDae := BackendDAEUtil.getSolvedSystem(cache, env, strippedDae, NONE(), NONE(), NONE(),NONE());
+  strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae, NONE(), NONE(), NONE(),NONE());
   
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);

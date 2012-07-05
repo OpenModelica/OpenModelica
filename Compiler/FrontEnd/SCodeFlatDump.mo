@@ -40,12 +40,10 @@ encapsulated package SCodeFlatDump
 
 public import Absyn;
 public import SCode;
-public import SCodeEnv;
 public import IOStream;
 public import SCodeFlat;
 
 protected import List;
-protected import Util;
 protected import Dump;
 protected import SCodeDump;
 

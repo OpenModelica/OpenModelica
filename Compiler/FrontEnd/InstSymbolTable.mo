@@ -42,7 +42,6 @@ encapsulated package InstSymbolTable
 public import Absyn;
 public import DAE;
 public import InstTypes;
-public import SCode;
 
 protected import BaseHashTable;
 protected import ComponentReference;

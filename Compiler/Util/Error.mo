@@ -766,8 +766,6 @@ public constant Message PARMODELICA_ERROR = MESSAGE(7005, TRANSLATION(), ERROR()
   "ParModelica: %s.");
 
 protected import ErrorExt;
-protected import Print;
-protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
 This function takes a String and set the global var to 

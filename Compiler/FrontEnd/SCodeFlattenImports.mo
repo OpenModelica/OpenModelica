@@ -51,7 +51,6 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import SCodeLookup;
-protected import Util;
 protected import System;
 
 protected type Item = SCodeEnv.Item;

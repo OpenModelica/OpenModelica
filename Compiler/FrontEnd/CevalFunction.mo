@@ -75,11 +75,9 @@ protected import Graph;
 protected import Lapack;
 protected import List;
 protected import Lookup;
-protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
-protected import SCodeDump;
 
 // [TYPE]  Types
 public type SymbolTable = Option<Interactive.SymbolTable>;

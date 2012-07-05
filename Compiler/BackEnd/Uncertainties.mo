@@ -421,9 +421,9 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         
         //print("* Flatten ok\n");   
-        dlow = BackendDAECreate.lower(dae,funcs,true);
-        //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
-        (dlow_1) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, SOME({"removeSimpleEquations","removeFinalParameters"}), NONE(), NONE(),SOME({}));
+        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
+        (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeSimpleEquations","removeFinalParameters"}), NONE(), NONE(),SOME({}));
         print("* Lowered Ok \n");
 
         //BackendDump.dump(dlow_1);
@@ -830,6 +830,8 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    Env.Cache cache;
+    Env.Env env;    
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -849,10 +851,10 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,
+                                   removedEqs=removedEqs,constraints=constraints,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),eqns,true) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -891,6 +893,8 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    Env.Cache cache;
+    Env.Env env;    
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -900,13 +904,13 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,
+                                   removedEqs=removedEqs,constraints=constraints,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
        orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl));
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -1321,6 +1325,8 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    Env.Cache cache;
+    Env.Env env;    
     DAE.FunctionTree funcs;
     BackendDAE.EventInfo eventInfo "eventInfo" ;
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
@@ -1328,10 +1334,10 @@ algorithm
     BackendDAE.SymbolicJacobians symjacs;
     
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,eventInfo=eventInfo,
+                                   removedEqs=removedEqs,constraints=constraints,eventInfo=eventInfo,cache=cache,env=env,
                                    functionTree=funcs,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),knownVars) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(systList,shared); 
        

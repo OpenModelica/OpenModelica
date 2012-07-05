@@ -47,6 +47,7 @@ public import Algorithm;
 public import BackendDAE;
 public import BaseHashTable;
 public import DAE;
+public import Env;
 public import HashTableCG;
 public import SCode;
 public import Util;
@@ -95,7 +96,9 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree functionTree;
-    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
+      Env.Cache cache;
+      Env.Env env;      
+    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,cache=cache,env=env,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs)))
       equation
         tpl = (SOME(functionTree),itlst);
         eqs = List.map1(eqs,inlineEquationSystem,tpl);
@@ -105,7 +108,7 @@ algorithm
         removedEqs = inlineEquationArray(removedEqs,tpl);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then  
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,functionTree,eventInfo,extObjClasses,btp,symjacs));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,cache,env,functionTree,eventInfo,extObjClasses,btp,symjacs));
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");

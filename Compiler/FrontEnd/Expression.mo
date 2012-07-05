@@ -49,7 +49,6 @@ encapsulated package Expression
 
 // public imports
 public import Absyn;
-public import SCode;
 public import DAE;
 public import Values;
 

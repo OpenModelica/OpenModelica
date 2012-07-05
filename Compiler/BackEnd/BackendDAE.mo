@@ -39,6 +39,7 @@ encapsulated package BackendDAE
 
 public import Absyn;
 public import DAE;
+public import Env;
 public import SCode;
 public import Values;
 public import HashTable2;
@@ -250,6 +251,8 @@ uniontype Shared "Data shared for all equation-systems"
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array< .DAE.Constraint> constraints "constraints (Optimica extension)";
+    .Env.Cache cache;
+    .Env.Env env;
     .DAE.FunctionTree functionTree "functions for Backend";
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";

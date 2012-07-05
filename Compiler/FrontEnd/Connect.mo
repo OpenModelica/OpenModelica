@@ -60,7 +60,6 @@ encapsulated package Connect
 public import DAE;
 public import Prefix;
 public import Absyn;
-public import ComponentReference;
 
 public constant Integer NEW_SET = -1 "The index used for new sets which have not
   yet been assigned a set index.";

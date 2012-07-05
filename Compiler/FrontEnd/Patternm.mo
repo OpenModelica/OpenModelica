@@ -56,7 +56,6 @@ public import UnitAbsyn;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import Connect;
-protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;

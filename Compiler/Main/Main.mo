@@ -53,23 +53,19 @@ protected import Corba;
 protected import DAE;
 protected import DAEDump;
 protected import DAEUtil;
-protected import Database;
+//protected import Database;
 protected import Debug;
-protected import Dependency;
 protected import Dump;
 protected import DumpGraphviz;
 protected import Env;
 protected import Error;
 protected import ErrorExt;
 protected import Flags;
-protected import InnerOuter;
-protected import Inst;
 protected import Interactive;
 protected import List;
 protected import Parser;
 protected import Print;
 protected import SCode;
-protected import SCodeUtil;
 protected import Settings;
 protected import SimCode;
 protected import Socket;
@@ -755,15 +751,13 @@ algorithm
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
-      DAE.FunctionTree funcs,funcs_1;
       String str;
 
     case (cache,env,dae,ap,classname)
       equation
         true = runBackendQ();
-        funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAECreate.lower(dae,funcs,true);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(cache,env,dlow,NONE(),NONE(),NONE(),NONE());
+        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
         modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,classname,ap,dae);

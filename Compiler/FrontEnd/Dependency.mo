@@ -55,7 +55,6 @@ protected import Connect;
 protected import Flags;
 protected import Inst;
 protected import List;
-protected import Util;
 protected import DAE;
 protected import InnerOuter;
 protected import UnitAbsyn;

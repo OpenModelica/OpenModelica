@@ -129,7 +129,7 @@ end Extra;
 
 protected import SCodeLookup;
 protected import SCodeDump;
-protected import Util;
+//protected import Util;
 
 public function flattenProgram
   "transforms scode to scode flat"  

@@ -41,7 +41,6 @@ encapsulated package Reference
 public 
 import Absyn;
 import SCode;
-import Pool;
 
 constant Integer highPriority   = 100;
 constant Integer mediumPriority = 50;

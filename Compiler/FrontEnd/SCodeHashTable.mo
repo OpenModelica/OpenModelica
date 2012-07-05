@@ -117,7 +117,6 @@ protected import List;
 protected import SCodeDump;
 protected import SCodeLookup;
 protected import System;
-protected import Util;
 
 public 
 uniontype Section

@@ -40,7 +40,6 @@ encapsulated package ValuesUtil
   expression values."
 
 public import Absyn;
-public import SCode;
 public import DAE;
 public import Values;
 
@@ -56,7 +55,6 @@ protected import Flags;
 protected import List;
 protected import Print;
 protected import System;
-protected import Util;
 protected import ClassInf;
 protected import Types;
 protected import SimulationResults;

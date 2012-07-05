@@ -45,7 +45,7 @@ public import SCode;
 public import SCodeDependency;
 public import SCodeFlattenImports;
 public import SCodeFlattenExtends;
-public import SCodeFlattenRedeclare;
+//public import SCodeFlattenRedeclare;
 
 protected import Debug;
 protected import Flags;
@@ -53,7 +53,7 @@ protected import List;
 protected import SCodeEnv;
 protected import System;
 protected import SCodeLookup;
-protected import SCodeDump;
+//protected import SCodeDump;
 protected import SCodeInst;
 
 protected type Env = SCodeEnv.Env;

@@ -46,23 +46,16 @@ encapsulated package SCodeFlattenExtends
 public import Absyn;
 public import SCode;
 public import SCodeEnv;
-public import SCodeHashTable;
-public import SCodeDependency;
 public import AvlTree;
 public import Scope;
 public import Name;
 
-protected import BaseHashTable;
-protected import Debug;
-protected import Dump;
 protected import Flags;
 protected import List;
 protected import SCodeLookup;
 protected import SCodeDump;
 protected import SCodeFlat;
-protected import SCodeFlatDump;
 protected import SCodeGraph;
-protected import Util;
 
 public
 uniontype Item

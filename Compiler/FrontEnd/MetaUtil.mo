@@ -41,7 +41,6 @@ encapsulated package MetaUtil
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Debug;
 public import SCode;
 public import SCodeUtil;
 

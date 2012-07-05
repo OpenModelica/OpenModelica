@@ -50,7 +50,6 @@ public import SCode;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import ConnectUtil2;
-protected import DAEUtil;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;

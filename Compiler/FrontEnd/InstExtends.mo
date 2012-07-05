@@ -63,12 +63,11 @@ protected import Inst;
 protected import List;
 protected import Lookup;
 protected import Mod;
-protected import Types;
 protected import Util;
 protected import SCodeDump;
 protected import ErrorExt;
 protected import SCodeUtil;
-protected import System;
+//protected import System;
 
 public type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 

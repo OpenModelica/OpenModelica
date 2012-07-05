@@ -9,31 +9,10 @@ encapsulated package Unparsing
 
 public import Tpl;
 
-public import SimCode;
-public import BackendDAE;
 public import System;
 public import Absyn;
-public import DAE;
-public import ClassInf;
 public import SCode;
-public import Util;
-public import List;
-public import ComponentReference;
-public import Expression;
-public import ExpressionDump;
-public import Config;
-public import Flags;
-public import Settings;
-public import Patternm;
-public import Error;
-public import Values;
-public import ValuesUtil;
-public import BackendQSS;
-public import BackendVariable;
-public import DAEDump;
-public import Algorithm;
-public import DAEUtil;
-public import Types;
+
 
 protected function lm_27
   input Tpl.Text in_txt;

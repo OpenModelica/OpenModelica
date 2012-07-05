@@ -46,8 +46,6 @@ encapsulated package Values
 
 public import Absyn;
 
-protected import DAE;
-
 public
 uniontype Value
   record INTEGER

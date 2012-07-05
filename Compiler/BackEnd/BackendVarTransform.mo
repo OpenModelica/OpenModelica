@@ -456,7 +456,7 @@ algorithm
     case (extendrepl,DAE.CREF_IDENT(ident=_),_)
       then 
         extendrepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -465,18 +465,7 @@ algorithm
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst,componentRef=subcr),NONE())
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = BaseHashTable.get(precr,extendrepl));
-        // update Replacements
-        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
-        // Create a list of crefs from names
-        crefs =  List.map(varLst,ComponentReference.creffromVar);
-        precr1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);        
-      then erepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -486,19 +475,6 @@ algorithm
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn1));
-      then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
-      equation
-        precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = BaseHashTable.get(precr1,extendrepl));
-        // update Replacements
-        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
-         // Create a list of crefs from names
-        crefs =  List.map(varLst,ComponentReference.creffromVar);
-        precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        precrn1 = ComponentReference.joinCrefs(pcr,precrn);
-        erepl1 = List.fold1r(crefs,addExtendReplacement,SOME(precrn1),erepl);        
       then erepl1;
     // all other
     case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())

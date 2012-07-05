@@ -10,7 +10,6 @@ encapsulated package TplParser
 public import Absyn;
 public import Tpl;
 public import TplAbsyn;
-public import Util;
 
 protected import Debug;
 protected import Flags;

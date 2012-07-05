@@ -52,15 +52,12 @@ public import SCode;
 // protected imports
 protected import ClassInf;
 protected import Config;
-protected import Debug;
-protected import Flags;
 protected import Global;
 protected import List;
 protected import Parser;
 protected import SCodeUtil;
 protected import Settings;
 protected import System;
-protected import Types;
 protected import Util;
 
 /* These imports were used in e.g. MSL 1.6. They should not be here anymore...

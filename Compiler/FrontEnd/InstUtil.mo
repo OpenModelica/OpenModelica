@@ -48,15 +48,9 @@ public import SCode;
 public import SCodeEnv;
 
 protected import ComponentReference;
-protected import Connect;
-protected import ConnectUtil;
-protected import DAEDump;
-protected import DAEUtil;
 protected import Debug;
-protected import Dump;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import SCodeDump;

@@ -42,11 +42,9 @@ encapsulated package Element
 public 
 import Absyn;
 import SCode;
-import Pool;
 import Scope;
 
-protected
-import SCodeDump;
+
 
 public
 uniontype Element

@@ -69,7 +69,6 @@ protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeMod;
 protected import System;
-protected import Tpl;
 protected import Types;
 protected import Typing;
 protected import TypeCheck;

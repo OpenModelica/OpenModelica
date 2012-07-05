@@ -41,6 +41,7 @@ encapsulated package BackendVariable
 public import BackendDAE;
 public import BaseHashTable;
 public import DAE;
+public import Env;
 public import Values;
 
 protected import Absyn;
@@ -3501,16 +3502,18 @@ algorithm
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns;
       array<DAE.Constraint> constrs;
+      Env.Cache cache;
+      Env.Env env;      
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,funcs,einfo,eoc,btp,symjacs))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,funcs,einfo,eoc,btp,symjacs);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addKnVarDAE;
 

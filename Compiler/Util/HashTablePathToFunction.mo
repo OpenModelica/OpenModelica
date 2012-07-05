@@ -28,7 +28,6 @@ public import Absyn;
 public import InstTypes;
 
 protected import System;
-protected import Util;
 
 public type Key = Absyn.Path;
 public type Value = InstTypes.Function;

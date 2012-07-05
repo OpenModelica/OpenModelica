@@ -50,7 +50,6 @@ protected import Error;
 protected import InstDump;
 protected import List;
 protected import SCodeDump;
-protected import SCodeInst;
 protected import SCodeLookup;
 protected import Util;
 

@@ -158,7 +158,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeFlatten;
 protected import SCodeDump;
-protected import Database;
+//protected import Database;
 
 public function newIdent
 "function: newIdent

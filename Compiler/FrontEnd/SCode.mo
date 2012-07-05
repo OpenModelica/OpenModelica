@@ -623,12 +623,8 @@ public constant Attributes defaultConstAttr =
  
 // .......... functionality .........
 protected import Util;
-protected import Dump;
 protected import List;
-protected import Print;
-protected import Error;
 protected import SCodeCheck;
-protected import SCodeDump;
 
 
 public function stripSubmod

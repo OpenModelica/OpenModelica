@@ -58,7 +58,6 @@ protected import Debug;
 protected import Dump;
 protected import Flags;
 protected import List;
-protected import Util;
 protected import SCodeDump;
 
 public

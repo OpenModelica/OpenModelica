@@ -54,7 +54,6 @@ public import Node;
 
 protected import List;
 protected import SCodeDump;
-protected import System;
 
 public
 type Scope2Node  = .Relation.Relation<tuple<Integer,Integer>,Integer> "scopeId + valueConstructor(node) -> node";
@@ -180,7 +179,6 @@ uniontype Context "extra information that is passed along for the ride to all th
   end CONTEXT;
 end Context;
 
-protected import Util;
 
 public function create
 "populates the SCodeGraph and expands the nodes on the path we want to instantiate"  

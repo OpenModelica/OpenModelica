@@ -43,7 +43,6 @@ import Env;
 import Prefix;
 import SCode;
 import UnitAbsyn;
-import Values;
 
 protected import ComponentReference;
 protected import ConnectUtil;
