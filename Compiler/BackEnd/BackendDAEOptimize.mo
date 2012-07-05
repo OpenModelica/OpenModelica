@@ -3310,7 +3310,6 @@ algorithm
         remeqns = BackendDAEUtil.listEquation(eqnslst);
         // do replacements in systems        
         systs = List.map1(systs,removeProtectedParameterswork,repl);
-        BackendDump.dump(BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)));        
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;

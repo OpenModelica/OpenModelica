@@ -499,7 +499,7 @@ constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
 protected constant String removeSimpleEquationDesc = "Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).";
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "evaluateParameters",
+//    "evaluateParameters",
     "removeFinalParameters", 
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks", 

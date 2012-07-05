@@ -1050,7 +1050,7 @@ protected function lowerIfEquation
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqn := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,functionTree,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,functionTree,inEqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;

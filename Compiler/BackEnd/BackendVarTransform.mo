@@ -1154,8 +1154,9 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,expl1,expl2);
         eqnslst = List.map2(eqnslst,replaceEquations2,repl,{});
         eqns = replaceEquations2(eqns,repl,{});
+        eqns = optimizeIfEquation(expl2,eqnslst,eqns,{},{},source,inAcc);
       then
-        replaceEquations2(es,repl,BackendDAE.IF_EQUATION(expl2,eqnslst,eqns,source)::inAcc);
+        replaceEquations2(es,repl,eqns);
         
     case ((a :: es),repl,_)
       equation
@@ -1164,6 +1165,49 @@ algorithm
         replaceEquations2(es, repl,a::inAcc);
   end matchcontinue;
 end replaceEquations2;
+
+protected function optimizeIfEquation
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> theneqns;
+  input list<BackendDAE.Equation> elseenqs;
+  input list<DAE.Exp> conditions1;
+  input list<list<BackendDAE.Equation>> theneqns1;
+  input DAE.ElementSource source;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqn := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqns)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> explst;
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns; 
+      
+    // no true case left with condition<>false
+    case ({},{},_,{},{},_,_) 
+      then 
+        listAppend(elseenqs,inEqns);   
+    // true case left with condition<>false
+    case ({},{},_,_,_,_,_)
+      equation 
+        explst = listReverse(conditions1);  
+        eqnslst = listReverse(theneqns1);  
+      then 
+        BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
+    // if true use it
+    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_)
+      then 
+        eqns; 
+    // if false skip it
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_)
+      then
+        optimizeIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,inEqns);
+    // all other cases
+    case(e::explst,eqns::eqnslst,_,_,_,_,_)
+      then
+        optimizeIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,inEqns);
+  end matchcontinue;
+end optimizeIfEquation;
 
 protected function replaceWhenEquation "Replaces variables in a when equation"
   input BackendDAE.WhenEquation whenEqn;
