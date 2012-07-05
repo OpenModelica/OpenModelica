@@ -3359,25 +3359,25 @@ algorithm
         (statementLst,(ops,ext_arg_1)) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({},inTypeA));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source),wclst,ext_arg_1); 
-    case (BackendDAE.WHEN_EQUATION(whenEquation =
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),wclst,_,_)
       equation
         e2 = Expression.crefExp(cr);
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((DAE.CREF(cr1,_),(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr1,e1_1,NONE()),source);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(i,cr1,e1_1,NONE()),source);
         (wclst1,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst,func,({} /*TODO: Save me?*/,ext_arg_2));
       then
         (res,wclst1,ext_arg_3);
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation =
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),wclst,_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        (BackendDAE.WHEN_EQUATION(elsepartRes,source),wclst1,ext_arg_2) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(elsepart,source),wclst,func,ext_arg_1);
-        res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),wclst1,ext_arg_2) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source),wclst,func,ext_arg_1);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
         (wclst2,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst1,func,({} /* TODO: Save me?*/,ext_arg_2));
       then
         (res,wclst2,ext_arg_3);

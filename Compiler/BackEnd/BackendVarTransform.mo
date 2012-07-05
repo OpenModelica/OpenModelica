@@ -1140,11 +1140,11 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
         replaceEquations2(es, repl,BackendDAE.RESIDUAL_EQUATION(e_2,source)::inAcc);
-    case ((BackendDAE.WHEN_EQUATION(whenEqn,source) :: es),repl,_)
+    case ((BackendDAE.WHEN_EQUATION(size,whenEqn,source) :: es),repl,_)
       equation
         whenEqn1 = replaceWhenEquation(whenEqn,repl);
       then
-        replaceEquations2(es, repl,BackendDAE.WHEN_EQUATION(whenEqn1,source)::inAcc);
+        replaceEquations2(es, repl,BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc);
  
    case ((BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source) :: es),repl,_)
       equation

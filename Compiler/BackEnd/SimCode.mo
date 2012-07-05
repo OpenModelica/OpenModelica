@@ -3686,7 +3686,7 @@ algorithm
       // ignore when equations if we should not generate them
     case (false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedEqs=eqns), shared, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, helpVarInfo, _)
       equation
-        BackendDAE.WHEN_EQUATION(_,_) = BackendDAEUtil.equationNth(eqns, index-1);
+        BackendDAE.WHEN_EQUATION(size=_) = BackendDAEUtil.equationNth(eqns, index-1);
         (equations,noDiscEquations,uniqueEqIndex) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex);
       then
         (equations,noDiscEquations,uniqueEqIndex);
@@ -3862,7 +3862,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(wcIndex, left, right, NONE()) = whenEquation;
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
@@ -3874,7 +3874,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation,source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(wcIndex, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);

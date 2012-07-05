@@ -593,23 +593,23 @@ algorithm
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
-       (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),ext_arg_2);
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),ext_arg_2);
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
       then
-        (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),func,inTypeA)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
@@ -730,7 +730,7 @@ algorithm
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),b1,ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -738,17 +738,17 @@ algorithm
         ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
         bres = Util.boolOrList({b1,b2});
       then
-       (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),bres,ext_arg_2);
-    case (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),bres,ext_arg_2);
+    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
         ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b3,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b3,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
         bres = Util.boolOrList({b1,b2,b3});
       then
-        (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source),func,inTypeA)
       then
         (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);
@@ -1488,7 +1488,7 @@ algorithm
         size;
     case BackendDAE.SOLVED_EQUATION(source=_) then 1;
     case BackendDAE.RESIDUAL_EQUATION(source=_) then 1;
-    case BackendDAE.WHEN_EQUATION(source=_) then 1;
+    case BackendDAE.WHEN_EQUATION(size=size) then 1;
     case BackendDAE.ALGORITHM(size=size) then size;
     case BackendDAE.COMPLEX_EQUATION(size=size) then size;
     case BackendDAE.IF_EQUATION(eqnsfalse=eqnsfalse)
@@ -1800,10 +1800,10 @@ algorithm
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.ALGORITHM(size,alg,source);
-    case (BackendDAE.WHEN_EQUATION(whenEquation,source),op)
+    case (BackendDAE.WHEN_EQUATION(size,whenEquation,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
-      then BackendDAE.WHEN_EQUATION(whenEquation,source);
+      then BackendDAE.WHEN_EQUATION(size,whenEquation,source);
     case (BackendDAE.COMPLEX_EQUATION(size,e1,e2,source),op)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);

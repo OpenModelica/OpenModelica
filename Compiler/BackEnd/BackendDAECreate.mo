@@ -1359,7 +1359,7 @@ algorithm
   (outEquationLst,outReinitStatementLst):=
   matchcontinue (inDAEElementLst,inWhenClauseIndex,functionTree,iEquationLst,iReinitStatementLst)
     local
-      BackendDAE.Value i;
+      Integer i,size;
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
       DAE.Exp cre,e,cond;
@@ -1367,26 +1367,29 @@ algorithm
       list<DAE.Element> xs;
       DAE.Element el;
       DAE.ElementSource source;
+      DAE.Dimensions ds;
 
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
     case ((DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs),i,_,_,_)
       equation
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
     case ((DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)),rhs = e,source = source) :: xs),i,_,_,_)
       equation
+        size = Expression.sizeOf(Expression.typeof(cre));
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i,_,_,_)
+    case ((DAE.ARRAY_EQUATION(dimension=ds,exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i,_,_,_)
       equation
+        size = List.fold(Expression.dimensionsSizes(ds),intMul,1);
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
@@ -3122,12 +3125,13 @@ algorithm
       list<BackendDAE.WhenClause> outClauseList;
       BackendDAE.WhenEquation foundEquation;
       list<BackendDAE.Equation> elseEqnsRest;
-      DAE.ElementSource source "the element source";
+      DAE.ElementSource source;
+      Integer size;
 
-    case (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index = ind,left = cr,right=rightSide),source)::trueEqns, elseEqns,trueCls,elseCls,nextInd)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation=BackendDAE.WHEN_EQ(index = ind,left = cr,right=rightSide),source=source)::trueEqns, elseEqns,trueCls,elseCls,nextInd)
       equation
         (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr,elseEqns);
-        res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(ind,cr,rightSide,SOME(foundEquation)),source);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(ind,cr,rightSide,SOME(foundEquation)),source);
         (resRest, outNextIndex, outClauseList) = mergeClauses(trueEqns,elseEqnsRest,trueCls, elseCls,nextInd);
       then (res::resRest, outNextIndex, outClauseList);
 
@@ -3155,12 +3159,12 @@ algorithm
       BackendDAE.Equation eq2;
       list<BackendDAE.Equation> rest, rest2;
 
-    case (cr1,BackendDAE.WHEN_EQUATION(eq as BackendDAE.WHEN_EQ(left=cr2),_)::rest)
+    case (cr1,BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_EQ(left=cr2))::rest)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
       then (eq, rest);
 
-    case (cr1,(eq2 as BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(left=cr2),_))::rest)
+    case (cr1,(eq2 as BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(left=cr2)))::rest)
       equation
         false = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
         (eq,rest2) = getWhenEquationFromVariable(cr1,rest);
