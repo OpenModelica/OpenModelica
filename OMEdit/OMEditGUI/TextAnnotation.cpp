@@ -508,23 +508,21 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
   shape = shape.replace("}", "");
   // parse the shape to get the list of attributes of Text Annotation.
   QStringList list = StringHandler::getStrings(shape);
-  if (list.size() < 17)
+  if (list.size() < 18)
   {
     return;
   }
-  // if first item of list is true then the Text Annotation should be visible.
-  mVisible = static_cast<QString>(list.at(0)).contains("true");
-
   int index = 0;
+  // if first item of list is true then the Text Annotation should be visible.
+  mVisible = static_cast<QString>(list.at(index)).contains("true");
   if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
   {
     mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
     mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
-
     mRotation = static_cast<QString>(list.at(3)).toFloat();
     index = 3;
   }
-  // 2,3,4 items of list contains the line color.
+  // 4,5,6 items of list contains the line color.
   index = index + 1;
   int red, green, blue;
   red = static_cast<QString>(list.at(index)).toInt();
@@ -533,7 +531,7 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
   index = index + 1;
   blue = static_cast<QString>(list.at(index)).toInt();
   mLineColor = QColor (red, green, blue);
-  // 5,6,7 items of list contains the fill color.
+  // 7,8,9 items of list contains the fill color.
   index = index + 1;
   red = static_cast<QString>(list.at(index)).toInt();
   index = index + 1;
@@ -541,7 +539,7 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
   index = index + 1;
   blue = static_cast<QString>(list.at(index)).toInt();
   mFillColor = QColor (red, green, blue);
-  // 8 item of the list contains the line pattern.
+  // 10 item of the list contains the line pattern.
   index = index + 1;
   QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
   QMap<QString, Qt::PenStyle>::iterator it;
@@ -553,7 +551,7 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
       break;
     }
   }
-  // 9 item of the list contains the fill pattern.
+  // 11 item of the list contains the fill pattern.
   index = index + 1;
   QString fillPattern = StringHandler::getLastWordAfterDot(list.at(index));
   QMap<QString, Qt::BrushStyle>::iterator fill_it;
@@ -565,10 +563,10 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
       break;
     }
   }
-  // 10 item of the list contains the thickness.
+  // 12 item of the list contains the thickness.
   index = index + 1;
   mThickness = static_cast<QString>(list.at(index)).toFloat();
-  // 11, 12, 13, 14 items of the list contains the extent points of Text.
+  // 13, 14, 15, 16 items of the list contains the extent points of Text.
   index = index + 1;
   qreal x = static_cast<QString>(list.at(index)).toFloat();
   index = index + 1;
@@ -581,7 +579,7 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
   QPointF p2 (x, y);
   mExtent.append(p1);
   mExtent.append(p2);
-  // 15 item of the list contains the text string.
+  // 17 item of the list contains the text string.
   index = index + 1;
   if (mIsCustomShape)
     mTextString = StringHandler::removeFirstLastQuotes(list.at(index));
@@ -591,11 +589,15 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
     checkNameString();
     checkParameterString();
   }
-  index++;
-  //Now comes the optional parameters.
+  // 18 item of the list contains the text size.
+  index = index + 1;
+  mFontSize = static_cast<QString>(list.at(index)).toFloat();
+  index = index + 1;
+  //Now comes the optional parameters; fontName and textStyle.
   while(index < list.size())
   {
     QString line = StringHandler::removeFirstLastQuotes(list.at(index));
+    // check textStyles enumeration.
     if(line == "TextStyle.Italic")
     {
       mFontItalic = true;
@@ -611,33 +613,25 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
       mFontUnderLine = true;
       index++;
     }
-    else if(line.length() < 3)
-    {
-      mFontSize = line.toInt();
-      index++;
-    }
-    else if(line == "TextAlignment.Center" )
+    // check textAlignment enumeration.
+    else if(line == "TextAlignment.Center")
     {
       mHorizontalAlignment = Qt::AlignCenter;
       index++;
     }
-    else if(line == "TextAlignment.Left" )
+    else if(line == "TextAlignment.Left")
     {
       mHorizontalAlignment = Qt::AlignLeft;
       index++;
     }
-    else if(line == "TextAlignment.Right" )
+    else if(line == "TextAlignment.Right")
     {
       mHorizontalAlignment = Qt::AlignRight;
       index++;
     }
-    else if(line.length() > 3)
-    {
-      mFontName = line;
-      index++;
-    }
     else
     {
+      mFontName = line;
       index++;
     }
   }
