@@ -777,7 +777,7 @@ algorithm
   end matchcontinue;
 end strongComponentsScalar;
 
-protected function eqnAssignmentNonScalar
+public function eqnAssignmentNonScalar
   input Integer index;
   input Integer size;
   input array<list<Integer>> mapEqnIncRow;
@@ -801,7 +801,7 @@ algorithm
   end matchcontinue;
 end eqnAssignmentNonScalar;
 
-protected function varAssignmentNonScalar
+public function varAssignmentNonScalar
   input Integer index;
   input Integer size;
   input array<Integer> ass1;
