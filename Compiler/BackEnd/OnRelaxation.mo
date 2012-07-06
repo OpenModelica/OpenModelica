@@ -1828,10 +1828,10 @@ algorithm
         eorphan = ass1[vorphan];
           print("Process Orphan " +& intString(vorphan) +& "  " +& intString(eorphan) +& "\n"); 
         // generate subgraph from residual equation to tearing variable
-			  rows = List.select(m[eorphan], Util.intPositive);
-			  rows = List.fold1(ass2[eorphan],List.removeOnTrue, intEq, rows);
-			  BackendDump.debuglst((rows,intString,", ","\n"));
-			  _ = getIndexSubGraph(rows,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,false);        
+        rows = List.select(m[eorphan], Util.intPositive);
+        rows = List.fold1(ass2[eorphan],List.removeOnTrue, intEq, rows);
+        BackendDump.debuglst((rows,intString,", ","\n"));
+        _ = getIndexSubGraph(rows,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,false);        
         // generate queue with BFS from tearing var to residual equation
          print("getIndex ");
          BackendDump.debuglst((mT[vorphan],intString,", ","\n"));
