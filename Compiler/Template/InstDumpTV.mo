@@ -292,7 +292,8 @@ package InstTypes
     end CONNECT_EQUATION;
 
     record FOR_EQUATION
-      String index;
+      String name;
+      Integer index;
       DAE.Type indexType;
       Option<DAE.Exp> range;
       list<Equation> body;

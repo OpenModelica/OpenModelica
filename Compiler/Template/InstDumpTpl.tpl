@@ -112,7 +112,7 @@ match equation
       ' in <%dumpExp(range_exp)%>'
     let eql_str = (body |> eq => dumpEquation(eq) ;separator="\n")
     <<
-    for {<%ty_str%>} <%index%><%range_str%> loop
+    for {<%ty_str%>} <%name%> /* index <%index%> */<%range_str%> loop
       <%eql_str%>
     end for;
     >>

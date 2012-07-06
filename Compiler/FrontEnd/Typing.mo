@@ -1087,7 +1087,8 @@ algorithm
       DAE.ComponentRef cref1, cref2;
       Connect2.Face face1, face2;
       Prefix prefix;
-      String index, name;
+      String name;
+      Integer index;
       list<Equation> eql;
       DAE.Type ty;
       list<tuple<DAE.Exp, list<Equation>>> branches;
@@ -1113,19 +1114,19 @@ algorithm
       then
         (acc_el, conn);
 
-    case (InstTypes.FOR_EQUATION(index, _, SOME(exp1), eql, info), st, acc_el, conn)
+    case (InstTypes.FOR_EQUATION(name, index, _, SOME(exp1), eql, info), st, acc_el, conn)
       equation
         (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
         ty = rangeToIteratorType(ty, exp1, info);
-        iter_name = Absyn.IDENT(index);
+        iter_name = Absyn.IDENT(name);
         iter = InstUtil.makeIterator(iter_name, ty, info);
         st = InstSymbolTable.addIterator(iter_name, iter, st);
         (eql, conn) = typeEquations(eql, st, conn);
-        eq = InstTypes.FOR_EQUATION(index, ty, SOME(exp1), eql, info);
+        eq = InstTypes.FOR_EQUATION(name, index, ty, SOME(exp1), eql, info);
       then
         (eq :: acc_el, conn);
 
-    case (InstTypes.FOR_EQUATION(index, _, NONE(), eql, info), st, acc_el, _)
+    case (InstTypes.FOR_EQUATION(_, _, _, NONE(), eql, info), st, acc_el, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Implicit for ranges are not yet implemented"},info);
       then fail();

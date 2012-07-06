@@ -2988,6 +2988,7 @@ algorithm
       Absyn.ComponentRef cref1, cref2;
       DAE.ComponentRef dcref1, dcref2;
       Absyn.Info info;
+      Integer index;
       String for_index,str;
       list<SCode.EEquation> eql;
       list<Equation> ieql;
@@ -3026,20 +3027,22 @@ algorithm
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
         info = info), _, _, functions)
       equation
+        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
         env = SCodeEnv.extendEnvWithIterators(
-          {Absyn.ITERATOR(for_index, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+          {Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
         (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
         (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
-        (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info),functions);
+        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info),functions);
 
     case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
         info = info), _, _, functions)
       equation
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
         (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
       then
-        (InstTypes.FOR_EQUATION(for_index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), functions);
+        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), functions);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
         elseBranch = eql, info = info), _, _, functions)

@@ -273,7 +273,8 @@ public uniontype Equation
   end CONNECT_EQUATION;
 
   record FOR_EQUATION
-    String index          "The name of the index/iterator variable.";
+    String name           "The name of the iterator variable.";
+    Integer index         "The index of the iterator variable.";
     DAE.Type indexType    "The type of the index/iterator variable.";
     Option<DAE.Exp> range "The range expression to loop over.";
     list<Equation> body   "The body of the for loop.";

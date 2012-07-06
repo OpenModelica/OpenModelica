@@ -697,7 +697,8 @@ algorithm
       Absyn.Path path;
       Absyn.Info info;
       list<DAE.Exp> expLst;
-      String index          "The name of the index/iterator variable.";
+      String name           "The name of the index/iterator variable.";
+      Integer index;
       DAE.Type indexType    "The type of the index/iterator variable.";
       Option<DAE.Exp> range "The range expression to loop over.";
       list<Equation> body   "The body of the for loop.";
@@ -719,7 +720,7 @@ algorithm
       then
         inAccumEl;
         
-    case (InstTypes.FOR_EQUATION(index, indexType, range, body, info), _, _)
+    case (InstTypes.FOR_EQUATION(name, index, indexType, range, body, info), _, _)
       equation
         accum_el = List.flatten(List.map2(body, expandEquation, inSubscripts, inAccumEl));
         accum_el = listAppend(accum_el, inAccumEl);
