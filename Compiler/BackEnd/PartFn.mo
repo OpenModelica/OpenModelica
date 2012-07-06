@@ -217,7 +217,7 @@ algorithm
       list<DAE.Exp> elst,elst_1;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAE.Algorithm alg,alg_1;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
       list<DAE.Function> dae;
 
     case(DAE.VAR(cref,kind,direction,parallelism,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
@@ -293,7 +293,7 @@ algorithm
     case(DAE.IF_EQUATION(elst,elm,elts,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        (elm_1,{dae}) = List.map1_2(elm,elabElements,dae);
+        (elm_1,dae) = List.mapFold(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
       then
         (DAE.IF_EQUATION(elst_1,elm_1,elts_1,source),dae);
@@ -356,6 +356,10 @@ algorithm
       then
         (DAE.NORETCALL(p,elst_1,source),dae);
 
+    case(DAE.EQUEQUATION(cr1=_),dae)
+     then
+       (iel,dae);        
+
     case(el,dae) then (el,dae);
 
   end match;
@@ -377,7 +381,7 @@ algorithm
       Boolean pp;
       DAE.ExternalDecl ed;
       DAE.InlineType inlineType;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
       Option<SCode.Comment> cmt;
       
     case ({},dae) then ({},dae);
