@@ -469,7 +469,7 @@ if test -n "$QMAKE"; then
 
   if test -f "$with_paradiseo/paradiseo-eo/src/eo"; then
     # User used a local paradiseo installation
-    with_paradiseo_include="$with_paradiseo/paradiseo-eo/src $with_paradiseo/paradiseo-mo/src $with_paradiseo/paradiseo-moeo/src"
+    with_paradiseo_include="$with_paradiseo/paradiseo-eo/src $with_paradiseo/paradiseo-mo/src $with_paradiseo/paradiseo-moeo/src $with_paradiseo/paradiseo-eo/src/utils $with_paradiseo/paradiseo-mo/src/utils $with_paradiseo/paradiseo-moeo/src/utils"
     with_paradiseo_lib="$with_paradiseo/paradiseo-eo/lib $with_paradiseo/paradiseo-mo/lib $with_paradiseo/paradiseo-moeo/lib"
     AC_MSG_RESULT(stock version in: $with_paradiseo)
   else
@@ -477,7 +477,7 @@ if test -n "$QMAKE"; then
     if test x"$with_paradiseo" = "xyes"; then
       with_paradiseo_checked=""
       for f in /{usr,opt,$PREFIX}; do
-        test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo_include="$f/include/paradiseo/" && with_paradiseo_lib="$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
+        test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/" && with_paradiseo_lib="$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
       done
     fi
 
