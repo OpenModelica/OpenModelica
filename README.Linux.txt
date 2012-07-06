@@ -41,7 +41,7 @@ The latest OpenModelica uses Qt for potting and 3D functionality. You will also 
     Coin3D   (http://www.coin3d.org - tested with 3.0.0; deprecated)
     SoQt     (http://www.coin3d.org - tested with 1.4.1; deprecated)
 OMOptim uses some packages for its optimization algorithms
-    paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3)
+    paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3; see the Debian installer for the directory structure or send openmodelica <at> ida.liu.se a listing of the files paradiseo installs to /usr/local/ to have the Makefiles updated)
 Note:
     FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS.
     The rml-mmc package needs some manual changes, too.
