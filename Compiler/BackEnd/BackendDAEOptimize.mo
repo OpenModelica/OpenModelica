@@ -3406,8 +3406,9 @@ algorithm
         repl1 = BackendVarTransform.addReplacement(ireplEvaluate, cr, e1);
       then 
         (knvars,cache,repl,repl1);
-    case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=dae_var_attr),_,_,_,_,_,_)
+    case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=dae_var_attr,comment=SOME(comment)),_,_,_,_,_,_)
       equation
+        true = hasEvaluateAnnotation(comment);
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, irepl, NONE());
@@ -3464,6 +3465,7 @@ algorithm
       equation
         // applay replacements
         (e,b) = BackendVarTransform.replaceExp(e, ireplEvaluate, NONE());   
+        (e,_) = ExpressionSimplify.condsimplify(b, e);
         // set bind value
         v = Debug.bcallret2(b, BackendVariable.setVarStartValue, var,e, var);
         // update Vararray
@@ -3477,6 +3479,7 @@ algorithm
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         // applay replacements
         (e,b) = BackendVarTransform.replaceExp(e, ireplEvaluate, NONE());   
+        (e,_) = ExpressionSimplify.condsimplify(b, e);
         // set bind value
         v = Debug.bcallret2(b, BackendVariable.setVarStartValue, var,e, var);
         // update Vararray
