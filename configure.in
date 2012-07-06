@@ -470,7 +470,12 @@ if test -n "$QMAKE"; then
   if test -f "$with_paradiseo/paradiseo-eo/src/eo"; then
     # User used a local paradiseo installation
     with_paradiseo_include="$with_paradiseo/paradiseo-eo/src $with_paradiseo/paradiseo-mo/src $with_paradiseo/paradiseo-moeo/src $with_paradiseo/paradiseo-eo/src/utils $with_paradiseo/paradiseo-mo/src/utils $with_paradiseo/paradiseo-moeo/src/utils"
-    with_paradiseo_lib="$with_paradiseo/paradiseo-eo/lib $with_paradiseo/paradiseo-mo/lib $with_paradiseo/paradiseo-moeo/lib"
+    if test -d "$with_paradiseo/paradiseo-eo/build/lib"; then
+      paradiseo_build="build"
+    else
+      paradiseo_build=""
+    fi
+    with_paradiseo_lib="$with_paradiseo/paradiseo-eo/$paradiseo_build/lib $with_paradiseo/paradiseo-moeo/$paradiseo_build/lib"
     AC_MSG_RESULT(stock version in: $with_paradiseo)
   else
 
