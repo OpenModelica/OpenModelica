@@ -505,6 +505,7 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
     mpSimulationProcess->setProcessEnvironment(environment);
 #endif
     mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
+    mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
     mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
     mpProgressDialog->setText(tr("Running Simulation.\nPlease wait for a while."));
     // set progress bar range
@@ -552,7 +553,7 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                            .arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardError())),Helper::ok);
+                            .arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardOutput())),Helper::ok);
       return;
     }
     // read the output file
