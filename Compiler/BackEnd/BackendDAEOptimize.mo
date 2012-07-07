@@ -594,35 +594,21 @@ algorithm
      local
       list<Integer> deeqns;
       HashTable2.HashTable derrepl;
-      BackendDAE.EquationArray eqns,eqns1,ieqns,reqns;
-      array<DAE.Constraint> constrs;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      list<BackendDAE.ZeroCrossing> zcl;
-      Env.Cache cache;
-      Env.Env env;      
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.Variables vars,knvars,eo;
+      BackendDAE.EquationArray eqns,eqns1;
+      BackendDAE.Variables vars,knvars;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;    
-      BackendDAE.AliasVariables av;  
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.BackendDAEType bdaetype;   
-      BackendDAE.SymbolicJacobians symjacs;    
+      BackendDAE.Matching matching;  
       Integer n;
     case ({},_,_,_) then (inSyst,inShared); 
-    case (deeqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),
-         BackendDAE.SHARED(knownVars=knvars,externalObjects=eo,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,constraints=constrs,cache=cache,env=env,
-         functionTree=funcTree,eventInfo=BackendDAE.EVENT_INFO(wclst,zcl),extObjClasses=eoc,backendDAEType=bdaetype,symjacs=symjacs),derrepl)
+    case (deeqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_,derrepl)
       equation
        Debug.fcall(Flags.DUMP_DERREPL, BaseHashTable.dumpHashTable, derrepl);
        n = BackendDAEUtil.equationSize(eqns);
        deeqns = List.sort(deeqns,intGt);
-       (eqns1,wclst1) = replaceDerEquations1(deeqns,0,n,derrepl,eqns,wclst);
-       einfo = BackendDAE.EVENT_INFO(wclst1,zcl);
+       eqns1 = replaceDerEquations1(deeqns,0,n,derrepl,eqns);
      then 
-       (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,eo,av,ieqns,reqns,constrs,cache,env,funcTree,einfo,eoc,bdaetype,symjacs));
+       (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),inShared);
    end match;     
 end replaceDerEquations;
 
@@ -632,36 +618,30 @@ protected function replaceDerEquations1
   input Integer EqnSize;
   input HashTable2.HashTable inDerrepl; 
   input BackendDAE.EquationArray inEqns;
-  input  list<BackendDAE.WhenClause> inEinfo;
   output BackendDAE.EquationArray outEqns;
-  output  list<BackendDAE.WhenClause> outEinfo;
 algorithm
-  (outEqns,outEinfo) :=
-    matchcontinue (inSortDeEqns,inIndx,EqnSize,inDerrepl,inEqns,inEinfo)
+  outEqns :=
+    matchcontinue (inSortDeEqns,inIndx,EqnSize,inDerrepl,inEqns)
      local
       list<Integer> deeqns;
       HashTable2.HashTable derrepl;
       Integer n,i,de;
       BackendDAE.Equation eqn,eqn1;
       BackendDAE.EquationArray eqns,eqns1,eqns2;
-      list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
-      BackendDAE.EventInfo einfo;    
-     case ({},_,_,_,eqns,wclst) then (eqns,wclst); 
-     case (de::deeqns,i,n,derrepl,eqns,wclst)
+     case ({},_,_,_,eqns) then eqns; 
+     case (de::deeqns,i,n,derrepl,eqns)
       equation
        true = intLt(i,de);
        eqn = BackendDAEUtil.equationNth(eqns,i);
-       (eqn1,wclst1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, wclst, replaceDerEquationsFinder,derrepl);
+       (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceDerEquationsFinder,derrepl);
        eqns1 = BackendEquation.equationSetnth(eqns,i,eqn1);
-       (eqns2,wclst2) = replaceDerEquations1(de::deeqns,i+1,n,derrepl,eqns1,wclst1);
      then 
-       (eqns2,wclst2);
-     case (de::deeqns,i,n,derrepl,eqns,wclst)
+       replaceDerEquations1(de::deeqns,i+1,n,derrepl,eqns1);
+     case (de::deeqns,i,n,derrepl,eqns)
       equation
        false = intLt(i,de);
-       (eqns2,wclst2) = replaceDerEquations1(deeqns,i+1,n,derrepl,eqns,wclst);
      then 
-       (eqns2,wclst2);       
+       replaceDerEquations1(deeqns,i+1,n,derrepl,eqns);       
    end matchcontinue;     
 end replaceDerEquations1;
 
@@ -1564,30 +1544,16 @@ algorithm
   (outSyst,outShared):=
   match (inEqsLst,derExp,inCr,inSyst,inShared)
     local
-      BackendDAE.EquationArray eqns,eqns1,ieqns,reqns;
-      array<DAE.Constraint> cstrs;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      list<BackendDAE.ZeroCrossing> zcl;
-      Env.Cache cache;
-      Env.Env env;      
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.Variables vars,knvars,eo;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;    
-      BackendDAE.AliasVariables av;  
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.BackendDAEType bdaetype;
+      BackendDAE.Matching matching;
     case ({},_,_,_,_) then (inSyst,inShared);
-    case (inEqsLst,derExp,inCr,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),
-          BackendDAE.SHARED(knownVars=knvars,externalObjects=eo,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,
-          constraints=cstrs,cache=cache,env=env,functionTree=funcTree,eventInfo=BackendDAE.EVENT_INFO(wclst,zcl),extObjClasses=eoc,backendDAEType=bdaetype,symjacs=symjacs))
+    case (inEqsLst,derExp,inCr,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_)
       equation
-        (eqns1,wclst1) = replacementsInEqns3(inEqsLst,derExp,inCr,eqns,wclst);
-        einfo = BackendDAE.EVENT_INFO(wclst1,zcl);
-      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,eo,av,ieqns,reqns,cstrs,cache,env,funcTree,einfo,eoc,bdaetype,symjacs));
+        eqns1 = replacementsInEqns3(inEqsLst,derExp,inCr,eqns);
+      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),inShared);
   end match;
 end replacementsInEqns2;
 
@@ -1598,28 +1564,24 @@ protected function replacementsInEqns3
   input DAE.Exp derExp;
   input DAE.ComponentRef inCr;
   input BackendDAE.EquationArray inEqns;
-  input  list<BackendDAE.WhenClause> inEinfo;
   output BackendDAE.EquationArray outEqns;
-  output  list<BackendDAE.WhenClause> outEinfo;
 algorithm
-  (outEqns,outEinfo):=
-  match (inEqsLst,derExp,inCr,inEqns,inEinfo)
+  outEqns:=
+  match (inEqsLst,derExp,inCr,inEqns)
     local
-      BackendDAE.EquationArray eqns,eqns1,eqns2;
-      list<BackendDAE.WhenClause> wclst,wclst1,wclst2;
-      BackendDAE.EventInfo einfo;
+      BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn,eqn1;
       Integer pos,pos_1;
       list<Integer> rest;
-    case ({},_,_,eqns,inEinfo) then (eqns,inEinfo);
-    case (pos::rest,derExp,inCr,eqns,wclst)
+    case ({},_,_,_) then inEqns;
+    case (pos::rest,derExp,inCr,_)
       equation
         pos_1 = pos-1;
-        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        (eqn1,wclst1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, wclst, replaceAliasDer,(derExp,inCr));
-        eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        (eqns2,wclst2) = replacementsInEqns3(rest,derExp,inCr,eqns1,wclst1);
-      then (eqns2,wclst2);
+        eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
+        (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasDer,(derExp,inCr));
+        eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
+      then 
+        replacementsInEqns3(rest,derExp,inCr,eqns);
   end match;
 end replacementsInEqns3;
 
@@ -3614,75 +3576,32 @@ protected function removeEqualFunctionCalls1
 algorithm
   (osyst,oshared,optimized) := match (isyst,ishared)
     local
-      BackendDAE.BackendDAE dae,dae1;
-      DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1,ineq;
-      array<DAE.Constraint> constraints;
-      BackendDAE.EventInfo einfo,einfo1;
       list<Integer> changed;
       Boolean b;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-      
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(constraints=constraints,functionTree=funcs,eventInfo=einfo))
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
         // check equations
-        (m_1,(mT_1,_,eqns1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,einfo,{}));
+        (m_1,(mT_1,_,eqns1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING());
-        (syst,shared) = removeEqualFunctionCalls2(b,syst,shared,eqns1,constraints,einfo1);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,changed);
       then (syst,shared,b);
   end match;
 end removeEqualFunctionCalls1;
 
-protected function removeEqualFunctionCalls2
-"function: removeEqualFunctionCalls2
-  autor: Frenkel TUD 2011-05"
-  input Boolean b;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input BackendDAE.EquationArray eqns;
-  input array<DAE.Constraint> constraints;
-  input BackendDAE.EventInfo einfo;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := match (b,syst,shared,eqns,constraints,einfo)
-    local
-      BackendVarTransform.VariableReplacements repl;
-      BackendDAE.Variables vars,knvars,exobj;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns,eqns1;
-      array<DAE.Constraint> constrs;
-      Env.Cache cache;
-      Env.Env env;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo1;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.BackendDAEType btp;
-    case (false,syst,shared,_,_,_) then (syst,shared);
-    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,m=m,mT=mT),BackendDAE.SHARED(knownVars=knvars,externalObjects=exobj,aliasVars=aliasVars,
-      initialEqs=inieqns,removedEqs=remeqns,cache=cache,env=env,functionTree=funcs,extObjClasses=eoc,backendDAEType=btp,symjacs=symjacs),eqns,constrs,einfo)
-      equation
-        repl = BackendVarTransform.emptyReplacements();
-        (eqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,repl);
-      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
-  end match;
-end removeEqualFunctionCalls2;
-
 protected function removeEqualFunctionCallFinder
 "autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EventInfo,list<Integer>>> inTpl;
- output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EventInfo,list<Integer>>> outTpl;
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> inTpl;
+ output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -3693,14 +3612,13 @@ algorithm
       list<Integer> changed,changed1,changed2;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
-      BackendDAE.EventInfo einfo,einfo1;
       BackendDAE.Var var;
       DAE.ComponentRef cr;
       DAE.Exp exp,e1,e2,ecr;
       list<BackendDAE.Value> expvars,controleqns,expvars1;
       list<list<BackendDAE.Value>> expvarseqns;
       
-    case ((elem,pos,m,(mT,vars,eqns,einfo,changed)))
+    case ((elem,pos,m,(mT,vars,eqns,changed)))
       equation
         // check number of vars in eqns
         _::_ = elem;
@@ -3718,13 +3636,13 @@ algorithm
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
         controleqns = getControlEqns(expvars1,expvarseqns);
         // print("controleqns "); BackendDump.debuglst((controleqns,intString," ","\n"));
-        (eqns1,einfo1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,einfo,changed);
+        (eqns1,changed) = removeEqualFunctionCall(controleqns,ecr,exp,eqns,changed);
         //print("changed1 "); BackendDump.debuglst((changed1,intString," ","\n"));
         //print("changed2 "); BackendDump.debuglst((changed2,intString," ","\n"));
         // print("Next\n");
-      then (({},m,(mT,vars,eqns1,einfo1,changed)));
-    case ((elem,pos,m,(mT,vars,eqns,einfo,changed)))
-      then (({},m,(mT,vars,eqns,einfo,changed))); 
+      then (({},m,(mT,vars,eqns1,changed)));
+    case ((elem,pos,m,(mT,vars,eqns,changed)))
+      then (({},m,(mT,vars,eqns,changed))); 
   end matchcontinue;
 end removeEqualFunctionCallFinder;
 
@@ -3818,42 +3736,36 @@ protected function removeEqualFunctionCall
   input DAE.Exp inExp;
   input DAE.Exp inECr;
   input BackendDAE.EquationArray inEqns;
-  input  BackendDAE.EventInfo inEinfo;
-  input list<Integer> changed;
+  input list<Integer> ichanged;
   output BackendDAE.EquationArray outEqns;
-  output  BackendDAE.EventInfo outEinfo;
   output list<Integer> outEqsLst;
 algorithm
-  (outEqns,outEinfo,outEqsLst):=
-  matchcontinue (inEqsLst,inExp,inECr,inEqns,inEinfo,changed)
+  (outEqns,outEqsLst):=
+  matchcontinue (inEqsLst,inExp,inECr,inEqns,ichanged)
     local
-      BackendDAE.EquationArray eqns,eqns1,eqns2;
-      list<BackendDAE.WhenClause> wclst,wclst1;
-      list<BackendDAE.ZeroCrossing> zcl;
-      BackendDAE.EventInfo einfo;
+      BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn,eqn1;
       Integer pos,pos_1,i;
       list<Integer> rest,changed;
-      BackendDAE.EventInfo eifo;
-    case ({},_,_,eqns,inEinfo,changed) then (eqns,inEinfo,changed);
-    case (pos::rest,inExp,inECr,eqns,BackendDAE.EVENT_INFO(whenClauseLst=wclst,zeroCrossingLst=zcl),changed)
+    case ({},_,_,_,_) then (inEqns,ichanged);
+    case (pos::rest,_,_,_,_)
       equation
         pos_1 = pos-1;
-        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
         //BackendDump.dumpEqns({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
-        (eqn1,wclst1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, wclst, replaceExp, (inECr,inExp,0));
+        (eqn1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
         //BackendDump.dumpEqns({eqn1});
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
-        eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        changed = List.consOnTrue(not listMember(pos,changed),pos,changed);
-        (eqns2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
-      then (eqns2,einfo,changed);
-    case (pos::rest,inExp,inECr,eqns,eifo,changed)
+        eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
+        changed = List.consOnTrue(not listMember(pos,ichanged),pos,ichanged);
+        (eqns,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,changed);
+      then (eqns,changed);
+    case (pos::rest,_,_,_,_)
       equation
-        (eqns2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns,eifo,changed);
-      then (eqns2,einfo,changed);
+        (eqns,changed) = removeEqualFunctionCall(rest,inExp,inECr,inEqns,ichanged);
+      then (eqns,changed);
   end matchcontinue;      
 end removeEqualFunctionCall;
 
