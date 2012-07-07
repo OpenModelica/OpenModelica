@@ -328,9 +328,7 @@ algorithm
     // when equations
     case (DAE.WHEN_EQUATION(condition = _),_,_,_,_,_,_,_,_,_,_,_)
       equation
-        count = listLength(inWhenClauseLst);
-        (eqns,_,whenclauses) = lowerWhenEqn(inElement,count,functionTree,inWhenClauseLst);
-        eqns = listAppend(inEqnsLst, eqns);
+        (eqns,whenclauses) = lowerWhenEqn(inElement,functionTree,inEqnsLst,inWhenClauseLst);
       then
         (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,whenclauses,inExtObjClasses,inStates);
 
@@ -1278,63 +1276,42 @@ protected function lowerWhenEqn
   inputs:  (DAE.Element, int /* when-clause index */, BackendDAE.WhenClause list)
   outputs: (Equation list, BackendDAE.Variables, int /* when-clause index */, BackendDAE.WhenClause list)"
   input DAE.Element inElement;
-  input Integer inWhenClauseIndex;
   input DAE.FunctionTree functionTree;
+  input list<BackendDAE.Equation> inEquationLst;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output Integer outWhenClauseIndex;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
 algorithm
-  (outEquationLst,outWhenClauseIndex,outWhenClauseLst):=
-  matchcontinue (inElement,inWhenClauseIndex,functionTree,inWhenClauseLst)
+  (outEquationLst,outWhenClauseLst):=
+  matchcontinue (inElement,functionTree,inEquationLst,inWhenClauseLst)
     local
-      list<BackendDAE.Equation> res, res1;
+      list<BackendDAE.Equation> res;
       list<BackendDAE.Equation> trueEqnLst, elseEqnLst;
       list<BackendDAE.WhenOperator> reinit;
-      Integer equation_count,reinit_count,extra,tot_count,i_1,i,nextWhenIndex;
-      Boolean hasReinit;
-      list<BackendDAE.WhenClause> whenClauseList1,whenClauseList2,whenClauseList3,whenClauseList4,whenList,elseClauseList;
+      list<BackendDAE.WhenClause> whenClauseList;
       DAE.Exp cond;
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
       String scond;
       DAE.ElementSource source;
 
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE(),source=source),i,_,whenList)
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE(),source=source),_,_,_)
       equation
         (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (res,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, i, functionTree, {}, {});
-        equation_count = listLength(res);
-        reinit_count = listLength(reinit);
-        hasReinit = (reinit_count > 0);
-        extra = Util.if_(hasReinit, 1, 0);
-        tot_count = equation_count + extra;
-        i_1 = i + tot_count;
-        whenClauseList1 = makeWhenClauses(equation_count, cond, {});
-        whenClauseList2 = makeWhenClauses(extra, cond, reinit);
-        whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
-        whenClauseList4 = listAppend(whenClauseList3, whenList);
+        (res,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, inEquationLst, {});
+        whenClauseList = makeWhenClauses(listLength(reinit) > 0, cond, reinit,inWhenClauseLst);
       then
-        (res,i_1,whenClauseList4);
+        (res,whenClauseList);
 
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart),source=source),i,_,whenList)
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart),source=source),_,_,_)
       equation
-        (elseEqnLst,nextWhenIndex,elseClauseList) = lowerWhenEqn(elsePart,i,functionTree,whenList);
+        (elseEqnLst,whenClauseList) = lowerWhenEqn(elsePart,functionTree,{},inWhenClauseLst);
         (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (trueEqnLst,reinit) = lowerWhenEqn2(listReverse(eqnl), cond,nextWhenIndex, functionTree, {}, {});
-        equation_count = listLength(trueEqnLst);
-        reinit_count = listLength(reinit);
-        hasReinit = (reinit_count > 0);
-        extra = Util.if_(hasReinit, 1, 0);
-        tot_count = equation_count + extra;
-        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        whenClauseList1 = makeWhenClauses(equation_count, cond, {});
-        whenClauseList2 = makeWhenClauses(extra, cond, reinit);
-        whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
-        (res1,i_1,whenClauseList4) = mergeClauses(trueEqnLst,elseEqnLst,whenClauseList3,
-          elseClauseList,nextWhenIndex + tot_count);
+        (trueEqnLst,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
+        whenClauseList = makeWhenClauses(listLength(reinit) > 0, cond, reinit,whenClauseList);
+        res = mergeClauses(trueEqnLst,elseEqnLst,inEquationLst);                    
       then
-        (res1,i_1,whenClauseList4);
+        (res,whenClauseList);
 
     case (DAE.WHEN_EQUATION(condition = cond),_,_,_)
       equation
@@ -1351,7 +1328,6 @@ protected function lowerWhenEqn2
   Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
   input DAE.Exp cond;
-  input Integer inWhenClauseIndex;
   input DAE.FunctionTree functionTree; 
   input list<BackendDAE.Equation> iEquationLst;
   input list<BackendDAE.WhenOperator> iReinitStatementLst;
@@ -1359,9 +1335,9 @@ protected function lowerWhenEqn2
   output list<BackendDAE.WhenOperator> outReinitStatementLst;
 algorithm
   (outEquationLst,outReinitStatementLst):=
-  matchcontinue (inDAEElementLst,cond,inWhenClauseIndex,functionTree,iEquationLst,iReinitStatementLst)
+  matchcontinue (inDAEElementLst,cond,functionTree,iEquationLst,iReinitStatementLst)
     local
-      Integer i,size;
+      Integer size;
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
       DAE.Exp cre,e,cond;
@@ -1375,23 +1351,23 @@ algorithm
       Boolean b;
       String s;
 
-    case ({},_,_,_,_,_) then (iEquationLst,iReinitStatementLst);
-    case ((DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs),_,i,_,_,_)
+    case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
+    case (DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs,_,_,_,_)
       equation
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i + 1, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(cond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)),rhs = e,source = source) :: xs),_,i,_,_,_)
+    case (DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)),rhs = e,source = source) :: xs,_,_,_,_)
       equation
         size = Expression.sizeOf(Expression.typeof(cre));
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i + 1, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case (((el as DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)) :: xs),_,i,_,_,_)
+    case ((el as DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)) :: xs,_,_,_,_)
       equation
         (expl,source) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         b = not Flags.getConfigBool(Flags.CHECK_MODEL);
@@ -1399,42 +1375,42 @@ algorithm
         Debug.bcall3(b,Error.addSourceMessage,Error.IF_EQUATION_WARNING, {s}, DAEUtil.getElementSourceFileInfo(source));
         // ToDo: lower IfEquation in When clause, see ModelicaSpec(3.3) page 85.
                 
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i + 1, functionTree, iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.ARRAY_EQUATION(dimension=ds,exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),_,i,_,_,_)
+    case (DAE.ARRAY_EQUATION(dimension=ds,exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs,_,_,_,_)
       equation
         size = List.fold(Expression.dimensionsSizes(ds),intMul,1);
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i + 1, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.ASSERT(condition=cond,message = e,source = source) :: xs),_,i,_,_,_)
+    case (DAE.ASSERT(condition=cond,message = e,source = source) :: xs,_,_,_,_)
       equation
         (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i, functionTree, iEquationLst, BackendDAE.ASSERT(cond,e,source) :: iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, iEquationLst, BackendDAE.ASSERT(cond,e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.REINIT(componentRef = cr,exp = e,source = source) :: xs),_,i,_,_,_)
+    case (DAE.REINIT(componentRef = cr,exp = e,source = source) :: xs,_,_,_,_)
       equation
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i, functionTree, iEquationLst, BackendDAE.REINIT(cr,e,source) :: iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, iEquationLst, BackendDAE.REINIT(cr,e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
 
-    case ((DAE.TERMINATE(message = e,source = source) :: xs),_,i,_,_,_)
+    case (DAE.TERMINATE(message = e,source = source) :: xs,_,_,_,_)
       equation
         (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,cond, i, functionTree, iEquationLst, BackendDAE.TERMINATE(e,source) :: iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,cond, functionTree, iEquationLst, BackendDAE.TERMINATE(e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
         
     // failure  
-    case ((el::xs),_,_,_,_,_)
+    case (el::_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- BackendDAECreate.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
@@ -1444,10 +1420,10 @@ algorithm
     // adrpo: 2010-09-26
     // allow to continue when checking the model
     // just ignore this equation.
-    case ((el::xs),_,i,_,_,_)
+    case (_::xs,_,_,_,_)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (eqnl,reinit) = lowerWhenEqn2(xs, cond, i + 1, functionTree,iEquationLst,iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs, cond, functionTree,iEquationLst,iReinitStatementLst);
       then
         (eqnl, reinit);
   end matchcontinue;
@@ -2236,8 +2212,7 @@ algorithm
     case {zc} then {zc};
     case (zc :: xs)
       equation
-        samezc = List.select1(xs, sameZeroCrossing, zc);
-        diff = List.select1(xs, differentZeroCrossing, zc);
+        (samezc,diff) = List.split1OnTrue(xs,sameZeroCrossing, zc);
         diff_1 = mergeZeroCrossings(diff);
         same_1 = List.fold(samezc, mergeZeroCrossing, zc);
       then
@@ -2389,11 +2364,12 @@ algorithm
   matchcontinue (inVariables1,knvars,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5,inIndex,inZeroCrossingLst)
     local
       BackendDAE.Variables v;
-      list<DAE.Exp> rellst1,rellst2,rel;
+      list<DAE.Exp> rellst1,rellst2,rel,conds;
       list<BackendDAE.ZeroCrossing> zcs,zcs1,res,res1;
       Integer index_,size,countZC,ind,eq_count_1,eq_count,wc_count_1,wc_count;
       BackendDAE.Equation e,eq_res1,eq_res2;
       list<BackendDAE.Equation> xs,el,eq_reslst;
+      list<list<BackendDAE.Equation>> eqnslst;
       DAE.Exp daeExp,e1,e2, eres1, eres2;
       BackendDAE.WhenClause wc;
       list<BackendDAE.WhenClause> xsWhen,wc_reslst;
@@ -2404,6 +2380,7 @@ algorithm
       list<DAE.Algorithm> algs,algs_res;
       Option<Integer> elseClause_;
       list<Integer> dimsize;
+      BackendDAE.WhenEquation weqn;
       
     case (_,_,{},_,{},_,_,res) then (res,{},{});
     
@@ -2415,8 +2392,7 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts_1),source_)::eq_reslst,wc_reslst);
-
-    
+         
     // then all when clauses are processed 
     case (v,knvars,el,eq_count,((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp,reinitStmtLst=whenOperations , elseClause = elseClause_ )) :: xsWhen),wc_count,countZC,zcs)
       equation
@@ -2425,7 +2401,16 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,el,eq_count, xsWhen, wc_count,countZC,res);
       then
         (res1,eq_reslst,BackendDAE.WHEN_CLAUSE(eres1,whenOperations,elseClause_)::wc_reslst);
-      
+
+    // check when equation condition 
+    case (v,knvars,((e as BackendDAE.WHEN_EQUATION(size=size, whenEquation=weqn, source= source_)) :: xs),eq_count,{},wc_count,countZC,zcs)
+      equation
+        eq_count = eq_count + 1;
+        (weqn,countZC,res) = findZeroCrossingsWhenEqns(weqn,zcs,countZC,eq_count,-1,v,knvars);
+        (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
+      then
+        (res1,BackendDAE.WHEN_EQUATION(size,weqn,source_)::eq_reslst,wc_reslst);
+
     // after all algorithms and when clauses are processed, all equations are processed 
     case (v,knvars,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
@@ -2465,7 +2450,15 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_)::eq_reslst,wc_reslst);
-        
+
+    case (v,knvars,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+      equation
+        print("Warning If equations not handled propper in findZeroCrossings2\n");
+        eq_count = eq_count + 1;
+        (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,zcs);
+      then
+        (res1,BackendDAE.IF_EQUATION(conds,eqnslst,el,source_)::eq_reslst,wc_reslst);
+
     // let when equation pass they are discrete and can't contain ZeroCrossings 
     case (v,knvars,(e :: xs),eq_count,{},_,countZC,res)
       equation
@@ -2475,6 +2468,42 @@ algorithm
         (res1,e::eq_reslst,wc_reslst);
    end matchcontinue;
 end findZeroCrossings2;
+
+protected function findZeroCrossingsWhenEqns
+"function: findZeroCrossingsWhenEqns
+  Helper function to findZeroCrossing."
+  input BackendDAE.WhenEquation inWhenEqn;
+  input list<BackendDAE.ZeroCrossing> inZeroCrossings;
+  input Integer incountZC;
+  input Integer counteq;
+  input Integer countwc;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output BackendDAE.WhenEquation oWhenEqn;
+  output Integer outcountZC;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings;
+algorithm
+  (oWhenEqn,outcountZC,outZeroCrossings) := 
+  match(inWhenEqn,inZeroCrossings,incountZC,counteq,countwc,vars,knvars)
+    local
+      DAE.Exp cond,e;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation we;
+      list<BackendDAE.ZeroCrossing> zc;
+      Integer countZC;
+    case (BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e, elsewhenPart=NONE()),_,_,_,_,_,_)
+      equation
+        (cond,countZC,zc) = findZeroCrossings3(cond,inZeroCrossings,incountZC,counteq,countwc,vars,knvars);
+      then
+        (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),countZC,zc);
+    case (BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e, elsewhenPart=SOME(we)),_,_,_,_,_,_)
+      equation
+        (we,countZC,zc) = findZeroCrossingsWhenEqns(we,inZeroCrossings,incountZC,counteq,countwc,vars,knvars);
+        (cond,countZC,zc) = findZeroCrossings3(cond,zc,countZC,counteq,countwc,vars,knvars);
+      then
+        (BackendDAE.WHEN_EQ(cond,cr,e,SOME(we)),countZC,zc);
+  end match;
+end findZeroCrossingsWhenEqns;
 
 protected function findZeroCrossings3
 "function: findZeroCrossings3
@@ -3089,26 +3118,18 @@ protected function makeWhenClauses
   Arg1: Number of elements to construct
   Arg2: condition expression of the when clause
   outputs: (WhenClause list)"
-  input Integer n           "Number of copies to make.";
+  input Boolean do;
   input DAE.Exp inCondition "the condition expression";
   input list<BackendDAE.WhenOperator> inReinitStatementLst;
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
 algorithm
   outWhenClauseLst:=
-  matchcontinue (n,inCondition,inReinitStatementLst)
-    local
-      BackendDAE.Value i_1,i;
-      list<BackendDAE.WhenClause> res;
-      DAE.Exp cond;
-      list<BackendDAE.WhenOperator> reinit;
-
-    case (0,_,_) then {};
-    case (i,cond,reinit)
-      equation
-        i_1 = i - 1;
-        res = makeWhenClauses(i_1, cond, reinit);
+  matchcontinue (do,inCondition,inReinitStatementLst,inWhenClauseLst)
+    case (false,_,_,_) then inWhenClauseLst;
+    case (true,_,_,_)
       then
-        (BackendDAE.WHEN_CLAUSE(cond,reinit,NONE()) :: res);
+        (BackendDAE.WHEN_CLAUSE(inCondition,inReinitStatementLst,NONE()) :: inWhenClauseLst);
   end matchcontinue;
 end makeWhenClauses;
 
@@ -3119,41 +3140,28 @@ protected function mergeClauses
    the same variable and put it in the else elseWhenPart of the first equation."
   input list<BackendDAE.Equation> trueEqnList "List of equations in the true part of the when clause.";
   input list<BackendDAE.Equation> elseEqnList "List of equations in the elsewhen part of the when clause.";
-  input list<BackendDAE.WhenClause> trueClauses "List of when clauses from the true part.";
-  input list<BackendDAE.WhenClause> elseClauses "List of when clauses from the elsewhen part.";
-  input Integer nextWhenClauseIndex  "Next available when clause index.";
+  input list<BackendDAE.Equation> inEquationLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output Integer outWhenClauseIndex;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
 algorithm
-  (outEquationLst,outWhenClauseIndex,outWhenClauseLst) :=
-  matchcontinue (trueEqnList, elseEqnList, trueClauses, elseClauses, nextWhenClauseIndex)
+  outEquationLst :=
+  matchcontinue (trueEqnList, elseEqnList, inEquationLst)
     local
       DAE.ComponentRef cr;
       DAE.Exp rightSide,cond;
-      Integer ind;
       BackendDAE.Equation res;
-      list<BackendDAE.Equation> trueEqns;
-      list<BackendDAE.Equation> elseEqns;
-      list<BackendDAE.WhenClause> trueCls;
-      list<BackendDAE.WhenClause> elseCls;
-      Integer nextInd;
-      list<BackendDAE.Equation> resRest;
-      Integer outNextIndex;
-      list<BackendDAE.WhenClause> outClauseList;
+      list<BackendDAE.Equation> trueEqns,elseEqnsRest;
       BackendDAE.WhenEquation foundEquation;
-      list<BackendDAE.Equation> elseEqnsRest;
       DAE.ElementSource source;
       Integer size;
 
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation=BackendDAE.WHEN_EQ(condition=cond,index = ind,left = cr,right=rightSide),source=source)::trueEqns, elseEqns,trueCls,elseCls,nextInd)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation=BackendDAE.WHEN_EQ(condition=cond,left = cr,right=rightSide),source=source)::trueEqns, _,_)
       equation
-        (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr,elseEqns);
-        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,ind,cr,rightSide,SOME(foundEquation)),source);
-        (resRest, outNextIndex, outClauseList) = mergeClauses(trueEqns,elseEqnsRest,trueCls, elseCls,nextInd);
-      then (res::resRest, outNextIndex, outClauseList);
+        (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr,elseEqnList);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,rightSide,SOME(foundEquation)),source);
+      then 
+        mergeClauses(trueEqns,elseEqnsRest,res::inEquationLst);
 
-    case ({},{},trueCls,elseCls,nextInd) then ({},nextInd,listAppend(trueCls,elseCls));
+    case ({},{},_) then inEquationLst;
 
     else
       equation

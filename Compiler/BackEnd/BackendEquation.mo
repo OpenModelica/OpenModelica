@@ -72,30 +72,6 @@ algorithm
   end match;
 end getWhenEquationExpr;
 
-public function getWhenCondition
-"function: getWhenCodition
-  Get expression's of condition by when equation"
-  input list<BackendDAE.WhenClause> inWhenClause;
-  input Integer inIndex;
-  output list<DAE.Exp> conditionList;
-algorithm
-  conditionList := matchcontinue (inWhenClause, inIndex)
-    local
-      list<BackendDAE.WhenClause> wc;
-      Integer ind;
-      list<DAE.Exp> condlst;
-      DAE.Exp e;
-    case (wc, ind)
-      equation
-        BackendDAE.WHEN_CLAUSE(condition=DAE.ARRAY(array=condlst)) = listNth(wc, ind);
-      then condlst;
-    case (wc, ind)
-      equation
-        BackendDAE.WHEN_CLAUSE(condition=e) = listNth(wc, ind);
-      then {e};
-  end matchcontinue;
-end getWhenCondition;
-
 public function getZeroCrossingIndicesFromWhenClause "function: getZeroCrossingIndicesFromWhenClause
   Returns a list of indices of zerocrossings that a given when clause is dependent on.
 "
@@ -593,7 +569,7 @@ algorithm
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -601,8 +577,8 @@ algorithm
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
         ((cond,ext_arg_2)) = func((cond,ext_arg_2));
       then
-       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,NONE()),source),ext_arg_2);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),ext_arg_2);
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -611,7 +587,7 @@ algorithm
         ((cond,ext_arg_2)) = func((cond,ext_arg_2));
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),func,inTypeA)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
@@ -652,22 +628,44 @@ public function traverseBackendDAEExpsEqnListOutEqn
     output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquations,outchangedEquations,outTypeA) := match(inEquations,inlistchangedEquations,func,inTypeA)
+  (outEquations,outchangedEquations,outTypeA) := 
+     traverseBackendDAEExpsEqnListOutEqnwork(inEquations,inlistchangedEquations,func,inTypeA,{});
+end traverseBackendDAEExpsEqnListOutEqn;
+
+protected function traverseBackendDAEExpsEqnListOutEqnwork
+"function: traverseBackendDAEExpsEqnList
+  author: Frenkel TUD 2010-11
+  traverse all expressions of a list of Equations. It is possible to change the equations"
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Equation> inlistchangedEquations;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.Equation> inEquationsAcc;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Equation> outchangedEquations;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEquations,outchangedEquations,outTypeA) := match(inEquations,inlistchangedEquations,func,inTypeA,inEquationsAcc)
   local 
        BackendDAE.Equation e,e1;
        list<BackendDAE.Equation> res,eqns, changedeqns;
        Type_a ext_arg_1,ext_arg_2;
        Boolean b;
-    case({},changedeqns,func,inTypeA) then ({},changedeqns,inTypeA);
-    case(e::res,changedeqns,func,inTypeA)
+    case({},_,_,_,_) then (listReverse(inEquationsAcc),inlistchangedEquations,inTypeA);
+    case(e::res,_,_,_,_)
      equation
       (e1,b,ext_arg_1) = traverseBackendDAEExpsEqnOutEqn(e,func,inTypeA);
-      changedeqns = List.consOnTrue(b, e1, changedeqns);
-      (eqns,changedeqns,ext_arg_2)  = traverseBackendDAEExpsEqnListOutEqn(res,changedeqns,func,ext_arg_1);
+      changedeqns = List.consOnTrue(b, e1, inlistchangedEquations);
+      (eqns,changedeqns,ext_arg_2)  = traverseBackendDAEExpsEqnListOutEqnwork(res,changedeqns,func,ext_arg_1,e1::inEquationsAcc);
     then 
-      (e1::eqns,changedeqns,ext_arg_2);
+      (eqns,changedeqns,ext_arg_2);
     end match;
-end traverseBackendDAEExpsEqnListOutEqn;
+end traverseBackendDAEExpsEqnListOutEqnwork;
 
 public function traverseBackendDAEExpsEqnOutEqn
  "function: traverseBackendDAEExpsEqnOutEqn
@@ -732,7 +730,7 @@ algorithm
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source),b1,ext_arg_1);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -741,8 +739,8 @@ algorithm
         ((cond,b3,ext_arg_2)) = func((cond,ext_arg_2));
         bres = Util.boolOrList({b1,b2,b3});
       then
-       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,NONE()),source),bres,ext_arg_2);
-    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+       (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),bres,ext_arg_2);
+    case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
       equation
         tp = Expression.typeof(e2);
         e1 = Expression.makeCrefExp(cr,tp);
@@ -752,7 +750,7 @@ algorithm
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b4,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
         bres = Util.boolOrList({b1,b2,b3,b4});
       then
-        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
+        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
     case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source),func,inTypeA)
       then
         (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);
@@ -1002,7 +1000,6 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       DAE.Algorithm alg1,alg2;
       list<DAE.Exp> explst1,explst2;
-      Integer i1,i2;
     case (_,_)
       equation
         true = referenceEq(e1,e2);
@@ -1046,10 +1043,10 @@ algorithm
         res = List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
       then res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i1)),
-          BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i2)))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr1,right=exp1)),
+          BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr2,right=exp2)))
       equation
-        res = intEq(i1,i2);
+        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2),Expression.expEqual(exp1,exp2));
       then res;
 
     case(_,_) then false;

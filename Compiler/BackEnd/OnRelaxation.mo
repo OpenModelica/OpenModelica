@@ -48,6 +48,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendDAETransform;
 protected import BaseHashSet;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import Debug;
 protected import Derive;
@@ -55,6 +56,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import HashSet;
+protected import HashTable4;
 protected import IndexReduction;
 protected import List;
 protected import Matching;
@@ -137,10 +139,9 @@ algorithm
       array<DAE.Exp> crefexps;
       list<DAE.Exp> crefexplst;
       array<list<Integer>> vorphansarray1,mapEqnIncRow,ass22,vec1;
-      list<BackendDAE.Equation> neweqns;
-      
+      list<BackendDAE.Equation> neweqns;      
       BackendDAE.StrongComponents othercomps;
-   
+      HashTable4.HashTable ht;   
       
     case (_,_,{})
       then (isyst,ishared,false);
@@ -277,6 +278,7 @@ algorithm
         transformJacToMatrix(jac,1,1,size,beqs,matrix);
         //  print("Jacobian as Matrix:\n");
         //  dumpMatrix(1,size,matrix);
+        ht = HashTable4.emptyHashTable();
         (tvars,teqns) = gaussElimination(1,size,matrix,BackendDAEUtil.emptyVars(),BackendDAEUtil.listEquation({}),(1,1));
         //  dumpMatrix(1,size,matrix);
         //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
@@ -938,7 +940,7 @@ protected function addRows
   output list<tuple<Integer,DAE.Exp>> outElst;
   output BackendDAE.Variables outVars "temporary variables";
   output BackendDAE.EquationArray outEqns "temporary equations";
-  output tuple<Integer,Integer> outTpl;  
+  output tuple<Integer,Integer> outTpl;
 algorithm
   (outElst,outVars,outEqns,outTpl) := matchcontinue(inA,inB,col,inVars,inEqns,inTpl,inElst)
     local
@@ -968,7 +970,7 @@ algorithm
       equation
         true = intEq(ca,cb);
         e = Expression.expAdd(ea,eb);
-        //(e,_) = ExpressionSimplify.simplify(e);
+        (e,_) = ExpressionSimplify.simplify(e);
         (vars,eqns,e,tpl) = makeDummyVar(inTpl,e,inVars,inEqns);
         (elst,vars,eqns,tpl) = addRows(resta,restb,col,vars,eqns,tpl,(ca,e)::inElst); 
       then
@@ -1068,6 +1070,15 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       DAE.Exp cexp;
+    case (_,DAE.CREF(componentRef=_),_,_)
+      then
+        (inVars,inEqns,e,inTpl);
+    case (_,DAE.UNARY(exp=DAE.CREF(componentRef=_)),_,_)
+      then
+        (inVars,inEqns,e,inTpl);
+    case (_,DAE.RCONST(real=_),_,_)
+      then
+        (inVars,inEqns,e,inTpl);
     case (_,_,_,_)
       equation
         true = Expression.isConst(e);
@@ -1081,7 +1092,7 @@ algorithm
       cexp = Expression.crefExp(cr);
       eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource),inEqns);
       v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
-      vars = BackendVariable.addVar(v,inVars); 
+      vars = BackendVariable.addVar(v,inVars);
     then
       (vars,eqns,cexp,(a,b+1));
   end matchcontinue;
@@ -1123,7 +1134,7 @@ algorithm
         scol = intString(col);
         srow = intString(row);
         e1 = Expression.expDiv(e,ce);
-        //(e1,_) = ExpressionSimplify.simplify(e1);
+        (e1,_) = ExpressionSimplify.simplify(e1);
         (vars,eqns,cexp,tpl) = makeDummyVar(inTpl,e1,inVars,inEqns);
         elst = matrix[col];
         elst = List.map1(elst,mulRow,cexp);

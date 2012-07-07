@@ -2680,51 +2680,12 @@ protected function generateHelpVarInfo
   output list<HelpVarInfo> outHelpVarInfo;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<BackendDAE.Equation> outSampleEqns;
-protected
-  BackendDAE.BackendDAE dlow;
 algorithm
-  outHelpVarInfo := helpVarInfoFromWhenConditionChecks(idlow);
-  (outHelpVarInfo, dlow) := generateHelpVarsForWhenStatements(outHelpVarInfo, idlow);
+  (outHelpVarInfo) := helpVarInfoFromWhenConditionChecks(idlow);
   // Generate HelpVars for sample call outside whenclause
   // additional collect all these equations
-  (outBackendDAE,(outHelpVarInfo,outSampleEqns)) := BackendDAEUtil.mapEqSystemAndFold(dlow,searchForSampleOutsideWhen,(outHelpVarInfo,{}));
+  (outHelpVarInfo, outBackendDAE, outSampleEqns) := generateHelpVarsForWhenStatements(outHelpVarInfo, idlow);
 end generateHelpVarInfo;
-
-protected function searchForSampleOutsideWhen
-  input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,tuple<list<HelpVarInfo>,list<BackendDAE.Equation>>> tpl;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,tuple<list<HelpVarInfo>,list<BackendDAE.Equation>>> otpl;
-algorithm
-  (osyst,otpl) := matchcontinue (syst,tpl)
-    local
-      list<HelpVarInfo> helpvars;
-      BackendDAE.Variables orderedVars;
-      BackendDAE.Variables knownVars;
-      BackendDAE.Variables externalObjects;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray orderedEqs;
-      list<BackendDAE.Equation> eqnsList;
-      BackendDAE.EquationArray removedEqs;
-      BackendDAE.EquationArray initialEqs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.ExternalObjectClasses extObjClasses;
-      list<BackendDAE.Equation> sampleEquations;
-      BackendDAE.Shared shared;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,(helpvars,sampleEquations)))
-      equation
-        eqnsList = BackendDAEUtil.equationList(orderedEqs);
-        (eqnsList,sampleEquations,(_,helpvars)) = BackendEquation.traverseBackendDAEExpsEqnListOutEqn(eqnsList, sampleEquations, sampleFinder,  (listLength(helpvars)-1,helpvars));
-        orderedEqs = BackendDAEUtil.listEquation(eqnsList);
-      then (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,(helpvars,sampleEquations)));
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.searchForSampleOutsideWhen failed"});
-      then fail();
-  end matchcontinue;
-end searchForSampleOutsideWhen;
 
 protected function sampleFinder
 "function: sampleFinder
@@ -2766,10 +2727,10 @@ algorithm
       DAE.CallAttributes attr;
     case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)),(nhelpvars,helpvars)))
       equation
-        nhelpvars = nhelpvars+1;
         args_ = listAppend(args_,{DAE.ICONST(nhelpvars)});
         e = DAE.CALL(name, args_, attr);
         helpvars = listAppend(helpvars,{(nhelpvars,e,-1)});
+        nhelpvars = nhelpvars+1;
       then ((e,(nhelpvars,helpvars)));
     case ((e,(nhelpvars,helpvars)))
     then ((e,(nhelpvars,helpvars)));
@@ -2784,24 +2745,18 @@ algorithm
   helpVarList :=
   matchcontinue (inBackendDAE)
     local
-      list<Integer> orderOfEquations,orderOfEquations_1;
       Integer n;
-      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
-      BackendDAE.BackendDAE dlow;
-      BackendDAE.EquationArray eqns;
+      list<HelpVarInfo> helpVarInfo;
       list<BackendDAE.WhenClause> whenClauseList;
-      BackendDAE.StrongComponents comps;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
     case (BackendDAE.DAE(eqs=systs,shared=shared as BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList))))
       equation
-        helpVarInfo1 = List.flatten(List.map1(systs,helpVarInfoFromWhenConditionChecks1,shared));
-        n = listLength(helpVarInfo1);
+        ((n,helpVarInfo)) = List.fold(systs,helpVarInfoFromWhenConditionChecks1,(0,{}));
         // Generate checks also for when clauses without equations but containing reinit statements.
-        (_, helpVarInfo2) = buildWhenConditionChecks2(whenClauseList, 0, n);
-        helpVarInfo = listAppend(helpVarInfo1, helpVarInfo2);
+        helpVarInfo= buildWhenConditionChecks2(whenClauseList, n, helpVarInfo);
       then
-        (helpVarInfo);
+        helpVarInfo;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks failed"});
@@ -2813,21 +2768,19 @@ end helpVarInfoFromWhenConditionChecks;
 protected function helpVarInfoFromWhenConditionChecks1
 "Return a list of help variables that were introduced by when conditions?"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  output list<HelpVarInfo> helpVarList;
+  input tuple<Integer,list<HelpVarInfo>> inTpl;
+  output tuple<Integer,list<HelpVarInfo>> outTpl;
 algorithm
-  helpVarList :=
-  matchcontinue (syst,shared)
+  outTpl :=
+  matchcontinue (syst,inTpl)
     local
       list<Integer> orderOfEquations,orderOfEquations_1;
-      Integer n;
-      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
-      BackendDAE.BackendDAE dlow;
+      Integer n,helpVarIndex;
+      list<HelpVarInfo> helpVarInfo;
       BackendDAE.EquationArray eqns;
-      list<BackendDAE.WhenClause> whenClauseList;
       BackendDAE.StrongComponents comps;
       array<Boolean> selectedeqns;
-    case (BackendDAE.EQSYSTEM(orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)),shared as BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList)))
+    case (BackendDAE.EQSYSTEM(orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)),(helpVarIndex,helpVarInfo))
       equation
         n = BackendDAEUtil.equationArraySize(eqns);
         selectedeqns = arrayCreate(n,false);
@@ -2835,9 +2788,10 @@ algorithm
         orderOfEquations_1 = addMissingEquations(n,selectedeqns,{});
         orderOfEquations_1 = listAppend(orderOfEquations_1,orderOfEquations);
         // First generate checks for all when equations, in the order of the sorted equations.
-        (_, helpVarInfo) = buildWhenConditionChecks4(orderOfEquations_1, eqns, whenClauseList, 0);
+        (helpVarIndex,helpVarInfo) = buildWhenConditionChecks4(orderOfEquations_1, eqns, helpVarIndex,helpVarInfo);
+        outTpl = (helpVarIndex,helpVarInfo);
       then
-        (helpVarInfo);
+        outTpl;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks1 failed"});
@@ -3391,16 +3345,20 @@ end varNotSolvedInWhen;
 protected function createSimWhenClauses
   input BackendDAE.BackendDAE dlow;
   input list<HelpVarInfo> helpVarInfo;
-  output list<SimWhenClause> simWhenClauses;
+  output list<SimWhenClause> osimWhenClauses;
 algorithm
-  simWhenClauses := matchcontinue (dlow,helpVarInfo)
+  osimWhenClauses := matchcontinue (dlow,helpVarInfo)
     local
       list<BackendDAE.WhenClause> wc;
       BackendDAE.EqSystems systs;
+      list<SimWhenClause> simWhenClauses;
       
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),helpVarInfo)
+      equation
+        simWhenClauses = List.fold1(systs,createSimWhenClausesEqs,helpVarInfo,{});
+        simWhenClauses =  List.fold1(wc,whenClauseToSimWhenClause,helpVarInfo,simWhenClauses);
       then
-        createSimWhenClausesWithEqs(systs, wc, wc, helpVarInfo, 0, {});
+        listReverse(simWhenClauses);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.createSimWhenClauses failed"});
@@ -3408,123 +3366,92 @@ algorithm
   end matchcontinue;
 end createSimWhenClauses;
 
-protected function createSimWhenClausesWithEqs
-  input BackendDAE.EqSystems systs;
-  input list<BackendDAE.WhenClause> whenClauses;
-  input list<BackendDAE.WhenClause> allwhenClauses;
+protected function createSimWhenClausesEqs
+  input BackendDAE.EqSystem syst;
   input list<HelpVarInfo> helpVarInfo;
-  input Integer currentWhenClauseIndex;
   input list<SimWhenClause> isimWhenClauses;
-  output list<SimWhenClause> simWhenClauses;
+  output list<SimWhenClause> osimWhenClauses;
 algorithm
-  simWhenClauses :=
-  match (systs, whenClauses, allwhenClauses, helpVarInfo, currentWhenClauseIndex, isimWhenClauses)
-    local
-      BackendDAE.WhenClause whenClause;
-      list<BackendDAE.WhenClause> wc;
-      Option<BackendDAE.WhenEquation> whenEq;
-      SimWhenClause simWhenClause;
-      Integer nextIndex;
-      
-    case (_, {}, _, _, _, _) then listReverse(isimWhenClauses);
-      
-    case (_, whenClause :: wc, _, _, _, _)
-      equation
-        whenEq = createSimWhenClausesWithEqsHelper(systs,currentWhenClauseIndex);
-        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq, allwhenClauses, helpVarInfo, currentWhenClauseIndex);
-        nextIndex = currentWhenClauseIndex + 1;
-      then
-        createSimWhenClausesWithEqs(systs, wc, allwhenClauses, helpVarInfo, nextIndex, simWhenClause :: isimWhenClauses);
-  end match;
-end createSimWhenClausesWithEqs;
-
-protected function createSimWhenClausesWithEqsHelper
-  input BackendDAE.EqSystems isysts;
-  input Integer currentWhenClauseIndex;
-  output Option<BackendDAE.WhenEquation> whenEq;
-algorithm
-  whenEq := matchcontinue (isysts,currentWhenClauseIndex)
+  osimWhenClauses := match (syst,helpVarInfo,isimWhenClauses)
     local
       BackendDAE.EquationArray eqs;
-      BackendDAE.EqSystems systs;
-    case ({},_) then NONE();
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqs)::_,currentWhenClauseIndex)
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqs),_,_)
       equation
-        ((whenEq as SOME(_),_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqs,findWhenEquation,(NONE(),currentWhenClauseIndex));
-      then whenEq;
-    case (_::systs,currentWhenClauseIndex) then createSimWhenClausesWithEqsHelper(systs,currentWhenClauseIndex);
-  end matchcontinue;
-end createSimWhenClausesWithEqsHelper;
+        ((osimWhenClauses,_)) = BackendEquation.traverseBackendDAEEqns(eqs,findWhenEquation,(isimWhenClauses,helpVarInfo));
+      then
+        osimWhenClauses;
+  end match;
+end createSimWhenClausesEqs;
 
 protected function findWhenEquation
-  input tuple<BackendDAE.Equation, tuple<Option<BackendDAE.WhenEquation>,Integer>> inTpl;
-  output tuple<BackendDAE.Equation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;
+  input tuple<BackendDAE.Equation, tuple<list<SimWhenClause>,list<HelpVarInfo>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<list<SimWhenClause>,list<HelpVarInfo>>> outTpl;
 algorithm
   outTpl := matchcontinue (inTpl)
     local
       BackendDAE.WhenEquation eq;
       BackendDAE.Equation eqn;
-      tuple<Option<BackendDAE.WhenEquation>,Integer> tplowei,tplowei1;
-      Boolean b;
-    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), tplowei))
+      list<SimWhenClause> scw;
+      list<HelpVarInfo> helpVarInfo;     
+    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), (scw,helpVarInfo)))
       equation
-        ((_,b,tplowei1)) = findWhenEquation1((eq,tplowei));
-      then ((eqn,b,tplowei1));
-    case ((eqn,tplowei)) then ((eqn,true,tplowei));
+        scw = findWhenEquation1(eq,helpVarInfo,scw);
+      then ((eqn,(scw,helpVarInfo)));
+    else then inTpl;
   end matchcontinue;
 end findWhenEquation;
 
 protected function findWhenEquation1
-"function: findWhenEquation1
-Helper function to findWhenEquation."
-  input tuple<BackendDAE.WhenEquation, tuple<Option<BackendDAE.WhenEquation>,Integer>> inTpl;
-  output tuple<BackendDAE.WhenEquation, Boolean, tuple<Option<BackendDAE.WhenEquation>,Integer>> outTpl;
+  input BackendDAE.WhenEquation inWEqn;
+  input list<HelpVarInfo> helpVarInfo; 
+  input list<SimWhenClause> iscw;
+  output list<SimWhenClause> oscw;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  oscw := match(inWEqn,helpVarInfo,iscw)
     local
-      Integer wc_ind,index;
-      BackendDAE.WhenEquation weqn,we;
-      tuple<Option<BackendDAE.WhenEquation>,Integer> tplowei,tplowei1;
-      Boolean b;
-    case((weqn as BackendDAE.WHEN_EQ(index = wc_ind),(_,index)))
+      DAE.Exp cond;
+      list<DAE.Exp> conditions;
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex; 
+      list<DAE.ComponentRef> conditionVars; 
+      BackendDAE.WhenEquation we;
+    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()),_,_)
       equation
-        true = intEq(index,wc_ind);
+        conditions = getConditionList(cond);
+        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+        conditionVars = Expression.extractCrefsFromExp(cond);        
       then
-        ((weqn,false,(SOME(weqn),index)));
-        
-    case((weqn as BackendDAE.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),tplowei))
+        SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWEqn), conditionsWithHindex)::iscw;
+    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)),_,_)
       equation
-        ((weqn,b,tplowei1)) = findWhenEquation1((we,tplowei));
+        conditions = getConditionList(cond);
+        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+        conditionVars = Expression.extractCrefsFromExp(cond);        
       then
-        ((weqn,b,tplowei1));
-    case ((weqn,tplowei)) then ((weqn,true,tplowei));
-  end matchcontinue;
-end findWhenEquation1;
+        findWhenEquation1(we,helpVarInfo,SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWEqn), conditionsWithHindex)::iscw);        
+  end match;
+end findWhenEquation1; 
 
 protected function whenClauseToSimWhenClause
   input BackendDAE.WhenClause whenClause;
-  input Option<BackendDAE.WhenEquation> whenEq;
-  input list<BackendDAE.WhenClause> whenClauses;
   input list<HelpVarInfo> helpVarInfo;
-  input Integer CurrentIndex;
-  output SimWhenClause simWhenClause;
+  input list<SimWhenClause> isimWhenClauses;
+  output list<SimWhenClause> osimWhenClauses;
 algorithm
-  simWhenClause := match (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
+  osimWhenClauses := match (whenClause, helpVarInfo, isimWhenClauses)
     local
       DAE.Exp cond;
-      list<BackendDAE.WhenClause> wc;
       list<BackendDAE.WhenOperator> reinits;
       list<DAE.ComponentRef> conditionVars;
       list<DAE.Exp> conditions;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       
-    case (BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq, wc, helpVarInfo,CurrentIndex)
+    case (BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), _,_)
       equation
-        conditions = getConditionList(wc, CurrentIndex);
+        conditions = getConditionList(cond);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
         conditionVars = Expression.extractCrefsFromExp(cond);
       then
-        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);
+        SIM_WHEN_CLAUSE(conditionVars, reinits, NONE(), conditionsWithHindex)::isimWhenClauses;
   end match;
 end whenClauseToSimWhenClause;
 
@@ -3863,8 +3790,8 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.WHEN_EQ(cond,wcIndex, left, right, NONE()) = whenEquation;
-        conditions = getConditionList(wcl, wcIndex);
+        BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
+        conditions = getConditionList(cond);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
         ({SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,NONE(),source)},iuniqueEqIndex+1);
@@ -3875,9 +3802,9 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.WHEN_EQ(cond,wcIndex, left, right, SOME(elseWhen)) = whenEquation;
+        BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
-        conditions = getConditionList(wcl, wcIndex);
+        conditions = getConditionList(cond);
         conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
         ({SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,SOME(elseWhenEquation),source)},iuniqueEqIndex+1);
@@ -4024,7 +3951,6 @@ algorithm
   equation_ :=
   match (elseWhen, wcl, helpVarInfo, source)
     local
-      Integer wcIndex;
       DAE.ComponentRef left;
       DAE.Exp  right,cond;
       BackendDAE.WhenEquation elseWhenEquation;
@@ -4032,18 +3958,18 @@ algorithm
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.Exp> conditions;
       // when eq without else
-    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond,index=wcIndex, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo, source)
+    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), wcl, helpVarInfo, source)
       equation
-        conditions = getConditionList(wcl, wcIndex);
+        conditions = getConditionList(cond);
         conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
         SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
         
         // when eq with else
-    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond,index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
+    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
       equation
         simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
-        conditions = getConditionList(wcl, wcIndex);
+        conditions = getConditionList(cond);
         conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
         SES_WHEN(0,left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
@@ -7578,8 +7504,9 @@ protected function generateHelpVarsForWhenStatements
   input BackendDAE.BackendDAE inBackendDAE;
   output list<HelpVarInfo> outHelpVarInfo;
   output BackendDAE.BackendDAE outBackendDAE;
+  output list<BackendDAE.Equation> outSampleEqns;
 algorithm
-  (outHelpVarInfo,outBackendDAE) :=
+  (outHelpVarInfo,outBackendDAE,outSampleEqns) :=
   matchcontinue (inHelpVarInfo,inBackendDAE)
     local
       list<HelpVarInfo> helpvars;
@@ -7599,16 +7526,16 @@ algorithm
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
+      list<BackendDAE.Equation> sampleEqns;
     case  (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
       removedEqs,constrs,cache,env,funcs,eventInfo,extObjClasses,btp,symjacs)))
       equation
-        
-        (eqs,(_,helpvars)) = List.mapFold(eqs,generateHelpVarsForWhenStatements1,(listLength(helpvars),helpvars));
-        (removedEqs,(_,helpvars)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(removedEqs,generateHelpVarsForWhenStatements2,(listLength(helpvars),helpvars));
-        (initialEqs,(_,helpvars)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(initialEqs,generateHelpVarsForWhenStatements2,(listLength(helpvars),helpvars));
-        
-      then (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
-        removedEqs,constrs,cache,env,funcs,eventInfo,extObjClasses,btp,symjacs)));
+        (eqs,(_,helpvars,sampleEqns)) = List.mapFold(eqs,generateHelpVarsForWhenStatements1,(listLength(helpvars),helpvars,{}));
+        (removedEqs,(_,helpvars,sampleEqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(removedEqs,generateHelpVarsForWhenStatements2,(listLength(helpvars),helpvars,sampleEqns));
+        (initialEqs,(_,helpvars,sampleEqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(initialEqs,generateHelpVarsForWhenStatements2,(listLength(helpvars),helpvars,sampleEqns));
+      then 
+        (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
+        removedEqs,constrs,cache,env,funcs,eventInfo,extObjClasses,btp,symjacs)),sampleEqns);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -7621,9 +7548,9 @@ end generateHelpVarsForWhenStatements;
 protected function generateHelpVarsForWhenStatements1 "function: generateHelpVarsForWhenStatements1
   helper for generateHelpVarsForWhenStatements."
     input BackendDAE.EqSystem syst;
-    input tuple<Integer,list<HelpVarInfo>> iTpl;
+    input tuple<Integer,list<HelpVarInfo>,list<BackendDAE.Equation>> iTpl;
     output BackendDAE.EqSystem osyst;
-    output tuple<Integer,list<HelpVarInfo>> oTpl;
+    output tuple<Integer,list<HelpVarInfo>,list<BackendDAE.Equation>> oTpl;
 algorithm
   (osyst,oTpl) := match (syst,iTpl)
     local
@@ -7633,100 +7560,45 @@ algorithm
       BackendDAE.Matching matching;
       Integer size;
       list<HelpVarInfo> helpvarinfo;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),(size,helpvarinfo))
+      list<BackendDAE.Equation> sampleEquations;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),(size,helpvarinfo,sampleEquations))
       equation
-        (eqns,(size,helpvarinfo)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,generateHelpVarsForWhenStatements2,(size,helpvarinfo));
+        (eqns,(size,helpvarinfo,sampleEquations)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,generateHelpVarsForWhenStatements2,(size,helpvarinfo,sampleEquations));
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),(size,helpvarinfo));
+        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),(size,helpvarinfo,sampleEquations));
   end match;
 end generateHelpVarsForWhenStatements1;
 
 protected function generateHelpVarsForWhenStatements2
-  input tuple<BackendDAE.Equation,tuple<Integer,list<HelpVarInfo>>> tpl;
-  output tuple<BackendDAE.Equation,tuple<Integer,list<HelpVarInfo>>> outTpl;
+  input tuple<BackendDAE.Equation,tuple<Integer,list<HelpVarInfo>,list<BackendDAE.Equation>>> tpl;
+  output tuple<BackendDAE.Equation,tuple<Integer,list<HelpVarInfo>,list<BackendDAE.Equation>>> outTpl;
 algorithm
   outTpl := match(tpl)
     local
       Integer size,hsize;
       DAE.ElementSource source;
       list<HelpVarInfo> helpvarinfo,helpVars1;  
-      list<Algorithm.Statement> stmts;     
-    case((BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source),(hsize,helpvarinfo)))
+      list<Algorithm.Statement> stmts;   
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> sampleEquations;  
+      Boolean b;
+    case((BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source),(hsize,helpvarinfo,sampleEquations)))
       equation
         (helpVars1,stmts,hsize) = generateHelpVarsInStatements(hsize,stmts);
         helpvarinfo = listAppend(helpVars1,helpvarinfo);
       then
-        ((BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts),source),(hsize,helpvarinfo)));
-    else then tpl;
+        ((BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts),source),(hsize,helpvarinfo,sampleEquations)));
+    case((eqn as BackendDAE.WHEN_EQUATION(size=_),(hsize,helpvarinfo,sampleEquations)))
+      then
+        ((eqn,(hsize,helpvarinfo,sampleEquations))); 
+    case((eqn,(hsize,helpvarinfo,sampleEquations)))
+      equation
+        (eqn,b,(hsize,helpvarinfo)) = BackendEquation.traverseBackendDAEExpsEqnOutEqn(eqn,sampleFinder,(hsize,helpvarinfo));
+        sampleEquations = List.consOnTrue(b, eqn, sampleEquations);      
+      then 
+        ((eqn,(hsize,helpvarinfo,sampleEquations)));
   end match;
 end generateHelpVarsForWhenStatements2;
-
-protected function generateHelpVarsInAlgorithmsDispatch
-  input Integer nextInd "Index of next help variable";
-  input array<Algorithm.Algorithm> inAlgArr;
-  input Integer index;
-  input Integer sizeOfArr;
-  input array<Algorithm.Algorithm> inAccAlgArr;
-  output list<HelpVarInfo> outHelpVars;
-  output array<Algorithm.Algorithm> outAlgArr;
-  output Integer n2;
-algorithm
-  (outHelpVars,outAlgArr,n2) := matchcontinue(nextInd, inAlgArr, index, sizeOfArr, inAccAlgArr)
-    local
-      list<HelpVarInfo> helpVars,helpVars1,helpVars2;
-      Integer i, n, nextInd1, nextInd2;
-      list<Algorithm.Statement> stmts, stmts2;
-      array<Algorithm.Algorithm> accAlgArr;
-      
-    // stop the loop
-    case (nextInd, inAlgArr, i, n, accAlgArr)
-      equation
-        false = intLt(i, n);
-      then
-        ({}, accAlgArr, nextInd);
-        
-    // loop body
-    case (nextInd, inAlgArr, i, n, accAlgArr)
-      equation
-        true = intLt(i, n);
-        //  get the element
-        DAE.ALGORITHM_STMTS(stmts) = arrayGet(inAlgArr, i+1);
-        (helpVars1,stmts2,nextInd1) = generateHelpVarsInStatements(nextInd,stmts);
-        accAlgArr = arrayUpdate(accAlgArr, i+1, DAE.ALGORITHM_STMTS(stmts2));
-        (helpVars2,accAlgArr,nextInd2) = generateHelpVarsInAlgorithmsDispatch(nextInd1, inAlgArr, i + 1, n, accAlgArr);
-        helpVars = listAppend(helpVars1,helpVars2);
-      then 
-        (helpVars,accAlgArr,nextInd);
-  end matchcontinue;
-end generateHelpVarsInAlgorithmsDispatch;
-
-protected function generateHelpVarsInAlgorithms
-  input Integer inNextInd "Index of next help variable";
-  input array<Algorithm.Algorithm> inAlgArr;
-  output list<HelpVarInfo> outHelpVars;
-  output array<Algorithm.Algorithm> outAlgArr;
-  output Integer n2;
-algorithm
-  (outHelpVars,outAlgArr,n2) := matchcontinue(inNextInd,inAlgArr)
-    local
-      array<Algorithm.Algorithm> outArr;
-      list<HelpVarInfo> helpVars;
-      Integer nextInd;
-      
-    case (nextInd, inAlgArr)
-      equation
-        outArr = arrayCopy(inAlgArr);
-        (helpVars,outArr,nextInd) = generateHelpVarsInAlgorithmsDispatch(nextInd, inAlgArr, 0, arrayLength(inAlgArr), outArr);
-      then 
-        (helpVars,outArr,nextInd);
-        
-    case (_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"generateHelpVarsInAlgorithms failed"});
-      then
-        fail();
-  end matchcontinue;
-end generateHelpVarsInAlgorithms;
 
 protected function generateHelpVarsInStatements
   input Integer n "Index of next help variable";
@@ -7959,21 +7831,18 @@ protected function buildWhenConditionChecks3
   Generates code for checking one equation of one when clause.
 "
   input list<DAE.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
-  input Integer whenClauseIndex        "When clause index";
   input Integer nextHelpIndex          "Next available help variable index";
-  input Boolean isElseWhen             "Whether this lase is an elsewhen or not";
-  output String outString              "Generated c-code";
-  output list<HelpVarInfo> helpVarLst;
+  input list<HelpVarInfo> helpVarLst;
+  output Integer onextHelpIndex          "Next available help variable index";
+  output list<HelpVarInfo> ohelpVarLst;
 algorithm
-  (outString,helpVarLst):=
-  matchcontinue (whenConditions,whenClauseIndex,nextHelpIndex,isElseWhen)
+  (onextHelpIndex,ohelpVarLst) := matchcontinue (whenConditions,nextHelpIndex,helpVarLst)
     local
-      String i_str,helpVarIndexStr,res,resx,res_1;
       HelpVarInfo helpInfo;
-      Integer helpVarIndex_1,i,helpVarIndex;
-      list<HelpVarInfo> helpVarInfoList, helpVarInfo1;
+      Integer helpVarIndex;
+      list<HelpVarInfo> helpVarInfo;
       DAE.Exp e;
-      list<DAE.Exp> el;
+      list<DAE.Exp> el,conditions;
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
@@ -7981,78 +7850,27 @@ algorithm
       DAE.InlineType inty;
       DAE.CallAttributes attr;
     
-    case ({},_,_,_) then ("",{});
+    case ({},_,_) then (nextHelpIndex,helpVarLst);
     
     //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)) :: el,i,helpVarIndex, false)
+    case (DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr) :: el,_,_)
       equation
-        i_str = intString(i);
-        helpVarIndexStr = intString(helpVarIndex);
-        args_ = listAppend(args_,{DAE.ICONST(helpVarIndex)});
+        args_ = listAppend(args_,{DAE.ICONST(nextHelpIndex)});
         e = DAE.CALL(name, args_, attr);
-        helpInfo = (helpVarIndex,e,i);
-        res = stringAppendList(
-          {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
-            " + localData->nZeroCrossing);\n"});
-        helpVarIndex_1 = helpVarIndex + 1;
-        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,false);
-        res_1 = stringAppend(res, resx);
+        (helpVarIndex,helpVarInfo) =  buildWhenConditionChecks3(el, nextHelpIndex + 1,(nextHelpIndex,e,-1)::helpVarLst);
       then
-        (res_1,(helpInfo :: helpVarInfoList));
-    //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)) :: el,i,helpVarIndex, true)
+        (helpVarIndex,helpVarInfo);
+    case (e :: el,_,_)
       equation
-        i_str = intString(i);
-        helpVarIndexStr = intString(helpVarIndex);
-        args_ = listAppend(args_,{DAE.ICONST(helpVarIndex)});
-        e = DAE.CALL(name, args_, attr);
-        helpInfo = (helpVarIndex,e,i);
-        res = stringAppendList(
-          {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
-            " + localData->nZeroCrossing);\n"});
-        helpVarIndex_1 = helpVarIndex + 1;
-        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,true);
-        res_1 = stringAppend(res, resx);
-      then
-        (res_1,(helpInfo :: helpVarInfoList));
-    
-    case ((e :: el),i,helpVarIndex, false)
-      equation
-        i_str = intString(i);
-        helpVarIndexStr = intString(helpVarIndex);
         //add HelpVar for sample and add hindex to sample call
-        ((e,(helpVarInfo1, helpVarIndex_1))) = Expression.traverseExp(e, addHindexSample, ({},helpVarIndex));
-        helpInfo = (helpVarIndex,e,i);
-        res = stringAppendList(
-          {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
-            " + localData->nZeroCrossing);\n"});
-        helpVarIndex_1 = helpVarIndex_1 + 1;
-        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,false);
-        helpVarInfoList = listAppend(helpVarInfo1,helpVarInfoList);
-        res_1 = stringAppend(res, resx);
+        ((e,(helpVarInfo,helpVarIndex))) = Expression.traverseExp(e, addHindexSample, (helpVarLst,nextHelpIndex));
+        (helpVarIndex,helpVarInfo) =  buildWhenConditionChecks3(el, helpVarIndex + 1,(nextHelpIndex,e,-1)::helpVarInfo);
       then
-        (res_1,(helpInfo :: helpVarInfoList));
+        (helpVarIndex,helpVarInfo);
     
-    case ((e :: el),i,helpVarIndex, true)
+    else
       equation
-        i_str = intString(i);
-        helpVarIndexStr = intString(helpVarIndex);
-        //add HelpVar for sample and add hindex to sample call
-        ((e,(helpVarInfo1, helpVarIndex_1))) = Expression.traverseExp(e, addHindexSample, ({},helpVarIndex));
-        helpInfo = (helpVarIndex,e,i);
-        res = stringAppendList(
-          {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
-            " + localData->nZeroCrossing);\n"});
-        helpVarIndex_1 = helpVarIndex_1 + 1;
-        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,true);
-        helpVarInfoList = listAppend(helpVarInfo1,helpVarInfoList);
-        res_1 = stringAppend(res, resx);
-      then
-        (res_1,(helpInfo :: helpVarInfoList));
-    
-    case (_,_,_,_)
-      equation
-        print("-build_when_condition_checks3 failed.\n");
+        print("-SimCode.buildWhenConditionChecks3 failed.\n");
       then
         fail();
   end matchcontinue;
@@ -8092,50 +7910,29 @@ protected function buildWhenConditionChecks2
 " This function outputs checks for all when clauses that do not have equations but reinit statements.
 "
   input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst1 "List of when clauses";
-  input Integer whenClauseIndex "index of the first when clause in inBackendDAEWhenClauseLst1";
   input Integer nextHelpVarIndex;
-  output String outString;
-  output list<HelpVarInfo> helpVarLst;
+  input list<HelpVarInfo> helpVarLst;
+  output list<HelpVarInfo> ohelpVarLst;
 algorithm
-  (outString,helpVarLst):=
-  matchcontinue (inBackendDAEWhenClauseLst1,whenClauseIndex,nextHelpVarIndex)
+  ohelpVarLst :=
+  matchcontinue (inBackendDAEWhenClauseLst1,nextHelpVarIndex,helpVarLst)
     local
-      Integer i_1,i,nextHelpIndex,numberOfNewHelpVars,nextHelpIndex_1;
-      String res,res2,res1;
-      list<HelpVarInfo> helpVarInfoList,helpVarInfoList2,helpVarInfoList1;
-      BackendDAE.WhenClause wc;
+      Integer nextHelpVarIndex1;
+      list<HelpVarInfo> helpVarLst1;
       list<BackendDAE.WhenClause> xs;
       list<DAE.Exp> el;
       DAE.Exp e;
-    case ({},_,_) then ("",{});
-    case (((wc as BackendDAE.WHEN_CLAUSE(reinitStmtLst = {})) :: xs),i,nextHelpIndex) /* skip if there are no reinit statements */
-      equation
-        i_1 = i + 1;
-        (res,helpVarInfoList) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
+    case ({},_,_) then helpVarLst;
+    /* skip if there are no reinit statements */
+    case (BackendDAE.WHEN_CLAUSE(reinitStmtLst = {}) :: xs,_,_) 
       then
-        (res,helpVarInfoList);
-    case (((wc as BackendDAE.WHEN_CLAUSE(condition = DAE.ARRAY(array = el))) :: xs),i,nextHelpIndex)
+        buildWhenConditionChecks2(xs,nextHelpVarIndex,helpVarLst);
+    case (BackendDAE.WHEN_CLAUSE(condition = e) :: xs,_,_)
       equation
-        i_1 = i + 1;
-        (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
-        numberOfNewHelpVars = listLength(helpVarInfoList2);
-        nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3(el, i, nextHelpIndex_1,false);
-        res = stringAppend(res1, res2);
-        helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
+        el = getConditionList(e);
+        (nextHelpVarIndex1,helpVarLst1) = buildWhenConditionChecks3(el,nextHelpVarIndex,helpVarLst);
       then
-        (res,helpVarInfoList);
-    case (((wc as BackendDAE.WHEN_CLAUSE(condition = e)) :: xs),i,nextHelpIndex)
-      equation
-        i_1 = i + 1;
-        (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
-        numberOfNewHelpVars = listLength(helpVarInfoList2);
-        nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3({e}, i, nextHelpIndex_1,false);
-        res = stringAppend(res1, res2);
-        helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
-      then
-        (res,helpVarInfoList);
+        buildWhenConditionChecks2(xs,nextHelpVarIndex1,helpVarLst1);
     case (_,_,_)
       equation
         print("-build_when_condition_checks2 failed.\n");
@@ -8151,47 +7948,33 @@ protected function buildWhenConditionChecks4
   of all the when clauses that does not contain equations (only reinit).
 "
   input list<Integer> orderOfEquations                "The sorting order of the equations.";
-  input BackendDAE.EquationArray inBackendDAEEquationLst     "List of equations.";
-  input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst "List of when clauses.";
-  input Integer nextHelpVarIndex                      "index of the next generated help variable.";
-  output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst                  "List of help variables introduced in this function.";
+  input BackendDAE.EquationArray eqnl     "List of equations.";
+  input Integer ihelpVarIndex                      "index of the next generated help variable.";
+  input list<HelpVarInfo> ihelpVarLst                  "List of help variables introduced in this function.";
+  output Integer ohelpVarIndex;
+  output list<HelpVarInfo> ohelpVarLst                  "List of help variables introduced in this function.";
 algorithm
-  (outString,helpVarLst):=
-  matchcontinue (orderOfEquations,inBackendDAEEquationLst,inBackendDAEWhenClauseLst,nextHelpVarIndex)
+  (ohelpVarIndex,ohelpVarLst):=
+  matchcontinue (orderOfEquations,eqnl,ihelpVarIndex,ihelpVarLst)
     local
       Integer eqn,nextHelpIndex;
-      String res2,res1,res;
-      list<HelpVarInfo> helpVarInfoList2,helpVarInfoList1,helpVarInfoList;
+      list<HelpVarInfo> helpVarInfoList;
       list<Integer> rest;
-      BackendDAE.EquationArray eqnl;
-      list<BackendDAE.WhenClause> whenClauseList;
       BackendDAE.WhenEquation whenEq;
-      
-    case ({},_,_,_) then ("",{});
-      
+    case ({},_,_,_) then (ihelpVarIndex,ihelpVarLst);     
       /* equation is a WHEN_EQUATION */
-    case ((eqn :: rest),eqnl,whenClauseList,nextHelpIndex)
+    case ((eqn :: rest),_,_,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEq) = BackendDAEUtil.equationNth(eqnl, eqn-1);
-        (res2, helpVarInfoList2) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
-        (res1, helpVarInfoList1) = buildWhenConditionCheckForEquation(SOME(whenEq), whenClauseList, false,
-          nextHelpIndex + listLength(helpVarInfoList2));
-        res = stringAppend(res1, res2);
-        helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
+        (nextHelpIndex,helpVarInfoList) = buildWhenConditionCheckForEquation(SOME(whenEq),ihelpVarIndex,ihelpVarLst);
+        (nextHelpIndex,helpVarInfoList) = buildWhenConditionChecks4(rest, eqnl, nextHelpIndex,helpVarInfoList);
       then
-        (res,helpVarInfoList);
-        
-    case ((_ :: rest),eqnl,whenClauseList,nextHelpIndex)
+        (nextHelpIndex,helpVarInfoList);       
+    case (_ :: rest,_,_,_)
       equation
-        (res,helpVarInfoList) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
+        (nextHelpIndex,helpVarInfoList) = buildWhenConditionChecks4(rest, eqnl,ihelpVarIndex,ihelpVarLst);
       then
-        (res,helpVarInfoList);
-    case (_,_,_,_)
-      equation
-        print("-build_when_condition_checks4 failed.\n");
-      then
-        fail();
+        (nextHelpIndex,helpVarInfoList);
   end matchcontinue;
 end buildWhenConditionChecks4;
 
@@ -8199,57 +7982,38 @@ protected function buildWhenConditionCheckForEquation "
   Generates eventchecking code given a when equation.
 "
   input Option<BackendDAE.WhenEquation> whenEq            "The equation to check for";
-  input list<BackendDAE.WhenClause> inBackendDAEWhenClauseLst "List of when clauses.";
-  input Boolean isElseWhen                            "Whether the equation is inside an elsewhen or not.";
-  input Integer nextHelpIndex                         "Next avalable help variable index.";
-  output String outString                             "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst                  "List of help variables introduced in this function.";
+  input Integer ihelpVarIndex                      "index of the next generated help variable.";
+  input list<HelpVarInfo> ihelpVarLst                  "List of help variables introduced in this function.";
+  output Integer ohelpVarIndex;
+  output list<HelpVarInfo> ohelpVarLst                  "List of help variables introduced in this function.";
 algorithm
-  (outString, helpVarLst) :=
-  match (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)
+  (ohelpVarIndex,ohelpVarLst):=
+  match (whenEq,ihelpVarIndex,ihelpVarLst)
     local
-      Integer nextHelpInd, ind;
-      Expression.ComponentRef cr;
-      DAE.Exp exp,cond;
-      String res1,res2,res;
+      Integer nextHelpInd;
+      DAE.Exp cond;
       Option<BackendDAE.WhenEquation> elsePart;
       list<DAE.Exp> conditionList;
-      list<HelpVarInfo> helpVars1,helpVars2, helpVars;
-      list<BackendDAE.WhenClause> whenClauseList;
-    case (SOME(BackendDAE.WHEN_EQ(cond,ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
+      list<HelpVarInfo> helpVars;
+    case (SOME(BackendDAE.WHEN_EQ(condition=cond,elsewhenPart=elsePart)),_,_)
       equation
-        conditionList = getConditionList(whenClauseList, ind);
-        (res1,helpVars1) = buildWhenConditionChecks3(conditionList, ind, nextHelpInd,isElseWhen);
-        (res2,helpVars2) = buildWhenConditionCheckForEquation(elsePart, whenClauseList, true,
-          nextHelpInd + listLength(helpVars1));
-        res = stringAppend(res1,res2);
-        helpVars = listAppend(helpVars1,helpVars2);
+        conditionList = getConditionList(cond);
+        (nextHelpInd,helpVars) = buildWhenConditionChecks3(conditionList,ihelpVarIndex,ihelpVarLst);
+        (nextHelpInd,helpVars) = buildWhenConditionCheckForEquation(elsePart,nextHelpInd,helpVars);
       then
-        (res,helpVars);
-    case (NONE(),_,_,_)
-    then ("",{});
+        (nextHelpInd,helpVars);
+    case (NONE(),_,_) then (ihelpVarIndex,ihelpVarLst);
   end match;
 end buildWhenConditionCheckForEquation;
 
 protected function getConditionList
-  input list<BackendDAE.WhenClause> whenClauseList;
-  input Integer index;
+  input DAE.Exp condition;
   output list<DAE.Exp> conditionList;
 algorithm
-  conditionList := matchcontinue (whenClauseList, index)
-    local
-      Integer ind;
-      DAE.Exp e;
-      
-    case (whenClauseList, ind)
-      equation
-        BackendDAE.WHEN_CLAUSE(condition=DAE.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
-      then conditionList;
-    case (whenClauseList, ind)
-      equation
-        BackendDAE.WHEN_CLAUSE(condition=e) = listNth(whenClauseList, ind);
-      then {e};
-  end matchcontinue;
+  conditionList := match (condition)
+    case DAE.ARRAY(array=conditionList) then conditionList;
+    else then {condition};
+  end match;
 end getConditionList;
 
 protected function addMissingEquations "function: addMissingEquations

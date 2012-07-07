@@ -3362,29 +3362,27 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source),wclst,ext_arg_1); 
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
-          BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),wclst,_,_)
+          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=NONE()),source = source),wclst,_,_)
       equation
         e2 = Expression.crefExp(cr);
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((DAE.CREF(cr1,_),(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
         ((cond,(ops,ext_arg_3))) = func((cond,(ops,ext_arg_2)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,i,cr1,e1_1,NONE()),source);
-        (wclst1,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst,func,({} /*TODO: Save me?*/,ext_arg_3));
-      then
-        (res,wclst1,ext_arg_3);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e1_1,NONE()),source);
+     then
+        (res,wclst,ext_arg_3);
 
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
-          BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),wclst,_,_)
+          BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),wclst,_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((cond,(ops,ext_arg_2))) = func((cond,(ops,ext_arg_1)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),wclst1,ext_arg_2) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source),wclst,func,ext_arg_2);
-        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,i,cr,e1_1,SOME(elsepartRes)),source);
-        (wclst2,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst1,func,({} /* TODO: Save me?*/,ext_arg_2));
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes,source=source),wclst1,ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size,elsepart,source),wclst,func,ext_arg_2);
+        res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e1_1,SOME(elsepartRes)),source);
       then
-        (res,wclst2,ext_arg_3);
+        (res,wclst,ext_arg_3);
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source),wclst,_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));

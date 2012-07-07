@@ -1171,24 +1171,25 @@ protected function whenEquationStr
 algorithm
   outString := match (inWhenEqn)
     local
-      String s1,s2,res,is;
+      String s1,s2,res,s3,cs;
       DAE.Exp e2,cond;
-      BackendDAE.Value i;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
-    case (BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e2, elsewhenPart = SOME(weqn)))
+    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn)))
       equation
         s1 = whenEquationStr(weqn);
         s2 = ExpressionDump.printExpStr(e2);
-        is = intString(i);
-        res = stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */, s1});
+        s3 = ExpressionDump.printExpStr(cond);
+        cs = ComponentReference.printComponentRefStr(cr);
+        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n", s1});
       then
         res;
-    case (BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e2, elsewhenPart = NONE()))
+    case (BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = NONE()))
       equation
         s2 = ExpressionDump.printExpStr(e2);
-        is = intString(i);
-        res = stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
+        s3 = ExpressionDump.printExpStr(cond);
+        cs = ComponentReference.printComponentRefStr(cr);
+        res = stringAppendList({"elsewhen ",s3," then\n  ",cs, " := ",s2,"\n"});
       then
         res;
   end match;
@@ -1202,9 +1203,8 @@ public function equationStr
 algorithm
   outString := matchcontinue (inEquation)
     local
-      String s1,s2,s3,s4,res,indx_str,is,var_str,intsStr,outsStr;
+      String s1,s2,s3,s4,res,indx_str,var_str,intsStr,outsStr;
       DAE.Exp e1,e2,e,cond;
-      Integer indx,i;
       list<DAE.Exp> expl,inps,outs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
@@ -1240,23 +1240,21 @@ algorithm
         res = stringAppendList({s1," := ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e2, elsewhenPart = SOME(weqn))))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2, elsewhenPart = SOME(weqn))))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
-        is = intString(i);
         s3 = whenEquationStr(weqn);
         s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then ",s1," := ",s2," when clause no: ",is /*, "\n" */, s3,"\nend when\n"});
+        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\n",s3,"end when"});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,index = i,left = cr,right = e2)))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2)))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
-        is = intString(i);
         s4 = ExpressionDump.printExpStr(cond);
-        res = stringAppendList({"when ",s4," then ",s1," := ",s2," when clause no: ",is /*, "\nend when\n" */});
+        res = stringAppendList({"when ",s4," then\n  ",s1," := ",s2,"\nend when"});
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))

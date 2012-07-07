@@ -154,11 +154,10 @@ algorithm
       then
         res;
     
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,index = i,left = cr,right = e2)), wcLst)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,left = cr,right = e2)), wcLst)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
-        BackendDAE.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
         s3 = ExpressionDump.printExpStr(condition);
         res = stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then

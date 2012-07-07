@@ -272,33 +272,31 @@ protected function inlineWhenEq
 "function: inlineWhenEq
   inlines function calls in when equations"
   input BackendDAE.WhenEquation inWhenEquation;
-  input Functiontuple inElementList;
+  input Functiontuple fns;
   input DAE.ElementSource inSource;
   output BackendDAE.WhenEquation outWhenEquation;
   output DAE.ElementSource outSource;
 algorithm
-  (outWhenEquation,outSource) := matchcontinue(inWhenEquation,inElementList,inSource)
+  (outWhenEquation,outSource) := matchcontinue(inWhenEquation,fns,inSource)
     local
-      Functiontuple fns;
-      Integer i;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,cond;
       BackendDAE.WhenEquation weq,weq_1;
       DAE.ElementSource source;
       
-    case (BackendDAE.WHEN_EQ(cond,i,cref,e,NONE()),fns,source)
+    case (BackendDAE.WHEN_EQ(cond,cref,e,NONE()),_,_)
       equation
-        (e_1,source) = inlineExp(e,fns,source);
+        (e_1,source) = inlineExp(e,fns,inSource);
         (cond,source) = inlineExp(cond,fns,source);
       then
-        (BackendDAE.WHEN_EQ(cond,i,cref,e_1,NONE()),source);
-    case (BackendDAE.WHEN_EQ(cond,i,cref,e,SOME(weq)),fns,source)
+        (BackendDAE.WHEN_EQ(cond,cref,e_1,NONE()),source);
+    case (BackendDAE.WHEN_EQ(cond,cref,e,SOME(weq)),_,_)
       equation
-        (e_1,source) = inlineExp(e,fns,source);
+        (e_1,source) = inlineExp(e,fns,inSource);
         (cond,source) = inlineExp(cond,fns,source);
         (weq_1,source) = inlineWhenEq(weq,fns,source);
       then
-        (BackendDAE.WHEN_EQ(cond,i,cref,e_1,SOME(weq_1)),source);
+        (BackendDAE.WHEN_EQ(cond,cref,e_1,SOME(weq_1)),source);
     else
       equation
         Debug.fprintln(Flags.FAILTRACE,"Inline.inlineWhenEq failed");

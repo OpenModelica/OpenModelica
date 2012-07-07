@@ -5863,6 +5863,28 @@ algorithm
   end match;
 end condAddSymbolicTransformation;
 
+public function addSymbolicTransformationDeriveLst
+  input DAE.ElementSource isource;
+  input list<DAE.Exp> explst1;
+  input list<DAE.Exp> explst2;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := match(isource,explst1,explst2)
+    local
+      DAE.SymbolicOperation op;
+      list<DAE.Exp> rexplst1,rexplst2;
+      DAE.Exp exp1,exp2;
+      DAE.ElementSource source;
+    case(_,{},_) then isource;
+    case(_,exp1::rexplst1,exp2::rexplst2)
+      equation
+        op = DAE.OP_DERIVE(DAE.crefTime,exp1,exp2);
+        source = addSymbolicTransformation(isource,op);        
+      then
+        addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
+  end match;  
+end addSymbolicTransformationDeriveLst;
+
 public function addSymbolicTransformationSubstitutionLst
   input list<Boolean> add;
   input DAE.ElementSource isource;

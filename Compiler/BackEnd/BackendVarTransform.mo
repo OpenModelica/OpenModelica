@@ -1217,7 +1217,7 @@ protected function replaceWhenEquation "Replaces variables in a when equation"
   output DAE.ElementSource osource;
 algorithm
   (outWhenEqn,osource) := matchcontinue(whenEqn,repl,isource)
-  local Integer i;
+  local
     DAE.ComponentRef cr,cr1;
     DAE.Exp e,e1,e2,cre,cre1,cond,cond1,cond2;
     DAE.Operator op;
@@ -1225,7 +1225,7 @@ algorithm
     Boolean b1,b2;
     DAE.ElementSource source;
 
-    case (BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),_,_)
+    case (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),_,_)
       equation
         (e1,b1) = replaceExp(e, repl,NONE());
         (e2,_) = ExpressionSimplify.condsimplify(b1,e1);
@@ -1237,10 +1237,10 @@ algorithm
         (cre1 as DAE.CREF(componentRef=cr1),b1) = replaceExp(cre,repl,NONE());
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);
       then 
-        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,NONE()),source);
+        (BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()),source);
 
     // Replacements makes cr negative, a = -b
-    case (BackendDAE.WHEN_EQ(cond,i,cr,e,NONE()),_,_)
+    case (BackendDAE.WHEN_EQ(cond,cr,e,NONE()),_,_)
       equation
         cre = Expression.crefExp(cr);
         (DAE.UNARY(operator=op,exp=cre1 as DAE.CREF(componentRef=cr1)),b1) = replaceExp(cre,repl,NONE());
@@ -1253,9 +1253,9 @@ algorithm
         (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);        
       then 
-        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,NONE()),source);
+        (BackendDAE.WHEN_EQ(cond2,cr1,e2,NONE()),source);
 
-    case (BackendDAE.WHEN_EQ(cond,i,cr,e,SOME(elsePart)),_,_)
+    case (BackendDAE.WHEN_EQ(cond,cr,e,SOME(elsePart)),_,_)
       equation
         (elsePart2,source) = replaceWhenEquation(elsePart,repl,isource);
         (e1,b1) = replaceExp(e, repl,NONE());
@@ -1268,10 +1268,10 @@ algorithm
         (cre1 as DAE.CREF(componentRef=cr1),b1) = replaceExp(cre,repl,NONE());
          source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,cre,cre1);        
       then 
-        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,SOME(elsePart2)),source);
+        (BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)),source);
 
     // Replacements makes cr negative, a = -b
-    case (BackendDAE.WHEN_EQ(cond,i,cr,e,SOME(elsePart)),_,_)
+    case (BackendDAE.WHEN_EQ(cond,cr,e,SOME(elsePart)),_,_)
       equation
         (elsePart2,source) = replaceWhenEquation(elsePart,repl,isource);
         /* TODO: Add symbolic operation to source */
@@ -1286,7 +1286,7 @@ algorithm
         (cond2,_) = ExpressionSimplify.condsimplify(b2,cond1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,cond,cond2);         
       then 
-        (BackendDAE.WHEN_EQ(cond2,i,cr1,e2,SOME(elsePart2)),source);
+        (BackendDAE.WHEN_EQ(cond2,cr1,e2,SOME(elsePart2)),source);
 
   end matchcontinue;
 end replaceWhenEquation;

@@ -44,7 +44,7 @@ release: omc
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
 
-install-openturns: 
+install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 interactive: .testvariables mkbuilddirs
