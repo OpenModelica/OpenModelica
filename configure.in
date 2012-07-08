@@ -475,14 +475,14 @@ if test -n "$QMAKE"; then
     else
       paradiseo_build=""
     fi
-    with_paradiseo_lib="$with_paradiseo/paradiseo-eo/$paradiseo_build/lib $with_paradiseo/paradiseo-moeo/$paradiseo_build/lib"
+    with_paradiseo_lib="-L$with_paradiseo/paradiseo-eo/$paradiseo_build/lib -L$with_paradiseo/paradiseo-moeo/$paradiseo_build/lib"
     AC_MSG_RESULT(stock version in: $with_paradiseo)
   else
 
     if test x"$with_paradiseo" = "xyes"; then
       with_paradiseo_checked=""
       for f in /{usr,opt,$PREFIX}; do
-        test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/" && with_paradiseo_lib="$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
+        test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/" && with_paradiseo_lib="-L$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
       done
     fi
 
