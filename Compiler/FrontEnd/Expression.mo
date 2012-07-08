@@ -2063,6 +2063,27 @@ algorithm
       then 
         f1;
    
+    case (e as DAE.UNARY(operator = DAE.UMINUS(ty=_),exp=e1))
+      equation
+        f1 = allTerms(e1);
+        f1 = List.map(f1,negate);
+      then 
+        f1;   
+
+    case (e as DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_),exp=e1))
+      equation
+        f1 = allTerms(e1);
+        f1 = List.map(f1,negate);
+      then 
+        f1;  
+   
+    case (e as DAE.ASUB(exp = e1,sub=f2))
+      equation
+        f1 = allTerms(e1);
+        f1 = List.map1(f1,makeASUB,f2);        
+      then 
+        f1;   
+   
     case (e as DAE.BINARY(operator = DAE.MUL(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARR(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(ty = _))) then {e};
@@ -2649,15 +2670,40 @@ public function expAdd
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
-protected
-  Type tp;
-  Boolean b;
-  Operator op;
 algorithm
-  tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
-  op := Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
-  outExp := DAE.BINARY(e1,op,e2);
+  outExp := matchcontinue(e1,e2)
+    local
+      Type tp;
+      Boolean b;
+      Operator op;
+      Real r1,r2;
+      Integer i1,i2;
+    case(_,_)
+      equation
+        true = isZero(e1);
+      then e2;   
+    case(_,_)
+      equation
+        true = isZero(e2);
+      then e1;           
+    case(DAE.RCONST(r1),DAE.RCONST(r2))
+      equation
+        r1 = realAdd(r1,r2);
+      then
+        DAE.RCONST(r1);    
+    case(DAE.ICONST(i1),DAE.ICONST(i2))
+      equation
+        i1 = intAdd(i1,i2);
+      then
+        DAE.ICONST(i1);
+    case (_,_)
+      equation
+        tp = typeof(e1);
+        b = DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
+        op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
+      then
+        DAE.BINARY(e1,op,e2);           
+  end matchcontinue; 
 end expAdd;
 
 public function expSub
@@ -2667,15 +2713,42 @@ public function expSub
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
-protected
-  Type tp;
-  Boolean b;
-  Operator op;
 algorithm
-  tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp);
-  op := Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
-  outExp := DAE.BINARY(e1,op,e2);
+  outExp := matchcontinue(e1,e2)
+    local
+      Type tp;
+      Boolean b;
+      Operator op;
+      Real r1,r2;
+      Integer i1,i2;
+    case(_,_)
+      equation
+        true = isZero(e1);
+      then 
+        negate(e2);    
+    case(_,_)
+      equation
+        true = isZero(e2);
+      then 
+        e1;    
+    case(DAE.RCONST(r1),DAE.RCONST(r2))
+      equation
+        r1 = realSub(r1,r2);
+      then
+        DAE.RCONST(r1);    
+    case(DAE.ICONST(i1),DAE.ICONST(i2))
+      equation
+        i1 = intSub(i1,i2);
+      then
+        DAE.ICONST(i1);
+    case (_,_)
+      equation
+        tp = typeof(e1);
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
+      then
+        DAE.BINARY(e1,op,e2);            
+  end matchcontinue;  
 end expSub;
 
 public function makeDiff
@@ -2803,15 +2876,56 @@ public function expMul
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
-protected
-  Type tp;
-  Boolean b;
-  Operator op;
 algorithm
-  tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp);
-  op := Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
-  outExp := DAE.BINARY(e1,op,e2);
+  outExp := matchcontinue(e1,e2)
+    local
+      Type tp;
+      Boolean b;
+      Operator op;
+      Real r1,r2;
+      Integer i1,i2;
+    case(_,_)
+      equation
+        true = isZero(e1);
+      then e1;    
+    case(_,_)
+      equation
+        true = isZero(e2);
+      then e2;    
+    case(DAE.RCONST(r1),_)
+      equation
+        true = realEq(r1, 1.0);
+      then e2;    
+    case(_,DAE.RCONST(r2))
+      equation
+        true = realEq(r2, 1.0);
+      then e1;    
+    case(DAE.ICONST(i1),_)
+      equation
+        true = intEq(i1, 1);
+      then e2;    
+    case(_,DAE.ICONST(i2))
+      equation
+        true = intEq(i2, 1);
+      then e1;    
+    case(DAE.RCONST(r1),DAE.RCONST(r2))
+      equation
+        r1 = realMul(r1,r2);
+      then
+        DAE.RCONST(r1);    
+    case(DAE.ICONST(i1),DAE.ICONST(i2))
+      equation
+        i1 = intMul(i1,i2);
+      then
+        DAE.ICONST(i1);
+    case (_,_)
+      equation
+        tp = typeof(e1);
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
+      then
+        DAE.BINARY(e1,op,e2);         
+  end matchcontinue;   
 end expMul;
 
 public function expMaxScalar
