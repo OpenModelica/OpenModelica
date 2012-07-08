@@ -2298,21 +2298,20 @@ public function findZeroCrossings "function: findZeroCrossings
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<BackendDAE.EqSystem> systs;
-  BackendDAE.Shared shared;
+  BackendDAE.BackendDAE dae;
+  list<BackendDAE.Var> vars;
 algorithm
-  outDAE := BackendDAEUtil.mapEqSystem(inDAE,findZeroCrossings1);
+  (dae,vars) := BackendDAEUtil.mapEqSystemAndFold(inDAE,findZeroCrossings1,{});
+  outDAE := findZeroCrossingsShared(dae,vars);
 end findZeroCrossings;
 
-protected function findZeroCrossings1 "function: findZeroCrossings
-  This function finds all zerocrossings in the list of equations and
-  the list of when clauses."
-    input BackendDAE.EqSystem syst;
-    input BackendDAE.Shared shared;
-    output BackendDAE.EqSystem osyst;
-    output BackendDAE.Shared oshared;
+protected function findZeroCrossingsShared "function: findZeroCrossingsShared
+  This function finds all zerocrossings in the shared part of the dae."
+  input BackendDAE.BackendDAE inDAE;
+  input list<BackendDAE.Var> allvars;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  (osyst,oshared) := match (syst,shared)
+  (outDAE) := match (inDAE,allvars)
     local
       BackendDAE.Variables vars,knvars,exobj;
       BackendDAE.AliasVariables av;
@@ -2331,14 +2330,59 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       Env.Cache cache;
       Env.Env env;      
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp,symjacs))
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp,symjacs)),_)
+      equation
+        vars = BackendDAEUtil.listVar1(allvars);
+        eqs_lst = BackendDAEUtil.equationList(remeqns);
+        (zero_crossings,eqs_lst1,_) = findZeroCrossings2(vars, knvars,eqs_lst,0, {}, 0,0,zero_crossings);
+        remeqns = BackendDAEUtil.listEquation(eqs_lst1);
+        eqs_lst = BackendDAEUtil.equationList(inieqns);
+        (zero_crossings,eqs_lst1,_) = findZeroCrossings2(vars, knvars,eqs_lst,0, {}, 0,0,zero_crossings);
+        inieqns = BackendDAEUtil.listEquation(eqs_lst1);
+        einfo1 = BackendDAE.EVENT_INFO(whenclauses,zero_crossings);
+      then
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo1,eoc,btp,symjacs));
+  end match;
+end findZeroCrossingsShared;
+
+protected function findZeroCrossings1 "function: findZeroCrossings
+  This function finds all zerocrossings in the list of equations and
+  the list of when clauses."
+    input BackendDAE.EqSystem syst;
+    input tuple<BackendDAE.Shared,list<BackendDAE.Var>> shared;
+    output BackendDAE.EqSystem osyst;
+    output tuple<BackendDAE.Shared,list<BackendDAE.Var>> oshared;
+algorithm
+  (osyst,oshared) := match (syst,shared)
+    local
+      list<BackendDAE.Var> allvars;
+      BackendDAE.Variables vars,knvars,exobj;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<DAE.Constraint> constrs;
+      BackendDAE.EventInfo einfo,einfo1;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<BackendDAE.WhenClause> whenclauses,whenclauses1;
+      list<BackendDAE.Equation> eqs_lst,eqs_lst1;
+      list<BackendDAE.ZeroCrossing> zero_crossings;
+      BackendDAE.EqSystems eqs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.Matching matching;
+      DAE.FunctionTree funcs;
+      BackendDAE.SymbolicJacobians symjacs;
+      Env.Cache cache;
+      Env.Env env;    
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp,symjacs),allvars))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         (zero_crossings,eqs_lst1,whenclauses1) = findZeroCrossings2(vars, knvars,eqs_lst,0, whenclauses, 0,0,zero_crossings);
         eqns1 = BackendDAEUtil.listEquation(eqs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);
+        allvars = listAppend(allvars,BackendDAEUtil.varList(vars));
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo1,eoc,btp,symjacs));
+        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo1,eoc,btp,symjacs),allvars));
   end match;
 end findZeroCrossings1;
 
