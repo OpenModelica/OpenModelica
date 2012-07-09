@@ -892,7 +892,7 @@ algorithm
         var_varindx_lst = List.threadTuple(varlst,vlst);
         // get from scalar eqns indexes the indexes in the equation array
         comp = List.map1r(comp,arrayGet,mapIncRowEqn);
-        comp = List.unique(comp);        
+        comp = List.unique(comp);  
         eqngetlst = List.map1(comp,intSub,1);
         eqn_lst = List.map1r(eqngetlst,BackendDAEUtil.equationNth,eqns);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);   

@@ -395,6 +395,20 @@ algorithm
    end match;
 end varBindExp;
 
+public function varBindExpStartValue
+"function varBindExpStartValue
+  author: Frenkel TUD 2010-12
+  Returns the bindExp or the start value if no bind is there of a variable."
+  input BackendDAE.Var v;
+  output DAE.Exp sv;
+algorithm
+  sv := match(v)
+    local DAE.Exp e;
+    case (BackendDAE.VAR(bindExp = SOME(e))) then e;
+    else
+      varStartValueFail(v);      
+   end match;
+end varBindExpStartValue;
 
 public function varStateSelect
 "function varStateSelect

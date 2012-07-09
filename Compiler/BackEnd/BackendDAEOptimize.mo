@@ -2848,6 +2848,19 @@ end countsimpleEquation;
  * remove final paramters stuff 
  */ 
 
+public function removeFinalParametersPast
+"function removeFinalParametersPast"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
+protected
+  BackendVarTransform.VariableReplacements repl,repl1;
+algorithm
+  outDAE := removeFinalParameters(inDAE);
+  outRunMatching := true;
+  // until remove simple equations does not update assignments and comps  
+end removeFinalParametersPast;
+
 public function removeFinalParameters
 "function: removeFinalParameters
   autor Frenkel TUD"
@@ -3361,6 +3374,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var,e1);
+        v = BackendVariable.setVarFinal(v, true);
         // update Vararray
         knvars = BackendVariable.addVar(v, inKnVars);
         // save replacement
@@ -3379,6 +3393,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setVarStartValue(var,e1);
+        v = BackendVariable.setVarFinal(v, true);
         // update Vararray
         knvars = BackendVariable.addVar(v, inKnVars);
         // save replacement
@@ -3397,6 +3412,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var,e1);
+        v = BackendVariable.setVarFinal(v, true);
         // update Vararray
         knvars = BackendVariable.addVar(v, inKnVars);
         // save replacement
@@ -3415,6 +3431,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setVarStartValue(var,e1);
+        v = BackendVariable.setVarFinal(v, true);
         // update Vararray
         knvars = BackendVariable.addVar(v, inKnVars);
         // save replacement

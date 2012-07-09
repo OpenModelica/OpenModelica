@@ -8998,6 +8998,7 @@ algorithm
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
   (BackendDAEOptimize.removeSimpleEquationsFastPast,"removeSimpleEquationsFast",false),
   (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls",false),
+  (BackendDAEOptimize.removeFinalParametersPast,"removeFinalParameters",false),
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn",false),
   (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter",false),
   (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables",false),
