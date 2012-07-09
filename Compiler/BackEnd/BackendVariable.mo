@@ -176,7 +176,7 @@ algorithm
               varKind = b,
               varDirection = c,
               varParallelism = prl,
-              varType = DAE.T_REAL(source = _),
+              varType = d,
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -186,67 +186,12 @@ algorithm
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,t,streamPrefix);
 
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_INTEGER(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
 
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_BOOL(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_ENUMERATION(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
   end match;
 end setVarFixed;
 
@@ -335,7 +280,7 @@ algorithm
               varKind = b,
               varDirection = c,
               varParallelism = prl,
-              varType = DAE.T_REAL(source = _),
+              varType = d,
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -345,67 +290,11 @@ algorithm
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_INTEGER(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_BOOL(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_BOOL(NONE(),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
-
-    case (BackendDAE.VAR(varName = a,
-              varKind = b,
-              varDirection = c,
-              varParallelism = prl,
-              varType = DAE.T_ENUMERATION(source = _),
-              bindExp = e,
-              bindValue = f,
-              arryDim = g,
-              index = i,
-              source = source,
-              values = NONE(),
-              comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
-      then
-        BackendDAE.VAR(a,b,c,prl,DAE.T_REAL_DEFAULT,e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
-            s,t,streamPrefix);
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+      
   end match;
 end setVarStartValue;
 
@@ -524,6 +413,91 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
+protected function getVariableAttributefromType
+  input DAE.Type inType;
+  output DAE.VariableAttributes attr;
+algorithm
+  attr := match(inType)
+    case DAE.T_REAL(source=_) then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_INTEGER(source=_) then DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_BOOL(source=_) then DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_STRING(source=_) then DAE.VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE());
+    case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE());
+    else
+      equation
+        // repord a warning on failtrace
+        Debug.fprint(Flags.FAILTRACE,"BackendVariable.getVariableAttributefromType called with unsopported Type!\n");
+      then
+        DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  end match;
+end getVariableAttributefromType;
+
+public function setVarFinal
+"function: setVarFinal
+  author: Frenkel TUD
+  Sets the final attribute of a variable."
+  input BackendDAE.Var inVar;
+  input Boolean finalPrefix;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,finalPrefix)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      BackendDAE.Value i;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<SCode.Comment> s;
+      DAE.Flow t;
+      DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),finalPrefix)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),finalPrefix)
+      equation
+        oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+  end match;
+end setVarFinal;
+
 public function setVarMinMax
 "function: setVarMinMax
   author: Frenkel TUD
@@ -549,6 +523,25 @@ algorithm
       Option<SCode.Comment> s;
       DAE.Flow t;
       DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),minMax)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -609,6 +602,25 @@ algorithm
       Option<SCode.Comment> s;
       DAE.Flow t;
       DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              source = source,
+              values = NONE(),
+              comment = s,
+              flowPrefix = t,
+              streamPrefix = streamPrefix),inExp)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
