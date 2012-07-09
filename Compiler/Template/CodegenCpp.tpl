@@ -3251,7 +3251,7 @@ template boundParameters(list<SimEqSystem> parameterEquations,Text &varDecls,Sim
     <%divbody%>
    >>
 end boundParameters;
-
+/*
 template outputIndices(ModelInfo modelInfo)
 ::= match modelInfo
 case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
@@ -3265,6 +3265,18 @@ case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     (vars.derivativeVars  |> SIMVAR(__) => if isOutput(causality) then '<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>+<%index%>';separator=",")};separator=","%>;
     >>
 end outputIndices;
+*/
+
+template outputIndices(ModelInfo modelInfo)
+::= match modelInfo
+case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
+    if varInfo.numOutVars then
+    <<
+    var_ouputs_idx+=<%
+    {(vars.outputVars |> SIMVAR(__) =>  '<%index%>';separator=",") };separator=","%>;
+    >>
+end outputIndices;
+
 
 template isOutput(Causality c)
  "Returns the Causality Attribute of a Variable."
@@ -3283,13 +3295,18 @@ template initValst(list<SimVar> varsLst, SimCode simCode) ::=
       case vStr as "0"
       case vStr as "0.0"
       case vStr as "(0)" then
-       '<%cref1(sv.name,simCode)%>=<%vStr%>;//<%cref(sv.name)%>'  
+       '<%cref1(sv.name,simCode)%>=<%vStr%>;//<%cref(sv.name)%>
+       _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr as "" then
-       '<%cref1(sv.name,simCode)%>=0;//<%cref(sv.name)%>' 
+       '<%cref1(sv.name,simCode)%>=0;//<%cref(sv.name)%>
+        _start_values["<%cref(sv.name)%>"]=<%vStr%>;'
       case vStr then
-       '<%cref1(sv.name,simCode)%>=<%vStr%>;//<%cref(sv.name)%>' 
+       '<%cref1(sv.name,simCode)%>=<%vStr%>;//<%cref(sv.name)%>
+       _start_values["<%cref(sv.name)%>"]=<%vStr%>;' 
         end match
-      else '<%cref1(sv.name,simCode)%>=0;'
+      else 
+        '<%cref1(sv.name,simCode)%>=<%startValue(sv.type_)%>;
+       _start_values["<%cref(sv.name)%>"]=<%startValue(sv.type_)%>;'
   ;separator="\n"
 end initValst;
 
@@ -3301,6 +3318,17 @@ end initValst;
        //else
       //'<%initValst(varsLst,simCode)%>'
 //end initValst1;
+
+template startValue(DAE.Type ty)
+::=
+  match ty
+  case ty as T_INTEGER(__) then '0'
+  case ty as T_REAL(__) then '0.0'
+  case ty as T_BOOL(__) then 'false'
+  case ty as T_STRING(__) then 'empty' 
+  else ""
+end startValue;
+
 
 template eventHandlingInit(SimCode simCode)
 
@@ -4439,7 +4467,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = 'double'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
@@ -4448,16 +4476,33 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = 'double'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
+   
+   case CALL(path=IDENT(name="log"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+   case CALL(path=IDENT(name="acos"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+   
    case CALL(path=IDENT(name="tan"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = 'double'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
@@ -4466,7 +4511,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = 'double'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
@@ -4475,7 +4520,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = 'double'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
@@ -4669,7 +4714,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
   match exp
   case cr as CREF(__) then
-    '$P$ATTRIBUTE<%cref1(cr.componentRef,simCode)%>.start'
+    'getStartValue(<%cref(cr.componentRef)%>,"<%cref(cr.componentRef)%>")'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let cref = cref1(cr.componentRef,simCode)
@@ -4714,7 +4759,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   <<
   <%preExpCond%>
   <%preExpMsg%>
-  Assert(<%condVar%>,<%msgVar%>);
+  <%if msgVar then 'Assert(<%condVar%>,<%msgVar%>);' else 'Assert(<%condVar%>,"");'%>
    >>
  
 end assertCommon;
@@ -6525,7 +6570,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_ASSIGN(exp1=PATTERN(__)) then "STMT_ASSIGN Pattern not supported yet"
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_ASSIGN_ARR(__)     then "STMT ASSIGN ARR"
-  case s as STMT_TUPLE_ASSIGN(__)   then "STMT TUPLE ASSIGN"
+  case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_FOR(__)            then "STMT FOR"
   case s as STMT_WHILE(__)          then "STMT WHILE"
@@ -6795,5 +6840,9 @@ case STMT_IF(__) then
    <%elseExpr(else_, context,&preExp , &varDecls /*BUFD*/,simCode)%>
   >>
 end algStmtIf;
+
+
+
+
 
 end CodegenCpp;

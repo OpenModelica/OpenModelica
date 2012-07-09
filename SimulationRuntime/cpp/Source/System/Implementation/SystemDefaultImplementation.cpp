@@ -106,7 +106,20 @@ int SystemDefaultImplementation::getDimRHS(const IContinous::INDEX index) const
  {
   memcpy(_conditions0,_conditions1,_dimZeroFunc*sizeof(bool));
  }
-
+ /* 
+ template<class T> 
+  T SystemDefaultImplementation::getStartValue(T variable,string key)
+  {
+    try
+    {
+        return boost::any_cast<T>(_start_values[key]);
+    }
+    catch(const boost::bad_any_cast & ex)
+    {
+       std::runtime_error("No such start value");
+    }
+  }
+  */
 /// Set current integration time
 void SystemDefaultImplementation::setTime(const double& t)
 {
