@@ -103,22 +103,22 @@ public function matchingAlgorithm
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;  
-	partial function StructurallySingularSystemHandlerFunc
-	  input list<Integer> eqns;
-	  input Integer actualEqn;
-	  input BackendDAE.EqSystem isyst;
-	  input BackendDAE.Shared ishared;
-	  input array<Integer> inAssignments1;
-	  input array<Integer> inAssignments2;
-	  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-	  output list<Integer> changedEqns;
-	  output Integer continueEqn;
-	  output BackendDAE.EqSystem osyst;
-	  output BackendDAE.Shared oshared;
-	  output array<Integer> outAssignments1;
-	  output array<Integer> outAssignments2; 
-	  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-	end StructurallySingularSystemHandlerFunc;   
+  partial function StructurallySingularSystemHandlerFunc
+    input list<Integer> eqns;
+    input Integer actualEqn;
+    input BackendDAE.EqSystem isyst;
+    input BackendDAE.Shared ishared;
+    input array<Integer> inAssignments1;
+    input array<Integer> inAssignments2;
+    input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+    output list<Integer> changedEqns;
+    output Integer continueEqn;
+    output BackendDAE.EqSystem osyst;
+    output BackendDAE.Shared oshared;
+    output array<Integer> outAssignments1;
+    output array<Integer> outAssignments2; 
+    output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+  end StructurallySingularSystemHandlerFunc;   
 algorithm
   (osyst,oshared,outArg) :=
   matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
@@ -412,22 +412,22 @@ public function matchingAlgorithm2
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-	partial function StructurallySingularSystemHandlerFunc
-	  input list<Integer> eqns;
-	  input Integer actualEqn;
-	  input BackendDAE.EqSystem isyst;
-	  input BackendDAE.Shared ishared;
-	  input array<Integer> inAssignments1;
-	  input array<Integer> inAssignments2;
-	  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-	  output list<Integer> changedEqns;
-	  output Integer continueEqn;
-	  output BackendDAE.EqSystem osyst;
-	  output BackendDAE.Shared oshared;
-	  output array<Integer> outAssignments1;
-	  output array<Integer> outAssignments2; 
-	  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-	end StructurallySingularSystemHandlerFunc;   
+  partial function StructurallySingularSystemHandlerFunc
+    input list<Integer> eqns;
+    input Integer actualEqn;
+    input BackendDAE.EqSystem isyst;
+    input BackendDAE.Shared ishared;
+    input array<Integer> inAssignments1;
+    input array<Integer> inAssignments2;
+    input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+    output list<Integer> changedEqns;
+    output Integer continueEqn;
+    output BackendDAE.EqSystem osyst;
+    output BackendDAE.Shared oshared;
+    output array<Integer> outAssignments1;
+    output array<Integer> outAssignments2; 
+    output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+  end StructurallySingularSystemHandlerFunc;   
 algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outArg):=
   matchcontinue (isyst,ishared,nv,nf,i,ass1,ass2,inMatchingOptions9,sssHandler,inArg)
