@@ -70,7 +70,6 @@ protected import Flags;
 protected import List;
 protected import SCodeDump;
 protected import Types;
-protected import Util;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;

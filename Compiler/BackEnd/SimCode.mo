@@ -3545,7 +3545,7 @@ algorithm
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
-        (equations1,uniqueEqIndex) = createSingleComplexEqnCode(listNth(eqnlst,0),varlst,helpVarInfo,iuniqueEqIndex);
+        (equations1,uniqueEqIndex) = createSingleComplexEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,iuniqueEqIndex);
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, helpVarInfo,uniqueEqIndex);
         odeEquations = Debug.bcallret2(bdynamic, listAppend, equations1, odeEquations,odeEquations);
         algebraicEquations = Debug.bcallret2((not bdynamic), listAppend, equations1, algebraicEquations,algebraicEquations);
@@ -3679,7 +3679,7 @@ algorithm
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
-        (equations1,uniqueEqIndex) = createSingleComplexEqnCode(listNth(eqnlst,0),varlst,helpVarInfo,iuniqueEqIndex);
+        (equations1,uniqueEqIndex) = createSingleComplexEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,iuniqueEqIndex);
         (equations,noDiscEquations,uniqueEqIndex) = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo,uniqueEqIndex);
         equations = listAppend(equations1,equations);
         noDiscEquations = listAppend(equations1,noDiscEquations);
@@ -5277,8 +5277,8 @@ algorithm
     case (e::block_,ass2,crefs,eqnLst,repl,_)
       equation
         s = ass2[e];
-        c = listNth(crefs,s-1);
-        eqn = listNth(eqnLst,e-1);
+        c = listGet(crefs,s);
+        eqn = listGet(eqnLst,e);
         varexp = Expression.crefExp(c);
         (exp,_) = solveEquation(eqn, varexp);
         (exps,_) = BackendVarTransform.replaceExp(exp,repl,NONE());
@@ -5364,9 +5364,9 @@ algorithm
     case (e::block_,ass2,crefs,varlst,eqnLst,repl)
       equation
         s = ass2[e];
-        c = listNth(crefs,s-1);
-        var = listNth(varlst,s-1);
-        eqn = listNth(eqnLst,e-1);
+        c = listGet(crefs,s);
+        var = listGet(varlst,s);
+        eqn = listGet(eqnLst,e);
         {eqn1} = BackendVarTransform.replaceEquations({eqn},repl);
         (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);
       then 

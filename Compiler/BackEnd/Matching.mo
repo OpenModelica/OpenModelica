@@ -114,7 +114,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;      
-      list<Integer> unassigned;
+      list<Integer> unmatched;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
@@ -127,6 +127,8 @@ algorithm
         emark = arrayCreate(neqns,-1);
         vec1 = arrayCreate(nvars,-1);
         vec2 = arrayCreate(neqns,-1);
+        //unmatched = List.intRange(neqns);
+        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
@@ -482,7 +484,7 @@ algorithm
       array<Integer> rowmarks,parentcolum;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;      
-      list<Integer> unassigned;
+      list<Integer> unmatched;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
@@ -495,6 +497,8 @@ algorithm
         parentcolum = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
+        //unmatched = List.intRange(neqns);
+        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -810,7 +814,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks;
-      list<Integer> unassigned;
+      list<Integer> unmatched;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
@@ -822,6 +826,8 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
+        //unmatched = List.intRange(neqns);
+        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -1076,7 +1082,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
-      list<Integer> unassigned;
+      list<Integer> unmatched;
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
@@ -1089,6 +1095,8 @@ algorithm
         lookahead = arrayCreate(neqns,0);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
+        //unmatched = List.intRange(neqns);
+        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);        
         (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));

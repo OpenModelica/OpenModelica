@@ -1023,7 +1023,7 @@ Author: Frenkel TUD"
 algorithm
   outblst := matchcontinue(inblst,icrlst,expl,inVarsandFuncs)
     local 
-      Integer i,i_1;
+      Integer i;
       DAE.Exp e,de;
       list<Boolean> bl,bl1;
       array<Boolean> ba;
@@ -1036,9 +1036,8 @@ algorithm
     // zeroDerivative
     case(inblst,(i,DAE.ZERO_DERIVATIVE())::crlst,expl,inVarsandFuncs)
       equation
-        i_1 = i-1;
         // get expression
-        e = listNth(expl,i_1);
+        e = listGet(expl,i);
         // diverentiate exp
         de = differentiateExpTime(e,inVarsandFuncs);
         // is diverentiated exp zero
@@ -1054,9 +1053,8 @@ algorithm
     // noDerivative
     case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,expl,inVarsandFuncs)
       equation
-        i_1 = i-1;
         // get expression
-        DAE.CALL(path=p2) = listNth(expl,i_1);
+        DAE.CALL(path=p2) = listGet(expl,i);
         true = Absyn.pathEqual(p1, p2);
         // path equal
         // remove input from list

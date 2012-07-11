@@ -548,7 +548,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(14, "indexReductionMeth
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", "simple index reduction method, select dummy states based on heuristics"),
-    ("DummyDerivativeNew", "simple index reduction method, select dummy states based on heuristics")})),
+    ("dynamicStateSelection", "simple index reduction method, select (dynamic) dummy states based on analysis of the system")})),
     "Sets the index reduction method to use.");
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
