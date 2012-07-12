@@ -2508,26 +2508,25 @@ public function makeDummyState "function: makeDummyState
   input Integer stateindx;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input array<Integer> mapIncRowEqn;
   output DAE.ComponentRef outDerDummyState;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
+  output list<Integer> ochangedeqns;
 algorithm
-  (outDerDummyState,osyst,oshared) := 
-   matchcontinue (dummystate,stateindx,isyst,ishared)
+  (outDerDummyState,osyst,oshared,ochangedeqns) := 
+   matchcontinue (dummystate,stateindx,isyst,ishared,mapIncRowEqn)
     local
       list<DAE.ComponentRef> dummystates;
       list<tuple<DAE.ComponentRef,Integer>> states;
       list<Integer> changedeqns;
       DAE.ComponentRef dummy_der;
       DAE.Exp stateexp,stateexpcall,dummyderexp;
-      DAE.Type tp;
-      BackendDAE.BackendDAE dae,dae1,dae2;
-      BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared)
+    case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,_)
       equation
         (dummy_der,syst) = newDummyVar(dummystate, syst, DAE.NEW_DUMMY_DER(dummystate,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
@@ -2535,14 +2534,12 @@ algorithm
         stateexp = Expression.crefExp(dummystate);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
+        changedeqns = List.unique(List.map1r(changedeqns,arrayGet,mapIncRowEqn));        
         (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, dummystate);
-        Debug.fcall(Flags.BLT_DUMP, print ,"Update Incidence Matrix: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (changedeqns,intString," ","\n"));
-        syst = BackendDAEUtil.updateIncidenceMatrix(syst, shared, changedeqns);
       then
-        (dummy_der,syst,shared);
+        (dummy_der,syst,shared,changedeqns);
     else
       equation
          print("BackendDAETransform.makeDummyState failed\n");
@@ -2747,7 +2744,7 @@ algorithm
         (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, state);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared, changedeqns,mapEqnIncRow,mapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), changedeqns,mapEqnIncRow,mapIncRowEqn);
         // print("new DAE:");
         // BackendDump.dumpEqSystem(syst);
         // BackendDump.dump(BackendDAE.DAE({syst},shared));
@@ -3604,7 +3601,7 @@ algorithm
         dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,0,source,NONE(),comment,flowPrefix,streamPrefix);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
-        vars_1 = BackendVariable.addVar(dummyvar, vars);
+        vars_1 = BackendVariable.addNewVar(dummyvar, vars);
       then
         (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,om,omT,matching));
 

@@ -107,7 +107,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_,_)
       equation
-        true = intGt(listLength(eqns),0);
+        true = intGt(listLength(eqns),0);        
+        BackendDAEUtil.profilerstart1();
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         // the check may should first split the equations in independent subgraphs
         (b,eqns_1,unassignedStates,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
@@ -117,11 +118,17 @@ algorithm
         changedeqns = List.unionOnTrue(changedeqns, discEqns, intEq);
         changedeqns = List.sort(changedeqns,intEq);
         contiEqn = List.fold(changedeqns,intMin,listGet(eqns,1));
+        BackendDAEUtil.profilerstop1();
       then
        (changedeqns,contiEqn,syst,shared,ass1,ass2,arg);
-    else
+    case ({},_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction called with empty list of equations!"});
+      then
+        fail();
+    case (_,_,_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
       then
         fail();
   end matchcontinue;
@@ -429,7 +436,7 @@ algorithm
         ass2 = Debug.bcallret3(b,arrayUpdate,inAss2,e1,-1,inAss2); 
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         changedEqns =  List.unique(List.map1r(changedEqns,arrayGet,imapIncRowEqn));
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared, changedEqns, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), changedEqns, imapEqnIncRow, imapIncRowEqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrCrefStr,("Found Alias State ",cr," := ",scr,"\n Update Incidence Matrix: "));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(changedEqns,intString," ","\n"));        
         changedEqns = List.consOnTrue(b, e1, mapEqnIncRow[e]);
@@ -511,14 +518,13 @@ algorithm
         ass2 = List.fold1r(ilst1,arrayUpdate,-1,inAss2);
         // set changed variables assignments to zero
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
-        BackendDump.debuglst((ilst,intString,", ","\n"));
         eqnslst1 = BackendDAETransform.collectVarEqns(ilst,{},mt,arrayLength(mt));
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         eqnslst1 =  List.unique(listAppend(List.map1r(eqnslst1,arrayGet,imapIncRowEqn),eqnslst));
         eqnslst1 = List.unique(e::eqnslst1);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared, eqnslst1, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
         orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
         // collect changed equations
         // and new equations and current equation
@@ -796,7 +802,7 @@ algorithm
       array<Integer> mapIncRowEqn;  
       array<DAE.Constraint> constrs;
       list<BackendDAE.Equation> enqnslst;
-
+      list<Integer> changedeqns;
     // no Index Reduction performed (OrgEqnsLst is Empty)
     case (_,_,(so,{},mapEqnIncRow,mapIncRowEqn))
      then 
@@ -835,10 +841,12 @@ algorithm
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         vec1 = Util.arrayExpand(ne1-ne, ass1, -1);
         vec2 = Util.arrayExpand(nv1-nv, ass2, -1);
-        (syst,shared) = addDummyStates(dummyStates,syst,shared,vec1,vec2);
+        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
+        syst = BackendVariable.expandVarsDAE(listLength(dummyStates),syst);
+        (syst,shared,changedeqns) = addDummyStates(dummyStates,syst,shared,vec1,vec2,mapIncRowEqn,{});
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);        
-        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL()); 
+        (syst,_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn); 
         Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);
         BackendDAEEXT.matching(ne1,nv1,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);     
@@ -1810,7 +1818,8 @@ algorithm
         syst = List.fold(varlst,BackendVariable.addVarDAE,isyst);
         syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
         changedeqns = List.intRange2(size,size+listLength(selecteqns));
-        syst = BackendDAEUtil.updateIncidenceMatrix(syst, ishared, changedeqns);
+        // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
+        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, ishared, changedeqns);
         shared = BackendDAEUtil.whenClauseAddDAE(wclst,ishared);
         (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
       then
@@ -2317,11 +2326,14 @@ protected function addDummyStates
   input BackendDAE.Shared ishared;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
+  input array<Integer> mapIncRowEqn;
+  input list<Integer> ichangedeqns;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;  
+  output list<Integer> ochangedeqns;
 algorithm
-  (osyst,oshared) := 
-  match (dummyStates,isyst,ishared,inAss1,inAss2)
+  (osyst,oshared,ochangedeqns) := 
+  match (dummyStates,isyst,ishared,inAss1,inAss2,mapIncRowEqn,ichangedeqns)
     local
      DAE.ComponentRef cr,dcr;
      BackendDAE.EqSystem syst;
@@ -2329,17 +2341,18 @@ algorithm
      array<Integer> vec1,vec2;
      list<DAE.ComponentRef> rest;
      Integer i,e;
-    case ({},_,_,_,_) then (isyst,ishared);
-    case (cr::rest,_,_,_,_)
+     list<Integer> changedeqns;
+    case ({},_,_,_,_,_,_) then (isyst,ishared,List.unique(ichangedeqns));
+    case (cr::rest,_,_,_,_,_,_)
       equation
         (_,i::_) = BackendVariable.getVarDAE(cr,isyst);
-        (dcr,syst,shared) = BackendDAETransform.makeDummyState(cr,i,isyst,ishared);
+        (_,syst,shared,changedeqns) = BackendDAETransform.makeDummyState(cr,i,isyst,ishared,mapIncRowEqn);
         e = inAss1[i];
         _ = Debug.bcallret3(intGt(e,0), arrayUpdate, inAss1, e, -1, inAss1);
         _ = Debug.bcallret3(intGt(i,0), arrayUpdate, inAss2, i, -1, inAss2);
-        (syst,shared) = addDummyStates(rest,syst,shared,inAss1,inAss2);
+        (syst,shared,changedeqns) = addDummyStates(rest,syst,shared,inAss1,inAss2,mapIncRowEqn,listAppend(ichangedeqns,changedeqns));
       then 
-        (syst,shared);
+        (syst,shared,changedeqns);
   end match;
 end addDummyStates;
 

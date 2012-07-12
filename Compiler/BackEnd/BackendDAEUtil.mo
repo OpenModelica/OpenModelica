@@ -2362,10 +2362,10 @@ public function systemSize
   author: Frenkel TUD
   Returns the size of the dae system, the size of the equations in an EquationArray,
   which not corresponds to the number of equations in a system."
-  input BackendDAE.EqSystem dae;
+  input BackendDAE.EqSystem syst;
   output Integer n;
 algorithm
-  n := match(dae)
+  n := match(syst)
     local
       EquationArray eqns;
     case BackendDAE.EQSYSTEM(orderedEqs = eqns)
@@ -5054,6 +5054,7 @@ public function updateIncidenceMatrixScalar
   outputs: (IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
+  input BackendDAE.IndexType inIndxType;
   input list<Integer> inIntegerLst;
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
@@ -5061,7 +5062,7 @@ public function updateIncidenceMatrixScalar
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;
 algorithm
-  (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,shared,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
+  (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,shared,inIndxType,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
     local
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
@@ -5076,7 +5077,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
 
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),eqns,_,_)
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),_,eqns,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -5090,10 +5091,10 @@ algorithm
         m = Util.arrayExpand(deltasize,m,{});
         mt = Util.arrayExpand(deltasize,mt,{});
         // fill the extended parts first
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,wc,m,mt,mapEqnIncRow,mapIncRowEqn);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,wc,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType);
         // update the old 
         eqns = List.removeOnTrue(oldsize, intLt, eqns);
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,wc,m,mt,eqns,mapEqnIncRow,mapIncRowEqn);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,wc,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType);
       then
         (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),mapEqnIncRow,mapIncRowEqn);
 
@@ -5115,14 +5116,15 @@ protected function updateIncidenceMatrixScalar1
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input list<Integer> inIntegerLst;
   input array<list<Integer>> iMapEqnIncRow;
-  input array<Integer> iMapIncRowEqn;  
+  input array<Integer> iMapIncRowEqn;
+  input BackendDAE.IndexType inIndxType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;  
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,oMapEqnIncRow,oMapIncRowEqn):=
-  matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
+  matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
     local
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
@@ -5133,15 +5135,15 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
       
-    case (_,_,_,m,mt,{},_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
+    case (_,_,_,m,mt,{},_,_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
 
-    case (vars,daeeqns,wc,m,mt,e::eqns,_,_)
+    case (vars,daeeqns,wc,m,mt,e::eqns,_,_,_)
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
         size = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,wc,BackendDAE.NORMAL(),{});
+        (row,_) = incidenceRow(eqn,vars,wc,inIndxType,{});
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listGet(scalarindxs,1));
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
@@ -5149,7 +5151,7 @@ algorithm
         m_1 = List.fold1r(scalarindxs,arrayUpdate,row,m);
         mt_1 = List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
         mt_2 = List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
-        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,wc,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn);
+        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,wc,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType);
       then (m_2,mt_3,mapEqnIncRow,mapIncRowEqn);
 
   end matchcontinue;
@@ -5166,14 +5168,15 @@ protected function updateIncidenceMatrixScalar2
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input array<list<Integer>> iMapEqnIncRow;
-  input array<Integer> iMapIncRowEqn;  
+  input array<Integer> iMapIncRowEqn;
+  input BackendDAE.IndexType inIndxType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;  
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,oMapEqnIncRow,oMapIncRowEqn):=
-  matchcontinue (index,n,size,vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,iMapEqnIncRow,iMapIncRowEqn)
+  matchcontinue (index,n,size,vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -5183,24 +5186,24 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
       
-    case (_,_,_,_,_,wc,m,mt,_,_)
+    case (_,_,_,_,_,wc,m,mt,_,_,_)
       equation
         false = intGt(index,n);
         abse = intAbs(index);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
         rowsize = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,wc,BackendDAE.NORMAL(),{});  
+        (row,_) = incidenceRow(eqn,vars,wc,inIndxType,{});  
         new_size = size+rowsize;      
         scalarindxs = List.intRange2(size+1,new_size);
         mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
         mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
         m = List.fold1r(scalarindxs,arrayUpdate,row,m);
         mt = fillincidenceMatrixT(row,scalarindxs,mt);
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(index+1,n,new_size,vars,daeeqns,wc,m,mt,mapEqnIncRow,mapIncRowEqn);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(index+1,n,new_size,vars,daeeqns,wc,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType);
       then 
         (m,mt,mapEqnIncRow,mapIncRowEqn);
-    case (_,_,_,_,_,_,m,mt,_,_)
+    case (_,_,_,_,_,_,m,mt,_,_,_)
       then 
         (m,mt,iMapEqnIncRow,iMapIncRowEqn);
   end matchcontinue;
@@ -8537,10 +8540,13 @@ algorithm
       
     case (_,_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
       equation
+        print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
+        profilerinit();
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
+        profilerresults();        
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,arg);
     else

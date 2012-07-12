@@ -3497,12 +3497,8 @@ algorithm
   osyst := match (inVar,syst)
     local
       BackendDAE.Var var;
-      BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.Shared shared;
+      BackendDAE.Variables ordvars,ordvars1;
+      BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
     case (var,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
@@ -3524,9 +3520,9 @@ algorithm
   oshared := match (inVar,shared)
     local
       BackendDAE.Var var;
-      BackendDAE.Variables ordvars,knvars,exobj,knvars1;
+      BackendDAE.Variables knvars,exobj,knvars1;
       BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       Env.Cache cache;
       Env.Env env;      
@@ -3534,7 +3530,6 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;
     case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
@@ -3610,6 +3605,109 @@ algorithm
         fail();
   end matchcontinue;
 end addVar;
+
+public function addNewVar
+"function: addNewVar
+  author: Frenkel TUD - 2012-07
+  Add a variable to Variables.
+  Did not check if the variable is already there. Use it only for
+  new variables."
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVar,inVariables)
+    local
+      BackendDAE.Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
+      BackendDAE.VariableArray varr_1,varr;
+      list<BackendDAE.CrefIndex> indexes;
+      array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
+      String name_str;
+      BackendDAE.Var v,newv;
+      DAE.ComponentRef cr;
+      DAE.Flow flowPrefix;
+      BackendDAE.Variables vars;
+      HashTableCrILst.HashTable fastht;
+    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n, fastht = fastht)))
+      equation
+        indx = HashTable2.hashFunc(cr, bsize);
+        newpos = vararrayLength(varr);
+        varr_1 = vararrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
+        n_1 = vararrayLength(varr_1);
+        //fastht = BaseHashTable.add((cr,{newpos}),fastht);
+      then
+        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1,fastht);
+
+    case (_,_)
+      equation
+        print("- BackendVariable.addNewVar failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addNewVar;
+
+public function expandVarsDAE
+"function: expandVars
+  author: Frenkel TUD 2011-04
+  Expand the Variable array."
+  input Integer needed;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (needed,syst)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables ordvars,ordvars1;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Matching matching;
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
+      equation
+        ordvars1 = expandVars(needed,ordvars);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching);
+  end match;
+end expandVarsDAE;
+
+public function expandVars
+"function: expandVars
+  author: Frenkel TUD - 2012-07
+  Expand the variable array"
+  input Integer needed;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (needed,inVariables)
+    local
+      BackendDAE.Value size,noe,bsize,n,size1,expandsize;
+      BackendDAE.VariableArray varr_1,varr;
+      list<BackendDAE.CrefIndex> indexes;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      BackendDAE.Variables vars;
+      HashTableCrILst.HashTable fastht;
+      array<Option<BackendDAE.Var>> arr,arr_1;
+    case (_,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=noe,arrSize=size,varOptArr=arr),bucketSize = bsize,numberOfVars = n, fastht = fastht)))
+      equation
+        size1 = noe + needed;
+        true = intGt(size1,size);
+        expandsize = size1-size1;
+        arr_1 = Util.arrayExpand(expandsize, arr, NONE());
+      then
+        BackendDAE.VARIABLES(hashvec,BackendDAE.VARIABLE_ARRAY(noe,size1,arr_1),bsize,n,fastht);
+
+    case (_,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=noe,arrSize=size,varOptArr=arr),bucketSize = bsize,numberOfVars = n, fastht = fastht)))
+      then
+        inVariables;
+
+    case (_,_)
+      equation
+        print("- BackendVariable.expandVars failed\n");
+      then
+        fail();
+  end matchcontinue;
+end expandVars;
+
 
 public function getVarAt
 "function: getVarAt

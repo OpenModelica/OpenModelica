@@ -122,7 +122,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;   
-      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,vec3,vorphansarray,mapIncRowEqn,ass12;
+      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,vec3,vorphansarray,mapIncRowEqn;
       Integer size,eo,io,mark,i1,i2,i3,esize,temp;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;    
@@ -237,9 +237,6 @@ algorithm
           print("Orphans Pairs: \n");
           List.map_0(orphanspairs,dumpOrphansPairs); print("\n");        
 
-        ass12 = arrayCreate(size,-1);
-        ass12 = Util.arrayCopy(ass1,ass12);
-
         // transform to nonscalar 
         ass1 = BackendDAETransform.varAssignmentNonScalar(1,size,ass1,mapIncRowEqn,{});
         ass22 = BackendDAETransform.eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
@@ -280,11 +277,11 @@ algorithm
           BackendDump.debuglst((vorphans,intString,", ","\n"));
           BackendDump.dumpVarsArray(vars);
 
-        eforphans = matchOrphans(orphanspairs,ass12,ass2,{});
+        eforphans = matchOrphans(orphanspairs,ass1,ass22,mapIncRowEqn,{});
         //  print("First Orphanspairs " +& intString(listLength(eforphans)) +& "\n");
         //  BackendDump.debuglst((eforphans,intString,", ","\n"));
-        //  BackendDump.dumpMatching(ass1);
-        //  BackendDump.dumpMatching(ass2); 
+          BackendDump.dumpMatching(ass1);
+          BackendDump.dumpIncidenceMatrix(ass22); 
         
         vec1 = arrayCreate(esize,{});
         vec2 = arrayCreate(esize,-1);
@@ -1162,12 +1159,14 @@ algorithm
     BackendDump.dumpIncidenceMatrixT(mt); 
   reduceOrphancMatrix(listReverse(comps),m);
     BackendDump.dumpIncidenceMatrix(m);
-true := false;
+//true := false;
   //(order,links) := getOrphansOrderEdvanced4(roots,vorphansarray,vorphansarrayT,mark,rowmarks,{},{},{});  
   omark := mark + 1;
   // add links to the order
   links := List.flatten(linkslst);
   (sortvorphans,omark) := getOrphansOrderEdvanced5(links,vorphansarray,vorphansarrayT,omark,rowmarks,order);
+  // map back to global indexes
+  sortvorphans := List.map1r(sortvorphans,arrayGet,map);
     print("sortvorphans: " +& stringDelimitList(List.map(sortvorphans,intString),", ") +& "\n");
 end getOrphansOrderEdvanced3;
 
@@ -2398,28 +2397,28 @@ algorithm
   end matchcontinue;
 end sortVarsforOrder2;
 
-
 protected function matchOrphans
   input list<tuple<Integer,list<tuple<Integer,Integer>>>> inTpllst;
   input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<list<Integer>> ass2;
+  input array<Integer> mapIncRowEqn;
   input list<Integer> inFirstPairs;
   output list<Integer> outFirstPairs;
 algorithm
-  outFirstPairs := matchcontinue(inTpllst,ass1,ass2,inFirstPairs)
+  outFirstPairs := matchcontinue(inTpllst,ass1,ass2,mapIncRowEqn,inFirstPairs)
     local 
       list<Integer> firstpairs;
       Integer c;
       list<tuple<Integer,Integer>> tpl;
       list<tuple<Integer,list<tuple<Integer,Integer>>>> rest;  
-    case ({},_,_,_) 
+    case ({},_,_,_,_) 
       then inFirstPairs;
-    case ((c,tpl)::rest,_,_,_)
+    case ((c,tpl)::rest,_,_,_,_)
       equation
        //  print("Try to match " +& intString(c) +& "\n");
-       firstpairs = matchOrphans1(c,tpl,ass1,ass2,inFirstPairs);
+       firstpairs = matchOrphans1(c,tpl,ass1,ass2,mapIncRowEqn,inFirstPairs);
       then
-        matchOrphans(rest,ass1,ass2,firstpairs);
+        matchOrphans(rest,ass1,ass2,mapIncRowEqn,firstpairs);
   end matchcontinue;
 end matchOrphans;
 
@@ -2427,37 +2426,42 @@ protected function matchOrphans1
   input Integer c;
   input list<tuple<Integer,Integer>> inTpl;
   input array<Integer> ass1;
-  input array<Integer> ass2;
+  input array<list<Integer>> ass2;
+  input array<Integer> mapIncRowEqn;
   input list<Integer> inFirstPairs;
   output list<Integer> outFirstPairs;
 algorithm
-  outFirstPairs := matchcontinue(c,inTpl,ass1,ass2,inFirstPairs)
+  outFirstPairs := matchcontinue(c,inTpl,ass1,ass2,mapIncRowEqn,inFirstPairs)
     local 
-      list<Integer> firstpairs;
-      Integer r,d;
+      list<Integer> firstpairs,lst;
+      Integer r,d,e;
       list<tuple<Integer,Integer>> rest;
-    case (_,{},_,_,_) 
+    case (_,{},_,_,_,_) 
       then inFirstPairs;
-    case (_,(r,d)::rest,_,_,_)
+    case (_,(r,d)::rest,_,_,_,_)
       equation
         true = intEq(d,1);
         false = intGt(ass1[r],0);
-        //  print("Match " +& intString(r) +& " with " +& intString(c) +& "\n");
-        _ = arrayUpdate(ass1,r,c);        
-        _ = arrayUpdate(ass2,c,r);        
+        e = mapIncRowEqn[c];
+        //  print("Match " +& intString(r) +& " with " +& intString(c) +& " with " +& intString(e) +& "\n");
+        _ = arrayUpdate(ass1,r,e);        
+        lst = ass2[e];
+        _ =arrayUpdate(ass2, e, r::lst);
       then
        c::inFirstPairs;
-    case (_,(r,d)::rest,_,_,_)
+    case (_,(r,d)::rest,_,_,_,_)
       equation
         false = intGt(ass1[r],0);
-        //  print("Match " +& intString(r) +& " with " +& intString(c) +&  " Distanz " +& intString(d) +& "\n");
-        _ = arrayUpdate(ass1,r,c);        
-        _ = arrayUpdate(ass2,c,r);        
+        e = mapIncRowEqn[c];
+        //  print("Match " +& intString(r) +& " with " +& intString(c) +& " with " +& intString(e) +&  " Distanz " +& intString(d) +& "\n");
+        _ = arrayUpdate(ass1,r,e);
+        lst = ass2[e];
+        _ =arrayUpdate(ass2, e, r::lst);
       then
        inFirstPairs; 
-    case(_,_::rest,_,_,_)
+    case(_,_::rest,_,_,_,_)
       then
-        matchOrphans1(c,rest,ass1,ass2,inFirstPairs);      
+        matchOrphans1(c,rest,ass1,ass2,mapIncRowEqn,inFirstPairs);      
   end matchcontinue;
 end matchOrphans1;
 
