@@ -113,13 +113,12 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;      
-      list<Integer> unmatched;
+      BackendDAE.IncidenceMatrixT mt;  
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -127,8 +126,7 @@ algorithm
         emark = arrayCreate(neqns,-1);
         vec1 = arrayCreate(nvars,-1);
         vec2 = arrayCreate(neqns,-1);
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
+        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
@@ -137,8 +135,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -483,13 +481,12 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,parentcolum;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;      
-      list<Integer> unmatched;
+      BackendDAE.IncidenceMatrixT mt;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -497,8 +494,7 @@ algorithm
         parentcolum = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
+        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -507,8 +503,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -559,7 +555,7 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1;      
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;      
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true=intGt(i,ne);
@@ -574,7 +570,8 @@ algorithm
         // if visitedcolums is not zero matching fails -> try index reduction and matching aggain
         (_,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) = reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
-        (ass1_2,ass2_2,syst,shared,arg) = BFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,parentcolum,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
+        parentcolum1 = assignmentsArrayExpand(parentcolum,nv_1,arrayLength(parentcolum),-1);
+        (ass1_2,ass2_2,syst,shared,arg) = BFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,parentcolum1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
         
@@ -752,7 +749,12 @@ algorithm
         _ = arrayUpdate(ass2,l,c);
         BFSBreasign(i,parentcolum[r],parentcolum,r,ass1,ass2);
       then
-        ();        
+        ();    
+    else
+      equation
+        print("Matching.BFSBreasign failed in Equation " +& intString(i) +& "\n");
+      then
+        fail();            
    end matchcontinue;
 end BFSBreasign;
 
@@ -814,20 +816,18 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks;
-      list<Integer> unmatched;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         rowmarks = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
+        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
         (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -836,8 +836,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -1082,12 +1082,11 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
-      list<Integer> unmatched;
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -1095,8 +1094,7 @@ algorithm
         lookahead = arrayCreate(neqns,0);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
+        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
         _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);        
         (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
@@ -1105,8 +1103,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -1456,8 +1454,8 @@ algorithm
       list<Integer> unmatched;      
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -1475,8 +1473,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -1537,7 +1535,7 @@ algorithm
         (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
         meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns_1,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1,ass2,inMatchingOptions,sssHandler,arg);
+        (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     else
@@ -1873,8 +1871,8 @@ algorithm
       list<Integer> unmatched;      
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -1894,8 +1892,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -2245,8 +2243,8 @@ algorithm
       list<Integer> unmatched;      
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);        
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -2265,8 +2263,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -2328,7 +2326,7 @@ algorithm
         (i_1,unmatched1) = HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns_1,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1,ass2,inMatchingOptions,sssHandler,arg);
+        (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     else
@@ -2912,8 +2910,8 @@ algorithm
       list<Integer> unmatched;      
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);        
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -2932,8 +2930,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -2995,7 +2993,7 @@ algorithm
         (i_1,unmatched1) = HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns_1,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1,ass2,inMatchingOptions,sssHandler,arg);
+        (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     else
@@ -3248,8 +3246,8 @@ algorithm
       list<Integer> unmatched;      
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);        
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -3270,8 +3268,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -3337,7 +3335,7 @@ algorithm
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns_1,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1,ass2,inMatchingOptions,sssHandler,arg);
+        (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     else
@@ -3974,8 +3972,8 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);   
         checkSystemForMatching(nvars,neqns,inMatchingOptions);     
@@ -3993,8 +3991,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -4056,7 +4054,7 @@ algorithm
         unmatched1 = getUnassigned(ne, ass1, {});
         meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns_1,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1,ass2,inMatchingOptions,sssHandler,arg);
+        (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     else
@@ -5021,8 +5019,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);        
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5035,8 +5033,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5073,8 +5071,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5087,8 +5085,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5125,8 +5123,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);       
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5139,8 +5137,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5177,8 +5175,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);       
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5191,8 +5189,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5229,8 +5227,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5243,8 +5241,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5281,8 +5279,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);       
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5295,8 +5293,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5333,8 +5331,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);       
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5347,8 +5345,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5385,8 +5383,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);       
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5399,8 +5397,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
@@ -5437,8 +5435,8 @@ algorithm
       BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);        
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5451,8 +5449,8 @@ algorithm
     // fail case if system is empty
     case (_,_,_,_,_)
       equation
-        nvars = BackendDAEUtil.systemSize(isyst);
-        neqns = BackendVariable.daenumVariables(isyst);
+        neqns = BackendDAEUtil.systemSize(isyst);
+        nvars = BackendVariable.daenumVariables(isyst);
         false = intGt(nvars,0);
         false = intGt(neqns,0);
         vec1 = listArray({});
