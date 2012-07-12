@@ -2391,7 +2391,7 @@ algorithm
     case (i::rest,inIntegerLst2,mt,l)
       equation
         true = intLt(i,l);
-        eqns = mt[i];
+        eqns = List.map(mt[i],intAbs);
         ilst = List.union(eqns,inIntegerLst2);
         ilst1 = collectVarEqns(rest,ilst,mt,l);  
       then 

@@ -301,6 +301,18 @@ algorithm
   Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, inString);
 end setIndexReductionMethod;
 
+public function getCheapMatchingAlgorithm
+  output Integer outInteger;
+algorithm
+  outInteger := Flags.getConfigInt(Flags.CHEAPMATCHING_ALGORITHM);
+end getCheapMatchingAlgorithm;
+
+public function setCheapMatchingAlgorithm
+  input Integer inInteger;
+algorithm
+  Flags.setConfigInt(Flags.CHEAPMATCHING_ALGORITHM, inInteger);
+end setCheapMatchingAlgorithm;
+
 public function getMatchingAlgorithm
   output String outString;
 algorithm

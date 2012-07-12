@@ -521,10 +521,17 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", "DESCRIBE ME"),
     ("residualForm", "Transforms simple equations x=y to zero-sum equations 0=y-x")})),
   "Sets the pre optimisation modules to use in the back end. See +help=optmodules for more info.");
-constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(13, "matchingAlgorithm",
+constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
+  NONE(), EXTERNAL(), INT_FLAG(3),
+  SOME(STRING_DESC_OPTION({
+    ("0", "No cheap matching."),
+    ("1", "cheap matching, traveres all equations and match the first free variable"),
+    ("3", "Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs.")})),
+    "Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics.");    
+constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
   NONE(), EXTERNAL(), STRING_FLAG("omc"),
   SOME(STRING_DESC_OPTION({
-    ("omc", "Depth First Search based Algorithm with simple Look Ahead Feature")/*,
+    ("omc", "Depth First Search based Algorithm with simple Look Ahead Feature"),
     ("BFSB", "Breath First Search based Algorithm"),
     ("DFSB", "Depth First Search based Algorithm"),
     ("MC21A", "Depth First Search based Algorithm with look ahead feature"),
@@ -542,15 +549,15 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(13, "matchingAlgorithm",
     ("HKExt", "Combined BFS and DFS algorithm external c implementation"),
     ("HKDWExt", "Combined BFS and DFS algorithm external c implementation"),
     ("ABMPExt", "Combined BFS and DFS algorithm external c implementation"),
-    ("PRExt", "matching algorithm using push relabel mechanism external c implementation")*/})),
+    ("PRExt", "matching algorithm using push relabel mechanism external c implementation")})),
     "Sets the matching algorithm to use.");  
-constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(14, "indexReductionMethod",
+constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", "simple index reduction method, select dummy states based on heuristics"),
     ("dynamicStateSelection", "simple index reduction method, select (dynamic) dummy states based on analysis of the system")})),
     "Sets the index reduction method to use.");
-constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
+constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
 //    "relaxSystem",
@@ -584,78 +591,78 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(15, "postOptModules",
     ("simplifyTimeIndepFuncCalls","simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")
     })),
   "Sets the post optimisation modules to use in the back end. See +help=optmodules for more info.");
-constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(16, "simCodeTarget",
+constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 
   SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump"})),
   "Sets the target language for the code generation");
-constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(17, "orderConnections", 
+constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections", 
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   "Orders connect equations alphabetically if set.");
-constant ConfigFlag TYPE_INFO = CONFIG_FLAG(18, "typeinfo",
+constant ConfigFlag TYPE_INFO = CONFIG_FLAG(19, "typeinfo",
   SOME("t"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Prints out extra type information if set.");
-constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(19, "keepArrays",
+constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(20, "keepArrays",
   SOME("a"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to split arrays or not.");
-constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(20, "modelicaOutput",
+constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(21, "modelicaOutput",
   SOME("m"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag PARAMS_STRUCT = CONFIG_FLAG(21, "paramsStruct",
+constant ConfigFlag PARAMS_STRUCT = CONFIG_FLAG(22, "paramsStruct",
   SOME("p"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
+constant ConfigFlag SILENT = CONFIG_FLAG(23, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on silent mode.");
-constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
+constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(24, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Sets the name of the corba session if +d=interactiveCorba is used.");
-constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
+constant ConfigFlag NUM_PROC = CONFIG_FLAG(25, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the number of processors to use.");
-constant ConfigFlag LATENCY = CONFIG_FLAG(25, "latency",
+constant ConfigFlag LATENCY = CONFIG_FLAG(26, "latency",
   SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the latency for parallel execution.");
-constant ConfigFlag BANDWIDTH = CONFIG_FLAG(26, "bandwidth",
+constant ConfigFlag BANDWIDTH = CONFIG_FLAG(27, "bandwidth",
   SOME("b"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the bandwidth for parallel execution.");
-constant ConfigFlag INST_CLASS = CONFIG_FLAG(27, "instClass",
+constant ConfigFlag INST_CLASS = CONFIG_FLAG(28, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   "Instantiate the class given by the fully qualified path.");
-constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(28, "vectorizationLimit",
+constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(29, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized.");
-constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(29, "simulationCg",
+constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(30, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on simulation code generation.");
-constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(30,
+constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(31,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Sets whether to evaluate parameters in annotations or not.");
-constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(31,
+constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(32,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "Set when checkModel is used to turn on specific features for checking.");
-constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(32,
+constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(33,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   "");
-constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(33,
+constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(34,
   "unitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(34,
+constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(35,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   "");
-constant ConfigFlag ENV_CACHE = CONFIG_FLAG(35,
+constant ConfigFlag ENV_CACHE = CONFIG_FLAG(36,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   "");
-constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(36,
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(37,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on labeled SimCode generation for reduction algorithms.");
-constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(37,
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(38,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Turns on reducing terms for reduction algorithms.");
-constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(38, "reductionMethod",
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     "Sets the reduction method to be used.");
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent", 
+constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
 
@@ -675,6 +682,7 @@ constant list<ConfigFlag> allConfigFlags = {
   SHOW_ANNOTATIONS,
   NO_SIMPLIFY,
   PRE_OPT_MODULES,
+  CHEAPMATCHING_ALGORITHM,
   MATCHING_ALGORITHM,
   INDEX_REDUCTION_METHOD,
   POST_OPT_MODULES,

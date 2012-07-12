@@ -1195,6 +1195,15 @@ algorithm
 annotation(preferredView="text");
 end setPreOptModules;
 
+function setCheapMatchingAlgorithm "example input: 3"
+  input Integer matchingAlgorithm;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+cheapmatchingAlgorithm=" + String(matchingAlgorithm));
+annotation(preferredView="text");
+end setCheapMatchingAlgorithm;
+
 function setMatchingAlgorithm "example input: omc"
   input String matchingAlgorithm;
   output Boolean success;

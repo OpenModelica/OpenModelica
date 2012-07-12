@@ -46,6 +46,7 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
@@ -126,8 +127,7 @@ algorithm
         emark = arrayCreate(neqns,-1);
         vec1 = arrayCreate(nvars,-1);
         vec2 = arrayCreate(neqns,-1);
-        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
-        _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
       then
@@ -494,8 +494,7 @@ algorithm
         parentcolum = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
-        _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -826,9 +825,8 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         rowmarks = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
-        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
-        _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        vec2 = arrayCreate(nvars,-1);       
+        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -1093,9 +1091,8 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);
-        //_ = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});        
-        _ = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);        
+        vec2 = arrayCreate(nvars,-1);       
+        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);      
         (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -1463,9 +1460,7 @@ algorithm
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);        
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = PF1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -1880,11 +1875,7 @@ algorithm
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);        
-        //matchFunctionCallResultVars(syst,ishared,vec1,vec2);
-        //unmatched = checkAssignment(1,neqns,vec1,vec2,{});
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (i,vec1,vec2,syst,shared,arg) = PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -2253,9 +2244,7 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         collummarks = arrayCreate(neqns,-1);
         level = arrayCreate(neqns,-1);      
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = HK1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -2920,9 +2909,7 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         collummarks = arrayCreate(neqns,-1);
         level = arrayCreate(neqns,-1);      
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = HKDW1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -3258,9 +3245,7 @@ algorithm
         level = arrayCreate(neqns,-1);     
         rlevel = arrayCreate(nvars,nvars);
         colptrs = arrayCreate(neqns,-1);
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = ABMP1(1,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -3981,9 +3966,7 @@ algorithm
         vec2 = arrayCreate(nvars,-1);
         l_label = arrayCreate(neqns,-1);
         r_label = arrayCreate(nvars,-1);       
-        //unmatched = List.intRange(neqns);
-        //unmatched = cheapmatching(1,nvars,neqns,m,mt,vec1,vec2,{});
-        unmatched = ks_rand_cheapmatching(nvars,neqns,m,mt,vec1,vec2);
+        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = PR_FIFO_FAIR1(unmatched,l_label,r_label,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
@@ -4516,6 +4499,43 @@ end PR_FIFO_FAIRrelabel;
   cheap matching implementations
  *****************************************/
 
+protected function cheapmatchingalgorithm
+"function cheapmatchingalgorithm, traverses all colums and look for a cheap matching, a unmatch row
+ autor: Frenkel TUD 2012-07"
+  input Integer nv;
+  input Integer ne;
+  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input array<Integer> ass1 "ass[eqnindx]=varindx";
+  input array<Integer> ass2 "ass[varindx]=eqnindx";
+  input Boolean intRangeUsed;
+  output list<Integer> outUnMatched;
+algorithm
+  outUnMatched := cheapmatchingalgorithm1(Config.getCheapMatchingAlgorithm(),nv,ne,m,mT,ass1,ass2,intRangeUsed);
+end cheapmatchingalgorithm;
+
+protected function cheapmatchingalgorithm1
+"function cheapmatchingalgorithm
+ autor: Frenkel TUD 2012-07"
+  input Integer algorithmid;
+  input Integer nv;
+  input Integer ne;
+  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input array<Integer> ass1 "ass[eqnindx]=varindx";
+  input array<Integer> ass2 "ass[varindx]=eqnindx";
+  input Boolean intRangeUsed;
+  output list<Integer> outUnMatched;
+algorithm
+  outUnMatched := match(algorithmid,nv,ne,m,mT,ass1,ass2,intRangeUsed)
+    case(1,_,_,_,_,_,_,_) then cheapmatching(1,nv,ne,m,mT,ass1,ass2,{});
+    case(3,_,_,_,_,_,_,_) then ks_rand_cheapmatching(nv,ne,m,mT,ass1,ass2);
+    case(_,_,_,_,_,_,_,true) then List.intRange(ne);
+    else then {};
+  end match;
+end cheapmatchingalgorithm1;
+
+
 protected function matchSingleVars
 "function matchSingleVars, match all vars with one equation
  autor: Frenkel TUD 2012-04"
@@ -5026,7 +5046,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5078,7 +5098,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5130,7 +5150,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5182,7 +5202,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5234,7 +5254,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5286,7 +5306,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5338,7 +5358,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5390,7 +5410,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
@@ -5442,7 +5462,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,3,1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
         (syst,shared,arg);
