@@ -1039,7 +1039,7 @@ case SES_MIXED(__) then
       <%
         discVars |> SIMVAR(__) hasindex i0 => 
           'double discrete_loc_<%i0%> = <%crefToReal(name, simCode)%>;'
-        ;separator=",\n"
+        ;separator="\n"
        
        /*match discVars
         case { var as SIMVAR(__) } then
