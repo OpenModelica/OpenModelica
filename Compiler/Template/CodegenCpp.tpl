@@ -9,8 +9,8 @@ template translateModel(SimCode simCode) ::=
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let()= textFile(simulationHeaderFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.h')
   let()= textFile(simulationCppFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions), 'Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions), 'Functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
 //  algloopfiles(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)  
   algloopfiles(allEquations,simCode) 
@@ -55,7 +55,7 @@ case SIMCODE(__) then
    >>
 end algloopHeaderFile;
 
-template simulationFunctionsFile(SimCode simCode, list<Function> functions)
+template simulationFunctionsFile(SimCode simCode, list<Function> functions, list<Exp> literals)
  "Generates the content of the Cpp file for functions in the simulation case."
 ::=
 match simCode
@@ -66,6 +66,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  
    Functions::Functions() 
    { 
+     <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n"%>
    } 
 
    Functions::~Functions() 
@@ -81,7 +82,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   
 end simulationFunctionsFile;
 
-template simulationFunctionsHeaderFile(SimCode simCode, list<Function> functions)
+template simulationFunctionsHeaderFile(SimCode simCode, list<Function> functions, list<Exp> literals)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
@@ -106,9 +107,15 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       public: 
         Functions(); 
        ~Functions(); 
+       //Modelica functions
        <%functionHeaderBodies2(functions,simCode)%>
+       
        void Assert(bool cond,string msg);
-      private:
+       
+       //Literals
+        <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
+     private:
+       //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
        
      };
@@ -410,7 +417,7 @@ template functionBody(Function fn, Boolean inFunc,SimCode simCode)
   match fn
   case fn as FUNCTION(__)           then functionBodyRegularFunction(fn, inFunc,simCode)
   case fn as EXTERNAL_FUNCTION(__)  then functionBodyExternalFunction(fn, inFunc,simCode)
-  case fn as RECORD_CONSTRUCTOR(__) then ""
+  case fn as RECORD_CONSTRUCTOR(__) then functionBodyRecordConstructor(fn)
 end functionBody;
 
 template externfunctionHeaderDefinition(list<Function> functions)
@@ -422,8 +429,15 @@ end externfunctionHeaderDefinition;
 template functionHeaderBodies1(list<Function> functions,SimCode simCode)
  "Generates the body for a set of functions."
 ::=
-  (functions |> fn => functionHeaderBody1(fn,simCode) ;separator="\n")
-end functionHeaderBodies1;
+match simCode
+    case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
+   let recorddecls = (recordDecls |> rd => recordDeclarationHeader(rd,simCode) ;separator="\n")
+   let rettypedecls =  (functions |> fn => functionHeaderBody1(fn,simCode) ;separator="\n")
+   <<
+   <%recorddecls%>
+   <%rettypedecls%>
+   >>
+end    functionHeaderBodies1;
 
 template functionHeaderBody1(Function fn,SimCode simCode)
  "Generates the body for a function."
@@ -431,7 +445,7 @@ template functionHeaderBody1(Function fn,SimCode simCode)
   match fn
   case fn as FUNCTION(__)           then functionHeaderRegularFunction1(fn,simCode)
   case fn as EXTERNAL_FUNCTION(__)  then functionHeaderExternFunction(fn,simCode)
-  case fn as RECORD_CONSTRUCTOR(__) then ""
+  case fn as RECORD_CONSTRUCTOR(__) then  functionHeaderRegularFunction1(fn,simCode)
 end functionHeaderBody1;
 
 template functionHeaderBodies2(list<Function> functions,SimCode simCode)
@@ -446,7 +460,7 @@ template functionHeaderBody2(Function fn,SimCode simCode)
   match fn
   case fn as FUNCTION(__)           then functionHeaderRegularFunction2(fn,simCode)
   case fn as EXTERNAL_FUNCTION(__)  then functionHeaderRegularFunction2(fn,simCode)
-  case fn as RECORD_CONSTRUCTOR(__) then ""
+  case fn as RECORD_CONSTRUCTOR(__) then functionHeaderRecordConstruct(fn,simCode)
 end functionHeaderBody2;
 
 template functionHeaderBodies3(list<Function> functions,SimCode simCode)
@@ -527,7 +541,7 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then 'struct <%underscorePath(rname)%>'
+                      then 'Test struct <%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
@@ -553,9 +567,28 @@ case FUNCTION(__) then
     typedef tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
     typedef tuple< <%outVars |> var => funReturnDefinition2(var,simCode) ;separator=", "%> > <%fname%>RefRetType;
   >>
+ case RECORD_CONSTRUCTOR(__) then
+      let fname = underscorePath(name)
+      <<
+    
+      typedef <%fname%>Type <%fname%>RetType;
+      >> 
 end functionHeaderRegularFunction1;
 
 
+
+template functionHeaderRecordConstruct(Function fn,SimCode simCode)
+::=
+match fn
+ case RECORD_CONSTRUCTOR(__) then
+      let fname = underscorePath(name)
+      let funArgsStr = (funArgs |> var as VARIABLE(__) =>
+          '<%varType2(var)%> <%crefStr(name)%>'
+        ;separator=", ")
+      <<
+      <%fname%>Type <%fname%>(<%funArgsStr%>);
+      >> 
+end functionHeaderRecordConstruct;
 
 template functionHeaderExternFunction(Function fn,SimCode simCode)
 ::=
@@ -566,6 +599,77 @@ case EXTERNAL_FUNCTION(__) then
     typedef tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
   >>
 end functionHeaderExternFunction;
+
+template recordDeclarationHeader(RecordDeclaration recDecl,SimCode simCode)
+ "Generates structs for a record declaration."
+::=
+  match recDecl
+  case RECORD_DECL_FULL(__) then
+    << 
+     struct <%name%>Type 
+     {
+        //Constructor allocates arrays
+        <%name%>Type()
+        {
+             <%variables |> var as VARIABLE(__) => '<%recordDeclarationHeaderArrayAllocate(var,simCode)%>' ;separator="\n"%>
+        }
+        //Public  Members
+        <%variables |> var as VARIABLE(__) => '<%varType1(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+    };
+    >> 
+  case RECORD_DECL_DEF(__) then
+    << 
+    RECORD DECL DEF
+    >>
+end recordDeclarationHeader;
+
+template recordDeclarationHeaderArrayAllocate(Variable v,SimCode simCode)
+ "Generates structs for a record declaration."
+::=
+  match v
+  case var as VARIABLE(ty=ty as T_ARRAY(__)) then
+  let instDimsInit = (ty.dims |> exp =>
+     dimension(exp);separator="][")
+     let arrayname = crefStr(name)
+  <<
+   <%arrayname%>.resize((boost::extents[<%instDimsInit%>]));
+   <%arrayname%>.reindex(1);
+  >> 
+end recordDeclarationHeaderArrayAllocate;
+
+template functionBodyRecordConstructor(Function fn)
+ "Generates the body for a record constructor."
+::=
+match fn
+case RECORD_CONSTRUCTOR(__) then
+  let()= System.tmpTickReset(1)
+  let &varDecls = buffer "" /*BUFD*/
+  let fname = underscorePath(name)
+  let retType = '<%fname%>Type'
+  let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+  let structType = '<%fname%>Type'
+  let structVar = tempDecl(structType, &varDecls /*BUFD*/)
+
+  <<
+  <%retType%> Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType2(var)%> <%crefStr(name)%>' ;separator=", "%>)
+  {
+   
+    <%varDecls%>
+    <%funArgs |> VARIABLE(__) => '<%structVar%>.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
+    return <%structVar%>;
+  }
+
+ 
+
+  >>
+end functionBodyRecordConstructor;
+
+template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp case exp as SHARED_LITERAL(__) then '_functions._OMC_LIT<%exp.index%>'
+end daeExpSharedLiteral;
+
 
 template functionHeaderRegularFunction2(Function fn,SimCode simCode)
 ::=
@@ -1057,9 +1161,9 @@ case var as FUNCTION_PTR(__) then
     else
 
       let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
-      <<
+      << 
       <% tys |> arg hasindex i1 fromindex 1 => '#define <%rettype%>_<%i1%> targTest2<%i1%>' ; separator="\n" %>
-      typedef struct <%rettype%>_s
+      typedef struct <%rettype%>_s 
       {
         <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcTypeShort(ty)%> targTest1<%i1%>;' ; separator="\n" %> 
       } <%rettype%>;
@@ -1169,7 +1273,8 @@ template varType1(Variable var)
 ::=
 match var
 case var as VARIABLE(__) then
-     if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 5)
+     if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> ' else expTypeFlag(var.ty, 6)
+
 end varType1;
 
 template varType2(Variable var)
@@ -2655,6 +2760,13 @@ template MemberVariableDefine2(SimVar simVar, String arrayName)
 ::=
  
 match simVar
+    
+   
+    /*case SIMVAR(arrayCref=NONE()) then
+       << 
+       <%variableType(type_)%> <%cref(name)%>;
+       >>
+    */
       case SIMVAR(numArrayElement={}) then
       <<
       <%variableType(type_)%> <%cref(name)%>;
@@ -2672,6 +2784,14 @@ match simVar
       <<
       multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
       >>
+   /*special case for varibales that marked as array but are not arrays */
+    case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims case "0" then  '<%varType%> <%varName%>;' 
+  
+   
 end MemberVariableDefine2;
 
 
@@ -2827,7 +2947,7 @@ template arraycref(ComponentRef cr)
 end arraycref;
 
 
-template arraycref2(ComponentRef cr, Text &dims)
+template arraycref2(ComponentRef cr, Text& dims)
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
@@ -2862,7 +2982,7 @@ template boostextentDims(ComponentRef cr, list<String> arraydims)
   else "CREF_NOT_IDENT_OR_QUAL"
 end boostextentDims;
 
-template crefToCStrForArray(ComponentRef cr, Text &dims)
+template crefToCStrForArray(ComponentRef cr, Text& dims)
 ::=
   match cr
   case CREF_IDENT(__) then 
@@ -3403,9 +3523,11 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     // we want the "modelica type"
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       '<%expTypeShort(ty)%>'
+    else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then 
+      '<%underscorePath(rname)%>Type'
     else match ty case T_COMPLEX(__) then
-      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
-    else
+      '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+     else
       '<%expTypeShort(ty)%>'
   case 3 then
     // we want the "array type"
@@ -3460,7 +3582,7 @@ template expTypeShort(DAE.Type type)
   case T_ARRAY(__)       then expTypeShort(ty)   
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
-  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'  
+  case T_COMPLEX(__)     then 'complex'  
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
@@ -4111,15 +4233,11 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as REDUCTION(__)       then "Reduction not supported yet"
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case e as SHARED_LITERAL(__)  then ""
+  case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   else "ErrorExp"
 end daeExp;
 
-template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
- "Generates code for a match expression."
-::=
-match exp case exp as SHARED_LITERAL(__) then '"_OMC_LIT<%exp.index%>"'
-end daeExpSharedLiteral;
+
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)
@@ -4397,7 +4515,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
    // let typeStr = expTypeShort(attr.ty )
    let typeStr ="double"
     let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = division(<%argStr%>,"division by zero");<%\n%>'
+    let &preExp += '<%retVar%> = division(<%argStr%>);<%\n%>'
     '<%retVar%>'              
   
   case CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR"),
@@ -4685,7 +4803,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     '<%tvar%>'
   
-  case exp as CALL(attr=attr as CALL_ATTR(__)) then
+  case exp as CALL(attr=attr as CALL_ATTR(ty=ty)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>RetType'
@@ -4700,7 +4818,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
       // non tuple calls (single return value)
       case CALL(attr=CALL_ATTR(tuple_=false)) then
-       if attr.builtin then '<%retVar%>' else 'get<0>(<%retVar%>)'
+       if attr.builtin then '<%retVar%>' else  match ty case T_COMPLEX(__) then'(<%retVar%>)' else 'get<0>(<%retVar%>)'
       // tuple calls (multiple return values)
       case CALL(attr=CALL_ATTR(tuple_=true)) then
         '<%retVar%>'
@@ -4915,7 +5033,7 @@ case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls,simCode) 
              ;separator=", "
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-  let ret_type = '<%record_type_name%>RetType'
+  let ret_type = '<%record_type_name%>'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%ret_var%> = _functions.<%record_type_name%>(<%vars%>);<%\n%>'
   '<%ret_var%>'
@@ -5667,6 +5785,66 @@ template timeEventCondition(list<SampleCondition> sampleConditions,Text &varDecl
     <%timeEventConditionCode%>
   >>
 end timeEventCondition;
+
+template literalExpConst(Exp lit, Integer index) "These should all be declared static X const"
+::=
+  let name = '_OMC_LIT<%index%>'
+  let tmp = '_OMC_LIT_STRUCT<%index%>'
+  let meta = 'static modelica_metatype const <%name%>'
+
+  match lit
+  case SCONST(__) then
+  
+      <<
+       string <%name%>;
+      >>
+  case lit as MATRIX(ty=ty as T_ARRAY(__))
+  case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+   
+    <<
+     multi_array<<%expTypeShort(ty)%>,<%listLength(ty.dims)%>> <%name%>;
+    >>
+  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+end literalExpConst;
+template literalExpConstArrayVal(Exp lit)
+::=
+  match lit
+  case ICONST(__) then integer
+  case lit as BCONST(__) then if lit.bool then 1 else 0
+  case RCONST(__) then real
+  case ENUM_LITERAL(__) then index
+  case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
+  else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
+end literalExpConstArrayVal;
+
+template literalExpConstImpl(Exp lit, Integer index) "These should all be declared static X const"
+::=
+  let name = '_OMC_LIT<%index%>'
+  let tmp = '_OMC_LIT_STRUCT<%index%>'
+  let meta = 'static modelica_metatype const <%name%>'
+
+  match lit
+  case SCONST(__) then
+    let escstr = Util.escapeModelicaStringToCString(string)
+      <<
+        <%name%> = "<%escstr%>";
+      >>
+  case lit as MATRIX(ty=ty as T_ARRAY(__))
+  case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+    let ndim = listLength(ty.dims)
+    let arrayTypeStr = expTypeShort(ty)
+    let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
+    let instDimsInit = (ty.dims |> exp =>
+     dimension(exp);separator="][") 
+    let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
+    <<
+      <%name%>.resize((boost::extents[<%instDimsInit%>]));
+      <%name%>.reindex(1);
+      <%arrayTypeStr%> <%name%>_data[]={<%data%>};
+       <%name%>.assign(<%name%>_data,<%name%>_data+<%listLength(flattenArrayExpToList(lit))%>);
+    >>
+  else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
+end literalExpConstImpl;
 
 
 template timeEventcondition(list<SampleCondition> sampleConditions,Text &varDecls /*BUFP*/,SimCode simCode)
