@@ -1798,6 +1798,24 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,env,"isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isOperator(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+    
+    case (cache,env,"isOperatorRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isOperatorRecord(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+    
+    case (cache,env,"isOperatorFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isOperatorFunction(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+    
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         Print.clearBuf();

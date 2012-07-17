@@ -2319,6 +2319,39 @@ annotation(
   preferredView="text");
 end isModel;
 
+function isOperator
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction operator.
+</html>"),
+  preferredView="text");
+end isOperator;
+
+function isOperatorRecord
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction \"operator record\".
+</html>"),
+  preferredView="text");
+end isOperatorRecord;
+
+function isOperatorFunction
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction \"operator function\".
+</html>"),
+  preferredView="text");
+end isOperatorFunction;
+
 function setInitXmlStartValue
   input String fileName;
   input String variableName;

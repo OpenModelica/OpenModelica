@@ -8686,6 +8686,66 @@ algorithm
   end matchcontinue;
 end isModel;
 
+public function isOperator
+"function: isOperator
+   This function takes a component reference and a program.
+   It returns true if the refrenced class has the restriction
+   \"operator\", otherwise it returns false."
+  input Absyn.Path path;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (path,inProgram)
+    local
+      Absyn.Program p;
+    case (path,p)
+      equation
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR(),_,_) = getPathedClassInProgram(path, p);
+      then true;
+    else false;
+  end matchcontinue;
+end isOperator;
+
+public function isOperatorRecord
+"function: isOperatorRecord
+   This function takes a component reference and a program.
+   It returns true if the refrenced class has the restriction
+   \"operator record\", otherwise it returns false."
+  input Absyn.Path path;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (path,inProgram)
+    local
+      Absyn.Program p;
+    case (path,p)
+      equation
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR_RECORD(),_,_) = getPathedClassInProgram(path, p);
+      then true;
+    else false;
+  end matchcontinue;
+end isOperatorRecord;
+
+public function isOperatorFunction
+"function: isOperatorFunction
+   This function takes a component reference and a program.
+   It returns true if the refrenced class has the restriction
+   \"operator function\", otherwise it returns false."
+  input Absyn.Path path;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (path,inProgram)
+    local
+      Absyn.Program p;
+    case (path,p)
+      equation
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()),_,_) = getPathedClassInProgram(path, p);
+      then true;
+    else false;
+  end matchcontinue;
+end isOperatorFunction;
+
 protected function isRecord
 "function: isRecord
    This function takes a component reference and a program.
