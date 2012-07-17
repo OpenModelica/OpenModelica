@@ -1830,4 +1830,14 @@ algorithm
   end match;
 end isWhenEquation;
 
+public function isArrayEquation
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.ARRAY_EQUATION(source=_) then true;
+    else then false;
+  end match;
+end isArrayEquation;
+
 end BackendEquation;

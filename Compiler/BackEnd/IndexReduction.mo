@@ -423,7 +423,7 @@ algorithm
         //m = arrayUpdate(m,e,{i,e1});  
         exp1 = Debug.bcallret1(negate, Expression.negate, exp1, exp1);
         exp2 = Derive.differentiateExpTime(exp1, (v1,ishared));
-        ((exp2,(so,v1))) = BackendDAETransform.replaceStateOrderExp((exp2,(inStateOrd,v1)));
+        ((exp2,so)) = BackendDAETransform.replaceStateOrderExp((exp2,inStateOrd));
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqnslst,arrayGet,imapIncRowEqn);
         eqns1 = List.unique(eqns1);        
@@ -505,7 +505,7 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
-        (eqn_1,(so,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, BackendDAETransform.replaceStateOrderExp,(inStateOrd,v)); 
+        (eqn_1,so) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, BackendDAETransform.replaceStateOrderExp,inStateOrd); 
         eqnss = BackendDAEUtil.equationArraySize(eqns);
         (eqn_1,(v1,eqns,so,ilst,_,_,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,changeDerVariablestoStates,(v,eqns,inStateOrd,{},e,imapIncRowEqn,mt));
         eqnss1 = BackendDAEUtil.equationArraySize(eqns);
@@ -2881,6 +2881,7 @@ algorithm
       list<Integer> eqnsids;
       Integer neqns;
       array<Integer> vec1,vec2,vec3,mapIncRowEqn;
+//    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);

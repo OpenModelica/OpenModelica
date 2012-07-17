@@ -1281,6 +1281,19 @@ algorithm
   end match;
 end isVarConnector;
 
+public function isFlowVar
+"function: isFlowVar
+  Returns true for flow variables, false otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    case BackendDAE.VAR(flowPrefix = DAE.FLOW()) then true;
+    else then false;
+  end matchcontinue;
+end isFlowVar;
+
 public function varIndexComparer
   input BackendDAE.Var lhs;
   input BackendDAE.Var rhs;

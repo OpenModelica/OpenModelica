@@ -2306,11 +2306,11 @@ end printStateOrderStr;
 public function replaceStateOrderExp
 "function: replaceStateExp
   author: Frenkel TUD 2011-05"
-  input tuple<DAE.Exp,tuple<BackendDAE.StateOrder,BackendDAE.Variables>> inTpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.StateOrder,BackendDAE.Variables>> outTpl;
+  input tuple<DAE.Exp,BackendDAE.StateOrder> inTpl;
+  output tuple<DAE.Exp,BackendDAE.StateOrder> outTpl;
 protected
   DAE.Exp e;
-  tuple<BackendDAE.StateOrder,BackendDAE.Variables> so;
+  BackendDAE.StateOrder so;
 algorithm
   (e,so) := inTpl;
   outTpl := Expression.traverseExp(e,replaceStateOrderExpFinder,so);
@@ -2319,23 +2319,31 @@ end replaceStateOrderExp;
 protected function replaceStateOrderExpFinder
 "function: replaceStateOrderExpFinder
   author: Frenkel TUD 2011-05 "
-  input tuple<DAE.Exp,tuple<BackendDAE.StateOrder,BackendDAE.Variables>> inExp;
-  output tuple<DAE.Exp,tuple<BackendDAE.StateOrder,BackendDAE.Variables>> outExp;
+  input tuple<DAE.Exp,BackendDAE.StateOrder> inExp;
+  output tuple<DAE.Exp,BackendDAE.StateOrder> outExp;
 algorithm
   (outExp) := matchcontinue (inExp)
     local
       DAE.Exp e;
       BackendDAE.StateOrder so;
       DAE.ComponentRef dcr,cr;
-      BackendDAE.Variables v;
       DAE.CallAttributes attr;
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(so,v)))
+      String ident;
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),so))
       equation
         dcr = getStateOrder(cr,so);
-//        true = BackendVariable.isState(dcr,v);
         e = Expression.crefExp(dcr);
       then
-        ((e, (so,v)));
+        ((e,so));
+        
+     case ((DAE.CREF(componentRef = DAE.CREF_QUAL(ident=ident,subscriptLst={},componentRef=cr)),so))
+      equation
+        true = stringEq(ident,DAE.derivativeNamePrefix);
+        dcr = getStateOrder(cr,so);
+        e = Expression.crefExp(dcr);
+      then
+        ((e,so));        
+        
      else then (inExp);
   end matchcontinue;
 end replaceStateOrderExpFinder;
@@ -2999,7 +3007,6 @@ algorithm
   (osyst,oshared):=
   matchcontinue (inExp1,inExp2,isyst,ishared,inIntegerLst6)
     local
-      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn,eqn_1;
@@ -3019,7 +3026,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;      
+      BackendDAE.Shared shared;  
       
     case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),ie,seqns,constrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs),{})
       equation
@@ -4311,7 +4318,7 @@ algorithm
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n to \n");
-        (eqn_1,(so,_)) = traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,(inStateOrd,v));
+        (eqn_1,so) = traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,inStateOrd);
         // print(BackendDump.equationStr(eqn_1) +& "\n");
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));
         eqns_1 = BackendEquation.equationAdd(eqn_1,eqns);

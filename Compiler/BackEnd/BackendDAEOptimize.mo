@@ -285,6 +285,82 @@ end lateInlineFunction;
 /* 
  * remove simply equations stuff
  */
+/*
+public function removeSimpleEquationsFastPastNew
+"function removeSimpleEquationsFastPast"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
+protected
+  BackendVarTransform.VariableReplacements repl,repl1;
+algorithm
+  repl := BackendVarTransform.emptyReplacements();
+  (outDAE,(repl1,outRunMatching)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsFast1New,(repl,false));
+  outDAE := removeSimpleEquationsShared(outRunMatching,outDAE,repl1);
+  outDAE := BackendDAEUtil.mapEqSystem(outDAE,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
+  // until remove simple equations does not update assignments and comps  
+end removeSimpleEquationsFastPastNew;
+
+public function removeSimpleEquationsFastNew
+"function: removeSimpleEquationsFast
+  autor: Frenkel TUD 2012-03
+  This function moves simple equations on the form a=b and a=const and a=f(not time)
+  in BackendDAE.BackendDAE to get speed up. The functions traverses the equation system
+  only once and does not jump back if a simple equation is found, hence not alle simple
+  equations will be detected."
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE odae;
+protected
+  BackendVarTransform.VariableReplacements repl,repl1;
+  Boolean b;
+algorithm
+  repl := BackendVarTransform.emptyReplacements();
+  (odae,(repl1,b)) := BackendDAEUtil.mapEqSystemAndFold(dae,removeSimpleEquationsFast1New,(repl,false));
+  odae := removeSimpleEquationsShared(b,odae,repl1);
+end removeSimpleEquationsFastNew;
+
+protected function removeSimpleEquationsFast1New
+"function: removeSimpleEquationsFast1
+  autor: Frenkel TUD 2012-03
+  This function moves simple equations on the form a=b and a=const and a=f(not time)
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.EqSystem isyst; 
+  input tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean>> sharedOptimized;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean>> osharedOptimized;
+algorithm
+  (osyst,osharedOptimized):=
+  match (isyst,sharedOptimized)
+    local
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.BinTree movedVars,movedAVars;
+      list<Integer> meqns,deqns;
+      Boolean b,b1;
+      BackendDAE.Shared shared;
+      HashTable2.HashTable derrepl,derrepl1;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.Equation> eqnslst;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(repl,b1)))
+      equation
+        derrepl = HashTable2.emptyHashTable();
+        // check equations
+       (eqnslst,shared,repl,derrepl,   = BackendEquation.traverseBackendDAEEqns(eqns, removeSimpleEquationsFastFinderNew, ())
+       eqn = BackendDAEUtil.
+       
+
+        ((syst,shared,repl_1,derrepl1,deqns,movedVars,movedAVars,meqns,b)) = 
+          traverseEquations(1,n,removeSimpleEquationsFastFinder,
+            (syst,shared,repl,derrepl,{},BackendDAE.emptyBintree,BackendDAE.emptyBintree,{},false));       
+        // replace der(x)=dx 
+        // replace vars in arrayeqns and algorithms, move vars to knvars and aliasvars, remove eqns
+      then (BackendDAE.EQSYSTEM(vars,eqns,NONE,NONE,BackendDAE.NO_MATCHING()),(shared,(repl,b or b1)));
+  end match;
+end removeSimpleEquationsFast1New;
+
+*/
+
 
 public function removeSimpleEquationsFastPast
 "function removeSimpleEquationsFastPast"
