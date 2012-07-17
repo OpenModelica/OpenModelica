@@ -667,7 +667,11 @@ end functionBodyRecordConstructor;
 template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."
 ::=
-match exp case exp as SHARED_LITERAL(__) then '_functions._OMC_LIT<%exp.index%>'
+match exp case exp as SHARED_LITERAL(__) then 
+ match context case FUNCTION_CONTEXT(__) then
+ ' _OMC_LIT<%exp.index%>'
+ else
+'_functions._OMC_LIT<%exp.index%>'
 end daeExpSharedLiteral;
 
 
@@ -2735,7 +2739,12 @@ match simVar
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
       multi_array<<%variableType(type_)%>,<%listLength(numArrayElement)%>> <%arraycref(name)%>;
-      >>   
+      >>
+       case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims case "0" then  '<%varType%>& <%varName%>;'    
 end MemberVariableDefine;
 
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
@@ -2753,6 +2762,11 @@ match simVar
       <<
       multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
       >>
+       case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims case "0" then  '<%varType%>& <%pre%><%varName%>'
 end MemberVariableDefineReference;
 
 
@@ -2807,7 +2821,12 @@ match simVar
       '<%arraycref(name)%>(_<%arraycref(name)%>)'
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
-      '<%arraycref(name)%>( _<%arraycref(name)%>)'  
+      '<%arraycref(name)%>( _<%arraycref(name)%>)'
+    /*special case for varibales that marked as array but are not arrays */   
+      case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      match dims case "0" then  '<%varName%>(_<%varName%>)'    
 end InitAlgloopParam;
 
 template CallAlgloopParam(SimVar simVar)
@@ -2822,7 +2841,14 @@ match simVar
       '<%arraycref(name)%>'
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
-      '<%arraycref(name)%>'   
+      '<%arraycref(name)%>'  
+    /*special case for varibales that marked as array but are not arrays */
+    case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      match dims case "0" then  '<%varName%>' 
+    
+       
 end CallAlgloopParam;
 
 template MemberVariableDefineReference2(SimVar simVar, String arrayName,String pre)
@@ -2839,7 +2865,13 @@ match simVar
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       <<
       multi_array<<%variableType(type_)%>,<%listLength(num)%>>& <%pre%><%arraycref(name)%>
-      >>  
+      >> 
+    /*special case for varibales that marked as array but are not arrays */
+    case SIMVAR(numArrayElement=_::_) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name,dims)
+      let varType = variableType(type_)
+      match dims case "0" then  '<%varType%>& <%pre%><%varName%>'  
 end MemberVariableDefineReference2;
 
 
@@ -4314,14 +4346,16 @@ case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
 
   let arrayDim = expTypeArrayforDim(ty)
-  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+  let &tmpdecl = buffer "" /*BUFD*/
+  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
   // let scalarPrefix = if scalar then "scalar_" else ""
   //let scalarRef = if scalar then "&" else ""
   let &tmpVar = buffer ""
   let params = (array |> e =>
-    '<%daeExp(e, context, &preExp /*BUFC*/, &tmpVar /*BUFD*/,simCode)%>'
+    '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
    ;separator=", ")
    let &preExp += '
+   //tmp array 
    <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);
    <%arrayVar%>.reindex(1);
    <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
@@ -5511,45 +5545,8 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
-template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
- "Generates a for algorithm statement where range is not RANGE."
-::=
-match stmt
-case STMT_FOR(__) then
-  let iterType = expType(type_, iterIsArray)
-  let arrayType = expTypeArray(type_)
 
 
-  let stmtStr = (statementLst |> stmt => 
-    algStatement(stmt, context, &varDecls,simCode) ;separator="\n")
-  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, 
-    context, &varDecls,simCode)
-end algStmtForGeneric;
-
-template algStmtForGeneric_impl(Exp exp, Ident iterator, String type, 
-  String arrayType, Boolean iterIsArray, Text &body, Context context, Text &varDecls,SimCode simCode)
- "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
-::=
-  let iterName = contextIteratorName(iterator, context)
-  //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
-  //let tvar = tempDecl("int", &varDecls)
-  //let ivar = tempDecl(type, &varDecls)
-  let &preExp = buffer ""
-  let &tmpVar = buffer ""
-  let evar = daeExp(exp, context, &preExp, &tmpVar,simCode)
-  //let stmtStuff = if iterIsArray then
-  //    'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
-  //  else
-  //    '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
-  <<
-  <%preExp%>
-    <%type%> <%iterName%>;
-   BOOST_FOREACH( short <%iterName%>,  <%evar%> ){ 
-      <%body%> 
-    }  
-  >>
-
-end algStmtForGeneric_impl;
 
 template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
@@ -5582,35 +5579,7 @@ template edgeHelpVar(String idx) ::=
    '_event_handling.edge(_event_handling[<%idx%>],"h<%idx%>")'
 end edgeHelpVar;
 
-template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls,SimCode simCode)
- "The implementation of algStmtForRange, which is also used by daeExpReduction."
-::=
-match range
-case RANGE(__) then
-  let iterName = iterator
-  let &stopVar = buffer ""
-  let &preExp = buffer ""
-  let startValue = daeExp(start, context, &preExp, &varDecls,simCode)
-  let stopValue = daeExp(stop, context, &preExp, &varDecls,simCode)
-  let res = tempDecl(type, &varDecls /*BUFC*/)
-  match step 
-  case SOME(eo) then
-    let &stepVar = buffer "" 
-    let stepValue = daeExp(eo, context, &preExp,&varDecls,simCode)
-    <<
-    <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>) { 
-      <%body%>
-    }
-    >>
-  else //optimization for 1 step
-    <<
-    <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1) { 
-      <%body%>
-    }
-    >>
-end algStmtForRange_impl;
+
 
 
 template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
@@ -6750,10 +6719,10 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_ASSIGN_ARR(__)     then "STMT ASSIGN ARR"
   case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/,simCode)
-  case s as STMT_FOR(__)            then "STMT FOR"
+  case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_WHILE(__)          then "STMT WHILE"
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls ,simCode)
-  case s as STMT_TERMINATE(__)      then "STMT TERMINATE"
+  case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
   case s as STMT_BREAK(__)          then "STMT BREAK"
   case s as STMT_FAILURE(__)        then "STMT FAILURE"
@@ -6771,6 +6740,20 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   >>
 
 end algStatement;
+
+
+template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates an assert algorithm statement."
+::=
+match stmt
+case STMT_TERMINATE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let msgVar = daeExp(msg, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  <<
+  <%preExp%>
+  Terminate(<%msgVar%>);
+  >>
+end algStmtTerminate;
 
 template modelicaLine(Info info)
 ::=
@@ -7020,7 +7003,103 @@ case STMT_IF(__) then
 end algStmtIf;
 
 
+template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a for algorithm statement."
+::=
+  match stmt
+  case s as STMT_FOR(range=rng as RANGE(__)) then
+    algStmtForRange(s, context, &varDecls /*BUFD*/,simCode)
+  case s as STMT_FOR(__) then
+    algStmtForGeneric(s, context, &varDecls /*BUFD*/,simCode)
+end algStmtFor;
+
+template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a for algorithm statement where range is not RANGE."
+::=
+match stmt
+case STMT_FOR(__) then
+  let iterType = expType(type_, iterIsArray)
+  let arrayType = expTypeArray(type_)
+
+
+  let stmtStr = (statementLst |> stmt => 
+    algStatement(stmt, context, &varDecls,simCode) ;separator="\n")
+  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, 
+    context, &varDecls,simCode)
+end algStmtForGeneric;
 
 
 
+
+
+
+template algStmtForGeneric_impl(Exp exp, Ident iterator, String type, 
+  String arrayType, Boolean iterIsArray, Text &body, Context context, Text &varDecls,SimCode simCode)
+ "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
+::=
+  let iterName = contextIteratorName(iterator, context)
+  //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
+  //let tvar = tempDecl("int", &varDecls)
+  //let ivar = tempDecl(type, &varDecls)
+  let &preExp = buffer ""
+  let &tmpVar = buffer ""
+  let evar = daeExp(exp, context, &preExp, &tmpVar,simCode)
+  //let stmtStuff = if iterIsArray then
+  //    'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
+  //  else
+  //    '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
+  <<
+  <%preExp%>
+    <%type%> <%iterName%>;
+   BOOST_FOREACH( short <%iterName%>,  <%evar%> ){ 
+      <%body%> 
+    }  
+  >>
+
+end algStmtForGeneric_impl;
+
+template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a for algorithm statement where range is RANGE."
+::=
+match stmt
+case STMT_FOR(range=rng as RANGE(__)) then
+  let identType = expType(type_, iterIsArray)
+  let identTypeShort = expTypeShort(type_)
+  let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls,simCode)
+                 ;separator="\n")
+  algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls,simCode)
+end algStmtForRange;
+
+
+
+
+template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls,SimCode simCode)
+ "The implementation of algStmtForRange, which is also used by daeExpReduction."
+::=
+match range
+case RANGE(__) then
+  let iterName = iterator
+  let &stopVar = buffer ""
+  let &preExp = buffer ""
+  let startValue = daeExp(start, context, &preExp, &varDecls,simCode)
+  let stopValue = daeExp(stop, context, &preExp, &varDecls,simCode)
+  let res = tempDecl(type, &varDecls /*BUFC*/)
+  match step 
+  case SOME(eo) then
+    let &stepVar = buffer "" 
+    let stepValue = daeExp(eo, context, &preExp,&varDecls,simCode)
+    <<
+    <%preExp%>
+    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>) { 
+      <%body%>
+    }
+    >>
+  else //optimization for 1 step
+    <<
+    <%preExp%>
+    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1) { 
+      <%body%>
+    }
+    >>
+end algStmtForRange_impl;
 end CodegenCpp;
