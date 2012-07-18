@@ -29,6 +29,8 @@ AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
+AC_SUBST(IPOPT_LDFLAGS)
+AC_SUBST(IPOPT_CFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
@@ -44,6 +46,7 @@ AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(PYTHON_INTERFACE)
 AC_SUBST(WITH_SUNDIALS)
+AC_SUBST(WITH_IPOPT)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -148,7 +151,7 @@ rmlinc=$rmlhome/include/plain/
 
 AC_MSG_CHECKING([if the user wants RML -trace support])
 RML_TRACE=",-ftrace"
-AC_ARG_ENABLE(rml-trace,        [--enable-rml-trace[[=yes]]                RML -trace support],[test "xno" = x"$enableval" && RML_TRACE=""])
+AC_ARG_ENABLE(rml-trace,        [  --enable-rml-trace[[=yes]]         RML -trace support],[test "xno" = x"$enableval" && RML_TRACE=""])
 if test -z "$RML_TRACE" ; then
 AC_MSG_RESULT([no])
 else
@@ -171,7 +174,7 @@ fi
 
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
 OMSHELL_TERMINAL="mosh"
-AC_ARG_ENABLE(omshell-terminal, [--enable-omshell-terminal[[=yes]]         Enables compilation of OMShell-terminal],[test "xno" = x"$enableval" && OMSHELL_TERMINAL=""])
+AC_ARG_ENABLE(omshell-terminal, [  --enable-omshell-terminal[[=yes]]  Enables compilation of OMShell-terminal],[test "xno" = x"$enableval" && OMSHELL_TERMINAL=""])
 if test -z "$OMSHELL_TERMINAL" ; then
   AC_MSG_RESULT([no])
 else
@@ -179,7 +182,7 @@ else
   AC_CHECK_HEADER(readline/readline.h,,AC_MSG_ERROR([readline missing]))
   AC_CHECK_HEADER(readline/history.h,,AC_MSG_ERROR([readline missing]))
 
-  AC_ARG_WITH(static-readline,  [  --with-static-readline=DIR  (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_READLINE="$withval"],[WANT_STATIC_READLINE="no"])
+  AC_ARG_WITH(static-readline,  [  --with-static-readline=DIR       (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_READLINE="$withval"],[WANT_STATIC_READLINE="no"])
 
   if test "$WANT_STATIC_READLINE" = "no"; then
     LIBS=""
@@ -235,7 +238,7 @@ return 0;
 
 dnl check for lpsolve55
 
-AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR  (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
+AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR        (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
 
 if test "$WANT_STATIC_LPSOLVE" = "no"; then
   LIBS=""
@@ -280,7 +283,7 @@ AC_CHECK_FUNC(gethostbyname,
   AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
 ])
 
-AC_ARG_WITH(static-sqlite,  [  --with-static-sqlite=FILE  (default to dynamic linking)],[WANT_STATIC_SQLITE="$withval"],[WANT_STATIC_SQLITE="no"])
+AC_ARG_WITH(static-sqlite,  [  --with-static-sqlite=FILE        (default to dynamic linking)],[WANT_STATIC_SQLITE="$withval"],[WANT_STATIC_SQLITE="no"])
 
 LIBS=""
 AC_CHECK_LIB(sqlite3,sqlite3_libversion,[],[AC_MSG_ERROR([sqlite3 not found])])
@@ -320,12 +323,39 @@ else
 fi
 LIBS=""
 
+dnl should we use ipopt?
+
+AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initialization], 
+[
+  WANT_IPOPT="yes"
+
+  if test "$withval" = "yes"; then
+    AC_CHECK_HEADERS(/coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt -lcoinmumps"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
+  else
+    IPOPT_DIR="$withval"
+    AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt -lcoinmumps"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
+  fi
+], [
+  WANT_IPOPT="no"
+  NO_IPOPT="yes"
+])
+
+if ! test "$NO_IPOPT" = "yes"; then
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
+  WITH_IPOPT="#define WITH_IPOPT"
+else
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: No"
+  WITH_IPOPT="/* Without IPOPT */"
+  IPOPT_CFLAGS=""
+  IPOPT_LDFLAGS=""
+fi
+
 dnl should we use corba?
 
 WANT_ORBIT2="no"
 WANT_MICO="no"
-AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
-AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR (recommended CORBA implementation)],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
+AC_ARG_WITH(MICO, [  --with-MICO=DIR                  use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
+AC_ARG_WITH(omniORB, [  --with-omniORB=DIR               use omniORB installed in DIR (recommended CORBA implementation)],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
 
 if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
@@ -333,7 +363,7 @@ if test ! "$WANT_MICO" = "no"; then
     IDLCMD="idl";
   else
     MICO="$WANT_MICO/bin/mico-config";
-   IDLCMD="$WANT_MICO/bin/idl";
+    IDLCMD="$WANT_MICO/bin/idl";
   fi
   if test "$USE_CORBA" = "no"; then
     AC_MSG_ERROR([failed to find mico-corba])
@@ -407,7 +437,7 @@ AC_MSG_CHECKING([for CORBA]);
 AC_MSG_RESULT([$DESIRED_CORBA]);
 
 AC_MSG_CHECKING([if the user wants to use the Python interface])
-AC_ARG_ENABLE(python-interface, [--enable-python-interface               Python interface to omc. Enabled by default if omniORB is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
+AC_ARG_ENABLE(python-interface, [  --enable-python-interface        Python interface to omc. Enabled by default if omniORB is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
 if test -z "$PYTHON_INTERFACE" ; then
 AC_MSG_RESULT([no])
 else
@@ -438,7 +468,7 @@ fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qwt])
-  AC_ARG_WITH(qwt, [  --with-qwt        Compile plotting libraries using qwt5. Default searches PREFIX/include/{qwt5,qwt,qwt-qt4}], [], [with_qwt=yes])
+  AC_ARG_WITH(qwt, [  --with-qwt                       Compile plotting libraries using qwt5. Default searches PREFIX/include/{qwt5,qwt,qwt-qt4}], [], [with_qwt=yes])
 
   if test x"$with_qwt" = "xyes"; then
     with_qwt_checked=""
@@ -465,7 +495,7 @@ fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for paradisEO])
-  AC_ARG_WITH(paradiseo, [  --with-paradiseo        Required for OMOptim. Default searches {PREFIX,/usr,/opt} for {include,lib}/paradiseo], [], [with_paradiseo=yes])
+  AC_ARG_WITH(paradiseo, [  --with-paradiseo                 Required for OMOptim. Default searches {PREFIX,/usr,/opt} for {include,lib}/paradiseo], [], [with_paradiseo=yes])
 
   if test -f "$with_paradiseo/paradiseo-eo/src/eo"; then
     # User used a local paradiseo installation
@@ -512,14 +542,14 @@ fi
 
 dnl should we compile modpar
 
-AC_ARG_WITH(MODPAR, [  --with-MODPAR        Compile with automatic parallelization, requires boost],
+AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
 [
 	USE_MODPAR="-DUSE_MODPAR"
 ], [
 AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
-AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
+AC_ARG_WITH(BOOST, [  --with-BOOST=DIR                 With BOOST library in DIR],
 [
 	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
 	  AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);

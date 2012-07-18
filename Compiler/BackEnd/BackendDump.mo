@@ -377,7 +377,7 @@ public function dumpBackendDAEEqnList
   input String header;
   input Boolean printExpTree;
 algorithm
-   print(header);
+   print(header +& "\n");
    dumpBackendDAEEqnList2(inBackendDAEEqnList,printExpTree);
    print("===================\n");
 end dumpBackendDAEEqnList;
@@ -397,98 +397,110 @@ algorithm
       DAE.ElementSource source;
       DAE.Algorithm alg;
 
-     case ({},_) then ();
-     case (BackendDAE.EQUATION(e1,e2,source)::res,printExpTree) /* header */
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("EQUATION: ");
-        str = ExpressionDump.printExpStr(e1);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e1,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source)::res,printExpTree) /* header */
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("COMPLEX_EQUATION: ");
-        str = ExpressionDump.printExpStr(e1);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e1,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-    case (BackendDAE.SOLVED_EQUATION(_,e,source)::res,printExpTree)
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("SOLVED_EQUATION: ");
-        str = ExpressionDump.printExpStr(e);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-    case (BackendDAE.RESIDUAL_EQUATION(e,source)::res,printExpTree)
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("RESIDUAL_EQUATION: ");
-        str = ExpressionDump.printExpStr(e);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,printExpTree)
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("ARRAY_EQUATION: ");
-        str = ExpressionDump.printExpStr(e1);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e1,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-     case (BackendDAE.ALGORITHM(alg=alg,source=source)::res,printExpTree)
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("ALGORITHM: ");
-        dumpAlgorithms({alg},0);
-        print("\n");
-      then
-        ();
-     case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source)::res,printExpTree)
-      equation
-        dumpBackendDAEEqnList2(res,printExpTree);
-        print("WHEN_EQUATION: ");
-        str = ExpressionDump.printExpStr(e);
-        print(str);
-        print("\n");
-        str = ExpressionDump.dumpExpStr(e,0);
-        str = Util.if_(printExpTree,str,"");
-        print(str);
-        print("\n");
-      then
-        ();
-     case (_::res,printExpTree)
-      equation
-      then ();
+    case ({}, _) then ();
+    case (BackendDAE.EQUATION(e1, e2, source)::res, printExpTree) equation /*done*/
+      str = "EQUATION: ";
+      str = str +& ExpressionDump.printExpStr(e1);
+      str = str +& " = ";
+      str = str +& ExpressionDump.printExpStr(e2);
+      str = str +& "\n";
+      print(str);
+      
+      str = "LHS:\n";
+      str = str +& ExpressionDump.dumpExpStr(e1, 0);
+      str = str +& "RHS:\n";
+      str = str +& ExpressionDump.dumpExpStr(e2, 0);
+      str = str +& "\n";
+      str = Util.if_(printExpTree, str, "");
+      print(str);
+      
+      dumpBackendDAEEqnList2(res, printExpTree);
+    then ();
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source)::res, printExpTree) equation /*done*/
+      str = "COMPLEX_EQUATION: ";
+      str = str +& ExpressionDump.printExpStr(e1);
+      str = str +& " = ";
+      str = str +& ExpressionDump.printExpStr(e2);
+      str = str +& "\n";
+      print(str);
+      
+      str = "LHS:\n";
+      str = str +& ExpressionDump.dumpExpStr(e1, 0);
+      str = str +& "RHS:\n";
+      str = str +& ExpressionDump.dumpExpStr(e2, 0);
+      str = str +& "\n";
+      str = Util.if_(printExpTree, str, "");
+      print(str);
+      
+      dumpBackendDAEEqnList2(res,printExpTree);
+    then ();
+    case (BackendDAE.SOLVED_EQUATION(_, e, source)::res,printExpTree) equation
+      print("SOLVED_EQUATION: ");
+      str = ExpressionDump.printExpStr(e);
+      print(str);
+      print("\n");
+      str = ExpressionDump.dumpExpStr(e,0);
+      str = Util.if_(printExpTree,str,"");
+      print(str);
+      print("\n");
+      dumpBackendDAEEqnList2(res,printExpTree);
+    then ();
+    case (BackendDAE.RESIDUAL_EQUATION(e, source)::res, printExpTree) equation /*done*/
+      str = "RESIDUAL_EQUATION: ";
+      str = str +& ExpressionDump.printExpStr(e);
+      str = str +& "\n";
+      print(str);
+      
+      str = ExpressionDump.dumpExpStr(e, 0);
+      str = str +& "\n";
+      str = Util.if_(printExpTree, str, "");
+      print(str);
+      
+      dumpBackendDAEEqnList2(res, printExpTree);
+    then ();
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,printExpTree) equation
+      print("ARRAY_EQUATION: ");
+      str = ExpressionDump.printExpStr(e1);
+      print(str);
+      print("\n");
+      str = ExpressionDump.dumpExpStr(e1,0);
+      str = Util.if_(printExpTree,str,"");
+      print(str);
+      print("\n");
+      dumpBackendDAEEqnList2(res,printExpTree);
+    then ();
+    case (BackendDAE.ALGORITHM(alg=alg,source=source)::res,printExpTree) equation
+      print("ALGORITHM: ");
+      dumpAlgorithms({alg},0);
+      print("\n");
+      dumpBackendDAEEqnList2(res,printExpTree);
+    then ();
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source)::res, printExpTree) equation
+      print("WHEN_EQUATION: ");
+      str = ExpressionDump.printExpStr(e);
+      print(str);
+      print("\n");
+      str = ExpressionDump.dumpExpStr(e,0);
+      str = Util.if_(printExpTree,str,"");
+      print(str);
+      print("\n");
+      dumpBackendDAEEqnList2(res,printExpTree);
+    then ();
+    case (_::res, printExpTree) equation
+      print("SKIPED EQUATION\n");
+      dumpBackendDAEEqnList2(res, printExpTree);
+    then ();
   end matchcontinue;
 end dumpBackendDAEEqnList2;
+
+public function dumpBackendDAEVarList
+  input list<BackendDAE.Var> inBackendDAEVarList;
+  input String header;
+algorithm
+   print(header +& "\n");
+   dumpVars(inBackendDAEVarList);
+   print("===================\n");
+end dumpBackendDAEVarList;
 
 public function dumpZcStr1 ""
   input list<BackendDAE.ZeroCrossing> zero_crossings;

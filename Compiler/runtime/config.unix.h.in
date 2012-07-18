@@ -1,6 +1,6 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
-#define LDFLAGS_RT "@RT_LDFLAGS@ @SUNDIALS_LDFLAGS@ -lpthread"
+#define LDFLAGS_RT "@RT_LDFLAGS@ @SUNDIALS_LDFLAGS@ @IPOPT_LDFLAGS@ -lpthread"
 #define CONFIG_EXE_EXT ""
 #define CONFIG_DLL_EXT ".so"
 #define CONFIG_PLATFORM "Unix"
@@ -45,5 +45,6 @@
 #define CONFIG_REVISION "@SOURCE_REVISION@"
 
 @WITH_SUNDIALS@
+@WITH_IPOPT@
 
 #define CONFIG_SYSTEMLIBS mk_cons(mk_scon("-lomcruntime"),mk_cons(mk_scon("-lexpat"),mk_cons(mk_scon("-lsqlite3"),mk_cons(mk_scon(CONFIG_LPSOLVE55),mk_cons(mk_scon(CONFIG_CORBALIBS),mk_nil())))))

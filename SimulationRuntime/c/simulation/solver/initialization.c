@@ -33,10 +33,11 @@
 
 #include "initialization.h"
 
-#include "kinsol_initialization.h"
-#include "nelderMeadEx_initialization.h"
-#include "newuoa_initialization.h"
 #include "simplex_initialization.h"
+#include "newuoa_initialization.h"
+#include "nelderMeadEx_initialization.h"
+#include "kinsol_initialization.h"
+#include "ipopt_initialization.h"
 
 #include "simulation_data.h"
 #include "omc_error.h"
@@ -78,32 +79,35 @@ const char *initMethodDescStr[IIM_MAX] = {
 enum INIT_OPTI_METHOD
 {
   IOM_UNKNOWN = 0,
-  IOM_NELDER_MEAD_EX,
-  IOM_NELDER_MEAD_EX2,
   IOM_SIMPLEX,
   IOM_NEWUOA,
+  IOM_NELDER_MEAD_EX,
+  IOM_NELDER_MEAD_EX2,
   IOM_KINSOL,
   IOM_KINSOL_SCALED,
+  IOM_IPOPT,
   IOM_MAX
 };
 
 const char *optiMethodStr[IOM_MAX] = {
   "unknown",
-  "nelder_mead_ex",
-  "nelder_mead_ex2",
   "simplex",
   "newuoa",
+  "nelder_mead_ex",
+  "nelder_mead_ex2",
   "kinsol",
-  "kinsol_scaled"
+  "kinsol_scaled",
+  "ipopt"
 };
 const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
-  "with global homotopy",
-  "without global homotopy",
-  "",
-  "brent's method",
+  "Nelder-Mead method",
+  "Brent's method",
+  "Nelder-Mead method with global homotopy",
+  "Nelder-Mead method without global homotopy",
   "sundials/kinsol",
-  "sundials/kinsol with scaling"
+  "sundials/kinsol with scaling",
+  "Interior Point OPTimizer"
 };
 
 /*! \fn leastSquareWithLambda
@@ -337,18 +341,20 @@ static int initialize(DATA *data, int optiMethod)
     */
   }
 
-  if(optiMethod == IOM_NELDER_MEAD_EX)
-    retVal = nelderMeadEx_initialization(data, initData, 0.0);
-  else if(optiMethod == IOM_NELDER_MEAD_EX2)
-    retVal = nelderMeadEx_initialization(data, initData, 1.0);
-  else if(optiMethod == IOM_SIMPLEX)
+  if(optiMethod == IOM_SIMPLEX)
     retVal = simplex_initialization(data, initData);
   else if(optiMethod == IOM_NEWUOA)
     retVal = newuoa_initialization(data, initData);
+  else if(optiMethod == IOM_NELDER_MEAD_EX)
+    retVal = nelderMeadEx_initialization(data, initData, 0.0);
+  else if(optiMethod == IOM_NELDER_MEAD_EX2)
+    retVal = nelderMeadEx_initialization(data, initData, 1.0);
   else if(optiMethod == IOM_KINSOL)
     retVal = kinsol_initialization(data, initData, 0);
   else if(optiMethod == IOM_KINSOL_SCALED)
     retVal = kinsol_initialization(data, initData, 1);
+  else if(optiMethod == IOM_IPOPT)
+    retVal = ipopt_initialization(data, initData, 0);
   else
     THROW("unsupported option -iom");
 

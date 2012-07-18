@@ -353,6 +353,8 @@ constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(95, "dumpderrepl",
   "Enables dumping of selected states. Works only in combination with backenddaeinfo.");
 constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(96, "dumpeqninorder",
   "Enables dumping of the equations in the order they are calculated");
+constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(97, "symbolicInitialization",
+  "Enables using of symbolic matrices for initialization (ipopt only)");
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -455,7 +457,8 @@ constant list<DebugFlag> allDebugFlags = {
   GEN_DEBUG_SYMBOLS,
   DUMP_STATESELECTION_INFO,
   DUMP_DERREPL,
-  DUMP_EQNINORDER
+  DUMP_EQNINORDER,
+  SYMBOLIC_INITIALIZATION
 };
 
 // CONFIGURATION FLAGS

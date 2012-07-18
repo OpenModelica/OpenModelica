@@ -127,8 +127,7 @@ end varEqual;
 
 
 
-public function setVarFixed
-"function: setVarFixed
+public function setVarFixed "function setVarFixed
   author: PA
   Sets the fixed attribute of a variable."
   input BackendDAE.Var inVar;
@@ -1422,25 +1421,20 @@ algorithm
   end matchcontinue;
 end isInput;
 
-
-/* NOT USED */
-public function isOutputVar
-"function: isOutputVar
+public function isOutputVar "function: isOutputVar
   Return true if variable is declared as output. Note that the output
   attribute sticks with a variable even if it is originating from a sub
   component, which is not the case for Dymola."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
+  outBoolean := matchcontinue (inVar)
     case (BackendDAE.VAR(varDirection = DAE.OUTPUT())) then true;
     case (_) then false;
   end matchcontinue;
 end isOutputVar;
 
-public function createpDerVar
-"function creatVarpDerCVar
+public function createpDerVar "function createpDerVar
   author: wbraun
   Create variable with $pDER.v as cref for jacobian variables."
   input BackendDAE.Var inVar;
@@ -1496,6 +1490,31 @@ algorithm
       BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); 
   end match;
 end copyVarNewName;
+
+public function setVarsKind "function: setVarsKind
+  author: lochel
+  This function sets the BackendDAE.VarKind of a variable-list."
+  input list<BackendDAE.Var> inVars;
+  input BackendDAE.VarKind inVarKind;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  outVars := matchcontinue(inVars, inVarKind)
+    local
+      BackendDAE.Var var;
+      list<BackendDAE.Var> restVars;
+      BackendDAE.VarKind varKind;
+      BackendDAE.Var out;
+      list<BackendDAE.Var> restOut;
+      
+    case(var::restVars, varKind)
+    then {};
+      
+    case(var::restVars, varKind) equation
+      out = setVarKind(var, varKind);
+      restOut = setVarsKind(restVars, varKind);
+    then out::restOut;
+  end matchcontinue;
+end setVarsKind;
 
 public function setVarKind
 "function setVarKind
@@ -1683,8 +1702,23 @@ algorithm
   end match;
 end setBindValue;
 
-public function setVarDirection
-"function setVarDirection
+public function setVarDirectionTpl "function setVarDirectionTpl
+  author: "
+  input tuple<BackendDAE.Var, DAE.VarDirection> inTpl;
+  output tuple<BackendDAE.Var, DAE.VarDirection> outTpl;
+algorithm 
+  outTpl  := match(inTpl)
+    local
+      BackendDAE.Var var;
+      DAE.VarDirection dir;
+      
+    case((var, dir)) equation
+      var = setVarDirection(var, dir);
+    then ((var, dir));
+  end match;
+end setVarDirectionTpl;
+
+public function setVarDirection "function setVarDirection
   author: Frenkel TUD 17-03-11
   Sets the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
@@ -1728,8 +1762,7 @@ algorithm
   end match;
 end setVarDirection;
 
-public function getVarDirection
-"function getVarDirection
+public function getVarDirection "function getVarDirection
   author: wbraun
   Get the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
@@ -1741,8 +1774,7 @@ algorithm
 end getVarDirection;
 
 
-public function isVarOnTopLevelAndOutput
-"function isVarOnTopLevelAndOutput
+public function isVarOnTopLevelAndOutput "function isVarOnTopLevelAndOutput
   this function checks if the provided cr is from a var that is on top model
   and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
@@ -1765,8 +1797,7 @@ algorithm
   end matchcontinue;
 end isVarOnTopLevelAndOutput;
 
-public function isVarOnTopLevelAndInput
-"function isVarOnTopLevelAndInput
+public function isVarOnTopLevelAndInput "function isVarOnTopLevelAndInput
   this function checks if the provided cr is from a var that is on top model
   and has the DAE.VarDirection = INPUT
   The check for top-model is done by spliting the name at \'.\' and
@@ -1789,8 +1820,7 @@ algorithm
   end matchcontinue;
 end isVarOnTopLevelAndInput;
 
-public function topLevelInput
-"function: topLevelInput
+public function topLevelInput "function: topLevelInput
   author: PA
   Succeds if variable is input declared at the top level of the model,
   or if it is an input in a connector instance at top level."
@@ -1854,8 +1884,7 @@ algorithm
 end topLevelOutput;
 
 
-public function isFinalVar
-"function isFinalVar
+public function isFinalVar "function isFinalVar
   author: Frenkel TUD
   Returns true if var is final."
   input BackendDAE.Var v;
@@ -1871,8 +1900,7 @@ algorithm
    end match;
 end isFinalVar;
 
-public function getVariableAttributes
-"function getVariableAttributes
+public function getVariableAttributes "function getVariableAttributes
   author: Frenkel TUD 2011-04
   returns the DAE.VariableAttributes of a variable"
   input BackendDAE.Var inVar;
@@ -1885,8 +1913,7 @@ algorithm
   end match;
 end getVariableAttributes;
 
-public function getVarSource
-"function getVarSource
+public function getVarSource "function getVarSource
   author: Frenkel TUD 2011-04
   returns the DAE.ElementSource of a variable"
   input BackendDAE.Var inVar;
@@ -1899,8 +1926,8 @@ algorithm
   end match;
 end getVarSource;
 
-public function getMinMaxAsserts
-"Author: Frenkel TUD 2011-03"
+public function getMinMaxAsserts "function getMinMaxAsserts
+  author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
@@ -1943,8 +1970,8 @@ algorithm
   end matchcontinue;
 end getMinMaxAsserts;
 
-protected function getMinMaxAsserts1
-"Author: Frenkel TUD 2011-03"
+protected function getMinMaxAsserts1 "function getMinMaxAsserts1
+  author: Frenkel TUD 2011-03"
   input list<Option<DAE.Exp>> ominmax;
   input DAE.Exp e;
   input DAE.Type tp;
@@ -1965,8 +1992,8 @@ algorithm
   end match;
 end getMinMaxAsserts1;
 
-public function getNominalAssert
-"Author: Frenkel TUD 2011-03"
+public function getNominalAssert "function getNominalAssert
+  author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
@@ -2010,12 +2037,13 @@ algorithm
 end getNominalAssert;
 
 
-public function varSortFunc "A sorting function (greatherThan) for Variables based on crefs"
+public function varSortFunc "function varSortFun
+  A sorting function (greatherThan) for Variables based on crefs"
   input BackendDAE.Var v1;
   input BackendDAE.Var v2;
   output Boolean greaterThan;
 algorithm
-  greaterThan := ComponentReference.crefSortFunc(varCref(v1),varCref(v2));
+  greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
 /* =======================================================

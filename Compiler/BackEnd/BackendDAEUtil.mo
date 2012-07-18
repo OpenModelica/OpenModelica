@@ -792,6 +792,29 @@ algorithm
   end match;
 end addBackendDAEKnVars;
 
+public function addBackendDAEEqSystem "function addBackendDAEEqSystem
+  autor: lochel
+  This function adds a EqSystem to BackendDAE."
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EqSystem inAddEqSystem;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := match(inDAE, inAddEqSystem)
+    local
+      list<BackendDAE.EqSystem> eqs;
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem addEqSystem;
+      
+    case(BackendDAE.DAE(eqs=eqs, shared=shared), addEqSystem) equation
+      eqs = listAppend(eqs, {addEqSystem});
+    then(BackendDAE.DAE(eqs, shared));
+      
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function addBackendDAEEqSystem failed"});
+    then fail();
+  end match;
+end addBackendDAEEqSystem;
+
 public function addBackendDAEFunctionTree
 " function: addBackendDAEFunctionTree
   That function replace the FunctionTree in BackendDAE.

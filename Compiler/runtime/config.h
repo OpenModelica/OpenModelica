@@ -80,7 +80,12 @@
 
 #define CONFIG_PATH_DELIMITER "/"
 #define CONFIG_GROUP_DELIMITER ";"
+
+#define CONFIG_IPOPT_INC /* Without IPOPT */
+#define CONFIG_IPOPT_LIB /* Without IPOPT */
+
 #define WITH_SUNDIALS
+/* Without IPOPT */
 
 #include "revision.h"
 
