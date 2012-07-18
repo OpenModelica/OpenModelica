@@ -3913,7 +3913,7 @@ algorithm
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
         // Algorithm for single variable.
@@ -3940,7 +3940,7 @@ algorithm
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
   end matchcontinue;
@@ -5765,7 +5765,7 @@ algorithm
         // The variables solved for and the output variables of the algorithm must be the same.
         false = List.setEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then
          fail();      
