@@ -6024,13 +6024,15 @@ end zeroCrossingOpFunc;
 template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = giveZeroFunc2(zeroCrossings, &varDecls /*BUFD*/, simCode)
+  let &prexp = buffer "" /*BUFD*/
+  let zeroCrossingsCode = giveZeroFunc2(zeroCrossings, &varDecls /*BUFD*/,prexp, simCode)
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
  void <%lastIdentOfPath(modelInfo.name)%>::giveZeroFunc(double* f)
   {
    <%varDecls%>
+   <%prexp%>
    <%zeroCrossingsCode%>
   }   
 >>
@@ -6073,17 +6075,17 @@ template saveConditions(SimCode simCode)
 >>
 end saveConditions;
 
-template giveZeroFunc2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
+template giveZeroFunc2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,Text &preExp,SimCode simCode)
 ::=
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    giveZeroFunc3(i0, relation_, &varDecls /*BUFD*/,simCode)
+    giveZeroFunc3(i0, relation_, &varDecls /*BUFD*/,&preExp,simCode)
   ;separator="\n")
 end giveZeroFunc2;
 
-template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
+template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Text &preExp ,SimCode simCode)
 ::=
- let &preExp = buffer "" /*BUFD*/
+ 
   match relation
   case rel as  RELATION(index=zerocrossingIndex) then
        let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
