@@ -5513,15 +5513,16 @@ algorithm
       DAE.Exp exp;
       Prefix.Prefix pre;
 
-    // adrpo: TODO! FIXME!
     //        this operator is not even specified in the specification!
-    //        We should implement this as said here:
     //        http://trac.modelica.org/Modelica/ticket/95
     case (cache,env,{exp0},{},impl,pre,info) /* impl */
       equation
         (cache, exp, _, _) = elabExp(cache, env, exp0, false,NONE(), false,pre,info);
       then
-        (cache, DAE.BCONST(true),DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST()));
+        (cache,
+        DAE.CALL(Absyn.IDENT("rooted"), {exp}, DAE.callAttrBuiltinBool),
+        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
+                
   end match;
 end elabBuiltinRooted;
 

@@ -58,6 +58,8 @@ encapsulated package ConnectionGraph
 public import Absyn;
 public import DAE;
 public import DAEUtil;
+public import HashTable;
+public import HashTable3;
 public import HashTableCG;
 public import Connect;
 
@@ -130,6 +132,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "Broken connections: " +& stringDelimitList(List.map(broken, printConnectionStr), ", "));
 
         elts = evalIsRoot(roots, elts);
+        elts = evalrooted(roots,graph, elts);
       then
         DAE.DAE(elts);
     // handle the connection braking
@@ -988,7 +991,7 @@ algorithm
         dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.T_INTEGER_DEFAULT, {});
         // select final roots
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
-        
+                
         // generate the graphviz representation and display
         // interpret brokenConnectsViaGraphViz and pass it to the breaking algorithm again
         brokenConnectsViaGraphViz = generateGraphViz(
@@ -1138,6 +1141,236 @@ algorithm
       then str;
   end match;
 end printPotentialRootTuple;
+
+protected function setRootDistance
+  input list<DAE.ComponentRef> finalRoots;
+  input HashTable3.HashTable table;
+  input Integer distance;
+  input list<DAE.ComponentRef> nextLevel;
+  input HashTable.HashTable irooted;
+  output HashTable.HashTable orooted;  
+algorithm
+  orooted := matchcontinue(finalRoots,table,distance,nextLevel,irooted)
+    local
+      HashTable.HashTable rooted;
+      list<DAE.ComponentRef> rest,level,next;
+      DAE.ComponentRef cr;
+    case({},_,_,{},_) then irooted;
+    case({},_,_,_,_) 
+      then 
+        setRootDistance(nextLevel,table,distance+1,{},irooted);
+    case(cr::rest,_,_,_,_)
+      equation
+        failure(_ = BaseHashTable.get(cr, irooted));
+        rooted = BaseHashTable.add((cr,distance),irooted);
+        next = BaseHashTable.get(cr, table);
+        //print("- ConnectionGraph.setRootDistance: Set Distance " +& 
+        //   ComponentReference.printComponentRefStr(cr) +& " , " +& intString(distance) +& "\n");        
+        //print("- ConnectionGraph.setRootDistance: add " +& 
+        //   stringDelimitList(List.map(next,ComponentReference.printComponentRefStr),"\n") +& " to the queue\n"); 
+        next = listAppend(nextLevel,next);       
+      then
+        setRootDistance(nextLevel,table,distance,next,irooted);
+    case(cr::rest,_,_,_,_)
+      equation
+        failure(_ = BaseHashTable.get(cr, irooted));
+        rooted = BaseHashTable.add((cr,distance),irooted);
+        //print("- ConnectionGraph.setRootDistance: Set Distance " +& 
+        //   ComponentReference.printComponentRefStr(cr) +& " , " +& intString(distance) +& "\n");        
+      then
+        setRootDistance(rest,table,distance,nextLevel,rooted);
+    case(cr::rest,_,_,_,_)
+      //equation
+      //  print("- ConnectionGraph.setRootDistance: cannot found " +& ComponentReference.printComponentRefStr(cr) +& "\n");        
+      then
+        setRootDistance(rest,table,distance,nextLevel,irooted);
+  end matchcontinue;
+end setRootDistance;
+
+protected function addBranches
+  input Edge edge;
+  input HashTable3.HashTable itable;
+  output HashTable3.HashTable otable;
+protected 
+  DAE.ComponentRef cref1,cref2;
+algorithm
+  (cref1,cref2) := edge;
+  otable := addConnectionRooted(cref1,cref2,itable);
+  otable := addConnectionRooted(cref2,cref1,otable); 
+end addBranches;
+
+protected function addConnectionsRooted
+  input DaeEdge connection;
+  input HashTable3.HashTable itable;
+  output HashTable3.HashTable otable;
+protected 
+  DAE.ComponentRef cref1,cref2;
+algorithm
+  (cref1,cref2,_) := connection;
+  otable := addConnectionRooted(cref1,cref2,itable); 
+  otable := addConnectionRooted(cref2,cref1,otable); 
+end addConnectionsRooted;
+
+protected function addConnectionRooted
+  input DAE.ComponentRef cref1;
+  input DAE.ComponentRef cref2;
+  input HashTable3.HashTable itable;
+  output HashTable3.HashTable otable;
+algorithm
+  otable := matchcontinue(cref1,cref2,itable)
+    local
+      HashTable3.HashTable table;
+      list<DAE.ComponentRef> crefs;
+    case(_,_,_)
+      equation
+        crefs = BaseHashTable.get(cref1,itable);
+        table = BaseHashTable.add((cref1,cref2::crefs),itable);
+      then
+        table;  
+    case(_,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cref1,itable));
+        table = BaseHashTable.add((cref1,{cref2}),itable);
+      then
+        table;  
+  end matchcontinue; 
+end addConnectionRooted;
+
+protected function evalrooted
+"Replaces all rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root"
+  input list<DAE.ComponentRef> inRoots;
+  input ConnectionGraph graph;
+  input list<DAE.Element> inDae;
+  output list<DAE.Element> outDae;
+algorithm
+  outDae := matchcontinue(inRoots,graph,inDae)
+    local
+      HashTable.HashTable rooted;
+      HashTable3.HashTable table;
+      Edges branches;
+      DaeEdges connections;
+    case (_,_, {}) then {};
+    case (_,_, _)
+      equation
+        // built table
+        table = HashTable3.emptyHashTable();
+        // add branches to table
+        branches = getBranches(graph);
+        table = List.fold(branches,addBranches,table);
+        // add connections to table
+        connections = getConnections(graph);
+        table = List.fold(connections,addConnectionsRooted,table);
+        // get distanste to root
+        //  BaseHashTable.dumpHashTable(table);
+        rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());        
+        //  BaseHashTable.dumpHashTable(rooted);
+        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalrootedHelper, (rooted,graph));
+      then outDae;
+  end matchcontinue;
+end evalrooted;
+
+protected function evalrootedHelper
+"Helper function for evalIsRoot."
+  input tuple<DAE.Exp,tuple<HashTable.HashTable,ConnectionGraph>> inRoots;
+  output tuple<DAE.Exp,tuple<HashTable.HashTable,ConnectionGraph>> outRoots;
+algorithm
+  outRoots := matchcontinue inRoots
+    local
+      ConnectionGraph graph;
+      DAE.Exp inExp,exp;
+      HashTable.HashTable rooted;
+      DAE.ComponentRef cref,cref1;
+      Boolean result;
+      Edges branches;
+
+    // handle rooted
+    case ((inExp as DAE.CALL(path=Absyn.IDENT("rooted"),
+          expLst={DAE.CREF(componentRef = cref)}), (rooted,graph)))
+      equation
+        // find partner in branches
+        branches = getBranches(graph);
+        cref1 = getEdge(cref,branches);
+        //print("- ConnectionGraph.evalrootedHelper: Found Branche Partner " +& 
+        //   ComponentReference.printComponentRefStr(cref) +& " , " +& ComponentReference.printComponentRefStr(cref1) +& "\n");
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalrootedHelper: Found Branche Partner " +& 
+           ComponentReference.printComponentRefStr(cref) +& " , " +& ComponentReference.printComponentRefStr(cref1));
+        result = getRooted(cref,cref1,rooted);
+        //print("- ConnectionGraph.evalrootedHelper: " +& 
+        //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalrootedHelper: " +& 
+           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+      then ((DAE.BCONST(result), (rooted,graph)));
+    // no replacement needed
+    case ((exp, (rooted,graph)))
+      equation
+        // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
+      then ((exp, (rooted,graph)));
+  end matchcontinue;
+end evalrootedHelper;
+
+protected function getRooted
+  input DAE.ComponentRef cref1;
+  input DAE.ComponentRef cref2;
+  input HashTable.HashTable rooted;
+  output Boolean result;
+algorithm
+  result := matchcontinue(cref1,cref2,rooted)
+    local
+      Integer i1,i2;
+    case(_,_,_)
+      equation
+        i1 = BaseHashTable.get(cref1,rooted);
+        i2 = BaseHashTable.get(cref1,rooted);
+      then
+        intLt(i1,i2);
+    // in faile case return true
+    else
+      then
+        true;
+  end matchcontinue;
+end getRooted;
+
+protected function getEdge
+"return the Edge partner of a edge, fails if not found"
+  input DAE.ComponentRef cr;
+  input Edges edges;
+  output DAE.ComponentRef ocr;
+algorithm
+  ocr := matchcontinue(cr,edges)
+    local
+      Edges rest;
+      DAE.ComponentRef cref1,cref2;
+    case(_,(cref1,cref2)::rest)
+      equation
+        cref1 = getEdge1(cr,cref1,cref2);
+      then
+        cref1;
+    case(_,_::rest)
+      then
+        getEdge(cr,rest);
+  end matchcontinue;
+end getEdge;
+
+protected function getEdge1
+"return the Edge partner of a edge, fails if not found"
+  input DAE.ComponentRef cr;
+  input DAE.ComponentRef cref1;
+  input DAE.ComponentRef cref2;
+  output DAE.ComponentRef ocr;
+algorithm
+  ocr := matchcontinue(cr,cref1,cref2)
+    case(_,_,_)
+      equation
+        true = ComponentReference.crefEqual(cr,cref1);
+      then
+        cref2;
+    case(_,_,_)
+      equation
+        true = ComponentReference.crefEqual(cr,cref2);
+      then
+        cref1;
+  end matchcontinue;
+end getEdge1;
 
 protected function evalIsRoot
 "Replaces all Connections.isRoot calls by true or false depending on wheter the parameter is in the list of roots."
