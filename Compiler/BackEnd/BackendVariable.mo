@@ -1498,22 +1498,7 @@ public function setVarsKind "function: setVarsKind
   input BackendDAE.VarKind inVarKind;
   output list<BackendDAE.Var> outVars;
 algorithm
-  outVars := matchcontinue(inVars, inVarKind)
-    local
-      BackendDAE.Var var;
-      list<BackendDAE.Var> restVars;
-      BackendDAE.VarKind varKind;
-      BackendDAE.Var out;
-      list<BackendDAE.Var> restOut;
-      
-    case(var::restVars, varKind)
-    then {};
-      
-    case(var::restVars, varKind) equation
-      out = setVarKind(var, varKind);
-      restOut = setVarsKind(restVars, varKind);
-    then out::restOut;
-  end matchcontinue;
+  outVars := List.map1(inVars,setVarKind,inVarKind);
 end setVarsKind;
 
 public function setVarKind
