@@ -157,9 +157,8 @@
     {
       int i, j, k=0;
       int idx = 0;
-      int INDEX_JAC_G;
 
-      useSymbolic = initialAnalyticJacobianG(ipopt_data->data, &INDEX_JAC_G);
+      useSymbolic = initialAnalyticJacobianG(ipopt_data->data);
 
       if(useSymbolic == 0)
       {

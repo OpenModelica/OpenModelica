@@ -79,28 +79,28 @@ int linearize(DATA* data)
     ASSERT(matrixD,"Calloc");
 
     /* Determine Matrix A */
-    if (!initialAnalyticJacobianA(data, NULL)){
+    if (!initialAnalyticJacobianA(data)){
       if (functionJacA(data, matrixA))
         THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
-    if (!initialAnalyticJacobianB(data, NULL)){
+    if (!initialAnalyticJacobianB(data)){
       if (functionJacB(data, matrixB))
         THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
-    if (!initialAnalyticJacobianC(data, NULL)){
+    if (!initialAnalyticJacobianC(data)){
       if (functionJacC(data, matrixC))
         THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
-    if (!initialAnalyticJacobianD(data, NULL)){
+    if (!initialAnalyticJacobianD(data)){
       if (functionJacD(data, matrixD))
         THROW("Error, can not get Matrix D ");
     }

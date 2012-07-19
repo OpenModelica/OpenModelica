@@ -127,7 +127,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   if (jac_flag){
     dasslData->info[4] = 1; /* use sub-routine JAC */
-    if (initialAnalyticJacobianA(simData, NULL)){
+    if (initialAnalyticJacobianA(simData)){
       INFO("Jacobian not generated or failed to initialize!");
       return 1;
     }

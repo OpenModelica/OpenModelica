@@ -147,11 +147,18 @@ extern void function_initMemoryState(void);
 
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
-extern int initialAnalyticJacobianG(DATA* data, int* index_jac);
-extern int initialAnalyticJacobianA(DATA* data, int* index_jac);
-extern int initialAnalyticJacobianB(DATA* data, int* index_jac);
-extern int initialAnalyticJacobianC(DATA* data, int* index_jac);
-extern int initialAnalyticJacobianD(DATA* data, int* index_jac);
+extern const int INDEX_JAC_G;
+extern const int INDEX_JAC_A;
+extern const int INDEX_JAC_B;
+extern const int INDEX_JAC_C;
+extern const int INDEX_JAC_D;
+
+extern int initialAnalyticJacobianG(DATA* data);
+extern int initialAnalyticJacobianA(DATA* data);
+extern int initialAnalyticJacobianB(DATA* data);
+extern int initialAnalyticJacobianC(DATA* data);
+extern int initialAnalyticJacobianD(DATA* data);
+
 extern int functionJacG(DATA* data, double* jac);
 extern int functionJacA(DATA* data, double* jac);
 extern int functionJacB(DATA* data, double* jac);
