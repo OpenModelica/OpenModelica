@@ -132,16 +132,10 @@ testPar:
 mosh:
 	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
 
-
-susan_all: susan susgen
-
 susan: all sustst	
 
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
-
-susgen:
-	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
 omlibrary: build/lib/omlibrary/stamp
 build/lib/omlibrary/stamp: libraries/README

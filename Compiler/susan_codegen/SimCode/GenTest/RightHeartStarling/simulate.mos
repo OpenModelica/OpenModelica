@@ -1,3 +1,0 @@
-loadFile("RightHeartStarling.mo");
-simulate(RightHeartStarling, stopTime=5);
-getErrorString();

@@ -1,3 +1,0 @@
-loadFile("TrapezTestTotal.mo");
-translateModel(TrapezTestTotal);
-getErrorString();
