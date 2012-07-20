@@ -2881,12 +2881,13 @@ algorithm
       list<Integer> eqnsids;
       Integer neqns;
       array<Integer> vec1,vec2,vec3,mapIncRowEqn;
-//    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
+      array<Boolean> eqnsflag;
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
+//    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
@@ -2911,9 +2912,10 @@ algorithm
         //neqns = BackendDAEUtil.equationArraySize(eqns);
         neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
-        graph = List.fold2(eqnsids,addEqnGraphMatch,eqns,(vec2,mapIncRowEqn),graph);
+        eqnsflag = arrayCreate(neqns,false);
+        graph = List.fold2(eqnsids,addEqnGraphMatch,eqns,(vec2,mapIncRowEqn,eqnsflag),graph);
         //graph = List.fold3(eqnsids,addEqnGraphMatch,eqns,vec2,mapIncRowEqn,graph);
-        ((_,_,_,graph)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,graph));
+        ((_,_,_,_,graph)) = List.fold(eqnsids,addDirectedEdgesGraph,(1,m,vec2,mapIncRowEqn,graph));
         GraphML.dumpGraph(graph,filename);
      then
        ();
@@ -3032,24 +3034,37 @@ end addEdgesGraph;
 protected function addEqnGraphMatch
   input Integer inNode;
   input BackendDAE.EquationArray eqns;
-  input tuple<array<Integer>,array<Integer>> atpl;
+  input tuple<array<Integer>,array<Integer>,array<Boolean>> atpl;
 //  input array<Integer> vec2;
 //  input array<Integer> mapIncRowEqn;
   input GraphML.Graph inGraph;
   output GraphML.Graph outGraph;
-protected
-  BackendDAE.Equation eqn;
-  String str,color;
-  Integer t;
-  array<Integer> vec2,mapIncRowEqn;
 algorithm
-  (vec2,mapIncRowEqn) := atpl;
-  eqn := BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
-  str := BackendDump.equationStr(eqn);
-  str := intString(mapIncRowEqn[inNode]) +& ": " +&  str;
-  //str := intString(inNode);
-  color := Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
-  outGraph := GraphML.addNode("n" +& intString(inNode),str,color,GraphML.RECTANGLE(),inGraph); 
+  outGraph := matchcontinue(inNode,eqns,atpl,inGraph)
+    local
+      BackendDAE.Equation eqn;
+      String str,color;
+      Integer t,e;
+      array<Integer> vec2,mapIncRowEqn;
+      array<Boolean> eqnsflag;
+    case(_,_,(vec2,mapIncRowEqn,eqnsflag),_)
+      equation
+        e = mapIncRowEqn[inNode];
+        false = eqnsflag[e];
+       eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+       str = BackendDump.equationStr(eqn);
+       str = intString(e) +& ": " +&  str;
+       //str = intString(inNode);
+       color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
+     then
+        GraphML.addNode("n" +& intString(e),str,color,GraphML.RECTANGLE(),inGraph);
+    case(_,_,(vec2,mapIncRowEqn,eqnsflag),_)
+      equation
+        e = mapIncRowEqn[inNode];
+        true = eqnsflag[e];
+     then
+        inGraph;
+  end matchcontinue;         
 end addEqnGraphMatch;
 
 protected function addEdgeGraph
@@ -3068,20 +3083,21 @@ end addEdgeGraph;
 
 protected function addDirectedEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,GraphML.Graph> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,GraphML.Graph> outTpl;
+  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.Graph> inTpl;
+  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.Graph> outTpl;
 protected
-  Integer id,v;
+  Integer id,v,n;
   GraphML.Graph graph;
   BackendDAE.IncidenceMatrix m;
   list<Integer> vars;
   array<Integer> vec2;
+  array<Integer> mapIncRowEqn;
 algorithm
-  (id,m,vec2,graph) := inTpl;
+  (id,m,vec2,mapIncRowEqn,graph) := inTpl;
   vars := List.select(m[e], Util.intPositive);
   v := vec2[e];
-  ((id,_,graph)) := List.fold1(vars,addDirectedEdgeGraph,e,(id,v,graph));     
-  outTpl := (id,m,vec2,graph);  
+  ((id,_,graph)) := List.fold1(vars,addDirectedEdgeGraph,mapIncRowEqn[e],(id,v,graph));     
+  outTpl := (id,m,vec2,mapIncRowEqn,graph);  
 end addDirectedEdgesGraph;
 
 protected function addDirectedEdgeGraph

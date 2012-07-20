@@ -8563,13 +8563,13 @@ algorithm
       
     case (_,_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
       equation
-        print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
+        //print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
         profilerinit();
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
-        profilerresults();        
+        //profilerresults();        
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,arg);
     else
@@ -8970,6 +8970,8 @@ algorithm
           (BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations",false),
           (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquationsFast",false),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
+          (BackendDAEOptimize.evaluateFinalParameters,"evaluateFinalParameters",false),
+          (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
           (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
           (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters",false),
@@ -9013,7 +9015,7 @@ algorithm
   (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
   (BackendDAEOptimize.tearingSystemNew,"tearingSystem",false),
   (OnRelaxation.relaxSystem,"relaxSystem",false),
-  (BackendDAEOptimize.evaluateParametersPast,"evaluateParameters",false),
+  (BackendDAEOptimize.removeevaluateParametersPast,"removeevaluateParameters",false),
   (BackendDAEOptimize.countOperations,"countOperations",false),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
   (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),

@@ -2919,6 +2919,42 @@ algorithm
 end countsimpleEquation;
 
 
+/*  
+ * evalutate final paramters stuff
+ *
+ */ 
+
+public function evaluateFinalParameters
+"function: evaluateFinalParameters
+  autor Frenkel TUD"
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE odae;
+algorithm
+  odae := match (dae)
+    local
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables knvars,exobj,knvars1;
+      BackendDAE.AliasVariables av,varsAliases;
+      BackendDAE.EquationArray remeqns,remeqns1,inieqns,inieqns1;
+      array<DAE.Constraint> constrs;
+      Env.Cache cache;
+      Env.Env env;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendVarTransform.VariableReplacements repl,repl1,repl2;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
+      equation
+        repl = BackendVarTransform.emptyReplacements();
+        ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
+        (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
+        Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
+      then
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+  end match;
+end evaluateFinalParameters;
 
 
 /*  
@@ -3085,9 +3121,10 @@ algorithm
         v1 = BackendVariable.setVarAttributes(v1,new_attr);
       then ((v1,(repl,numrepl)));
     
-    case  ((v as BackendDAE.VAR(values=attr),(repl,numrepl))) equation 
-      (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
-      v1 = BackendVariable.setVarAttributes(v,new_attr);      
+    case  ((v as BackendDAE.VAR(values=attr),(repl,numrepl)))
+      equation 
+        (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
+        v1 = BackendVariable.setVarAttributes(v,new_attr);      
       then ((v1,(repl,numrepl)));
   end matchcontinue;
 end replaceFinalVarTraverser;
@@ -3305,21 +3342,73 @@ end protectedParametersFinder;
  * evaluate parameters stuff 
  * evaluate all parameter with evaluate=true Annotation
  */
-public function evaluateParametersPast
-"function evaluateParametersPast"
+
+public function evaluateParameters
+"function: evaluateParameters
+  autor Frenkel TUD"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := match (inDAE)
+    local
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables knvars,exobj,knvars_1,knvars_2;
+      BackendDAE.AliasVariables av,varsAliases;
+      BackendDAE.EquationArray remeqns,remeqns1,inieqns,inieqns1;
+      array<DAE.Constraint> constrs;
+      Env.Cache cache;
+      Env.Env env;      
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.BackendDAEType btp;
+      list<BackendDAE.Var> vlst;
+      list<BackendDAE.Equation> eqnslst;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
+      list<list<Integer>> comps,mlst;
+      array<Integer> v;
+      Integer size;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+    case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
+      equation     
+        // sort parameters
+        size = BackendVariable.varsSize(knvars);
+        ((_,_,mlst,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,{},arrayCreate(size,{})));
+        v = listArray(List.intRange(size));
+        m = listArray(listReverse(mlst));
+        comps = BackendDAETransform.tarjanAlgorithm(m, mt, v, v);        
+        // evaluate vars with bind expression consists of evaluated vars
+        (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
+        Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
+      then
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+  end match;
+end evaluateParameters;
+
+/*  
+ * remove evaluated parameters stuff 
+ * remove all parameter with evaluate=true Annotation
+ */
+
+ 
+public function removeevaluateParametersPast
+"function removeevaluateParametersPast"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
   output Boolean outRunMatching;
 protected
   BackendVarTransform.VariableReplacements repl,repl1;
 algorithm
-  outDAE := evaluateParameters(inDAE);
+  outDAE := removeevaluateParameters(inDAE);
   outRunMatching := true;
   // until remove simple equations does not update assignments and comps  
-end evaluateParametersPast;
+end removeevaluateParametersPast;
 
-public function evaluateParameters
-"function: evaluateParameters
+public function removeevaluateParameters
+"function: removeevaluateParameters
   autor Frenkel TUD"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -3371,7 +3460,7 @@ algorithm
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
-end evaluateParameters;
+end removeevaluateParameters;
 
 protected function traverseVariablesSorted
   input list<list<Integer>> inComps;
