@@ -155,7 +155,7 @@
 
     if(values == NULL)
     {
-      int i, j, k;
+      int i, j;
       int idx = 0;
 
       if(ipopt_data->useSymbolic == 1)
@@ -167,16 +167,15 @@
         DEBUG_INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
         if(DEBUG_FLAG(LOG_INIT))
         {
-          printf("sparsity pattern:\n");
-          for(i=0, k=0; i<n; ++i)
+          DEBUG_INFO(LOG_INIT, "sparsity pattern");
+          for(i=0; i<n; ++i)
           {
-            printf("column %3d: [", i+1);
-            for(j=0; k<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            printf("        | | column %3d: [ ", i+1);
+            for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
             {
               if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
               {
                 idx++;
-                k++;
                 printf("*");
               }
               else
@@ -190,9 +189,9 @@
         }
 
         idx = 0;
-        for(i=0, k=0; i<n; ++i)
+        for(i=0; i<n; ++i)
         {
-          for(j=0; k<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+          for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
           {
             if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
             {
@@ -202,7 +201,7 @@
             }
           }
         }
-}
+      }
       else
       {
         /*
@@ -231,42 +230,32 @@
 
       if(ipopt_data->useSymbolic == 1)
       {
-        memset(values, 0, n*m*sizeof(double));
         functionJacG_sparse(ipopt_data->data, values);
 
         if(DEBUG_FLAG(LOG_INIT))
         {
           int i, j;
+          int idx = 0;
           for(i=0; i<n; ++i)
           {
-            for(j=0; j<m; ++j)
-              printf("%10.5g ", values[j*n+i]);
-            printf("\n");
+            printf("        | | column %3d: [ ", i+1);
+            for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            {
+              if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+              {
+                printf("%10.5g ", values[idx]);
+                idx++;
+              }
+              else
+                printf("%10.5g ", 0.0);
+            }
+            for(; j<m; ++j)
+              printf("%10.5g ", 0.0);
+            printf("]\n");
           }
-        }
-        /*
-        int i, j;
-        int idx = 0;
-
-        double* jac = calloc(n*m, sizeof(double));  /* must be initialized with zero *//*
-        functionJacG(ipopt_data->data, jac);
-
-        for(i=0; i<n; ++i)
-        {
-          for(j=0; j<m; ++j)
-          {
-            values[idx] = jac[idx];
-            idx++;
-
-            if(DEBUG_FLAG(LOG_INIT))
-              printf("%10.5g ", values[idx-1]);
-          }
-          if(DEBUG_FLAG(LOG_INIT))
-            printf("\n");
+          printf("\n");
         }
 
-        free(jac);
-        */
       }
       else
       {
@@ -291,16 +280,22 @@
           {
             values[idx] = (gp[j]-gn[j])/(2.0*hh);
             idx++;
-
-            if(DEBUG_FLAG(LOG_INIT))
-              printf("%10.5g ", values[idx-1]);
           }
-          if(DEBUG_FLAG(LOG_INIT))
-            printf("\n");
         }
 
         free(gp);
         free(gn);
+
+        if(DEBUG_FLAG(LOG_INIT))
+        {
+          int i, j;
+          for(i=0; i<n; ++i)
+          {
+            for(j=0; j<m; ++j)
+              printf("%10.5g ", values[j*n+i]);
+            printf("\n");
+          }
+        }
       }
     }
     return TRUE;
@@ -372,6 +367,7 @@
     if(ipopt_data.useSymbolic == 1)
     {
       nele_jac = data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[n-1]; // sparse
+      DEBUG_INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
       DEBUG_INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
 
