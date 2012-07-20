@@ -1155,6 +1155,7 @@ algorithm
       HashTable.HashTable rooted;
       list<DAE.ComponentRef> rest,level,next;
       DAE.ComponentRef cr;
+      Integer i;
     case({},_,_,{},_) then irooted;
     case({},_,_,_,_) 
       then 
@@ -1170,7 +1171,7 @@ algorithm
         //   stringDelimitList(List.map(next,ComponentReference.printComponentRefStr),"\n") +& " to the queue\n"); 
         next = listAppend(nextLevel,next);       
       then
-        setRootDistance(nextLevel,table,distance,next,irooted);
+        setRootDistance(rest,table,distance,next,rooted);
     case(cr::rest,_,_,_,_)
       equation
         failure(_ = BaseHashTable.get(cr, irooted));
@@ -1179,6 +1180,14 @@ algorithm
         //   ComponentReference.printComponentRefStr(cr) +& " , " +& intString(distance) +& "\n");        
       then
         setRootDistance(rest,table,distance,nextLevel,rooted);
+/*    case(cr::rest,_,_,_,_)
+      equation
+        i = BaseHashTable.get(cr, irooted);
+        print("- ConnectionGraph.setRootDistance: found " +& 
+           ComponentReference.printComponentRefStr(cr) +& " twice, value is " +& intString(i) +& "\n");        
+      then
+        setRootDistance(rest,table,distance,nextLevel,irooted);
+*/
     case(cr::rest,_,_,_,_)
       //equation
       //  print("- ConnectionGraph.setRootDistance: cannot found " +& ComponentReference.printComponentRefStr(cr) +& "\n");        
@@ -1261,6 +1270,7 @@ algorithm
         connections = getConnections(graph);
         table = List.fold(connections,addConnectionsRooted,table);
         // get distanste to root
+        //  print("Roots: " +& stringDelimitList(List.map(inRoots,ComponentReference.printComponentRefStr),"\n") +& "\n");
         //  BaseHashTable.dumpHashTable(table);
         rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());        
         //  BaseHashTable.dumpHashTable(rooted);
@@ -1320,7 +1330,7 @@ algorithm
     case(_,_,_)
       equation
         i1 = BaseHashTable.get(cref1,rooted);
-        i2 = BaseHashTable.get(cref1,rooted);
+        i2 = BaseHashTable.get(cref2,rooted);
       then
         intLt(i1,i2);
     // in faile case return true
