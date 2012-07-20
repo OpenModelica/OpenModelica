@@ -413,11 +413,12 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   data->localData[0]->timeValue = *t;
   data->localData[0]->realVars = y;
   functionODE(data);
-  functionJacA(data, pd);
+  functionJacA_dense(data, pd);
 
   /* add cj to the diagonal elements of the matrix */
   j = 0;
-  for (i = 0; i < data->modelData.nStates; i++) {
+  for(i = 0; i < data->modelData.nStates; i++)
+  {
     pd[j] -= (double) *cj;
     j += data->modelData.nStates + 1;
   }
@@ -432,8 +433,8 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
  *  numerical method finite differences
  */
 int
-jacA_num(DATA* data, double *t, double *y, double *matrixA) {
-
+jacA_num(DATA* data, double *t, double *y, double *matrixA)
+{
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   double delta_h = 1.e-10;
   double delta_hh;

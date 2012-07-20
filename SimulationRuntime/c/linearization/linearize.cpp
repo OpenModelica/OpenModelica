@@ -80,28 +80,28 @@ int linearize(DATA* data)
 
     /* Determine Matrix A */
     if (!initialAnalyticJacobianA(data)){
-      if (functionJacA(data, matrixA))
+      if (functionJacA_dense(data, matrixA))
         THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
     if (!initialAnalyticJacobianB(data)){
-      if (functionJacB(data, matrixB))
+      if (functionJacB_dense(data, matrixB))
         THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
     if (!initialAnalyticJacobianC(data)){
-      if (functionJacC(data, matrixC))
+      if (functionJacC_dense(data, matrixC))
         THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
     if (!initialAnalyticJacobianD(data)){
-      if (functionJacD(data, matrixD))
+      if (functionJacD_dense(data, matrixD))
         THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);

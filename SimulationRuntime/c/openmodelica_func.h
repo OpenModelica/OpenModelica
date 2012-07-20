@@ -153,17 +153,36 @@ extern const int INDEX_JAC_B;
 extern const int INDEX_JAC_C;
 extern const int INDEX_JAC_D;
 
+/*
+ * These functions initialize specific jacobians.
+ * Return-value 0: jac is present
+ * Return-value 1: jac is not present
+ */
 extern int initialAnalyticJacobianG(DATA* data);
 extern int initialAnalyticJacobianA(DATA* data);
 extern int initialAnalyticJacobianB(DATA* data);
 extern int initialAnalyticJacobianC(DATA* data);
 extern int initialAnalyticJacobianD(DATA* data);
 
-extern int functionJacG(DATA* data, double* jac);
-extern int functionJacA(DATA* data, double* jac);
-extern int functionJacB(DATA* data, double* jac);
-extern int functionJacC(DATA* data, double* jac);
-extern int functionJacD(DATA* data, double* jac);
+/*
+ * These functions calculate specific jacobians using sparsity pattern.
+ * Output array jac contains each element of the matrix and must be filled with zeros before calling.
+ */
+extern int functionJacG_dense(DATA* data, double* jac);
+extern int functionJacA_dense(DATA* data, double* jac);
+extern int functionJacB_dense(DATA* data, double* jac);
+extern int functionJacC_dense(DATA* data, double* jac);
+extern int functionJacD_dense(DATA* data, double* jac);
+
+/*
+ * These functions calculate specific jacobians using sparsity pattern.
+ * Output array jac contains only the nonzeros.
+ */
+extern int functionJacG_sparse(DATA* data, double* jac);
+extern int functionJacA_sparse(DATA* data, double* jac);
+extern int functionJacB_sparse(DATA* data, double* jac);
+extern int functionJacC_sparse(DATA* data, double* jac);
+extern int functionJacD_sparse(DATA* data, double* jac);
 /*#endif*/
 
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
