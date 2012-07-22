@@ -277,7 +277,8 @@ end funStatement;
 constant String localRepresentationArrayDefines =
 "var X = states; var Xd = statesDerivatives; var Y = algebraics; var P = parameters; var H = helpVars; var EO = externalObjects;
 var preX = savedStates; var preXd = savedStatesDerivatives; var preY = savedAlgebraics; var preH = savedHelpVars;
-var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; ";
+var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; 
+/*TODO: HACK FOR non-time varying params*/ var preP = P; var prePI = PI; var prePB = PB;";
        
 
 template modelDataMembers(ModelInfo modelInfo, SimCode simCode) ::=
@@ -904,6 +905,8 @@ public override void BoundParameters()
   <% localRepresentationArrayDefines %>
   <% parameterEquations
      |> saeq as SES_SIMPLE_ASSIGN(__)  => equation_(saeq, contextOther, simCode) ;separator="\n"%>
+  <% parameterEquations 
+     |> eq as SES_ALGORITHM(__) => equation_(eq, contextOther, simCode) ;separator="\n"%>  
 }
 >>
 end functionBoundParameters;
@@ -1129,7 +1132,7 @@ case SES_WHEN(__) then
   let &preExp = buffer ""
   let helpIf = (conditions |> (e, hidx) =>
       let hInit = daeExp(e, context, &preExp, simCode)
-      let &preExp += 'H[<%hidx%>] = <%hInit%> ? 1.0 : 0.0;' //TODO: ??? type
+      let &preExp += 'H[<%hidx%>] = <%hInit%> ? 1.0 : 0.0;<%\n%>' //TODO: ??? type
       edgeHelpVar(hidx)
       //'/*edge(H[<%hidx%>])*/(H[<%hidx%>]!=0.0 && preH[<%hidx%>]==0.0)'
     ;separator=" || ")
@@ -1191,7 +1194,8 @@ end representationArrayName;
 
 template representationArrayNameTypePostfix(Type type_) ::=
   match type_ 
-  case T_INTEGER(__)  then "I"
+  case T_INTEGER(__)
+  case T_ENUMERATION(__)  then "I"
   case T_BOOL(__) then "B"
   case T_REAL(__) then ""
   else "BAD_ARRAY_NAME_POSTFIX"
@@ -1893,27 +1897,38 @@ template daeExpRelation(Exp inExp, Context context, Text &preExp, SimCode simCod
       case LESS(ty = T_BOOL(__))        then '(!<%e1%> && <%e2%>)'
       case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
       case LESS(ty = T_INTEGER(__))
-      case LESS(ty = T_REAL(__))        then '(<%e1%> < <%e2%>)'
+      case LESS(ty = T_REAL(__))
+      case LESS(ty = T_ENUMERATION(__)) then '(<%e1%> < <%e2%>)'
+      
       case GREATER(ty = T_BOOL(__))     then '(<%e1%> && !<%e2%>)'
       case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
       case GREATER(ty = T_INTEGER(__))
-      case GREATER(ty = T_REAL(__))     then '(<%e1%> > <%e2%>)'
+      case GREATER(ty = T_REAL(__))
+      case GREATER(ty = T_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
+      
       case LESSEQ(ty = T_BOOL(__))      then '(!<%e1%> || <%e2%>)'
       case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
       case LESSEQ(ty = T_INTEGER(__))
-      case LESSEQ(ty = T_REAL(__))      then '(<%e1%> <= <%e2%>)'
+      case LESSEQ(ty = T_REAL(__))
+      case LESSEQ(ty = T_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
+      
       case GREATEREQ(ty = T_BOOL(__))   then '(<%e1%> || !<%e2%>)'
       case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
       case GREATEREQ(ty = T_INTEGER(__))
-      case GREATEREQ(ty = T_REAL(__))   then '(<%e1%> >= <%e2%>)'
+      case GREATEREQ(ty = T_REAL(__))
+      case GREATEREQ(ty = T_ENUMERATION(__))  then '(<%e1%> >= <%e2%>)'
+      
       case EQUAL(ty = T_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
       case EQUAL(ty = T_STRING(__))
       case EQUAL(ty = T_INTEGER(__))
-      case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
+      case EQUAL(ty = T_REAL(__))
+      case EQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> == <%e2%>)'
+      
       case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
       case NEQUAL(ty = T_STRING(__))
       case NEQUAL(ty = T_INTEGER(__))
-      case NEQUAL(ty = T_REAL(__))      then '(<%e1%> != <%e2%>)'
+      case NEQUAL(ty = T_REAL(__))
+      case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
       case _                         then "daeExpRelation:ERR"
 end daeExpRelation;
 
@@ -2053,6 +2068,10 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     <<
     (/*edge*/<% cref(arg.componentRef, simCode) %> && !(<% preCref(arg.componentRef, simCode) %>))
     >>
+  case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
+    <<
+    (/*change*/<% cref(arg.componentRef, simCode) %> != <% preCref(arg.componentRef, simCode) %>)
+    >>
   
   case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     'Math.Max(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
@@ -2065,6 +2084,11 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     let var2 = daeExp(e2, context, &preExp, simCode)
     'Mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
   
+  //TODO: ignoring the format yet
+  case CALL(path=IDENT(name="String"), expLst={s, format}) then
+    let str = daeExp(s, context, &preExp, simCode)
+    '(<%str%>).ToString()'
+    
   case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, simCode)
     'Abs_int(<%var1%>)'
@@ -2083,6 +2107,9 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   
   case CALL(path=IDENT(name="sin"), expLst={s1}) then
     'Math.Sin(<%daeExp(s1, context, &preExp, simCode)%>)'
+  
+  case CALL(path=IDENT(name="cos"), expLst={s1}) then
+    'Math.Cos(<%daeExp(s1, context, &preExp, simCode)%>)'
   
   case CALL(path=IDENT(name="sqrt"), expLst={s1}) then
     'Math.Sqrt(<%daeExp(s1, context, &preExp, simCode)%>)'
