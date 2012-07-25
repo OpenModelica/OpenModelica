@@ -10080,10 +10080,37 @@ algorithm
       str = getNamedAnnotation(className,p,"defaultComponentPrefixes",SOME("{}"),getDefaultComponentPrefixesModStr);
       io = getDefaultInnerOuter(str);
       redecl = getDefaultReplaceable(str);
+      redecl = makeReplaceableIfPartial(p, className, redecl);
       attr = getDefaultAttr(str);
     then(io,redecl,attr);
   end match;
 end getDefaultPrefixes;
+
+protected function makeReplaceableIfPartial 
+"function makeReplaceableIfPartial
+  This function takes:
+  arg1 - a Program,
+  arg2 - the path of class,
+  arg3 - redeclare option.
+  The result is an updated redeclare option.
+  This function checks if the class is partial or not, if yes then it adds the replaceable keyword to the component."
+  input Absyn.Program p;
+  input Absyn.Path className;
+  input Option<Absyn.RedeclareKeywords> redecl;
+  output Option<Absyn.RedeclareKeywords> new_redecl;
+algorithm
+  new_redecl := matchcontinue(p, className, redecl)
+    case (p, className, NONE())
+      equation
+        true = isPartial(className, p);
+      then SOME(Absyn.REPLACEABLE());
+    /* if the above case fails i.e class is not partial */
+    case (p, className, NONE())
+    then redecl;
+    case (p, className, SOME(Absyn.REPLACEABLE()))
+    then redecl;
+  end matchcontinue;
+end makeReplaceableIfPartial;
 
 protected function getDefaultInnerOuter "helper function to getDefaultPrefixes"
   input String str;
