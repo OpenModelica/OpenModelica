@@ -179,6 +179,8 @@ package SimCode
     end SIMULATION;
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
+    record ALGLOOP_CONTEXT
+    end ALGLOOP_CONTEXT;
     record OTHER
     end OTHER;
     record INLINE_CONTEXT
@@ -461,7 +463,8 @@ package SimCode
   constant Context contextSimulationDiscrete;
   constant Context contextInlineSolver;
   constant Context contextFunction;
-  constant Context contextOther;  
+  constant Context contextOther;
+  constant Context contextAlgloop;             
   constant list<DAE.Exp> listExpLength1;
 
   function elementVars
