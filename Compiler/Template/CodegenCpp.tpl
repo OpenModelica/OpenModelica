@@ -3852,7 +3852,7 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
       let num = index
       match simCode
           case SIMCODE(modelInfo = MODELINFO(__)) then    
-         <<#include "<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h ">>
+         <<#include "<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>.h">>
    end match
   case e as SES_MIXED(cont = eq_sys)
   then
