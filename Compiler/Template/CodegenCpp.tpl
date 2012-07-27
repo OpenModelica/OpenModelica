@@ -151,7 +151,7 @@ FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem  -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem  -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;
@@ -212,7 +212,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
         throw std::invalid_argument("No AlgLoopSolverFactory  found");
     }
-    <%generateAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
+    <%generateAlgloopsolvers(allEquations,simCode)%>
     }
     <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
     { 
@@ -1818,7 +1818,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "System/Interfaces/IAlgLoopSolverFactory.h"
   #include "System/Interfaces/IAlgLoopSolver.h"
   #include "Functions.h"
-  <%algloopfilesInclude(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
+  <%algloopfilesInclude(allEquations,simCode)%>
   #include "DataExchange/Interfaces/IHistory.h"
   #include "HistoryImpl.h"
   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
@@ -1871,7 +1871,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public  ISystemInitialization <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ',public IReduceDAE '%>,public SystemDefaultImplementation
   { 
   
-   <%generatefriendAlgloops(odeEquations,simCode)%>
+   <%generatefriendAlgloops(allEquations,simCode)%>
   public: 
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings& globalSettings); 
       ~<%lastIdentOfPath(modelInfo.name)%>();
@@ -1897,7 +1897,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      ublas::vector<double> _jac_x;
      boost::shared_ptr<IAlgLoopSolverFactory>
         _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
-     <%generateAlgloopsolverVariables(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
+     <%generateAlgloopsolverVariables(allEquations,simCode)%>
      //workaround for jacobian variables
       <%variableDefinitionsJacobians(jacobianMatrixes)%>   
    };
@@ -3667,10 +3667,10 @@ case SES_MIXED(__) then
   >>
 end equationMixed;
 
-template generateAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template generateAlgloopsolvers(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+  let algloopsolver = (allEquations |> eqs => (eqs |> eq =>
       generateAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode) ;separator="\n")
     ;separator="\n")
   
@@ -3681,9 +3681,9 @@ template generateAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<
 end generateAlgloopsolvers;
 
 
-template generatefriendAlgloops(list<list<SimEqSystem>> continousEquations, SimCode simCode)
+template generatefriendAlgloops(list<SimEqSystem> allEquations, SimCode simCode)
  ::=
-    let friendalgloops = (continousEquations |> eqs => (eqs |> eq =>
+    let friendalgloops = (allEquations |> eqs => (eqs |> eq =>
       generatefriendAlgloops2(eq, simCode) ;separator="\n")
     ;separator="\n")
   <<
@@ -3747,10 +3747,10 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
 /*_algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(<%CallAlgloopParams(modelInfo)%>__z,__zDot,_event_handling )*/
 
 
-template generateAlgloopsolverVariables(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template generateAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+  let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode);separator="\n")
     ;separator="\n")
   
@@ -3829,11 +3829,11 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
     " "
  end initAlgloopsolvers2;
 
-template algloopfilesInclude(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template algloopfilesInclude(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   <<
-  <% continousEquations |> eqs => (eqs |> eq =>
+  <% allEquations |> eqs => (eqs |> eq =>
       algloopfilesInclude2(eq, contextOther, &varDecls /*BUFC*/,simCode) ;separator="\n" )
     ;separator="\n" %>
   >>
@@ -3932,10 +3932,10 @@ template algloopfilesindex(SimEqSystem eq)
     " "
  end algloopfilesindex;
 
-template algloopcppfilenames(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template algloopcppfilenames(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+  let algloopsolver = (allEquations |> eqs => (eqs |> eq =>
       algloopcppfilenames2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator=" ")
   
