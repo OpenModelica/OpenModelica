@@ -27,6 +27,14 @@ int main(int argc, const char* argv[])
     libraries_path.make_preferred();
     modelica_path.make_preferred();
     string resultsfilename(argv[modelname_index]);
+    
+
+    fs::path results_file_path = fs::path( resultsfilename) ;
+    if(!(results_file_path.extension().string() == ".csv"))
+    {
+        std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
+        throw std::invalid_argument(eception_msg.c_str());
+    }
     //std::cout << libraries_path << "  end" << std::endl;
     try
     {
