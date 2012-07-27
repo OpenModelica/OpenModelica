@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.6)
 project(System)
 # add the solver default implementation library
 add_library(System SHARED AlgLoopDefaultImplementation AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
-
+target_link_libraries (System ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 
 install (TARGETS System DESTINATION bin)
 install (FILES SystemDefaultImplementation.h AlgLoopDefaultImplementation.h EventHandling.h DESTINATION include/omc/cpp/System/Implementation)

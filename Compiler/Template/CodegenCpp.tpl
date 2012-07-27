@@ -173,7 +173,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     }
     
     <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings& globalSettings) 
-   :SystemDefaultImplementation()
+   :SystemDefaultImplementation(globalSettings)
     <%simulationInitFile(simCode)%>
     { 
     //Number of equations

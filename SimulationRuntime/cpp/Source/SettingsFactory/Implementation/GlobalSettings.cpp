@@ -116,7 +116,14 @@ void GlobalSettings::load(std::string xml_file)
   }
   
 }
-
+  void GlobalSettings::setRuntimeLibrarypath(string path)
+  {
+  _runtimeLibraryPath=path;
+  }
+   string GlobalSettings::getRuntimeLibrarypath()
+   {
+   return _runtimeLibraryPath;
+   }
  /* std::fstream ofs;
   ofs.open("C:\\Temp\\GlobalSettings.xml", ios::out);
   boost::archive::xml_oarchive xml(ofs);

@@ -33,6 +33,8 @@ public:
   virtual string getResultsFileName();
   //initializes the settings object by an xml file
    void load(std::string xml_file);
+   virtual void setRuntimeLibrarypath(string);
+  virtual string getRuntimeLibrarypath();
 private:
   double
     _startTime,     ///< Start time of integration (default: 0.0)
@@ -45,8 +47,8 @@ private:
   string 
     _output_path,
     selected_solver,
-   _resultsfile_name;
-
+   _resultsfile_name,
+   _runtimeLibraryPath;
   
    //Serialization of settings class
   friend class boost::serialization::access;

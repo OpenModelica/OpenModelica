@@ -9,7 +9,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 }
 
 Modelica::Modelica(IGlobalSettings& globalSettings) 
-:SystemDefaultImplementation()
+:SystemDefaultImplementation(globalSettings)
 
 { 
   // Number of equations

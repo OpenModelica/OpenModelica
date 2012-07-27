@@ -6,8 +6,8 @@
 #include "AlgLoopSolverFactory.h"
 #include "EventHandling.h"
 #include "AlgLoopDefaultImplementation.h"
-
-SystemDefaultImplementation::SystemDefaultImplementation()
+#include "LibrariesConfig.h"
+SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& globalSettings)
 : time        (0.0)
 , __z        (NULL)
 , __zDot       (NULL)
@@ -15,6 +15,16 @@ SystemDefaultImplementation::SystemDefaultImplementation()
 ,_conditions0(NULL)
 ,_conditions1(NULL)
 {
+
+  fs::path newton_name(NEWTON_LIB);
+  fs::path newton_path = globalSettings.getRuntimeLibrarypath();
+  newton_path/=newton_name;
+
+  newton_path.make_preferred();
+  type_map types;
+  if(!load_single_library(types,  newton_path.string()))
+     throw std::invalid_argument("Newton library could not be loaded");
+
 }
 
 SystemDefaultImplementation::~SystemDefaultImplementation()

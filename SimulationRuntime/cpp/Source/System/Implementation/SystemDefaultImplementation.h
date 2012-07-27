@@ -5,6 +5,7 @@
 #include "System/Interfaces/IEvent.h"           // interface for event handling
 #include "System/Interfaces/ISystemProperties.h"    // Interface describes properties of System
 #include "System/Interfaces/ISystemInitialization.h"  // Interface to initialize the system
+#include "SettingsFactory/Interfaces/IGlobalSettings.h"
 #include "Math/Implementation/Functions.h"        // Include for use of abs
 #include  <boost/unordered_map.hpp>
 #include <boost/any.hpp>
@@ -38,7 +39,7 @@ typedef boost::unordered_map<std::string, boost::any> SValuesMap;
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-    SystemDefaultImplementation();
+    SystemDefaultImplementation(IGlobalSettings& globalSettings);
 
     ~SystemDefaultImplementation();
 

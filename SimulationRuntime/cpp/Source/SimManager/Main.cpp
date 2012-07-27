@@ -22,12 +22,13 @@ int main(int argc, const char* argv[])
     if(argc < nargc)
         throw std::invalid_argument("No runtime library path and Modelica system library path defined");
 
-    fs::path libraries_path = fs::path( argv[lib_index] ) ;
+     string runtime_lib_path = argv[lib_index];
+    fs::path libraries_path = fs::path( runtime_lib_path) ;
     fs::path modelica_path = fs::path( argv[modelica_index] ) ;
     libraries_path.make_preferred();
     modelica_path.make_preferred();
     string resultsfilename(argv[modelname_index]);
-    
+   
 
     fs::path results_file_path = fs::path( resultsfilename) ;
     if(!(results_file_path.extension().string() == ".csv"))
@@ -40,11 +41,11 @@ int main(int argc, const char* argv[])
     {
 
         Configuration config(libraries_path);
-
         IGlobalSettings* global_settings = config.getGlobalSettings();
+        global_settings->setRuntimeLibrarypath(runtime_lib_path);       
         global_settings->setResultsFileName(resultsfilename);
         //Load Modelica sytem library
-        
+       
 
         fs::path modelica_system_name(MODELICASYSTEM_LIB);
         fs::path modelica_system_path = modelica_path;

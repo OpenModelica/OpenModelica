@@ -39,4 +39,6 @@ public:
   virtual void load(std::string xml_file)=0;
   virtual void setResultsFileName(string)=0;
   virtual string getResultsFileName()=0;
+  virtual void setRuntimeLibrarypath(string)=0;
+  virtual string getRuntimeLibrarypath()=0;
 };

@@ -18,7 +18,12 @@
 #include "Utils/extension/extension.hpp"
 #include "Utils/extension/factory.hpp"
 #include "Utils/extension/type_map.hpp"
+#include "Utils/extension/shared_library.hpp"
+#include "Utils/extension/convenience.hpp"
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
 
 using namespace boost::extensions;
 using namespace std;
 using boost::unordered_map;
+namespace fs = boost::filesystem;
