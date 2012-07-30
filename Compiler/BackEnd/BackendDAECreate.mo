@@ -230,7 +230,6 @@ algorithm
       DAE.Constraint cons_1;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      Absyn.Info info;
       Absyn.Path path;
       BackendDAE.Variables vars,knvars,extVars;
       BackendDAE.ExternalObjectClasses extObjCls;
@@ -342,7 +341,7 @@ algorithm
         (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,whenclauses,inExtObjClasses,inStates);
 
     // if equation that cannot be translated to if expression but have initial() as condition
-    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}, source = DAE.SOURCE(info = info)),_,_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2=_::{},equations3={}),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
@@ -926,7 +925,7 @@ protected function lowerEqn
 algorithm
   outEqns :=  match (inElement,functionTree,inEqns)
     local
-      DAE.Exp e1,e2,e1_1,e2_1;
+      DAE.Exp e1,e2,e1_1,e2_1,cond,msg;
       DAE.ComponentRef cr1,cr2;
       DAE.ElementSource source;
       Boolean b1,b2;
@@ -940,7 +939,8 @@ algorithm
       list<Boolean> blst; 
       list<DAE.Var> varLst;   
       Absyn.Path path,fname,path1;  
-      String s; 
+      String s;
+      DAE.Algorithm alg;
       
     // tuple-tuple assignments are split into one equation for each tuple
     // element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6;
@@ -1033,6 +1033,18 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
       then
         lowerIfEquation(explst1,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
+          
+    case (DAE.ASSERT(condition=cond,message=msg,source=source),_,_)
+      equation
+        (cond,source) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        BackendDAEUtil.checkAssertCondition(cond,msg);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)});
+      then
+        BackendDAE.ALGORITHM(0,alg,source)::inEqns;  
+
+    case (DAE.TERMINATE(message=msg,source=source),_,_)
+      then
+        BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source)::inEqns;          
           
     case (_,_,_)
       equation
