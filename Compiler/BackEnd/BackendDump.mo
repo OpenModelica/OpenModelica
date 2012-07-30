@@ -1423,10 +1423,10 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
-        print(" ");
+        print("(");
         dumpFlow(flowPrefix);
-        print(" ");
         dumpAttributes(dae_var_attr);
+        print(") ");
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = List.map(paths, Absyn.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
@@ -1439,7 +1439,9 @@ algorithm
         indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(ComponentReference.printComponentRef2Str("", arrayDim));
+        print("(");
         dumpAttributes(dae_var_attr);
+        print(") ");
         print(" indx = ");
         print(indx_str);
         print("\n");
@@ -1475,10 +1477,10 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
-        print(" ");
+        print("(");
         dumpFlow(flowPrefix);
-        print(" ");        
         dumpAttributes(dae_var_attr);
+        print(") ");        
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
@@ -1532,8 +1534,8 @@ public function dumpFlow
 algorithm
   _:=
   match(flowPrefix)
-    case DAE.FLOW() equation print("flow=true"); then ();
-    case DAE.NON_FLOW() equation print("flow=false"); then ();
+    case DAE.FLOW() equation print("flow=true "); then ();
+    case DAE.NON_FLOW() equation print("flow=false "); then ();
     case DAE.NON_CONNECTOR() equation print(""); then ();
   end match;
 end dumpFlow;
@@ -1555,7 +1557,6 @@ algorithm
      then ();
     case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
-        print("(");
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
@@ -1564,13 +1565,11 @@ algorithm
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
         dumpOptDistribution(dist);
-        print(") ");
      then ();
     case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
-        print("(");
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
@@ -1578,41 +1577,34 @@ algorithm
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
         dumpOptDistribution(dist);
-        print(") ");
      then ();
     case SOME(DAE.VAR_ATTR_BOOL(initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then ();
     case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        print("(");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
-        print(") ");
      then ();
     case SOME(DAE.VAR_ATTR_STRING(initial_=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        print("(");
         dumpOptExpression(start,"start");
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
-        print(") ");
      then ();
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        print("(");
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
-        print(") ");
      then ();
     else ();
   end match;

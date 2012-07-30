@@ -8260,7 +8260,6 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
 
@@ -8346,137 +8345,8 @@ protected
 algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  //outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
   outDAE := reduceIndexDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
 end transformBackendDAE;
-
-public function transformDAE
-"function transformDAE 
-  Run the matching Algorithm and the sorting algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
-  input BackendDAE.BackendDAE inDAE;
-  input Option<MatchingOptions> inMatchingOptions;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-  output BackendDAE.BackendDAE outDAE;
-protected
-  list<BackendDAE.EqSystem> systs;
-  BackendDAE.Shared shared;
-algorithm
-  BackendDAE.DAE(systs,shared) := inDAE;
-  (systs,shared) := mapTransformDAE(systs,shared,inMatchingOptions,matchingAlgorithm,daeHandler,{});
-  outDAE := BackendDAE.DAE(systs,shared);
-end transformDAE;
-
-protected function mapTransformDAE
-"function transformDAE 
-  Run the matching Algorithm and the sorting algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
-  input list<BackendDAE.EqSystem> isysts;
-  input BackendDAE.Shared ishared;
-  input Option<MatchingOptions> inMatchingOptions;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-  input list<BackendDAE.EqSystem> acc;
-  output list<BackendDAE.EqSystem> osysts;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osysts,oshared) := matchcontinue (isysts,ishared,inMatchingOptions,matchingAlgorithm,daeHandler,acc)
-    local 
-      BackendDAE.EqSystem syst;
-      list<BackendDAE.EqSystem> systs;
-      BackendDAE.Shared shared;
-    case ({},_,_,_,_,_) then (listReverse(acc),ishared);
-    case (syst::systs,_,_,_,_,_)
-      equation
-        (syst,shared) = transformDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,daeHandler);
-        (systs,shared) = mapTransformDAE(systs,shared,inMatchingOptions,matchingAlgorithm,daeHandler,syst::acc);
-      then (systs,shared);
-  end matchcontinue;
-end mapTransformDAE;
-
-protected function transformDAEWork
-"function transformDAE 
-  Run the matching Algorithm and the sorting algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input Option<MatchingOptions> inMatchingOptions;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,daeHandler)
-    local 
-      String str,methodstr,mAmethodstr;
-      array<Integer> v1;
-      BackendDAE.StrongComponents comps;
-      MatchingOptions match_opts;
-      StructurallySingularSystemHandlerFunc daeHandlerfunc;
-      matchingAlgorithmFunc matchingAlgorithmfunc;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      list<list<BackendDAE.Value>> icomps;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;   
-      BackendDAE.StructurallySingularSystemHandlerArg arg;
-      
-    case (_,_,_,(matchingAlgorithmfunc,mAmethodstr),(daeHandlerfunc,methodstr,_,_))
-      equation
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.SOLVABLE());
-        match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
-        // matching algorithm
-        arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);        
-        (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, daeHandlerfunc,arg);
-        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        // sorting algorithm
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
-        (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponentsScalar(syst, shared,mapEqnIncRow,mapIncRowEqn);
-        // if comps vector does not match to matching size 
-        // restart the matching
-        (syst,shared) = restartMatching(not checkCompsMatching(comps,systemSize(syst)),syst, shared, match_opts, matchingAlgorithmfunc, daeHandlerfunc,arg);
-        Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      then (syst,shared);
-    else
-      equation
-        str = "Transformation Module failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
-end transformDAEWork;
-
-protected function restartMatching
-  "Restarts matching if cond is true."
-  input Boolean cond;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input MatchingOptions opts;
-  input matchingAlgorithmFunc matchingAlgorithm;
-  input StructurallySingularSystemHandlerFunc daeHandler;
-  input BackendDAE.StructurallySingularSystemHandlerArg arg;  
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := match (cond,isyst,ishared,opts,matchingAlgorithm,daeHandler,arg)
-    local 
-      BackendDAE.EqSystem syst; 
-      BackendDAE.Shared shared;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;       
-    case (false,_,_,_,_,_,_) then (isyst,ishared);
-    case (true,_,_,_,_,_,_)
-      equation
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.SOLVABLE());
-        (syst,shared,_) = BackendDAETransform.matchingAlgorithm(syst, ishared, opts, daeHandler,arg);
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
-        (syst,_) = BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
-      then (syst,shared);
-  end match;
-end restartMatching;
 
 protected function reduceIndexDAE
 "function reduceIndexDAE 
@@ -8799,7 +8669,6 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
