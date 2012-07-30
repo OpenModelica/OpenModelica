@@ -10436,7 +10436,7 @@ algorithm
     case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,_))
       equation
         // check conditions
-        ((explst,(_,true))) = Expression.traverseExpList(explst, simplifyevaluatedParamter, (knvars,false));
+        ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, knvars);
         explst = ExpressionSimplify.simplifyList(explst, {});
         // simplify if equations
         acc = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
@@ -10447,8 +10447,8 @@ algorithm
 end simplifyIfEquationsFinder;
 
 protected function simplifyevaluatedParamter
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl1;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl2;
+  input tuple<DAE.Exp, BackendDAE.Variables> tpl1;
+  output tuple<DAE.Exp, BackendDAE.Variables> tpl2;
 algorithm
   tpl2 := matchcontinue(tpl1)
     local
@@ -10456,13 +10456,13 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var v;
       DAE.Exp e;
-    case ((DAE.CREF(componentRef = cr),(knvars,_)))
+    case ((DAE.CREF(componentRef = cr),knvars))
       equation
         (v::{},_::{}) = BackendVariable.getVar(cr,knvars);
         true = BackendVariable.isFinalVar(v);
         e = BackendVariable.varBindExpStartValue(v);    
       then
-        ((e,(knvars,true)));
+        ((e,knvars));
     case tpl1 then tpl1;   
   end matchcontinue;
 end simplifyevaluatedParamter;
@@ -10484,9 +10484,10 @@ algorithm
   outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
     local
       DAE.Exp e;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst,fbsExp;
+      list<list<DAE.Exp>> tbsExp;      
       list<list<BackendDAE.Equation>> eqnslst;
-      list<BackendDAE.Equation> eqns; 
+      list<BackendDAE.Equation> eqns;
 
       
     // no true case left with condition<>false
@@ -10495,10 +10496,20 @@ algorithm
         listAppend(elseenqs,inEqns);
     // true case left with condition<>false
     case ({},{},_,_,_,_,_,_)
-      equation 
-        explst = listReverse(conditions1);  
-        eqnslst = listReverse(theneqns1);  
+      equation
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+        _ = countEquationsInBranches(eqnslst,elseenqs,source);
+        fbsExp = makeEquationLstToResidualExpLst(elseenqs);
+        tbsExp = List.map(eqnslst, makeEquationLstToResidualExpLst);
+        eqns = makeEquationsFromResiduals(explst, tbsExp, fbsExp, source);
       then 
+        listAppend(eqns,inEqns);
+    case ({},{},_,_,_,_,_,_)
+      equation 
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+      then
         BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
     // if true use it
     case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
@@ -10514,5 +10525,215 @@ algorithm
         simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
   end matchcontinue;
 end simplifyIfEquation;
+
+protected function countEquationsInBranches "
+Checks that the number of equations is the same in all branches
+of an if-equation"
+  input list<list<BackendDAE.Equation>> trueBranches;
+  input list<BackendDAE.Equation> falseBranch;
+  input DAE.ElementSource source;
+  output Integer nrOfEquations;
+algorithm
+  nrOfEquations := matchcontinue(trueBranches,falseBranch,source)
+    local
+      list<Boolean> b;
+      list<String> strs;
+      String str,eqstr;
+      list<Integer> nrOfEquationsBranches;
+    case (trueBranches,falseBranch,source)
+      equation
+        nrOfEquations = BackendEquation.equationLstSize(falseBranch);
+        nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);
+        b = List.map1(nrOfEquationsBranches, intEq, nrOfEquations);
+        true = List.reduce(b,boolAnd);
+      then (nrOfEquations);
+    case (trueBranches,falseBranch,source)
+      equation
+        nrOfEquations = BackendEquation.equationLstSize(falseBranch);
+        nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);
+        eqstr = stringDelimitList(List.map(listAppend(trueBranches,{falseBranch}),BackendDump.dumpEqnsStr),"\n");
+        strs = List.map(nrOfEquationsBranches, intString);
+        str = stringDelimitList(strs,",");
+        str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
+        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},DAEUtil.getElementSourceFileInfo(source));
+      then fail();
+  end matchcontinue;
+end countEquationsInBranches;
+
+protected function makeEquationLstToResidualExpLst 
+  input list<BackendDAE.Equation> eqLst;
+  output list<DAE.Exp> oExpLst;
+algorithm
+  oExpLst := matchcontinue(eqLst)
+    local
+      list<BackendDAE.Equation> rest;
+      list<DAE.Exp> exps1,exps2,exps;
+      BackendDAE.Equation eq;
+      DAE.ElementSource source;
+      String str;
+    case ({}) then {};
+    case ((eq as BackendDAE.ALGORITHM(source = source))::rest)
+      equation
+        str = BackendDump.equationStr(eq);
+        str = Util.stringReplaceChar(str,"\n","");
+        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},DAEUtil.getElementSourceFileInfo(source));
+        exps = makeEquationLstToResidualExpLst(rest);
+      then exps;
+    case (eq::rest)
+      equation
+        exps1 = makeEquationToResidualExpLst(eq);
+        exps2 = makeEquationLstToResidualExpLst(rest);
+        exps = listAppend(exps1,exps2);
+      then 
+        exps;
+  end matchcontinue;
+end makeEquationLstToResidualExpLst;
+
+protected function makeEquationToResidualExpLst "
+If-equations with more than 1 equation in each branch cannot be transformed
+to a single equation with residual if-expression. This function translates such
+equations to a list of residual if-expressions. Normal equations are translated 
+to a list with a single residual expression."
+  input BackendDAE.Equation eq;
+  output list<DAE.Exp> oExpLst;
+algorithm
+  oExpLst := matchcontinue(eq)
+    local
+      list<list<BackendDAE.Equation>> tbs;
+      list<BackendDAE.Equation> fbs;
+      list<DAE.Exp> conds, fbsExp,exps;
+      list<list<DAE.Exp>> tbsExp;
+      BackendDAE.Equation elt;
+      DAE.Exp exp;
+
+    case (BackendDAE.IF_EQUATION(conditions=conds,eqnstrue=tbs,eqnsfalse=fbs))
+      equation
+        fbsExp = makeEquationLstToResidualExpLst(fbs);
+        tbsExp = List.map(tbs, makeEquationLstToResidualExpLst);
+        exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
+      then
+        exps;
+    case (elt)
+      equation
+        exp=makeEquationToResidualExp(elt);
+      then
+        {exp};
+  end matchcontinue;
+end makeEquationToResidualExpLst;
+
+protected function makeResidualIfExpLst
+  input list<DAE.Exp> inExp1;
+  input list<list<DAE.Exp>> inExpLst2;
+  input list<DAE.Exp> inExpLst3;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := match (inExp1,inExpLst2,inExpLst3)
+    local
+      list<list<DAE.Exp>> tbs,tbsRest;
+      list<DAE.Exp> tbsFirst,fbs,rest_res;
+      list<DAE.Exp> conds;
+      DAE.Exp ifexp,fb;
+
+    case (_,tbs,{})
+      equation
+        List.map_0(tbs, List.assertIsEmpty);
+      then {};
+
+    case (conds,tbs,fb::fbs)
+      equation
+        tbsRest = List.map(tbs,List.rest);
+        rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
+
+        tbsFirst = List.map(tbs,List.first);
+
+        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
+      then
+        (ifexp :: rest_res);
+  end match;
+end makeResidualIfExpLst;
+
+protected function makeEquationToResidualExp ""
+  input BackendDAE.Equation eq;
+  output DAE.Exp oExp;
+algorithm
+  oExp := matchcontinue(eq)
+    local
+      DAE.Exp e1,e2;
+      DAE.ComponentRef cr1,cr2;
+      DAE.Type ty,ty1,ty2;
+      String str;
+    // normal equation
+    case(BackendDAE.EQUATION(exp=e1,scalar=e2))
+      equation
+        oExp = Expression.expSub(e1,e2);
+      then
+        oExp;
+    // equation from array TODO! check if this works!
+    case(BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
+      equation
+        oExp = Expression.expSub(e1,e2);
+      then
+        oExp;       
+    // solved equation
+    case(BackendDAE.SOLVED_EQUATION(componentRef=cr1, exp=e2))
+      equation
+        e1 = Expression.crefExp(cr1);
+        oExp = Expression.expSub(e1,e2);
+      then
+        oExp;
+    // residual equation
+    case(BackendDAE.RESIDUAL_EQUATION(exp = oExp))
+      then
+        oExp;
+    // complex equation
+    case(BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
+      equation
+        oExp = Expression.expSub(e1,e2);
+      then
+        oExp;
+    // failure
+    case(eq)
+      equation
+        str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " +& BackendDump.equationStr(eq) +& " to residual form!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end makeEquationToResidualExp;
+
+protected function makeEquationsFromResiduals
+  input list<DAE.Exp> inExp1;
+  input list<list<DAE.Exp>> inExpLst2;
+  input list<DAE.Exp> inExpLst3;
+  input DAE.ElementSource source "the origin of the element";
+  output list<BackendDAE.Equation> outExpLst;
+algorithm
+  outExpLst := match (inExp1,inExpLst2,inExpLst3,source)
+    local
+      list<list<DAE.Exp>> tbs,tbsRest;
+      list<DAE.Exp> tbsFirst,fbs;
+      list<DAE.Exp> conds;
+      DAE.Exp ifexp,fb;
+      BackendDAE.Equation eq;
+      list<BackendDAE.Equation> rest_res;
+      DAE.ElementSource src;
+
+    case (_,tbs,{},_)
+      equation
+        List.map_0(tbs, List.assertIsEmpty);
+      then {};
+
+    case (conds,tbs,fb::fbs,src)
+      equation
+        tbsRest = List.map(tbs,List.rest);
+        rest_res = makeEquationsFromResiduals(conds, tbsRest,fbs,src);
+
+        tbsFirst = List.map(tbs,List.first);
+
+        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
+        eq = BackendDAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
+      then
+        (eq :: rest_res);
+  end match;
+end makeEquationsFromResiduals;
 
 end BackendDAEOptimize;

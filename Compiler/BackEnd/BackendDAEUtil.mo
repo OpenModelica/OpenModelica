@@ -4310,8 +4310,8 @@ algorithm
     case(BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_,_)
       equation
         res = incidenceRow1(expl, incidenceRowExp, vars, iRow,inIndexType);
-        (res,size) = incidenceRowLstLst(eqnslst,vars,inWhenClause,inIndexType,res,1);
-        (res,size) = incidenceRowLst(eqns,vars,inWhenClause,inIndexType,res,size);
+        (res,_) = incidenceRowLstLst(eqnslst,vars,inWhenClause,inIndexType,res,0);
+        (res,size) = incidenceRowLst(eqns,vars,inWhenClause,inIndexType,res,0);
       then
         (res,size);
     
@@ -8572,7 +8572,6 @@ algorithm
       BackendDAE.BackendDAE sode;
     case (true,_,_,_)
       equation
-        //sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
         sode = reduceIndexDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
