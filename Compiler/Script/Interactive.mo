@@ -10431,7 +10431,9 @@ protected function addClassAnnotationToClass
 algorithm
   outClass := matchcontinue (inClass,inAbsynNamedArgLst)
     local
-      list<Absyn.ElementItem> publst,publst2;
+      list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
+      list<Absyn.EquationItem> equationlst,equationlst2;
+      list<Absyn.AlgorithmItem> algorithmlst,algorithmlst2;
       Absyn.Annotation annotation_,oldann,newann,newann_1;
       Absyn.Class cdef_1,cdef;
       list<Absyn.ClassPart> parts,parts2;
@@ -10445,14 +10447,7 @@ algorithm
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
     /* a class with parts */
-    case ((cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = parts))),nargs)
-      equation
-        publst = getPublicList(parts) "No annotation element found in class" ;
-        failure(_ = getElementAnnotationInElements(publst));
-        annotation_ = annotationListToAbsyn(nargs);
-        cdef_1 = addToPublic(cdef, Absyn.ANNOTATIONITEM(annotation_));
-      then
-        cdef_1;
+    /* if annotation is found in public elements then merge it */
     case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                                body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
                                info = file_info)),nargs)
@@ -10465,15 +10460,81 @@ algorithm
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
-    /* an extended class with parts: model extends M end M; */
-    case ((cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))),nargs)
+    /* if annotation is found in protected elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               info = file_info)),nargs)
       equation
-        publst = getPublicList(parts) "No annotation element found in class" ;
-        failure(_ = getElementAnnotationInElements(publst));
+        protlst = getProtectedList(parts);
+        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(protlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        protlst2 = replaceElementAnnotationInElements(protlst, newann_1);
+        parts2 = replaceProtectedList(parts, protlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+    /* if annotation is found in equation elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        equationlst = getEquationList(parts);
+        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
+        parts2 = replaceEquationList(parts, equationlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+    /* if annotation is found in initial equation elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        equationlst = getInitialEquationList(parts);
+        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
+        parts2 = replaceInitialEquationList(parts, equationlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+    /* if annotation is found in algorithm elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        algorithmlst = getAlgorithmList(parts);
+        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
+        parts2 = replaceAlgorithmList(parts, algorithmlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+    /* if annotation is found in initial algorithm elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        algorithmlst = getInitialAlgorithmList(parts);
+        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
+        parts2 = replaceInitialAlgorithmList(parts, algorithmlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(typeVars,classAttrs,parts2,cmt),file_info);
+    /* if no annotation element found in class then add it to the public list*/
+    case ((cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = parts))),nargs)
+      equation
+        publst = getPublicList(parts);
         annotation_ = annotationListToAbsyn(nargs);
         cdef_1 = addToPublic(cdef, Absyn.ANNOTATIONITEM(annotation_));
       then
         cdef_1;
+    /* an extended class with parts: model extends M end M; */
+    /* if annotation is found in public elements then merge it */
     case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                                body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
                                info = file_info)),nargs)
@@ -10486,6 +10547,79 @@ algorithm
         parts2 = replacePublicList(parts, publst2);
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if annotation is found in protected elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        protlst = getProtectedList(parts);
+        Absyn.ANNOTATIONITEM(oldann) = getElementAnnotationInElements(protlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        protlst2 = replaceElementAnnotationInElements(protlst, newann_1);
+        parts2 = replaceProtectedList(parts, protlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if annotation is found in equation elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        equationlst = getEquationList(parts);
+        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
+        parts2 = replaceEquationList(parts, equationlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if annotation is found in initial equation elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        equationlst = getInitialEquationList(parts);
+        Absyn.EQUATIONITEMANN(oldann) = getElementAnnotationInEquations(equationlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        equationlst2 = replaceElementAnnotationInEquations(equationlst, newann_1);
+        parts2 = replaceInitialEquationList(parts, equationlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if annotation is found in algorithm elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        algorithmlst = getAlgorithmList(parts);
+        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
+        parts2 = replaceAlgorithmList(parts, algorithmlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if annotation is found in initial algorithm elements then merge it */
+    case ((cdef as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+                               body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt),
+                               info = file_info)),nargs)
+      equation
+        algorithmlst = getInitialAlgorithmList(parts);
+        Absyn.ALGORITHMITEMANN(oldann) = getElementAnnotationInAlgorithms(algorithmlst);
+        newann = annotationListToAbsyn(nargs);
+        newann_1 = mergeAnnotations(oldann, newann);
+        algorithmlst2 = replaceElementAnnotationInAlgorithms(algorithmlst, newann_1);
+        parts2 = replaceInitialAlgorithmList(parts, algorithmlst2);
+      then
+        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2),file_info);
+    /* if no annotation element found in an extended class then add it to the public list*/
+    case ((cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))),nargs)
+      equation
+        publst = getPublicList(parts);
+        annotation_ = annotationListToAbsyn(nargs);
+        cdef_1 = addToPublic(cdef, Absyn.ANNOTATIONITEM(annotation_));
+      then
+        cdef_1;
   end matchcontinue;
 end addClassAnnotationToClass;
 
@@ -10513,6 +10647,54 @@ algorithm
   end matchcontinue;
 end replaceElementAnnotationInElements;
 
+protected function replaceElementAnnotationInEquations
+"function: replaceElementAnnotationInEquations
+   This function takes an element list and replaces the
+   first annotation with the one given as argument."
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  input Absyn.Annotation inAnnotation;
+  output list<Absyn.EquationItem> outAbsynEquationItemLst;
+algorithm
+  outAbsynEquationItemLst:=
+  matchcontinue (inAbsynEquationItemLst,inAnnotation)
+    local
+      list<Absyn.EquationItem> xs,res;
+      Absyn.Annotation a,a2;
+      Absyn.EquationItem el;
+    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: xs),a) then (Absyn.EQUATIONITEMANN(a) :: xs);
+    case ((el :: xs),a2)
+      equation
+        res = replaceElementAnnotationInEquations(xs, a2);
+      then
+        (el :: res);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceElementAnnotationInEquations;
+
+protected function replaceElementAnnotationInAlgorithms
+"function: replaceElementAnnotationInAlgorithms
+   This function takes an element list and replaces the
+   first annotation with the one given as argument."
+  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  input Absyn.Annotation inAnnotation;
+  output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
+algorithm
+  outAbsynAlgorithmItemLst:=
+  matchcontinue (inAbsynAlgorithmItemLst,inAnnotation)
+    local
+      list<Absyn.AlgorithmItem> xs,res;
+      Absyn.Annotation a,a2;
+      Absyn.AlgorithmItem el;
+    case ((Absyn.ALGORITHMITEMANN(annotation_ = _) :: xs),a) then (Absyn.ALGORITHMITEMANN(a) :: xs);
+    case ((el :: xs),a2)
+      equation
+        res = replaceElementAnnotationInAlgorithms(xs, a2);
+      then
+        (el :: res);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceElementAnnotationInAlgorithms;
+
 protected function getElementAnnotationInElements
 "function: getElementAnnotationInElements
    This function retrieves the first Annotation
@@ -10533,6 +10715,48 @@ algorithm
         a;
   end matchcontinue;
 end getElementAnnotationInElements;
+
+protected function getElementAnnotationInEquations
+"function: getElementAnnotationInEquations
+   This function retrieves the first Annotation
+   among the equation taken as argument"
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  output Absyn.EquationItem outEquationItem;
+algorithm
+  outEquationItem:=
+  matchcontinue (inAbsynEquationItemLst)
+    local
+      Absyn.EquationItem a;
+      list<Absyn.EquationItem> xs;
+    case (((a as Absyn.EQUATIONITEMANN(annotation_ = _)) :: xs)) then a;
+    case ((_ :: xs))
+      equation
+        a = getElementAnnotationInEquations(xs);
+      then
+        a;
+  end matchcontinue;
+end getElementAnnotationInEquations;
+
+protected function getElementAnnotationInAlgorithms
+"function: getElementAnnotationInAlgorithms
+   This function retrieves the first Annotation
+   among the equation taken as argument"
+  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  output Absyn.AlgorithmItem outAlgorithmItem;
+algorithm
+  outAlgorithmItem:=
+  matchcontinue (inAbsynAlgorithmItemLst)
+    local
+      Absyn.AlgorithmItem a;
+      list<Absyn.AlgorithmItem> xs;
+    case (((a as Absyn.ALGORITHMITEMANN(annotation_ = _)) :: xs)) then a;
+    case ((_ :: xs))
+      equation
+        a = getElementAnnotationInAlgorithms(xs);
+      then
+        a;
+  end matchcontinue;
+end getElementAnnotationInAlgorithms;
 
 protected function mergeAnnotations
 "function: mergeAnnotations
@@ -16922,6 +17146,106 @@ algorithm
   end matchcontinue;
 end replaceProtectedList;
 
+protected function replaceEquationList "function: replaceEquationList
+
+   This function replaces the `EquationItem\' list in the `ClassPart\' list,
+   and returns the updated list.
+"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inAbsynEquationItemLst)
+    local
+      Absyn.ClassPart lst,x;
+      list<Absyn.ClassPart> rest,ys,xs;
+      list<Absyn.EquationItem> newequationlst,new;
+    case (((lst as Absyn.EQUATIONS(contents = _)) :: rest),newequationlst) then (Absyn.EQUATIONS(newequationlst) :: rest);
+    case ((x :: xs),new)
+      equation
+        ys = replaceEquationList(xs, new);
+      then
+        (x :: ys);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceEquationList;
+
+protected function replaceInitialEquationList "function: replaceInitialEquationList
+
+   This function replaces the `EquationItem\' list in the `ClassPart\' list,
+   and returns the updated list.
+"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input list<Absyn.EquationItem> inAbsynEquationItemLst;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inAbsynEquationItemLst)
+    local
+      Absyn.ClassPart lst,x;
+      list<Absyn.ClassPart> rest,ys,xs;
+      list<Absyn.EquationItem> newequationlst,new;
+    case (((lst as Absyn.INITIALEQUATIONS(contents = _)) :: rest),newequationlst) then (Absyn.INITIALEQUATIONS(newequationlst) :: rest);
+    case ((x :: xs),new)
+      equation
+        ys = replaceInitialEquationList(xs, new);
+      then
+        (x :: ys);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceInitialEquationList;
+
+protected function replaceAlgorithmList "function: replaceAlgorithmList
+
+   This function replaces the `AlgorithmItem\' list in the `ClassPart\' list,
+   and returns the updated list.
+"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inAbsynAlgorithmItemLst)
+    local
+      Absyn.ClassPart lst,x;
+      list<Absyn.ClassPart> rest,ys,xs;
+      list<Absyn.AlgorithmItem> newalgorithmlst,new;
+    case (((lst as Absyn.ALGORITHMS(contents = _)) :: rest),newalgorithmlst) then (Absyn.ALGORITHMS(newalgorithmlst) :: rest);
+    case ((x :: xs),new)
+      equation
+        ys = replaceAlgorithmList(xs, new);
+      then
+        (x :: ys);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceAlgorithmList;
+
+protected function replaceInitialAlgorithmList "function: replaceInitialAlgorithmList
+
+   This function replaces the `AlgorithmItem\' list in the `ClassPart\' list,
+   and returns the updated list.
+"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  output list<Absyn.ClassPart> outAbsynClassPartLst;
+algorithm
+  outAbsynClassPartLst:=
+  matchcontinue (inAbsynClassPartLst,inAbsynAlgorithmItemLst)
+    local
+      Absyn.ClassPart lst,x;
+      list<Absyn.ClassPart> rest,ys,xs;
+      list<Absyn.AlgorithmItem> newalgorithmlst,new;
+    case (((lst as Absyn.INITIALALGORITHMS(contents = _)) :: rest),newalgorithmlst) then (Absyn.INITIALALGORITHMS(newalgorithmlst) :: rest);
+    case ((x :: xs),new)
+      equation
+        ys = replaceInitialAlgorithmList(xs, new);
+      then
+        (x :: ys);
+    case ({},_) then {};
+  end matchcontinue;
+end replaceInitialAlgorithmList;
+
 protected function deletePublicList "function: deletePublicList
 
   Deletes all PULIC classparts from the list.
@@ -16973,31 +17297,6 @@ algorithm
         (x :: res);
   end matchcontinue;
 end deleteProtectedList;
-
-protected function replaceEquationList "function: replaceEquationList
-
-   This function replaces the `EquationItem\' list in the `ClassPart\' list,
-   and returns the updated list.
-"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
-algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst,inAbsynEquationItemLst)
-    local
-      Absyn.ClassPart lst,x;
-      list<Absyn.ClassPart> rest,ys,xs;
-      list<Absyn.EquationItem> newpublst,new;
-    case (((lst as Absyn.EQUATIONS(contents = _)) :: rest),newpublst) then (Absyn.EQUATIONS(newpublst) :: rest);
-    case ((x :: xs),new)
-      equation
-        ys = replaceEquationList(xs, new);
-      then
-        (x :: ys);
-    case ({},_) then {};
-  end matchcontinue;
-end replaceEquationList;
 
 protected function getPublicList "function: getPublicList
 
@@ -17076,6 +17375,69 @@ algorithm
     case (_) then fail();
   end matchcontinue;
 end getEquationList;
+
+protected function getInitialEquationList "function: getInitialEquationList
+  This function takes a ClassPart List and returns the first InitialEquationItem
+  list of the class."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<Absyn.EquationItem> outAbsynInitialEquationItemLst;
+algorithm
+  outAbsynInitialEquationItemLst := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.EquationItem> lst,ys;
+      list<Absyn.ClassPart> rest,xs;
+      Absyn.ClassPart x;
+    case (Absyn.INITIALEQUATIONS(contents = lst) :: rest) then lst;
+    case ((x :: xs))
+      equation
+        ys = getInitialEquationList(xs);
+      then
+        ys;
+    case (_) then fail();
+  end matchcontinue;
+end getInitialEquationList;
+
+protected function getAlgorithmList "function: getAlgorithmList
+  This function takes a ClassPart List and returns the first AlgorithmItem
+  list of the class."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
+algorithm
+  outAbsynAlgorithmItemLst := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.AlgorithmItem> lst,ys;
+      list<Absyn.ClassPart> rest,xs;
+      Absyn.ClassPart x;
+    case (Absyn.ALGORITHMS(contents = lst) :: rest) then lst;
+    case ((x :: xs))
+      equation
+        ys = getAlgorithmList(xs);
+      then
+        ys;
+    case (_) then fail();
+  end matchcontinue;
+end getAlgorithmList;
+
+protected function getInitialAlgorithmList "function: getInitialAlgorithmList
+  This function takes a ClassPart List and returns the first InitialAlgorithmItem
+  list of the class."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<Absyn.AlgorithmItem> outAbsynInitialAlgorithmItemLst;
+algorithm
+  outAbsynInitialAlgorithmItemLst := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.AlgorithmItem> lst,ys;
+      list<Absyn.ClassPart> rest,xs;
+      Absyn.ClassPart x;
+    case (Absyn.INITIALALGORITHMS(contents = lst) :: rest) then lst;
+    case ((x :: xs))
+      equation
+        ys = getInitialAlgorithmList(xs);
+      then
+        ys;
+    case (_) then fail();
+  end matchcontinue;
+end getInitialAlgorithmList;
 
 protected function getClassFromElementitemlist "function: getClassFromElementitemlist
 
