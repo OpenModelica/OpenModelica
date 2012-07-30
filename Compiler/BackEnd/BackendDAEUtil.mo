@@ -8850,6 +8850,7 @@ algorithm
           (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
           (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
           (BackendDAECreate.expandDerOperator,"expandDerOperator",false),
+          (BackendDAEOptimize.simplifyIfEquations,"simplifyIfEquations",false),
           (BackendDAEOptimize.residualForm,"residualForm",false)
   };
   strPreOptModules := getPreOptModulesString();

@@ -1009,7 +1009,6 @@ algorithm
       equation
         b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
         s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
-        Debug.bcall3(b1,Error.addSourceMessage,Error.IF_EQUATION_WARNING, {s}, DAEUtil.getElementSourceFileInfo(source));
         (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
@@ -1020,7 +1019,6 @@ algorithm
       equation
         b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
         s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
-        Debug.bcall3(b1,Error.addSourceMessage,Error.IF_EQUATION_WARNING, {s}, DAEUtil.getElementSourceFileInfo(source));
         (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);

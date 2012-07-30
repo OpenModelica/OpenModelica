@@ -5628,8 +5628,8 @@ algorithm
   elts := List.map1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
   d := DAE.DAE(elts);
   // Transform if equations to if expression before going into code generation.
-  d := evaluateAnnotation(cache,env,d);
-  d := transformIfEqToExpr(d,false);
+  //d := evaluateAnnotation(cache,env,d);
+  //d := transformIfEqToExpr(d,false);
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);
 end transformationsBeforeBackend;

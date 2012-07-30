@@ -10367,4 +10367,152 @@ algorithm
   end match;
 end countOperator;
 
+
+/* 
+ * simplify if equations
+ *
+ */
+
+public function simplifyIfEquations
+"function: simplifyIfEquations
+  autor: Frenkel TUD 2012-07
+  This function traveres all if equations and tries to simplify it by using the 
+  information from evaluation of parameters"
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE odae;
+algorithm
+  odae := BackendDAEUtil.mapEqSystem(dae,simplifyIfEquationsWork);
+end simplifyIfEquations;
+
+protected function simplifyIfEquationsWork
+"function: simplifyIfEquationsWork
+  autor: Frenkel TUD 2012-07
+  This function traveres all if equations and tries to simplify it by using the 
+  information from evaluation of parameters"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := matchcontinue (isyst,ishared)
+    local
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.Equation> eqnslst;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(knownVars=knvars))
+      equation
+        // traverse the equations
+        eqnslst = BackendDAEUtil.equationList(eqns);
+        // traverse equations in reverse order, than branch equations of if equaitions need no reverse
+        ((eqnslst,true)) = List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},false));
+        eqns = BackendDAEUtil.listEquation(eqnslst);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+      then (syst,shared);
+    case (_,_)
+      then (isyst,ishared);
+  end matchcontinue;
+end simplifyIfEquationsWork;
+
+protected function simplifyIfEquationsFinder
+"function: simplifyIfEquationsFinder
+  autor: Frenkel TUD 2012-07
+  helper for simplifyIfEquations"
+  input BackendDAE.Equation inElem;
+  input BackendDAE.Variables inConstArg;
+  input tuple<list<BackendDAE.Equation>,Boolean> inArg;
+  output tuple<list<BackendDAE.Equation>,Boolean> outArg;
+algorithm
+  outArg := matchcontinue(inElem,inConstArg,inArg)
+    local
+      list<DAE.Exp> explst;
+      list<BackendDAE.Equation> eqnslst,acc;
+      list<list<BackendDAE.Equation>> eqnslstlst;
+      DAE.ElementSource source;
+      BackendDAE.Variables knvars;
+      Boolean b;
+    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,_))
+      equation
+        // check conditions
+        ((explst,(_,true))) = Expression.traverseExpList(explst, simplifyevaluatedParamter, (knvars,false));
+        explst = ExpressionSimplify.simplifyList(explst, {});
+        // simplify if equations
+        acc = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
+      then
+        ((acc,true));
+    case (_,_,(acc,b)) then ((inElem::acc,b));
+  end matchcontinue;
+end simplifyIfEquationsFinder;
+
+protected function simplifyevaluatedParamter
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl1;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl2;
+algorithm
+  tpl2 := matchcontinue(tpl1)
+    local
+      BackendDAE.Variables knvars;
+      DAE.ComponentRef cr;
+      BackendDAE.Var v;
+      DAE.Exp e;
+    case ((DAE.CREF(componentRef = cr),(knvars,_)))
+      equation
+        (v::{},_::{}) = BackendVariable.getVar(cr,knvars);
+        true = BackendVariable.isFinalVar(v);
+        e = BackendVariable.varBindExpStartValue(v);    
+      then
+        ((e,(knvars,true)));
+    case tpl1 then tpl1;   
+  end matchcontinue;
+end simplifyevaluatedParamter;
+
+protected function simplifyIfEquation
+"function: simplifyIfEquation
+  autor: Frenkel TUD 2012-07
+  helper for simplifyIfEquations"
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> theneqns;
+  input list<BackendDAE.Equation> elseenqs;
+  input list<DAE.Exp> conditions1;
+  input list<list<BackendDAE.Equation>> theneqns1;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables knvars;  
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> explst;
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns; 
+
+      
+    // no true case left with condition<>false
+    case ({},{},_,{},{},_,_,_) 
+      then 
+        listAppend(elseenqs,inEqns);
+    // true case left with condition<>false
+    case ({},{},_,_,_,_,_,_)
+      equation 
+        explst = listReverse(conditions1);  
+        eqnslst = listReverse(theneqns1);  
+      then 
+        BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
+    // if true use it
+    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+      then 
+        listAppend(eqns,inEqns);
+    // if false skip it
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
+      then
+        simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns);
+    // all other cases
+    case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
+      then
+        simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
+  end matchcontinue;
+end simplifyIfEquation;
+
 end BackendDAEOptimize;
