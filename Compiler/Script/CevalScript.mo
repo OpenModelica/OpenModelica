@@ -1814,6 +1814,12 @@ algorithm
         b = Interactive.isOperatorFunction(classpath, p);
       then
         (cache,Values.BOOL(b),st);
+        
+    case (cache,env,"isProtectedClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.isProtectedClass(classpath, name, p);
+      then
+        (cache,Values.BOOL(b),st);
     
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation

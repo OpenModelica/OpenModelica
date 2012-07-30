@@ -2352,6 +2352,18 @@ annotation(
   preferredView="text");
 end isOperatorFunction;
 
+function isProtectedClass
+  input TypeName cl;
+  input String c2;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class c1 has class c2 as one of its protected class.
+</html>"),
+  preferredView="text");
+end isProtectedClass;
+
 function setInitXmlStartValue
   input String fileName;
   input String variableName;

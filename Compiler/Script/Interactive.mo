@@ -9053,7 +9053,7 @@ algorithm
     local
       Absyn.Path modelpath;
       Boolean res, public_res, protected_res;
-      String element_name,str;
+      String str;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> public_elementitem_list, protected_elementitem_list;
       Absyn.ComponentRef model_;
@@ -9136,6 +9136,77 @@ algorithm
         res;
   end matchcontinue;
 end isReplaceableInElements;
+
+public function isProtectedClass
+"function: isProtectedClass
+  Returns true if the class referenced by inString within path is protected.
+  Only look to Element Items of inComponentRef1 for components use getComponents."
+  input Absyn.Path path;
+  input String inString;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (path,inString,inProgram)
+    local
+      Boolean res, protected_res;
+      String str;
+      list<Absyn.ClassPart> parts;
+      list<Absyn.ElementItem> protected_elementitem_list;
+      Absyn.Program p;
+    /* a class with parts - protected elements */
+    case (path,str,p)
+      equation
+        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(path, p);
+        protected_elementitem_list = getProtectedList(parts);
+        protected_res = isProtectedClassInElements(protected_elementitem_list, str);
+        res = Util.if_(protected_res, true, false);
+      then
+        res;
+    /* an extended class with parts: model extends M end M; protected elements */
+    case (path,str,p)
+      equation
+        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        protected_elementitem_list = getProtectedList(parts);
+        protected_res = isProtectedClassInElements(protected_elementitem_list, str);
+        res = Util.if_(protected_res, true, false);
+      then
+        res;
+    case (_,_,_) then false;
+  end matchcontinue;
+end isProtectedClass;
+
+protected function isProtectedClassInElements
+"function: isProtectedClassInElements
+  Helper function to isProtectedClass."
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input String inString;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inAbsynElementItemLst, inString)
+    local
+      String str, id;
+      Boolean res;
+      Absyn.ElementItem current;
+      list<Absyn.ElementItem> rest;
+    case ({}, _) then false;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)))) :: rest), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
+      equation
+        true = stringEq(id,str);
+      then
+        true;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(name = id)) :: rest), str)
+      equation
+        true = stringEq(id,str);
+      then
+        true;
+    case ((_ :: rest), str)
+      equation
+        res = isProtectedClassInElements(rest, str);
+      then
+        res;
+    case (_,_) then false;
+  end matchcontinue;
+end isProtectedClassInElements;
 
 protected function getEnumLiterals
 "function: getEnumLiterals
