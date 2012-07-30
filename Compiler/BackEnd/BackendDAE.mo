@@ -252,6 +252,7 @@ uniontype Shared "Data shared for all equation-systems"
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array< .DAE.Constraint> constraints "constraints (Optimica extension)";
+    array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
     .Env.Cache cache;
     .Env.Env env;
     .DAE.FunctionTree functionTree "functions for Backend";

@@ -303,6 +303,11 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end CONSTRAINT;  
   
+  record CLASS_ATTRIBUTES
+    ClassAttributes classAttrs;
+  end CLASS_ATTRIBUTES;
+    
+  
 end Element;
 
 public uniontype Function
@@ -530,13 +535,23 @@ uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm sect
 end Algorithm;
 
 public
-uniontype Constraint "The `Constraints\' type corresponds to a whole Constraint section.
+uniontype Constraint "Optimica extension: The `Constraints\' type corresponds to a whole Constraint section.
   It is simple a list of expressions."
   record CONSTRAINT_EXPS
     list<Exp> constraintLst;
   end CONSTRAINT_EXPS;
 
 end Constraint;
+
+public
+uniontype ClassAttributes "currently for Optimica extension: these are the objectives of optimization class"
+  record OPTIMIZATION_ATTRS
+    Option<Exp> objetiveE;
+    Option<Exp> startTimeE;
+    Option<Exp> finalTimeE;
+  end OPTIMIZATION_ATTRS;
+end ClassAttributes;
+
 
 public
 uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),

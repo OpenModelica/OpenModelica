@@ -764,6 +764,8 @@ public constant Message PARMODELICA_WARNING = MESSAGE(7004, TRANSLATION(), WARNI
   "ParModelica: %s.");
 public constant Message PARMODELICA_ERROR = MESSAGE(7005, TRANSLATION(), ERROR(),
   "ParModelica: %s.");
+public constant Message OPTIMICA_ERROR = MESSAGE(7006, TRANSLATION(), ERROR(),
+  "Optimica: %s.");  
 
 protected import ErrorExt;
 

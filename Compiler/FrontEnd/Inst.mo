@@ -3275,7 +3275,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
-      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae;
+      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
       ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,ci_state7,new_ci_state,ci_state_1;
       list<DAE.Var> vars;
       Option<DAE.Type> bc;
@@ -3284,6 +3284,7 @@ algorithm
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1,expandableEqs, expandableEqsInit;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       list<SCode.ConstraintSection> constrs;
+      list<Absyn.NamedArg> clsattrs;
       SCode.Restriction re,r;
       Boolean impl, valid_connector;
       SCode.Visibility vis;
@@ -3378,7 +3379,7 @@ algorithm
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg,
-                      constraintLst = constrs, externalDecl = ed
+                      constraintLst = constrs, clsattrs = clsattrs, externalDecl = ed
                       ),
         re,vis,_,_,inst_dims,impl,callscope,graph,csets,instSingleCref,info,stopInst)
       equation
@@ -3524,13 +3525,16 @@ algorithm
         (cache,env5,ih,dae5,csets5,ci_state6,graph) =
           instList(cache,env5,ih, mods, pre, csets4, ci_state5, InstSection.instInitialAlgorithm, initalg_1, impl, unrollForLoops, graph);
 
-        //Instantiate Constraints  (see function "instConstraints")
-        (cache,env5,dae6,ci_state7) =
-          instConstraints(cache,env5, pre, ci_state6, constrs, impl);
-        
+        //Instantiate/Translate class Attributes (currently only allowed for Optimica extensions)
+        (cache,env5,dae6) =
+          instClassAttributes(cache,env5, pre, clsattrs, impl,info);
 
+        //Instantiate Constraints  (see function "instConstraints")
+        (cache,env5,dae7,ci_state7) =
+          instConstraints(cache,env5, pre, ci_state6, constrs, impl);       
+        
         //Collect the DAE's
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6});
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6,dae7});
 
         //Change outer references to corresponding inner reference
         // adrpo: TODO! FIXME! very very very expensive function, try to get rid of it!
@@ -3538,7 +3542,7 @@ algorithm
         //(dae,csets5,ih,graph) = InnerOuter.changeOuterReferences(dae,csets5,ih,graph);
         //t2 = clock();
         //ti = t2 -. t1;
-        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& Env.printEnvPathStr(env5));
+        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& Env.printEnvPathStr(env7));
 
         csets5 = InnerOuter.changeInnerOuterInOuterConnect(csets5);
         
@@ -12327,7 +12331,7 @@ protected function checkFunctionInputUsed
 protected
   list<DAE.Element> invars,vars,algs;
 algorithm
-  (vars,_,_,_,algs,_,_) := DAEUtil.splitElements(elts);
+  (vars,_,_,_,algs,_,_,_) := DAEUtil.splitElements(elts);
   invars := List.filter(vars,DAEUtil.isInputVar);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
@@ -13752,6 +13756,7 @@ algorithm
   end match;
 end instList;
 
+
 protected function instConstraints
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -13787,6 +13792,122 @@ algorithm
   
   end match;
 end instConstraints;
+
+
+protected function instClassAttributes
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input list<Absyn.NamedArg> inAttrs;
+  input Boolean inBoolean;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.DAElist outDae;
+algorithm
+  
+  (outCache,outEnv,outDae):=
+  match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      DAE.DAElist clsAttrs, dae;
+              
+    case (cache,env,_,{},_,_) 
+      then (cache,env,DAEUtil.emptyDae);
+                  
+    case (_,_,_,_,_,_) 
+      equation
+        clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE()))});
+        (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,clsAttrs);
+      then (cache,env,dae);
+  end match;
+end instClassAttributes;
+
+
+protected function instClassAttributes2
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input list<Absyn.NamedArg> inAttrs;
+  input Boolean inBoolean;
+  input Absyn.Info inInfo;
+  input DAE.DAElist inClsAttrs;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.DAElist outDae;
+algorithm
+  
+  (outCache,outEnv,outDae):=
+  match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,inClsAttrs)
+    local
+      list<Env.Frame> env,env_1,env_2;
+      Prefix.Prefix pre;
+      Boolean impl;
+      DAE.DAElist dae1,dae2,dae;
+      Absyn.NamedArg na;
+      list<Absyn.NamedArg> rest;
+      Env.Cache cache;
+      Absyn.Ident attrName;
+      Absyn.Exp attrExp;
+      DAE.Exp outExp;
+      DAE.Properties outProps;
+      DAE.DAElist clsAttrs;
+  
+    case (cache,env,pre,{},impl,inInfo,clsAttrs) 
+      then (cache,env,clsAttrs);
+        
+    case (cache,env,pre,(na :: rest),impl,_,clsAttrs)
+      equation
+        Absyn.NAMEDARG(attrName, attrExp) = na;
+        (cache,outExp,outProps,_) = Static.elabExp(cache, env, attrExp, impl, NONE(), false /*vectorize*/, pre, inInfo);
+        (clsAttrs) = insertClassAttribute(clsAttrs,attrName,outExp);
+        (cache,env_2,clsAttrs) = instClassAttributes2(cache, env, pre, rest, impl, inInfo,clsAttrs);
+      then
+        (cache,env_2,clsAttrs);
+        
+    case (_,_,_,_,_,_,_) 
+      equation
+        Error.addMessage(Error.OPTIMICA_ERROR, {"Class Attributes allowed only for Optimization classes."});
+      then fail();
+  end match;
+end instClassAttributes2;
+
+
+protected function insertClassAttribute
+  input DAE.DAElist inAttrs;
+  input Absyn.Ident attrName;
+  input DAE.Exp inAttrExp;
+  output DAE.DAElist outAttrs;  
+algorithm
+  outAttrs := matchcontinue(inAttrs, attrName, inAttrExp)
+    local
+      Ident name;
+      Option<DAE.Exp> objectiveE,startTimeE,finalTimeE;
+      DAE.DAElist attrs;
+      
+    case (attrs, "objective", _)
+      equation
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(_,startTimeE,finalTimeE))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(SOME(inAttrExp),startTimeE,finalTimeE))});
+      then attrs;
+        
+    case (attrs, "startTime", _)
+      equation
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,_,finalTimeE))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,SOME(inAttrExp),finalTimeE))});
+      then attrs;
+        
+    case (attrs, "finalTime", _)
+      equation
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,_))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,SOME(inAttrExp)))});
+      then attrs;
+        
+  end matchcontinue;
+end insertClassAttribute;
+
+
 
 protected function instBinding
 "function: instBinding

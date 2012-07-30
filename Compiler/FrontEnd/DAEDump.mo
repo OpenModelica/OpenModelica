@@ -2859,12 +2859,12 @@ algorithm
   outStream := match(l, inStream)
     local  
       IOStream.IOStream str;
-      list<DAE.Element> v,o,ie,ia,e,a,co;
+      list<DAE.Element> v,o,ie,ia,e,a,ca,co;
       
     case (l, str)
      equation
        // classify DAE 
-       (v,ie,ia,e,a,co,o) = DAEUtil.splitElements(l);
+       (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
 
        // dump variables
        str = dumpVarsStream(v, false, str);

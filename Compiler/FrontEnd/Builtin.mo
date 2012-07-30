@@ -264,6 +264,23 @@ protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefi
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
+          
+/* Optimica Extensions. Theses variables are considered builtin for Optimica: startTime, finalTime and objective */
+protected constant DAE.Var startTimeVar = DAE.TYPES_VAR("startTime",
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+
+/* The builtin variable time. See also variableIsBuiltin */
+protected constant DAE.Var finalTimeVar = DAE.TYPES_VAR("finalTime",
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+
+/* The builtin variable time. See also variableIsBuiltin */
+protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+          
+          
 
 protected constant DAE.Type stringIntInt2string = 
           DAE.T_FUNCTION(
@@ -457,7 +474,24 @@ output Boolean b;
 algorithm
   b := match (cref)
     case(DAE.CREF_IDENT(ident="time")) then true;
-    else false;
+      
+    //If accepting Optimica then these variabels are also builtin   
+    case(DAE.CREF_IDENT(ident="startTime"))  
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then true;
+        
+    case(DAE.CREF_IDENT(ident="finalTime"))  
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then true;
+        
+    case(DAE.CREF_IDENT(ident="objective"))  
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then true;
+        
+        else false;
   end match;
 end variableIsBuiltin;
 
@@ -565,6 +599,11 @@ algorithm
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameC(env, uncertaintyType);
       env = Env.extendFrameV(env, timeVar, NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
+      
+      //If Optimica add the startTime,finalTime and objective "builtin" variables.
+      env = Util.if_(Config.acceptMetaModelicaGrammar(), Env.extendFrameV(env, objectiveVar, NONE(), Env.VAR_UNTYPED(), {}), env);
+      env = Util.if_(Config.acceptMetaModelicaGrammar(), Env.extendFrameV(env, startTimeVar, NONE(), Env.VAR_UNTYPED(), {}), env);
+      env = Util.if_(Config.acceptMetaModelicaGrammar(), Env.extendFrameV(env, finalTimeVar, NONE(), Env.VAR_UNTYPED(), {}), env);
 
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);

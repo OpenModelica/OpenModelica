@@ -830,6 +830,7 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    array<DAE.ClassAttributes> classAttrs;
     Env.Cache cache;
     Env.Env env;    
     DAE.FunctionTree funcs;
@@ -851,10 +852,10 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),eqns,true) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -893,6 +894,7 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    array<DAE.ClassAttributes> classAttrs;
     Env.Cache cache;
     Env.Env env;    
     DAE.FunctionTree funcs;
@@ -904,13 +906,13 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
        orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl));
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
        
@@ -1325,6 +1327,7 @@ algorithm
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
+    array<DAE.ClassAttributes> classAttrs;
     Env.Cache cache;
     Env.Env env;    
     DAE.FunctionTree funcs;
@@ -1334,10 +1337,10 @@ algorithm
     BackendDAE.SymbolicJacobians symjacs;
     
     case(BackendDAE.DAE(systList,(shared as BackendDAE.SHARED(externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
-                                   removedEqs=removedEqs,constraints=constraints,eventInfo=eventInfo,cache=cache,env=env,
+                                   removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,eventInfo=eventInfo,cache=cache,env=env,
                                    functionTree=funcs,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),knownVars) 
     equation
-       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
+       shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(systList,shared); 
        
