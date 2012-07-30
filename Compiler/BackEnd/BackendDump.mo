@@ -1423,6 +1423,9 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
+        print(" ");
+        dumpFlow(flowPrefix);
+        print(" ");
         dumpAttributes(dae_var_attr);
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = List.map(paths, Absyn.pathString);
@@ -1472,6 +1475,9 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
+        print(" ");
+        dumpFlow(flowPrefix);
+        print(" ");        
         dumpAttributes(dae_var_attr);
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
@@ -1521,6 +1527,17 @@ algorithm
   end match;
 end dumpKind;
 
+public function dumpFlow
+  input DAE.Flow flowPrefix;
+algorithm
+  _:=
+  match(flowPrefix)
+    case DAE.FLOW() equation print("flow=true"); then ();
+    case DAE.NON_FLOW() equation print("flow=false"); then ();
+    case DAE.NON_CONNECTOR() equation print(""); then ();
+  end match;
+end dumpFlow;
+
 public function dumpAttributes
 "function: dumpAttributes
   Helper function to dump."
@@ -1534,6 +1551,8 @@ algorithm
        Option<Boolean> isProtected,finalPrefix;
        Option<DAE.Distribution> dist;
     case NONE() then ();
+    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+     then ();
     case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
         print("(");
@@ -1547,6 +1566,8 @@ algorithm
         dumpOptDistribution(dist);
         print(") ");
      then ();
+    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+     then ();
     case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
         print("(");
@@ -1559,6 +1580,8 @@ algorithm
         dumpOptDistribution(dist);
         print(") ");
      then ();
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+      then ();
     case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
@@ -1568,6 +1591,8 @@ algorithm
         dumpOptBoolean(finalPrefix,"final");
         print(") ");
      then ();
+    case SOME(DAE.VAR_ATTR_STRING(initial_=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+     then ();
     case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
         print("(");
@@ -1575,6 +1600,8 @@ algorithm
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
         print(") ");
+     then ();
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation

@@ -8260,8 +8260,8 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-  //sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
@@ -8346,8 +8346,8 @@ protected
 algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
-  //outDAE := reduceIndexDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
+  //outDAE := transformDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
+  outDAE := reduceIndexDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
 end transformBackendDAE;
 
 public function transformDAE
@@ -8702,8 +8702,8 @@ algorithm
       BackendDAE.BackendDAE sode;
     case (true,_,_,_)
       equation
-        sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
-        //sode = reduceIndexDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
+        //sode = transformDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
+        sode = reduceIndexDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
     case (false,_,_,_)
@@ -8799,8 +8799,8 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
-  //sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  //sode := transformDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
