@@ -5553,7 +5553,7 @@ algorithm
       equation
         eqn_str = "";
         var_str = "";
-        source = BackendEquation.markedEquationSource(isyst, listGet({},1));
+        source = DAE.emptyElementSource;
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then

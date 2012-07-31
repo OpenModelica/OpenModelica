@@ -432,8 +432,8 @@ algorithm
         (orgEqnsLst,_) = traverseOrgEqnsExp(inOrgEqnsLst,(cr,exp1,exp2),replaceAliasStateExp,{});
         e1 = inAss1[i];
         b = intGt(e1,0);    
-        ass1 = Debug.bcallret3(b,arrayUpdate,inAss1,i,-1,inAss1); 
-        ass2 = Debug.bcallret3(b,arrayUpdate,inAss2,e1,-1,inAss2); 
+        ass1 = consArrayUpdate(b, inAss1,i,-1);
+        ass2 = consArrayUpdate(b, inAss2,e1,-1);
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         changedEqns =  List.unique(List.map1r(changedEqns,arrayGet,imapIncRowEqn));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), changedEqns, imapEqnIncRow, imapIncRowEqn);
@@ -2346,13 +2346,29 @@ algorithm
         (_,i::_) = BackendVariable.getVarDAE(cr,isyst);
         (_,syst,shared,changedeqns) = BackendDAETransform.makeDummyState(cr,i,isyst,ishared,mapIncRowEqn);
         e = inAss1[i];
-        _ = Debug.bcallret3(intGt(e,0), arrayUpdate, inAss1, e, -1, inAss1);
-        _ = Debug.bcallret3(intGt(i,0), arrayUpdate, inAss2, i, -1, inAss2);
+        _ = consArrayUpdate(intGt(e,0), inAss1, e, -1);
+        _ = consArrayUpdate(intGt(i,0), inAss2, i, -1);
         (syst,shared,changedeqns) = addDummyStates(rest,syst,shared,inAss1,inAss2,mapIncRowEqn,listAppend(ichangedeqns,changedeqns));
       then 
         (syst,shared,changedeqns);
   end match;
 end addDummyStates;
+
+protected function consArrayUpdate
+  input Boolean cond;
+  input array<Type_a> arr;
+  input Integer index;
+  input Type_a newValue;
+  output array<Type_a> oarr;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  oarr := match(cond,arr,index,newValue)
+    case(true,_,_,_)
+      then
+        arrayUpdate(arr,index,newValue);
+    case(false,_,_,_) then arr;
+  end match;
+end consArrayUpdate;
 
 /*****************************************
  calculation of the determinant of a square matrix . 
