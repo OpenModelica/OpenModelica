@@ -195,11 +195,11 @@ if(INSTALL_OMDEV_LIBS)
   endif()
 
   if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION lib/omc)
+    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
   endif()
 
-  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION lib/omc)
-  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION lib/omc)
+  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
+  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
   #install (FILES "${BOOST_SERIALIZATION_LIBRARY_RELEASE}"   DESTINATION bin)
 endif()
 
