@@ -25,10 +25,10 @@ int main(int argc, const char* argv[])
      string runtime_lib_path = argv[lib_index];
     fs::path libraries_path = fs::path( runtime_lib_path) ;
     fs::path modelica_path = fs::path( argv[modelica_index] ) ;
-	fs::path config_path = fs::path( argv[config_index] ) ;
+    fs::path config_path = fs::path( argv[config_index] ) ;
     libraries_path.make_preferred();
     modelica_path.make_preferred();
-	config_path.make_preferred();
+    config_path.make_preferred();
     string resultsfilename(argv[modelname_index]);
    
 
