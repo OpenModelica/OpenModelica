@@ -5171,7 +5171,7 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print, str2);
         // copy dlow
         dlowc = BackendDAEUtil.copyBackendDAE(dlow);
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),orderedEqs=eqns)::{},shared) = dlowc;
         dlowc1 = BackendDAEUtil.copyBackendDAE(dlow1);
         BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
         // add Tearing Var
@@ -7757,7 +7757,7 @@ algorithm
      case(e, diff_cref::rest, _, _)
        equation
         true = Flags.isSet(Flags.FAILTRACE_JAC);
-         str = "BackendDAEOptimize.createDiffListMeta failed: " +& ExpressionDump.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(diff_cref);
+         str = "BackendDAEOptimize.createDiffListMeta failed: " +& ExpressionDump.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(diff_cref) +& "\n";
          print(str);
         //Error.addMessage(Error.INTERNAL_ERROR, {str});
        then fail();

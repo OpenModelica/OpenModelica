@@ -300,7 +300,6 @@ uniontype Variables "- Variables"
     VariableArray varArr "varArr ; Array of variables";
     Integer bucketSize "bucketSize ; bucket size";
     Integer numberOfVars "numberOfVars ; no. of vars";
-    HashTableCrILst.HashTable fastht "cref -> list<Integer>(indxes)";
   end VARIABLES;
 end Variables;
 
