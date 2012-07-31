@@ -1,13 +1,13 @@
 cmake_minimum_required (VERSION 2.6)
 
-project(Modelica)
+project(${ModelicaName})
 
-add_library(Modelica SHARED ModelicaSystem.cpp )
+add_library(${ModelicaName} SHARED ModelicaSystem.cpp )
 
-target_link_libraries (Modelica  System ModelicaExternalC)
+target_link_libraries (${ModelicaName}  ${SystemName} ${ModelicaExternalCName})
 
 
-GET_TARGET_PROPERTY(libModelicaSystem Modelica LOCATION)
+GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemName ${libModelicaSystem} NAME)
 #set (BOOST_LIBS ${Boost})
 set (BOOS_INCLUDE ${Boost_INCLUDE_DIRS})

@@ -797,7 +797,7 @@ algorithm
              outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,
              plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
-             platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to,
+             platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
@@ -1339,13 +1339,15 @@ algorithm
         
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
-        compileDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
-         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        simflags2=Util.if_(ifcpp,stringAppendList({compileDir," ","./"," ",result_file}), simflags);           
-        executable1=Util.if_(ifcpp,"Simulation",executable); 
+        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
+        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc" ;
+        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        simflags2=Util.if_(ifcpp,stringAppendList({libDir," ",compileDir," ",result_file," ",configDir}), simflags);           
+        executable1=Util.if_(ifcpp,"OMCppSimulation",executable); 
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);

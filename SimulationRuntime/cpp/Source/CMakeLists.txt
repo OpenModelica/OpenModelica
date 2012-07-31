@@ -25,6 +25,21 @@ SET(INSTALL_OMDEV_LIBS ON)
 ENDIF( WIN32 )
 
 SET(MODELICA_MODEL "ModelicaSystem")
+SET(LIBPREFIX "OMCpp")
+SET(SolverName ${LIBPREFIX}Solver)
+SET(SystemName ${LIBPREFIX}System)
+set(MathName ${LIBPREFIX}Math)
+set(ModelicaExternalName ${LIBPREFIX}ModelicaExternalC)
+set(SettingsFactoryName ${LIBPREFIX}SettingsFactory)
+set(SimManagerName ${LIBPREFIX}Simulation)
+set(CVodeName ${LIBPREFIX}CVode)
+set(EulerName ${LIBPREFIX}Euler)
+set(IdaName ${LIBPREFIX}Ida)
+set(IdasName ${LIBPREFIX}Idas)
+set(KinsolName ${LIBPREFIX}Kinsol)
+set(ModelicaName ${LIBPREFIX}Modelica)
+set(NewtonName ${LIBPREFIX}Newton)
+
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
 SET(USE_SUNDIALS ON)
@@ -126,11 +141,11 @@ add_subdirectory (Solver/CVode/Implementation)
 #add  Idas solver project
 add_subdirectory (Solver/Idas/Implementation)
 add_subdirectory (Solver/Ida/Implementation)
-GET_TARGET_PROPERTY(libCVode CVode LOCATION)
+GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
 GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
-GET_TARGET_PROPERTY(libIdas Idas LOCATION)
+GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
 GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
-GET_TARGET_PROPERTY(libIda Ida LOCATION)
+GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
 GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
 
 set (IDAS_LIB ${libIdasName})
@@ -138,24 +153,24 @@ set (CVODE_LIB ${libCVodeName})
 set (IDA_LIB ${libIdaName})
 endIf()
 
-GET_TARGET_PROPERTY(libNewton Newton LOCATION)
+GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
 GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME) 
 
-GET_TARGET_PROPERTY(libEuler Euler LOCATION)
+GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
 
 
 
-GET_TARGET_PROPERTY(libSetFactory SettingsFactory LOCATION)
+GET_TARGET_PROPERTY(libSetFactory ${SettingsFactoryName} LOCATION)
 GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
 
-GET_TARGET_PROPERTY(libModelica Modelica LOCATION)
+GET_TARGET_PROPERTY(libModelica ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
 
-GET_TARGET_PROPERTY(libSystem System LOCATION)
+GET_TARGET_PROPERTY(libSystem ${SystemName} LOCATION)
 GET_FILENAME_COMPONENT(libSystemName ${libSystem} NAME)
 
-GET_TARGET_PROPERTY(libSolver Solver LOCATION)
+GET_TARGET_PROPERTY(libSolver ${SolverName} LOCATION)
 GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
 
 set (EULER_LIB ${libEulerName})
@@ -180,11 +195,11 @@ if(INSTALL_OMDEV_LIBS)
   endif()
 
   if(USE_MICO)
-    install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
+    install (FILES "${MICO_LIBRARY}"   DESTINATION lib/omc)
   endif()
 
-  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
-  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
+  install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION lib/omc)
+  install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION lib/omc)
   #install (FILES "${BOOST_SERIALIZATION_LIBRARY_RELEASE}"   DESTINATION bin)
 endif()
 

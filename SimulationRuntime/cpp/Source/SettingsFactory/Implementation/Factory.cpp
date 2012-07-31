@@ -18,12 +18,12 @@ SettingsFactory::~SettingsFactory(void)
 
  
 }
-tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > SettingsFactory::create(fs::path libraries_path)
+tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > SettingsFactory::create(fs::path libraries_path,fs::path config_path)
 {
   
  
   fs::path settingsfile_name("GlobalSettings.xml");
-  fs::path settingsfile_path = libraries_path;
+  fs::path settingsfile_path = config_path;
   fs::path settingsfolder_name("config");
   settingsfile_path/=settingsfolder_name;
   settingsfile_path/=settingsfile_name;
@@ -54,7 +54,7 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
       _global_settings->getSelectedSolver().append("Settings.xml"));
   
   fs::path solversettingsfile_name(settings_file);
-  fs::path solversettingsfile_path = libraries_path;
+  fs::path solversettingsfile_path = config_path;
   solversettingsfile_path/=settingsfolder_name;
   solversettingsfile_path/=solversettingsfile_name;
 

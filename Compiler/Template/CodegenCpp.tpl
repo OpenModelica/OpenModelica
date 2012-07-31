@@ -144,14 +144,14 @@ EXEEXT=<%makefileParams.exeext%>
 DLLEXT=<%makefileParams.dllext%>
 CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
 CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-LDFLAGS=-L"<%makefileParams.omhome%>/bin"    
+LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc"    
 
 MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
 FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lSystem  -lModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem  -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;

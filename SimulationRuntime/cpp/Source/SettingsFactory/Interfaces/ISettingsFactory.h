@@ -8,7 +8,7 @@ class ISettingsFactory
 public:
   ISettingsFactory() {};
   virtual ~ISettingsFactory(void) {};
-  virtual tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > create(fs::path libraries_path) =0;
+  virtual tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > create(fs::path libraries_path,fs::path config_path) =0;
   
 
 };

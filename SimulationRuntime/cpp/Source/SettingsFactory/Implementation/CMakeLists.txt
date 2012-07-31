@@ -1,14 +1,14 @@
 cmake_minimum_required (VERSION 2.6)
 
-project(SettingsFactory)
+project(${SettingsFactoryName})
 # add the solver default implementation library
-add_library(SettingsFactory SHARED GlobalSettings.cpp Factory.cpp  )
-target_link_libraries( SettingsFactory ${Boost_LIBRARIES})
+add_library(${SettingsFactoryName} SHARED GlobalSettings.cpp Factory.cpp  )
+target_link_libraries( ${SettingsFactoryName} ${Boost_LIBRARIES})
 
 
-install (TARGETS SettingsFactory DESTINATION bin)
+install (TARGETS ${SettingsFactoryName} DESTINATION lib/omc)
 install (FILES "../Interfaces/GlobalSettings.xml" 
-  DESTINATION bin/config)
+  DESTINATION share/omc/runtime/cpp/config)
 install (FILES "../Interfaces/IGlobalSettings.h" 
   DESTINATION include/omc/cpp/SettingsFactory/Interfaces)
 

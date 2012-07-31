@@ -7,11 +7,11 @@ namespace fs = boost::filesystem;
 
 
 
-int nargc=4;
+int nargc=5;
 int lib_index= 1;
 int modelica_index = 2;
 int modelname_index = 3;
-
+int config_index = 4;
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
 int _tmain(int argc, _TCHAR* argv[])
@@ -25,8 +25,10 @@ int main(int argc, const char* argv[])
      string runtime_lib_path = argv[lib_index];
     fs::path libraries_path = fs::path( runtime_lib_path) ;
     fs::path modelica_path = fs::path( argv[modelica_index] ) ;
+	fs::path config_path = fs::path( argv[config_index] ) ;
     libraries_path.make_preferred();
     modelica_path.make_preferred();
+	config_path.make_preferred();
     string resultsfilename(argv[modelname_index]);
    
 
@@ -40,7 +42,7 @@ int main(int argc, const char* argv[])
     try
     {
 
-        Configuration config(libraries_path);
+        Configuration config(libraries_path,config_path);
         IGlobalSettings* global_settings = config.getGlobalSettings();
         global_settings->setRuntimeLibrarypath(runtime_lib_path);       
         global_settings->setResultsFileName(resultsfilename);

@@ -2,7 +2,7 @@
 #include "Configuration.h"
 #include <boost/algorithm/string.hpp>
 #include "LibrariesConfig.h"
-Configuration::Configuration(fs::path libraries_path)
+Configuration::Configuration(fs::path libraries_path,fs::path config_path)
 :_libraries_path(libraries_path)
 {
   type_map types;
@@ -21,7 +21,7 @@ Configuration::Configuration(fs::path libraries_path)
     throw std::invalid_argument("No such settings library");
   }
   _settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create());
-  tie(_global_settings,_solver_settings) =_settings_factory->create(libraries_path);
+  tie(_global_settings,_solver_settings) =_settings_factory->create(libraries_path,config_path);
 
 
 }

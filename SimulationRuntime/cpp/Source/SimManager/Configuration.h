@@ -9,7 +9,7 @@
 class Configuration
 {
 public:
-  Configuration(fs::path libraries_path);
+  Configuration(fs::path libraries_path, fs::path config_path);
   ~Configuration(void);
   IDAESolver* createSolver(IDAESystem* system);
   IGlobalSettings* getGlobalSettings();
@@ -21,4 +21,5 @@ private:
    boost::shared_ptr<IGlobalSettings>  _global_settings;
    boost::shared_ptr<IDAESolver> _solver;
    fs::path _libraries_path;
+   fs::path _config_path;
 };
