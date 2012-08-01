@@ -1763,7 +1763,6 @@ void SystemImpl__gettextInit(const char *locale)
   const char *omhome = SettingsImpl__getInstallationDirectoryPath();
   char *localedir;
   int omlen;
-  fprintf(stderr, "try locale %s\n", locale);
   if (!setlocale(LC_ALL, locale)) {
     const char *c_tokens[1]={locale};
     c_add_message(85, /* ERROR_OPENING_FILE */
