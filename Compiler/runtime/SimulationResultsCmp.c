@@ -241,7 +241,7 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
     /* events */
     if(i>0) {
       /* an event */
-      if (t == time->data[i-1]) {
+      if (absdouble(t-time->data[i-1]) > 0.00000065) {
         /* fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
           goto the last */
         char te = 0;

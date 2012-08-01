@@ -147,7 +147,8 @@ dasrt_deinitial(DASSL_DATA *dasslData){
   free(dasslData->iwork);
   free(dasslData->ipar);
   free(dasslData->info);
-
+  free(dasslData->dasslStatistics);
+  free(dasslData->dasslStatisticsTmp);
   return 0;
 }
 
