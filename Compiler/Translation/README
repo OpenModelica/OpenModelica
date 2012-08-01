@@ -1,0 +1,10 @@
+GetText guide:
+
+# Setup a new translation target
+make update
+msginit --locale=sv_SE.utf8 -i openmodelica.pot
+svn add sv.po
+
+# To update a translation file
+msgmerge -U sv.po openmodelica.pot
+
