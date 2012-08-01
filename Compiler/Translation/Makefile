@@ -1,7 +1,7 @@
 srcdir = ..
 top_builddir = ../..
 localedir = $(top_builddir)/build/share/locale/
-locales = sv en_GB
+locales = sv
 
 release:
 	for locale in $(locales); do mkdir -p $(localedir)/$$locale/LC_MESSAGES && msgfmt -o$(localedir)/$$locale/LC_MESSAGES/openmodelica.mo $$locale.po; done

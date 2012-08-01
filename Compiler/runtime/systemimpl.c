@@ -56,6 +56,7 @@ extern "C" {
 #include "rtclock.h"
 #include "config.h"
 #include "errorext.h"
+#include "settingsimpl.h"
 #include "f2c.h"
 
 #if defined(_MSC_VER) /* no iconv for VS! */
@@ -68,6 +69,8 @@ typedef void* iconv_t;
 #else /* real compilers */
 
 #include "iconv.h"
+#include <locale.h>
+#include <libintl.h>
 
 #endif
 
@@ -1751,6 +1754,41 @@ int SystemImpl__intRand(int n)
     if (RAND_MAX-(long)r >= m) break;
   }
   return r % n;
+}
+
+void SystemImpl__gettextInit(const char *locale)
+{
+#if defined(_MSC_VER)
+#else
+  const char *omhome = SettingsImpl__getInstallationDirectoryPath();
+  char *localedir;
+  int omlen;
+  fprintf(stderr, "try locale %s\n", locale);
+  if (!setlocale(LC_ALL, locale)) {
+    const char *c_tokens[1]={locale};
+    c_add_message(85, /* ERROR_OPENING_FILE */
+      ErrorType_scripting,
+      ErrorLevel_warning,
+      "Failed to set locale: '%s'.",
+      c_tokens,
+      1);
+  }
+  omlen = strlen(omhome);
+  localedir = (char*) malloc(omlen + 25);
+  sprintf(localedir, "%s/share/locale", omhome);
+  bindtextdomain ("openmodelica", localedir);
+  textdomain ("openmodelica");
+  free(localedir);
+#endif
+}
+
+const char* SystemImpl__gettext(const char *msgid)
+{
+#if defined(_MSC_VER)
+  return msgid;
+#else
+  return gettext(msgid);
+#endif
 }
 
 #ifdef __cplusplus

@@ -2072,3 +2072,17 @@ RML_BEGIN_LABEL(System__realRand)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__gettextInit)
+{
+  SystemImpl__gettextInit(RML_STRINGDATA(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__gettext)
+{
+  rmlA0 = mk_scon(SystemImpl__gettext(RML_STRINGDATA(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

@@ -20,4 +20,4 @@ msgstr ""
 
 #: ../Main/Main.mo:1114
 msgid "You are trying to run OpenModelica as root.\n"
-msgstr ""
+msgstr "Du försöker köra OpenModelica som root.\n"

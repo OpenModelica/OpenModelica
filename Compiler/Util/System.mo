@@ -920,7 +920,7 @@ public function realRand
   "Returns a value in the intervals (0,1]"
   output Real r;
 
-  external "C" r = SystemImpl__realRand();
+  external "C" r = SystemImpl__realRand() annotation(Library = {"omcruntime"});
 end realRand;
 
 public function intRand
@@ -929,7 +929,20 @@ public function intRand
   input Integer n;
   output Integer i;
 
-  external "C" i = SystemImpl__intRand(n);
+  external "C" i = SystemImpl__intRand(n) annotation(Library = {"omcruntime"});
 end intRand;
+
+public function gettextInit
+  "Choose a locale for subsequent gettext calls. Prints warnings on failures."
+  input String locale := "" "Empty string choses automatically from the environment";
+  external "C" SystemImpl__gettextInit(locale) annotation(Library = {"omcruntime"});
+end gettextInit;
+
+public function gettext
+  "Translate a string from msgid to msgstr using the language of the chosen locale"
+  input String msgid;
+  output String msgstr;
+  external "C" msgstr = SystemImpl__gettext(msgid) annotation(Library = {"omcruntime"});
+end gettext;
 
 end System;

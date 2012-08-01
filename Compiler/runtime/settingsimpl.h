@@ -30,5 +30,6 @@
 
 #ifndef SETTINGSIMPL__H_
 #define SETTINGSIMPL__H_
+extern const char* SettingsImpl__getInstallationDirectoryPath();
 extern const char* SettingsImpl__getTempDirectoryPath();
 #endif

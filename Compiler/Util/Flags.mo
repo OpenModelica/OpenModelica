@@ -673,6 +673,9 @@ constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
 constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   "Defines whether plot commands should open OMPlot or just output results.");
+constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale", 
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  "Override the locale from the environment.");
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -717,7 +720,8 @@ constant list<ConfigFlag> allConfigFlags = {
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
-  PLOT_SILENT
+  PLOT_SILENT,
+  LOCALE_FLAG
 };
 
 public function new

@@ -1088,6 +1088,7 @@ algorithm
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args_1);
+        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
         ismode = Flags.isSet(Flags.INTERACTIVE);
         icmode = Flags.isSet(Flags.INTERACTIVE_CORBA);
         imode = boolOr(ismode, icmode);
@@ -1111,7 +1112,8 @@ algorithm
     case _
       equation
         true = System.userIsRoot();
-        print("You are trying to run OpenModelica as root.\n");
+        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",""));
+        print(System.gettext("You are trying to run OpenModelica as root.\n"));
         print("This is a very bad idea. Why you ask?\n");
         print("* The socket interface does not authenticate the user.\n");
         print("* OpenModelica allows execution of arbitrary commands.\n");

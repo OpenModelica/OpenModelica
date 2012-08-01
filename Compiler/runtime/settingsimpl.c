@@ -62,7 +62,7 @@ extern int SystemImpl__directoryExists(const char*);
 char* winPath = NULL;
 
 // Do not free or modify the returned variable. It's part of the environment!
-static const char* SettingsImpl__getInstallationDirectoryPath() {
+const char* SettingsImpl__getInstallationDirectoryPath() {
   const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
   if (path == NULL)
