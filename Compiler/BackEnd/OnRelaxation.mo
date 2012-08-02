@@ -122,7 +122,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;   
-      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,vec3,vorphansarray,mapIncRowEqn;
+      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,vec3,vorphansarray,mapIncRowEqn,orowmarks,ocolummarks;
       Integer size,eo,io,mark,i1,i2,i3,esize,temp;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;    
@@ -253,6 +253,8 @@ algorithm
         // genereate cliques
         rowmarks = arrayCreate(size,-1);
         colummarks = arrayCreate(size,-1);
+        orowmarks = arrayCreate(size,-1);
+        ocolummarks = arrayCreate(size,-1);
         vorphansarray1 = arrayCreate(size,{});
         mc = arrayCreate(esize,{});
         mct = arrayCreate(size,{});
@@ -298,7 +300,7 @@ algorithm
         List.map2_0(constraintresidual,doAssign,ass22,{-1});
         mark = getOrphansPairs(otherorphans,ass1,ass22,m,mt,mark+1,rowmarks,colummarks);
         List.map2_0(constraintresidual,doAssign,ass22,{});
-        mark = getOrphansPairsConstraints(constraints,ass1,ass22,mc,mct,mark,rowmarks,colummarks);
+        mark = getOrphansPairsConstraints(constraints,ass1,ass22,mc,mct,mark,rowmarks,colummarks,eqns);
         //  print("Matching with Orphans:\n");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpIncidenceMatrix(ass22); 
@@ -306,12 +308,12 @@ algorithm
         vec1 = arrayCreate(esize,{});
         vec2 = arrayCreate(esize,-1);
         
-        rowmarks = List.fold1(vorphans,markOrphans,mark,rowmarks);
-        colummarks = List.fold1(eorphans,markOrphans,mark,colummarks);
-        mark = getIndexesForEqnsAdvanced(vorphans,1,m,mt,mark,rowmarks,colummarks,ass1,ass22,vec1,vec2,arrayCreate(esize,false), vars,eqns,shared,size);
+        orowmarks = List.fold1(vorphans,markOrphans,1,orowmarks);
+        ocolummarks = List.fold1(eorphans,markOrphans,1,ocolummarks);
+        mark = getIndexesForEqnsAdvanced(vorphans,1,m,mt,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass22,vec1,vec2,arrayCreate(esize,false), vars,eqns,shared,size);
         
-        //  BackendDump.dumpIncidenceMatrix(vec1);
-        //  BackendDump.dumpMatching(vec2);
+          BackendDump.dumpIncidenceMatrix(vec1);
+          BackendDump.dumpMatching(vec2);
         //  vec3 = arrayCreate(size,-1);
         //  _ = List.fold1(arrayList(vec2),transposeOrphanVec,vec3,1);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
@@ -548,7 +550,7 @@ protected function markOrphans
   input array<Integer> rowmark;
   output array<Integer> orowmark;
 algorithm
-  orowmark := arrayUpdate(rowmark,o,-2);
+  orowmark := arrayUpdate(rowmark,o,mark);
 end markOrphans;
 
 protected function generateCliquesResidual
@@ -749,6 +751,45 @@ algorithm
   end matchcontinue;
 end generateCliquesResidual2;
 
+protected function getTearingConstraints
+"function getTearingConstraints
+  author: Frenkel TUD 2012-07"
+  input list<Integer> inOrphans;
+  input array<Integer> ass1;
+  input array<list<Integer>> ass2;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.Variables vars;  
+  input list<Integer> iconstraints;
+  output list<Integer> oconstraints;
+algorithm
+  oconstraints := matchcontinue(inOrphans,ass1,ass2,m,mt,vars,iconstraints)
+    local
+      list<Integer> rest,constraints,elst,rlst;
+      Integer o;
+      Boolean constr;
+      list<Boolean> blst;
+      list<BackendDAE.Var> vlst;      
+    case ({},_,_,_,_,_,_)
+      then
+       iconstraints;
+    case (o::rest,_,_,_,_,_,_)
+      equation
+        elst = mt[o];
+        rlst = List.flatten(List.map1r(elst,arrayGet,ass2));
+        // check for partner
+        //  BackendDump.debuglst((rlst,intString,", ","\n"));
+        vlst = List.map1r(rlst,BackendVariable.getVarAt,vars);
+        blst = List.map(vlst,BackendVariable.isFlowVar);
+        constr = Util.boolAndList(blst);        
+        constraints = List.consOnTrue(constr, o, iconstraints);
+      then
+       getTearingConstraints(rest,ass1,ass2,m,mt,vars,constraints);
+    case (_::rest,_,_,_,_,_,_)
+      then
+        getTearingConstraints(rest,ass1,ass2,m,mt,vars,iconstraints);
+  end matchcontinue;
+end getTearingConstraints;
 
 protected function prepairOrphansOrder
 "function prepairOrphansOrder
@@ -1273,7 +1314,7 @@ algorithm
       equation
         false = intEq(rowmarks[o],mark);
         _ = arrayUpdate(rowmarks,o,mark);
-          print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " +& intString(o) +& "\n");
         getConstraintesOrphansOrderEdvanced1(mct[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{});
       then
         getConstraintesOrphansOrderEdvanced(rest,ass1,ass2,m,mt,mc,mct,mark+1,rowmarks,colummarks,orphans); 
@@ -1312,13 +1353,13 @@ algorithm
         ();
     case (e::rest,_,_,_,_,_,_,_,_,_,_)
       equation
-         print("Check Eqn: " +& intString(e) +& "\n");
+        // print("Check Eqn: " +& intString(e) +& "\n");
         false = intEq(colummarks[e],mark);
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
-          print("search in " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        //  print("search in " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
         olst = hasOrphanEdvanced(r,ass1,{});
         _ = arrayUpdate(colummarks,e,mark);
-          print("Found Orphans " +& stringDelimitList(List.map(olst,intString),", ") +& " ChildOrphan is " +& intString(preorphan) +& "\n");
+        //  print("Found Orphans " +& stringDelimitList(List.map(olst,intString),", ") +& " ChildOrphan is " +& intString(preorphan) +& "\n");
         addPreOrphans(preorphan,olst,orphans);
         r1 = ass2[e] "vars assignt with equation"; 
         r = List.fold1(r1,List.removeOnTrue, intEq, r) "needed vars of equation";
@@ -1336,7 +1377,7 @@ algorithm
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0) "equations assigned with needed vars";
         next = listAppend(nextQueue, elst);
         _ = arrayUpdate(colummarks,e,mark);
-          print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
         getConstraintesOrphansOrderEdvanced1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,next); 
       then
         ();
@@ -1659,6 +1700,31 @@ algorithm
         ();   
   end match;
 end reduceOrphancMatrix1;
+
+protected function hasResidualOrphan1
+"function hasResidualOrphan
+  author: Frenkel TUD 2012-07"
+  input list<Integer> eqns;
+  input array<list<Integer>> ass;
+  input BackendDAE.EquationArray eqnsarr;
+  output Integer Orphan;
+algorithm
+  Orphan := matchcontinue(eqns,ass,eqnsarr)
+    local
+      list<Integer> rest;
+      Integer e,len,size;
+    case (e::_,_,_)
+      equation
+        len = listLength(ass[e]);
+        size = BackendEquation.equationSize(BackendDAEUtil.equationNth(eqnsarr, e-1));
+        true = intLt(len,size);
+      then
+        e;
+    case (_::rest,_,_)
+      then 
+        hasResidualOrphan1(rest,ass,eqnsarr);
+  end matchcontinue;
+end hasResidualOrphan1;
 
 protected function hasResidualOrphan
 "function hasResidualOrphan
@@ -2574,7 +2640,7 @@ algorithm
         o = hasResidualOrphan(elst,ass2);
         //  print("Found Orphanpair " +& intString(o) +& " <-> " +& intString(orphan) +& "\n");
         _ = arrayUpdate(ass1,orphan,o);        
-        _ =arrayUpdate(ass2, o, {orphan});          
+        _ = arrayUpdate(ass2, o, {orphan});          
       then
         ();
     case (r::rest,_,_,_,_,_,_,_,_,_)
@@ -2609,27 +2675,28 @@ protected function getOrphansPairsConstraints
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
+  input BackendDAE.EquationArray eqns;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks)
+  omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns)
     local
       list<Integer> rest;
       array<Integer> sorphans;
       Integer o,c,mark1;
-    case ({},_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_)
       then
        mark;
-    case (o::rest,_,_,_,_,_,_,_)
+    case (o::rest,_,_,_,_,_,_,_,_)
       equation
         false = intEq(colummarks[o],mark);
         _ = arrayUpdate(colummarks,o,mark);
-        //  print("Process Orphan " +& intString(o) +& "\n");
-        getOrphansPairsConstraints1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,{});
+          print("getOrphansPairsConstraints Process Orphan " +& intString(o) +& "\n");
+        getOrphansPairsConstraints1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns,o,{});
       then
-        getOrphansPairsConstraints(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks); 
-    case (_::rest,_,_,_,_,_,_,_)
+        getOrphansPairsConstraints(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,eqns); 
+    case (_::rest,_,_,_,_,_,_,_,_)
       then
-        getOrphansPairsConstraints(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks); 
+        getOrphansPairsConstraints(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns); 
   end matchcontinue;
 end getOrphansPairsConstraints;
 
@@ -2645,22 +2712,23 @@ protected function getOrphansPairsConstraints1
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
+  input BackendDAE.EquationArray eqnsarr;
   input Integer orphan;
   input list<Integer> nextQueue;
 algorithm
-  _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,nextQueue)
+  _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,nextQueue)
     local
       Integer e,r,o;
-      list<Integer> rest,next,rlst,lst;
-    case ({},_,_,_,_,_,_,_,_,{})
+      list<Integer> rest,next,rlst,lst,ass2lst;
+    case ({},_,_,_,_,_,_,_,_,_,{})
       then
         ();
-    case ({},_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_)
       equation
-        getOrphansPairsConstraints1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,{});
+        getOrphansPairsConstraints1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,{});
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_,_,_)
+    case (e::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // print("Check Eqn: " +& intString(e) +& "\n");
         false = intEq(colummarks[e],mark);
@@ -2668,13 +2736,16 @@ algorithm
         rlst = List.fold1(ass2[e],List.removeOnTrue, intEq, rlst);
         next = List.select1(List.flatten(List.map1r(rlst,arrayGet,mt)),intGt,0);
         //  print("search in " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
-        o = hasResidualOrphan(next,ass2);
+        o = hasResidualOrphan1(next,ass2,eqnsarr);
         //  print("Found Orphanpair " +& intString(o) +& " <-> " +& intString(orphan) +& "\n");
-        _ = arrayUpdate(ass1,orphan,o);        
-        _ =arrayUpdate(ass2, o, {orphan});          
+        _ = arrayUpdate(ass1,orphan,o);
+        ass2lst = ass2[o];
+        ass2lst = orphan::ass2lst;
+        _ =arrayUpdate(ass2, o, ass2lst);    
+         
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_,_,_)
+    case (e::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(colummarks[e],mark);
         rlst = List.select1(m[e],intGt,0) "vars of eqns";
@@ -2684,12 +2755,12 @@ algorithm
         next = listAppend(nextQueue, next);
         _ = arrayUpdate(colummarks,e,mark);
         //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
-        getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,next); 
+        getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,next); 
       then
         ();
-    case (_::rest,_,_,_,_,_,_,_,_,_)
+    case (_::rest,_,_,_,_,_,_,_,_,_,_)
       equation
-        getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,nextQueue); 
+        getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,nextQueue); 
       then
        ();       
   end matchcontinue;
@@ -2706,6 +2777,8 @@ protected function getIndexesForEqnsAdvanced
   input Integer imark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
+  input array<Integer> orowmarks;
+  input array<Integer> ocolummarks;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
   input array<list<Integer>> vec1;
@@ -2720,73 +2793,90 @@ protected function getIndexesForEqnsAdvanced
   
   output Integer outMark;
 algorithm
-  outMark := match(orphans,index,m,mT,imark,rowmarks,colummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size)
+  outMark := matchcontinue(orphans,index,m,mT,imark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size)
     local
       Integer vorphan,eorphan,index1,mark;
-      list<Integer> rest,rows,queue,rqueue,bvars,beqns,lst;
+      list<Integer> rest,rows,queue,rqueue,bvars,beqns,lst,vorphans,vorphanseqns;
       list<list<Integer>> queuelst;
       
       BackendDAE.EqSystem syst;
-    case ({},_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
       equation
         //markIndexdColums(1,arrayLength(vec1),mark+1,colummarks,vec2);
         //getIndexesForEqnsRest(1,arrayLength(vec1),index,mark+1,colummarks,ass1,ass2,vec1,vec2);
       then imark;
-    case (vorphan::rest,_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_)
-      equation      
+    case (vorphan::rest,_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
+      equation
+        true = intEq(orowmarks[vorphan],1);
         eorphan = ass1[vorphan];
-          print("Process Orphan " +& intString(vorphan) +& "  " +& intString(eorphan) +& "\n"); 
+        vorphans = ass2[eorphan];
+        //  print("getIndexesForEqnsAdvanced Process Orphans " +& stringDelimitList(List.map(vorphans,intString),", ") +& "  " +& intString(eorphan) +& "\n"); 
         // generate subgraph from residual equation to tearing variable
         rows = List.select(m[eorphan], Util.intPositive);
         rows = List.fold1(ass2[eorphan],List.removeOnTrue, intEq, rows);
          BackendDump.debuglst((rows,intString,", ","\n"));
-        _ = getIndexSubGraph(rows,vorphan,m,mT,imark,rowmarks,colummarks,ass1,ass2,false);        
+        _ = getIndexSubGraph(rows,vorphans,m,mT,imark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);        
         // generate queue with BFS from tearing var to residual equation
          print("getIndex ");
-         BackendDump.debuglst((mT[vorphan],intString,", ","\n"));
-        queue = mT[vorphan]; 
-        queuelst = getIndexQueque(queue,m,mT,imark,rowmarks,colummarks,ass1,ass2,vec2,queuemark,{},{},{});
+        vorphanseqns = List.unique(List.flatten(List.map1r(vorphans,arrayGet,mT))); 
+        //  BackendDump.debuglst((vorphanseqns,intString,", ","\n"));
+        queuelst = getIndexQueque(vorphanseqns,m,mT,imark,rowmarks,colummarks,ass1,ass2,vec2,queuemark,{},{},{});
         queue = List.flatten(queuelst);
-         print("queue ");
-         BackendDump.debuglst((queue,intString,", ","\n"));
+        // print("final queue ");
+        // BackendDump.debuglst((queue,intString,", ","\n"));
         // set indexes
         mark = imark+2;
         ((index1,queue,rqueue)) = List.fold1(queue,setIndexQueue,(vec1,vec2,ass2,queuemark,colummarks,mark),(index,{},{}));
-        _=arrayUpdate(vec1,index1,{vorphan});
+        _=arrayUpdate(vec1,index1,vorphans);
         _=arrayUpdate(vec2,index1,eorphan);
         _=arrayUpdate(queuemark,eorphan,true);
         mark = mark+1;
         // collect all border vars and equations
         // mark all elements of the clique
-          print("Mark all Index Vars " +& stringDelimitList(List.map(rqueue,intString),", ") +& "\n");        
+        //  print("Mark all Index Vars " +& stringDelimitList(List.map(rqueue,intString),", ") +& "\n");        
         List.map2_0(rqueue,doMark,rowmarks,mark);
-          print("Mark all Index Eqns " +& stringDelimitList(List.map(queue,intString),", ") +& "\n");        
+        //  print("Mark all Index Eqns " +& stringDelimitList(List.map(queue,intString),", ") +& "\n");        
         List.map2_0(queue,doMark,colummarks,mark);
         // get all unmarked elements -> boarder elements
         bvars = getBorderElements(queue,m,mark,rowmarks,{});
-        bvars = List.removeOnTrue(vorphan, intEq, bvars);
-          print("Mark all Index BVars " +& stringDelimitList(List.map(bvars,intString),", ") +& "\n");        
+        bvars = List.fold1(vorphans,List.removeOnTrue, intEq, bvars);
+        //  print("Mark all Index BVars " +& stringDelimitList(List.map(bvars,intString),", ") +& "\n");        
         beqns = getBorderElements(rqueue,mT,mark,colummarks,{});
         beqns = List.removeOnTrue(eorphan, intEq, beqns);
-          print("Mark all Index BEqns " +& stringDelimitList(List.map(beqns,intString),", ") +& "\n"); 
+        //  print("Mark all Index BEqns " +& stringDelimitList(List.map(beqns,intString),", ") +& "\n"); 
         lst = List.select2(m[eorphan],unmarked,rowmarks,mark);         
-        lst = listAppend(vorphan::lst,bvars);      
-          print("Set eorphan " +& intString(eorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        lst = listAppend(listAppend(vorphans,lst),bvars);      
+        //  print("Set eorphan " +& intString(eorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
         _ = arrayUpdate(m,eorphan,lst);
-        lst = List.select2(mT[vorphan],unmarked,colummarks,mark);         
+        
+        lst = List.select2(vorphanseqns,unmarked,colummarks,mark);         
         lst = listAppend(eorphan::lst,beqns);      
-          print("Set vorphan " +& intString(vorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("Set vorphan " +& intString(vorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
         _ = arrayUpdate(mT,vorphan,lst);
+        
         setBoarderElemts(bvars,mT,mark,colummarks,eorphan);
         setBoarderElemts(beqns,m,mark,rowmarks,vorphan);
-        
+        // unset orphanmark so it can passed
+        //_=arrayUpdate(orowmarks,vorphan,-1);
+        _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
+        _=arrayUpdate(ocolummarks,eorphan,-1);
+
+       vorphans = List.removeOnTrue(vorphan, intEq, vorphans); 
+       _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
+       _ = List.fold1r(vorphans,arrayUpdate,{},mT);
+
           syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
           IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) +& "SystemIndexing" +& intString(index) +& ".graphml");
         
       then
-       getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
-  end match;
+       getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
+    case (vorphan::rest,_,_,_,_,_,_,_,_,_,_,_ ,_,_,_,_,_,_)
+      then
+       getIndexesForEqnsAdvanced(rest,index,m,mT,imark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
+  end matchcontinue;
 end getIndexesForEqnsAdvanced;  
+
+
 
 protected function getBorderElements
   input list<Integer> elements;
@@ -2902,20 +2992,20 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         queue = List.unique(iqueue);
-         print("append level: "); BackendDump.debuglst((queue,intString,", ","\n"));
+        // print("append level: "); BackendDump.debuglst((queue,intString,", ","\n"));
       then
         getIndexQueque(nextqueue,m,mT,mark,rowmarks,colummarks,ass1,ass2,vec2,queuemark,{},{},queue::iqueue1);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         r = ass2[c];
         b = queuemark[c];
-         print("Process Colum " +& intString(c) +& " Rows " +& stringDelimitList(List.map(r,intString),", ") +& "  " +& boolString(b) +&"\n");
+        //  print("Process Colum " +& intString(c) +& " Rows " +& stringDelimitList(List.map(r,intString),", ") +& "  " +& boolString(b) +&"\n");
         (colums1,b2) = getIndexQueque1(r,c,mT,mark,rowmarks,{},false);
-         BackendDump.debuglst((colums1,intString,", ","\n"));
+        //  BackendDump.debuglst((colums1,intString,", ","\n"));
         b1 = intGt(listLength(colums),0);
         // cons next rows in front to jump over marked nodes 
         queue = Debug.bcallret3(b1, List.unionOnTrue, colums1, nextqueue, intEq, nextqueue);
-         print("queue: "); BackendDump.debuglst((queue,intString,", ","\n"));
+        //  print("queue: "); BackendDump.debuglst((queue,intString,", ","\n"));
         queue1 = List.consOnTrue(b2, c, iqueue);
       then
        getIndexQueque(rest,m,mT,mark,rowmarks,colummarks,ass1,ass2,vec2,queuemark,queue,queue1,iqueue1);
@@ -2945,7 +3035,7 @@ algorithm
     case (r::rest,_,_,_,_,_,_)
       equation
         true = intEq(rowmarks[r],mark);
-          print("Go from: " +& intString(c) +& " to " +& intString(r) +& "\n"); 
+        //  print("Go from: " +& intString(c) +& " to " +& intString(r) +& "\n"); 
         colums = List.select(mT[r], Util.intPositive);
         colums = List.removeOnTrue(c, intEq , colums);
         colums = listAppend(colums,icolums); 
@@ -3044,63 +3134,69 @@ protected function getIndexSubGraph
 "function getIndexSubGraph
  autor: Frenkel TUD 2012-07"
   input list<Integer> rows;
-  input Integer vorphan;
+  input list<Integer> vorphan;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
+  input array<Integer> orowmarks;
+  input array<Integer> ocolummarks;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
   input Boolean ifound;
   output Boolean found;
 algorithm
-  found := matchcontinue(rows,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,ifound)
+  found := matchcontinue(rows,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,ifound)
     local
       Integer r,e;
       list<Integer> rest,nextrows,queue1;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_) then ifound;
-    case (r::rest,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_) then ifound;
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // is my var orphan?
-        true = intEq(r,vorphan);
+        //true = intEq(r,vorphan);
+        true = listMember(r,vorphan);
         // mark all entries in the queue
-         print("Found orphan " +& intString(r) +& "\n");
+        // print("Found orphan " +& intString(r) +& "\n");
+         _ = getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);
       then
         true;
-    case (r::rest,_,_,_,_,_,_,_,_,_)
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        false = intEq(r,vorphan);
+        //false = intEq(r,vorphan);
+        false = listMember(r,vorphan);
         // stop if it is an orphan
-        false = intEq(rowmarks[r],-2);
+        false = intEq(orowmarks[r],1);
         true = intEq(rowmarks[r],mark);
         e = ass1[r];
         List.map2_0(ass2[e],doMark,rowmarks,mark);
       then
-        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,true);        
-    case (r::rest,_,_,_,_,_,_,_,_,_)
+        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,true);
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        false = intEq(r,vorphan);
+        //false = intEq(r,vorphan);
+        false = listMember(r,vorphan);
         // stop if it is an orphan
-        false = intEq(rowmarks[r],-2);
+        false = intEq(orowmarks[r],1);
         //false = intEq(rowmarks[r],mark);
         e = ass1[r];
-        false = intEq(colummarks[e],-2);
+        false = intEq(ocolummarks[e],1);
         false = intEq(colummarks[e],mark);
         nextrows = List.select(m[e], Util.intPositive);
         nextrows = List.setDifferenceOnTrue(nextrows,ass2[e],intEq);
-          print("search Subgraph: " +& intString(r) +& " across " +& intString(e) +& "\n");  
+        //  print("search Subgraph: " +& intString(r) +& " across " +& intString(e) +& "\n");  
         //_ = arrayUpdate(rowmarks,r,mark);
         _ = arrayUpdate(colummarks,e,mark);
-          BackendDump.debuglst((nextrows,intString,", ","\n"));
-        b = getIndexSubGraph(nextrows,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,false);
+        //  BackendDump.debuglst((nextrows,intString,", ","\n"));
+        b = getIndexSubGraph(nextrows,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);
         markIndexSubgraph(b,ass2[e],mark,rowmarks); 
       then
-        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,b or ifound);
-    case (r::rest,_,_,_,_,_,_,_,_,_)
+        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,b or ifound);
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
-        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,ass1,ass2,ifound);         
+        getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,ifound);
   end matchcontinue;
 end getIndexSubGraph;
 
