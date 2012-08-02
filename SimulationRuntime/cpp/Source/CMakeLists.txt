@@ -48,7 +48,7 @@ SET(USE_SUNDIALS ON)
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.45.0 COMPONENTS filesystem  system serialization REQUIRED)
+find_package(Boost 1.45.0 COMPONENTS filesystem  system serialization program_options REQUIRED)
 # Lapack and Blas
 find_package( BLAS )
 find_package( LAPACK  )

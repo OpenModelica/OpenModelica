@@ -3,15 +3,14 @@
 #include "Configuration.h"
 #include "System/Interfaces/ISystemProperties.h"
 #include "LibrariesConfig.h"
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using namespace std;
 
 
 
-int nargc=5;
-int lib_index= 1;
-int modelica_index = 2;
-int modelname_index = 3;
-int config_index = 4;
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
 int _tmain(int argc, _TCHAR* argv[])
@@ -19,35 +18,100 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, const char* argv[])
 #endif
 {  
-    if(argc < nargc)
-        throw std::invalid_argument("No runtime library path and Modelica system library path defined");
 
-     string runtime_lib_path = argv[lib_index];
-    fs::path libraries_path = fs::path( runtime_lib_path) ;
-    fs::path modelica_path = fs::path( argv[modelica_index] ) ;
-    fs::path config_path = fs::path( argv[config_index] ) ;
-    libraries_path.make_preferred();
-    modelica_path.make_preferred();
-    config_path.make_preferred();
-    string resultsfilename(argv[modelname_index]);
-   
+    try 
+    {  
+        int opt;
+        int portnum;
 
-    fs::path results_file_path = fs::path( resultsfilename) ;
-    if(!(results_file_path.extension().string() == ".csv"))
-    {
-        std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
-        throw std::invalid_argument(eception_msg.c_str());
-    }
-    //std::cout << libraries_path << "  end" << std::endl;
-    try
-    {
+        po::options_description desc("Allowed options");
+        desc.add_options()
+            ("help", "produce help message")
+            ("runtime-libray,r", po::value<string>(),"path to cpp runtime libraries")
+            ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
+            ("results-file,R", po::value<string>(),"name of results file")
+            ("config-path,c", po::value< string >(),  "path to xml files")
+            ;
+        po::variables_map vm;        
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);    
+        if (vm.count("help")) {
+            cout << desc << "\n";
+            return 1;
+        }
+        string runtime_lib_path;
+                      
+        if (vm.count("runtime-libray"))
+        {
+            //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;
+            runtime_lib_path = vm["runtime-libray"].as<string>();
+        }
+        else
+        {
+            cerr << "runtime  libraries path is not set";
+            return 0;
+        }
+        fs::path libraries_path = fs::path( runtime_lib_path) ;
+
+        fs::path modelica_path;
+        if (vm.count("Modelica-system-library"))
+        {
+            //cout << "Modelica library path set to " << vm["Modelica-system-library"].as<string>()  << std::endl;
+            modelica_path = fs::path(vm["Modelica-system-library"].as<string>());
+        }
+        else
+        {
+            cerr << "Modelica library path is not set";
+            return 0;
+        }
+        fs::path config_path;
+        if (vm.count("config-path"))
+        {
+            //cout << "config path set to " << vm["config-path"].as<string>() << std::endl;
+            config_path = fs::path(vm["config-path"].as<string>());
+        
+        }
+        else
+        {
+            cerr << "config  path is not set";
+            return 0;
+        }
+        string resultsfilename;
+        if (vm.count("results-file"))
+        {
+            //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
+            resultsfilename = vm["results-file"].as<string>();
+            
+        }
+        else
+        {
+            cerr << "resultsfilename  is not set";
+            return 0;
+        }
+
+        libraries_path.make_preferred();
+        modelica_path.make_preferred();
+        config_path.make_preferred();
+
+
+
+        fs::path results_file_path = fs::path( resultsfilename) ;
+        if(!(results_file_path.extension().string() == ".csv"))
+        {
+            std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
+            cerr << eception_msg.c_str();
+            return 0;
+        }
+
+        //std::cout << libraries_path << "  end" << std::endl;
+
 
         Configuration config(libraries_path,config_path);
         IGlobalSettings* global_settings = config.getGlobalSettings();
         global_settings->setRuntimeLibrarypath(runtime_lib_path);       
         global_settings->setResultsFileName(resultsfilename);
         //Load Modelica sytem library
-       
+
 
         fs::path modelica_system_name(MODELICASYSTEM_LIB);
         fs::path modelica_system_path = modelica_path;
@@ -103,12 +167,19 @@ int main(int argc, const char* argv[])
         //solver->reportErrorMessage(std::cout);
         return 0;
     }
+
+    catch(exception& e) 
+    {
+        cerr << "error: " << e.what() << "\n";
+        return 1;
+    } 
     catch(std::exception& ex)
     {
         std::string error = ex.what();
-        std::cout << "Simulation stopped: "<< std::endl << error << std::endl;
+        cerr << "Simulation stopped: "<<  error ;
         return 1;
     }
+
 }
 
 

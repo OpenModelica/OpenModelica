@@ -1343,7 +1343,7 @@ algorithm
         libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc" ;
         configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        simflags2=Util.if_(ifcpp,stringAppendList({libDir," ",compileDir," ",result_file," ",configDir}), simflags);           
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);           
         executable1=Util.if_(ifcpp,"OMCppSimulation",executable); 
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
