@@ -236,6 +236,13 @@ algorithm
         print(res);
       then
         ();
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1))
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        res = stringAppendList({s1,"\n"});
+        print(res);
+      then
+        ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = w))
       equation
         (cr,e2) = BackendEquation.getWhenEquationExpr(w);
@@ -266,6 +273,12 @@ algorithm
         ExpressionDump.dumpExp(e1);
         print("=\n");
         ExpressionDump.dumpExp(e2);
+      then
+        ();
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1))
+      equation
+        ExpressionDump.dumpExp(e1);
+        print("\n");
       then
         ();
     case (_)

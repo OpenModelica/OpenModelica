@@ -355,6 +355,8 @@ constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(96, "dumpeqninorder",
   "Enables dumping of the equations in the order they are calculated");
 constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(97, "symbolicInitialization",
   "Enables using of symbolic matrices for initialization (ipopt only)");
+constant DebugFlag TEARING_AND_RELAXATION = DEBUG_FLAG(98, "tearing_and_relaxation",
+  "performes relaxation after tearing");
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -458,7 +460,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_STATESELECTION_INFO,
   DUMP_DERREPL,
   DUMP_EQNINORDER,
-  SYMBOLIC_INITIALIZATION
+  SYMBOLIC_INITIALIZATION,
+  TEARING_AND_RELAXATION
 };
 
 // CONFIGURATION FLAGS

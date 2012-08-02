@@ -767,7 +767,8 @@ algorithm
         ass1 = varAssignmentNonScalar(1,arrayLength(ass1),ass1,mapIncRowEqn,{});
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
+        //(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});

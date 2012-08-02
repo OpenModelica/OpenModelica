@@ -78,6 +78,7 @@ protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
+protected import Uncertainties;
 
 
 
@@ -4903,22 +4904,63 @@ algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
     local
-      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2,dlow1_3;
-      BackendDAE.IncidenceMatrix m,m_1,m_3,m_4;
-      BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4;
-      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2,dlow1_3,sub_dae,subSyst,linearDAE,linearDAE1;
+      BackendDAE.IncidenceMatrix m,m_1,m_3,m_4,m_subSyst,m_subSyst1,m_subSyst2;
+      BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4,mT_subSyst,mT_subSyst1,mT_subSyst2;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3,match1;
       list<list<Integer>> comps,comps_1;
-      list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns;
+      list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns,residual;
       list<list<Integer>> r,t;
-      Integer ll;
+      Integer ll,arrSize,l,sizeArr,NOE;
       list<DAE.ComponentRef> crlst;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst,sub_eqSyst,sub_eqSyst2,eqSystem,relaxedEqSystem;
+      BackendDAE.Shared shared,sub_shared,sub_shared2,relaxedShared;
+      array<DAE.Exp> expArr,eArr,resEq;
+      list<Option<BackendDAE.Equation>> eq_subSyst_Lst;
+      array<Option<BackendDAE.Equation>> eq_subSyst_Arr,transEqArr;
+      BackendDAE.EquationArray eqns_subSyst,eqArray,removedEqs,emptyEqns;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac_subSyst,jacNewton;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac_subSyst1;
+      tuple<Integer, Integer, BackendDAE.Equation> row;
+      BackendDAE.Variables vars_subSyst,vars,variables,varsempty,externalObjects,emptyVars,knownVars,vars1,tVariables;
+      BackendDAE.Equation eq;
+      DAE.Exp e,expArr1,resEq1;
+      array<BackendDAE.Equation> eqArr,inEqArr;
+      list<BackendDAE.Equation> eqLst;
+      list<DAE.ComponentRef> lstRef,crefLst;
+      array<DAE.ComponentRef> arrRef;
+      array<list<BackendDAE.CrefIndex>> arr,emptyArrCI;
+      array<Option<BackendDAE.Var>> emptyarr,optVarArrEmpty;
+      BackendDAE.Matching matching;
+      BackendDAE.VariableArray varArrEmpty;
+      BackendDAE.AliasVariables aliasVars;
+      array<DAE.Algorithm> algorithms; 
+      array<DAE.Constraint> constraints;
+      DAE.FunctionTree functionTree;
+      Env.Cache cache;
+      Env.Env env;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;
+      BackendDAE.BackendDAEType backenDAEType;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
+      BackendDAE.IncidenceMatrix m_new;
+      BackendDAE.IncidenceMatrixT mT_new;
+      array<Integer> v1_new,v2_new;
+      list<Integer> eqnsNewton,varsNewton;
+      BackendDAE.StrongComponent comps_Newton;
+      BackendDAE.JacobianType jacTypeNewton;
+      array< .DAE.ClassAttributes> classAttrs;
     case (dlow,dlow1,m,mT,v1,v2,{})
+      equation
+        print("no comps\n");
       then
         ({},{},dlow,dlow1,m,mT,v1,v2,{});
     case (dlow,dlow1,m,mT,v1,v2,comp::comps)
       equation
+        true = Flags.isSet(Flags.TEARING_AND_RELAXATION);
         // block ?
         ll = listLength(comp);
         true = ll > 1;
@@ -4926,6 +4968,113 @@ algorithm
         (tvars,crlst) = getTearingVars(m,v1,v2,comp,dlow);
         // try tearing
         (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{},crlst);
+        //BackendDump.dumpTearing({residualeqns},{tearingvars});
+        //-------------
+        l = listLength(tearingvars);
+        sub_dae = BackendDAEUtil.copyBackendDAE(dlow1_1);
+        BackendDAE.DAE({sub_eqSyst},sub_shared) = dlow1_1;
+        (m_subSyst1,mT_subSyst1) = BackendDAEUtil.incidenceMatrix(sub_eqSyst, sub_shared, BackendDAE.NORMAL());
+        residual = residualeqns;
+        tvars = tearingvars;
+        BackendDAE.EQSYSTEM(vars,eqns,_,_,_) = sub_eqSyst;
+        vars1 = vars;
+        eqn_lst = BackendEquation.getEqns(residualeqns,eqns);
+        eq = listGet(eqn_lst,1);
+        var_lst = List.map1r(tvars, BackendVariable.getVarAt, vars);
+        subSyst = Uncertainties.getSubSystemDaeForVars(residual,tvars,dlow1_1);
+        BackendDAE.DAE({sub_eqSyst2},sub_shared2) = subSyst;
+        (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, sub_shared2, BackendDAE.NORMAL());
+        BackendDAE.EQSYSTEM(vars_subSyst,eqns_subSyst,_,_,_) = sub_eqSyst2;
+        BackendDAE.EQUATION_ARRAY(sizeArr,NOE,arrSize,eq_subSyst_Arr) = eqns_subSyst;
+        eq_subSyst_Lst = arrayList(eq_subSyst_Arr);
+        transEqArr = equationToResidualFormArr(eq_subSyst_Arr,1,l);
+        BackendDAE.SHARED(knownVars,externalObjects,aliasVars,_,removedEqs,constraints,classAttrs,cache,env,functionTree,eventInfo,extObjClasses,backenDAEType,symjacs) = sub_shared2;
+        eqns_subSyst = BackendDAE.EQUATION_ARRAY(sizeArr,NOE,arrSize,transEqArr);
+        jac_subSyst = BackendDAEUtil.calculateJacobian(vars_subSyst, eqns_subSyst, m_subSyst2, mT_subSyst2,false);
+        SOME(jac_subSyst1) = jac_subSyst;
+        row = listGet(jac_subSyst1,1);
+        (_,_,eq) = row;
+        BackendDAE.RESIDUAL_EQUATION(e,_) = eq;
+        l = listLength(tvars);
+        eArr = arrayCreate(l,DAE.RCONST(0.0));
+        varsempty = BackendDAEUtil.emptyVars();
+        BackendDAE.VARIABLES(_,varArrEmpty,_,_) = varsempty;
+        BackendDAE.VARIABLE_ARRAY(_,_,optVarArrEmpty) = varArrEmpty;
+        vars = vars_subSyst;
+        crefLst = createCrefLstForNewton(l,1,{});
+        variables = newVariablesForNewton(l,crefLst,varsempty);
+        (expArr,lstRef) = matrixVectorMultiplication(jac_subSyst1,1,1,variables,l,eArr,{});  //any entry for inExpArr
+        expArr1 = arrayGet(expArr,1);
+        resEq = equationToExpArr(eq_subSyst_Arr,1,arrayCreate(l,expArr1));
+        resEq1 = arrayGet(resEq,1);
+        expArr = buildLinSystForNewton(expArr,resEq,1,expArr);  //last entry does not matter  how to choose, just to have an array<DAE.Exp>
+        expArr1 = arrayGet(expArr,1);
+        inEqArr = arrayCreate(l,eq);
+        eqArr = expToEquationArr(expArr,1,inEqArr);
+        eqLst = arrayList(eqArr);
+        eqArray = BackendDAEUtil.listEquation(eqLst);  //BackendDAE.EquationArray
+        emptyArrCI = arrayCreate(l,{});
+        arrRef = listArray(lstRef);
+        arr = arrLstCrefIndex(arrRef,1,emptyArrCI);
+        arrSize = arrayLength(arr);
+        emptyarr = arrayCreate(arrSize, NONE());
+        BackendDAE.SHARED(knownVars,externalObjects,aliasVars,_,removedEqs,constraints,classAttrs,cache,env,functionTree,eventInfo,extObjClasses,backenDAEType,symjacs) = sub_shared;
+        knownVars = BackendVariable.mergeVariables(knownVars,vars1);  //?????
+        tVariables = BackendDAEUtil.listVar(var_lst);
+        knownVars = BackendVariable.mergeVariables(knownVars,tVariables);
+        emptyEqns = BackendDAEUtil.listEquation({});
+        emptyVars = BackendDAEUtil.emptyVars();
+        eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.SIMULATION(),{});
+        (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,shared,BackendDAE.NORMAL());
+        match1 = arrayCreate(l,1);
+        matching = BackendDAE.MATCHING(match1,match1,{});
+        eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching);
+        linearDAE = BackendDAE.DAE({eqSystem},shared);
+        eqnsNewton = List.intRange(l);
+        varsNewton = List.intRange(l);
+        jacNewton = BackendDAEUtil.calculateJacobian(variables,eqArray,m_new,mT_new,false);
+        jacTypeNewton = BackendDAEUtil.analyzeJacobian(variables,eqArray,jacNewton);
+        comps_Newton = BackendDAE.EQUATIONSYSTEM(eqnsNewton,varsNewton,jacNewton,jacTypeNewton);
+        matching = BackendDAE.MATCHING(match1,match1,{comps_Newton});
+        eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching);
+        linearDAE = BackendDAE.DAE({eqSystem},shared);
+        linearDAE1 = BackendDAEUtil.transformBackendDAE(linearDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
+        print("\n---linearDAE1---\n");
+        BackendDump.dump(linearDAE1);
+        BackendDAE.DAE({eqSystem},shared) = linearDAE1;
+        BackendDAE.EQSYSTEM(variables,eqArray,_,_,matching) = eqSystem;
+        BackendDAE.MATCHING(v1_new,v2_new,_) = matching;
+        (relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton});
+        print("\nrelaxedEqSystem\n");
+        BackendDump.dumpEqSystem(relaxedEqSystem);
+        print("\n----end of linear system----\n");
+        
+        //-------------
+        // clean v1,v2,m,mT
+        v2_2 = arrayCreate(ll, 0);
+        v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);
+        v1_2 = arrayCreate(ll, 0);
+        v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
+        BackendDAE.DAE({syst},shared) = dlow1_1;
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        dlow1_2 = BackendDAE.DAE({syst},shared);
+        (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
+        // next Block
+        (r,t,dlow_2,dlow1_3,m_4,mT_4,v1_3,v2_3,comps_1) = tearingSystem1(dlow_1,dlow1_2,m_3,mT_3,v1_2,v2_2,comps);
+      then
+        (residualeqns::r,tearingvars::t,dlow_2,dlow1_3,m_4,mT_4,v1_3,v2_3,comp_1::comps_1);
+    case (dlow,dlow1,m,mT,v1,v2,comp::comps)
+      equation
+        print("\ntearing without relaxation\n");
+        // block ?
+        ll = listLength(comp);
+        true = ll > 1;
+        // get all interesting vars
+        (tvars,crlst) = getTearingVars(m,v1,v2,comp,dlow);
+        // try tearing
+        (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{},crlst);
+        BackendDump.dumpTearing({residualeqns},{tearingvars});
         // clean v1,v2,m,mT
         v2_2 = arrayCreate(ll, 0);
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);
@@ -4950,6 +5099,418 @@ algorithm
         ({0}::r,{0}::t,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp::comps_1);
   end matchcontinue;
 end tearingSystem1;
+
+protected function printEquationArr
+  "prints an array of BackendDAE.Equations"
+  input array<Option<BackendDAE.Equation>> inArr;
+  input Integer indx;
+  input Integer max;
+algorithm
+  _ := matchcontinue(inArr,indx,max)
+  local
+    BackendDAE.Equation entry;
+    String str;
+  case (_,_,_)
+    equation
+      true = (indx>max);
+    then
+      ();
+  case (_,_,_)
+    equation
+      true = (indx<=max);
+      SOME(entry) = arrayGet(inArr,indx);
+      str = stringAppend("\neqArr",intString(indx));
+      print(str);
+      print("\n");
+      BackendDump.printEquation(entry);
+      printEquationArr(inArr,indx+1,max);
+    then
+      ();
+  case (_,_,_)
+    equation
+      true = (indx<=max);
+      NONE() = arrayGet(inArr,indx);
+      print("NONE()");
+      printEquationArr(inArr,indx+1,max);
+    then
+      ();
+  end matchcontinue;
+end printEquationArr;  
+    
+
+protected function equationToResidualFormArr
+  "transforms an array with equations of the form a = b into an array with equations of the form a - b = 0"
+  input array<Option<BackendDAE.Equation>> inOptEqArr;
+  input Integer indx;
+  input Integer max;
+  output array<Option<BackendDAE.Equation>> outEqArr;
+algorithm
+  outEqArr := matchcontinue(inOptEqArr,indx,max)
+  local
+    BackendDAE.Equation entry,transEntry;
+    Option<BackendDAE.Equation> transEntry1;
+    array<Option<BackendDAE.Equation>> arr;
+    DAE.Exp e1,e2;
+  case (_,_,_)
+    equation
+      true = (indx>max);
+    then
+      inOptEqArr;
+  case (_,_,_)
+    equation
+      true = (indx<=max);
+      SOME(entry) = arrayGet(inOptEqArr,indx);
+      BackendDAE.EQUATION(e1,e2,_) = entry;
+      transEntry = BackendEquation.equationToResidualForm(entry);
+      transEntry1 = SOME(transEntry);
+      arr = arrayUpdate(inOptEqArr,indx,transEntry1);
+      outEqArr = equationToResidualFormArr(inOptEqArr,indx+1,max);
+    then
+      outEqArr;
+  case (_,_,_)
+    equation
+      true = (indx<=max);
+      NONE() = arrayGet(inOptEqArr,indx);
+      transEntry = BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource);
+      transEntry1 = SOME(transEntry);
+      arr = arrayUpdate(inOptEqArr,indx,transEntry1);
+      outEqArr = equationToResidualFormArr(inOptEqArr,indx+1,max);
+    then
+      outEqArr;
+  end matchcontinue;
+end equationToResidualFormArr;
+
+protected function newVariablesForNewton
+  "creates the new variables for the Newton system"
+  input Integer l;
+  input list<DAE.ComponentRef> crefs;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars := matchcontinue(l,crefs,inVars)
+  local
+    BackendDAE.Var var;
+    DAE.ComponentRef cref;
+    list<DAE.ComponentRef> rest;
+    BackendDAE.Variables variables,variables1;
+  case (_,cref::rest,_)
+    equation
+      var = BackendDAE.VAR(cref, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
+                            DAE.emptyElementSource,
+                            NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM());
+      variables1 = BackendVariable.addVar(var,inVars);
+      variables = newVariablesForNewton(l,rest,variables1);
+    then
+      variables;
+  case (_,{},_)
+    then
+      inVars;
+  end matchcontinue;
+end newVariablesForNewton;
+
+
+protected function createCrefLstForNewton
+  "creates a list<DAE.ComponentRef> with the length of the number of tearing variables"
+  input Integer l;  //number of tVars
+  input Integer indx;
+  input list<DAE.ComponentRef> inRefLst;
+  output list<DAE.ComponentRef> outRefLst;
+algorithm
+  outRefLst := matchcontinue(l,indx,inRefLst)
+  local
+    String str;
+    DAE.ComponentRef cref;
+    list<DAE.ComponentRef> refLst;
+  case (_,_,_)
+    equation
+      true = (indx>l);
+    then
+     inRefLst;
+  case (_,_,_)
+    equation
+      true = (indx<=l);
+      str = stringAppend("NV",intString(indx));
+      cref = ComponentReference.makeCrefIdent(str, DAE.T_REAL_DEFAULT, {});  //NV = NewtonVariable
+      refLst = listAppend(inRefLst,{cref});
+      outRefLst = createCrefLstForNewton(l,indx+1,refLst);
+    then
+      outRefLst;
+  end matchcontinue; 
+end createCrefLstForNewton;
+
+protected function arrLstCrefIndex
+  "array<DAE.ComponentRef> --> array<list<BackendDAE.CrefIndex>>"
+  input array<DAE.ComponentRef> inArr;
+  input Integer indx;
+  input array<list<BackendDAE.CrefIndex>> inArrLst;
+  output array<list<BackendDAE.CrefIndex>> outArrLst;
+algorithm
+  outArrLst := matchcontinue(inArr,indx,inArrLst)
+  local
+    BackendDAE.CrefIndex entry;
+    DAE.ComponentRef entryCR;
+  case (_,_,_)
+    equation
+      true = (indx>arrayLength(inArrLst));
+    then
+      inArrLst;
+  case (_,_,_)
+    equation
+      true = (indx <= arrayLength(inArrLst));
+      entryCR = arrayGet(inArr,indx);
+      entry = BackendDAE.CREFINDEX(entryCR,indx);
+      outArrLst = arrayUpdate(inArrLst,indx,{entry});
+      outArrLst = arrLstCrefIndex(inArr,indx+1,outArrLst);
+    then
+      outArrLst;
+  case (_,_,_)
+    then
+      fail();
+  end matchcontinue;
+end arrLstCrefIndex;
+
+protected function expToEquationArr
+  "transforms an array<DAE.Exp> into an array<BackendDAE.Equation>"
+  input array<DAE.Exp> inExpArr;
+  input Integer indx;
+  input array<BackendDAE.Equation> inEqArr;
+  output array<BackendDAE.Equation> outEqArr;
+algorithm
+  outEqArr := matchcontinue(inExpArr,indx,inEqArr)
+  local
+    DAE.Exp entryExp;
+    BackendDAE.Equation entry;
+    array<BackendDAE.Equation> eqArr,eqArr1;
+  case (_,_,_)
+    equation
+      false = (indx<=arrayLength(inEqArr));
+    then
+      inEqArr;
+  case (_,_,_)
+    equation
+      true = (indx<=arrayLength(inEqArr));
+      entryExp = arrayGet(inExpArr,indx);
+      entry = BackendDAE.EQUATION(entryExp,DAE.RCONST(0.0),DAE.emptyElementSource);  //DAE.RCONST???
+      eqArr = arrayUpdate(inEqArr,indx,entry);
+      eqArr1 = expToEquationArr(inExpArr,indx+1,eqArr);
+    then
+      eqArr1;
+  end matchcontinue;
+end expToEquationArr;
+
+protected function equationToExpArr
+  "transforms an array<Option<BackendDAE.Equation>> into an array<DAE.Exp>"
+  input array<Option<BackendDAE.Equation>> inArr;
+  input Integer indx;
+  input array<DAE.Exp> arr;
+  output array<DAE.Exp> outArr;
+algorithm
+  outArr := matchcontinue(inArr,indx,arr)
+  local
+    Option<BackendDAE.Equation> optEq;
+    BackendDAE.Equation eq;
+    DAE.Exp e;
+    array<DAE.Exp> arr1,arr2;
+  case (_,_,_)
+    equation
+      true = (indx>arrayLength(arr));
+    then
+      arr;
+  case (_,_,_)
+    equation
+      true = (indx<=arrayLength(arr));
+      optEq = arrayGet(inArr,indx);
+      SOME(eq) = optEq;
+      BackendDAE.EQUATION(e,_,_) = eq;
+      arr1 = arrayUpdate(arr,indx,e);
+      arr2 = equationToExpArr(inArr,indx+1,arr1);
+    then
+      arr2;
+  case (_,_,_)
+    equation
+      true = (indx<=arrayLength(arr));
+      optEq = arrayGet(inArr,indx);
+      SOME(eq) = optEq;
+      BackendDAE.RESIDUAL_EQUATION(e,_) = eq;
+      arr1 = arrayUpdate(arr,indx,e);
+      arr2 = equationToExpArr(inArr,indx+1,arr1);
+    then
+      arr2;
+  case (_,_,_)
+    equation
+      true = (indx<=arrayLength(arr));
+      optEq = arrayGet(inArr,indx);
+      NONE() = optEq;
+      e = DAE.RCONST(0.0);
+      arr1 = arrayUpdate(arr,indx,e);
+      arr2 = equationToExpArr(inArr,indx+1,arr1);
+    then
+      arr2;
+  end matchcontinue;
+end equationToExpArr;
+
+protected function buildLinSystForNewton
+  "builds the system f'(x)*dx = f(x) <-> f'(x)*dx-f(x) = 0, f residual equations, x tearing variables"
+  input array<DAE.Exp> lhsArr;
+  input array<DAE.Exp> rhsArr;
+  input Integer indx;
+  input array<DAE.Exp> expArr;
+  output array<DAE.Exp> outExpArr;
+algorithm
+  outExpArr := matchcontinue(lhsArr,rhsArr,indx,expArr)
+    local
+      DAE.Exp lhs,rhs,outExp,outExp1;
+    case (_,_,_,_)
+      equation
+        true = (indx<=arrayLength(lhsArr));
+        lhs = arrayGet(lhsArr,indx);
+        rhs = arrayGet(rhsArr,indx);
+        outExp1 = Expression.makeDifference(lhs,rhs);
+        (outExp,_) = ExpressionSimplify.simplify(outExp1); 
+        outExpArr = arrayUpdate(expArr,indx,outExp);
+        outExpArr = buildLinSystForNewton(lhsArr,rhsArr,indx+1,outExpArr);
+      then
+        outExpArr;
+    case (_,_,_,_)
+      equation
+        true = (indx>arrayLength(lhsArr));
+      then
+        expArr;
+  end matchcontinue;
+end buildLinSystForNewton;
+
+protected function matrixVectorMultiplication
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  input Integer row;
+  input Integer col;  //column
+  input BackendDAE.Variables vars;
+  input Integer size;
+  input array<DAE.Exp> inExpArr;
+  input list<DAE.ComponentRef> inLstRef;
+  output array<DAE.Exp> outExp; 
+  output list<DAE.ComponentRef> outLstRef;
+algorithm
+  (outExp,outLstRef) := matchcontinue(jac,row,col,vars,size,inExpArr,inLstRef)
+  local
+    list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+    DAE.Exp e,exp1,eqExp,varExp;
+    array<DAE.Exp> expArr;
+    DAE.ComponentRef cr;
+    BackendDAE.Equation eq;
+    list<DAE.ComponentRef> varcrefs; 
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      true = intEq(col,1);
+      false = intLt(size,col);  //col<=size
+      false = intLt(size,row);  //row<=size
+      varcrefs = BackendVariable.getAllCrefFromVariables(vars);
+      cr = listGet(varcrefs,col);
+      varExp = Expression.crefExp(cr);
+      eq = getEqFromTupleLst(jac,row,col);  //entry of the jacobian
+      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      true = Expression.isZero(eqExp);
+      (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs); 
+    then
+      (expArr,varcrefs);
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      true = intEq(col,1);
+      false = intLt(size,col);  //col<=size
+      false = intLt(size,row);  //row<=size
+      varcrefs = BackendVariable.getAllCrefFromVariables(vars);
+      cr = listGet(varcrefs,col);
+      varExp = Expression.crefExp(cr);
+      eq = getEqFromTupleLst(jac,row,col);  //entry of the jacobian
+      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      false = Expression.isZero(eqExp);
+      exp1 = Expression.expMul(eqExp,varExp);
+      expArr = arrayUpdate(inExpArr,row,exp1);
+      (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,expArr,varcrefs); 
+    then
+      (expArr,varcrefs);
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      true = intGt(col,size);  //col>size
+      (expArr,varcrefs) = matrixVectorMultiplication(jac,row+1,1,vars,size,inExpArr,inLstRef);
+    then
+      (expArr,varcrefs);
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      false = intEq(col,1);
+      false = intLt(size,col);  //col<=size
+      false = intLt(size,row);  //row<=size
+      varcrefs = BackendVariable.getAllCrefFromVariables(vars);
+      cr = listGet(varcrefs,col);
+      varExp = Expression.crefExp(cr);
+      eq = getEqFromTupleLst(jac,row,col);
+      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      false = Expression.isZero(eqExp);
+      e = arrayGet(inExpArr,row);
+      exp1 = Expression.expAdd(e,Expression.expMul(eqExp,varExp));
+      expArr = arrayUpdate(inExpArr,row,exp1);
+      (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,expArr,varcrefs); 
+    then
+      (expArr,inLstRef);
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      false = intEq(col,1);
+      false = intLt(size,col);  //col<=size
+      false = intLt(size,row);  //row<=size
+      varcrefs = BackendVariable.getAllCrefFromVariables(vars);
+      cr = listGet(varcrefs,col);
+      varExp = Expression.crefExp(cr);
+      eq = getEqFromTupleLst(jac,row,col);
+      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      true = Expression.isZero(eqExp);
+      (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs);
+    then
+      (expArr,inLstRef);
+  case (jac,_,_,_,_,inExpArr,inLstRef)
+    equation
+      true = intGt(row,size);  //row>size
+    then
+      (inExpArr,inLstRef);
+  case (_,_,_,_,_,_,_)
+    then
+      fail();
+  end matchcontinue;
+end matrixVectorMultiplication;
+
+protected function getEqFromTupleLst
+  "gets the equation of a list of tuple<Integer, Integer, BackendDAE.Equation> for two given integers"
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inTuple;
+  input Integer r;
+  input Integer c;
+  output BackendDAE.Equation outEq;
+algorithm
+  outEq := matchcontinue(inTuple,r,c)
+  local
+    list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
+    Integer i1,i2;
+    BackendDAE.Equation eq;
+  case ((i1,i2,eq)::rest,r,c)
+    equation
+      true = intEq(i1,r);  //i1 = r
+      true = intEq(i2,c);  //i2 = c
+    then
+      eq;
+  case ((i1,i2,eq)::rest,r,c)
+    equation
+      false = intEq(i1,r);  //i1 <>r
+      eq = getEqFromTupleLst(rest,r,c);
+    then
+      eq;
+  case ((i1,i2,eq)::rest,r,c)
+    equation
+      false = intEq(i2,c);  //i2 <>c
+      eq = getEqFromTupleLst(rest,r,c);
+    then
+      eq;
+  case ({},r,c)
+    then
+      BackendDAE.RESIDUAL_EQUATION(DAE.RCONST(0.0),DAE.emptyElementSource);  //(r,c) does not appear in jac
+  end matchcontinue;
+end getEqFromTupleLst;
 
 protected function correctAssignments
 " function: correctAssignments
@@ -5013,11 +5574,10 @@ algorithm
 end getTearingVars;
 
 protected function tearingSystem2
-" function: tearingSystem2
-  Residualequation loop. This function
-  select a residual equation.
-  The equation with most connections to
-  variables will be selected."
+" function: tearingSystem
+  This function selects a tearing variable. The variable nodes (V-nodes) are weighted with the sum of the weights of 
+  its incident edges. The edges are weighted as the inverse of the vertex degree of its incident equation node
+  (E-node). The V-node with largest weight is chosen."
   input BackendDAE.BackendDAE inDlow;
   input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
@@ -5025,7 +5585,7 @@ protected function tearingSystem2
   input array<Integer> inV1;
   input array<Integer> inV2;
   input list<Integer> inComp;
-  input list<Integer> inTVars;
+  input list<Integer> inVars;
   input list<Integer> inExclude;
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
@@ -5043,64 +5603,70 @@ protected function tearingSystem2
   output list<Integer> outComp;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
-  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqns,inTearVars,inTearEqns,inCrlst)
+  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inVars,inExclude,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
       BackendDAE.BackendDAE dlow,dlow_1,dlow1,dlow1_1;
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       array<Integer> v1,v2,v1_1,v2_1;
-      list<Integer> tvars,vars,vars_1,comp,comp_1,exclude;
-      String str,str1;
-      Integer residualeqn;
+      list<Integer> tvars,comp,comp_1,exclude,vars;
+      Integer tearVar;
       list<Integer> tearingvars,residualeqns,tearingvars_1,residualeqns_1,tearingeqns,tearingeqns_1;
       list<DAE.ComponentRef> crlst;
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
+      list<Integer> eqns,eqns_1;
+      BackendDAE.EqSystem syst;
+      tuple<Real,BackendDAE.Value> tupl;
+       
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        // get from eqn equation with most variables
-        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
-        true = residualeqn > 0;
-        str = intString(residualeqn);
-        str1 = stringAppend("ResidualEqn: ", str);
-        Debug.fcall(Flags.TEARING_DUMP, print, str1);
-         // get from mT variable with most equations
-        vars = m[residualeqn];
-        vars_1 = List.select1(vars,listMember,tvars);
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
-        // only succeed if tearing need less equations than system size is
-//        true = listLength(tearingvars_1) < systemsize;
+        tupl = tearingVariable(m,mT,vars,comp,0.0,0,exclude);
+        (_,tearVar) = tupl;
+        true = tearVar > 0;
+        eqns = mT[tearVar];  //gets all E-nodes incident to the tearing variable
+        eqns_1 = eqns;
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqns_1,{},tearVar,residualeqns,tearingvars,tearingeqns,crlst);
     then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        // get from eqn equation with most variables
-        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
-        true = residualeqn > 0;
-        // try next equation
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,residualeqn::exclude,residualeqns,tearingvars,tearingeqns,crlst);
+        true = (listLength(tearingvars)==0);  //until now tearing was not used
+        tupl = tearingVariable(m,mT,vars,comp,0.0,0,exclude);
+        (_,tearVar) = tupl;
+        true = tearVar > 0;
+        eqns = mT[tearVar];  //gets all E-nodes incident to the tearing variable
+        eqns_1 = eqns;
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqns_1,{},tearVar,residualeqns,tearingvars,tearingeqns,crlst);
+    then
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
+   
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
+      equation
+        tupl = tearingVariable(m,mT,vars,comp,0.0,0,exclude);
+        (_,tearVar) = tupl;
+        true = tearVar > 0;
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,vars,tearVar::exclude,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,_)
       equation
-        // get from eqn equation with most variables
-        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
-        false = residualeqn > 0;
-        Debug.fcall(Flags.TEARING_DUMP, print, "Select Residual BackendDAE.Equation failed\n");
+        tupl = tearingVariable(m,mT,vars,comp,0.0,0,exclude);
+        (_,tearVar) = tupl;
+        false = tearVar > 0;
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select tearVar BackendDAE.Equation failed\n");
       then
         fail();
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,_)
       equation
-        Debug.fcall(Flags.TEARING_DUMP, print, "Select Residual BackendDAE.Equation failed!\n");
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select tearing variable failed!\n");
       then
-        fail();        
+        fail();   
   end matchcontinue;
 end tearingSystem2;
 
 protected function tearingSystem3
 " function: tearingSystem3
-  TearingVar loop. This function select
-  a tearing variable. The variable with
-  most connections to equations will be
-  selected."
+  This function selects a residual equation. It chooses the one incident to the tearing variable with 
+  largest vertex degree." 
   input BackendDAE.BackendDAE inDlow;
   input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
@@ -5108,9 +5674,9 @@ protected function tearingSystem3
   input array<Integer> inV1;
   input array<Integer> inV2;
   input list<Integer> inComp;
-  input list<Integer> inTVars;
+  input list<Integer> inEqs;
   input list<Integer> inExclude;
-  input Integer inResEqn;
+  input Integer inTearVar;
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
@@ -5127,7 +5693,7 @@ protected function tearingSystem3
   output list<Integer> outComp;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
-  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns,inCrlst)
+  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inEqs,inExclude,inTearVar,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
       BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
@@ -5135,45 +5701,48 @@ algorithm
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       BackendDAE.StrongComponents comps;
       list<list<Integer>> comps_1,comps_2,onecomp,morecomps;
-      list<Integer> vars,comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns;
-      String str,str1,str2;
+      list<Integer> comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns,eqs;
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
       list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1;
       DAE.ComponentRef cr,crt;
       list<DAE.ComponentRef> crlst;
-      DAE.Ident ident,ident_t;
       BackendDAE.VariableArray varr;
+
+      BackendDAE.Variables exobj,ordvars,vars_1,ordvars1,knvars,vararray;
+      BackendDAE.EquationArray eqns, eqns_1, eqns_2,eqns1,eqns1_1,remeqns,inieqns,eqns1_2;
+      DAE.Exp eqn,scalar,rhs,expCref,expR,expR1;
+
       BackendDAE.Value nvars,neqns,memsize;
-      BackendDAE.Variables ordvars,vars_1,knvars,exobj,ordvars1,vararray;
       BackendDAE.AliasVariables av;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
-      BackendDAE.EquationArray eqns, eqns_1, eqns_2,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      DAE.Exp eqn,scalar,rhs,expCref;
 
       DAE.ElementSource source;
-      DAE.Type identType;
-      list<DAE.Subscript> subscriptLst;
       BackendDAE.Var var;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
+      
+      tuple<Real,BackendDAE.Value> tupl;
+      
+      array<Option<BackendDAE.Equation>> equOptArr1,equOptArr;
+      
+      BackendDAE.Equation eq,entry,entry1,entry1_1;
+      
     
-    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
+    case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        vararray = BackendVariable.daeVars(syst);
-        (tearingvar,_) = getMaxfromListListVar(mT,vars,comp,0,0,exclude,vararray);
-        // check if tearing var is found
-        true = tearingvar > 0;
-        str = intString(tearingvar);
-        str1 = stringAppend("\nTearingVar: ", str);
-        str2 = stringAppend(str1,"\n");
-        Debug.fcall(Flags.TEARING_DUMP, print, str2);
+        true = (listLength(residualeqns)<>0);  //there exist alreay chosen residual equations
+        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        true = residualeqn > 0;
         // copy dlow
         dlowc = BackendDAEUtil.copyBackendDAE(dlow);
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),orderedEqs=eqns)::{},shared) = dlowc;
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
+        BackendDAE.EQUATION_ARRAY(_,_,_,equOptArr) = eqns;
         dlowc1 = BackendDAEUtil.copyBackendDAE(dlow1);
         BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
+        BackendDAE.EQUATION_ARRAY(_,_,_,equOptArr1) = eqns1;
         // add Tearing Var
         var = BackendVariable.vararrayNth(varr, tearingvar-1);
         cr = BackendVariable.varCref(var);
@@ -5189,9 +5758,14 @@ algorithm
 
         // Add Residual eqn
         rhs = Expression.crefExp(crt);
-        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),rhs,source));
-
-        eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),DAE.RCONST(0.0),source));
+        eq = BackendDAEUtil.equationNth(eqns,residualeqn-1);
+        entry = BackendEquation.equationToResidualForm(eq);
+        BackendDAE.RESIDUAL_EQUATION(expR,_) = entry;
+        expR1 =  Expression.makeDifference(expR,rhs);
+        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source);
+        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source);
+        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,entry1);
+        eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,entry1_1);
         // add equation to calc org var
         expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
@@ -5211,7 +5785,6 @@ algorithm
         // remove residual equations and tearing eqns
         resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
         othereqns = List.select1(onecomp_flat,List.notMember,resteareqns);
-        eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1,crlst);
          // if we have not make alle equations causal select next residual equation
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_2,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps_1,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
         // check
@@ -5222,22 +5795,108 @@ algorithm
         comp_2 = List.select1(cmops_flat,listMember,comp);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
+   case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
-        // check if tearing var is found
-        true = tearingvar > 0;
+        true = (listLength(residualeqns)==0);  //until now no residual equations have been used
+        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        true = residualeqn > 0;
+        // copy dlow
+        dlowc = BackendDAEUtil.copyBackendDAE(dlow);
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
+        dlowc1 = BackendDAEUtil.copyBackendDAE(dlow1);
+        BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
+        // add Tearing Var
+        var = BackendVariable.vararrayNth(varr, tearingvar-1);
+        cr = BackendVariable.varCref(var);
+        crt = ComponentReference.prependStringCref("tearingresidual_",cr);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
+        // replace in residual equation orgvar with Tearing Var
+        BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
+        // true = replace + replace1 > 0;
+
+        // Add Residual eqn
+        rhs = Expression.crefExp(crt);
+        
+        eq = BackendDAEUtil.equationNth(eqns,residualeqn-1);
+        entry = BackendEquation.equationToResidualForm(eq);
+        BackendDAE.RESIDUAL_EQUATION(expR,_) = entry;
+        expR1 =  Expression.makeDifference(expR,rhs);
+        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source);
+        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source);
+        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,entry1);
+        eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,entry1_1);
+        //eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),DAE.RCONST(0.0),source));
+        // add equation to calc org var
+        expCref = Expression.crefExp(cr);
+        eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
+                          {},DAE.callAttrBuiltinReal),
+                          expCref, DAE.emptyElementSource),eqns_1);
+
+        tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
+        dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
+        dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
+        // try causalisation
+        (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2),matching=BackendDAE.MATCHING(v1_1,v2_1,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow_1,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
+        comps_1 = List.map(comps,getEqnIndxFromComp);
+        // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
+        (morecomps,onecomp) = splitComps(comps_1);
+        // try to solve the equations
+        onecomp_flat = List.flatten(onecomp);
+        // remove residual equations and tearing eqns
+        resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
+        othereqns = List.select1(onecomp_flat,List.notMember,resteareqns);
+         // if we have not make alle equations causal select next residual equation
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_2,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps_1,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
+        // check
+        true = ((listLength(residualeqns_1) > listLength(residualeqns)) and
+                (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
+        // get specifig comps
+        cmops_flat = List.flatten(comps_2);
+        comp_2 = List.select1(cmops_flat,listMember,comp);
+      then
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
+    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
+      equation
+        true = (listLength(residualeqns)<>0);  //there exist alreay chosen residual equations
+       tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        true = residualeqn > 0;
         // clear errors
         Error.clearMessages();
-        // try next TearingVar
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqs,residualeqn::exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
       equation
-        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
-        // check if tearing var is found
-        false = tearingvar > 0;
+        true = (listLength(residualeqns)==0);  //until now no residual equations have been used
+        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        true = residualeqn > 0;
+        // clear errors
+        Error.clearMessages();
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqs,residualeqn::exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
+      then
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
+    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
+      equation
+        true = (listLength(residualeqns)<>0);  //there exist alreay chosen residual equations
+        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        false = residualeqn > 0;
+        // clear errors
+        Error.clearMessages();
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select Tearing BackendDAE.Var failed\n");
+      then
+        fail();
+    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
+      equation
+        true = (listLength(residualeqns)==0);  //until now no residual equations have been used
+        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
+        (_,residualeqn) = tupl;
+        false = residualeqn > 0;
         // clear errors
         Error.clearMessages();
         Debug.fcall(Flags.TEARING_DUMP, print, "Select Tearing BackendDAE.Var failed\n");
@@ -5245,6 +5904,286 @@ algorithm
         fail();
   end matchcontinue;
 end tearingSystem3;
+
+protected function residualEquation
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrixT inMT;
+  input list<BackendDAE.Value> inLst;
+  input list<BackendDAE.Value> inComp;
+  input Real inMax;
+  input BackendDAE.Value inEq;
+  input list<BackendDAE.Value> inExclude;
+  input BackendDAE.Value inTearVar;
+  output tuple<Real,BackendDAE.Value> outTupl;
+algorithm
+  outTupl := matchcontinue(inM,inMT,inLst,inComp,inMax,inEq,inExclude,inTearVar)
+  local
+    BackendDAE.IncidenceMatrix m;
+    BackendDAE.IncidenceMatrixT mt;
+    list<BackendDAE.Value> rest,comp,exclude;
+    BackendDAE.Value e,eq,tearVar;
+    list<Real> weights;
+    Real max;
+    //Real e2,t;
+    list<tuple<Real,BackendDAE.Value>> tupls;
+    tuple<Real,BackendDAE.Value> tupl;
+  case (m,mt,e::rest,comp,max,eq,exclude,tearVar)
+    equation
+      tupls = edgeDegree(mt[tearVar],{(0.0,0)},m);
+      tupl = getMaxFromListWithTuples(tupls,(0.0,0),exclude);
+    then
+      tupl;
+  case (_,_,_,_,_,_,_,_)
+    equation
+      Debug.fcall(Flags.TEARING_DUMP, print, "Select residual equation failed!\n");
+    then
+      fail();        
+  end matchcontinue;
+end residualEquation;
+
+protected function edgeDegree
+  input list<Integer> inLst;
+  input list<tuple<Real,BackendDAE.Value>> inTupls;
+  input BackendDAE.IncidenceMatrix inM;
+  output list<tuple<Real,BackendDAE.Value>> outTupls;
+algorithm
+  outTupls := matchcontinue(inLst,inTupls,inM)
+  local
+    BackendDAE.IncidenceMatrix m;
+    Integer e,deg;
+    list<Integer> rest,incLst;
+    Real degReal;
+    tuple<Real,BackendDAE.Value> tupl;
+    list<tuple<Real,BackendDAE.Value>> tupls,tupls1;
+  case (e::rest,tupls,m)
+    equation
+      true = (e > 0);
+       incLst = m[e];
+       deg = listLength(incLst);
+       degReal = intReal(deg);
+       tupl = (degReal,e);
+       tupls1 = listAppend(tupls,{tupl});
+       tupls = edgeDegree(rest,tupls1,m);
+    then
+      tupls;
+  case (e::rest,tupls,m)
+    equation
+      false = (e > 0);
+      tupls = edgeDegree(rest,tupls,m);
+    then
+      tupls;
+  case ({},tupls,m) then tupls;
+  case (_,_,_)
+    then
+      fail();        
+  end matchcontinue;
+end edgeDegree;
+
+protected function getMaxFromListWithTuples
+"gets the argument v such that f(v) is maximal; list<tuple> = {(f,v)}"
+  input list<tuple<Real,BackendDAE.Value>> inLst;
+  input tuple<Real,BackendDAE.Value> oldTupl;
+  input list<BackendDAE.Value> inExclude;
+  output tuple<Real,BackendDAE.Value> outTupl;
+algorithm
+  outTupl := matchcontinue(inLst,oldTupl,inExclude)
+  local
+    list<tuple<Real,BackendDAE.Value>> rest;
+    Real weight,oldWeight;
+    BackendDAE.Value var,oldVar;
+    tuple<Real,BackendDAE.Value> tupl,oldTupl;
+    list<BackendDAE.Value> exclude;
+  case ((weight,var)::rest,(oldWeight,oldVar),exclude)
+    equation
+      true = (var > 0);
+      false = listMember(var,exclude);  //v(2) does not belong to the list with excluded vars
+      true = (weight >. oldWeight);
+      tupl = getMaxFromListWithTuples(rest,(weight,var),exclude);
+    then
+      tupl;
+  case ((weight,var)::rest,(oldWeight,oldVar),exclude)
+    equation
+      true = (var > 0);
+      false = listMember(var,exclude);
+      false = (weight >. oldWeight);
+      tupl = getMaxFromListWithTuples(rest,(oldWeight,oldVar),exclude);
+    then
+      tupl;
+  case ({},oldTupl,exclude)
+    equation
+    then
+      oldTupl;
+  case ((weight,var)::rest,oldTupl,exclude)
+    equation
+      true = (var > 0);
+      true = listMember(var,exclude);
+      tupl = getMaxFromListWithTuples(rest,oldTupl,exclude);
+    then
+      tupl;
+  case ((weight,var)::rest,oldTupl,exclude)
+    equation
+      false = (var > 0);
+      tupl = getMaxFromListWithTuples(rest,oldTupl,exclude);
+    then
+      tupl;
+  case (_,_,_)
+    equation
+        Debug.fcall(Flags.TEARING_DUMP, print, "getMaxFromListWithTuples failed!\n");
+      then
+        fail();        
+  end matchcontinue;      
+end getMaxFromListWithTuples;
+
+protected function tearingVariable
+"chooses the variable with maximum weight"
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrixT inMT;
+  input list<BackendDAE.Value> inLst;
+  input list<BackendDAE.Value> inComp;
+  input Real inMax;
+  input BackendDAE.Value inVar;
+  input list<BackendDAE.Value> inExclude;
+  output tuple<Real,Integer> outTupl;
+algorithm
+  outTupl := matchcontinue(inM,inMT,inLst,inComp,inMax,inVar,inExclude)
+  local
+    BackendDAE.IncidenceMatrix m;
+    BackendDAE.IncidenceMatrixT mt;
+    list<BackendDAE.Value> rest,comp,exclude;
+    BackendDAE.Value v,var;
+    Real max,max_1,weight;
+    list<tuple<Real,BackendDAE.Value>> tupls;
+    tuple<Real,BackendDAE.Value> tupl;
+  case (m,mt,v::rest,comp,max,var,exclude)
+    equation
+      tupls = weightVariables(m,mt,v::rest,comp,{(0.0,0)},exclude);
+      tupl = listGet(tupls,2);
+      tupl = getMaxFromListWithTuples(tupls,(0.0,0),exclude);
+    then
+      tupl;
+  case (_,_,_,_,_,_,_)
+    equation
+      Debug.fcall(Flags.TEARING_DUMP, print, "Select tearing variable failed!\n");
+    then
+      fail();        
+  end matchcontinue;
+end tearingVariable;
+
+protected function printIntList
+  input list<Integer> inLst;
+  input String inStr;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inLst,inStr)
+  local
+    list<Integer> rest;
+    Integer v;
+    String str,str1;
+  case (v::rest,str)
+    equation
+       str1 = stringAppend(str,intString(v));
+       str = printIntList(rest,str1);
+     then
+       str;
+  case ({},str)
+    equation
+      str = stringAppend(str,"\n");
+      Debug.fcall(Flags.TEARING_DUMP, print, str);
+    then str;
+  end matchcontinue;
+end printIntList;
+
+protected function weightVariables
+  input BackendDAE.IncidenceMatrix inM; 
+  input BackendDAE.IncidenceMatrixT inMT;
+  input list<BackendDAE.Value> inVars;
+  input list<BackendDAE.Value> inComp;
+  input list<tuple<Real,BackendDAE.Value>> inTupls;
+  input list<BackendDAE.Value> inExclude;
+  output list<tuple<Real,BackendDAE.Value>> outTuple;  //(weight,variable)
+algorithm
+  outTuple := matchcontinue(inM,inMT,inVars,inComp,inTupls,inExclude)
+  local
+    BackendDAE.IncidenceMatrix m;
+    BackendDAE.IncidenceMatrixT mt;
+    list<BackendDAE.Value> rest,comp,exclude,incidenceLst;
+    BackendDAE.Value var,v;
+    list<Real> weights,weights1;
+    Real weight,weight1;
+    String str;
+    tuple<Real,BackendDAE.Value> tupl2;
+    list<tuple<Real,BackendDAE.Value>> tupls,tupls1;
+  case (m,mt,{},comp,tupls,exclude)
+    then
+      tupls;
+  case (m,mt,v::rest,comp,tupls,exclude)
+    equation
+      true = (v > 0);
+      incidenceLst = mt[v];
+      weight1 = weightVariables1(m,incidenceLst,exclude,0.0);
+      tupl2 = (weight1,v);
+      tupls1 = listAppend(tupls,{tupl2});
+      tupls = weightVariables(m,mt,rest,comp,tupls1,exclude);
+    then
+      tupls;
+  case (m,mt,v::rest,comp,tupls,exclude)
+    equation
+      false = (v > 0);
+      tupls1 = weightVariables(m,mt,rest,comp,tupls,exclude);
+    then
+      tupls1;
+  case (_,_,_,_,_,_)
+    equation
+      Debug.fcall(Flags.TEARING_DUMP, print, "weightVariables failed!\n");
+    then
+      fail();        
+  end matchcontinue;
+end weightVariables;
+
+
+protected function weightVariables1 "helper function for weightVariables"
+  input BackendDAE.IncidenceMatrix inM;
+  input list<BackendDAE.Value> inIncidenceLst;
+  input list<BackendDAE.Value> inExclude;
+  input Real inWeight;
+  output Real outWeight;
+algorithm
+  outWeight := matchcontinue(inM,inIncidenceLst,inExclude,inWeight)
+  local
+    BackendDAE.IncidenceMatrix m;
+    list<BackendDAE.Value> rest,lst1,exclude;
+    BackendDAE.Value eq,deg;
+    Real weight,weight1,deg_real;
+  case (m,{},exclude,weight) then weight;
+  case (m,eq::rest,exclude,weight)
+    equation
+      true = (eq > 0);
+      lst1 = m[eq];  //incident variables to equation v
+      deg = listLength(lst1);  //edge degree
+      deg_real = intReal(deg);
+      weight = weight +. (1.0 /. deg_real);
+      weight1 = weightVariables1(m,rest,exclude,weight);
+     then
+       weight1;
+  case (m,eq::rest,exclude,weight)
+    equation
+      false = (eq > 0);
+      weight1 = weightVariables1(m,rest,exclude,weight);
+     then
+       weight1;
+  case (m,eq::rest,exclude,weight)
+    equation
+      weight1 = weightVariables1(m,rest,exclude,weight);
+     then
+       weight1;
+  case (_,_,_,_)
+    equation
+      Debug.fcall(Flags.TEARING_DUMP, print, "weightVariables1 failed!\n");
+    then
+      fail();        
+  end matchcontinue;
+end weightVariables1;
+
 
 protected function tearingSystem4
 " function: tearingSystem4

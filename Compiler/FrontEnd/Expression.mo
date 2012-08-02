@@ -2773,6 +2773,29 @@ algorithm
   end matchcontinue;
 end makeDiff;
 
+public function makeDifference
+"Takes two expressions and create
+ the difference between them --> a-(b+c) = a-b-c"
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp res;
+algorithm
+  res := matchcontinue(e1,e2)
+    local
+
+    case(e1,e2) 
+      equation
+        true = isZero(e2);
+      then e1;
+    case(e1,e2) 
+      equation
+        true = isZero(e1);
+      then negate(e2);
+    case(e1,e2)
+      then expAdd(e1,negate(e2));
+  end matchcontinue;
+end makeDifference;
+
 public function makeLBinary
 "Makes a binary logical expression of all elements in the list."
   input list<DAE.Exp> inExpLst;
