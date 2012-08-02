@@ -59,7 +59,7 @@ omoptim: mkbuilddirs omoptimbasis
 	$(MAKE) -C OMOptim/build -f Makefile.unix
 endif
 omoptimbasis: mkbuilddirs
-	$(MAKE) -C OMOptim/OMOptimBasis/build -f Makefile.unix
+	$(MAKE) -C OMOptimBasis/build -f Makefile.unix
 
 qtclients: omnotebook omshell omedit omplot omoptim omoptimbasis
 
