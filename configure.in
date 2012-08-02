@@ -321,6 +321,25 @@ else
   WITH_SUNDIALS="/* Without Sundials */"
   SUNDIALS_LDFLAGS=""
 fi
+
+LIBS=""
+
+AC_MSG_CHECKING([gettext linking])
+AC_TRY_LINK([
+#include <libintl.h>
+], [
+  gettext("");
+], [AC_MSG_RESULT([in C-library])],
+  [
+  LIBS="-lintl";
+  AC_TRY_LINK([
+    #include <libintl.h>
+  ], [
+      gettext("");
+  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
+      [AC_MSG_ERROR([no])])
+])
+
 LIBS=""
 
 dnl should we use ipopt?
@@ -535,9 +554,9 @@ else
 fi
 
 if test "Darwin" != `uname`; then
-  RT_LDFLAGS="-lrt"
+  RT_LDFLAGS="$RT_LDFLAGS -lrt"
 else
-  RT_LDFLAGS="-liconv"
+  RT_LDFLAGS="$RT_LDFLAGS -liconv"
 fi
 
 dnl should we compile modpar
