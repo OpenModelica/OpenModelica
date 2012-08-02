@@ -69,7 +69,7 @@ qtclean: qtclean-common
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
 	$(MAKE) -C OMOptim/build -f Makefile.unix clean
-	$(MAKE) -C OMOptim/OMOptimBasis/build -f Makefile.unix clean
+	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
 endif
 
 fix-svn-eol-style:
