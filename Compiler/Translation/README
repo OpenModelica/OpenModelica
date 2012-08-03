@@ -7,4 +7,5 @@ svn add sv.po
 
 # To update a translation file
 msgmerge -U sv.po openmodelica.pot
-
+# or to merge all files (might screw other translators)
+make merge-all
