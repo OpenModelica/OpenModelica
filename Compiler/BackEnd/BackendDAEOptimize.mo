@@ -7967,6 +7967,9 @@ algorithm
       list<String> slst;
       DAE.Algorithm alg;
       list<DAE.Algorithm> algs;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      list<list<DAE.Subscript>> subslst;
     
     //remove dicrete Equation  
     case(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
@@ -7984,9 +7987,16 @@ algorithm
       derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.ARRAY_EQUATION(source=_), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: derive failed [case: ARRAY_EQUATION]"});
-    then fail();
+    case(currEquation as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=lhs,right=rhs,source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        lhs_ = List.map1r(subslst,Expression.applyExpSubscripts,lhs);
+        lhs_ = ExpressionSimplify.simplifyList(lhs_, {});
+        rhs_ = List.map1r(subslst,Expression.applyExpSubscripts,rhs);
+        rhs_ = ExpressionSimplify.simplifyList(rhs_, {});
+    then
+      deriveLst(lhs_,rhs_,source,vars, functions, inputVars, paramVars, stateVars, knownVars,inorderedVars, inDiffVars, inMatrixName, {});
       
     case(currEquation as BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=exp, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       crefs = List.map2(vars,differentiateVarWithRespectToXR,cref, inMatrixName);
@@ -8015,6 +8025,44 @@ algorithm
     then fail();
   end matchcontinue;
 end derive;
+
+protected function deriveLst "function derivelst
+  author: Frenkel TUD
+  helper for derive to handle array equations"
+  input list<DAE.Exp> lhslst;
+  input list<DAE.Exp> rhslst;
+  input DAE.ElementSource source;
+  input list<DAE.ComponentRef> inVars;
+  input DAE.FunctionTree functions;
+  input BackendDAE.Variables inInputVars;
+  input BackendDAE.Variables inParamVars;
+  input BackendDAE.Variables inStateVars;
+  input BackendDAE.Variables inKnownVars;
+  input BackendDAE.Variables inorderedVars;
+  input list<DAE.ComponentRef> inDiffVars;
+  input tuple<String,Boolean> inMatrixName;
+  input list<BackendDAE.Equation> inDerivedEquations;
+  output list<BackendDAE.Equation> outDerivedEquations;
+algorithm
+  outDerivedEquations := match(lhslst, rhslst, source, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName, inDerivedEquations)
+    local
+      list<BackendDAE.Equation> derivedEqns;
+      DAE.Exp lhs, rhs;
+      list<DAE.Exp> lhsrest,rhsrest,lhs_,rhs_;
+    
+    case({},{},_,_,_,_,_,_,_,_,_,_,_) then inDerivedEquations;
+      
+    case(lhs::lhsrest,rhs::rhsrest,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        lhs_ = differentiateWithRespectToXVec(lhs, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName);
+        rhs_ = differentiateWithRespectToXVec(rhs, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName);
+        derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
+        derivedEqns = listAppend(inDerivedEquations,derivedEqns);
+      then 
+        deriveLst(lhsrest,rhsrest, source, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName, derivedEqns);
+ 
+  end match;
+end deriveLst;
 
 protected function createEqn
   input DAE.Exp inLHS;
@@ -10689,7 +10737,26 @@ algorithm
      list<DAE.Exp> explst;
      DAE.Exp e1,e2;
      DAE.ElementSource source;
+     list<Integer> dimSize;
+     Integer ntvars;
+     list<list<DAE.Exp>> explstlst;
     case ({},_,_,_) then listReverse(iEqns);
+    case (eqns::heqns,_,(eqn as BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left=e1,right=e2,source=source))::hzeroeqns,_)
+      equation
+        print("generateHEquations Array Case\n");
+        BackendDump.dumpEqns(eqns);
+        BackendDump.dumpEqns({eqn});
+        BackendDump.debuglst((dimSize,intString,", ","\n"));
+        ExpressionDump.dumpExp(e2);
+        e2 = Expression.expSub(e1, e2);
+        e2 = Expression.negate(e2);
+        explst = List.map(eqns,equationToExp);
+        ntvars = listLength(tvarcrefs);
+        explstlst = List.partition(explst,ntvars);
+        explst = List.map1(explstlst, generateHEquations1,tvarcrefs);
+        e1 = generateHEquations2(dimSize,explst,Expression.typeof(e2));     
+      then
+        generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source)::iEqns);      
     case (eqns::heqns,_,eqn::hzeroeqns,_)
       equation
         explst = List.map(eqns,equationToExp);
@@ -10702,6 +10769,31 @@ algorithm
         generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.EQUATION(e1,e2,source)::iEqns);
   end match;
 end generateHEquations;
+
+protected function generateHEquations2
+  input list<Integer> dimSize;
+  input list<DAE.Exp> inExplst;
+  input DAE.Type inTp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(dimSize,inExplst,inTp)
+    local
+      list<Integer> rest;
+      list<DAE.Exp> explst,explst1;
+    case({},_,_) then fail();
+  end match;
+end generateHEquations2;
+
+protected function generateHEquations1
+  input list<DAE.Exp> explst;
+  input list<DAE.Exp> tvarcrefs;
+  output DAE.Exp e;
+protected
+  list<DAE.Exp> explst1;
+algorithm
+  explst1 := List.threadMap(explst,tvarcrefs,Expression.expMul);
+  e := Expression.makeSum(explst1);
+end generateHEquations1;
 
 protected function getOtherDerivedEquations
   input list<list<Integer>> othercomps; 
