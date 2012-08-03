@@ -1763,7 +1763,11 @@ void SystemImpl__gettextInit(const char *locale)
   const char *omhome = SettingsImpl__getInstallationDirectoryPath();
   char *localedir;
   int omlen;
+#if defined(__MINGW32__)
+  if (!setlocale(LC_ALL, locale)) {
+#else
   if (!setlocale(LC_MESSAGES, locale)) {
+#endif
     const char *c_tokens[1]={locale};
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
@@ -1772,6 +1776,9 @@ void SystemImpl__gettextInit(const char *locale)
       c_tokens,
       1);
   }
+#if defined(__MINGW32__)
+  setlocale(LC_NUMERIC, "C");
+#endif
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);
   sprintf(localedir, "%s/share/locale", omhome);
