@@ -6640,7 +6640,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_CATCH(__)          then "STMT CATCH"
   case s as STMT_THROW(__)          then "STMT THROW"
   case s as STMT_RETURN(__)         then "STMT RETURN"
-  case s as STMT_NORETCALL(__)      then "STMT NORETCALL"
+  case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/,simCode)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
   <<
@@ -6967,6 +6967,20 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   >>
 
 end algStmtForGeneric_impl;
+
+template algStmtNoretcall(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a no return call algorithm statement."
+::=
+match stmt
+case STMT_NORETCALL(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  <<
+  //No retcall
+  <%preExp%>
+  <%expPart%>;
+  >>
+end algStmtNoretcall;
 
 template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates a for algorithm statement where range is RANGE."
