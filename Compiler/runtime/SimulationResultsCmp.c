@@ -307,6 +307,8 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         /* search event in reference forwards */
         refevent = 0;
         t_event = t + t*reltol*0.1;
+        /* do not exceed next time step */
+        t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
         j_event = j;
         while(tr < t_event) {
           te = 0;
