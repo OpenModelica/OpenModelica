@@ -55,6 +55,8 @@ typedef struct {
   unsigned int n;
 } DiffDataField;
 
+#define DOUBLEEQUAL_TOTAL 0.0000000001
+#define DOUBLEEQUAL_REL 0.00001
 
 static SimulationResult_Globals simresglob_c = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
 static SimulationResult_Globals simresglob_ref = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
@@ -74,7 +76,7 @@ static inline void fixDerInName(char *str, size_t len)
     for(i = 4; i < pos; ++i)
       str[i-4] = str[i];
     /* move "der(" to the end of prefix
-      "a.b.c.b.c.d)" -> "a.b.c.der(d)" */
+       "a.b.c.b.c.d)" -> "a.b.c.der(d)" */
     strncpy(&str[pos-4],"der(",4);
   }
 }
@@ -88,8 +90,8 @@ static inline void fixCommaInName(char **str, size_t len)
 
   nc = 0;
   for (j=0;j<len;j++)
-      if ((*str)[j] ==',' )
-        nc +=1;
+    if ((*str)[j] ==',' )
+      nc +=1;
 
   if (nc > 0) {
 
@@ -137,7 +139,7 @@ char ** getVars(void *vars, unsigned int* nvars)
       newvars[i] = cmpvars[i];
     newvars[ncmpvars] = var;
     ncmpvars += 1;
-      if(cmpvars) free(cmpvars);
+    if(cmpvars) free(cmpvars);
     cmpvars = newvars;
     /* fprintf(stderr, "NVar: %d\n", ncmpvars); */
 
@@ -195,30 +197,52 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   assert(i == 0);
 
   /* for (i=0;i<res.n;i++)
-     fprintf(stderr, "%d: %.6g\n",  i, res.data[i]); */
+    fprintf(stderr, "%d: %.6g\n",  i, res.data[i]); */
 
   return res;
 }
 
+/* see http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/ */
+char AlmostEqualRelativeAndAbs(double A, double B)
+{
+  /* Check if the numbers are really close -- needed
+  when comparing numbers near zero. */
+  double diff = absdouble(A - B);
+  if (diff <= DOUBLEEQUAL_TOTAL)
+    return 1;
+
+  A = absdouble(A);
+  B = absdouble(B);
+  double largest = (B > A) ? B : A;
+
+  if (diff <= largest * DOUBLEEQUAL_REL)
+    return 1;
+  return 0;
+}
+
 unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx)
 {
-  unsigned int i,j,k;
-  double t,tr,d,dr,err;
+  unsigned int i,j,k,j_event;
+  double t,tr,d,dr,err,d_left,d_right,dr_left,dr_right,t_event;
   DiffData *diffdatafild;
   char increased = 0;
   char interpolate = 0;
   char isdifferent = 0;
+  char refevent = 0;
   j = 0;
   tr = reftime->data[j];
   dr = refdata->data[j];
-
-  /* fprintf(stderr, "compare: %s\n",varname); */
+#ifdef DEBUGOUTPUT
+   fprintf(stderr, "compare: %s\n",varname);
+#endif
   for (i=0;i<data->n;i++){
     t = time->data[i];
     d = data->data[i];
     increased = 0;
-    /* fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d); */
-    while(tr <= t){
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "i: %d t: %.6g   d:%.6g\n",i,t,d);
+#endif
+    while(tr < t){
       if (j +1< reftime->n) {
         j += 1;
         tr = reftime->data[j];
@@ -226,7 +250,9 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         if (tr == t) {
           break;
         }
-        /* fprintf(stderr, "j: %d tr:%.6g\n",j,tr); */
+#ifdef DEBUGOUTPUT
+         fprintf(stderr, "j: %d tr:%.6g\n",j,tr);
+#endif
       }
       else
         break;
@@ -237,16 +263,30 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         tr = reftime->data[j];
       }
     }
-    /* fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr); */
-    /* events */
-    if(i>0) {
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "i: %d t: %.6g   d:%.6g  j: %d tr:%.6g\n",i,t,d,j,tr);
+#endif
+    /* events, in case of an event compare only the left and right values of the absolute event time range,
+    * this means ta_left = min(t_left,tr_left) and
+    * ta_right = max(t_right,ta_right) */
+    if(i<time->n) {
+#ifdef DEBUGOUTPUT
+       fprintf(stderr, "check event: %.6g  - %.6g = %.6g\n",t,time->data[i+1],absdouble(t-time->data[i+1]));
+#endif
       /* an event */
-      if (absdouble(t-time->data[i-1]) > 0.00000065) {
-        /* fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
-          goto the last */
+      if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+#ifdef DEBUGOUTPUT
+         fprintf(stderr, "event: %.6g  %d  %.6g\n",t,i,d);
+#endif
+        /* left value */
+        d_left = d;
+#ifdef DEBUGOUTPUT
+         fprintf(stderr, "left value: %.6g  %d %.6g\n",t,i,d_left);
+#endif
+        /* right value */
         char te = 0;
         if (i+1<data->n) {
-          if (time->data[i+1] < t+0.00000065) {
+          if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
             te = 1;
           }
         }
@@ -254,43 +294,152 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
           i +=1;
           te = 0;
           if (i+1<data->n) {
-            if (time->data[i+1] < t+0.00000065) {
+            if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
               te = 1;
             }
           }
         }
         t = time->data[i];
-        d = data->data[i];
-        /* fprintf(stderr, "movet to: %.6g  %d  %.6g\n",t,i,d);
-           fprintf(stderr, "1event: %.6g  %d\n",tr,j); */
-        te == 0;
-        if (j+1<reftime->n) {
-          if (reftime->data[j+1] < tr+0.00000065) {
-            te = 1;
-          }
-        }
-        while(te==1){
-          j +=1;
+        d_right = data->data[i];
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "right value: %.6g  %d %.6g\n",t,i,d_right);
+#endif
+        /* search event in reference forwards */
+        refevent = 0;
+        t_event = t + t*reltol*0.1;
+        j_event = j;
+        while(tr < t_event) {
           te = 0;
           if (j+1<reftime->n) {
-            if (reftime->data[j+1] < tr+0.00000065) {
+            if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
               te = 1;
+              dr_left = refdata->data[j];
+#ifdef DEBUGOUTPUT
+               fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
+#endif
+              refevent = 1;
+            }
+          }
+          while(te==1){
+            j +=1;
+            te = 0;
+            if (j+1<reftime->n) {
+              if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
+                te = 1;
+              }
+            }
+          }
+          if (refevent == 0) {
+            j += 1;
+            if (j >= reftime->n)
+              break;
+            tr = reftime->data[j];
+          }
+          else {
+            tr = reftime->data[j];
+            break;
+          }
+        }
+        if (refevent==1) {
+          tr = reftime->data[j];
+          dr_right = refdata->data[j];
+#ifdef DEBUGOUTPUT
+           fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
+#endif
+
+          err = absdouble(d_left-dr_left);
+#ifdef DEBUGOUTPUT
+           fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_left)+abstol);
+#endif
+          if ( err < reltol*fabs(dr_left)+abstol){
+            err = absdouble(d_right-dr_right);
+#ifdef DEBUGOUTPUT
+             fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_right)+abstol);
+#endif
+            if ( err < reltol*fabs(dr_right)+abstol){
+              continue;
             }
           }
         }
-        tr = reftime->data[j];
-        /* fprintf(stderr, "1movet to: %.6g  %d\n",tr,j); */
+        else {
+          /* search event in reference backwards */
+          j = j_event;
+          tr = reftime->data[j];
+          refevent = 0;
+          t_event = t - t*reltol*0.1;
+          while(tr > t_event) {
+            te = 0;
+            if (j-1>0) {
+              if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
+                te = 1;
+                dr_right = refdata->data[j];
+#ifdef DEBUGOUTPUT
+                 fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
+#endif
+                refevent = 1;
+              }
+            }
+            while(te==1){
+              j -=1;
+              te = 0;
+              if (j-1>0) {
+                if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
+                  te = 1;
+                }
+              }
+            }
+            if (refevent == 0) {
+              j -= 1;
+              if (j == 0)
+                break;
+              tr = reftime->data[j];
+            }
+            else {
+              tr = reftime->data[j];
+              break;
+            }
+          }
+          if (refevent==1) {
+            tr = reftime->data[j];
+            dr_left = refdata->data[j];
+#ifdef DEBUGOUTPUT
+            fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
+#endif
+            err = absdouble(d_left-dr_left);
+#ifdef DEBUGOUTPUT
+            fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_left)+abstol);
+#endif
+            if ( err < reltol*fabs(dr_left)+abstol){
+              err = absdouble(d_right-dr_right);
+#ifdef DEBUGOUTPUT
+              fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_right)+abstol);
+#endif
+              if ( err < reltol*fabs(dr_right)+abstol){
+                j = j_event;
+                tr = reftime->data[j];
+                continue;
+              }
+            }
+          }
+          j = j_event;
+          tr = reftime->data[j];
+        }
       }
     }
+
     interpolate = 0;
-    /* fprintf(stderr, "interpolate? %d %.6g:%.6g  %.6g:%.6g\n",i,t,tr,absdouble((t-tr)/tr),abstol); */
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "interpolate? %d %.6g:%.6g  %.6g:%.6g\n",i,t,tr,absdouble((t-tr)/tr),abstol);
+#endif
     if (absdouble(t-tr) > 0.00001) {
       interpolate = 1;
     }
 
     dr = refdata->data[j];
     if (interpolate==1){
-      /* fprintf(stderr, "interpolate %.6g:%.6g  %.6g:%.6g %d",t,d,tr,dr,j); */
+#ifdef DEBUGOUTPUT
+      fprintf(stderr, "interpolate %.6g:%.6g  %.6g:%.6g %d",t,d,tr,dr,j);
+#endif
       unsigned int jj = j;
       /* look for interpolation partner */
       if (tr > t) {
@@ -312,11 +461,15 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
             }
           }
         }
-        /* fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr); */
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],refdata->data[jj]);
+#endif
         if (reftime->data[jj] != tr){
-         dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
+          dr = refdata->data[jj] + ((dr-refdata->data[jj])/(tr-reftime->data[jj]))*(t-reftime->data[jj]);
         }
-      /* fprintf(stderr, "-> dr:%.6g\n",dr); */
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "-> dr:%.6g\n",dr);
+#endif
       }
       else {
         if (j+1<reftime->n) {
@@ -337,21 +490,25 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
             }
           }
         }
-        /* fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr); */
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "-> %d %.6g %.6g\n",jj,reftime->data[jj],tr);
+#endif
         if (reftime->data[jj] != tr){
           dr = dr + ((refdata->data[jj] - dr)/(reftime->data[jj] - tr))*(t-tr);
         }
-        /* fprintf(stderr, "-> dr:%.6g\n",dr); */
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "-> dr:%.6g\n",dr);
+#endif
       }
     }
-    /* fprintf(stderr, "j: %d tr: %.6g  dr:%.6g  t:%.6g  d:%.6g\n",j,tr,dr,t,d); */
-
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "j: %d tr: %.6g  dr:%.6g  t:%.6g  d:%.6g\n",j,tr,dr,t,d);
+#endif
     err = absdouble(d-dr);
-
-    /* fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol); */
-
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr)+abstol);
+#endif
     if ( err > reltol*fabs(dr)+abstol){
-
       if (j+1<reftime->n) {
         if (reftime->data[j+1] == tr) {
           dr = refdata->data[j+1];
@@ -374,7 +531,7 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
       diffdatafild[ddf->n].timeref = tr;
       diffdatafild[ddf->n].interpolate = interpolate?'1':'0';
       ddf->n +=1;
-        if(ddf->data) free(ddf->data);
+      if(ddf->data) free(ddf->data);
       ddf->data = diffdatafild;
     }
   }
@@ -402,7 +559,7 @@ int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const cha
   fprintf(fout, "\"Name\";\"Time\";\"DataPoint\";\"RefTime\";\"RefDataPoint\";\"absolute error\";\"relative error\";interpolate;\n");
   for (i=0;i<ddf->n;i++){
     fprintf(fout, "%s;%.6g;%.6g;%.6g;%.6g;%.6g;%.6g;%c;\n",ddf->data[i].name,ddf->data[i].time,ddf->data[i].data,ddf->data[i].timeref,ddf->data[i].dataref,
-        fabs(ddf->data[i].data-ddf->data[i].dataref),fabs((ddf->data[i].data-ddf->data[i].dataref)/ddf->data[i].dataref),ddf->data[i].interpolate);
+      fabs(ddf->data[i].data-ddf->data[i].dataref),fabs((ddf->data[i].data-ddf->data[i].dataref)/ddf->data[i].dataref),ddf->data[i].interpolate);
   }
   fclose(fout);
   /* fprintf(stderr, "writeLogFile: %s finished\n",filename); */
@@ -448,7 +605,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
   /* fprintf(stderr, "Compare Vars:\n"); /*
   /* for(i=0;i<ncmpvars;i++)
-     fprintf(stderr, "Var: %s\n", cmpvars[i]); */
+  fprintf(stderr, "Var: %s\n", cmpvars[i]); */
 
   /*  get time */
   /* fprintf(stderr, "get time\n"); */
@@ -530,14 +687,14 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
 
   if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol))
   {
-     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Cannot write result file!\n", msg, 0);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Cannot write result file!\n", msg, 0);
   }
 
   if (ddf.n > 0){
     /* fprintf(stderr, "diff: %d\n",ddf.n); */
     /* for (i=0;i<vardiffindx;i++)
-      fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
-   res = mk_nil();
+    fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
+    res = mk_nil();
     for (i=0;i<vardiffindx;i++){
       res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
     }
