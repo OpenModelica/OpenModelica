@@ -1247,7 +1247,7 @@ algorithm
   outEqsLst := 
   matchcontinue (dims,e1,e2,source,iAcc)
     local
-      DAE.Exp e1,e2,e1_1,e2_1;
+      DAE.Exp e1_1,e2_1;
       list<DAE.Exp> ea1,ea2;
       list<Integer> ds;
     case (_,_,_,_,_)
