@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-06 11:04+0200\n"
-"PO-Revision-Date: 2012-08-06 11:59+0100\n"
+"POT-Creation-Date: 2012-08-06 13:04+0200\n"
+"PO-Revision-Date: 2012-08-06 13:05+0100\n"
 "Last-Translator: Martin Sjölund <martin.sjolund@liu.se>\n"
 "Language-Team: Swedish\n"
 "Language: sv\n"
@@ -111,6 +111,10 @@ msgid "Class %s not found"
 msgstr "Klass %s hittades inte"
 
 #: ../Util/Error.mo:172
+#: ../runtime/printimpl.c:270
+#: ../runtime/printimpl.c:289
+#: ../runtime/systemimpl.c:376
+#: ../runtime/systemimpl.c:394
 #, c-format
 msgid "Error writing to file %s."
 msgstr "Fel vid skrivning till fil %s."
@@ -1489,18 +1493,18 @@ msgstr ""
 #: ../Util/Error.mo:713
 #, c-format
 msgid "Input variable %s is assigned! This is not allowed."
-msgstr ""
+msgstr "In-variabler %s tilldelas till! Detta är otillåtet."
 
 #: ../Util/Error.mo:723
 #, c-format
 msgid "Template error: %s"
-msgstr ""
+msgstr "Template-fel: %s"
 
 #: ../Util/Error.mo:725
 #: ../Util/Error.mo:727
 #, c-format
 msgid "Operator Overloading: %s."
-msgstr ""
+msgstr "Operatoröverlagring: %s."
 
 #: ../Util/Flags.mo:165
 msgid "Sets whether to print a failtrace or not."
@@ -1508,7 +1512,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:167
 msgid "Prints extra information from Ceval."
-msgstr ""
+msgstr "Skriv ut extra information från Ceval."
 
 #: ../Util/Flags.mo:173
 msgid "Do some simple analyses on the datastructure from the frontend to check if it is consistent"
@@ -1588,11 +1592,11 @@ msgstr ""
 
 #: ../Util/Flags.mo:263
 msgid "Starts omc as a server listening on the socket interface."
-msgstr ""
+msgstr "Startar omc som en server som lyssnar på socket-gränssnittet."
 
 #: ../Util/Flags.mo:265
 msgid "Starts omc as a server listening on the Corba interface."
-msgstr ""
+msgstr "Startar omc som en server som lyssnar på Corba-gränssnittet."
 
 #: ../Util/Flags.mo:267
 msgid "Prints out debug information for the interactive server."
@@ -1941,7 +1945,7 @@ msgstr "Slår på tyst läge."
 
 #: ../Util/Flags.mo:629
 msgid "Sets the name of the corba session if +d=interactiveCorba is used."
-msgstr ""
+msgstr "Anger namnet på corba-sessionen om +d=interactiveCorba används."
 
 #: ../Util/Flags.mo:632
 msgid "Sets the number of processors to use."
@@ -1995,7 +1999,164 @@ msgstr "Anger om plot-kommandon ska öppna OMPlot eller visa argumenten som skul
 msgid "Override the locale from the environment."
 msgstr "Överskrid de nationella inställningarna i omgivningen."
 
-#: ../Main/Main.mo:1124
+#: ../Main/Main.mo:624
+msgid "File does not exist: "
+msgstr "Filen finns inte: "
+
+#: ../Main/Main.mo:1132
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr "Du försöker köra OpenModelica som root.\n"
+
+#: ../runtime/SimulationResults.c:63
+#: ../runtime/SimulationResults.c:71
+#: ../runtime/SimulationResults.c:79
+#, c-format
+msgid "Failed to open simulation result %s: %s\n"
+msgstr "Misslyckades öppna simuleringsresultat %s: %s\n"
+
+#: ../runtime/SimulationResults.c:85
+#, c-format
+msgid "Failed to open simulation result %s\n"
+msgstr "Misslyckades öppna simuleringsresultat %s\n"
+
+#: ../runtime/SimulationResults.c:108
+#: ../runtime/SimulationResults.c:138
+#, c-format
+msgid "%s not found in %s\n"
+msgstr "%s hittades inte i%s\n"
+
+#: ../runtime/SimulationResults.c:121
+#, c-format
+msgid "%s not defined at time %s (startTime=%s, stopTime=%s)."
+msgstr "%s är inte definierad vid tidpunkt %s (start=%s, stopp=%s)."
+
+#: ../runtime/SimulationResults.c:154
+#, c-format
+msgid "%s not defined at time %s\n"
+msgstr "%s är ej definierad vid tidpunkt %s\n"
+
+#: ../runtime/SimulationResults.c:168
+#, c-format
+msgid "val() not implemented for plot format: %s\n"
+msgstr "val() stödjer ej data-format: %s\n"
+
+#: ../runtime/SimulationResults.c:191
+#, c-format
+msgid "Failed to read readSimulationResultSize from file: %s\n"
+msgstr "Misslyckades läsa storlek av simuleringsresultat från fil: %s\n"
+
+#: ../runtime/SimulationResults.c:196
+#, c-format
+msgid "readSimulationResultSize() not implemented for plot format: %s\n"
+msgstr "readSimulationResultSize() stödjer ej dataformat: %s\n"
+
+#: ../runtime/SimulationResults.c:236
+#, c-format
+msgid "readSimulationResultSize() not implemented for plot format: %s"
+msgstr "readSimulationResultSize() stödjer ej dataformat: %s"
+
+#: ../runtime/SimulationResults.c:261
+msgid "readDataset(...): Expected and actual dimension sizes do not match."
+msgstr "readDataset(...): Förväntade och faktiska dimensionsstorlekar stämmer ej överens."
+
+#: ../runtime/SimulationResults.c:271
+#, c-format
+msgid "Could not read variable %s in file %s."
+msgstr "Kunde inte läsa variabel %s i fil %s."
+
+#: ../runtime/SimulationResults.c:292
+#, c-format
+msgid "readDataSet() not implemented for plot format: %s\n"
+msgstr "readDataSet() stödjer ej data-format: %s\n"
+
+#: ../runtime/SimulationResultsCmp.c:668
+#: ../runtime/SimulationResultsCmp.c:681
+msgid "Get Data of Var failed!\n"
+msgstr ""
+
+#: ../runtime/SimulationResultsCmp.c:694
+msgid "Cannot write result file!\n"
+msgstr "Kan inte skriva till resultatfil!\n"
+
+#: ../runtime/SimulationResultsCmp.c:706
+msgid "Files not Equal\n"
+msgstr "Filerna är inte lika\n"
+
+#: ../runtime/systemimpl.c:313
+#, c-format
+msgid "Error opening file: %s."
+msgstr "Fel vid öppning av fil %s."
+
+#: ../runtime/systemimpl.c:327
+#, c-format
+msgid "File too large to fit into a MetaModelica string: %s."
+msgstr "Filen får inte plats i en MetaModelica string: %s"
+
+#: ../runtime/systemimpl.c:418
+#, c-format
+msgid "Error appending to file %s."
+msgstr "Fel vid tillägg av fil %s."
+
+#: ../runtime/systemimpl.c:536
+#: ../runtime/systemimpl.c:542
+#: ../runtime/systemimpl.c:590
+#, c-format
+msgid "system(%s) failed: %s"
+msgstr "system(%s) misslyckades: %s"
+
+#: ../runtime/systemimpl.c:670
+#, c-format
+msgid "Error opening file %s."
+msgstr "Fel vid öppning av fil %s."
+
+#: ../runtime/systemimpl.c:822
+#, c-format
+msgid "OMC unable to load `%s': %s.\n"
+msgstr "OMC kunde inte ladda `%s': %s.\n"
+
+#: ../runtime/systemimpl.c:1190
+#, c-format
+msgid "Failed to compile regular expression: %s with error: "
+msgstr "Misslyckades med att kompilera reguljärt uttryck: %s med fel: "
+
+#: ../runtime/systemimpl.c:1341
+#, c-format
+msgid "Modelica URI lacks classname: %s"
+msgstr "Modelica URI saknar klassnamn: %s"
+
+#: ../runtime/systemimpl.c:1350
+#, c-format
+msgid "File URI has no path: %s"
+msgstr "File URI saknar sökväg: %s"
+
+#: ../runtime/systemimpl.c:1354
+#, c-format
+msgid "File URI using hostnames is not supported: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1359
+#, c-format
+msgid "Unknown uri: %s"
+msgstr "Okänd uri: %s"
+
+#: ../runtime/systemimpl.c:1607
+#, c-format
+msgid "freopen(%s,%s,%s) failed: %s"
+msgstr "freopen(%s,%s,%s) misslyckades: %s"
+
+#: ../runtime/systemimpl.c:1636
+#: ../runtime/systemimpl.c:1646
+#, c-format
+msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
+msgstr "iconv(\"%s\",to=\"%s\",from=\"%s\") misslyckades: %s"
+
+#: ../runtime/systemimpl.c:1652
+#, c-format
+msgid "iconv(to=%s) failed because the character set output null bytes in the middle of the string."
+msgstr "iconv(to=%s) misslyckades eftersom teckenuppsättningen använde en noll-byte mitt i strängen."
+
+#: ../runtime/systemimpl.c:1726
+#, c-format
+msgid "Failed to set locale: '%s'."
+msgstr "Misslyckades med att sätta nationella inställningar: '%s'."
 

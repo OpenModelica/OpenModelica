@@ -69,8 +69,6 @@ typedef void* iconv_t;
 #else /* real compilers */
 
 #include "iconv.h"
-#include <locale.h>
-#include <libintl.h>
 
 #endif
 
@@ -155,12 +153,6 @@ static int isPartialInstantiation = 0;
 static int usesCardinality = 1;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
-
-#ifdef CONFIG_WITH_SENDDATA
-// SendData crap
-void emulateStreamData(const char* data, const char*, const char*, const char*, const char*, int, int, int, int, int, const char*);
-void emulateStreamData2(const char*, const char*, int);
-#endif
 
 /*
  * Common implementations
@@ -318,7 +310,7 @@ static char* SystemImpl__readFile(const char* filename)
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error opening file: %s.",
+      gettext("Error opening file: %s."),
       c_tokens,
       1);
     return strdup("No such file");
@@ -332,7 +324,7 @@ static char* SystemImpl__readFile(const char* filename)
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
-      "File too large to fit into a MetaModelica string: %s.",
+      gettext("File too large to fit into a MetaModelica string: %s."),
       c_tokens,
       1);
     fclose(file);
@@ -381,7 +373,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
     c_add_message(21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error writing to file %s.",
+      gettext("Error writing to file %s."),
       c_tokens,
       1);
     return 1;
@@ -399,7 +391,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
     c_add_message(21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error writing to file %s.",
+      gettext("Error writing to file %s."),
       c_tokens,
       1);
     fclose(file);
@@ -423,7 +415,7 @@ int SystemImpl__appendFile(const char* filename, const char *data)
     const char *c_tokens[1] = {filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
       ErrorType_scripting, ErrorLevel_error,
-      "Error appending to file %s.",
+      gettext("Error appending to file %s."),
       c_tokens,
       1);
     return 1;
@@ -519,37 +511,6 @@ const char* SystemImpl__basename(const char *str)
   return res;
 }
 
-void SystemImpl__enableSendData(int enable)
-{
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  if(enable)
-    _putenv("enableSendData=1");
-  else
-    _putenv("enableSendData=0");
-#else
-  if(enable)
-    setenv("enableSendData", "1", 1 /* overwrite */);
-  else
-    setenv("enableSendData", "0", 1 /* overwrite */);
-#endif
-}
-
-void SystemImpl__setDataPort(int port)
-{
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  char* dataport = (char*) malloc(25);
-  sprintf(dataport,"sendDataPort=%d", port);
-  _putenv(dataport);
-  free(dataport);
-#else
-  char* p = (char*) malloc(10);
-  sprintf(p, "%d", port);
-  setenv("sendDataPort", p, 1 /* overwrite */);
-  free(p);
-#endif
-  //setDataPort(port);
-}
-
 int SystemImpl__systemCall(const char* str)
 {
   int status = -1,ret_val = -1;
@@ -572,13 +533,13 @@ int SystemImpl__systemCall(const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
     return -1;
   } else {
 
     if (waitpid(pID, &status, 0) == -1) {
       const char *tokens[2] = {strerror(errno),str};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error, gettext("system(%s) failed: %s"),tokens,2);
     }
   }
 #endif
@@ -626,7 +587,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
     return -1;
   }
 #endif
@@ -706,7 +667,7 @@ char* SystemImpl__readFileNoNumeric(const char* filename)
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error opening file %s.",
+      gettext("Error opening file %s."),
       c_tokens,
       1);
     return strdup("No such file");
@@ -858,7 +819,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
-    c_add_message(-1, ErrorType_runtime,ErrorLevel_error, "OMC unable to load `%s': %s.\n", ctokens, 2);
+    c_add_message(-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
 
@@ -1089,16 +1050,6 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
   return 0;
 }
 
-static void addSendDataError(const char* functionName)
-{
-    c_add_message(156, /* WITHOUT_SENDDATA */
-      ErrorType_scripting,
-      ErrorLevel_error,
-      "%s failed because OpenModelica was configured without sendData support.",
-      &functionName,
-      1);
-}
-
 /* If the Modelica string is used as a C string literal, this
  * calculates the string length of that string. */
 extern int SystemImpl__unescapedStringLength(const char* str)
@@ -1236,7 +1187,7 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
   if (rc) {
     char err_buf[2048] = {0};
     int len = 0;
-    len += snprintf(err_buf+len,2040-len,"Failed to compile regular expression: %s with error: ", re);
+    len += snprintf(err_buf+len,2040-len,gettext("Failed to compile regular expression: %s with error: "), re);
     len += regerror(rc, &myregex, err_buf+len, 2048-len);
     len += snprintf(err_buf+len,2040-len,".");
     len += snprintf(err_buf+len,2040-len,".");
@@ -1387,7 +1338,7 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(modelicaUri),name,path);
     if (!**name) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"Modelica URI lacks classname: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Modelica URI lacks classname: %s"),msg,1);
       return 1;
     }
     return 0;
@@ -1396,16 +1347,16 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(fileUri),name,path);
     if (!**path) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"File URI has no path: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI has no path: %s"),msg,1);
       return 1;
     } else if (**name) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"File URI using hostnames is not supported: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI using hostnames is not supported: %s"),msg,1);
       return 1;
     }
     return 0;
   }
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"Unknown uri: %s",&uri,1);
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Unknown uri: %s"),&uri,1);
   return 1;
 }
 
@@ -1653,7 +1604,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   file = freopen(filename,mode,file);
   if (file==NULL) {
     const char *tokens[4] = {strerror(errno),streamName,mode,filename};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"freopen(%s,%s,%s) failed: %s",tokens,4);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("freopen(%s,%s,%s) failed: %s"),tokens,4);
     return 0;
   }
   return 1;
@@ -1682,7 +1633,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
-    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     return (char*) "";
   }
   in_str = (char*) str;
@@ -1692,13 +1643,13 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   iconv_close(ic);
   if (count == -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
-    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     return (char*) "";
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
     const char *tokens[1] = {to};
-    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(to=%s) failed because the character set output null bytes in the middle of the string.",&to,1);
+    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     return (char*) "";
   }
   return buf;
@@ -1772,7 +1723,7 @@ void SystemImpl__gettextInit(const char *locale)
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_warning,
-      "Failed to set locale: '%s'.",
+      gettext("Failed to set locale: '%s'."),
       c_tokens,
       1);
   } else if (*locale) {

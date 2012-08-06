@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-06 11:04+0200\n"
+"POT-Creation-Date: 2012-08-06 13:04+0200\n"
 "PO-Revision-Date: 2012-08-03 14:38+0200\n"
 "Last-Translator:  <martin.sjolund@liu.se>\n"
 "Language-Team: German\n"
@@ -111,7 +111,8 @@ msgstr ""
 msgid "Class %s not found"
 msgstr ""
 
-#: ../Util/Error.mo:172
+#: ../Util/Error.mo:172 ../runtime/printimpl.c:270 ../runtime/printimpl.c:289
+#: ../runtime/systemimpl.c:376 ../runtime/systemimpl.c:394
 #, c-format
 msgid "Error writing to file %s."
 msgstr ""
@@ -2201,6 +2202,160 @@ msgstr ""
 msgid "Override the locale from the environment."
 msgstr ""
 
-#: ../Main/Main.mo:1124
+#: ../Main/Main.mo:624
+msgid "File does not exist: "
+msgstr ""
+
+#: ../Main/Main.mo:1132
 msgid "You are trying to run OpenModelica as root.\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:63 ../runtime/SimulationResults.c:71
+#: ../runtime/SimulationResults.c:79
+#, c-format
+msgid "Failed to open simulation result %s: %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:85
+#, c-format
+msgid "Failed to open simulation result %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:108 ../runtime/SimulationResults.c:138
+#, c-format
+msgid "%s not found in %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:121
+#, c-format
+msgid "%s not defined at time %s (startTime=%s, stopTime=%s)."
+msgstr ""
+
+#: ../runtime/SimulationResults.c:154
+#, c-format
+msgid "%s not defined at time %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:168
+#, c-format
+msgid "val() not implemented for plot format: %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:191
+#, c-format
+msgid "Failed to read readSimulationResultSize from file: %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:196
+#, c-format
+msgid "readSimulationResultSize() not implemented for plot format: %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:236
+#, c-format
+msgid "readSimulationResultSize() not implemented for plot format: %s"
+msgstr ""
+
+#: ../runtime/SimulationResults.c:261
+msgid "readDataset(...): Expected and actual dimension sizes do not match."
+msgstr ""
+
+#: ../runtime/SimulationResults.c:271
+#, c-format
+msgid "Could not read variable %s in file %s."
+msgstr ""
+
+#: ../runtime/SimulationResults.c:292
+#, c-format
+msgid "readDataSet() not implemented for plot format: %s\n"
+msgstr ""
+
+#: ../runtime/SimulationResultsCmp.c:668 ../runtime/SimulationResultsCmp.c:681
+msgid "Get Data of Var failed!\n"
+msgstr ""
+
+#: ../runtime/SimulationResultsCmp.c:694
+msgid "Cannot write result file!\n"
+msgstr ""
+
+#: ../runtime/SimulationResultsCmp.c:706
+msgid "Files not Equal\n"
+msgstr ""
+
+#: ../runtime/systemimpl.c:313
+#, c-format
+msgid "Error opening file: %s."
+msgstr ""
+
+#: ../runtime/systemimpl.c:327
+#, c-format
+msgid "File too large to fit into a MetaModelica string: %s."
+msgstr ""
+
+#: ../runtime/systemimpl.c:418
+#, c-format
+msgid "Error appending to file %s."
+msgstr ""
+
+#: ../runtime/systemimpl.c:536 ../runtime/systemimpl.c:542
+#: ../runtime/systemimpl.c:590
+#, c-format
+msgid "system(%s) failed: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:670
+#, c-format
+msgid "Error opening file %s."
+msgstr ""
+
+#: ../runtime/systemimpl.c:822
+#, c-format
+msgid "OMC unable to load `%s': %s.\n"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1190
+#, c-format
+msgid "Failed to compile regular expression: %s with error: "
+msgstr ""
+
+#: ../runtime/systemimpl.c:1341
+#, c-format
+msgid "Modelica URI lacks classname: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1350
+#, c-format
+msgid "File URI has no path: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1354
+#, c-format
+msgid "File URI using hostnames is not supported: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1359
+#, c-format
+msgid "Unknown uri: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1607
+#, c-format
+msgid "freopen(%s,%s,%s) failed: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1636 ../runtime/systemimpl.c:1646
+#, c-format
+msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1652
+#, c-format
+msgid ""
+"iconv(to=%s) failed because the character set output null bytes in the "
+"middle of the string."
+msgstr ""
+
+#: ../runtime/systemimpl.c:1726
+#, c-format
+msgid "Failed to set locale: '%s'."
 msgstr ""

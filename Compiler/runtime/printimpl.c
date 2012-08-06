@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "errorext.h"
+#include "systemimpl.h"
 
 /* adrpo: this is defined in errorext. (enabled with omc +showErrorMessages) */
 extern int showErrorMessages;
@@ -266,7 +267,7 @@ static int PrintImpl__writeBuf(const char* filename)
     c_add_message(21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error writing to file %s.",
+      gettext("Error writing to file %s."),
       c_tokens,
       1);
     return 1;
@@ -285,7 +286,7 @@ static int PrintImpl__writeBuf(const char* filename)
     c_add_message(21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
-      "Error writing to file %s.",
+      gettext("Error writing to file %s."),
       c_tokens,
       1);
     fprintf(stderr, "Print.writeBuf: error writing to file: %s!\n", filename);

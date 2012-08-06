@@ -621,7 +621,7 @@ algorithm
     case (f::_)
       equation
         false = System.regularFileExists(f);
-        print("File does not exist: "); print(f); print("\n");
+        print(System.gettext("File does not exist: ")); print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
