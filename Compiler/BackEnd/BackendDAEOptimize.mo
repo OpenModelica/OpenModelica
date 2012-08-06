@@ -616,7 +616,6 @@ algorithm
   repl := BackendVarTransform.emptyReplacements();
   (outDAE,(repl1,outRunMatching)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsPast1,(repl,false));
   outDAE := removeSimpleEquationsShared(outRunMatching,outDAE,repl1);
-  outDAE := BackendDAEUtil.mapEqSystem(outDAE,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
   // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
 
@@ -1094,7 +1093,7 @@ algorithm
         arg = traverseComponents1(elst,elst,inFunc,inTypeA);
       then
         traverseComponents(rest,inFunc,arg);
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst)::rest,_,_) 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst)::rest,_,_)
       equation
         elst = List.sort(elst,intGt);
         arg = traverseComponents1(elst,elst,inFunc,inTypeA);
