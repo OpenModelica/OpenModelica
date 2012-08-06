@@ -3394,7 +3394,10 @@ public function translateContent "Translate content to a string"
   output String str;
 algorithm
   str := match msg
-    case gettext(str) then System.gettext(str);
+    case gettext(str)
+      equation
+        str = System.gettext(str);
+      then str;
     case notrans(str) then str;
   end match;
 end translateContent;

@@ -514,14 +514,6 @@ algorithm
       DAE.FunctionTree funcs;
       list<Absyn.Class> cls;
 
-      /* Version requested using --version*/
-    case (_) // try first to see if we had a version request among flags.
-      equation
-        true = Config.versionRequest();
-        print(Settings.getVersionNr());
-        print("\n");
-      then ();
-
     case (_)
       equation
         true = Config.helpRequest();
@@ -1042,17 +1034,37 @@ public function main
 "function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
-  input list<String> inStringLst;
+  input list<String> args;
+protected
+  list<String> args_1;
 algorithm
-  _ := matchcontinue (inStringLst)
+  args_1 := Flags.new(args);
+  System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+  main2(args_1);
+end main;
+
+protected function main2
+"function: main
+  This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
+  start the translation."
+  input list<String> args;
+algorithm
+  _ := matchcontinue (args)
     local
       String errstr;
-      list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String omhome,oldpath,newpath;
       Interactive.SymbolTable symbolTable;
       list<tuple<String, String>> dbResult;
       
+      /* Version requested using --version*/
+    case _ // try first to see if we had a version request among flags.
+      equation
+        true = Config.versionRequest();
+        print(Settings.getVersionNr());
+        print("\n");
+      then ();
+
       // Setup mingw path only once.
     case _
       equation
@@ -1073,8 +1085,6 @@ algorithm
     
     case args as _::_
       equation
-        args_1 = Flags.new(args);
-       
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
         
@@ -1087,8 +1097,7 @@ algorithm
 
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
-        symbolTable = readSettings(args_1);
-        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+        symbolTable = readSettings(args);
         ismode = Flags.isSet(Flags.INTERACTIVE);
         icmode = Flags.isSet(Flags.INTERACTIVE_CORBA);
         imode = boolOr(ismode, icmode);
@@ -1098,7 +1107,7 @@ algorithm
         // see if the interactive Corba mode is active
         Debug.bcall1(icmode, interactivemodeCorba, symbolTable);
         // non of the interactive mode was set, flatten the file
-        Debug.bcall(imode_1, translateFile, args_1);
+        Debug.bcall(imode_1, translateFile, args);
         /*
         errstr = Print.getErrorString();
         Debug.fcall(Flags.ERRORBUF, print, errstr);
@@ -1112,7 +1121,6 @@ algorithm
     case _
       equation
         true = System.userIsRoot();
-        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",""));
         print(System.gettext("You are trying to run OpenModelica as root.\n"));
         print("This is a very bad idea. Why you ask?\n");
         print("* The socket interface does not authenticate the user.\n");
@@ -1151,7 +1159,7 @@ algorithm
         _ = Absyn.isDerCref;
       then fail();
   end matchcontinue;
-end main;
+end main2;
 
 end Main;
 
