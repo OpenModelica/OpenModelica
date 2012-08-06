@@ -514,12 +514,6 @@ algorithm
       DAE.FunctionTree funcs;
       list<Absyn.Class> cls;
 
-    case (_)
-      equation
-        true = Config.helpRequest();
-      then
-        ();
-
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (f :: libs)
@@ -1065,6 +1059,26 @@ algorithm
         print("\n");
       then ();
 
+    case args
+      equation
+        true = not System.userIsRoot() or Config.getRunningTestsuite();
+        true = Flags.isSet(Flags.INTERACTIVE);
+        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
+        _ = Settings.getInstallationDirectoryPath();
+        symbolTable = readSettings(args);
+        interactivemode(symbolTable);
+      then ();
+
+    case args
+      equation
+        true = not System.userIsRoot() or Config.getRunningTestsuite();
+        false = Flags.isSet(Flags.INTERACTIVE);
+        true = Flags.isSet(Flags.INTERACTIVE_CORBA);
+        _ = Settings.getInstallationDirectoryPath();
+        symbolTable = readSettings(args);
+        interactivemodeCorba(symbolTable);
+      then ();
+
       // Setup mingw path only once.
     case _
       equation
@@ -1085,6 +1099,8 @@ algorithm
     
     case args as _::_
       equation
+        false = Flags.isSet(Flags.INTERACTIVE);
+        false = Flags.isSet(Flags.INTERACTIVE_CORBA);
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
         
@@ -1098,16 +1114,8 @@ algorithm
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
-        ismode = Flags.isSet(Flags.INTERACTIVE);
-        icmode = Flags.isSet(Flags.INTERACTIVE_CORBA);
-        imode = boolOr(ismode, icmode);
-        imode_1 = boolNot(imode);
-        // see if the interactive Socket mode is active
-        Debug.bcall1(ismode, interactivemode, symbolTable);
-        // see if the interactive Corba mode is active
-        Debug.bcall1(icmode, interactivemodeCorba, symbolTable);
         // non of the interactive mode was set, flatten the file
-        Debug.bcall(imode_1, translateFile, args);
+        translateFile(args);
         /*
         errstr = Print.getErrorString();
         Debug.fcall(Flags.ERRORBUF, print, errstr);

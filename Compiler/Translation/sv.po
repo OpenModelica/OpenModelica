@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
 "POT-Creation-Date: 2012-08-06 11:04+0200\n"
-"PO-Revision-Date: 2012-08-06 11:11+0100\n"
+"PO-Revision-Date: 2012-08-06 11:59+0100\n"
 "Last-Translator: Martin Sjölund <martin.sjolund@liu.se>\n"
 "Language-Team: Swedish\n"
 "Language: sv\n"
@@ -21,177 +21,177 @@ msgstr ""
 #: ../Util/Error.mo:132
 #, c-format
 msgid "Syntax error near: %s"
-msgstr ""
+msgstr "Syntaxfel nära: %s"
 
 #: ../Util/Error.mo:136
 #, c-format
 msgid "Class %s not found in scope %s."
-msgstr ""
+msgstr "Klass %s hittades inte i omfattning %s."
 
 #: ../Util/Error.mo:138
 #, c-format
 msgid "Class %s not found in scope %s while instantiating %s."
-msgstr ""
+msgstr "Klass %s hittades inte i omfattning %s då %s exemplifierades."
 
 #: ../Util/Error.mo:140
 #, c-format
 msgid "Variable %s not found in scope %s"
-msgstr ""
+msgstr "Variabel %s hittades inte i omfattning %s"
 
 #: ../Util/Error.mo:142
 #, c-format
 msgid "Trying to assign to constant component in %s := %s"
-msgstr ""
+msgstr "Försökte göra en tilldelning till en konstant komponent i %s := %s"
 
 #: ../Util/Error.mo:144
 #, c-format
 msgid "Trying to assign to parameter component in %s := %s"
-msgstr ""
+msgstr "Försökte göra en tilldelning till en parameter komponent i %s := %s"
 
 #: ../Util/Error.mo:146
 #, c-format
 msgid "Trying to assign to %s component %s"
-msgstr ""
+msgstr "Försökte göra en tilldelning till %s komponent %s"
 
 #: ../Util/Error.mo:148
 #, c-format
 msgid "Type mismatch in assignment in %s := %s of %s := %s"
-msgstr ""
+msgstr "Typerna är missanpassade i tilldelning %s := %s av typ %s := %s"
 
 #: ../Util/Error.mo:150
 #, c-format
 msgid "Type error in conditional ( %s). Expected Boolean, got %s."
-msgstr ""
+msgstr "Typfel i villkorligt uttryck (%s). Förväntade Boolean, fick %s."
 
 #: ../Util/Error.mo:152
 #, c-format
 msgid "Type error in for expression (%s). Expected array got %s."
-msgstr ""
+msgstr "Typfel i uttryck (%s). Förväntade array, fick %s."
 
 #: ../Util/Error.mo:154
 #, c-format
 msgid "Type error in when conditional (%s). Expected Boolean scalar or vector, got %s."
-msgstr ""
+msgstr "Typfel i when-villkor (%s). Förväntade Boolean skalär eller vektor, fick %s."
 
 #: ../Util/Error.mo:156
 #, c-format
 msgid "Type error in while conditional (%s). Expected Boolean got %s."
-msgstr ""
+msgstr "Typfel i while-villkor (%s). Förväntade Boolean, fick %s."
 
 #: ../Util/Error.mo:158
 msgid "'end' can not be used outside array subscripts."
-msgstr ""
+msgstr "'end' kan inte användas utanför subskript av arrayer."
 
 #: ../Util/Error.mo:160
 #, c-format
 msgid "Division by zero in %s / %s"
-msgstr ""
+msgstr "Division med noll i %s / %s"
 
 #: ../Util/Error.mo:162
 #, c-format
 msgid "Modulo by zero in mod(%s,%s)"
-msgstr ""
+msgstr "Modulo av noll i mod(%s,%s)"
 
 #: ../Util/Error.mo:164
 #, c-format
 msgid "Second argument in rem is zero in rem(%s,%s)"
-msgstr ""
+msgstr "Andra argumentet i rem är noll i rem(%s,%s)"
 
 #: ../Util/Error.mo:166
 msgid "Error reading simulation result."
-msgstr ""
+msgstr "Fel då simuleringsresultat lästes."
 
 #: ../Util/Error.mo:168
 msgid "Error reading simulation result size"
-msgstr ""
+msgstr "Fel då storleken av simuleringsresultat lästes"
 
 #: ../Util/Error.mo:170
 #, c-format
 msgid "Class %s not found"
-msgstr ""
+msgstr "Klass %s hittades inte"
 
 #: ../Util/Error.mo:172
 #, c-format
 msgid "Error writing to file %s."
-msgstr ""
+msgstr "Fel vid skrivning till fil %s."
 
 #: ../Util/Error.mo:174
 #, c-format
 msgid "Error building simulator. Buildlog: %s"
-msgstr ""
+msgstr "Fel vid bygge av simulator. Loggfil: %s"
 
 #: ../Util/Error.mo:176
 #, c-format
 msgid "Dimensions must be parameter or constant expression (in %s)."
-msgstr ""
+msgstr "Dimensioner måste vara parameter- eller konstant-uttryck (i %s)."
 
 #: ../Util/Error.mo:178
 #, c-format
 msgid "Variable %s has no value."
-msgstr ""
+msgstr "Variabel %s saknar värde."
 
 #: ../Util/Error.mo:180
 msgid "Negative value as argument to sqrt."
-msgstr ""
+msgstr "Negativt värde som värde till sqrt."
 
 #: ../Util/Error.mo:182
 #, c-format
 msgid "No constant value for variable %s in scope %s."
-msgstr ""
+msgstr "Inget konstant värde för variabel %s i omfattning %s."
 
 #: ../Util/Error.mo:184
 #, c-format
 msgid "In class %s, class restriction 'type' can only be derived from predefined types."
-msgstr ""
+msgstr "I klass %s får klass-restriktion 'type' enbart komma från fördefinierade typer."
 
 #: ../Util/Error.mo:186
 #, c-format
 msgid "Unknown external language %s in external function declaration"
-msgstr ""
+msgstr "Okänt externt språk %s i external-avsnitt"
 
 #: ../Util/Error.mo:188
 #, c-format
 msgid "Different number of equations in the branches of the if equation: %s"
-msgstr ""
+msgstr "Olika antal ekvationer i grenarna av if-ekvationen: %s"
 
 #: ../Util/Error.mo:190
 #, c-format
 msgid "Too few equations, underdetermined system. The model has %s equation(s) and %s variable(s)"
-msgstr ""
+msgstr "För få ekvationer, underbestämt system. Modellen har %s ekvationer och %s variabler"
 
 #: ../Util/Error.mo:192
 #, c-format
 msgid "Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"
-msgstr ""
+msgstr "För många ekvationer, överbestämt system. Modellen har %s ekvationer och %s variabler"
 
 #: ../Util/Error.mo:194
 #, c-format
 msgid "Model is structurally singular, error found sorting equations %s for variables %s"
-msgstr ""
+msgstr "Modellen är strukturellt singulär; felet hittades under sortering av ekvationer %s och variabler %s"
 
 #: ../Util/Error.mo:196
 #, c-format
 msgid "The language feature %s is not supported. Suggested workaround: %s"
-msgstr ""
+msgstr "Språkfunktionen %s stöds ej. Förslag på lösning: %s"
 
 #: ../Util/Error.mo:198
 #, c-format
 msgid "Derivative of expression %s is non-existent"
-msgstr ""
+msgstr "Derivatan av uttrycket %s är obefintligt"
 
 #: ../Util/Error.mo:200
 msgid "No classes are loaded."
-msgstr ""
+msgstr "Inga klasser är laddade."
 
 #: ../Util/Error.mo:202
 #, c-format
 msgid "Illegal to instantiate partial class %s"
-msgstr ""
+msgstr "Förbjudet att exemplifiera partiell klass %s"
 
 #: ../Util/Error.mo:204
 #, c-format
 msgid "Base class %s not found in scope %s"
-msgstr ""
+msgstr "Basklass %s hittades inte i omfattning %s"
 
 #: ../Util/Error.mo:206
 #, c-format
@@ -210,7 +210,7 @@ msgstr ""
 #: ../Util/Error.mo:212
 #, c-format
 msgid "Array dimension mismatch, expression %s has type %s, expected array dimensions [%s]"
-msgstr ""
+msgstr "Vektor-dimensioner är missanpassade, uttryck %s har typ %s, förväntade dimensioner [%s]"
 
 #: ../Util/Error.mo:214
 #, c-format
@@ -220,7 +220,7 @@ msgstr ""
 #: ../Util/Error.mo:216
 #, c-format
 msgid "Type mismatch in equation %s of type %s"
-msgstr ""
+msgstr "Typerna är missanpassade i ekvation %s av typ %s"
 
 #: ../Util/Error.mo:218
 #, c-format
@@ -270,7 +270,7 @@ msgstr ""
 #: ../Util/Error.mo:236
 #, c-format
 msgid "Tuple %s  must contain component references only"
-msgstr ""
+msgstr "Tupel %s får enbart innehålla component-referenser"
 
 #: ../Util/Error.mo:238
 #: ../Util/Error.mo:338
@@ -311,7 +311,7 @@ msgstr ""
 #: ../Util/Error.mo:252
 #, c-format
 msgid "Internal error %s"
-msgstr ""
+msgstr "Internt fel %s"
 
 #: ../Util/Error.mo:254
 #, c-format
@@ -366,7 +366,7 @@ msgstr ""
 #: ../Util/Error.mo:274
 #, c-format
 msgid "Type in %s must be simple type in component %s"
-msgstr ""
+msgstr "Typ i %s måste vara en enkel typ i komponent %s"
 
 #: ../Util/Error.mo:276
 #, c-format
@@ -393,7 +393,7 @@ msgstr ""
 #: ../Util/Error.mo:284
 #, c-format
 msgid "Slot %s already filled in a function call in component %s"
-msgstr ""
+msgstr "Plats %s är redan fylld i funktionsanrop i komponent %s"
 
 #: ../Util/Error.mo:286
 #, c-format
@@ -413,7 +413,7 @@ msgstr ""
 #: ../Util/Error.mo:292
 #, c-format
 msgid "Type mismatch in if-expression in component %s. True branch: %s has type %s,  false branch: %s has type %s"
-msgstr ""
+msgstr "Typerna är missanpassade i if-uttryck i komponent %s. Sann gren: %s har typ %s, falsk gren: %s har typ %s"
 
 #: ../Util/Error.mo:294
 #, c-format
@@ -428,7 +428,7 @@ msgstr ""
 #: ../Util/Error.mo:298
 #, c-format
 msgid "Error opening file %s"
-msgstr ""
+msgstr "Fel vid öppning av fil %s"
 
 #: ../Util/Error.mo:300
 #, c-format
