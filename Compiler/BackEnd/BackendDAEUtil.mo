@@ -5741,7 +5741,6 @@ algorithm
         (row,size) = adjacencyRowEnhanced(vars, e, wc, i1, rowmark, kvars);
         rowSize = inRowSize + size;
         rowindxs = List.intRange2(inRowSize+1, rowSize);
-        i1 = index+1;
         mapIncRowEqn = List.consN(size,i1,imapIncRowEqn);        
         // put it in the arrays
         iArr = List.consN(size,row,iArr);        
