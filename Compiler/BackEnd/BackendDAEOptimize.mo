@@ -644,6 +644,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared,(repl,b1)))
       equation
+      (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, shared, BackendDAE.NORMAL());
         derrepl = HashTable2.emptyHashTable();
         // check equations
         ((syst,shared,repl_1,derrepl1,deqns,movedVars,movedAVars,meqns,b)) = 

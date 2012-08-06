@@ -77,7 +77,6 @@ protected import Flags;
 protected import Global;
 protected import HashTable2;
 protected import HashTable4;
-protected import HashTableCrILst;
 protected import IndexReduction;
 protected import List;
 protected import Matching;
