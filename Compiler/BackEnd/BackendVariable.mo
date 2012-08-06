@@ -1780,29 +1780,11 @@ public function topLevelInput "function: topLevelInput
   input DAE.VarDirection inVarDirection;
   input DAE.ConnectorType inConnectorType;
 algorithm
-  _ := matchcontinue (inComponentRef,inVarDirection,inConnectorType)
-    local
-      DAE.ComponentRef cr;
-      String name;
-    case ((cr as DAE.CREF_IDENT(ident = name)),DAE.INPUT(),_)
-      equation
-        {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.POTENTIAL()) /* Connector input variables at top level for crefs that are stringified */
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.FLOW())
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    /* For crefs that are not yet stringified, e.g. lower_known_var */
-    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.POTENTIAL()) then ();
-  end matchcontinue;
+  _ := match (inComponentRef,inVarDirection,inConnectorType)
+    case (DAE.CREF_IDENT(ident = _), DAE.INPUT(), _) then ();
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), DAE.INPUT(), DAE.FLOW()) then ();
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), DAE.INPUT(), DAE.POTENTIAL()) then ();
+  end match;
 end topLevelInput;
 
 protected function topLevelOutput
@@ -1810,29 +1792,11 @@ protected function topLevelOutput
   input DAE.VarDirection inVarDirection;
   input DAE.ConnectorType inConnectorType;
 algorithm
-  _ := matchcontinue(inComponentRef, inVarDirection, inConnectorType)
-  local 
-    DAE.ComponentRef cr;
-    String name;
-    case ((cr as DAE.CREF_IDENT(ident = name)),DAE.OUTPUT(),_)
-      equation
-        {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.POTENTIAL()) /* Connector input variables at top level for crefs that are stringified */
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.FLOW())
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    /* For crefs that are not yet stringified, e.g. lower_known_var */
-    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.OUTPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.OUTPUT(),DAE.POTENTIAL()) then ();
-  end matchcontinue;
+  _ := match(inComponentRef, inVarDirection, inConnectorType)
+    case (DAE.CREF_IDENT(ident = _), DAE.OUTPUT(), _) then ();
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), DAE.OUTPUT(), DAE.FLOW()) then ();
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), DAE.OUTPUT(), DAE.POTENTIAL()) then ();
+  end match;
 end topLevelOutput;
 
 
