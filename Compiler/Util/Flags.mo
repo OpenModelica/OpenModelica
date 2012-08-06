@@ -1468,9 +1468,8 @@ algorithm
 
     case {"debug"}
       equation
-        print("The debug flag takes a comma-separated list of flags which are used by the\n");
-        print("compiler for debugging. Flags prefixed with - will be disabled.\n");
-        print("The available flags are:\n\n");
+        print(System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with - will be disabled.\n"));
+        print(System.gettext("The available flags are:\n\n"));
         debug_flags = List.map(allDebugFlags, printDebugFlag);
         str = stringAppendList(debug_flags);
         print(str);
@@ -1479,18 +1478,15 @@ algorithm
 
     case {"optmodules"}
       equation
-        print("The +preOptModules flag sets the optimisation modules which are used before the\n");
-        print("matching and index reduction in the back end. These modules are specified as a\n");
-        print("comma-separated list, where the valid modules are:\n\n");
+        /* 80-char wrapped lines */
+        print(System.gettext("The +preOptModules flag sets the optimisation modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a\ncomma-separated list, where the valid modules are:\n\n"));
         print(printFlagValidOptionsDesc(PRE_OPT_MODULES));
-        print("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\n");
-        print("after the pre optimisation modules. Valid options are:\n\n");
+        /* 80-char wrapped lines */
+        print(System.gettext("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\nafter the pre optimisation modules. Valid options are:\n\n"));
         print(printFlagValidOptionsDesc(MATCHING_ALGORITHM));
-        print("\nThe +indexReductionMethod sets the method that is used for the index reduction,\n");
-        print("after the pre optimisation modules. Valid options are:\n\n");
+        print(System.gettext("\nThe +indexReductionMethod sets the method that is used for the index reduction,\nafter the pre optimisation modules. Valid options are:\n\n"));
         print(printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD));
-        print("\nThe +postOptModules then sets the optimisation modules which are used after the\n");
-        print("index reduction, specified as a comma-separated list. The valid modules are:\n\n");
+        print(System.gettext("\nThe +postOptModules then sets the optimisation modules which are used after the\nindex reduction, specified as a comma-separated list. The valid modules are:\n\n"));
         print(printFlagValidOptionsDesc(POST_OPT_MODULES));
         print("\n");
       then
@@ -1528,32 +1524,27 @@ public function printUsage
   "Prints out the usage text for the compiler."
 algorithm
   print("OpenModelica Compiler "); print(Settings.getVersionNr());
-  print(" Copyright Linkoping University 1997-2011\n");
-  print("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n");
+  print(System.gettext(" Copyright Linköping University 1997-2012\n"));
+  print(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //print("Please check the System Guide for full information about flags.\n");
-  print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n");
-  print("* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n");
-  print("*            The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
-  print("* runtimeOptions: call omc -help to see runtime options\n");
-  print("* omcOptions:\n");
+  print(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
+  print(System.gettext("* +omcOptions:\n"));
   print(printAllConfigFlags());
   print("\n");
-  print("* Examples:\n");
-  print("\tomc Model.mo             will produce flattened Model on standard output\n");
-  print("\tomc +s Model.mo          will produce simulation code for the model:\n");
-  print("\t                          * Model.c           the model C code\n");
-  print("\t                          * Model_functions.c the model functions C code\n");
-  print("\t                          * Model.makefile    the makefile to compile the model.\n");
-  print("\t                          * Model_init.xml    the initial values\n");
+  print(System.gettext("* Examples:\n"));
+  print(System.gettext("\tomc Model.mo             will produce flattened Model on standard output\n"));
+  print(System.gettext("\tomc +s Model.mo          will produce simulation code for the model:\n"));
+  print(System.gettext("\t                          * Model.c           the model C code\n"));
+  print(System.gettext("\t                          * Model_functions.c the model functions C code\n"));
+  print(System.gettext("\t                          * Model.makefile    the makefile to compile the model.\n"));
+  print(System.gettext("\t                          * Model_init.xml    the initial values\n"));
   //print("\tomc Model.mof            will produce flattened Model on standard output\n");
-  print("\tomc Script.mos           will run the commands from Script.mos\n");
-  print("\tomc Model.mo Modelica    will first load the Modelica library and then produce \n");
-  print("\t                         flattened Model on standard output\n");
-  print("\tomc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n");
-  print("\t                         flattened Model1 on standard output\n");
-  print("\t*.mo (Modelica files) \n");
+  print(System.gettext("\tomc Script.mos           will run the commands from Script.mos\n"));
+  print(System.gettext("\tomc Model.mo Modelica    will first load the Modelica library and then produce \n\t                         flattened Model on standard output\n"));
+  print(System.gettext("\tomc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                         flattened Model1 on standard output\n"));
+  print(System.gettext("\t*.mo (Modelica files) \n"));
   //print("\t*.mof (Flat Modelica files) \n");
-  print("\t*.mos (Modelica Script files) \n");
+  print(System.gettext("\t*.mos (Modelica Script files) \n"));
 end printUsage;
 
 public function printAllConfigFlags
@@ -1627,13 +1618,13 @@ algorithm
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   Valid options: " +& 
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& " " +& 
           stringDelimitList(strl, ", ");
       then
         opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))
       equation
-        opt_str = "\n" +& descriptionIndent +& "   Valid options:\n" +& 
+        opt_str = "\n" +& descriptionIndent +& "   " +& System.gettext("Valid options:") +& "\n" +& 
           stringAppendList(List.map(descl, printFlagOptionDescShort));
       then 
         opt_str;

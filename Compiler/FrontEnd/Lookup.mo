@@ -763,25 +763,10 @@ algorithm
         fr::prevFrames = listReverse(env);
         // strippath = Absyn.stripLast(path);
         // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        // assertPackage(c2,Absyn.pathString(strippath));
         (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),true);
       then
         (cache,c,env_1,prevFrames);
 
-    /* commented since MSL does not follow this rule, instead assertPackage gives warning */
-    /*case (cache,(Env.IMPORT(imp = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
-      equation
-        id = Absyn.pathLastIdent(path) "If not package, error" ;
-        true = stringEq(id, ident);
-        fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        failure(assertPackage(c2));
-        str = Absyn.pathString(strippath);
-        Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
-      then
-        fail();*/
     case (cache,(Env.IMPORT(imp = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident,inState)
       equation
         true = id ==& ident "Named imports";
@@ -790,25 +775,9 @@ algorithm
         // strippath = Absyn.stripLast(path);
         // Debug.traceln("named import " +& id +& " is " +& Absyn.pathString(path));
         // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
-        // assertPackage(c2,Absyn.pathString(strippath));
         (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),true);
       then
         (cache,c,env_1,prevFrames);
-
-    /* Error message if named import is not package */
-    /* commented since MSL does not follow this rule, instead assertPackage gives warning */
-    /*case (cache,(Env.IMPORT(imp = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
-      equation
-        true = stringEq(id, ident) "Assert package for Named imports" ;
-        fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        failure(assertPackage(c2));
-        str = Absyn.pathString(strippath);
-        Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
-      then
-        fail();*/
 
     case (cache,(_ :: fs),env,ident,inState)
       equation
@@ -2952,24 +2921,6 @@ algorithm
   end match;
 end sliceDimensionType;
 
-
-protected function assertPackage "function: assertPackage
-
-  This function checks that a class definition is a package.  This
-  breaks the everything-can-be-generalized-to-class principle, since
-  it requires that the keyword `package\' is used in the package file.
-"
-  input SCode.Element inClass;
-  input String className;
-algorithm
-  _:=
-  matchcontinue (inClass,className)
-    case (SCode.CLASS(restriction = SCode.R_PACKAGE()),_) then ();  /* Break the generalize-to-class rule */
-    case (_,_) equation
-      Error.addMessage(Error.WARNING_IMPORT_PACKAGES_ONLY,{className});
-    then ();
-  end matchcontinue;
-end assertPackage;
 
 protected function buildMetaRecordType "common function when looking up the type of a metarecord"
   input Env.Cache inCache;

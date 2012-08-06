@@ -234,8 +234,6 @@ public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), ERROR(),
   Util.gettext("Attempt to modify protected element %s"));
 public constant Message INVALID_TUPLE_CONTENT = MESSAGE(55, TRANSLATION(), ERROR(),
   Util.gettext("Tuple %s  must contain component references only"));
-public constant Message IMPORT_PACKAGES_ONLY = MESSAGE(56, TRANSLATION(), ERROR(),
-  Util.gettext("%s is not a package, imports is only allowed for packages."));
 public constant Message IMPORT_SEVERAL_NAMES = MESSAGE(57, TRANSLATION(), ERROR(),
   Util.gettext("%s found in several unqualified import statements."));
 public constant Message LOOKUP_TYPE_FOUND_COMP = MESSAGE(58, TRANSLATION(), ERROR(),
@@ -262,8 +260,6 @@ public constant Message WRONG_TYPE_OR_NO_OF_ARGS = MESSAGE(68, TRANSLATION(), ER
   Util.gettext("Wrong type or wrong number of arguments to %s (in component %s)"));
 public constant Message DIFFERENT_DIM_SIZE_IN_ARGUMENTS = MESSAGE(69, TRANSLATION(), ERROR(),
   Util.gettext("Different dimension sizes in arguments to %s in component %s"));
-public constant Message DER_APPLIED_TO_CONST = MESSAGE(70, TRANSLATION(), ERROR(),
-  Util.gettext("der operator applied to constant expression der(%s)"));
 public constant Message ARGUMENT_MUST_BE_INTEGER_OR_REAL = MESSAGE(71, TRANSLATION(), ERROR(),
   Util.gettext("%s argument to %s in component %s must be Integer or Real expression"));
 public constant Message ARGUMENT_MUST_BE_INTEGER = MESSAGE(72, TRANSLATION(), ERROR(),
@@ -334,8 +330,6 @@ public constant Message ILLEGAL_EQUATION_TYPE = MESSAGE(105, TRANSLATION(), ERRO
   Util.gettext("Illegal type in equation %s, only builtin types (Real, String, Integer, Boolean or enumeration) or record type allowed in equation."));
 public constant Message ASSERT_FAILED = MESSAGE(106, TRANSLATION(), ERROR(),
   Util.gettext("Assertion failed in function, message: %s "));
-public constant Message WARNING_IMPORT_PACKAGES_ONLY = MESSAGE(107, TRANSLATION(), WARNING(),
-  Util.gettext("%s is not a package, imports is only allowed for packages."));
 public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for component %s declared as '%s'.\n  The existing 'inner' components are:\n    %s\n  Check if you have not misspelled the 'outer' component name.\n  Please declare an 'inner' component with the same name in the top scope.\n  Continuing flattening by only considering the 'outer' component declaration."));
 public constant Message CONNECT_STREAM_TO_NONSTREAM = MESSAGE(109, TRANSLATION(), ERROR(),
@@ -430,8 +424,6 @@ public constant Message RECURSIVE_SHORT_CLASS_DEFINITION = MESSAGE(153, TRANSLAT
   Util.gettext("Recursive short class definition of %s in terms of %s"));
 public constant Message FUNCTION_ELEMENT_WRONG_KIND = MESSAGE(155, TRANSLATION(), ERROR(),
   Util.gettext("Element is not allowed in function context: %s"));
-public constant Message WITHOUT_SENDDATA = MESSAGE(156, SCRIPTING(), ERROR(),
-  Util.gettext("%s failed because OpenModelica was configured without sendData support."));
 public constant Message DUPLICATE_CLASSES_TOP_LEVEL = MESSAGE(157, TRANSLATION(), ERROR(),
   Util.gettext("Duplicate classes on top level is not allowed (got %s)."));
 public constant Message WHEN_EQ_LHS = MESSAGE(158, TRANSLATION(), ERROR(),
