@@ -209,22 +209,20 @@ public function addConnection
   input Face inFace1;
   input DAE.ComponentRef inCref2;
   input Face inFace2;
-  input SCode.Flow inFlow;
-  input SCode.Stream inStream;
+  input SCode.ConnectorType inConnectorType;
   input DAE.ElementSource inSource;
   output Sets outSets;
 protected
 algorithm
-  outSets := match(inSets, inCref1, inFace1, inCref2, inFace2, inFlow,
-      inStream, inSource)
+  outSets := match(inSets, inCref1, inFace1, inCref2, inFace2, inConnectorType, inSource)
     local
       ConnectorElement e1, e2;
       ConnectorType ty;
       Sets sets;
 
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
-        ty = makeConnectorType(inFlow, inStream);
+        ty = makeConnectorType(inConnectorType);
         e1 = findElement(inCref1, inFace1, ty, inSource, inSets);
         e2 = findElement(inCref2, inFace2, ty, inSource, inSets);
         sets = mergeSets(e1, e2, inSets);
@@ -242,22 +240,21 @@ public function addArrayConnection
   input DAE.ComponentRef inCref2;
   input Connect.Face inFace2;
   input DAE.ElementSource inSource;
-  input SCode.Flow inFlow;
-  input SCode.Stream inStream;
+  input SCode.ConnectorType inConnectorType;
   output Connect.Sets outSets;
 algorithm
   outSets := 
-  match(inSets, inCref1, inFace1, inCref2, inFace2, inSource, inFlow, inStream)
+  match(inSets, inCref1, inFace1, inCref2, inFace2, inSource, inConnectorType)
     local
       list<DAE.ComponentRef> crefs1, crefs2;
 
-    case (_, _, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         crefs1 = ComponentReference.expandCref(inCref1,false);
         crefs2 = ComponentReference.expandCref(inCref2,false);
       then
         addArrayConnection2(inSets, crefs1, inFace1, crefs2, inFace2, inSource,
-          inFlow, inStream);
+          inConnectorType);
 
   end match;
 end addArrayConnection;
@@ -269,23 +266,22 @@ protected function addArrayConnection2
   input list<DAE.ComponentRef> inCrefs2;
   input Connect.Face inFace2;
   input DAE.ElementSource inSource;
-  input SCode.Flow inFlow;
-  input SCode.Stream inStream;
+  input SCode.ConnectorType inConnectorType;
   output Connect.Sets outSets;
 algorithm
   outSets := match(inSets, inCrefs1, inFace1, inCrefs2, inFace2, inSource,
-      inFlow, inStream)
+      inConnectorType)
     local
       DAE.ComponentRef cref1, cref2;
       list<DAE.ComponentRef> rest_crefs1, rest_crefs2;
       Connect.Sets cs;
 
-    case (cs, cref1 :: rest_crefs1, _, cref2 :: rest_crefs2, _, _, _, _)
+    case (cs, cref1 :: rest_crefs1, _, cref2 :: rest_crefs2, _, _, _)
       equation
-        cs = addConnection(cs, cref1, inFace1, cref2, inFace2, inFlow, inStream, inSource);
+        cs = addConnection(cs, cref1, inFace1, cref2, inFace2, inConnectorType, inSource);
       then
         addArrayConnection2(cs, rest_crefs1, inFace1, rest_crefs2, inFace2,
-          inSource, inFlow, inStream);
+          inSource, inConnectorType);
 
     else inSets;
 
@@ -293,15 +289,14 @@ algorithm
 end addArrayConnection2;
 
 protected function makeConnectorType
-  "Creates a connector type from the flow and stream prefix given."
-  input SCode.Flow inFlow;
-  input SCode.Stream inStream;
+  "Creates a connector type from the flow or stream prefix given."
+  input SCode.ConnectorType inConnectorType;
   output ConnectorType outType;
 algorithm
-  outType := match(inFlow, inStream)
-    case (SCode.NOT_FLOW(), SCode.NOT_STREAM()) then Connect.EQU();
-    case (SCode.FLOW(), SCode.NOT_STREAM()) then Connect.FLOW();
-    case (SCode.NOT_FLOW(), SCode.STREAM()) then Connect.STREAM(NONE());
+  outType := match(inConnectorType)
+    case SCode.POTENTIAL() then Connect.EQU();
+    case SCode.FLOW() then Connect.FLOW();
+    case SCode.STREAM() then Connect.STREAM(NONE());
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -371,7 +366,7 @@ algorithm
     case ({}, _, _) then (inAccFlows, inAccStreams);
 
     case ((var as DAE.TYPES_VAR(attributes = DAE.ATTR(
-        flowPrefix = SCode.FLOW()))) :: rest_vars, _, _)
+        connectorType = SCode.FLOW()))) :: rest_vars, _, _)
       equation
         (flows, streams) = 
           getStreamAndFlowVariables(rest_vars, var :: inAccFlows, inAccStreams);
@@ -379,7 +374,7 @@ algorithm
         (flows, streams);
 
     case ((var as DAE.TYPES_VAR(attributes = DAE.ATTR(
-        streamPrefix = SCode.STREAM()))) :: rest_vars, _, _)
+        connectorType = SCode.STREAM()))) :: rest_vars, _, _)
       equation
         (flows, streams) =
           getStreamAndFlowVariables(rest_vars, inAccFlows, var :: inAccStreams);
@@ -3017,7 +3012,7 @@ algorithm
         (p + n * p2, f + n * f2, s + n * s2);
 
     // A flow variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(flowPrefix = SCode.FLOW()))) :: rest)
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.FLOW()))) :: rest)
       equation
         n = sizeOfVariable(v);
         (p, f, s) = countConnectorVars(rest);
@@ -3025,7 +3020,7 @@ algorithm
         (p, f + n, s);
 
     // A stream variable.
-    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(streamPrefix = SCode.STREAM()))) :: rest)
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = SCode.STREAM()))) :: rest)
       equation
         n = sizeOfVariable(v);
         (p, f, s) = countConnectorVars(rest);
@@ -3123,21 +3118,20 @@ algorithm
     local
       Absyn.Path class_path;
       Integer pv, fv, sv;
-      SCode.Flow f;
-      SCode.Stream s;
+      SCode.ConnectorType ct;
       Boolean bf, bs;
 
     // Extended from bidirectional basic type, which means that it can't be
     // balanced.
     case (ClassInf.CONNECTOR(path = class_path),
-        SCode.ATTR(flowPrefix = f, streamPrefix = s, direction = Absyn.BIDIR()), _)
+        SCode.ATTR(connectorType = ct, direction = Absyn.BIDIR()), _)
       equation
         // The connector might be either flow, stream or neither. 
         // This will set either fv, sv, or pv to 1, and the rest to 0, and
         // checkConnectorBalance2 will then be called to provide the appropriate
         // error message (or might actually succeed if +std=2.x or 1.x).
-        bf = SCode.flowBool(f);
-        bs = SCode.streamBool(s);
+        bf = SCode.flowBool(ct);
+        bs = SCode.streamBool(ct);
         fv = Util.if_(bf, 1, 0);
         sv = Util.if_(bs, 1, 0);
         pv = Util.if_(bf or bs, 0, 1);

@@ -980,8 +980,7 @@ algorithm
   (outCache,attr,tp) := match(inCache,inEnv,cr)
     local 
       DAE.ComponentRef cr1;
-      SCode.Flow f;
-      SCode.Stream streamPrefix;
+      SCode.ConnectorType ct;
       SCode.Parallelism prl;
       SCode.Variability var;
       Absyn.Direction dir;
@@ -1002,12 +1001,12 @@ algorithm
     // qualified component reference
     case(cache,env,cr as DAE.CREF_QUAL(ident=_)) 
       equation
-        (cache,attr1 as DAE.ATTR(f,streamPrefix,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
+        (cache,attr1 as DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
         cr1 = ComponentReference.crefStripLastIdent(cr);
         // Find innerOuter attribute from "parent"
         (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
       then 
-        (cache,DAE.ATTR(f,streamPrefix,prl,var,dir,io,vis),ty1);
+        (cache,DAE.ATTR(ct,prl,var,dir,io,vis),ty1);
   end match;
 end lookupConnectorVar;
 
@@ -2154,11 +2153,10 @@ algorithm
       list<SCode.Element> res;
       SCode.Element comp;
       String id;
-      SCode.Flow fl;
+      SCode.ConnectorType ct;
       SCode.Replaceable repl;
       SCode.Visibility vis;
       SCode.Final f;
-      SCode.Stream st;
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
@@ -2180,7 +2178,7 @@ algorithm
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
-        SCode.ATTR(d,fl,st,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2200,14 +2198,14 @@ algorithm
         // dir = Absyn.INPUT();
         vis = SCode.PROTECTED();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
     
     // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case ((((comp as 
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,fl,st,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,ct,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2227,14 +2225,14 @@ algorithm
         //dir = Absyn.INPUT();
         vis = SCode.PROTECTED();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
     
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case ((((comp as 
       SCode.COMPONENT(
         id,
         SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,fl,st,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
+        SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),mods,env)
       equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2253,7 +2251,7 @@ algorithm
         // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,fl,st,prl,var,dir),tp,umod,comment,cond,info) :: res);
+        (SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
 
     case ((comp,cmod)::_,mods,_)
       equation
@@ -2278,7 +2276,7 @@ algorithm
   //print(" creating element of type: " +& id +& "\n");
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
-          SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
+          SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
           SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo);
 end buildRecordConstructorResultElt;
@@ -2725,8 +2723,7 @@ algorithm
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String id;
-      SCode.Flow f;
-      SCode.Stream streamPrefix;
+      SCode.ConnectorType ct;
       SCode.Parallelism prl;
       SCode.Variability vt,vt2;
       Absyn.Direction di;
@@ -2770,7 +2767,7 @@ algorithm
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
-        (cache,DAE.ATTR(f,streamPrefix,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
@@ -2781,17 +2778,17 @@ algorithm
         splicedExp = Expression.makeCrefExp(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,DAE.ATTR(f,streamPrefix,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
 
     // Qualified componentname without spliced Expression.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
-        (cache,DAE.ATTR(f,streamPrefix,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
         vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,DAE.ATTR(f,streamPrefix,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
   end matchcontinue;
 end lookupVarF;
 

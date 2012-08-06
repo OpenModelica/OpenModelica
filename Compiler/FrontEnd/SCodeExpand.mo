@@ -434,8 +434,7 @@ algorithm
       DAE.VarKind var_kind;
       DAE.VarDirection dir;
       DAE.VarVisibility vis;
-      DAE.Flow fp;
-      DAE.Stream sp;
+      DAE.ConnectorType ct;
       InstTypes.Binding binding;
       Option<DAE.Exp> bind_exp;
       InstTypes.DaePrefixes prefs;
@@ -449,9 +448,9 @@ algorithm
         subs = listReverse(subs);
         bind_exp = expandBinding(binding, subs);
         cref = subscriptPath(name, subs);
-        (var_kind, dir, vis, fp, sp) = getPrefixes(prefs);
+        (var_kind, dir, vis, ct) = getPrefixes(prefs);
         elem = DAE.VAR(cref, var_kind, dir, DAE.NON_PARALLEL(), vis, ty,
-          bind_exp, {}, fp, sp, DAE.emptyElementSource, NONE(), NONE(),
+          bind_exp, {}, ct, DAE.emptyElementSource, NONE(), NONE(),
           Absyn.NOT_INNER_OUTER());
       then
         elem :: inAccumEl;
@@ -657,24 +656,21 @@ protected function getPrefixes
   output DAE.VarKind outVarKind;
   output DAE.VarDirection outDirection;
   output DAE.VarVisibility outVisibility;
-  output DAE.Flow outFlow;
-  output DAE.Stream outStream;
+  output DAE.ConnectorType outConnectorType;
 algorithm
-  (outVarKind, outDirection, outVisibility, outFlow, outStream) :=
+  (outVarKind, outDirection, outVisibility, outConnectorType) :=
   match(inPrefixes)
     local
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarVisibility vis;
-      DAE.Flow fp;
-      DAE.Stream sp;
+      DAE.ConnectorType ct;
 
-    case InstTypes.DAE_PREFIXES(vis, kind, _, _, dir, fp, sp)
-      then (kind, dir, vis, fp, sp);
+    case InstTypes.DAE_PREFIXES(vis, kind, _, _, dir, ct)
+      then (kind, dir, vis, ct);
     
     case InstTypes.NO_DAE_PREFIXES()
-      then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR(),
-          DAE.NON_STREAM_CONNECTOR());
+      then (DAE.VARIABLE(), DAE.BIDIR(), DAE.PUBLIC(), DAE.NON_CONNECTOR());
 
   end match;
 end getPrefixes;

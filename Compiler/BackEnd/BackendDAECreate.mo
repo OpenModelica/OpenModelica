@@ -539,8 +539,7 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -556,13 +555,12 @@ algorithm
                   protection = protection,
                   ty = t,
                   dims = dims,
-                  flowPrefix = flowPrefix,
-                  streamPrefix = streamPrefix,
+                  connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   absynCommentOption = comment),_)
       equation
-        (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, istates, dae_var_attr);
+        (kind_1,states) = lowerVarkind(kind, t, name, dir, ct, istates, dae_var_attr);
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
@@ -570,7 +568,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);       
       then
-        (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), states);
+        (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,ct), states);
   end match;
 end lowerDynamicVar;
 
@@ -590,8 +588,7 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -608,13 +605,12 @@ algorithm
                   ty = t,
                   binding = bind,
                   dims = dims,
-                  flowPrefix = flowPrefix,
-                  streamPrefix = streamPrefix,
+                  connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   absynCommentOption = comment))
       equation
-        kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
+        kind_1 = lowerKnownVarkind(kind, name, dir, ct);
         bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
@@ -623,7 +619,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
-        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,ct);
 
     case (_)
       equation
@@ -717,8 +713,7 @@ protected function lowerVarkind
            Type,
            DAE.ComponentRef,
            DAE.VarDirection, /* input/output/bidir */
-           DAE.Flow,
-           DAE.Stream,
+           DAE.ConnectorType,
            BackendDAE.BinTree /* states */)
   outputs  VarKind
   NOTE: Fails for not states that are not algebraic
@@ -727,78 +722,77 @@ protected function lowerVarkind
   input DAE.Type inType;
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
-  input DAE.Stream inStream;
+  input DAE.ConnectorType inConnectorType;
   input BackendDAE.BinTree inStates;
   input Option<DAE.VariableAttributes> daeAttr;
   output BackendDAE.VarKind outVarKind;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  (outVarKind,outBinTree) := matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inFlow,inStream,inStates,daeAttr)
+  (outVarKind,outBinTree) := matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inConnectorType,inStates,daeAttr)
     local
       BackendDAE.BinTree states;
     // States appear differentiated among equations
-    case (DAE.VARIABLE(),_,_,_,_,_,_,_)
+    case (DAE.VARIABLE(),_,_,_,_,_,_)
       equation
         _ = BackendDAEUtil.treeGet(inStates, inComponentRef);
       then
         (BackendDAE.STATE(),inStates);
     // Or states have StateSelect.always
-    case (DAE.VARIABLE(),_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
+    case (DAE.VARIABLE(),_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
       equation
       states = BackendDAEUtil.treeAdd(inStates, inComponentRef, 0);
     then (BackendDAE.STATE(),states);
     // Or states have StateSelect.prefer
-    case (DAE.VARIABLE(),_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+    case (DAE.VARIABLE(),_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
       equation
       states = BackendDAEUtil.treeAdd(inStates, inComponentRef, 0);
     then (BackendDAE.STATE(),states);
 
-    case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),_,_,_,_,_,_)
+    case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
 
-    case (DAE.DISCRETE(),DAE.T_BOOL(varLst = _),_,_,_,_,_,_)
+    case (DAE.DISCRETE(),DAE.T_BOOL(varLst = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
 
-    case (DAE.VARIABLE(),DAE.T_INTEGER(varLst = _),_,_,_,_,_,_)
+    case (DAE.VARIABLE(),DAE.T_INTEGER(varLst = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
 
-    case (DAE.DISCRETE(),DAE.T_INTEGER(varLst = _),_,_,_,_,_,_)
+    case (DAE.DISCRETE(),DAE.T_INTEGER(varLst = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
         
-    case (DAE.VARIABLE(),DAE.T_ENUMERATION(names = _),_,_,_,_,_,_)
+    case (DAE.VARIABLE(),DAE.T_ENUMERATION(names = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
 
-    case (DAE.DISCRETE(),DAE.T_ENUMERATION(names = _),_,_,_,_,_,_)
+    case (DAE.DISCRETE(),DAE.T_ENUMERATION(names = _),_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);        
 
-    case (DAE.VARIABLE(),_,_,_,_,_,_,_)
+    case (DAE.VARIABLE(),_,_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.VARIABLE(),inStates);
 
-    case (DAE.DISCRETE(),_,_,_,_,_,_,_)
+    case (DAE.DISCRETE(),_,_,_,_,_,_)
       equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inFlow));
+        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
       then
         (BackendDAE.DISCRETE(),inStates);
   end matchcontinue;
@@ -811,16 +805,16 @@ protected function lowerKnownVarkind
   input DAE.VarKind inVarKind;
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
+  input DAE.ConnectorType inConnectorType;
   output BackendDAE.VarKind outVarKind;
 algorithm
-  outVarKind := matchcontinue (inVarKind,inComponentRef,inVarDirection,inFlow)
+  outVarKind := matchcontinue (inVarKind,inComponentRef,inVarDirection,inConnectorType)
 
     case (DAE.PARAM(),_,_,_) then BackendDAE.PARAM();
     case (DAE.CONST(),_,_,_) then BackendDAE.CONST();
     case (DAE.VARIABLE(),_,_,_)
       equation
-        BackendVariable.topLevelInput(inComponentRef,inVarDirection,inFlow);
+        BackendVariable.topLevelInput(inComponentRef,inVarDirection,inConnectorType);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!
@@ -870,8 +864,7 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -884,8 +877,7 @@ algorithm
                   ty = t,
                   binding = bind,
                   dims = dims,
-                  flowPrefix = flowPrefix,
-                  streamPrefix = streamPrefix,
+                  connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
                   absynCommentOption = comment))
@@ -893,7 +885,7 @@ algorithm
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
       then
-        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,ct);
   end match;
 end lowerExtObjVar;
 
@@ -1748,7 +1740,7 @@ algorithm
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
+                            NONE(),DAE.NON_CONNECTOR()), vars);
         exp = Expression.crefExp(cref_);
       then
         /*

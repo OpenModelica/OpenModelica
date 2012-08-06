@@ -105,8 +105,7 @@ uniontype Var "- Variables"
     .DAE.ElementSource source "origin of variable" ;
     Option< .DAE.VariableAttributes> values "values ; values on builtin attributes" ;
     Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
-    .DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
-    .DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
+    .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
 end Var;
 

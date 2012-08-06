@@ -1120,8 +1120,7 @@ algorithm
   outV := matchcontinue(var)
     local
       Ident name;
-      SCode.Flow f;
-      SCode.Stream streamPrefix;
+      SCode.ConnectorType ct;
       SCode.Visibility vis;
       Type tp;
       Binding bind;
@@ -1130,8 +1129,8 @@ algorithm
       Absyn.InnerOuter io;
       Option<DAE.Const> cnstForRange;
     
-    case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,_,io,vis),tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,prl,v,Absyn.INPUT(),io,vis),tp,bind,cnstForRange);
+    case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,_,io,vis),tp,bind,cnstForRange)
+    then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,Absyn.INPUT(),io,vis),tp,bind,cnstForRange);
 
   end matchcontinue;
 end setVarInput;
@@ -4837,7 +4836,7 @@ algorithm
     case ({},_) then {};
     
     // we have a flow prefix
-    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = SCode.FLOW()),ty = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = SCode.FLOW()),ty = ty) :: vs),cr)
       equation
         ty2 = simplifyType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
@@ -4874,7 +4873,7 @@ algorithm
       DAE.ComponentRef cref_;
     
     case ({},_) then {};
-    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = SCode.STREAM()),ty = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(connectorType = SCode.STREAM()),ty = ty) :: vs),cr)
       equation
         ty2 = simplifyType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id, {}, ty2);

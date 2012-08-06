@@ -671,26 +671,24 @@ algorithm
       SCode.Final fp;
       Absyn.InnerOuter io;
       Absyn.Direction dir;
-      SCode.Flow flp;
-      SCode.Stream sp;
+      SCode.ConnectorType ct;
       Absyn.Info info;
       InstTypes.VarArgs va;
 
     // All prefixes are the default ones, same as having no prefixes.
     case (SCode.PREFIXES(visibility = SCode.PUBLIC(), finalPrefix =
         SCode.NOT_FINAL(), innerOuter = Absyn.NOT_INNER_OUTER()), SCode.ATTR(
-        flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM(),
-        variability = SCode.VAR(), direction = Absyn.BIDIR()), _, _)
+        connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
+        direction = Absyn.BIDIR()), _, _)
       then InstTypes.NO_PREFIXES();
 
     // Otherwise, select the prefixes we are interested in and build a PREFIXES
     // record.
     case (SCode.PREFIXES(visibility = vis, finalPrefix = fp, innerOuter = io),
-          SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
-        direction = dir), _, info)
+          SCode.ATTR(connectorType = ct, variability = var, direction = dir), _, info)
       equation
         va = makeVarArg(dir,inComment);
-      then InstTypes.PREFIXES(vis, var, fp, io, (dir, info), (flp, info), (sp, info), va);
+      then InstTypes.PREFIXES(vis, var, fp, io, (dir, info), (ct, info), va);
 
   end match;
 end makePrefixes;
@@ -739,24 +737,22 @@ protected function makePrefixesFromAttributes
 algorithm
   outPrefixes := match(inAttributes, inInfo)
     local
-      SCode.Flow flp;
-      SCode.Stream sp;
+      SCode.ConnectorType ct;
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.Info info;
 
     // All attributes are the default ones, same as having no prefixes.
-    case (SCode.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix =
-        SCode.NOT_STREAM(), variability = SCode.VAR(), direction = Absyn.BIDIR()), _)
+    case (SCode.ATTR(connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
+        direction = Absyn.BIDIR()), _)
       then InstTypes.NO_PREFIXES();
 
     // Otherwise, select the attributes we are interested in and build a
     // PREFIXES record with the parts not covered by SCode.Attributes set to the
     // default values.
-    case (SCode.ATTR(flowPrefix = flp, streamPrefix = sp, variability = var,
-        direction = dir), _)
+    case (SCode.ATTR(connectorType = ct, variability = var, direction = dir), _)
       then InstTypes.PREFIXES(SCode.PUBLIC(), var, SCode.NOT_FINAL(),
-        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (flp, inInfo), (sp, inInfo), InstTypes.NO_VARARG());
+        Absyn.NOT_INNER_OUTER(), (dir, inInfo), (ct, inInfo), InstTypes.NO_VARARG());
 
   end match;
 end makePrefixesFromAttributes;
@@ -780,8 +776,7 @@ algorithm
       SCode.Final fp1, fp2;
       Absyn.InnerOuter io1, io2;
       tuple<Absyn.Direction, Absyn.Info> dir1, dir2;
-      tuple<SCode.Flow, Absyn.Info> flp1, flp2;
-      tuple<SCode.Stream, Absyn.Info> sp1, sp2;
+      tuple<SCode.ConnectorType, Absyn.Info> ct1, ct2;
       InstTypes.VarArgs va2;
 
     // No outer prefixes => no change.
@@ -790,17 +785,16 @@ algorithm
     case (_, InstTypes.NO_PREFIXES(), _, _) then inOuterPrefixes;
 
     // Both outer and inner prefixes => merge them.
-    case (InstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, flp1, sp1, _),
-          InstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, flp2, sp2, va2), _, _)
+    case (InstTypes.PREFIXES(vis1, var1, fp1, io1, dir1, ct1, _),
+          InstTypes.PREFIXES(vis2, var2, fp2, io2, dir2, ct2, va2), _, _)
       equation
         vis2 = mergeVisibility(vis1, vis2);
         var2 = mergeVariability(var1, var2);
         fp2 = mergeFinal(fp1, fp2);
         dir2 = mergeDirection(dir1, dir2, inElementName, inElementType);
-        (flp2, sp2) =
-          mergeFlowStream(flp1, sp1, flp2, sp2, inElementName, inElementType);
+        ct2 = mergeConnectorType(ct1, ct2, inElementName, inElementType);
       then
-        InstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, flp2, sp2, va2);
+        InstTypes.PREFIXES(vis2, var2, fp2, io1, dir2, ct2, va2);
 
   end match;
 end mergePrefixes;
@@ -827,14 +821,13 @@ algorithm
       SCode.Final fp;
       Absyn.InnerOuter io;
       tuple<Absyn.Direction, Absyn.Info> dir;
-      tuple<SCode.Flow, Absyn.Info> flp;
-      tuple<SCode.Stream, Absyn.Info> sp;
+      tuple<SCode.ConnectorType, Absyn.Info> ct;
       InstTypes.VarArgs va;
 
     case (SCode.PUBLIC(), _) then inPrefixes;
 
-    case (_, InstTypes.PREFIXES(_, var, fp, io, dir, flp, sp, va))
-      then InstTypes.PREFIXES(inVisibility, var, fp, io, dir, flp, sp, va);
+    case (_, InstTypes.PREFIXES(_, var, fp, io, dir, ct, va))
+      then InstTypes.PREFIXES(inVisibility, var, fp, io, dir, ct, va);
 
     else InstTypes.DEFAULT_PROTECTED_PREFIXES;
 
@@ -933,61 +926,39 @@ algorithm
   end match;
 end directionString;
 
-protected function mergeFlowStream
-  "Merges outer and inner flow and stream prefixes."
-  input tuple<SCode.Flow, Absyn.Info> inOuterFlow;
-  input tuple<SCode.Stream, Absyn.Info> inOuterStream;
-  input tuple<SCode.Flow, Absyn.Info> inInnerFlow;
-  input tuple<SCode.Stream, Absyn.Info> inInnerStream;
+protected function mergeConnectorType
+  "Merges outer and inner connector type prefixes (flow, stream)."
+  input tuple<SCode.ConnectorType, Absyn.Info> inOuterConnectorType;
+  input tuple<SCode.ConnectorType, Absyn.Info> inInnerConnectorType;
   input Absyn.Path inElementName;
   input String inElementType;
-  output tuple<SCode.Flow, Absyn.Info> outFlow;
-  output tuple<SCode.Stream, Absyn.Info> outStream;
+  output tuple<SCode.ConnectorType, Absyn.Info> outConnectorType;
 algorithm
-  (outFlow, outStream) := matchcontinue(inOuterFlow, inOuterStream, inInnerFlow,
-      inInnerStream, inElementName, inElementType)
+  outConnectorType := matchcontinue(inOuterConnectorType, inInnerConnectorType,
+      inElementName, inElementType)
     local
-      SCode.Flow fp1, fp2;
-      SCode.Stream sp1, sp2;
+      SCode.ConnectorType ct1, ct2;
       Absyn.Info info1, info2;
-      String fp_str, sp_str, pf_str, el_name;
-      tuple<SCode.Flow, Absyn.Info> new_fp;
-      tuple<SCode.Stream, Absyn.Info> new_sp;
+      String ct1_str, ct2_str, el_name;
 
     // If either of the prefixes are unset, return the others.
-    case ((SCode.NOT_FLOW(), _), (SCode.NOT_STREAM(), _), _, _, _, _)
-      then (inInnerFlow, inInnerStream);
-    case (_, _, (SCode.NOT_FLOW(), _), (SCode.NOT_STREAM(), _), _, _)
-      then (inOuterFlow, inOuterStream);
+    case ((SCode.POTENTIAL(), _), _, _, _) then inInnerConnectorType;
+    case (_, (SCode.POTENTIAL(), _), _, _) then inOuterConnectorType;
 
-    // Trying to overwrite a flow prefix => show error.
-    case ((fp1, info1), (sp1, _), (SCode.FLOW(), info2), _, _, _)
+    // Trying to overwrite a flow/stream prefix => show error.
+    case ((ct1, info1), (ct2, info2), _, _)
       equation
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
-        fp_str = SCodeDump.flowStr(fp1);
-        sp_str = SCodeDump.streamStr(sp1);
-        pf_str = fp_str +& sp_str;
+        ct1_str = SCodeDump.connectorTypeStr(ct1);
+        ct2_str = SCodeDump.connectorTypeStr(ct2);
         el_name = Absyn.pathString(inElementName);
         Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {"flow", inElementType, el_name, pf_str}, info2);
-      then
-        fail();
-
-    // Trying to overwrite a stream prefix => show error.
-    case ((fp1, info1), (sp1, _), _, (SCode.STREAM(), info2), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
-        fp_str = SCodeDump.flowStr(fp1);
-        sp_str = SCodeDump.streamStr(sp1);
-        pf_str = fp_str +& sp_str;
-        el_name = Absyn.pathString(inElementName);
-        Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
-          {"stream", inElementType, el_name, pf_str}, info2);
+          {ct2_str, inElementType, el_name, ct1_str}, info2);
       then
         fail();
 
   end matchcontinue;
-end mergeFlowStream;
+end mergeConnectorType;
 
 public function addPrefix
   input String inName;
@@ -1489,21 +1460,18 @@ algorithm
       Absyn.InnerOuter io;
       Absyn.Direction dir1;
       DAE.VarDirection dir2;
-      SCode.Flow flp1;
-      DAE.Flow flp2;
-      SCode.Stream sp1;
-      DAE.Stream sp2;
+      SCode.ConnectorType ct1;
+      DAE.ConnectorType ct2;
 
     case InstTypes.NO_PREFIXES() then InstTypes.NO_DAE_PREFIXES();
-    case InstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (flp1, _), (sp1, _), _)
+    case InstTypes.PREFIXES(vis1, var1, fp, io, (dir1, _), (ct1, _), _)
       equation
         vis2 = translateVisibility(vis1);
         var2 = translateVariability(var1);
         dir2 = translateDirection(dir1);
-        flp2 = translateFlow(flp1);
-        sp2 = translateStream(sp1);
+        ct2 = translateConnectorType(ct1);
       then
-        InstTypes.DAE_PREFIXES(vis2, var2, fp, io, dir2, flp2, sp2);
+        InstTypes.DAE_PREFIXES(vis2, var2, fp, io, dir2, ct2);
 
   end match;
 end translatePrefixes;
@@ -1541,25 +1509,16 @@ algorithm
   end match;
 end translateDirection;
 
-protected function translateFlow
-  input SCode.Flow inFlow;
-  output DAE.Flow outFlow;
+protected function translateConnectorType
+  input SCode.ConnectorType inConnectorType;
+  output DAE.ConnectorType outConnectorType;
 algorithm
-  outFlow := match(inFlow)
-    case SCode.NOT_FLOW() then DAE.NON_CONNECTOR();
-    else DAE.FLOW();
+  outConnectorType := match(inConnectorType)
+    case SCode.FLOW() then DAE.FLOW();
+    case SCode.STREAM() then DAE.STREAM();
+    else DAE.NON_CONNECTOR();
   end match;
-end translateFlow;
-
-protected function translateStream
-  input SCode.Stream inStream;
-  output DAE.Stream outStream;
-algorithm
-  outStream := match(inStream)
-    case SCode.NOT_STREAM() then DAE.NON_STREAM_CONNECTOR();
-    else DAE.STREAM();
-  end match;
-end translateStream;
+end translateConnectorType;
 
 public function conditionTrue
   input Condition inCondition;
@@ -1608,4 +1567,17 @@ algorithm
   b := match stmt case InstTypes.FUNCTION_ARRAY_INIT(name=_) then true; else false; end match;
 end isArrayAllocation;
 
+public function isFlowComponent
+  input Component inComponent;
+  output Boolean outIsFlow;
+algorithm
+  outIsFlow := match(inComponent)
+    case InstTypes.UNTYPED_COMPONENT(prefixes =
+      InstTypes.PREFIXES(connectorType = (SCode.FLOW(), _))) then true;
+    case InstTypes.TYPED_COMPONENT(prefixes =
+      InstTypes.DAE_PREFIXES(connectorType = DAE.FLOW())) then true;
+    else false;
+  end match;
+end isFlowComponent;
+  
 end InstUtil;

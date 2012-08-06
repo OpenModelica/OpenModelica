@@ -65,19 +65,12 @@ public uniontype VarKind
   record CONST "constant"    end CONST;  
 end VarKind;
 
-public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
-   it is not a connector variable at all."
+public uniontype ConnectorType
+  record POTENTIAL end POTENTIAL;
   record FLOW end FLOW;
-  record NON_FLOW end NON_FLOW;
-  record NON_CONNECTOR end NON_CONNECTOR;
-end Flow;
-
-public uniontype Stream "The Stream of a variable indicates if it is a Stream variable or not, or if
-   it is not a connector variable at all."
   record STREAM end STREAM;
-  record NON_STREAM end NON_STREAM;
-  record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
-end Stream;
+  record NON_CONNECTOR end NON_CONNECTOR;
+end ConnectorType;
 
 public uniontype VarDirection
   record INPUT  "input"                   end INPUT;
@@ -166,8 +159,7 @@ public uniontype Element
     Type ty "Full type information required";
     Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute";
     InstDims  dims "dimensions";
-    Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
-    Stream streamPrefix "Stream variables in connectors" ;
+    ConnectorType connectorType "The connector type: flow, stream, no prefix, or not a connector element.";
     ElementSource source "the origins of the component/equation/algorithm";
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
@@ -704,8 +696,7 @@ end Var;
 public
 uniontype Attributes "- Attributes"
   record ATTR
-    SCode.Flow          flowPrefix "flow" ;
-    SCode.Stream        streamPrefix "stream" ;
+    SCode.ConnectorType connectorType "flow, stream or unspecified";
     SCode.Parallelism   parallelism "parallelism";
     SCode.Variability   variability "variability" ;
     Absyn.Direction     direction "direction" ;
@@ -715,9 +706,9 @@ uniontype Attributes "- Attributes"
 end Attributes;
 
 public 
-constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()); 
-constant Attributes dummyAttrParam = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
-constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrVar   = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()); 
+constant Attributes dummyAttrParam = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.PARAM(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
+constant Attributes dummyAttrConst = ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;

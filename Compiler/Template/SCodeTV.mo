@@ -685,15 +685,11 @@ package SCode
     record NOT_PARTIAL end NOT_PARTIAL;
   end Partial;
 
-  uniontype Stream
-    record STREAM end STREAM;
-    record NOT_STREAM end NOT_STREAM;
-  end Stream;
-
-  uniontype Flow
+  uniontype ConnectorType
+    record POTENTIAL end POTENTIAL;
     record FLOW end FLOW;
-    record NOT_FLOW end NOT_FLOW;
-  end Flow;
+    record STREAM end STREAM;
+  end ConnectorType;
 
   uniontype Prefixes
     record PREFIXES
@@ -753,19 +749,18 @@ package SCode
   uniontype Attributes
     record ATTR
       Absyn.ArrayDim arrayDims;
-      Flow flowPrefix;
+      ConnectorType connectorType;
       Parallelism parallelism;
-      Stream streamPrefix;
       Variability variability;
       Absyn.Direction direction;
     end ATTR;
   end Attributes;
 
-uniontype Parallelism 
-  record PARGLOBAL      end PARGLOBAL;
-  record PARLOCAL       end PARLOCAL;
-  record NON_PARALLEL   end NON_PARALLEL;
-end Parallelism;
+  uniontype Parallelism 
+    record PARGLOBAL      end PARGLOBAL;
+    record PARLOCAL       end PARLOCAL;
+    record NON_PARALLEL   end NON_PARALLEL;
+  end Parallelism;
 
   uniontype Variability
     record VAR      end VAR;

@@ -83,17 +83,15 @@ algorithm
       BackendDAE.Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       list<BackendDAE.Var> rest;
       Boolean res;
     case ({},var_name) then false;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
+    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment)) :: rest),var_name)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
       then
         true;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
+    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment)) :: rest),var_name)
       equation
         res = isVarKnown(rest, var_name);
       then
@@ -149,8 +147,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Boolean fixed;
 
     case (BackendDAE.VAR(varName = a,
@@ -165,11 +162,10 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
+              connectorType = ct),fixed)
       equation
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -183,12 +179,11 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),fixed)
+              connectorType = ct),fixed)
       equation
         attr = getVariableAttributefromType(d);
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,ct);
 
 
   end match;
@@ -254,8 +249,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -269,11 +263,10 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
+              connectorType = ct),inExp)
       equation
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -287,12 +280,11 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
+              connectorType = ct),inExp)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
       
   end match;
 end setVarStartValue;
@@ -319,10 +311,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       
-    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,_,s,t,streamPrefix),attr) then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,attr,s,t,streamPrefix);  
+    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,_,s,ct),attr)
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,attr,s,ct);  
   end matchcontinue;
 end setVarAttributes; 
 
@@ -469,8 +461,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -484,12 +475,11 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),finalPrefix)
+              connectorType = ct),finalPrefix)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -503,11 +493,10 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),finalPrefix)
+              connectorType = ct),finalPrefix)
       equation
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
   end match;
 end setVarFinal;
 
@@ -534,8 +523,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -549,12 +537,11 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),minMax)
+              connectorType = ct),minMax)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -568,11 +555,10 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),minMax)
+              connectorType = ct),minMax)
       equation
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
   end match;
 end setVarMinMax;
 
@@ -613,8 +599,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -628,12 +613,11 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
+              connectorType = ct),inExp)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -647,11 +631,10 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),inExp)
+              connectorType = ct),inExp)
       equation
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,t,streamPrefix);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
   end match;
 end setVarNominalValue;
 
@@ -1271,12 +1254,8 @@ public function isVarConnector
 algorithm
   result :=
   match (var)
-    case (BackendDAE.VAR(flowPrefix = DAE.FLOW())) then true;
-    case (BackendDAE.VAR(flowPrefix = DAE.NON_FLOW())) then true;
-    case (BackendDAE.VAR(streamPrefix = DAE.STREAM())) then true;
-    case (BackendDAE.VAR(streamPrefix = DAE.NON_STREAM())) then true;
-    case (_)
-      then false;
+    case BackendDAE.VAR(connectorType = DAE.NON_CONNECTOR()) then false;
+    else true;
   end match;
 end isVarConnector;
 
@@ -1288,7 +1267,7 @@ public function isFlowVar
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case BackendDAE.VAR(flowPrefix = DAE.FLOW()) then true;
+    case BackendDAE.VAR(connectorType = DAE.FLOW()) then true;
     else then false;
   end matchcontinue;
 end isFlowVar;
@@ -1469,8 +1448,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (_,BackendDAE.VAR(varKind = kind,
@@ -1484,10 +1462,9 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix))
+              connectorType = ct))
     then
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,ct); 
   end match;
 end copyVarNewName;
 
@@ -1523,8 +1500,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
@@ -1539,10 +1515,9 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),new_kind)
+              connectorType = ct),new_kind)
     equation
-      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 2, new_kind);
+      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
     then 
       oVar; 
   end match;
@@ -1570,8 +1545,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
@@ -1586,10 +1560,9 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),new_i)
+              connectorType = ct),new_i)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,new_i,source,attr,comment,ct); // referenceUpdate(inVar, 8, new_i);
     then
       oVar; 
   end match;
@@ -1616,8 +1589,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
@@ -1631,11 +1603,10 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),
+              connectorType = ct),
           inBindExp)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 5, SOME(inBindExp));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
     then 
       oVar;
   end match;
@@ -1662,8 +1633,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
@@ -1678,10 +1648,9 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),inBindValue)
+              connectorType = ct),inBindValue)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 6, SOME(inBindValue));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
     then 
       oVar;
   end match;
@@ -1723,8 +1692,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
@@ -1738,10 +1706,9 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),varDirection)
+              connectorType = ct),varDirection)
     equation
-      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 3, varDirection);
+      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
     then 
       oVar; 
   end match;
@@ -1772,10 +1739,10 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.VarDirection dir;
-      DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,flowPrefix = flowPrefix))
+      DAE.ConnectorType ct;
+    case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
       equation
-        topLevelOutput(cr, dir, flowPrefix);
+        topLevelOutput(cr, dir, ct);
       then
         true;
     case (_) then false;
@@ -1795,10 +1762,10 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.VarDirection dir;
-      DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,flowPrefix = flowPrefix))
+      DAE.ConnectorType ct;
+    case (BackendDAE.VAR(varName = cr,varDirection = dir,connectorType = ct))
       equation
-        topLevelInput(cr, dir, flowPrefix);
+        topLevelInput(cr, dir, ct);
       then
         true;
     case (_) then false;
@@ -1811,9 +1778,9 @@ public function topLevelInput "function: topLevelInput
   or if it is an input in a connector instance at top level."
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
+  input DAE.ConnectorType inConnectorType;
 algorithm
-  _ := matchcontinue (inComponentRef,inVarDirection,inFlow)
+  _ := matchcontinue (inComponentRef,inVarDirection,inConnectorType)
     local
       DAE.ComponentRef cr;
       String name;
@@ -1822,7 +1789,7 @@ algorithm
         {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
       then
         ();
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.NON_FLOW()) /* Connector input variables at top level for crefs that are stringified */
+    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.POTENTIAL()) /* Connector input variables at top level for crefs that are stringified */
       equation
         {_,_} = Util.stringSplitAtChar(name, ".");
       then
@@ -1834,16 +1801,16 @@ algorithm
         ();
     /* For crefs that are not yet stringified, e.g. lower_known_var */
     case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.NON_FLOW()) then ();
+    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.POTENTIAL()) then ();
   end matchcontinue;
 end topLevelInput;
 
 protected function topLevelOutput
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
+  input DAE.ConnectorType inConnectorType;
 algorithm
-  _ := matchcontinue(inComponentRef, inVarDirection, inFlow)
+  _ := matchcontinue(inComponentRef, inVarDirection, inConnectorType)
   local 
     DAE.ComponentRef cr;
     String name;
@@ -1852,7 +1819,7 @@ algorithm
         {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
       then
         ();
-    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.NON_FLOW()) /* Connector input variables at top level for crefs that are stringified */
+    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.POTENTIAL()) /* Connector input variables at top level for crefs that are stringified */
       equation
         {_,_} = Util.stringSplitAtChar(name, ".");
       then
@@ -1864,7 +1831,7 @@ algorithm
         ();
     /* For crefs that are not yet stringified, e.g. lower_known_var */
     case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.OUTPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.OUTPUT(),DAE.NON_FLOW()) then ();
+    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.OUTPUT(),DAE.POTENTIAL()) then ();
   end matchcontinue;
 end topLevelOutput;
 
@@ -2736,8 +2703,7 @@ algorithm
       DAE.ElementSource source "origin of equation";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Integer typ,place;
       Absyn.Path path;
       tuple<BackendDAE.Var,Integer,Integer> fst;
@@ -2756,11 +2722,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2777,11 +2742,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2798,11 +2762,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place)::vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         x_1_strType = x_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2819,11 +2782,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         x_1 = x + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.STATE(),d,prl,tp,b,value,dim,x,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2840,11 +2802,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1 "Dummy derivatives become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2861,11 +2822,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1 "Dummy derivatives become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2882,11 +2842,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1 "Dummy state become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2903,11 +2862,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1 "Dummy state become algebraic variables" ;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2924,11 +2882,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1_strType = y_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2945,11 +2902,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         y_1 = y + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.DISCRETE(),d,prl,tp,b,value,dim,y,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -2966,11 +2922,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         p_1_strType = p_strType + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p_strType,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p_strType,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType,fst::acc);
       then
@@ -2987,11 +2942,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         p_1 = p + 1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.PARAM(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -3008,12 +2962,11 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
          //IS THIS A BUG??
          // THE INDEX FOR const IS SET TO p (=last parameter index)
-        fst = (BackendDAE.VAR(cr,BackendDAE.CONST(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.CONST(),d,prl,tp,b,value,dim,p,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -3030,11 +2983,10 @@ algorithm
                source = source,
                values = dae_var_attr,
                comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
+               connectorType = ct),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType,acc)
       equation
         ext_1 = ext+1;
-        fst = (BackendDAE.VAR(cr,BackendDAE.EXTOBJ(path),d,prl,tp,b,value,dim,ext,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place);
+        fst = (BackendDAE.VAR(cr,BackendDAE.EXTOBJ(path),d,prl,tp,b,value,dim,ext,source,dae_var_attr,comment,ct),typ,place);
         (acc,x1,xd1,y1,p1,dummy,ext1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,fst::acc);
       then
@@ -3590,7 +3542,6 @@ algorithm
       String name_str;
       BackendDAE.Var v,newv;
       DAE.ComponentRef cr;
-      DAE.Flow flowPrefix;
       BackendDAE.Variables vars;
     /* adrpo: ignore records!
     case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
@@ -3598,7 +3549,7 @@ algorithm
     then
       vars;
     */
-    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         failure((_,_) = getVar(cr, vars));
         // print("adding when not existing previously\n");
@@ -3612,7 +3563,7 @@ algorithm
       then
         BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
 
-    case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    case ((newv as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         (_,{indx}) = getVar(cr, vars);
         // print("adding when already present => Updating value\n");
@@ -3648,9 +3599,8 @@ algorithm
       String name_str;
       BackendDAE.Var v,newv;
       DAE.ComponentRef cr;
-      DAE.Flow flowPrefix;
       BackendDAE.Variables vars;
-    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         indx = HashTable2.hashFunc(cr, bsize);
         newpos = vararrayLength(varr);
@@ -4273,8 +4223,7 @@ algorithm
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
-      DAE.Flow t;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Boolean fixed;
       list<DAE.SymbolicOperation> ops;
 
@@ -4290,12 +4239,11 @@ algorithm
               source = source,
               values = oattr,
               comment = s,
-              flowPrefix = t,
-              streamPrefix = streamPrefix),iops)
+              connectorType = ct),iops)
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
-      then BackendDAE.VAR(a,b,c,p,d,e,f,g,i,source,oattr,s,t,streamPrefix);
+      then BackendDAE.VAR(a,b,c,p,d,e,f,g,i,source,oattr,s,ct);
   end match;
 end mergeVariableOperations;
 

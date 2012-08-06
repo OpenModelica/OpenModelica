@@ -701,21 +701,19 @@ template dumpAttributes(SCode.Attributes attributes)
 ::=
 match attributes
   case ATTR(__) then
-    let flow_str = dumpFlow(flowPrefix)
-    let stream_str = dumpStream(streamPrefix)
+    let ct_str = dumpConnectorType(connectorType)
     let prl_str = dumpParallelism(parallelism)
     let var_str = dumpVariability(variability)
     let dir_str = dumpDirection(direction)
-    '<%prl_str%><%dir_str%><%var_str%><%flow_str%><%stream_str%>'
+    '<%prl_str%><%dir_str%><%var_str%><%ct_str%>'
 end dumpAttributes;
 
-template dumpFlow(SCode.Flow flow)
-::= match flow case FLOW(__) then 'flow '
-end dumpFlow;
-
-template dumpStream(SCode.Stream stream)
-::= match stream case STREAM(__) then 'stream '
-end dumpStream;
+template dumpConnectorType(SCode.ConnectorType connectorType)
+::=
+match connectorType
+  case FLOW() then 'flow '
+  case STREAM() then 'stream '
+end dumpConnectorType;
 
 template dumpParallelism(SCode.Parallelism parallelism)
 ::=

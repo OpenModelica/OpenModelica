@@ -887,8 +887,7 @@ algorithm
       Absyn.Path extendsPath;
       SCode.Visibility vis;
       Absyn.ArrayDim ad;
-      SCode.Flow fp;
-      SCode.Stream sp;
+      SCode.ConnectorType ct;
       SCode.Variability var;
       SCode.Parallelism prl;
       Absyn.Direction dir;
@@ -897,14 +896,14 @@ algorithm
       HashTableStringToPath.HashTable ht;
       SCode.Element elt;
     
-    case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, fp, sp, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
+    case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
         (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
       then 
-        (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, fp, sp, prl, var, dir), typeSpec, modifications, comment, condition, info));
+        (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info));
     
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, info),ht)
       equation

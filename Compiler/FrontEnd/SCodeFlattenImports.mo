@@ -261,15 +261,14 @@ protected function flattenAttributes
   output SCode.Attributes outAttributes;
 protected
   Absyn.ArrayDim ad;
-  SCode.Flow fp;
-  SCode.Stream sp;
+  SCode.ConnectorType ct;
   SCode.Parallelism prl;
   SCode.Variability var;
   Absyn.Direction dir;
 algorithm
-  SCode.ATTR(ad, fp, sp, prl, var, dir) := inAttributes;
+  SCode.ATTR(ad, ct, prl, var, dir) := inAttributes;
   ad := List.map2(ad, flattenSubscript, inEnv, inInfo);
-  outAttributes := SCode.ATTR(ad, fp, sp, prl, var, dir);
+  outAttributes := SCode.ATTR(ad, ct, prl, var, dir);
 end flattenAttributes;
 
 protected function flattenTypeSpec

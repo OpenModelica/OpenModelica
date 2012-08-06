@@ -8583,8 +8583,7 @@ algorithm
       Integer index;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       DAE.ElementSource source "the origin of the element";
       BackendDAE.Var backendVar;
       
@@ -8600,12 +8599,11 @@ algorithm
       source = source,
       values = attr,
       comment = comment,
-      flowPrefix = flowPrefix,
-      streamPrefix = streamPrefix))
+      connectorType = ct))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,ct);
         
     case (backendVar)
     then
@@ -9101,8 +9099,6 @@ algorithm
       list<String> numArrayElement;
       Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
       String  commentStr,  unit, displayUnit,NumarrayElement,idxs_str1;
@@ -9126,8 +9122,6 @@ algorithm
       values = dae_var_attr,
       comment = comment,
       varType = tp,
-      flowPrefix = flowPrefix,
-      streamPrefix = streamPrefix,
       source = source)),optAliasVars,vars)
       equation
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);

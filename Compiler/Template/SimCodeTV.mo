@@ -1955,15 +1955,11 @@ uniontype Partial "the partial prefix"
   record NOT_PARTIAL "a non partial prefix" end NOT_PARTIAL;
 end Partial;
 
-uniontype Stream "the stream prefix"
-  record STREAM     "a stream prefix"     end STREAM;
-  record NOT_STREAM "a non stream prefix" end NOT_STREAM;
-end Stream;
-
-uniontype Flow "the flore prefix"
-  record FLOW     "a flow prefix"     end FLOW;
-  record NOT_FLOW "a non flow prefix" end NOT_FLOW;
-end Flow;
+uniontype ConnectorType
+  record POTENTIAL end POTENTIAL;
+  record FLOW end FLOW;
+  record STREAM end STREAM;
+end ConnectorType;
 
 uniontype Prefixes "the common class or component prefixes"
   record PREFIXES "the common class or component prefixes"
@@ -2030,8 +2026,7 @@ end Element;
 uniontype Attributes "- Attributes"
   record ATTR "the attributes of the component"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
-    Flow   flowPrefix   "the flow prefix";
-    Stream streamPrefix "the stream prefix";
+    ConnectorType connectorType;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
   end ATTR;

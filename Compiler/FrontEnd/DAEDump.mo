@@ -484,8 +484,7 @@ algorithm
     local
       String crstr,dirstr,tystr,str,dimstr;
       DAE.ComponentRef cr;
-      SCode.Flow fl;
-      SCode.Stream st;
+      SCode.ConnectorType ct;
       SCode.Variability var;
       Absyn.Direction dir;
       DAE.Type ty;
@@ -493,7 +492,7 @@ algorithm
       DAE.Attributes attr;
       
     case DAE.NOEXTARG() then "";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir),type_ = ty)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(connectorType =ct,variability = var,direction = dir),type_ = ty)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
       then
@@ -849,8 +848,6 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type typ;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       list<Absyn.Path> classlst,class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -864,8 +861,6 @@ algorithm
              parallelism = prl,
              ty = typ,
              binding = NONE(),
-             flowPrefix = flowPrefix,
-             streamPrefix = streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -888,8 +883,6 @@ algorithm
              parallelism = prl,
              ty = typ,
              binding = SOME(e),
-             flowPrefix = flowPrefix,
-             streamPrefix = streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2407,15 +2400,26 @@ end dumpDebugElement;
 
 public function dumpFlow "
 Author BZ 2008-07, dump flow properties to string."
-  input DAE.Flow var;
+  input DAE.ConnectorType var;
   output String flowString;
 algorithm
   flowString := matchcontinue(var)
     case DAE.FLOW() then "flow";
-    case DAE.NON_FLOW() then "effort";
+    case DAE.POTENTIAL() then "effort";
     case DAE.NON_CONNECTOR() then "non_connector";
   end matchcontinue;
 end dumpFlow;
+
+public function dumpConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output String outString;
+algorithm
+  outString := match(inConnectorType)
+    case DAE.FLOW() then "flow";
+    case DAE.STREAM() then "stream";
+    else "";
+  end match;
+end dumpConnectorType;
 
 public function dumpGraphviz "
  Graphviz functions to visualize
@@ -3301,8 +3305,6 @@ algorithm
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       DAE.Type typ;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       DAE.ElementSource source "the origin of the element";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -3319,8 +3321,6 @@ algorithm
              ty = typ,
              dims = dims,
              binding = NONE(),
-             flowPrefix = flowPrefix,
-             streamPrefix =  streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment), printTypeDimension, str)
@@ -3347,8 +3347,6 @@ algorithm
              ty = typ,
              dims = dims,
              binding = SOME(e),
-             flowPrefix = flowPrefix,
-             streamPrefix = streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment), printTypeDimension, str)

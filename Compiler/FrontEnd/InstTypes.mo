@@ -220,16 +220,14 @@ public uniontype Prefixes
     SCode.Final finalPrefix;
     Absyn.InnerOuter innerOuter;
     tuple<Absyn.Direction, Absyn.Info> direction;
-    tuple<SCode.Flow, Absyn.Info> flowPrefix;
-    tuple<SCode.Stream, Absyn.Info> streamPrefix;
+    tuple<SCode.ConnectorType, Absyn.Info> connectorType;
     VarArgs varArgs;
   end PREFIXES;
 end Prefixes;
 
 public constant Prefixes DEFAULT_PROTECTED_PREFIXES = PREFIXES(
   SCode.PROTECTED(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
-  (Absyn.BIDIR(), Absyn.dummyInfo), (SCode.NOT_FLOW(), Absyn.dummyInfo),
-  (SCode.NOT_STREAM(), Absyn.dummyInfo), NO_VARARG());
+  (Absyn.BIDIR(), Absyn.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
 
 public uniontype VarArgs
   record NO_VARARG end NO_VARARG;
@@ -245,14 +243,13 @@ public uniontype DaePrefixes
     SCode.Final finalPrefix;
     Absyn.InnerOuter innerOuter;
     DAE.VarDirection direction;
-    DAE.Flow flowPrefix;
-    DAE.Stream streamPrefix;
+    DAE.ConnectorType connectorType;
   end DAE_PREFIXES;
 end DaePrefixes;
 
 public constant DaePrefixes DEFAULT_CONST_DAE_PREFIXES = DAE_PREFIXES(
   DAE.PUBLIC(), DAE.CONST(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
-  DAE.BIDIR(), DAE.NON_CONNECTOR(), DAE.NON_STREAM_CONNECTOR());
+  DAE.BIDIR(), DAE.NON_CONNECTOR());
 
 public uniontype Equation
   record EQUALITY_EQUATION

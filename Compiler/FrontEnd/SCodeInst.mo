@@ -129,24 +129,41 @@ algorithm
       equation
         System.startTimer();
         name = Absyn.pathLastIdent(inClassPath);
+
+        // ---------------- Instantiation ---------------
+        // Look up the class to instantiate in the environment.
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
+        // Instantiate that class.
         (cls, _, _, functions) = instClassItem(item, InstTypes.NOMOD(), 
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize));
+        // Instantiate global constants (package constants).
         (const_el,functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
+        // Add the constants to the instantiated class.
         cls = InstUtil.addElementsToClass(const_el, cls);
 
         //print(InstDump.modelStr(name, cls));
+
+        // ------------------- Typing -------------------
+        // Build the symboltable to use for typing.
         (cls, symtab) = InstSymbolTable.build(cls);
+        // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
+        // Type all instantiated functions.
         ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions), Typing.typeFunction, (functions, symtab));
+        // Type the instantiated class.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
 
+        // Instantiate conditional components now that we have typed all crefs
+        // that might be used as conditions.
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
+        // Type the instantiated class again, to type any instantiated
+        // conditional components that might have been added.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
+        // Type all equation and algorithm sections in the class.
         (cls, conn) = Typing.typeSections(cls, symtab);
         
-        // typechecking
+        // Type check the typed class.
         (cls, symtab) = TypeCheck.check(cls, symtab);
 
         System.stopTimer();
@@ -159,6 +176,8 @@ algorithm
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
 
+        // Expand the instantiated and typed class into scalar components,
+        // equations and algorithms.
         _ = SCodeExpand.expand(name, cls, functions);
       then
         ();

@@ -986,8 +986,7 @@ algorithm
       DAE.Type ty "the type" ;
       Option<DAE.Exp> binding "binding" ;
       DAE.InstDims dims "Binding expression e.g. for parameters" ;
-      DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
-      DAE.Stream streamPrefix "stream or no strem" ;
+      DAE.ConnectorType ct;
       list<Absyn.Path> f "the list of classes";
       Option<DAE.VariableAttributes> vAttr;
       Option<SCode.Comment> com "comment";
@@ -999,11 +998,11 @@ algorithm
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
     // variables
     case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,
-                            flowPrefix,streamPrefix,source,vAttr,com,inOut)
+                            ct,source,vAttr,com,inOut)
        :: rest,localAccList,pre)
     equation
       (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
-      elem = DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,flowPrefix,streamPrefix,source,vAttr,com,inOut);
+      elem = DAE.VAR(cRef,v1,v2,prl,prot,ty,binding,dims,ct,source,vAttr,com,inOut);
       localAccList = listAppend(localAccList,List.create(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,ih,rest,localAccList,pre);
     then (localCache,temp);

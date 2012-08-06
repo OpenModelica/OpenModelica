@@ -1869,7 +1869,7 @@ algorithm
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM(), parallelism = SCode.NON_PARALLEL()),_,DAE.UNBOUND(),_,_,_,_,_) 
+        (cache,DAE.ATTR(connectorType = SCode.POTENTIAL(), parallelism = SCode.NON_PARALLEL()),_,DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info)) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, ci_state, i, v, sl, source, initial_, impl, unrollForLoops);
@@ -3023,8 +3023,7 @@ algorithm
       DAE.Type t1,t2;
       DAE.Properties prop1,prop2;
       DAE.Attributes attr1,attr2;
-      SCode.Flow flowPrefix1,flowPrefix2;
-      SCode.Stream streamPrefix1,streamPrefix2;
+      SCode.ConnectorType ct1, ct2;
       Boolean impl;
       DAE.Type ty1,ty2;
       Connect.Face f1,f2;
@@ -3083,8 +3082,8 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,_,io1,_),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,attr1 as DAE.ATTR(ct1,prl1,vt1,_,io1,_),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2 as DAE.ATTR(ct2,prl2,vt2,_,io2,_),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1, c1_2, info) "Check that the type of the connectors are good." ;
         validConnector(ty2, c2_2, info);
         f1 = ConnectUtil.componentFace(env,ih,c1_2);
@@ -3095,7 +3094,7 @@ algorithm
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         // print("\n");
         (cache,_,ih,sets,dae,graph) =
-        connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, flowPrefix1, streamPrefix1, io1, io2, graph, info);
+          connectComponents(cache, env, ih, sets, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, ct1, io1, io2, graph, info);
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3202,8 +3201,7 @@ algorithm
       DAE.Type t1,t2;
       DAE.Properties prop1,prop2;
       DAE.Attributes attr1,attr2,attr;
-      SCode.Flow flowPrefix1,flowPrefix2;
-      SCode.Stream streamPrefix1,streamPrefix2;
+      SCode.ConnectorType ct1, ct2;
       Boolean impl;
       DAE.Type ty1,ty2,ty;
       Connect.Sets sets;
@@ -3237,8 +3235,8 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM()) = attr1;
-        DAE.ATTR(flowPrefix = SCode.NOT_FLOW(), streamPrefix = SCode.NOT_STREAM()) = attr2;
+        DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr1;
+        DAE.ATTR(connectorType = SCode.POTENTIAL()) = attr2;
         true = isExpandableConnectorType(ty1);
         true = isExpandableConnectorType(ty2);
 
@@ -3314,7 +3312,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2,vis2) = attr2;
+        DAE.ATTR(ct2,prl2,vt2,dir2,io2,vis2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
@@ -3347,7 +3345,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
           ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
           // add empty here to connect individual components!
           envComponentEmpty);
@@ -3384,7 +3382,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,dir2,io2,vis2) = attr2;
+        DAE.ATTR(ct2,prl2,vt2,dir2,io2,vis2) = attr2;
         
         // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
@@ -3415,7 +3413,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
             ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), envComponent);
         // ******************************************************************************
         // here we need to update the correct environment.
@@ -3443,7 +3441,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix1,streamPrefix1,prl1,vt1,dir1,io1,vis1) = attr1;
+        DAE.ATTR(ct1,prl1,vt1,dir1,io1,vis1) = attr1;
         
         // then connect the components normally.
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
@@ -3454,7 +3452,7 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
-           SCode.ATTR({}, flowPrefix1, streamPrefix1, prl1, vt1, Absyn.BIDIR()), 
+           SCode.ATTR({}, ct1, prl1, vt1, Absyn.BIDIR()), 
            vis1, NONE(), {}, NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, SCode.NOT_FINAL(), source, true);
@@ -3766,19 +3764,17 @@ protected function checkConnectTypes
   input DAE.Attributes inRhsAttributes;
   input Absyn.Info inInfo;
 protected
-  SCode.Flow lhs_flow, rhs_flow;
-  SCode.Stream lhs_stream, rhs_stream;
+  SCode.ConnectorType lhs_ct, rhs_ct;
   Absyn.Direction lhs_dir, rhs_dir;
   Absyn.InnerOuter lhs_io, rhs_io;
   SCode.Visibility lhs_vis, rhs_vis;
 algorithm
-  DAE.ATTR(flowPrefix = lhs_flow, streamPrefix = lhs_stream,
-    direction = lhs_dir, innerOuter = lhs_io, visibility = lhs_vis) := inLhsAttributes;
-  DAE.ATTR(flowPrefix = rhs_flow, streamPrefix = rhs_stream,
-    direction = rhs_dir, innerOuter = rhs_io, visibility = rhs_vis) := inRhsAttributes;
+  DAE.ATTR(connectorType = lhs_ct, direction = lhs_dir, innerOuter = lhs_io,
+    visibility = lhs_vis) := inLhsAttributes;
+  DAE.ATTR(connectorType = rhs_ct, direction = rhs_dir, innerOuter = rhs_io,
+    visibility = rhs_vis) := inRhsAttributes;
   checkConnectTypesType(inLhsType, inRhsType, inLhsCref, inRhsCref, inInfo);
-  checkConnectTypesFlowStream(lhs_flow, lhs_stream, rhs_flow, rhs_stream,
-    inLhsCref, inRhsCref, inInfo);
+  checkConnectTypesFlowStream(lhs_ct, rhs_ct, inLhsCref, inRhsCref, inInfo);
   checkConnectTypesDirection(lhs_dir, inLhsFace, lhs_vis, rhs_dir, inRhsFace,
     rhs_vis, inLhsCref, inRhsCref, inInfo);
   checkConnectTypesInnerOuter(lhs_io, rhs_io, inLhsCref, inRhsCref, inInfo);
@@ -3836,43 +3832,44 @@ algorithm
 end checkConnectTypesType;
       
 protected function checkConnectTypesFlowStream
-  input SCode.Flow inLhsFlow;
-  input SCode.Stream inLhsStream;
-  input SCode.Flow inRhsFlow;
-  input SCode.Stream inRhsStream;
+  input SCode.ConnectorType inLhsConnectorType;
+  input SCode.ConnectorType inRhsConnectorType;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inLhsFlow, inLhsStream, inRhsFlow, inRhsStream, inLhsCref,
+  _ := matchcontinue(inLhsConnectorType, inRhsConnectorType, inLhsCref,
       inRhsCref, inInfo)
     local
       String cref_str1, cref_str2;
       list<String> err_strl;
 
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _)
       equation
-        true = SCode.flowEqual(inLhsFlow, inRhsFlow);
-        true = SCode.streamEqual(inLhsStream, inRhsStream);
+        true = SCode.connectorTypeEqual(inLhsConnectorType, inRhsConnectorType);
       then
         ();
 
-    case (_, SCode.NOT_STREAM(), _, SCode.NOT_STREAM(), _, _, _)
+    case (_, _, _, _, _)
       equation
+        true = SCode.flowBool(inLhsConnectorType) or
+               SCode.flowBool(inRhsConnectorType);
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        err_strl = Util.if_(SCode.flowBool(inLhsFlow),
+        err_strl = Util.if_(SCode.flowBool(inLhsConnectorType),
           {cref_str1, cref_str2}, {cref_str2, cref_str1});
         Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW,
           err_strl, inInfo);
       then
         fail(); 
 
-    case (SCode.NOT_FLOW(), _, SCode.NOT_FLOW(), _, _, _, _)
+    case (_, _, _, _, _)
       equation
+        true = SCode.streamBool(inLhsConnectorType) or
+               SCode.streamBool(inRhsConnectorType);
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        err_strl = Util.if_(SCode.streamBool(inLhsStream),
+        err_strl = Util.if_(SCode.streamBool(inLhsConnectorType),
           {cref_str1, cref_str2}, {cref_str2, cref_str1});
         Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM,
           err_strl, inInfo);
@@ -3976,8 +3973,7 @@ public function connectComponents "
   input Connect.Face inFace8;
   input DAE.Type inType9;
   input SCode.Variability vt2;
-  input SCode.Flow inFlowPrefix;
-  input SCode.Stream inStreamPrefix;
+  input SCode.ConnectorType inConnectorType;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3990,7 +3986,7 @@ public function connectComponents "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inFlowPrefix,inStreamPrefix,io1,io2,inGraph,info)
+  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inConnectorType,io1,io2,inGraph,info)
     local
       DAE.ComponentRef c1_1,c2_1,c1,c2;
       Connect.Sets sets_1,sets;
@@ -4001,8 +3997,7 @@ algorithm
       DAE.Dimension dim1,dim2;
       DAE.DAElist dae;
       list<DAE.Var> l1,l2;
-      SCode.Flow flowPrefix;
-      SCode.Stream streamPrefix;
+      SCode.ConnectorType ct;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -4018,8 +4013,9 @@ algorithm
       list<DAE.ComponentRef> crefs1, crefs2;
 
     // connections to outer components
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,SCode.NOT_STREAM(),io1,io2,graph,info)
+    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,ct,io1,io2,graph,info)
       equation
+        false = SCode.streamBool(ct);
         // print("Connecting components: " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +&
         //    ComponentReference.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
         //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
@@ -4044,7 +4040,7 @@ algorithm
         (cache,env,ih,sets,DAEUtil.emptyDae,graph);
         
     // Non-flow and Non-stream type Parameters and constants generate assert statements
-    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,SCode.NOT_FLOW(),SCode.NOT_STREAM(),io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,SCode.POTENTIAL(),io1,io2,graph,info)
       equation
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(t1);
@@ -4067,7 +4063,7 @@ algorithm
           }),graph);
 
     // Connection of two components of basic type.
-    case (cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2, t2, vt2, _, _, io1, io2, graph, info)
+    case (cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2, t2, vt2, _, io1, io2, graph, info)
       equation
         true = Types.basicType(t1);
         true = Types.basicType(t2);
@@ -4075,7 +4071,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
 
-        sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inFlowPrefix, inStreamPrefix, source);
+        sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
@@ -4083,7 +4079,7 @@ algorithm
     case (cache,env,ih,sets,pre,
         c1,f1,DAE.T_ARRAY(dims = {dim1}, ty = t1),vt1,
         c2,f2,DAE.T_ARRAY(dims = {dim2}, ty = t2),vt2,
-        flowPrefix as SCode.NOT_FLOW(), streamPrefix as SCode.NOT_STREAM(),io1,io2,graph,info)
+        ct as SCode.POTENTIAL(),io1,io2,graph,info)
       equation
         DAE.T_COMPLEX(complexClassType=_) = Types.arrayElementType(t1);
         DAE.T_COMPLEX(complexClassType=_) = Types.arrayElementType(t2);
@@ -4094,8 +4090,8 @@ algorithm
         crefs1 = ComponentReference.expandCref(c1,false);
         crefs2 = ComponentReference.expandCref(c2,false);
         (cache, _, ih, sets_1, dae, graph) = connectArrayComponents(cache, env,
-          ih, sets, pre, crefs1, f1, t1, vt1, io1, crefs2, f2, t2, vt2, io2,
-          flowPrefix, streamPrefix, graph, info);
+          ih, sets, pre, crefs1, f1, t1, vt1, io1, crefs2, f2, t2, vt2, io2, ct,
+          graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4103,7 +4099,7 @@ algorithm
     case (cache,env,ih,sets,pre,
         c1, f1, t1 as DAE.T_ARRAY(ty = _), vt1,
         c2, f2, t2 as DAE.T_ARRAY(ty = _), vt2,
-        flowPrefix,streamPrefix,io1,io2,graph,info)
+        ct,io1,io2,graph,info)
       equation
         dims = Types.getDimensions(t1);
         dims2 = Types.getDimensions(t2);
@@ -4112,27 +4108,22 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
 
-        sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source,
-          flowPrefix, streamPrefix);
+        sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     // Connection of connectors with an equality constraint.
     case (cache,env,ih,sets,pre,c1,f1,t1 as DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,idim1,inlineType1))),vt1,
                                 c2,f2,t2 as DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,idim2,inlineType2))),vt2,
-                                flowPrefix as SCode.NOT_FLOW(), streamPrefix as SCode.NOT_STREAM(),io1,io2,
+                                ct as SCode.POTENTIAL(),io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         // Connect components ignoring equality constraints
         (cache,env,ih,sets_1,dae,_) =
-        connectComponents(
-          cache, env, ih, sets, pre,
-          c1, f1, t1, vt1,
-          c2, f2, t2, vt2,
-          flowPrefix, streamPrefix, 
-          io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
+        connectComponents(cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2,
+          t2, vt2, ct, io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4165,29 +4156,31 @@ algorithm
         (cache,env,ih,sets_1,dae,graph);
 
     // Complex types t1 extending basetype
-    case (cache,env,ih,sets,pre,c1,f1,DAE.T_SUBTYPE_BASIC(complexType = bc_tp1),vt1,c2,f2,t2,vt2,
-           flowPrefix,streamPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,DAE.T_SUBTYPE_BASIC(complexType = bc_tp1),vt1,c2,f2,t2,vt2, ct,io1,io2,graph,info)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets, pre, c1, f1, bc_tp1, vt1, c2, f2, t2, vt2, flowPrefix, streamPrefix, io1, io2, graph, info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets,
+            pre, c1, f1, bc_tp1, vt1, c2, f2, t2, vt2, ct, io1, io2, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     // Complex types t2 extending basetype
-    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,DAE.T_SUBTYPE_BASIC(complexType = bc_tp2),vt2,flowPrefix,streamPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,DAE.T_SUBTYPE_BASIC(complexType = bc_tp2),vt2,ct,io1,io2,graph,info)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2, bc_tp2, vt2, flowPrefix, streamPrefix, io1, io2, graph, info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets,
+            pre, c1, f1, t1, vt1, c2, f2, bc_tp2, vt2, ct, io1, io2, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     // Connection of complex connector, e.g. Pin 
-    case (cache,env,ih,sets,pre,c1,f1,DAE.T_COMPLEX(varLst = l1),vt1,c2,f2,DAE.T_COMPLEX(varLst = l2),vt2,_,_,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,DAE.T_COMPLEX(varLst = l1),vt1,c2,f2,DAE.T_COMPLEX(varLst = l2),vt2,ct,io1,io2,graph,info)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectVars(cache, env, ih, sets, pre, c1, f1, l1, vt1, c2, f2, l2, vt2, inFlowPrefix, inStreamPrefix, io1, io2, graph, info);
+        (cache,_,ih,sets_1,dae,graph) = connectVars(cache, env, ih, sets, pre,
+            c1, f1, l1, vt1, c2, f2, l2, vt2, ct, io1, io2, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     // Error 
-    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,io1,io2,_,info)
+    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,io1,io2,_,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -4201,7 +4194,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_,_)
+    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.connectComponents failed\n");
       then
@@ -4225,8 +4218,7 @@ protected function connectArrayComponents
   input DAE.Type inRhsType;
   input SCode.Variability inRhsVar;
   input Absyn.InnerOuter inRhsIO;
-  input SCode.Flow inFlow;
-  input SCode.Stream inStream;
+  input SCode.ConnectorType inConnectorType;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
@@ -4240,7 +4232,7 @@ algorithm
   match(inCache, inEnv, inIH, inSets, inPrefix, 
       inLhsCrefs, inLhsFace, inLhsType, inLhsVar, inLhsIO, 
       inRhsCrefs, inRhsFace, inRhsType, inRhsVar, inRhsIO, 
-      inFlow, inStream, inGraph, inInfo)
+      inConnectorType, inGraph, inInfo)
     local
       DAE.ComponentRef lhs, rhs;
       list<DAE.ComponentRef> rest_lhs, rest_rhs;
@@ -4252,16 +4244,16 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
 
     case (_, _, _, _, _, lhs :: rest_lhs, _, _, _, _, rhs :: rest_rhs, _, _, _,
-        _, _, _, _, _)
+        _, _, _, _)
       equation
         (cache, env, ih, sets, dae1, graph) = connectComponents(inCache, inEnv,
           inIH, inSets, inPrefix, lhs, inLhsFace, inLhsType, inLhsVar, rhs,
-          inRhsFace, inRhsType, inRhsVar, inFlow, inStream, inLhsIO, inRhsIO,
+          inRhsFace, inRhsType, inRhsVar, inConnectorType, inLhsIO, inRhsIO,
           inGraph, inInfo);
         (cache, env, ih, sets, dae2, graph) = connectArrayComponents(cache,
           env, ih, sets, inPrefix, rest_lhs, inLhsFace, inLhsType, inLhsVar,
-          inLhsIO, rest_rhs, inRhsFace, inRhsType, inRhsVar, inRhsIO, inFlow,
-          inStream, graph, inInfo);
+          inLhsIO, rest_rhs, inRhsFace, inRhsType, inRhsVar, inRhsIO,
+          inConnectorType, graph, inInfo);
         dae1 = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache, env, ih, sets, dae1, graph);
@@ -4289,8 +4281,7 @@ protected function connectVars
   input Connect.Face inFace7;
   input list<DAE.Var> inTypesVarLst8;
   input SCode.Variability vt2;
-  input SCode.Flow inFlowPrefix;
-  input SCode.Stream inStreamPrefix;
+  input SCode.ConnectorType inConnectorType;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -4303,7 +4294,7 @@ protected function connectVars
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,inFlowPrefix,inStreamPrefix,io1,io2,inGraph,info)
+  match (inCache,inEnv,inIH,inSets,inPrefix,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,inConnectorType,io1,io2,inGraph,info)
     local
       Connect.Sets sets,sets_1,sets_2;
       list<Env.Frame> env;
@@ -4312,8 +4303,7 @@ algorithm
       Connect.Face f1,f2;
       String n;
       DAE.Attributes attr1,attr2;
-      SCode.Flow flow1,flow2;
-      SCode.Stream stream1;
+      SCode.ConnectorType ct;
       DAE.Type ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
@@ -4322,47 +4312,35 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,sets,_,_,_,{},vt1,_,_,{},vt2,_,_,io1,io2,graph,info)
+    case (cache,env,ih,sets,_,_,_,{},vt1,_,_,{},vt2,_,io1,io2,graph,info)
       then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
     case (cache,env,ih,sets,_,c1,f1,
-        (DAE.TYPES_VAR(name = n,attributes =(attr1 as DAE.ATTR(flowPrefix = flow1, streamPrefix = stream1,variability = vta)),ty = ty1) :: xs1),vt1,c2,f2,
-        (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),ty = ty2) :: xs2),vt2,_,_,io1,io2,graph,info)
+        (DAE.TYPES_VAR(name = n,attributes =(attr1 as DAE.ATTR(connectorType = ct,variability = vta)),ty = ty1) :: xs1),vt1,c2,f2,
+        (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),ty = ty2) :: xs2),vt2,_,io1,io2,graph,info)
       equation
         ty_2 = Types.simplifyType(ty1);
-        flow1 = propagateFlow(inFlowPrefix, flow1);
-        stream1 = propagateStream(inStreamPrefix, stream1);
+        ct = propagateConnectorType(inConnectorType, ct);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty_2);
         c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty_2);
         checkConnectTypes(c1_1, ty1, f1, attr1, c2_1, ty2, f2, attr2, info);
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, inPrefix, c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, flow1, stream1, io1, io2, graph, info);
-        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, inPrefix, c1, f1, xs1,vt1, c2, f2, xs2, vt2, inFlowPrefix, inStreamPrefix, io1, io2, graph, info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, inPrefix, c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, ct, io1, io2, graph, info);
+        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, inPrefix, c1, f1, xs1,vt1, c2, f2, xs2, vt2, inConnectorType, io1, io2, graph, info);
         dae_1 = DAEUtil.joinDaes(dae, dae2);
       then
         (cache,env,ih,sets_2,dae_1,graph);
   end match;
 end connectVars;
 
-protected function propagateFlow
-  input SCode.Flow inCompFlow;
-  input SCode.Flow inSubCompFlow;
-  output SCode.Flow outSubCompFlow;
+protected function propagateConnectorType
+  input SCode.ConnectorType inConnectorType;
+  input SCode.ConnectorType inSubConnectorType;
+  output SCode.ConnectorType outSubConnectorType;
 algorithm
-  outSubCompFlow := match(inCompFlow, inSubCompFlow)
-    case (SCode.FLOW(), _) then inCompFlow;
-    else inSubCompFlow;
+  outSubConnectorType := match(inConnectorType, inSubConnectorType)
+    case (SCode.POTENTIAL(), _) then inSubConnectorType;
+    else inConnectorType;
   end match;
-end propagateFlow;
-
-protected function propagateStream
-  input SCode.Stream inCompStream;
-  input SCode.Stream inSubCompStream;
-  output SCode.Stream outSubCompStream;
-algorithm
-  outSubCompStream := match(inCompStream, inSubCompStream)
-    case (SCode.STREAM(), _) then inCompStream;
-    else inSubCompStream;
-  end match;
-end propagateStream;
+end propagateConnectorType;
 
 protected function expandArrayDimension
   "Expands an array into elements given a dimension, i.e.

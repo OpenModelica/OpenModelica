@@ -205,8 +205,7 @@ algorithm
       Absyn.ArrayDim ad;
       Absyn.Direction direction;
       SCode.Final fin;
-      SCode.Flow fp;
-      SCode.Stream sp;
+      SCode.ConnectorType ct;
       Option<Absyn.Exp> cond;
       SCode.Partial pp;
       SCode.Encapsulated ep;
@@ -224,13 +223,13 @@ algorithm
 
     case (_, SCode.COMPONENT(name = n,
                              prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
-                             attributes = SCode.ATTR(ad, fp, sp, prl, var, direction),
+                             attributes = SCode.ATTR(ad, ct, prl, var, direction),
                              typeSpec = typath,
                              modifications = mod,
                              condition = cond), inMod)
       equation
         s1 = visibilityStr(vis) +& redeclareStr(red) +& finalStr(fin) +& ioStr(io) +& replaceableStr(rep);
-        s2 = flowStr(fp) +& streamStr(sp) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);    
+        s2 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);    
         s3 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod);
         s4 = Dump.unparseComponentCondition(cond);  
         res = stringAppendList({s1, "|", s2, "|", s3, s4});
@@ -238,10 +237,10 @@ algorithm
         res;
 
     // derived
-    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, fp, sp, prl, var, direction))), inMod)
+    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, ct, prl, var, direction))), inMod)
       equation
         true = stringEq(inName, SCodeFlat.derivedName);
-        s1 = flowStr(fp) +& streamStr(sp) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
+        s1 = connectorTypeStr(ct) +& parallelismStr(prl) +& variabilityStr(var) +& directionStr(direction);
         s2 = Dump.unparseTypeSpec(typath) +& Dump.printArraydimStr(ad) +& SCodeDump.printModStr(mod) +& SCodeDump.printModStr(inMod); 
         res = stringAppendList({s1, "|", s2});
       then
@@ -383,25 +382,16 @@ algorithm
   end match;
 end replaceableStr;
 
-public function flowStr
-  input SCode.Flow inFlow;
+public function connectorTypeStr
+  input SCode.ConnectorType inConnectorType;
   output String str;
 algorithm
-  str := match(inFlow)
-    case (SCode.FLOW()) then "f";
-    case (SCode.NOT_FLOW()) then "x";
+  str := match(inConnectorType)
+    case SCode.POTENTIAL() then "x";
+    case SCode.FLOW() then "f";
+    case SCode.STREAM() then "s";
   end match;
-end flowStr;
-
-public function streamStr
-  input SCode.Stream inStream;
-  output String str;
-algorithm
-  str := match(inStream)
-    case (SCode.STREAM()) then "s";
-    case (SCode.NOT_STREAM()) then "x";
-  end match;
-end streamStr;
+end connectorTypeStr;
 
 protected function directionStr
   input Absyn.Direction inDirection;

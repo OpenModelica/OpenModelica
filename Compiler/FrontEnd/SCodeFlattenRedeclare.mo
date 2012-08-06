@@ -1116,21 +1116,19 @@ protected function propagateAttributes
   output SCode.Attributes outNewAttributes;
 protected
   Absyn.ArrayDim dims1, dims2;
-  SCode.Flow fp1, fp2;
-  SCode.Stream sp1, sp2;
+  SCode.ConnectorType ct1, ct2;
   SCode.Parallelism prl1,prl2;
   SCode.Variability var1, var2;
   Absyn.Direction dir1, dir2;
 algorithm
-  SCode.ATTR(dims1, fp1, sp1, prl1, var1, dir1) := inOriginalAttributes;
-  SCode.ATTR(dims2, fp2, sp2, prl2, var2, dir2) := inNewAttributes;
+  SCode.ATTR(dims1, ct1, prl1, var1, dir1) := inOriginalAttributes;
+  SCode.ATTR(dims2, ct2, prl2, var2, dir2) := inNewAttributes;
   dims2 := propagateArrayDimensions(dims1, dims2);
-  fp2 := propagateFlowPrefix(fp1, fp2);
-  sp2 := propagateStreamPrefix(sp1, sp2);
+  ct2 := propagateConnectorType(ct1, ct2);
   prl2 := propagateParallelism(prl1,prl2);
   var2 := propagateVariability(var1, var2);
   dir2 := propagateDirection(dir1, dir2);
-  outNewAttributes := SCode.ATTR(dims2, fp2, sp2, prl2, var2, dir2);
+  outNewAttributes := SCode.ATTR(dims2, ct2, prl2, var2, dir2);
 end propagateAttributes;
 
 protected function propagateArrayDimensions
@@ -1144,27 +1142,16 @@ algorithm
   end match;
 end propagateArrayDimensions;
 
-protected function propagateFlowPrefix
-  input SCode.Flow inOriginalFlow;
-  input SCode.Flow inNewFlow;
-  output SCode.Flow outNewFlow;
+protected function propagateConnectorType
+  input SCode.ConnectorType inOriginalConnectorType;
+  input SCode.ConnectorType inNewConnectorType;
+  output SCode.ConnectorType outNewConnectorType;
 algorithm
-  outNewFlow := match(inOriginalFlow, inNewFlow)
-    case (_, SCode.NOT_FLOW()) then inOriginalFlow;
-    else inNewFlow;
+  outNewConnectorType := match(inOriginalConnectorType, inNewConnectorType)
+    case (_, SCode.POTENTIAL()) then inOriginalConnectorType;
+    else inNewConnectorType;
   end match;
-end propagateFlowPrefix;
-
-protected function propagateStreamPrefix
-  input SCode.Stream inOriginalStream;
-  input SCode.Stream inNewStream;
-  output SCode.Stream outNewStream;
-algorithm
-  outNewStream := match(inOriginalStream, inNewStream)
-    case (_, SCode.NOT_STREAM()) then inOriginalStream;
-    else inNewStream;
-  end match;
-end propagateStreamPrefix;
+end propagateConnectorType;
 
 protected function propagateParallelism
   input SCode.Parallelism inOriginalParallelism;

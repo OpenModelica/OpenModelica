@@ -248,8 +248,7 @@ package InstTypes
       SCode.Final finalPrefix;
       Absyn.InnerOuter innerOuter;
       tuple<Absyn.Direction, Absyn.Info> direction;
-      tuple<SCode.Flow, Absyn.Info> flowPrefix;
-      tuple<SCode.Stream, Absyn.Info> streamPrefix;
+      tuple<SCode.ConnectorType, Absyn.Info> connectorType;
       VarArgs varArgs;
     end PREFIXES;
   end Prefixes;
@@ -268,8 +267,7 @@ package InstTypes
       SCode.Final finalPrefix;
       Absyn.InnerOuter innerOuter;
       DAE.VarDirection direction;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType connectorType;
     end DAE_PREFIXES;
   end DaePrefixes;
 

@@ -800,8 +800,7 @@ algorithm
      local 
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       SCode.Flow flowPrefix;
-       SCode.Stream streamPrefix;
+       SCode.ConnectorType ct;
        DAE.DAElist dae;
        InstHierarchy ih;
        Connect.SetTrie sets;
@@ -820,12 +819,12 @@ algorithm
     // if it was not added, add it (search for both components)
     case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix = flowPrefix,streamPrefix = streamPrefix, variability = vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(sets, sc, cl, {}, {}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(sets, sc, cl, {}, {}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,ConnectionGraph.EMPTY,info);
         // TODO: take care of dae, can contain asserts from connections
       then
         Connect.SETS(sets, sc, cl, cc, oc);
@@ -870,8 +869,7 @@ algorithm
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       SCode.Flow flowPrefix;
-       SCode.Stream streamPrefix;
+       SCode.ConnectorType ct;
        DAE.DAElist dae;
        InstHierarchy ih;
        Connect.SetTrie sets;
@@ -890,7 +888,7 @@ algorithm
     // if it was not added, add it (first component found: cr1)
     case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
         t2 = t1;
         vt2 = vt1;
@@ -900,8 +898,7 @@ algorithm
         InstSection.connectComponents(
           cache,env,ih,
           Connect.SETS(sets, sc, cl, {}, {}),
-          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,
-          io1,io2,ConnectionGraph.EMPTY,info);
+          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,ConnectionGraph.EMPTY,info);
         // TODO: take care of dae, can contain asserts from connections
       then
         Connect.SETS(sets, sc, cl, cc, oc);
@@ -910,7 +907,7 @@ algorithm
     case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         pre = Prefix.NOPRE();
-        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
         io1 = removeOuter(io1);
@@ -919,7 +916,7 @@ algorithm
         InstSection.connectComponents(
           cache,env,ih,
           Connect.SETS(sets, sc, cl, {}, {}),
-          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,
+          pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,
           io1,io2,ConnectionGraph.EMPTY,info);
         // TODO: take care of dae, can contain asserts from connections
       then
@@ -1304,8 +1301,7 @@ public function switchInnerToOuterAndPrefix
       DAE.Type t;
       Option<DAE.Exp> e;
       list<DAE.Subscript> id;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
@@ -1331,8 +1327,7 @@ public function switchInnerToOuterAndPrefix
                    ty = t,
                    binding = e,
                    dims = id,
-                   flowPrefix = flowPrefix,
-                   streamPrefix = streamPrefix,
+                   connectorType = ct,
                    source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
@@ -1341,7 +1336,7 @@ public function switchInnerToOuterAndPrefix
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
-        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
 
     // If var already have inner/outer, keep it.
     case ( (v as DAE.VAR(componentRef = _)) :: r,io,pre)
@@ -1382,8 +1377,7 @@ public function prefixOuterDaeVars
       DAE.Type t;
       Option<DAE.Exp> e;
       list<DAE.Subscript> id;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
@@ -1407,8 +1401,7 @@ public function prefixOuterDaeVars
                    ty = t,
                    binding = e,
                    dims = id,
-                   flowPrefix = flowPrefix,
-                   streamPrefix = streamPrefix,
+                   connectorType = ct,
                    source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
@@ -1417,7 +1410,7 @@ public function prefixOuterDaeVars
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
-        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
 
     // Traverse components
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),crefPrefix)
@@ -1546,8 +1539,7 @@ algorithm
       Env.InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
       Env.Env env "The environment of the instantiated component. Contains e.g. all sub components";
 
-      SCode.Flow flowPrefix "flow" ;
-      SCode.Stream streamPrefix "stream" ;
+      SCode.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
@@ -1556,16 +1548,16 @@ algorithm
     // inner
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER(), visibility);
+        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
+        attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
     
     // inner outer
     case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
-        DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
-        attributes = DAE.ATTR(flowPrefix, streamPrefix, parallelism, variability, direction, Absyn.OUTER(), visibility);
+        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
+        attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
       then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
 

@@ -988,10 +988,9 @@ algorithm
       DAE.ElementSource source "origin of variable" ;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
-      DAE.Flow fl;
-      DAE.Stream str;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),bindExp) then 
-      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,indx,source,attr,cmt,fl,str); 
+      DAE.ConnectorType ct;
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct),bindExp) then 
+      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,indx,source,attr,cmt,ct); 
   end matchcontinue;
 end setVarBindingOpt;
 
@@ -1019,10 +1018,9 @@ algorithm
       DAE.ElementSource source "origin of variable" ;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
-      DAE.Flow fl;
-      DAE.Stream str;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str),cr) then 
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,fl,str); 
+      DAE.ConnectorType ct;
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct),cr) then 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct); 
   end matchcontinue;
 end setVarCref;
 
@@ -1129,16 +1127,15 @@ algorithm
       list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      DAE.Flow flowPrefix;
       HashTable.HashTable mvars;
     case ({},knvars,_) then ({},knvars); 
-    case (((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)) :: vs),knvars,mvars)
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation 
         _ = BaseHashTable.get(cr,mvars) "alg var moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         (vs_1,(v :: knvars_1));
-    case (((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)) :: vs),knvars,mvars)
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation 
         failure(_ = BaseHashTable.get(cr,mvars)) "alg var not moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);

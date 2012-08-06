@@ -359,7 +359,7 @@ algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
   backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},0,
-                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
 end makeIterVariable;
 
 protected function checkEquationSize"function: checkEquationSize
@@ -1076,74 +1076,73 @@ algorithm
   matchcontinue (inTpl)      
     local
       BackendDAE.Value nx,ny,ny_string, ny_int, ny_bool;
-      DAE.Flow flowPrefix;
       Var var;
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE()),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
     
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
      
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
                  
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE()),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.STATE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.STATE()),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx+1,ny,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
@@ -1209,8 +1208,7 @@ algorithm
       DAE.ElementSource src;
       Option<DAE.VariableAttributes> va;
       Option<SCode.Comment> c;
-      DAE.Flow fp;
-      DAE.Stream sp;
+      DAE.ConnectorType ct;
       Values.Value v;
     case (var as BackendDAE.VAR(bindValue = SOME(_)), _, _, _)
       equation
@@ -1221,7 +1219,7 @@ algorithm
         var;      
     case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
           varType = ty, bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
-          values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
+          values = va, comment = c, connectorType = ct), cache, env, _)
       equation
         // wbraun: Evaluate parameter expressions only if they are
         //         constant at compile time otherwise we solve them 
@@ -1230,7 +1228,7 @@ algorithm
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, env, e, false, NONE(), Ceval.NO_MSG());
       then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);        
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, idx, src, va, c, ct);        
     else inVar;
   end matchcontinue;
 end calculateValue;
@@ -7793,25 +7791,24 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> values;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
     
     case (NONE(),_,_) then (NONE(),inTypeA);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,ct)),_,_)
       equation
         ((e1,ext_arg_1)) = func((e1,inTypeA));
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);        
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_2);        
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,ct)),ext_arg_2);
     
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,ct)),_,_)
       equation
         (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);        
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_2);
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,index,source,attr,comment,ct)),ext_arg_2);
     
     else
       equation

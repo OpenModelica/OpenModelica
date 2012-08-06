@@ -1404,8 +1404,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.InstDims arrayDim;
@@ -1423,8 +1422,7 @@ algorithm
                      source = source,
                      values = dae_var_attr,
                      comment = comment,
-                     flowPrefix = flowPrefix,
-                     streamPrefix = streamPrefix)) :: xs),varno)
+                     connectorType = ct)) :: xs),varno)
       equation
         varnostr = intString(varno);
         print(varnostr);
@@ -1437,7 +1435,7 @@ algorithm
         print(":");
         dumpKind(kind);
         print("(");
-        dumpFlow(flowPrefix);
+        dumpConnectorType(ct);
         dumpAttributes(dae_var_attr);
         print(") ");
         paths = DAEUtil.getElementSourceTypes(source);
@@ -1473,8 +1471,7 @@ algorithm
                      source = source,
                      values = dae_var_attr,
                      comment = comment,
-                     flowPrefix = flowPrefix,
-                     streamPrefix = streamPrefix)) :: xs),varno)
+                     connectorType = ct)) :: xs),varno)
       equation
         varnostr = intString(varno);
         print(varnostr);
@@ -1491,7 +1488,7 @@ algorithm
         print(":");
         dumpKind(kind);
         print("(");
-        dumpFlow(flowPrefix);
+        dumpConnectorType(ct);
         dumpAttributes(dae_var_attr);
         print(") ");        
         print(path_str);
@@ -1542,16 +1539,15 @@ algorithm
   end match;
 end dumpKind;
 
-public function dumpFlow
-  input DAE.Flow flowPrefix;
+public function dumpConnectorType
+  input DAE.ConnectorType inConnectorType;
 algorithm
-  _:=
-  match(flowPrefix)
+  _ := match(inConnectorType)
     case DAE.FLOW() equation print("flow=true "); then ();
-    case DAE.NON_FLOW() equation print("flow=false "); then ();
-    case DAE.NON_CONNECTOR() equation print(""); then ();
+    case DAE.POTENTIAL() equation print("flow=false "); then ();
+    else ();
   end match;
-end dumpFlow;
+end dumpConnectorType;
 
 public function dumpAttributes
 "function: dumpAttributes

@@ -133,9 +133,9 @@ public constant SCode.Prefixes commonPrefixesNotFinal =
     SCode.NOT_REPLACEABLE()); 
 
 protected
-constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR()); 
-constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
-constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
+constant SCode.Attributes attrConst = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR()); 
+constant SCode.Attributes attrParam = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
+constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
 /*
 - The primitive types
   These are the primitive types that are used to build the types
@@ -262,22 +262,22 @@ protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefi
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
           
 /* Optimica Extensions. Theses variables are considered builtin for Optimica: startTime, finalTime and objective */
 protected constant DAE.Var startTimeVar = DAE.TYPES_VAR("startTime",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var finalTimeVar = DAE.TYPES_VAR("finalTime",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
+          DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
           
           

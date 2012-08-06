@@ -528,25 +528,16 @@ algorithm
   end match;
 end printInitialStr;
 
-public function flowStr
-  input SCode.Flow inFlow;
+public function connectorTypeStr
+  input SCode.ConnectorType inConnectorType;
   output String str;
 algorithm
-  str := match(inFlow)
-    case (SCode.FLOW()) then "flow";
-    case (SCode.NOT_FLOW()) then "";
+  str := match(inConnectorType)
+    case SCode.POTENTIAL() then "";
+    case SCode.FLOW() then "flow";
+    case SCode.STREAM() then "stream";
   end match;
-end flowStr;
-
-public function streamStr
-  input SCode.Stream inStream;
-  output String str;
-algorithm
-  str := match(inStream)
-    case (SCode.STREAM()) then "stream";
-    case (SCode.NOT_STREAM()) then "";
-  end match;
-end streamStr;
+end connectorTypeStr;
 
 public function encapsulatedStr
   input SCode.Encapsulated inEncapsulated;

@@ -392,22 +392,40 @@ algorithm
       Absyn.Parallelism p;
       Absyn.ArrayDim adim,extraADim;
       Absyn.Direction dir;
-      SCode.Flow sf;
-      SCode.Stream ss;
+      SCode.ConnectorType ct;
       SCode.Parallelism sp;
       SCode.Variability sv;
       
     case (Absyn.ATTR(f, s, p, v, dir, adim),extraADim)
       equation
-        sf = SCode.boolFlow(f);
-        ss = SCode.boolStream(s);
+        ct = translateConnectorType(f, s);
         sv = translateVariability(v);
         sp = translateParallelism(p);
         adim = listAppend(extraADim, adim);
       then
-        SCode.ATTR(adim, sf, ss, sp, sv, dir);
+        SCode.ATTR(adim, ct, sp, sv, dir);
   end matchcontinue;
 end translateAttributes;
+
+protected function translateConnectorType
+  input Boolean inFlow;
+  input Boolean inStream;
+  output SCode.ConnectorType outType;
+algorithm
+  outType := match(inFlow, inStream)
+    case (false, false) then SCode.POTENTIAL();
+    case (true, false) then SCode.FLOW();
+    case (false, true) then SCode.STREAM();
+    // Both flow and stream is not allowed by the grammar, so this shouldn't be
+    // possible.
+    case (true, true)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"SCodeUtil.translateConnectorType got both flow and stream prefix."});
+      then
+        fail();
+  end match;
+end translateConnectorType;
 
 protected function translateClassdef
 "function: translateClassdef
@@ -1349,8 +1367,7 @@ algorithm
       SCode.Encapsulated sEnc;
       SCode.Partial sPar;
       SCode.Visibility vis;
-      SCode.Flow sFl;
-      SCode.Stream sSt;
+      SCode.ConnectorType ct;
       Option<SCode.ConstrainClass> scc;
 
 
@@ -1429,12 +1446,11 @@ algorithm
         sRed = SCode.boolRedeclare(redecl);
         scc = translateConstrainClass(cc);
         sRep = Util.if_(repl_1,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
-        sFl = SCode.boolFlow(fl);
-        sSt = SCode.boolStream(st);
+        ct = translateConnectorType(fl, st);
       then
         (SCode.COMPONENT(n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          SCode.ATTR(tot_dim,sFl,sSt,prl1,var1,di),
+          SCode.ATTR(tot_dim,ct,prl1,var1,di),
           t,mod,comment_1,cond,info) :: xs_1);
 
     case (cc,finalPrefix,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
@@ -2307,7 +2323,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
-                      SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()),
+                      SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR()),
                       NONE());
   elt := SCode.CLASS(
            str,

@@ -375,25 +375,24 @@ algorithm
       Integer index;
       Option<DAE.VariableAttributes> values,values1;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       BackendDAE.Var var;
       DAE.ElementSource source;
       Option<DAE.Exp> bind;
 
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct),fns)
       equation
         (bind,source) = inlineExpOpt(bind,fns,source);
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source) = inlineExp(startv,fns,source);
         values1 = DAEUtil.setStartAttr(values,startv_1);
       then
-        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix);
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix),fns)
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values1,comment,ct);
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct),fns)
       equation
         (bind,source) = inlineExpOpt(bind,fns,source);
       then
-        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct);
     case(var,_) then var;
   end matchcontinue;
 end inlineVar;
@@ -574,8 +573,7 @@ algorithm
       DAE.Type ty;
       DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
       DAE.InstDims dims;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
@@ -588,11 +586,11 @@ algorithm
       DAE.Function f1,f2;      
 
     case ({},_) then {};
-    case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
+    case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
                  source,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
         (binding_1,source) = inlineExp(binding,fns,source);
-        res = DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,
+        res = DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,ct,
                       source,variableAttributesOption,absynCommentOption,innerOuter);
         cdr_1 = inlineDAEElements(cdr,fns);
       then

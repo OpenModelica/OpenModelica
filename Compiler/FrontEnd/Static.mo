@@ -4166,24 +4166,13 @@ algorithm
     // Operand is a stream variable, ok!
     case (_, _, DAE.CREF(componentRef = cr), _, _, _)
       equation
-        (_, DAE.ATTR(streamPrefix = SCode.STREAM()), _, _, _, _, _, _, _) =
+        (_, DAE.ATTR(connectorType = SCode.STREAM()), _, _, _, _, _, _, _) =
           Lookup.lookupVar(inCache, inEnv, cr);
       then
         ();
     // Operand is not a stream variable, error!
-    case (_, _, DAE.CREF(componentRef = cr), _, _, _)
-      equation
-        (_, DAE.ATTR(streamPrefix = SCode.NOT_STREAM()), _, _, _, _, _, _, _) =
-          Lookup.lookupVar(inCache, inEnv, cr);
-        op_str = ComponentReference.printComponentRefStr(cr);
-        Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
-          {op_str, inOperator}, inInfo);
-      then
-        fail();
-    // Operand is not even a component reference, error!
     else
       equation
-        false = Expression.isCref(inOperand);
         op_str = ExpressionDump.printExpStr(inOperand);
         Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
           {op_str, inOperator}, inInfo);

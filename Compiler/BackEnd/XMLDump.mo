@@ -1964,13 +1964,14 @@ It could be:
  - NonFlow
  - NonConnector
 "
-  input DAE.Flow inVarFlow;
+  input DAE.ConnectorType inVarFlow;
   output String outString;
 algorithm
   outString:=
   match (inVarFlow)
     case DAE.FLOW()          then VAR_FLOW_FLOW;
-    case DAE.NON_FLOW()      then VAR_FLOW_NONFLOW;
+    case DAE.POTENTIAL()     then VAR_FLOW_NONFLOW;
+    case DAE.STREAM()        then VAR_FLOW_NONFLOW;
     case DAE.NON_CONNECTOR() then VAR_FLOW_NONCONNECTOR;
   end match;
 end dumpFlowStr;
@@ -2767,14 +2768,15 @@ It could be:
  - NonStream
  - NonStreamConnector
 "
-  input DAE.Stream inVarStream;
+  input DAE.ConnectorType inVarStream;
   output String outString;
 algorithm
   outString:=
   match (inVarStream)
     case DAE.STREAM()               then VAR_STREAM_STREAM;
-    case DAE.NON_STREAM()           then VAR_STREAM_NONSTREAM;
-    case DAE.NON_STREAM_CONNECTOR() then VAR_STREAM_NONSTREAM_CONNECTOR;
+    case DAE.POTENTIAL()            then VAR_STREAM_NONSTREAM;
+    case DAE.FLOW()                 then VAR_STREAM_NONSTREAM;
+    case DAE.NON_CONNECTOR()        then VAR_STREAM_NONSTREAM_CONNECTOR;
   end match;
 end dumpStreamStr;
 
@@ -3195,8 +3197,7 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -3217,12 +3218,11 @@ algorithm
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
-                            flowPrefix = flowPrefix,
-                            streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
+                            connectorType = ct)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),
-                     dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
+                     intString(indx),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
+                     dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
@@ -3261,8 +3261,7 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -3284,11 +3283,10 @@ algorithm
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
-                            flowPrefix = flowPrefix,
-                            streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,varno,addMMLCode)
+                            connectorType = ct)) :: xs),crefIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
+                        boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the

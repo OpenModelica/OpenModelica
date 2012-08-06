@@ -301,8 +301,7 @@ algorithm
       Option<DAE.Exp> e;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.ElementSource source "the origin of the element";
@@ -317,8 +316,7 @@ algorithm
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
-                            flowPrefix = flowPrefix,
-                            streamPrefix = streamPrefix)) :: {}),varno)
+                            connectorType = ct)) :: {}),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);
@@ -354,8 +352,7 @@ algorithm
                               source = source,
                               values = dae_var_attr,
                               comment = comment,
-                              flowPrefix = flowPrefix,
-                              streamPrefix = streamPrefix)) :: xs),varno)
+                              connectorType = ct)) :: xs),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);

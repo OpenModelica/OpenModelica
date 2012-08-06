@@ -497,16 +497,11 @@ uniontype Partial "the partial prefix"
 end Partial;
 
 public
-uniontype Stream "the stream prefix"
-  record STREAM     "a stream prefix"     end STREAM;
-  record NOT_STREAM "a non stream prefix" end NOT_STREAM;
-end Stream;
-
-public
-uniontype Flow "the flow prefix"
-  record FLOW     "a flow prefix"     end FLOW;
-  record NOT_FLOW "a non flow prefix" end NOT_FLOW;
-end Flow;
+uniontype ConnectorType
+  record POTENTIAL "No connector type prefix." end POTENTIAL;
+  record FLOW "A flow prefix." end FLOW;
+  record STREAM "A stream prefix." end STREAM;
+end ConnectorType;
 
 public 
 uniontype Prefixes "the common class or component prefixes"
@@ -576,8 +571,7 @@ public
 uniontype Attributes "- Attributes"
   record ATTR "the attributes of the component"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
-    Flow   flowPrefix   "the flow prefix";
-    Stream streamPrefix "the stream prefix";
+    ConnectorType connectorType "The connector type: flow, stream or nothing.";
     Parallelism parallelism "parallelism prefix: parglobal, parlocal, parprivate";
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
@@ -617,9 +611,9 @@ public constant Prefixes defaultPrefixes =
     NOT_REPLACEABLE()); 
 
 public constant Attributes defaultVarAttr =
-  ATTR({}, NOT_FLOW(), NOT_STREAM(), NON_PARALLEL(), VAR(), Absyn.BIDIR());
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.BIDIR());
 public constant Attributes defaultConstAttr =
-  ATTR({}, NOT_FLOW(), NOT_STREAM(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
+  ATTR({}, POTENTIAL(), NON_PARALLEL(), CONST(), Absyn.BIDIR());
  
 // .......... functionality .........
 protected import Util;
@@ -1628,19 +1622,17 @@ algorithm
     local
       Parallelism prl1,prl2;
       Variability var1,var2;
-      Flow fl1,fl2;
-      Stream st1,st2;
+      ConnectorType ct1, ct2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
       
-    case(ATTR(ad1,fl1,st1,prl1,var1,dir1),ATTR(ad2,fl2,st2,prl2,var2,dir2))
+    case(ATTR(ad1,ct1,prl1,var1,dir1),ATTR(ad2,ct2,prl2,var2,dir2))
       equation
         true = arrayDimEqual(ad1,ad2);
-        true = valueEq(fl1,fl2);
+        true = valueEq(ct1, ct2);
         true = parallelismEqual(prl1,prl2);
         true = variabilityEqual(var1,var2);
         true = directionEqual(dir1,dir2);
-        true = valueEq(st1,st2);  // added Modelica 3.1 stream connectors
       then 
         true;
     
@@ -3384,69 +3376,57 @@ algorithm
   end match;
 end boolFinal;
 
-public function flowBool
-  input Flow inFlow;
-  output Boolean bFlow;
+public function connectorTypeEqual
+  input ConnectorType inConnectorType1;
+  input ConnectorType inConnectorType2;
+  output Boolean outEqual;
 algorithm
-  bFlow := match(inFlow)
-    case (FLOW()) then true;
-    case (NOT_FLOW()) then false;
+  outEqual := match(inConnectorType1, inConnectorType2)
+    case (POTENTIAL(), POTENTIAL()) then true;
+    case (FLOW(), FLOW()) then true;
+    case (STREAM(), STREAM()) then true;
+  end match;
+end connectorTypeEqual;
+
+public function flowBool
+  input ConnectorType inConnectorType;
+  output Boolean outFlow;
+algorithm
+  outFlow := match(inConnectorType)
+    case FLOW() then true;
+    else false;
   end match;
 end flowBool;
 
 public function boolFlow
   input Boolean inBoolFlow;
-  output Flow outFlow;
+  output ConnectorType outFlow;
 algorithm
   outFlow := match(inBoolFlow)
-    case (true) then FLOW();
-    case (false) then NOT_FLOW();
+    case true then FLOW();
+    else POTENTIAL();
   end match;
 end boolFlow;
 
-public function flowEqual
-  input Flow inFlow1;
-  input Flow inFlow2;
-  output Boolean outEqual;
-algorithm
-  outEqual := match(inFlow1, inFlow2)
-    case (FLOW(), FLOW()) then true;
-    case (NOT_FLOW(), NOT_FLOW()) then true;
-    else false;
-  end match;
-end flowEqual;
-
 public function streamBool
-  input Stream inStream;
+  input ConnectorType inStream;
   output Boolean bStream;
 algorithm
   bStream := match(inStream)
-    case (STREAM()) then true;
-    case (NOT_STREAM()) then false;
+    case STREAM() then true;
+    else false;
   end match;
 end streamBool;
 
 public function boolStream
   input Boolean inBoolStream;
-  output Stream outStream;
+  output ConnectorType outStream;
 algorithm
   outStream := match(inBoolStream)
-    case (true) then STREAM();
-    case (false) then NOT_STREAM();
+    case true then STREAM();
+    else POTENTIAL();
   end match;
 end boolStream;
-
-public function streamEqual
-  input Stream inStream1;
-  input Stream inStream2;
-  output Boolean outEqual;
-algorithm
-  outEqual := match(inStream1, inStream2)
-    case (STREAM(), STREAM()) then true;
-    case (NOT_STREAM(), NOT_STREAM()) then true;
-    else false;
-  end match;
-end streamEqual;
 
 public function mergeAttributesFromClass
   input Attributes inAttributes;
@@ -3481,22 +3461,31 @@ algorithm
       Variability v1,v2,v;
       Absyn.Direction d1,d2,d;
       Absyn.ArrayDim ad1,ad2,ad;
-      Flow f1,f2,f;
-      Stream s1,s2,s;
+      ConnectorType ct1, ct2, ct;
     
     case(ele,NONE()) then SOME(ele);
-    case(ATTR(ad1,f1,s1,p1,v1,d1), SOME(ATTR(ad2,f2,s2,p2,v2,d2)))
+    case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(ad2,ct2,p2,v2,d2)))
       equation
-        f = boolFlow(boolOr(flowBool(f1),flowBool(f2)));
-        s = boolStream(boolOr(streamBool(s1),streamBool(s2)));
+        ct = propagateConnectorType(ct1, ct2);
         p = propagateParallelism(p1,p2);
         v = propagateVariability(v1,v2);
         d = propagateDirection(d1,d2);
         ad = ad1; // TODO! CHECK if ad1 == ad2!
       then
-        SOME(ATTR(ad,f,s,p,v,d));
+        SOME(ATTR(ad,ct,p,v,d));
   end match;
 end mergeAttributes;
+
+protected function propagateConnectorType
+  input ConnectorType inConnectorType1;
+  input ConnectorType inConnectorType2;
+  output ConnectorType outConnectorType;
+algorithm
+  outConnectorType := match(inConnectorType1, inConnectorType2)
+    case (_, POTENTIAL()) then inConnectorType1;
+    else inConnectorType2;
+  end match;
+end propagateConnectorType;
 
 protected function propagateParallelism
 "Helper function for mergeAttributes"
@@ -3689,14 +3678,13 @@ public function removeAttributeDimensions
   input Attributes inAttributes;
   output Attributes outAttributes;
 protected
-  Flow f;
-  Stream s;
+  ConnectorType ct;
   Variability v;
   Parallelism p;
   Absyn.Direction d;
 algorithm
-  ATTR(_, f, s, p, v, d) := inAttributes;
-  outAttributes := ATTR({}, f, s, p, v, d);
+  ATTR(_, ct, p, v, d) := inAttributes;
+  outAttributes := ATTR({}, ct, p, v, d);
 end removeAttributeDimensions;
 
 public function setAttributesDirection
@@ -3705,13 +3693,12 @@ public function setAttributesDirection
   output Attributes outAttributes;
 protected
   Absyn.ArrayDim ad;
-  Flow f;
-  Stream s;
+  ConnectorType ct;
   Parallelism p;
   Variability v;
 algorithm
-  ATTR(ad, f, s, p, v, _) := inAttributes;
-  outAttributes := ATTR(ad, f, s, p, v, inDirection);
+  ATTR(ad, ct, p, v, _) := inAttributes;
+  outAttributes := ATTR(ad, ct, p, v, inDirection);
 end setAttributesDirection;
 
 public function attrVariability

@@ -182,7 +182,7 @@ algorithm
       DAE.Exp bindExp,bindExp2,e,e2,e22,e1,e11;
       DAE.InstDims dims;
       DAE.StartValue start;
-      DAE.Flow fl;
+      DAE.ConnectorType ct;
       DAE.ElementSource source "the origin of the element";
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
@@ -194,7 +194,6 @@ algorithm
       list<DAE.Statement> stmts,stmts2;
       DAE.VarParallelism prl;
       DAE.VarVisibility prot;
-      DAE.Stream st;
       Boolean partialPrefix;
       DAE.ExternalDecl extdecl;
       DAE.Function f1,f2;
@@ -207,19 +206,19 @@ algorithm
 
     case ({},repl,condExpFunc) then {};
 
-    case (DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp),dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc)
+    case (DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp),dims,ct,source,attr,cmt,io)::dae,repl,condExpFunc)
       equation
         (bindExp2,_) = replaceExp(bindExp, repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae, repl, condExpFunc);
         attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
         /* TODO: Add operation to source */
-      then DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp2),dims,fl,st,source,attr,cmt,io)::dae2;
+      then DAE.VAR(cr,kind,dir,prl,prot,tp,SOME(bindExp2),dims,ct,source,attr,cmt,io)::dae2;
 
-    case (DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc)
+    case (DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io)::dae,repl,condExpFunc)
       equation
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
         attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
-      then DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,fl,st,source,attr,cmt,io)::dae2;
+      then DAE.VAR(cr,kind,dir,prl,prot,tp,NONE(),dims,ct,source,attr,cmt,io)::dae2;
 
     case (DAE.DEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation

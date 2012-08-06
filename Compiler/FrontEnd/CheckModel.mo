@@ -90,7 +90,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       DAE.VarDirection dir;
-      DAE.Flow flowp;
+      DAE.ConnectorType ct;
       Boolean b;
       list<DAE.ComponentRef> crlst;
       DAE.Algorithm alg;
@@ -115,9 +115,9 @@ algorithm
         (varSize,eqnSize,eqns,hs); 
   
     // variable Variables
-    case (DAE.VAR(componentRef=cr,kind = DAE.VARIABLE(),direction=dir,flowPrefix=flowp,binding=SOME(e1),source=source)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,kind = DAE.VARIABLE(),direction=dir,connectorType = ct,binding=SOME(e1),source=source)::rest,_,_,_,_)
       equation
-        b = topLevelInput(cr,dir,flowp);
+        b = topLevelInput(cr,dir,ct);
         ce = Expression.crefExp(cr);
         size = Util.if_(b,0,1);
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce,e1,source), ieqnslst);
@@ -127,9 +127,9 @@ algorithm
         (varSize,eqnSize,eqns,hs);
   
     // discrete Variables
-    case (DAE.VAR(componentRef=cr,kind = DAE.DISCRETE(),direction=dir,flowPrefix=flowp,binding=SOME(e1),source=source)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,kind = DAE.DISCRETE(),direction=dir,connectorType = ct,binding=SOME(e1),source=source)::rest,_,_,_,_)
       equation
-        b = topLevelInput(cr,dir,flowp);
+        b = topLevelInput(cr,dir,ct);
         ce = Expression.crefExp(cr);
         size = Util.if_(b,0,1);
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce,e1,source), ieqnslst);
@@ -139,9 +139,9 @@ algorithm
         (varSize,eqnSize,eqns,hs);   
     
     // variable Variables
-    case (DAE.VAR(componentRef=cr,kind = DAE.VARIABLE(),direction=dir,flowPrefix=flowp)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,kind = DAE.VARIABLE(),direction=dir,connectorType = ct)::rest,_,_,_,_)
       equation
-        b = topLevelInput(cr,dir,flowp);
+        b = topLevelInput(cr,dir,ct);
         size = Util.if_(b,0,1);
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize+size,ieqnSize,ieqnslst,hs);
@@ -149,9 +149,9 @@ algorithm
         (varSize,eqnSize,eqns,hs);
   
     // discrete Variables
-    case (DAE.VAR(componentRef=cr,kind = DAE.DISCRETE(),direction=dir,flowPrefix=flowp)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,kind = DAE.DISCRETE(),direction=dir,connectorType = ct)::rest,_,_,_,_)
       equation
-        b = topLevelInput(cr,dir,flowp);
+        b = topLevelInput(cr,dir,ct);
         size = Util.if_(b,0,1);
         hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize+size,ieqnSize,ieqnslst,hs);  
@@ -339,10 +339,10 @@ public function topLevelInput
   or if it is an input in a connector instance at top level return true."
   input DAE.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
+  input DAE.ConnectorType inConnectorType;
   output Boolean b;
 algorithm
-  b := matchcontinue (inComponentRef,inVarDirection,inFlow)
+  b := matchcontinue (inComponentRef,inVarDirection,inConnectorType)
     local
       DAE.ComponentRef cr;
       String name;
@@ -351,7 +351,7 @@ algorithm
         {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
       then
         true;
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.NON_FLOW()) /* Connector input variables at top level for crefs that are stringified */
+    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.POTENTIAL()) /* Connector input variables at top level for crefs that are stringified */
       equation
         {_,_} = Util.stringSplitAtChar(name, ".");
       then
@@ -363,7 +363,7 @@ algorithm
         true;
     /* For crefs that are not yet stringified, e.g. lower_known_var */
     case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then true;
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.NON_FLOW()) then true;
+    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.POTENTIAL()) then true;
     else 
       then 
         false;
