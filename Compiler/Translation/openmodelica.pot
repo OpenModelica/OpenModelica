@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-06 09:26+0200\n"
+"POT-Creation-Date: 2012-08-06 11:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2193,13 +2193,14 @@ msgstr ""
 
 #: ../Util/Flags.mo:678
 msgid ""
-"Defines whether plot commands should open OMPlot or just output results."
+"Defines whether plot commands should open OMPlot or show the list of "
+"arguments that would have been sent to OMPlot."
 msgstr ""
 
 #: ../Util/Flags.mo:681
 msgid "Override the locale from the environment."
 msgstr ""
 
-#: ../Main/Main.mo:1116
+#: ../Main/Main.mo:1124
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr ""

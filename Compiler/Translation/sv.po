@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-06 09:26+0200\n"
-"PO-Revision-Date: 2012-08-06 09:56+0100\n"
+"POT-Creation-Date: 2012-08-06 11:04+0200\n"
+"PO-Revision-Date: 2012-08-06 11:11+0100\n"
 "Last-Translator: Martin Sjölund <martin.sjolund@liu.se>\n"
 "Language-Team: Swedish\n"
 "Language: sv\n"
@@ -1890,15 +1890,15 @@ msgstr ""
 
 #: ../Util/Flags.mo:595
 msgid "remove parameter with evalute=true annotation"
-msgstr ""
+msgstr "tar bort parametrar med evaluate=true annotation"
 
 #: ../Util/Flags.mo:596
 msgid "count the mathematic operations of the system"
-msgstr ""
+msgstr "räknar antalen matematiska operationer i systemet"
 
 #: ../Util/Flags.mo:598
 msgid "Generates symbolic jacobian"
-msgstr ""
+msgstr "Skapar symbolisk Jacobian"
 
 #: ../Util/Flags.mo:599
 msgid ""
@@ -1921,19 +1921,19 @@ msgstr ""
 
 #: ../Util/Flags.mo:608
 msgid "Sets the target language for the code generation"
-msgstr ""
+msgstr "Anger målspråket för kodgenerering "
 
 #: ../Util/Flags.mo:611
 msgid "Orders connect equations alphabetically if set."
-msgstr ""
+msgstr "Anger om connect-ekvationer ska sorteras i bokstavsordning."
 
 #: ../Util/Flags.mo:614
 msgid "Prints out extra type information if set."
-msgstr ""
+msgstr "Skriver ut extra typ-information."
 
 #: ../Util/Flags.mo:617
 msgid "Sets whether to split arrays or not."
-msgstr ""
+msgstr "Anger om arrayer ska delas upp eller inte."
 
 #: ../Util/Flags.mo:626
 msgid "Turns on silent mode."
@@ -1945,7 +1945,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:632
 msgid "Sets the number of processors to use."
-msgstr ""
+msgstr "Anger antalet processorer som ska användas."
 
 #: ../Util/Flags.mo:635
 msgid "Sets the latency for parallel execution."
@@ -1961,11 +1961,11 @@ msgstr ""
 
 #: ../Util/Flags.mo:644
 msgid "Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."
-msgstr ""
+msgstr "Ställer in gränsen för vektorisering; arrayer och matriser större än denna kommer inte vektoriseras."
 
 #: ../Util/Flags.mo:647
 msgid "Turns on simulation code generation."
-msgstr ""
+msgstr "Slår på generering av simuleringskod"
 
 #: ../Util/Flags.mo:650
 msgid "Sets whether to evaluate parameters in annotations or not."
@@ -1988,14 +1988,14 @@ msgid "Sets the reduction method to be used."
 msgstr ""
 
 #: ../Util/Flags.mo:678
-msgid "Defines whether plot commands should open OMPlot or just output results."
-msgstr ""
+msgid "Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."
+msgstr "Anger om plot-kommandon ska öppna OMPlot eller visa argumenten som skulle skickats till OMPlot."
 
 #: ../Util/Flags.mo:681
 msgid "Override the locale from the environment."
 msgstr "Överskrid de nationella inställningarna i omgivningen."
 
-#: ../Main/Main.mo:1116
+#: ../Main/Main.mo:1124
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr "Du försöker köra OpenModelica som root.\n"
 

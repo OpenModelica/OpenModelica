@@ -675,7 +675,7 @@ constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
     Util.gettext("Sets the reduction method to be used."));
 constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Defines whether plot commands should open OMPlot or just output results."));
+  Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
 constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale", 
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
@@ -1023,6 +1023,7 @@ algorithm
     case ("help", _, _)
       equation
         values = List.map(inValues, System.tolower);
+        System.gettextInit(Util.if_(getConfigBool(RUNNING_TESTSUITE),"C",getConfigString(LOCALE_FLAG)));
         printHelp(values);
         setConfigBool(HELP, true);
       then

@@ -1131,7 +1131,7 @@ algorithm
     case {}
       equation
         false = System.userIsRoot();
-        Flags.printUsage();
+        Debug.bcall0(not Config.helpRequest() /* Already printed help */, Flags.printUsage);
       then ();
     
     case _

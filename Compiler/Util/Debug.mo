@@ -493,6 +493,22 @@ algorithm
   end match;
 end bcall;
 
+public function bcall0
+"function: bcall0
+  bool controlled calling of function."
+  input Boolean inBoolean;
+  input Func func;
+  partial function Func end Func;
+algorithm
+  _ := match (inBoolean,func)
+    case (true,_)
+      equation
+        func();
+      then ();
+    case (false,_) then ();
+  end match;
+end bcall0;
+
 public function bcall1
 "function: bcall1
   bool controlled calling of function."
