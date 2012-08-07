@@ -243,9 +243,13 @@ bool OMCProxy::startServer()
       objectRefFile.remove();
 
     mObjectRefFile = objectRefFile.fileName();
+    // read the locale
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QString language = settings.value("language").toString();
+    QString locale = language.isEmpty() ? QLocale::system().name() : language;
     // Start the omc.exe
     QStringList parameters;
-    parameters << QString("+c=").append(mName).append(fileIdentifier) << QString("+d=interactiveCorba");
+    parameters << QString("+c=").append(mName).append(fileIdentifier) << QString("+d=interactiveCorba") << QString("+locale=").append(locale);
     QProcess *omcProcess = new QProcess();
     QFile omcOutputFile;
 #ifdef WIN32 // Win32
