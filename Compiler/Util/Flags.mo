@@ -1523,8 +1523,8 @@ end printHelp;
 public function printUsage
   "Prints out the usage text for the compiler."
 algorithm
-  print("OpenModelica Compiler "); print(Settings.getVersionNr());
-  print(System.gettext(" Copyright Linköping University 1997-2012\n"));
+  print("OpenModelica Compiler "); print(Settings.getVersionNr()); print("\n");
+  print(System.gettext("Copyright © Linköping University 1997-2012\n"));
   print(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //print("Please check the System Guide for full information about flags.\n");
   print(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));

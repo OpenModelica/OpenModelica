@@ -43,6 +43,7 @@ public import DAE;
 public import Types;
 
 protected import Error;
+protected import Util;
 
 public type Connections = Connect2.Connections;
 public type Connection = Connect2.Connection;
@@ -56,8 +57,8 @@ public function makeBranch
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode1, "Connections.branch", "first ", inInfo);
-  checkCrefIsValidNode(inNode2, "Connections.branch", "second ", inInfo);
+  checkCrefIsValidNode(inNode1, "Connections.branch", true, inInfo);
+  checkCrefIsValidNode(inNode2, "Connections.branch", false, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makeBranch;
 
@@ -66,7 +67,7 @@ public function makeRoot
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode, "Connections.root", "", inInfo);
+  checkCrefIsValidNode(inNode, "Connections.root", true, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makeRoot;
 
@@ -76,7 +77,7 @@ public function makePotentialRoot
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode, "Connections.potentialRoot", "", inInfo);
+  checkCrefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makePotentialRoot;
 
@@ -86,10 +87,10 @@ protected function checkCrefIsValidNode
    function checks that a cref is a valid node."
   input DAE.ComponentRef inNode;
   input String inFuncName;
-  input String inArgNumber;
+  input Boolean isFirst;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inNode, inFuncName, inArgNumber, inInfo)
+  _ := match(inNode, inFuncName, isFirst, inInfo)
     local
       DAE.Type ty1, ty2;
       
@@ -98,14 +99,13 @@ algorithm
     case (DAE.CREF_QUAL(identType = ty1, 
         componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
       equation
-        checkCrefIsValidNode2(ty1, ty2, inFuncName, inArgNumber, inInfo);
+        checkCrefIsValidNode2(ty1, ty2, inFuncName, isFirst, inInfo);
       then
         ();
 
     else
       equation
-        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE, {inArgNumber, inFuncName,
-        "on the form A.R, where A is a connector and R an overdetermined type/record."}, inInfo);
+        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST,Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND), {inFuncName}, inInfo);
       then
         fail();
 
@@ -116,10 +116,10 @@ protected function checkCrefIsValidNode2
   input DAE.Type inType1;
   input DAE.Type inType2;
   input String inFuncName;
-  input String inArgNumber;
+  input Boolean isFirst;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inType1, inType2, inFuncName, inArgNumber, inInfo)
+  _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
     case (_, _, _, _, _)
       equation
         true = Types.isComplexConnector(inType1);
@@ -129,8 +129,8 @@ algorithm
 
     else
       equation
-        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE,
-          {inArgNumber, inFuncName, "an overdetermined type or record"}, inInfo);
+        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST,Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND),
+          {inFuncName}, inInfo);
       then
         fail();
 

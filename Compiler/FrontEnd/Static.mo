@@ -3298,8 +3298,7 @@ algorithm
         false = Types.isUnknownType(inArrayExpType);
         exp_str = ExpressionDump.printExpStr(inArrayExp);
         size_str = "size(" +& exp_str +& ")";
-        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE, 
-          {"first ", size_str, "an array expression"}, inInfo);
+        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
         fail();
   
@@ -3361,8 +3360,7 @@ algorithm
         exp_str = ExpressionDump.printExpStr(inArrayExp);
         index_str = ExpressionDump.printExpStr(inIndexExp);
         size_str = "size(" +& exp_str +& ", " +& index_str +& ")";        
-        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE,
-          {"first ", size_str, "an array expression"}, inInfo);
+        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
         (NONE(), NONE());
 
