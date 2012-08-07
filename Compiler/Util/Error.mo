@@ -293,7 +293,7 @@ public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, T
 public constant Message ASSERT_CONSTANT_FALSE_ERROR = MESSAGE(98, SYMBOLIC(), ERROR(),
   Util.gettext("Assertion triggered during translation: %s"));
 public constant Message ARRAY_INDEX_OUT_OF_BOUNDS = MESSAGE(99, TRANSLATION(), ERROR(),
-  Util.gettext("Index out of bounds. Adressing position: %s, while array length is: %s"));
+  Util.gettext("Index out of bounds. Addressing position: %s, while array length is: %s"));
 public constant Message COMPONENT_CONDITION_VARIABILITY = MESSAGE(100, TRANSLATION(), ERROR(),
   Util.gettext("Component condition must be parameter or constant expression (in %s)."));
 public constant Message DUPLICATE_MODIFICATIONS = MESSAGE(103, TRANSLATION(), ERROR(),
@@ -550,8 +550,6 @@ public constant Message FINAL_OVERRIDE = MESSAGE(508, TRANSLATION(), ERROR(),
   Util.gettext("trying to override final variable in class: %s"));
 public constant Message WARNING_RELATION_ON_REAL = MESSAGE(509, TRANSLATION(), WARNING(),
   Util.gettext("In component %s, in relation %s, %s on Reals is only allowed inside functions."));
-public constant Message When_With_IF = MESSAGE(511, TRANSLATION(), ERROR(),
-  Util.gettext("When equations using if-statements on form 'if a then b=c else b=d' not implemented yet, use 'b=if a then c else d' as workaround\n%s"));
 public constant Message OUTER_MODIFICATION = MESSAGE(512, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring the modification on outer element: %s"));
 public constant Message DERIVATIVE_NON_REAL = MESSAGE(514, TRANSLATION(), ERROR(),

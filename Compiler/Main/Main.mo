@@ -1133,7 +1133,7 @@ algorithm
         print("This is a very bad idea. Why you ask?\n");
         print("* The socket interface does not authenticate the user.\n");
         print("* OpenModelica allows execution of arbitrary commands.\n");
-        print("* The good news is there is no reason to run OpenModelica as root.\n");
+        print("The good news is there is no reason to run OpenModelica as root.\n");
       then fail();
     
     case {}

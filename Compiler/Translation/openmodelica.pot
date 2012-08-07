@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-07 11:37+0200\n"
+"POT-Creation-Date: 2012-08-07 14:52+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -458,7 +458,7 @@ msgstr ""
 
 #: ../Util/Error.mo:296
 #, c-format
-msgid "Index out of bounds. Adressing position: %s, while array length is: %s"
+msgid "Index out of bounds. Addressing position: %s, while array length is: %s"
 msgstr ""
 
 #: ../Util/Error.mo:298
@@ -1214,140 +1214,132 @@ msgstr ""
 
 #: ../Util/Error.mo:554
 #, c-format
-msgid ""
-"When equations using if-statements on form 'if a then b=c else b=d' not "
-"implemented yet, use 'b=if a then c else d' as workaround\n"
-"%s"
-msgstr ""
-
-#: ../Util/Error.mo:556
-#, c-format
 msgid "Ignoring the modification on outer element: %s"
 msgstr ""
 
-#: ../Util/Error.mo:558
+#: ../Util/Error.mo:556
 #, c-format
 msgid ""
 "Illegal derivative. der(%s) in component %s is of type %s, which is not a "
 "subtype of Real"
 msgstr ""
 
-#: ../Util/Error.mo:560
+#: ../Util/Error.mo:558
 #, c-format
 msgid "In modifier %s"
 msgstr ""
 
-#: ../Util/Error.mo:562
+#: ../Util/Error.mo:560
 #, c-format
 msgid "Multiple modifiers in same scope for element %s, %s"
 msgstr ""
 
-#: ../Util/Error.mo:564
+#: ../Util/Error.mo:562
 #, c-format
 msgid ""
 "The system of units is inconsistent in term %s with the units %s and %s "
 "respectively."
 msgstr ""
 
-#: ../Util/Error.mo:566
+#: ../Util/Error.mo:564
 msgid "The system of units is consistent."
 msgstr ""
 
-#: ../Util/Error.mo:568
+#: ../Util/Error.mo:566
 msgid ""
 "The system of units is incomplete. Please provide unit information to the "
 "model by e.g. using types from the SIunits package."
 msgstr ""
 
-#: ../Util/Error.mo:570
+#: ../Util/Error.mo:568
 #, c-format
 msgid "Failed to elaborate rhs of %s"
 msgstr ""
 
-#: ../Util/Error.mo:572
+#: ../Util/Error.mo:570
 #, c-format
 msgid "Could not evaluate expression: %s"
 msgstr ""
 
-#: ../Util/Error.mo:574
+#: ../Util/Error.mo:572
 #, c-format
 msgid "jacobian equation %s could not solve proper for %s. Assume %s=0."
 msgstr ""
 
-#: ../Util/Error.mo:576
+#: ../Util/Error.mo:574
 #, c-format
 msgid ""
 "Simplification produced a higher complexity (%s) than the original (%s). The "
 "simplification was: %s => %s."
 msgstr ""
 
-#: ../Util/Error.mo:578
+#: ../Util/Error.mo:576
 #, c-format
 msgid "Iterator %s, has type %s, but expected an array expression."
 msgstr ""
 
-#: ../Util/Error.mo:580
+#: ../Util/Error.mo:578
 #, c-format
 msgid "Cannot instantiate %s due to restriction %s."
 msgstr ""
 
-#: ../Util/Error.mo:582
+#: ../Util/Error.mo:580
 #, c-format
 msgid "Library %s was not loaded but is marked as used by model %s."
 msgstr ""
 
-#: ../Util/Error.mo:584
+#: ../Util/Error.mo:582
 #, c-format
 msgid ""
 "The maximum recursion depth was reached, probably due to mutual recursion. "
 "The current scope: %s."
 msgstr ""
 
-#: ../Util/Error.mo:587
+#: ../Util/Error.mo:585
 #, c-format
 msgid ""
 " Local variable '%s' shadows input or result variables in a {match,"
 "matchcontinue} expression."
 msgstr ""
 
-#: ../Util/Error.mo:589
+#: ../Util/Error.mo:587
 #, c-format
 msgid " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."
 msgstr ""
 
-#: ../Util/Error.mo:591
+#: ../Util/Error.mo:589
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
 msgstr ""
 
-#: ../Util/Error.mo:593
+#: ../Util/Error.mo:591
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 
-#: ../Util/Error.mo:595
+#: ../Util/Error.mo:593
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
 "modifications, which are not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:597
+#: ../Util/Error.mo:595
 msgid "MetaModelica complex types may not have modifiers."
 msgstr ""
 
-#: ../Util/Error.mo:599
+#: ../Util/Error.mo:597
 #, c-format
 msgid "Cannot evaluate function pointers (got %s)."
 msgstr ""
 
-#: ../Util/Error.mo:601
+#: ../Util/Error.mo:599
 #, c-format
 msgid "Tried to use function %s, but it was not instantiated."
 msgstr ""
 
-#: ../Util/Error.mo:603
+#: ../Util/Error.mo:601
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -1359,61 +1351,61 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:605
+#: ../Util/Error.mo:603
 #, c-format
 msgid "In metarecord call %s: %s"
 msgstr ""
 
-#: ../Util/Error.mo:607
+#: ../Util/Error.mo:605
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr ""
 
-#: ../Util/Error.mo:609
+#: ../Util/Error.mo:607
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr ""
 
-#: ../Util/Error.mo:611
+#: ../Util/Error.mo:609
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
 "tail %s."
 msgstr ""
 
-#: ../Util/Error.mo:613
+#: ../Util/Error.mo:611
 #, c-format
 msgid ""
 "%s. Strict RML enforces match expression input and output to be the same as "
 "the function's."
 msgstr ""
 
-#: ../Util/Error.mo:615
+#: ../Util/Error.mo:613
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr ""
 
-#: ../Util/Error.mo:617
+#: ../Util/Error.mo:615
 #, c-format
 msgid "Invalid named fields: %s"
 msgstr ""
 
-#: ../Util/Error.mo:619
+#: ../Util/Error.mo:617
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
 msgstr ""
 
-#: ../Util/Error.mo:621
+#: ../Util/Error.mo:619
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr ""
 
-#: ../Util/Error.mo:623
+#: ../Util/Error.mo:621
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr ""
 
-#: ../Util/Error.mo:625
+#: ../Util/Error.mo:623
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -1423,67 +1415,67 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: ../Util/Error.mo:627
+#: ../Util/Error.mo:625
 #, c-format
 msgid "Call pattern is not a record deconstructor %s"
 msgstr ""
 
-#: ../Util/Error.mo:629
+#: ../Util/Error.mo:627
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr ""
 
-#: ../Util/Error.mo:631
+#: ../Util/Error.mo:629
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
 msgstr ""
 
-#: ../Util/Error.mo:633
+#: ../Util/Error.mo:631
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr ""
 
-#: ../Util/Error.mo:635
+#: ../Util/Error.mo:633
 #, c-format
 msgid "Unused local variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:637
+#: ../Util/Error.mo:635
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr ""
 
-#: ../Util/Error.mo:639
+#: ../Util/Error.mo:637
 #, c-format
 msgid "Converted match expression to switch of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:641
+#: ../Util/Error.mo:639
 #, c-format
 msgid ""
 "Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr ""
 
-#: ../Util/Error.mo:643
+#: ../Util/Error.mo:641
 #, c-format
 msgid ""
 "Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:645
+#: ../Util/Error.mo:643
 #, c-format
 msgid ""
 "Cannot optimize function due to a local variable having the same name as an "
 "input variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:655
+#: ../Util/Error.mo:653
 #, c-format
 msgid "Template error: %s"
 msgstr ""
 
-#: ../Util/Error.mo:657 ../Util/Error.mo:659
+#: ../Util/Error.mo:655 ../Util/Error.mo:657
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr ""
@@ -1764,15 +1756,15 @@ msgid "replace all parameters with protected=true in the system"
 msgstr ""
 
 #: ../Util/Flags.mo:524 ../Util/Flags.mo:590
-msgid "strips all parameter not present int the equations from the system"
+msgid "Strips all parameter not present in the equations from the system"
 msgstr ""
 
 #: ../Util/Flags.mo:525
-msgid "strips all variables not present int the equations from the system"
+msgid "Strips all variables not present in the equations from the system"
 msgstr ""
 
 #: ../Util/Flags.mo:526
-msgid "evaluates parameter with evalute=true annotation"
+msgid "Evaluates parameter with evalute=true annotation"
 msgstr ""
 
 #: ../Util/Flags.mo:527

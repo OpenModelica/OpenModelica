@@ -9,6 +9,7 @@ builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
 builddir_man=$(top_builddir)/build/share/man/
 builddir_java=$(top_builddir)/build/share/omc/java/
+builddir_locale=$(top_builddir)/build/share/locale/
 
 INSTALL_APPDIR     = ${DESTDIR}/Applications/MacPorts/
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
@@ -19,6 +20,7 @@ INSTALL_DOCDIR     = ${DESTDIR}${docdir}
 INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
+INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
 .PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall
 
@@ -53,6 +55,7 @@ interactive: .testvariables mkbuilddirs
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs omlibrary
+	make -C Compiler/Translation release
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
@@ -174,6 +177,7 @@ install-dirs:
 	mkdir -p ${INSTALL_INCLUDEDIR}
 	mkdir -p ${INSTALL_DOCDIR}/omc/testmodels
 	mkdir -p ${INSTALL_MANDIR}/man1/
+	mkdir -p ${INSTALL_LOCALEDIR}
 	test ! -d ${builddir_doc}/omedit/ || mkdir -p ${INSTALL_DOCDIR}/omedit/
 	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
 	test ! -d ${builddir_share}/omshell/nls/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/nls/
@@ -206,3 +210,5 @@ install: install-dirs install-python
 	cp -rp ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
 	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}
+	# Translations
+	cp -p ${builddir_locale}/* ${INSTALL_LOCALEDIR}
