@@ -2678,6 +2678,7 @@ algorithm
       Operator op;
       Real r1,r2;
       Integer i1,i2;
+      DAE.Exp e;
     case(_,_)
       equation
         true = isZero(e1);
@@ -2696,6 +2697,13 @@ algorithm
         i1 = intAdd(i1,i2);
       then
         DAE.ICONST(i1);
+    /* a + (-b) = a - b */
+    case (_,DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=e))
+      then
+        expSub(e1,e); 
+    case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e))
+      then
+        expSub(e1,e); 
     case (_,_)
       equation
         tp = typeof(e1);
@@ -2721,6 +2729,7 @@ algorithm
       Operator op;
       Real r1,r2;
       Integer i1,i2;
+      DAE.Exp e;
     case(_,_)
       equation
         true = isZero(e1);
@@ -2741,6 +2750,24 @@ algorithm
         i1 = intSub(i1,i2);
       then
         DAE.ICONST(i1);
+    /* a - (-b) = a + b */
+    case (_,DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=e))
+      then
+        expAdd(e1,e); 
+    case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e))
+      then
+        expAdd(e1,e); 
+    /* - a - b = -(a + b) */
+    case (DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=e),_)
+      equation
+        e = expAdd(e,e2); 
+      then
+        negate(e);        
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=e),_)
+      equation
+        e = expAdd(e,e2); 
+      then
+        negate(e);        
     case (_,_)
       equation
         tp = typeof(e1);

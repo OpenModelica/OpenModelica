@@ -59,6 +59,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import CheckModel;
 protected import ComponentReference;
@@ -85,7 +86,6 @@ protected import SCode;
 protected import System;
 protected import Util;
 protected import Values;
-protected import VarTransform;
 
 public 
 type Var = BackendDAE.Var;
@@ -7232,6 +7232,8 @@ public function getEqnsysRhsExp "function: getEqnsysRhsExp
 
   Retrieve the right hand side expression of an equation
   in an equation system, given a set of variables.
+  Uses f(x) = g(x) -> 0 = f(x)-g(x) -> x=0 -> rhs= f(0)-g(0).
+  Does not work for nonlinear Equations. 
 
   inputs:  (DAE.Exp, BackendDAE.Variables /* variables of the eqn sys. */)
   outputs:  DAE.Exp =
@@ -7239,145 +7241,117 @@ public function getEqnsysRhsExp "function: getEqnsysRhsExp
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   output DAE.Exp outExp;
+protected
+  BackendVarTransform.VariableReplacements repl;
 algorithm
-  outExp:=
-  matchcontinue (inExp,inVariables)
-    local
-      list<DAE.Exp> term_lst,rhs_lst,rhs_lst2;
-      DAE.Exp new_exp,res,exp;
-      BackendDAE.Variables vars;
-    case (exp,vars)
-      equation
-        term_lst = Expression.allTerms(exp);
-        rhs_lst = List.select1(term_lst, freeFromAnyVar, vars);
-        /* A term can contain if-expressions that has branches that are on rhs and other branches that
-        are on lhs*/
-        rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
-        new_exp = Expression.makeSum(listAppend(rhs_lst,rhs_lst2));
-        (res,_) = ExpressionSimplify.simplify(new_exp);
-      then
-        res;
-    case (_,_)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "- BackendDAEUtil.getEqnsysRhsExp failed\n");
-      then
-        fail();
-  end matchcontinue;
+  repl := makeZeroReplacements(inVariables);
+  ((outExp,(_,_,true))) := Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,true));
+  (outExp,_) := ExpressionSimplify.simplify(outExp);
 end getEqnsysRhsExp;
 
-public function ifBranchesFreeFromVar "
-  Retrieves if-branches free from any of the variables passed as argument.
-  This is done by replacing the variables with zero."
-  input list<DAE.Exp> iexpl;
-  input BackendDAE.Variables vars;
-  output list<DAE.Exp> outExpl;
+protected function getEqnsysRhsExp1
+  input tuple<DAE.Exp, tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Boolean>> inTplExpTypeA;
+  output tuple<DAE.Exp, Boolean, tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Boolean>> outTplExpBoolTypeA;
 algorithm
-  outExpl := matchcontinue(iexpl,vars)
-    local 
-      DAE.Exp cond,t,f,e1,e2;
-      VarTransform.VariableReplacements repl;
-      DAE.Operator op;
+  outTplExpBoolTypeA := match(inTplExpTypeA)
+    local
+      DAE.Exp cond,t,f,e,e1;
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.Variables vars;
+      Boolean b,b1;
       Absyn.Path path;
-      list<DAE.Exp> expl2,expl;
-      Boolean tpl ;
-      Boolean b;
-      DAE.InlineType i;
-      DAE.Type ty;
+      list<DAE.Exp> expLst;
       DAE.CallAttributes attr;
-    
-    case({},vars) then {};
-    
-    case(DAE.IFEXP(cond,t,f)::expl,vars) 
+    case ((e as DAE.CREF(ty=_),(repl,vars,b)))
       equation
-        repl = makeZeroReplacements(vars);
-        t = ifBranchesFreeFromVar2(t,repl);
-        f = ifBranchesFreeFromVar2(f,repl);
-        expl = ifBranchesFreeFromVar(expl,vars);
-      then 
-        (DAE.IFEXP(cond,t,f)::expl);
-    
-    case(DAE.BINARY(e1,op,e2)::expl,vars) 
+        (e1,b1) = BackendVarTransform.replaceExp(e, repl, NONE());
+        e1 = Util.if_(b1,e1,e);
+      then
+        ((e1,false,(repl,vars,b)));  
+    case ((DAE.IFEXP(cond,t,f),(repl,vars,b)))
       equation
-        repl = makeZeroReplacements(vars);
-        {e1} = ifBranchesFreeFromVar({e1},vars);
-        {e2} = ifBranchesFreeFromVar({e2},vars);
-        expl = ifBranchesFreeFromVar(expl,vars);
-      then 
-        (DAE.BINARY(e1,op,e2)::expl);
-    
-    case(DAE.UNARY(op,e1)::expl,vars) 
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(cond, getEqnsysRhsExp2, (vars,b));
+        ((t,(_,_,b))) = Expression.traverseExpTopDown(t, getEqnsysRhsExp1, (repl,vars,b));
+        ((f,(_,_,b))) = Expression.traverseExpTopDown(f, getEqnsysRhsExp1, (repl,vars,b));
+      then
+        ((DAE.IFEXP(cond,t,f),false,(repl,vars,b)));  
+    case ((e as DAE.CALL(path = path as Absyn.IDENT(name = "der")),(repl,vars,b)))
+      then
+        ((e,true,(repl,vars,b)));         
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(repl,vars,b)))
+      then
+        ((e,false,(repl,vars,b)));         
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(repl,vars,b)))
+      then
+        ((e,false,(repl,vars,b))); 
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(repl,vars,b)))
+      then
+        ((e,false,(repl,vars,b)));
+    case ((e as DAE.CALL(expLst=expLst),(repl,vars,b)))
       equation
-        repl = makeZeroReplacements(vars);
-        {e1} = ifBranchesFreeFromVar({e1},vars);
-        expl = ifBranchesFreeFromVar(expl,vars);
-      then 
-        (DAE.UNARY(op,e1)::expl);
-    
-    case(DAE.CALL(path,expl2,attr)::expl,vars) 
-      equation
-        repl = makeZeroReplacements(vars);
-        (expl2 as _::_) = ifBranchesFreeFromVar(expl2,vars);
-        expl = ifBranchesFreeFromVar(expl,vars);
-      then 
-        (DAE.CALL(path,expl2,attr)::expl);
-    
-    case(_::expl,vars) 
-      equation
-        expl = ifBranchesFreeFromVar(expl,vars);
-      then expl;
-  end matchcontinue;
-end ifBranchesFreeFromVar;
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpListTopDown(expLst, getEqnsysRhsExp2, (vars,b));
+      then
+        ((e,b,(repl,vars,b)));         
+    case ((e,(repl,vars,b))) then ((e,b,(repl,vars,b)));
+  end match;
+end getEqnsysRhsExp1;
 
-protected function ifBranchesFreeFromVar2 "
-  Help function to ifBranchesFreeFromVar,
-  replaces variables in if branches (not conditions) 
-  recursively (to include elseifs)"
-  input DAE.Exp ifBranch;
-  input VarTransform.VariableReplacements repl;
-  output DAE.Exp outIfBranch;
+protected function getEqnsysRhsExp2
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> inTplExpTypeA;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,Boolean>> outTplExpBoolTypeA;
 algorithm
-  outIfBranch := matchcontinue(ifBranch,repl)
-    local 
-      DAE.Exp cond,t,f,e;
-    
-    case(DAE.IFEXP(cond,t,f),_) 
+  outTplExpBoolTypeA := matchcontinue(inTplExpTypeA)
+    local
+      DAE.Exp e;
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr;
+      Boolean b;
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,b)))
+      then ((e, false, (vars,b)));
+        
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,b)))
+      then
+        ((e, false, (vars,b)));
+
+    // found ?
+    case ((e as DAE.CREF(componentRef = cr),(vars,_)))
       equation
-        t = ifBranchesFreeFromVar2(t,repl);
-        f = ifBranchesFreeFromVar2(f,repl);
-      then 
-        DAE.IFEXP(cond,t,f);
-    
-    case(_,_) 
-      equation
-        (e,_) = VarTransform.replaceExp(ifBranch,repl,NONE());
-      then e;
+         (_::_,_) = BackendVariable.getVar(cr, vars);
+      then
+        ((e, false,(vars,false)));
+
+    case ((e,(vars,b))) then ((e,b,(vars,b)));
   end matchcontinue;
-end ifBranchesFreeFromVar2;
+end getEqnsysRhsExp2;
 
 protected function makeZeroReplacements "
   Help function to ifBranchesFreeFromVar, creates replacement rules
   v -> 0, for all variables"
   input BackendDAE.Variables vars;
-  output VarTransform.VariableReplacements repl;
+  output BackendVarTransform.VariableReplacements repl;
 algorithm
-  repl := BackendVariable.traverseBackendDAEVars(vars,makeZeroReplacement,VarTransform.emptyReplacements());
+  repl := BackendVariable.traverseBackendDAEVars(vars,makeZeroReplacement,BackendVarTransform.emptyReplacements());
 end makeZeroReplacements;
 
 protected function makeZeroReplacement "helper function to makeZeroReplacements.
 Creates replacement Var-> 0"
-  input tuple<Var, VarTransform.VariableReplacements> inTpl;
-  output tuple<Var, VarTransform.VariableReplacements> outTpl;
+  input tuple<Var, BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local    
      Var var;
      DAE.ComponentRef cr;
-     VarTransform.VariableReplacements repl,repl1;
+     BackendVarTransform.VariableReplacements repl,repl1;
     case ((var,repl))
       equation
         cr =  BackendVariable.varCref(var);
-        repl1 = VarTransform.addReplacement(repl,cr,DAE.RCONST(0.0));
+        repl1 = BackendVarTransform.addReplacement(repl,cr,Expression.makeConstZero(ComponentReference.crefLastType(cr)));
       then
         ((var,repl1));
     else then inTpl;

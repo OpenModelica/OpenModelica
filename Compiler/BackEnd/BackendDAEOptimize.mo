@@ -10609,8 +10609,7 @@ algorithm
   (osyst,oshared,outRunMatching):=
     matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn)
     local
-      list<Integer> tvars,residual,ores,residual1,othercomps1,eindex1;
-      list<list<Integer>> othercomps;
+      list<Integer> ores,residual1,othercomps1,eindex1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Integer size,tornsize,numvars;
