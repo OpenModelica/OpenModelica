@@ -10711,6 +10711,11 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
         // solve other equations for other vars
         size = listLength(eindex);
+        // do not use it if more than 50 equations there, 
+        // this will be fixed if it is possible to save the information of tearing variables
+        // and residual equations for code generation, than it is not necessary to solve all the other 
+        // equations and replace the other variables in the residual equations
+        true = intLt(size,50);
         eqns = BackendEquation.daeEqns(subsyst);
         vars = BackendVariable.daeVars(subsyst);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
