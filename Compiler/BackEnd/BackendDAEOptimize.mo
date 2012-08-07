@@ -11184,7 +11184,7 @@ algorithm
         varexp = Debug.bcallret2(BackendVariable.isStateVar(var), Derive.differentiateExpTime, varexp, (inVars,ishared), varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         (expr1,_) = BackendVarTransform.replaceExp(expr, inRepl, NONE());
-        eqns = BackendEquation.equationSetnth(inEqns,c-1,BackendDAE.EQUATION(expr,varexp,source));
+        eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source));
         cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         repl = BackendVarTransform.addReplacement(inRepl,cr,expr1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr1,"\n"));
