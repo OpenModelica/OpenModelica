@@ -1737,14 +1737,16 @@ void SystemImpl__gettextInit(const char *locale)
       gettext("Failed to set locale: '%s'."),
       c_tokens,
       1);
-  } else if (*locale) {
-    /* We succesfully forced a new non-system locale; let's clear some variables */
-    unsetenv("LANGUAGE");
-    /* Try to make sure we force UTF-8; else gettext will fail */
-    clocale = setlocale(LC_CTYPE, NULL);
-    if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")))
-      setlocale(LC_CTYPE, "C.UTF-8");
   }
+  /* We succesfully forced a new non-system locale; let's clear some variables */
+  if (*locale) {
+    unsetenv("LANG");
+    unsetenv("LANGUAGE");
+  }
+  /* Try to make sure we force UTF-8; else gettext will fail */
+  clocale = setlocale(LC_CTYPE, NULL);
+  if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")))
+    setlocale(LC_CTYPE, "C.UTF-8");
 #endif
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);
