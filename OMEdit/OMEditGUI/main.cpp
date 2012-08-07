@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
   omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
 #endif
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
-  QString language = settings.value("language").toString();
+  QLocale settingsLocale = settings.value("language").toLocale();
+  QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
   QString translationDirectory = omhome + QString("/share/omedit/nls");
-  QString locale = language.isEmpty() ? QLocale::system().name() : language;
   // install Qt's default translations
   QTranslator qtTranslator;
 #ifdef Q_OS_WIN

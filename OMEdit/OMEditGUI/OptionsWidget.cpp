@@ -229,7 +229,7 @@ void OptionsWidget::readGeneralSettings()
   // read the language option
   if (mSettings.contains("language"))
   {
-    if (!mSettings.value("language").toString().isEmpty())
+    if (!mSettings.value("language").toLocale().name().isEmpty())
     {
       int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(mSettings.value("language"), Qt::UserRole, Qt::MatchExactly);
       mpGeneralSettingsPage->getLanguageComboBox()->setCurrentIndex(currentIndex);
@@ -357,7 +357,7 @@ void OptionsWidget::readLibrariesSettings()
 void OptionsWidget::saveGeneralSettings()
 {
   // save Language option
-  mSettings.setValue("language", mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toString());
+  mSettings.setValue("language", mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()));
   // save plotting view mode
   mSettings.setValue("plotting/viewmode", mpGeneralSettingsPage->getViewMode());
   if (mpGeneralSettingsPage->getViewMode().compare("SubWindow") == 0)
@@ -559,24 +559,23 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   mpLanguageComboBox = new QComboBox;
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
   /* Slow sorting, but works using regular Qt functions */
-  QMap<QString,QString> map;
-  map.insert(tr("Chinese"), "zh_CN");
-  map.insert(tr("English"), "en");
-  map.insert(tr("French"), "fr");
-  map.insert(tr("German"), "de");
-  map.insert(tr("Italian"), "it");
-  map.insert(tr("Japanese"), "ja");
-  map.insert(tr("Romanian"), "ro");
-  map.insert(tr("Russian"), "ru");
-  map.insert(tr("Spanish"), "es");
-  map.insert(tr("Swedish"), "sv");
+  QMap<QString, QLocale> map;
+  map.insert(tr("Chinese").append(" (zh_CN)"), QLocale(QLocale::Chinese));
+  map.insert(tr("English").append(" (en)"), QLocale(QLocale::English));
+  map.insert(tr("French").append(" (fr)"), QLocale(QLocale::French));
+  map.insert(tr("German").append(" (de)"), QLocale(QLocale::German));
+  map.insert(tr("Italian").append(" (it)"), QLocale(QLocale::Italian));
+  map.insert(tr("Japanese").append(" (ja)"), QLocale(QLocale::Japanese));
+  map.insert(tr("Romanian").append(" (ro)"), QLocale(QLocale::Romanian));
+  map.insert(tr("Russian").append(" (ru)"), QLocale(QLocale::Russian));
+  map.insert(tr("Spanish").append(" (es)"), QLocale(QLocale::Spanish));
+  map.insert(tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
   QStringList keys(map.keys());
   keys.sort();
   foreach (const QString &key, keys) {
-    QString val = map[key];
-    mpLanguageComboBox->addItem(key + " ("+val+")",val);
+    QLocale locale = map[key];
+    mpLanguageComboBox->addItem(key, locale);
   }
-
   // Plotting View Mode
   mpPlottingViewModeLabel = new QLabel(tr("Plotting View Mode:"));
   mpTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
