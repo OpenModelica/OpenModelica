@@ -1715,10 +1715,21 @@ void SystemImpl__gettextInit(const char *locale)
   char *localedir,*clocale;
   int omlen;
 #if defined(__MINGW32__)
-  if (!(setlocale(LC_ALL, locale))) {
+  if (*locale) {
+    char environment[strlen(locale)+9];
+    strcpy(environment, "LANGUAGE=");
+    putenv(strcat(environment, locale));
+  } else {
+    LCID userLocaleId = GetUserDefaultLCID();
+    int localeBufferSize = GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, NULL, 0);
+    char userLocaleStr[localeBufferSize];
+    GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, userLocaleStr, localeBufferSize);
+    char environment[localeBufferSize+9];
+    strcpy(environment, "LANGUAGE=");
+    putenv(strcat(environment, userLocaleStr));
+  }
 #else
   if (!((setlocale(LC_MESSAGES, locale)))) {
-#endif
     const char *c_tokens[1]={locale};
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
@@ -1728,18 +1739,12 @@ void SystemImpl__gettextInit(const char *locale)
       1);
   } else if (*locale) {
     /* We succesfully forced a new non-system locale; let's clear some variables */
-#if defined(__MINGW32__)
-    putenv("LANGUAGE=");
-#else
     unsetenv("LANGUAGE");
-#endif
     /* Try to make sure we force UTF-8; else gettext will fail */
     clocale = setlocale(LC_CTYPE, NULL);
     if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")))
       setlocale(LC_CTYPE, "C.UTF-8");
   }
-#if defined(__MINGW32__)
-  setlocale(LC_NUMERIC, "C");
 #endif
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);
