@@ -10716,7 +10716,7 @@ algorithm
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
         Debug.fcall(Flags.TEARING_DUMP, print,"TVars: ");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,", ","\nOther Equations:\n"));        
-        (eqns,repl,k0) = solveOtherEquations(othercomps,eqns,vars,ass2,ishared,BackendVarTransform.emptyReplacementsSized(size),{});
+        (eqns,repl,k0) = solveOtherEquations(othercomps,eqns,vars,ass2,mapIncRowEqn,ishared,BackendVarTransform.emptyReplacementsSized(size),{});
         // replace other vars in residual equations with there expression, use reverse order from othercomps
         Debug.fcall(Flags.TEARING_DUMP, print,"Residual Equations:\n");
         residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
@@ -11151,6 +11151,7 @@ protected function solveOtherEquations "function solveOtherEquations
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
   input array<Integer> ass2;
+  input array<Integer> mapIncRowEqn;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements inRepl;
   input list<BackendDAE.Var> iOtherVars;
@@ -11159,21 +11160,24 @@ protected function solveOtherEquations "function solveOtherEquations
   output list<BackendDAE.Var> oOtherVars;
 algorithm
   (outEqns,outRepl,oOtherVars) :=
-  matchcontinue (othercomps,inEqns,inVars,ass2,ishared,inRepl,iOtherVars)
+  matchcontinue (othercomps,inEqns,inVars,ass2,mapIncRowEqn,ishared,inRepl,iOtherVars)
     local
       list<list<Integer>> rest;
       BackendDAE.EquationArray eqns;
-      Integer v,c;
+      Integer v,c,e;
       DAE.Exp e1,e2,varexp,expr,expr1;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars;
-    case ({},_,_,_,_,_,_) then (inEqns,inRepl,iOtherVars);
-    case ({c}::rest,_,_,_,_,_,_)
+      list<Integer> clst;
+      BackendDAE.Equation eqn;
+    case ({},_,_,_,_,_,_,_) then (inEqns,inRepl,iOtherVars);
+    case ({c}::rest,_,_,_,_,_,_,_)
       equation
-        BackendDAE.EQUATION(e1,e2,source) = BackendDAEUtil.equationNth(inEqns, c-1);
+        e = mapIncRowEqn[c];
+        BackendDAE.EQUATION(e1,e2,source) = BackendDAEUtil.equationNth(inEqns, e-1);
         v = ass2[c];
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
@@ -11184,9 +11188,17 @@ algorithm
         cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         repl = BackendVarTransform.addReplacement(inRepl,cr,expr1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr1,"\n"));
-        (eqns,repl,otherVars) = solveOtherEquations(rest,eqns,inVars,ass2,ishared,repl,var::iOtherVars);
+        (eqns,repl,otherVars) = solveOtherEquations(rest,eqns,inVars,ass2,mapIncRowEqn,ishared,repl,var::iOtherVars);
       then
         (eqns,repl,otherVars);
+/*    case ((c::clst)::rest,_,_,_,_,_,_,_)
+      equation
+        e = mapIncRowEqn[c];
+        true = getZeroVarReplacements2(e,clst,mapIncRowEqn);        
+        eqn = BackendDAEUtil.equationNth(inEqns, e-1);
+      then
+        fail();        
+*/
   end matchcontinue;
 end solveOtherEquations;
 
