@@ -211,4 +211,4 @@ install: install-dirs install-python
 	# Java
 	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
-	cp -p ${builddir_locale}/* ${INSTALL_LOCALEDIR}
+	cp -rp ${builddir_locale}/* ${INSTALL_LOCALEDIR}/
