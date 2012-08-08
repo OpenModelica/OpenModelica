@@ -39,7 +39,6 @@ encapsulated package BackendVariable
 "
 
 public import BackendDAE;
-public import BaseHashTable;
 public import DAE;
 public import Env;
 public import Values;
@@ -54,7 +53,6 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashTable2;
-protected import HashTableCrILst;
 protected import List;
 protected import SCode;
 protected import Util;
@@ -929,6 +927,13 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isVarDiscrete;
+
+public function isVarNonDiscrete
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean := not isVarDiscrete(inVar);
+end isVarNonDiscrete;
 
 public function hasDiscreteVar
 "Returns true if var list contains a discrete time variable."
@@ -3378,50 +3383,12 @@ public function existsVar
   input BackendDAE.Variables inVariables;
   input Boolean skipDiscrete;
   output Boolean outBoolean;
+protected
+  list<BackendDAE.Var> varlst;
 algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef,inVariables,skipDiscrete)
-    local
-      BackendDAE.Value hval,hashindx,indx,bsize,n;
-      list<BackendDAE.CrefIndex> indexes;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr2,cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      BackendDAE.VariableArray varr;
-      String str;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),false)
-      equation
-        hashindx = HashTable2.hashFunc(cr, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes, getVar4(cr, indexes));
-        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        true;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),true)
-      equation
-        hashindx = HashTable2.hashFunc(cr, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes, getVar4(cr, indexes));
-        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        false = isVarDiscrete(v);
-      then
-        true;        
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n),_)
-      equation
-        hashindx = HashTable2.hashFunc(cr, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes, getVar4(cr, indexes));
-        failure((_) = vararrayNth(varr, indx));
-        print("- BackendVariable.existsVar could not found variable, cr:");
-        str = ComponentReference.printComponentRefStr(cr);
-        print(str);
-        print("\n");
-      then
-        false;
-    case (_,_,_) then false;
-  end matchcontinue;
+  (varlst,_) := getVar(inComponentRef,inVariables);
+  varlst := Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
+  outBoolean:=intGt(listLength(varlst),0);
 end existsVar;
 
 public function addVarDAE
