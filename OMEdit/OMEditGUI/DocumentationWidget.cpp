@@ -124,8 +124,8 @@ void DocumentationWidget::show(QString className)
   /* Create a local file with the html we want to view as otherwise
    * JavaScript does not run properly.
    */
-  QTextStream out(&mDocumentationFile);
   mDocumentationFile.open();
+  QTextStream out(&mDocumentationFile);
   out << documentation;
   mDocumentationFile.close();
   
