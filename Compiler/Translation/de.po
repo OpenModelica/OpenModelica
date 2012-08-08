@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-07 14:52+0200\n"
+"POT-Creation-Date: 2012-08-08 07:52+0200\n"
 "PO-Revision-Date: 2012-08-03 14:38+0200\n"
 "Last-Translator:  <martin.sjolund@liu.se>\n"
 "Language-Team: German\n"
@@ -2309,7 +2309,15 @@ msgid ""
 "middle of the string."
 msgstr ""
 
-#: ../runtime/systemimpl.c:1726
+#: ../runtime/systemimpl.c:1743
 #, c-format
-msgid "Failed to set locale: '%s'."
+msgid "Warning: Failed to set locale: '%s'\n"
+msgstr ""
+
+#: ../runtime/systemimpl.c:1755
+#, c-format
+msgid ""
+"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
+"UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you "
+"might have some issues.\n"
 msgstr ""

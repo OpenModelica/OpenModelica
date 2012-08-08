@@ -1729,15 +1729,21 @@ void SystemImpl__gettextInit(const char *locale)
     putenv(strcat(environment, userLocaleStr));
   }
 #else
-  if (!((setlocale(LC_MESSAGES, locale)))) {
+  /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
+  char *locale2 = NULL;
+  char *locale3 = NULL;
+  asprintf(&locale2, "%s.utf8", locale);
+  asprintf(&locale3, "%s.UTF-8", locale);
+  int res = *locale == 0 ? setlocale(LC_MESSAGES, locale)!=0 :
+    (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
+    (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
+    setlocale(LC_MESSAGES, locale);
+  if (!res) {
     const char *c_tokens[1]={locale};
-    c_add_message(85, /* ERROR_OPENING_FILE */
-      ErrorType_scripting,
-      ErrorLevel_warning,
-      gettext("Failed to set locale: '%s'."),
-      c_tokens,
-      1);
+    fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
+  free(locale2);
+  free(locale3);
   /* We succesfully forced a new non-system locale; let's clear some variables */
   if (*locale) {
     unsetenv("LANG");
@@ -1745,16 +1751,16 @@ void SystemImpl__gettextInit(const char *locale)
   }
   /* Try to make sure we force UTF-8; else gettext will fail */
   clocale = setlocale(LC_CTYPE, NULL);
-  if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")))
-    setlocale(LC_CTYPE, "C.UTF-8");
-#endif
+  if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")) && !setlocale(LC_CTYPE, "C.UTF-8"))
+    fprintf(stderr, gettext("Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you might have some issues.\n"));
+#endif /* __MINGW32__ */
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);
   sprintf(localedir, "%s/share/locale", omhome);
   bindtextdomain ("openmodelica", localedir);
   textdomain ("openmodelica");
   free(localedir);
-#endif
+#endif /* _MSC_VER */
 }
 
 const char* SystemImpl__gettext(const char *msgid)
