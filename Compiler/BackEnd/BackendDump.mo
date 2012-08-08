@@ -221,38 +221,7 @@ public function printEquation "function: printEquation
 "
   input BackendDAE.Equation inEquation;
 algorithm
-  _:=
-  match (inEquation)
-    local
-      String s1,s2,res;
-      DAE.Exp e1,e2;
-      DAE.ComponentRef cr;
-      BackendDAE.WhenEquation w;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2,"\n"});
-        print(res);
-      then
-        ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        res = stringAppendList({s1,"\n"});
-        print(res);
-      then
-        ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation = w))
-      equation
-        (cr,e2) = BackendEquation.getWhenEquationExpr(w);
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," =  ",s2,"\n"});
-        print(res);
-      then
-        ();
-  end match;
+  print(equationStr(inEquation) +& "\n");
 end printEquation;
 
 public function dumpEquation "function: dumpEquation
