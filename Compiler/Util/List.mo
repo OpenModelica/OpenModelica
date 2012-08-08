@@ -3859,6 +3859,39 @@ algorithm
   end match;
 end map1AllValue;
 
+public function map1rAllValue
+  "Applies a function to all elements in the lists, and fails if not all
+   elements are equal to the given value. This function also takes an extra
+   argument that are passed to the mapping function."
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input ValueType inValue;
+  input ArgType1 inArg1;
+
+  partial function MapFunc
+    input ArgType1 inArg1;
+    input ElementInType inElement;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  _ := match(inList, inMapFunc, inValue, inArg1)
+    local
+      ElementInType head;
+      list<ElementInType> rest;
+      ElementOutType new_head;
+
+    case ({}, _, _, _) then ();
+
+    case (head :: rest, _, _, _)
+      equation
+        new_head = inMapFunc(inArg1,head);
+        equality(new_head = inValue);
+        map1rAllValue(rest, inMapFunc, inValue, inArg1);
+      then
+        ();
+  end match;
+end map1rAllValue;
+
 public function map2AllValue
   "Applies a function to all elements in the lists, and fails if not all
    elements are equal to the given value. This function also takes two extra
@@ -3893,6 +3926,41 @@ algorithm
         ();
   end match;
 end map2AllValue;
+
+public function foldAllValue
+  "Applies a function to all elements in the lists, and fails if not all
+   elements are equal to the given value. This function also takes an extra
+   argument that are passed to the mapping function and updated"
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input ValueType inValue;
+  input ArgType1 inArg1;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    output ElementOutType outElement;
+    output ArgType1 outArg1;
+  end MapFunc;
+algorithm
+  _ := match(inList, inMapFunc, inValue, inArg1)
+    local
+      ElementInType head;
+      list<ElementInType> rest;
+      ElementOutType new_head;
+      ArgType1 arg;
+
+    case ({}, _, _, _) then ();
+
+    case (head :: rest, _, _, _)
+      equation
+        (new_head,arg) = inMapFunc(head, inArg1);
+        equality(new_head = inValue);
+        foldAllValue(rest, inMapFunc, inValue, arg);
+      then
+        ();
+  end match;
+end foldAllValue;
 
 public function applyAndFold
   "fold(map(inList, inApplyFunc), inFoldFunc, inFoldArg), but is more

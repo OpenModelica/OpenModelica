@@ -78,6 +78,7 @@ protected import BackendQSS;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
+protected import BaseHashSet;
 protected import Builtin;
 protected import CevalScript;
 protected import CheckModel;
@@ -99,6 +100,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
+protected import HashSet;
 protected import List;
 protected import Mod;
 protected import PartFn;
@@ -4321,7 +4323,7 @@ algorithm
       list<tuple<DAE.Exp,DAE.Exp>> exptl,exptl1;
       list<DAE.ComponentRef> crefs;
       Integer uniqueEqIndex;
-      Absyn.Path path;
+      Absyn.Path path,rpath;
       String ident;
       list<SimVar> tempvars;
     /* a = f() */ 
@@ -4363,8 +4365,9 @@ algorithm
       then
          (eqSystlst,uniqueEqIndex+1,itempvars);        
     /* Record() = f() */  
-    case (e1 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),e2,_,_,_,_)
+    case (e1 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),e2,_,_,_,_)
       equation
+        true = Absyn.pathEqual(path, rpath);
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
@@ -4390,8 +4393,9 @@ algorithm
       then
          (eqSystlst,uniqueEqIndex,tempvars);   
     /* Record() = f() */  
-    case (e1,e2 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),_,_,_,_)
+    case (e1,e2 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),_,_,_,_)
       equation
+        true = Absyn.pathEqual(path, rpath);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
@@ -5757,19 +5761,17 @@ algorithm
     local
       Integer uniqueEqIndex;
       DAE.Exp e1,e2;
-      DAE.ComponentRef cr,cr_1;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crefs;
       BackendVarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
       list<SimVar> tempvars;
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),BackendDAE.VAR(varName = cr)::_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_,_,_,_)
       equation
-        // We need to strip subs from the name since they are removed in cr.
-        cr_1 = ComponentReference.crefStripLastSubs(cr);
+        crefs = List.map(inVars,BackendVariable.varCref);
         e1 = replaceDerOpInExp(e1);
         e2 = replaceDerOpInExp(e2);
-        (equations_,uniqueEqIndex,tempvars) = createSingleComplexEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, itempvars, source);
+        (equations_,uniqueEqIndex,tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source);
       then
         (equations_,uniqueEqIndex,tempvars);
        
@@ -5791,8 +5793,7 @@ end createSingleComplexEqnCode;
 
 // TODO: are the cases really correct?
 protected function createSingleComplexEqnCode2
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
+  input list<DAE.ComponentRef> crefs;
   input DAE.Exp inExp3;
   input DAE.Exp inExp4;
   input Integer iuniqueEqIndex;
@@ -5802,14 +5803,14 @@ protected function createSingleComplexEqnCode2
   output Integer ouniqueEqIndex;
   output list<SimVar> otempvars;
 algorithm
-  (equations_,ouniqueEqIndex,otempvars) := matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4,iuniqueEqIndex,itempvars,source)
+  (equations_,ouniqueEqIndex,otempvars) := matchcontinue (crefs,inExp3,inExp4,iuniqueEqIndex,itempvars,source)
     local
       DAE.ComponentRef cr,cr1,eltcr,cr2;
       DAE.Exp e1,e2,e1_1,e2_1;
       DAE.Type ty;
       DAE.Statement stms;
       DAE.Type tp;
-      Absyn.Path path;
+      Absyn.Path path,rpath;
       list<DAE.Exp> expLst,crexplst;
       DAE.Ident ident;
       list<tuple<DAE.Exp,DAE.Exp>> exptl;
@@ -5818,8 +5819,11 @@ algorithm
       list<SimVar> tempvars;
       Integer uniqueEqIndex;
       list<DAE.Var> varLst;
-    case (cr,eltcr,e1 as DAE.CREF(componentRef = cr2),e2,_,_,_)
+      list<Boolean> blst;
+      HashSet.HashSet ht;
+    case (_,e1 as DAE.CREF(componentRef = cr2),e2,_,_,_)
       equation
+        List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,cr2);
         //((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(SOME(inFuncs),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
@@ -5828,8 +5832,9 @@ algorithm
       then
         ({SES_ALGORITHM(iuniqueEqIndex,{stms})},iuniqueEqIndex+1,itempvars);
         
-    case (cr,eltcr,e1,e2 as DAE.CREF(componentRef = cr2),_,_,_)
+    case (_,e1,e2 as DAE.CREF(componentRef = cr2),_,_,_)
       equation
+        List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,cr2);
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         //((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(SOME(inFuncs)),false)));
@@ -5838,9 +5843,13 @@ algorithm
       then
         ({SES_ALGORITHM(iuniqueEqIndex,{stms})},iuniqueEqIndex+1,itempvars);
         
-    /* Record() = f()   
-    case (cr,eltcr,e1 as DAE.CALL(path=path,expLst=expLst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),e2,_,_,_)
+    /* Record() = f()  */ 
+    case (_,e1 as DAE.CALL(path=path,expLst=expLst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath),varLst=varLst))),e2,_,_,_)
       equation
+        true = Absyn.pathEqual(path, rpath);
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs,BaseHashSet.add,ht);
+        List.foldAllValue(expLst,createSingleComplexEqnCode3,true,ht); 
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
@@ -5858,10 +5867,14 @@ algorithm
         tempvars = greateTempVars(varLst,cr1,itempvars);
       then
         (eqSystlst,uniqueEqIndex,tempvars);
-*/
-    /* f() = Record()   
-    case (cr,eltcr,e1,e2 as DAE.CALL(path=path,expLst=expLst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),_,_,_)
+
+    /* f() = Record()  */ 
+    case (_,e1,e2 as DAE.CALL(path=path,expLst=expLst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath),varLst=varLst))),_,_,_)
       equation
+        true = Absyn.pathEqual(path, rpath);
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs,BaseHashSet.add,ht);
+        List.foldAllValue(expLst,createSingleComplexEqnCode3,true,ht);         
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
@@ -5879,9 +5892,9 @@ algorithm
         tempvars = greateTempVars(varLst,cr1,itempvars);
       then
         (eqSystlst,uniqueEqIndex,tempvars);
-*/        
+        
         // failure
-    case (cr,_,e1,e2,_,_,_)
+    case (_,e1,e2,_,_,_)
       /*
        equation
        s1 = ExpressionDump.printExpStr(e1);
@@ -5895,6 +5908,26 @@ algorithm
   end matchcontinue;
 end createSingleComplexEqnCode2;
 
+protected function createSingleComplexEqnCode3
+  input DAE.Exp inExp;
+  input HashSet.HashSet iht;
+  output Boolean outB;
+  output HashSet.HashSet oht;
+algorithm
+  (outB,oht) := matchcontinue(inExp,iht)
+    local
+      DAE.ComponentRef cr;
+      HashSet.HashSet ht;  
+    case (DAE.CREF(componentRef=cr),_)
+      equation
+        _ = BaseHashSet.get(cr,iht);
+        ht = BaseHashSet.delete(cr, iht);
+      then
+        (true,ht);
+    else
+      (false,iht);
+  end matchcontinue;  
+end createSingleComplexEqnCode3;
 
 protected function createSingleArrayEqnCode
   input Boolean genDiscrete;
