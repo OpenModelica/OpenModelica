@@ -43,7 +43,7 @@
 //! Constructor
 //! @param pParent is the pointer to MainWindow.
 DocumentationWidget::DocumentationWidget(MainWindow *pParent)
-  : QWidget(pParent)
+  : QWidget(pParent), mDocumentationFile(QDir::tempPath() + "/OpenModelica/OMEdit/documentation-XXXXXX.html")
 {
   setObjectName("DocumentationWidget");
   mpParentMainWindow = pParent;
@@ -121,7 +121,15 @@ void DocumentationWidget::show(QString className)
     mpSaveButton->setVisible(false);
   }
   QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
-  mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
+  /* Create a local file with the html we want to view as otherwise
+   * JavaScript does not run properly.
+   */
+  QTextStream out(&mDocumentationFile);
+  mDocumentationFile.open();
+  out << documentation;
+  mDocumentationFile.close();
+  
+  mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
   mpDocumentationViewer->setVisible(true);
   mpDocumentationEditor->setVisible(false);
 }
@@ -180,7 +188,7 @@ void DocumentationWidget::saveChanges()
   QString doc = mpDocumentationEditor->toPlainText();
   if(doc.startsWith("<html>", Qt::CaseInsensitive) && doc.endsWith("</html>", Qt::CaseInsensitive))
   {
-    mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
+    mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+StringHandler::escape(doc)+"\")");
     show(mClassName);
   }
   else

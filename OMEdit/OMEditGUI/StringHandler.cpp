@@ -618,3 +618,8 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
     return tooltip;
   }
 }
+
+QString StringHandler::escape(QString str)
+{
+  return str.replace("\\", "\\\\").replace("\"", "\\\"");
+}

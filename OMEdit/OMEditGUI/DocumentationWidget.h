@@ -70,6 +70,7 @@ public:
   QPushButton *mpEditButton;
   QPushButton *mpSaveButton;
   QDialogButtonBox *mpButtonBox;
+  QTemporaryFile mDocumentationFile;
   QString mClassName;
 protected:
   virtual void paintEvent(QPaintEvent *event);

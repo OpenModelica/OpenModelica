@@ -52,6 +52,7 @@ public:
                         CONSTANT, PROTECTED};
   enum ModelicaErrors {NOTIFICATION, WARNING, OMERROR, NOOMERROR};
   enum ModelicaErrorKinds {SYNTAX, GRAMMAR, TRANSLATION, SYMBOLIC, SIMULATION, SCRIPTING, NOOMERRORKIND};
+  static QString escape(QString str);
   static QString getModelicaClassType(int type);
   static QString getViewType(int type);
   static QString getErrorKind(int kind);
