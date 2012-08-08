@@ -66,6 +66,7 @@ public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Env = SCodeEnv.Env;
 public type Equation = InstTypes.Equation;
+public type Function = InstTypes.Function;
 public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
@@ -133,6 +134,13 @@ algorithm
     case (InstTypes.EXTENDED_ELEMENTS(cls = cls), vars)
       then makeDaeVarsFromClass(cls, vars);
 
+    case (InstTypes.CONDITIONAL_ELEMENT(component = comp), vars)
+      equation
+        var = componentToDaeVar(comp);
+        vars = var :: vars;
+      then
+        vars;
+
   end match;
 end makeDaeVarsFromElement;
 
@@ -175,6 +183,7 @@ algorithm
       then
         DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, DAE.UNBOUND(), NONE());
 
+    // TODO: Handle stuff like conditional components here.
     else DAE.TYPES_VAR("dummy", DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
         DAE.UNBOUND(), NONE());
 
@@ -1580,4 +1589,18 @@ algorithm
   end match;
 end isFlowComponent;
   
+public function getFunctionInputs
+  input Function inFunction;
+  output list<Element> outInputs;
+algorithm
+  outInputs := match(inFunction)
+    local
+      list<Element> inputs;
+
+    case InstTypes.FUNCTION(inputs = inputs) then inputs;
+    case InstTypes.RECORD(components = inputs) then inputs;
+
+  end match;
+end getFunctionInputs;
+
 end InstUtil;

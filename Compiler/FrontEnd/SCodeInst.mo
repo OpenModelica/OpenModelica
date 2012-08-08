@@ -2012,33 +2012,22 @@ algorithm
   (outCallExp,outFunctions) := matchcontinue(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Path call_path;
-      DAE.ComponentRef cref;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
-      Class func;
-      list<Element> inputs,outputs; 
+      Function func;
+      list<Element> inputs; 
       FunctionHashTable functions;
     
-    // inst records
     case (_, _, _, _, _, _, functions)
       equation
-        (call_path, InstTypes.RECORD(components=inputs), functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
+        (call_path, func, functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
         (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, functions);
         (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
+        inputs = InstUtil.getFunctionInputs(func);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
         (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
     
-    // inst functions
-    case (_, _, _, _, _, _, functions)
-      equation
-        (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
-        (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, functions);
-        (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
-        args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
-      then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
-
   end matchcontinue;
 end instFunctionCall;
 
