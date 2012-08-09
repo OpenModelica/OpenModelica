@@ -1732,6 +1732,8 @@ void SystemImpl__gettextInit(const char *locale)
   /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
   char *locale2 = NULL;
   char *locale3 = NULL;
+  char *old_ctype = strdup(setlocale(LC_CTYPE, ""));
+  int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
   asprintf(&locale2, "%s.utf8", locale);
   asprintf(&locale3, "%s.UTF-8", locale);
   int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
@@ -1744,15 +1746,26 @@ void SystemImpl__gettextInit(const char *locale)
   }
   free(locale2);
   free(locale3);
+  clocale = setlocale(LC_CTYPE, NULL);
+  int have_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
   /* We succesfully forced a new non-system locale; let's clear some variables */
   if (*locale) {
     unsetenv("LANG");
     unsetenv("LANGUAGE");
   }
   /* Try to make sure we force UTF-8; else gettext will fail */
-  clocale = setlocale(LC_CTYPE, NULL);
-  if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") || strstr(clocale, "utf-8") || strstr(clocale, "utf8")) && !setlocale(LC_CTYPE, "C.UTF-8"))
+  if (have_utf8)
+     setlocale(LC_CTYPE, clocale);
+  else if (old_ctype_is_utf8)
+    setlocale(LC_CTYPE, old_ctype);
+  else if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") ||
+             strstr(clocale, "utf-8") || strstr(clocale, "utf8")) &&
+            !(setlocale(LC_CTYPE, "C.UTF-8") ||
+              setlocale(LC_CTYPE, ".UTF-8") ||
+              setlocale(LC_CTYPE, "UTF-8"))) {
     fprintf(stderr, gettext("Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you might have some issues.\n"));
+  }
+  free(old_ctype);
 #endif /* __MINGW32__ */
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);

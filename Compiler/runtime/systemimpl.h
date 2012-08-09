@@ -43,6 +43,7 @@ typedef int (*function_t)(type_description*, type_description*);
 #else
 #include <locale.h>
 #include <libintl.h>
+#include <langinfo.h>
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
