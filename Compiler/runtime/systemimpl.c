@@ -1734,10 +1734,10 @@ void SystemImpl__gettextInit(const char *locale)
   char *locale3 = NULL;
   asprintf(&locale2, "%s.utf8", locale);
   asprintf(&locale3, "%s.UTF-8", locale);
-  int res = *locale == 0 ? setlocale(LC_MESSAGES, locale)!=0 :
+  int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
     (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
     (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
-    setlocale(LC_MESSAGES, locale);
+    setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale);
   if (!res) {
     const char *c_tokens[1]={locale};
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
