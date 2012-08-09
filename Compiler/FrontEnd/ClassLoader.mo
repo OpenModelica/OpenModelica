@@ -62,9 +62,10 @@ public function loadClass
   input Absyn.Path inPath;
   input list<String> priorityList;
   input String modelicaPath;
+  input Option<String> encoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inPath,priorityList,modelicaPath)
+  outProgram := matchcontinue (inPath,priorityList,modelicaPath,encoding)
     local
       String gd,classname,mp,pack;
       list<String> mps;
@@ -72,19 +73,19 @@ algorithm
       Absyn.Path rest,path;
       Absyn.TimeStamp ts;
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
-    case (Absyn.IDENT(name = classname),priorityList,mp)
+    case (Absyn.IDENT(name = classname),priorityList,mp,encoding)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(classname, priorityList, mps);
+        p = loadClassFromMps(classname, priorityList, mps, encoding);
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack,path = rest),priorityList,mp)
+    case (Absyn.QUALIFIED(name = pack,path = rest),priorityList,mp,encoding)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(pack, priorityList, mps);
+        p = loadClassFromMps(pack, priorityList, mps, encoding);
       then
         p;
     /* failure */
@@ -117,6 +118,7 @@ protected function loadClassFromMps
   input String id;
   input list<String> prios;
   input list<String> mps;
+  input Option<String> encoding;
   output Absyn.Program outProgram;
 protected
   String mp,name;
@@ -125,7 +127,7 @@ algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
   // print("System.getLoadModelPath: " +& id +& " {" +& stringDelimitList(prios,",") +& "} " +& stringDelimitList(mps,",") +& " => " +& mp +& " " +& name +& " " +& boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
-  outProgram := loadClassFromMp(id, mp, name, isDir);
+  outProgram := loadClassFromMp(id, mp, name, isDir, encoding);
 end loadClassFromMps;
 
 protected function loadClassFromMp
@@ -133,30 +135,31 @@ protected function loadClassFromMp
   input String path;
   input String name;
   input Boolean isDir;
+  input Option<String> optEncoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := match (id,path,name,isDir)
+  outProgram := match (id,path,name,isDir,optEncoding)
     local
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,encoding,encodingfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
 
-    case (_,path,name,false)
+    case (_,path,name,false,optEncoding)
       equation
         pd = System.pathDelimiter();
         encodingfile = stringAppendList({path,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,"UTF-8"),"\n")," ");
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
         p = Parser.parse(path +& pd +& name,encoding);
       then
         p;
 
-    case (id,path,name,true)
+    case (id,path,name,true,optEncoding)
       equation
         ts = Absyn.getNewTimeStamp();
         /* Check for path/package.encoding; OpenModelica extension */
         pd = System.pathDelimiter();
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,"UTF-8"),"\n")," ");
+        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
         p = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
       then
         p;
@@ -388,18 +391,16 @@ algorithm
         p1_1 = Parser.parse(name,encoding);
         pd = System.pathDelimiter();
         dir_1 = stringAppendList({dir,pd,".."});
-        p1 = loadModelFromEachClass(p1_1, dir_1);
-      then
-        p1;
+        p1 = loadModelFromEachClass(p1_1, dir_1, SOME(encoding));
+      then p1;
 
     case (name,encoding)
       equation
         true = System.regularFileExists(name);
-        false = stringEq(name,"package.mo");
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
+        false = stringEq(filename,"package.mo");
         p1 = Parser.parse(name,encoding);
-      then
-        p1;
+      then p1;
 
     // faliling
     else
@@ -416,9 +417,10 @@ protected function loadModelFromEachClass
   helper function to loadFile"
   input Absyn.Program inProgram;
   input String inString;
+  input Option<String> optEncoding;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inProgram,inString)
+  outProgram := matchcontinue (inProgram,inString,optEncoding)
     local
       Absyn.Within a;
       Absyn.Path path;
@@ -427,19 +429,19 @@ algorithm
       list<Absyn.Class> res;
       Absyn.TimeStamp ts;
 
-    case (Absyn.PROGRAM(classes = {},within_ = a,globalBuildTimes=ts),_)
+    case (Absyn.PROGRAM(classes = {},within_ = a,globalBuildTimes=ts),_,_)
       then (Absyn.PROGRAM({},a,ts));
 
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a,globalBuildTimes=ts),dir)
+    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a,globalBuildTimes=ts),dir,optEncoding)
       equation
         path = Absyn.IDENT(id);
-        pnew = loadClass(path, {"default"}, dir);
-        p_res = loadModelFromEachClass(Absyn.PROGRAM(res,a,ts), dir);
+        pnew = loadClass(path, {"default"}, dir, optEncoding);
+        p_res = loadModelFromEachClass(Absyn.PROGRAM(res,a,ts), dir, optEncoding);
         p_1 = Interactive.updateProgram(pnew, p_res);
       then
         p_1;
 
-    case (_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadModelFromEachClass failed\n");
       then
