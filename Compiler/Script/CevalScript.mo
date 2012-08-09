@@ -656,7 +656,7 @@ algorithm
     case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad,notifyLoad)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
-        pnew = Debug.bcallret3(not b, ClassLoader.loadClass, path, strings, modelicaPath, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
+        pnew = Debug.bcallret4(not b, ClassLoader.loadClass, path, strings, modelicaPath, NONE(), Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
         className = Absyn.pathString(path);
         version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
         Error.assertionOrAddSourceMessage(b or not notifyLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
