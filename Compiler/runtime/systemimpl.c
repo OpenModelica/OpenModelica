@@ -1761,7 +1761,8 @@ void SystemImpl__gettextInit(const char *locale)
   else if (!(strstr(clocale, "UTF-8") || strstr(clocale, "UTF8") ||
              strstr(clocale, "utf-8") || strstr(clocale, "utf8")) &&
             !(setlocale(LC_CTYPE, "C.UTF-8") ||
-              setlocale(LC_CTYPE, ".UTF-8") ||
+              setlocale(LC_CTYPE, "en_US.UTF-8") ||
+              setlocale(LC_CTYPE, "en_GB.UTF-8") ||
               setlocale(LC_CTYPE, "UTF-8"))) {
     fprintf(stderr, gettext("Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you might have some issues.\n"));
   }
