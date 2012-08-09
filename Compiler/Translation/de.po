@@ -1,21 +1,21 @@
 # German translations for OpenModelica package.
 # Copyright (C) 2012 Open Source Modelica Consortium (OSMC)
 # This file is distributed under the same license as the OpenModelica package.
-#  <martin.sjolund@liu.se>, 2012.
+# Martin Sjölund <martin.sjolund at liu.se>, 2012.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
-"Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-08 07:52+0200\n"
-"PO-Revision-Date: 2012-08-03 14:38+0200\n"
-"Last-Translator:  <martin.sjolund@liu.se>\n"
-"Language-Team: German\n"
+"Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
+"POT-Creation-Date: 2012-08-09 09:02+0200\n"
+"PO-Revision-Date: 2012-08-09 09:37+0200\n"
+"Last-Translator: Martin Sjölund <martin.sjolund at liu.se>\n"
+"Language-Team: German <openmodelica at liu.se>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
 #: ../Util/Error.mo:132
 #, c-format
@@ -1690,46 +1690,47 @@ msgstr ""
 #: ../Util/Flags.mo:470
 msgid "Sets debug flags. Use +help=debug to see available flags."
 msgstr ""
+"Stellt Debug-Flags. Verwenden Sie +help=debug, um verfügbare Flags zu sehen."
 
 #: ../Util/Flags.mo:474
 msgid "Displays the help text."
-msgstr ""
+msgstr "Zeigt den Hilfetext."
 
 #: ../Util/Flags.mo:477
 msgid "Used when running the testsuite."
-msgstr ""
+msgstr "Wird verwendet, um die Tests deterministisch zu machen."
 
 #: ../Util/Flags.mo:480
 msgid "Print the version and exit."
-msgstr ""
+msgstr "Drucken Sie die Version aus und beende."
 
 #: ../Util/Flags.mo:483
 msgid "Sets the target compiler to use."
-msgstr ""
+msgstr "Setzt den Ziel-Compiler zu verwenden."
 
 #: ../Util/Flags.mo:487
 msgid "Sets the grammar and semantics to accept."
-msgstr ""
+msgstr "Setzt die Grammatik und Semantik zu akzeptieren."
 
 #: ../Util/Flags.mo:490
 msgid "Sets the annotation version that should be used."
-msgstr ""
+msgstr "Setzt die Annotation-Version, die verwendet werden sollten."
 
 #: ../Util/Flags.mo:495
 msgid "Sets the language standard that should be used."
-msgstr ""
+msgstr "Setzt die Sprache Norm, die verwendet werden sollten."
 
 #: ../Util/Flags.mo:498
 msgid "Show error messages immediately when they happen."
-msgstr ""
+msgstr "Zeige Fehlermeldungen sofort, wenn sie passieren."
 
 #: ../Util/Flags.mo:501
 msgid "Show annotations in the flattened code."
-msgstr ""
+msgstr "Zeigen Sie Annotationen im flach Code."
 
 #: ../Util/Flags.mo:504
 msgid "Do not simplify expressions if set."
-msgstr ""
+msgstr "Führen Sie keine teuren Vereinfachungen."
 
 #: ../Util/Flags.mo:505
 msgid ""
@@ -1940,31 +1941,32 @@ msgstr ""
 
 #: ../Util/Flags.mo:607
 msgid "Sets the target language for the code generation"
-msgstr ""
+msgstr "Setzt die Zielsprache für die Code-Generierung."
 
 #: ../Util/Flags.mo:610
 msgid "Orders connect equations alphabetically if set."
-msgstr ""
+msgstr "Sortiert connect-Gleichungen alphabetisch falls eingestellt."
 
 #: ../Util/Flags.mo:613
 msgid "Prints out extra type information if set."
-msgstr ""
+msgstr "Druckt zusätzliche Typinformationen falls eingestellt."
 
 #: ../Util/Flags.mo:616
 msgid "Sets whether to split arrays or not."
-msgstr ""
+msgstr "Legt fest, ob Arrays aufgeteilt oder nicht."
 
 #: ../Util/Flags.mo:625
 msgid "Turns on silent mode."
-msgstr ""
+msgstr "Schaltet stumm geschaltet wurde."
 
 #: ../Util/Flags.mo:628
 msgid "Sets the name of the corba session if +d=interactiveCorba is used."
 msgstr ""
+"Legt den Namen des CORBA-Sitzung, wenn +d=interactiveCorba verwendet wird."
 
 #: ../Util/Flags.mo:631
 msgid "Sets the number of processors to use."
-msgstr ""
+msgstr "Legt die Anzahl der Prozessoren zu nutzen."
 
 #: ../Util/Flags.mo:634
 msgid "Sets the latency for parallel execution."
@@ -1972,7 +1974,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:637
 msgid "Sets the bandwidth for parallel execution."
-msgstr ""
+msgstr "Legt die Bandbreite für die parallele Ausführung."
 
 #: ../Util/Flags.mo:640
 msgid "Instantiate the class given by the fully qualified path."
@@ -1983,40 +1985,48 @@ msgid ""
 "Sets the vectorization limit, arrays and matrices larger than this will not "
 "be vectorized."
 msgstr ""
+"Setzt die Vektorisierung liegt, wird von Arrays und Matrizen größer als "
+"dieser Wert nicht vektorisiert werden."
 
 #: ../Util/Flags.mo:646
 msgid "Turns on simulation code generation."
-msgstr ""
+msgstr "Schaltet die Simulation Codegenerierung."
 
 #: ../Util/Flags.mo:649
 msgid "Sets whether to evaluate parameters in annotations or not."
-msgstr ""
+msgstr "Legt fest, ob Parameter in Annotationen zu bewerten ist oder nicht."
 
 #: ../Util/Flags.mo:652
 msgid "Set when checkModel is used to turn on specific features for checking."
 msgstr ""
+"Stellen Sie, wenn checkModel wird verwendet, um auf Besonderheiten für die "
+"Prüfung zu machen."
 
 #: ../Util/Flags.mo:667
 msgid "Turns on labeled SimCode generation for reduction algorithms."
-msgstr ""
+msgstr "Schaltet beschriftet SimCode Generation zur Reduzierung Algorithmen."
 
 #: ../Util/Flags.mo:670
 msgid "Turns on reducing terms for reduction algorithms."
 msgstr ""
+"Schaltet auf die Verringerung der Bedingungen für die Reduzierung "
+"Algorithmen."
 
 #: ../Util/Flags.mo:674
 msgid "Sets the reduction method to be used."
-msgstr ""
+msgstr "Setzt die Methode zur Reduktion verwendet werden."
 
 #: ../Util/Flags.mo:677
 msgid ""
 "Defines whether plot commands should open OMPlot or show the list of "
 "arguments that would have been sent to OMPlot."
 msgstr ""
+"Legt fest, ob Plot-Befehle sollten OMPlot öffnen oder zeigen die Liste der "
+"Argumente, die zur OMPlot Befehl gesendet worden wäre."
 
 #: ../Util/Flags.mo:680
 msgid "Override the locale from the environment."
-msgstr ""
+msgstr "Überschreiben Sie die Ländereinstellung aus der Umgebung."
 
 #: ../Util/Flags.mo:1471
 msgid ""
@@ -2069,16 +2079,19 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1527
-msgid "Copyright © Linköping University 1997-2012\n"
-msgstr ""
+msgid "Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"
+msgstr "Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"
 
 #: ../Util/Flags.mo:1528
 msgid ""
 "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
 "\n"
 msgstr ""
+"Lizensiert unter OMSC-PL und GPL, siehe www.openmodelica.org\n"
+"\n"
 
 #: ../Util/Flags.mo:1530
+#, fuzzy
 msgid ""
 "Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries "
 "| .mo-files] \n"
@@ -2088,47 +2101,59 @@ msgid ""
 "LibN.\n"
 "* runtimeOptions: call omc -help to see runtime options\n"
 msgstr ""
+"Aufruf: omc [-runtimeOptionen +omcOptionen] (Modell.mo | Script.mos) "
+"[Bibliotheken | .mo-Dateien] \n"
+"* Bibliotheken: Namen von Bibliotheken vor der Verarbeitung Modell oder "
+"Skript zu laden.\n"
+"                Die Bibliotheken sollten durch Leerzeichen getrennt werden: "
+"Bib1 Bib2 ... BibN.\n"
+"* runtimeOptionen: call omc -help to see runtime options\n"
 
 #: ../Util/Flags.mo:1531
 msgid "* +omcOptions:\n"
-msgstr ""
+msgstr "* +omcOptionen:\n"
 
 #: ../Util/Flags.mo:1534
 msgid "* Examples:\n"
-msgstr ""
+msgstr "* Beispiele:\n"
 
 #: ../Util/Flags.mo:1535
+#, fuzzy
 msgid ""
 "\tomc Model.mo             will produce flattened Model on standard output\n"
 msgstr ""
+"\tomc Modell.mo           will produce flattened Model on standard output\n"
 
 #: ../Util/Flags.mo:1536
 msgid ""
 "\tomc +s Model.mo          will produce simulation code for the model:\n"
 msgstr ""
+"\tomc +s Modell.mo         produziert Simulation-Code für das Modell:\n"
 
 #: ../Util/Flags.mo:1537
 msgid "\t                          * Model.c           the model C code\n"
-msgstr ""
+msgstr "\t                         * Modell.c           das Modell C-Code\n"
 
 #: ../Util/Flags.mo:1538
 msgid ""
 "\t                          * Model_functions.c the model functions C code\n"
 msgstr ""
+"\t                         * Modell_functions.c Code für die Funktionen\n"
 
 #: ../Util/Flags.mo:1539
 msgid ""
 "\t                          * Model.makefile    the makefile to compile the "
 "model.\n"
 msgstr ""
+"\t                         * Model.makefile     kompiliert das Modell\n"
 
 #: ../Util/Flags.mo:1540
 msgid "\t                          * Model_init.xml    the initial values\n"
-msgstr ""
+msgstr "\t                         * Model_init.xml     Anfangswerte\n"
 
 #: ../Util/Flags.mo:1542
 msgid "\tomc Script.mos           will run the commands from Script.mos\n"
-msgstr ""
+msgstr "\tomc Script.mos           werden die Befehle aus Script.mos laufen\n"
 
 #: ../Util/Flags.mo:1543
 msgid ""
@@ -2146,15 +2171,15 @@ msgstr ""
 
 #: ../Util/Flags.mo:1545
 msgid "\t*.mo (Modelica files) \n"
-msgstr ""
+msgstr "\t*.mo (Modelica-Dateien)\n"
 
 #: ../Util/Flags.mo:1547
 msgid "\t*.mos (Modelica Script files) \n"
-msgstr ""
+msgstr "\t*.mos (Modelica Script-Dateien) \n"
 
 #: ../Util/Flags.mo:1621 ../Util/Flags.mo:1627
 msgid "Valid options:"
-msgstr ""
+msgstr "Gültige Optionen:"
 
 #: ../Main/Main.mo:624
 msgid "File does not exist: "

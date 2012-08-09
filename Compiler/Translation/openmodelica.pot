@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
-"Report-Msgid-Bugs-To: openmodelica@ida.liu.se\n"
-"POT-Creation-Date: 2012-08-08 07:52+0200\n"
+"Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
+"POT-Creation-Date: 2012-08-09 09:04+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2069,7 +2069,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1527
-msgid "Copyright © Linköping University 1997-2012\n"
+msgid "Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"
 msgstr ""
 
 #: ../Util/Flags.mo:1528
