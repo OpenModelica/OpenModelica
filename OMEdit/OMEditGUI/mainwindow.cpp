@@ -624,7 +624,7 @@ void MainWindow::createMenus()
   mpViewPerspectivesMenu->addAction(mpWelcomeViewAction);
   mpViewPerspectivesMenu->addAction(mpModelingViewAction);
   mpViewPerspectivesMenu->addAction(mpPlottingViewAction);
-  mpViewPerspectivesMenu->addAction(mpInteractiveSimulationViewAction);
+  // TODO: mpViewPerspectivesMenu->addAction(mpInteractiveSimulationViewAction);
   mpViewMenu->addAction(mpViewPerspectivesMenu->menuAction());
   mpViewMenu->addSeparator();
   mpViewMenu->addAction(mpGridLinesAction);
@@ -636,7 +636,7 @@ void MainWindow::createMenus()
   mpSimulationMenu->setTitle(tr("&Simulation"));
   // Add Actions to Simulation Menu
   mpSimulationMenu->addAction(mpSimulationAction);
-  mpSimulationMenu->addAction(mpInteractiveSimulationAction);
+  // TODO: mpSimulationMenu->addAction(mpInteractiveSimulationAction);
   mpSimulationMenu->addSeparator();
   mpSimulationMenu->addAction(mpFlatModelAction);
   mpSimulationMenu->addAction(mpCheckModelAction);
@@ -735,7 +735,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->setObjectName("Simulation");
   mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
   mpSimulationToolBar->addAction(mpSimulationAction);
-  mpSimulationToolBar->addAction(mpInteractiveSimulationAction);
+  // TODO: mpSimulationToolBar->addAction(mpInteractiveSimulationAction);
   mpSimulationToolBar->addSeparator();
   mpSimulationToolBar->addAction(mpFlatModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
@@ -763,7 +763,7 @@ void MainWindow::createToolbars()
   mpPerspectiveToolBar->addWidget(spacerWidget);
   mpPerspectiveToolBar->addAction(mpModelingViewAction);
   mpPerspectiveToolBar->addAction(mpPlottingViewAction);
-  mpPerspectiveToolBar->addAction(mpInteractiveSimulationViewAction);
+  // TODO: mpPerspectiveToolBar->addAction(mpInteractiveSimulationViewAction);
 }
 
 //! Adds the currently opened file to the recentFileList settings.
