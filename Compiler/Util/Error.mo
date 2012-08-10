@@ -537,6 +537,12 @@ public constant Message INVALID_ARGUMENT_TYPE_OVERDET_FIRST = MESSAGE(232, TRANS
   Util.gettext("The first argument of %s must be an overdetermined type or record."));
 public constant Message INVALID_ARGUMENT_TYPE_OVERDET_SECOND = MESSAGE(233, TRANSLATION(), ERROR(),
   Util.gettext("The second argument of %s must be an overdetermined type or record."));
+public constant Message LIBRARY_ONE_PACKAGE_PER_FILE = MESSAGE(234, GRAMMAR(), ERROR(),
+  Util.gettext("Modelica library files should contain exactly one package, but found the following classes: %s."));
+public constant Message LIBRARY_UNEXPECTED_WITHIN = MESSAGE(235, GRAMMAR(), ERROR(),
+  Util.gettext("Expected the package to have %s but got %s"));
+public constant Message LIBRARY_UNEXPECTED_NAME = MESSAGE(236, GRAMMAR(), ERROR(),
+  Util.gettext("Expected the package to have name %s, but got %s."));
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));

@@ -218,6 +218,16 @@ RML_BEGIN_LABEL(System__trim)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__trimWhitespace)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *res = SystemImpl__trim(str," \f\n\r\t\v");
+  rmlA0 = (void*) mk_scon(res);
+  free(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__strcmp)
 {
   char *str0 = RML_STRINGDATA(rmlA0);

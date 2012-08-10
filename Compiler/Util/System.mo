@@ -55,6 +55,14 @@ public function trim
   external "C" outString=System_trim(inString,charsToRemove) annotation(Library = "omcruntime");
 end trim;
 
+public function trimWhitespace
+"removes chars in ' \f\n\r\t\v' from begin and end of inString"
+  input String inString;
+  output String outString;
+
+  external "C" outString=System_trim(inString," \f\n\r\t\v") annotation(Library = "omcruntime");
+end trimWhitespace;
+
 public function trimChar
   input String inString1;
   input String inString2;

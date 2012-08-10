@@ -4449,16 +4449,7 @@ public function getClassName "function getClassName
   input Class inClass;
   output String outName;
 algorithm
-  outName:=
-  matchcontinue (inClass)
-    local
-      Ident n,filename;
-      Boolean p,f,e;
-      Restriction r;
-      ClassDef body;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body))
-    then n;
-  end matchcontinue;
+  CLASS(name=outName) := inClass;
 end getClassName;
 
 public function mergeElementAttributes "
@@ -5331,6 +5322,31 @@ algorithm
     else false;
   end match;
 end pathIsFullyQualified;
+
+public function withinEqual
+  input Within within1;
+  input Within within2;
+  output Boolean b;
+algorithm
+  b := match (within1,within2)
+    local
+      Path p1,p2;
+    case (TOP(),TOP()) then true;
+    case (WITHIN(p1),WITHIN(p2)) then pathEqual(p1,p2);
+  end match;
+end withinEqual;
+
+public function withinString
+  input Within w1;
+  output String str;
+algorithm
+  b := match (w1)
+    local
+      Path p1;
+    case (TOP()) then "within ;";
+    case (WITHIN(p1)) then "within " +& pathString(p1) +& ";";
+  end match;
+end withinString;
 
 public function joinWithinPath
   input Within within_;

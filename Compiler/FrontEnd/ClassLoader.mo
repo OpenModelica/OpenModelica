@@ -46,6 +46,7 @@ public import Interactive;
 
 protected import Config;
 protected import Debug;
+protected import Error;
 protected import Flags;
 protected import List;
 protected import Parser;
@@ -179,43 +180,25 @@ protected function loadCompletePackageFromMp
 algorithm
   outProgram := matchcontinue (id,inIdent,inString,encoding,inWithin,inProgram)
     local
-      String pd,mp_1,packagefile,subdirstr,pack,mp;
+      String pd,mp_1,packagefile,orderfile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
       Absyn.Within w1,within_;
       Absyn.Program p1_1,p2,p;
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
       Absyn.TimeStamp ts;
-    case (id,pack,mp,encoding,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
+    case (id,pack,mp,encoding,within_,Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
+        orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile,encoding);
+        Absyn.PROGRAM(p1,w1,ts) = parsePackageFile(packagefile,encoding,within_,pack);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
-        subdirs = System.subDirectories(mp_1);
-        subdirs = List.sort(subdirs, Util.strcmpBool);
-        subdirstr = stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, id, mp_1, encoding, within_, p1_1);
-        p = loadCompleteSubfiles(id, mp_1, encoding, within_, p2);
-      then
-        p;
-
-    case (id,pack,mp,encoding,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
-      equation
-        pd = System.pathDelimiter();
-        mp_1 = stringAppendList({mp,pd,pack});
-        packagefile = stringAppendList({mp_1,pd,"package.mo"});
-        existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile,encoding);
-        Print.printBuf("loading ");
-        Print.printBuf(packagefile);
-        Print.printBuf("\n");
-        p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath),ts),Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
         subdirs = List.sort(subdirs, Util.strcmpBool);
         subdirstr = stringDelimitList(subdirs, ", ");
@@ -411,6 +394,48 @@ algorithm
   end matchcontinue;
 end loadFile;
 
+public function parsePackageFile
+  "Parses a file containing a single class that matches the within"
+  input String name;
+  input String encoding;
+  input Absyn.Within w1 "Expected within of the package";
+  input String pack "Expected name of the package";
+  output Absyn.Program outProgram;
+algorithm
+  outProgram := matchcontinue (name,encoding,w1,pack)
+    local
+      Absyn.Program p;
+      list<Absyn.Class> cs;
+      Absyn.Within w2;
+      Absyn.TimeStamp ts;
+      Boolean b;
+      list<String> classNames;
+      Absyn.Info info;
+      String str,s1,s2,cname;
+
+    case (name,encoding,w1,pack)
+      equation
+        true = System.regularFileExists(name);
+        (p as Absyn.PROGRAM(cs,w2,ts)) = Parser.parse(name,encoding);
+        classNames = List.map(cs, Absyn.getClassName);
+        str = stringDelimitList(classNames,", ");
+        Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
+        Absyn.CLASS(name=cname,info=info)::{} = cs;
+        Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+        s1 = Absyn.withinString(w1);
+        s2 = Absyn.withinString(w2);
+        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+      then p;
+
+    // faliling
+    else
+      equation
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadPackageFile failed: "+&name+&"\n");
+      then
+        fail();
+  end matchcontinue;
+end parsePackageFile;
+
 protected function loadModelFromEachClass
 "function loadModelFromEachClass
   author: x02lucpo
@@ -448,6 +473,109 @@ algorithm
         fail();
   end matchcontinue;
 end loadModelFromEachClass;
+
+protected function sortPackageOrder
+  "Sort the classes based on the package.order file"
+  input Absyn.Program p;
+  input Absyn.Path path "Path where the classes to sort reside";
+  input String filename;
+  output Absyn.Program op;
+protected
+  String contents;
+  String namesToSort;
+algorithm
+  op := matchcontinue (p,path,filename)
+    local
+      String contents,name;
+      list<String> namesToSort, tv;
+      Boolean pp,fp,ep;
+      list<Absyn.NamedArg> ca;
+      list<Absyn.ClassPart> cp;
+      Option<String> cmt;
+      Absyn.Info info;
+      list<tuple<Boolean,Absyn.Element>> elts;
+      Boolean b;
+      
+    case (p,path,filename)
+      equation
+        /*
+        contents = System.readFile(filename);
+        namesToSort = List.removeOnTrue("",stringEqual,List.map(System.strtok(contents, "\n"),System.trimWhitespace));
+        Absyn.CLASS(name,pp,fp,ep,Absyn.R_PACKAGE(),Absyn.PARTS(tv,ca,cp,cmt),info) = Interactive.getPathedClassInProgram(path,p);
+        b = sortPackageAlreadyInOrder(namesToSort,cp);
+        print("sortPackageOrder: already in order " +& Absyn.pathString(path) +& "? " +& boolString(b) +& "\n");
+        */
+        /* ((cp,el)) = List.fold(namesToSort,sortPackageOrder3,(cp,{}));
+        print("number of classparts " +& intString(listLength(cp)) +& "\n"); */
+      then p;
+  end matchcontinue;
+end sortPackageOrder;
+
+protected function sortPackageAlreadyInOrder
+  input list<String> inNamesToSort;
+  input list<Absyn.ClassPart> cp;
+  output Boolean b;
+algorithm
+  b := matchcontinue (inNamesToSort,cp)
+    local
+      list<Absyn.ClassPart> rcp;
+      list<Absyn.ElementItem> elts;
+      list<String> namesToSort;
+    case (_,_) then sortPackageAlreadyInOrder2(inNamesToSort,cp);
+    else false;
+  end matchcontinue;
+end sortPackageAlreadyInOrder;
+
+protected function sortPackageAlreadyInOrder2
+  input list<String> inNamesToSort;
+  input list<Absyn.ClassPart> cp;
+  output Boolean b;
+algorithm
+  b := match (inNamesToSort,cp)
+    local
+      list<Absyn.ClassPart> rcp;
+      list<Absyn.ElementItem> elts;
+      list<String> namesToSort;
+      String str;
+    case ({},{}) then true;
+    case (namesToSort,Absyn.PUBLIC(elts)::rcp)
+      equation
+        namesToSort = sortPackageAlreadyInOrderElts(namesToSort,elts);
+      then sortPackageAlreadyInOrder2(namesToSort,rcp);
+    case (namesToSort,Absyn.PROTECTED(elts)::rcp)
+      equation
+        namesToSort = sortPackageAlreadyInOrderElts(namesToSort,elts);
+      then sortPackageAlreadyInOrder2(namesToSort,rcp);
+    case (namesToSort,_::rcp)
+      then sortPackageAlreadyInOrder2(namesToSort,rcp);
+    else
+      equation
+        str = stringDelimitList(inNamesToSort, ", ");
+        print("sortPackageAlreadyInOrder2 failed: " +& str +& "\n");
+      then false;
+  end match;
+end sortPackageAlreadyInOrder2;
+
+protected function sortPackageAlreadyInOrderElts
+  input list<String> inNamesToSort;
+  input list<Absyn.ElementItem> inElts;
+  output list<String> outNamesToSort;
+algorithm
+  outNamesToSort := match (inNamesToSort,inElts)
+    local
+      String name1,name2;
+      list<String> namesToSort;
+      list<Absyn.ElementItem> elts;
+    case (name1::namesToSort,Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2))))::elts)
+      equation
+        print(Util.if_(boolNot(name1 ==& name2), "sortPackageAlreadyInOrderElts failed: " +& name1 +& " == " +& name2 +& "\n", ""));
+        true = name1 ==& name2;
+      then sortPackageAlreadyInOrderElts(namesToSort,elts);
+    case (namesToSort,_::elts)
+      then sortPackageAlreadyInOrderElts(namesToSort,elts);
+    else inNamesToSort;
+  end match;
+end sortPackageAlreadyInOrderElts;
 
 end ClassLoader;
 

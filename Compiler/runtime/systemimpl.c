@@ -459,11 +459,11 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
   //fprintf(stderr, "trim left '%s'\n", str);
   length = strlen(str);
   if (length) // It is safe to go backwards in the string because we know there is at least 1 char that stops it
-    str2 = trimStep(str+length, chars_to_be_removed, -1);
+    str2 = trimStep(str+length-1, chars_to_be_removed, -1);
   else
     str2 = str;
   //fprintf(stderr, "trim right '%s'\n", str2);
-  length = str2 - str;
+  length = str2 - str + 1;
   res = (char*) malloc(length+1);
   strncpy(res,str,length);
   res[length] = '\0';
