@@ -417,7 +417,7 @@ algorithm
     case (name,encoding,w1,pack)
       equation
         true = System.regularFileExists(name);
-        (p as Absyn.PROGRAM(cs,w2,ts)) = Parser.parse(name,encoding);
+        Absyn.PROGRAM(cs,w2,ts) = Parser.parse(name,encoding);
         classNames = List.map(cs, Absyn.getClassName);
         str = stringDelimitList(classNames,", ");
         Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
@@ -425,8 +425,8 @@ algorithm
         Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
         s1 = Absyn.withinString(w1);
         s2 = Absyn.withinString(w2);
-        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-      then p;
+        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_1_X), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+      then Absyn.PROGRAM(cs,w1 /* Modelica 1.x did not keep within */,ts);
 
     // faliling
     else

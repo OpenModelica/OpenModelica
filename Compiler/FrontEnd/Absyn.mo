@@ -5341,7 +5341,7 @@ public function withinString
   input Within w1;
   output String str;
 algorithm
-  b := match (w1)
+  str := match (w1)
     local
       Path p1;
     case (TOP()) then "within ;";

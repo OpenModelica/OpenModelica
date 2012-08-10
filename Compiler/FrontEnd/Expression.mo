@@ -5727,10 +5727,10 @@ end isConst;
 protected function isConstWork
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
-  input Boolean res;
+  input Boolean inRes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp,res)
+  outBoolean := match (inExp,inRes)
     local
       Boolean res;
       Operator op;
@@ -5801,7 +5801,6 @@ protected function isConstValueWork
 algorithm
   outBoolean := match (inExp,res)
     local
-      Boolean res;
       Operator op;
       DAE.Exp e,e1,e2;
       Type t;

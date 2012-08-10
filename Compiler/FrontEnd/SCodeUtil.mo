@@ -223,7 +223,6 @@ algorithm
       Option<SCode.Comment> scodeCmt;
       SCode.Ident opName;
       list<Absyn.Path> opFuncNames;
-      Absyn.Info info;
       
   case (Absyn.PARTS(classParts = parts,comment = cmtString),opName,info)
       equation
