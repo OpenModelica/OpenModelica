@@ -111,6 +111,7 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
 protected:
   virtual void mousePressEvent(QMouseEvent *event);
+  virtual QWebView* createWindow(QWebPage::WebWindowType type);
 };
 
 #endif // DOCUMENTATIONWIDGET_H

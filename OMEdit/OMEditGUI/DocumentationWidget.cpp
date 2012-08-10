@@ -237,6 +237,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   // set page font settings
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
+  settings()->setAttribute(QWebSettings::LocalStorageEnabled, 1);
   // set page links settings
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 
@@ -333,4 +334,17 @@ void DocumentationViewer::mousePressEvent(QMouseEvent *event)
   {
     event->ignore();
   }
+}
+
+QWebView *DocumentationViewer::createWindow(QWebPage::WebWindowType type)
+{
+    Q_UNUSED(type);
+ 
+    QWebView *webView = new QWebView;
+    QWebPage *newWeb = new QWebPage(webView);
+    webView->setAttribute(Qt::WA_DeleteOnClose, true);
+    webView->setPage(newWeb);
+    webView->show();
+ 
+    return webView;
 }
