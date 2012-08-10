@@ -1835,6 +1835,18 @@ external "builtin";
 annotation(preferredView="text");
 end importFMU;
 
+/* Under Development */
+function importFMUNew "Imports the Functional Mockup Unit
+  Example command:
+  importFMU(\"A.fmu\");"
+  input String filename "the fmu file name";
+  input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  output Boolean success "Returns true on success";
+external "builtin";
+annotation(preferredView="text");
+end importFMUNew;
+/* Under Development */
+
 function getSourceFile "Returns the filename of the class."
   input TypeName class_;
   output String filename "empty on failure";

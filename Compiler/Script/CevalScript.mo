@@ -106,6 +106,7 @@ protected import XMLDump;
 protected import ComponentReference;
 protected import Uncertainties;
 protected import OpenTURNS;
+protected import FMI;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -1439,6 +1440,17 @@ algorithm
         (cache,Values.BOOL(true),st);
         
     case (cache,env,"importFMU",_,st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+        
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+      equation
+        workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
+        true = FMI.importFMU(filename, workdir);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"importFMUNew",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         

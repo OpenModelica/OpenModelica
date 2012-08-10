@@ -224,6 +224,7 @@ Socket.mo \
 System.mo \
 TaskGraphExt.mo \
 BackendDAEEXT.mo \
+FMI.mo \
 
 
 
