@@ -5333,6 +5333,7 @@ algorithm
       Path p1,p2;
     case (TOP(),TOP()) then true;
     case (WITHIN(p1),WITHIN(p2)) then pathEqual(p1,p2);
+    else false;
   end match;
 end withinEqual;
 

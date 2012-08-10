@@ -341,7 +341,7 @@ algorithm
       equation
         pd = System.pathDelimiter();
         f_1 = stringAppendList({mp,pd,f});
-        Absyn.PROGRAM(cls,_,_) = Parser.parse(f_1,encoding);
+        Absyn.PROGRAM(classes=cls) = parsePackageFile(f,encoding,within_,System.substring(f,1,stringLength(f)-3 /* .mo */));
         p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         p_2 = loadSubpackageFiles(fs, mp, encoding, within_, p_1);
       then
