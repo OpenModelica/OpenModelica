@@ -194,7 +194,7 @@ algorithm
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = parsePackageFile(packagefile,encoding,within_,pack);
+        Absyn.PROGRAM(p1,w1,ts) = parsePackageFile(packagefile,encoding,within_,id);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
@@ -327,7 +327,7 @@ protected function loadSubpackageFiles
 algorithm
   outProgram := matchcontinue (inStringLst,inString,encoding,inWithin,inProgram)
     local
-      String mp,pd,f_1,f;
+      String mp,pd,f_1,f,id;
       Absyn.Within within_,w;
       list<Absyn.Class> cls,oldc;
       Absyn.Program p_1,p_2;
@@ -341,7 +341,8 @@ algorithm
       equation
         pd = System.pathDelimiter();
         f_1 = stringAppendList({mp,pd,f});
-        Absyn.PROGRAM(classes=cls) = parsePackageFile(f,encoding,within_,System.substring(f,1,stringLength(f)-3 /* .mo */));
+        id = System.substring(f,1,stringLength(f)-3 /* .mo */);
+        Absyn.PROGRAM(classes=cls) = parsePackageFile(f_1,encoding,within_,id);
         p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         p_2 = loadSubpackageFiles(fs, mp, encoding, within_, p_1);
       then
@@ -430,7 +431,7 @@ algorithm
     // faliling
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadPackageFile failed: "+&name+&"\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.parsePackageFile failed: "+&name+&"\n");
       then
         fail();
   end matchcontinue;
