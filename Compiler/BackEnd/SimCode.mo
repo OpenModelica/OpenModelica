@@ -333,6 +333,25 @@ uniontype Function
     list<Statement> body;
     Absyn.Info info;
   end FUNCTION;
+  
+  record PARALLEL_FUNCTION
+    Absyn.Path name;
+    list<Variable> outVars;
+    list<Variable> functionArguments;
+    list<Variable> variableDeclarations;
+    list<Statement> body;
+    Absyn.Info info;
+  end PARALLEL_FUNCTION;
+  
+  record KERNEL_FUNCTION
+    Absyn.Path name;
+    list<Variable> outVars;
+    list<Variable> functionArguments;
+    list<Variable> variableDeclarations;
+    list<Statement> body;
+    Absyn.Info info;
+  end KERNEL_FUNCTION;
+  
   record EXTERNAL_FUNCTION
     Absyn.Path name;
     String extName;
@@ -347,6 +366,7 @@ uniontype Function
     Absyn.Info info;
     Boolean dynamicLoad;
   end EXTERNAL_FUNCTION;
+  
   record RECORD_CONSTRUCTOR
     Absyn.Path name;
     list<Variable> funArgs;
@@ -534,6 +554,8 @@ uniontype Context
   end OTHER;
   record INLINE_CONTEXT
   end INLINE_CONTEXT;
+  record PARALLEL_FUNCTION_CONTEXT
+  end PARALLEL_FUNCTION_CONTEXT;
 end Context;
 
 
@@ -541,8 +563,9 @@ public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
 public constant Context contextSimulationDiscrete     = SIMULATION(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
-public constant Context contextAlgloop               = ALGLOOP_CONTEXT();
+public constant Context contextAlgloop                = ALGLOOP_CONTEXT();
 public constant Context contextOther                  = OTHER();
+public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
 
 
 public function elementVars
@@ -590,6 +613,11 @@ algorithm
     local
       Boolean res;
     case (_, FUNCTION_CONTEXT())
+      equation
+        res = crefNoSub(cref);
+      then
+        res;
+    case (_, PARALLEL_FUNCTION_CONTEXT())
       equation
         res = crefNoSub(cref);
       then
@@ -727,6 +755,7 @@ algorithm
     case(DAE.ARRAY(ty=aty, scalar=true, array =(DAE.CREF(componentRef=cr) ::aRest)),context)
       equation
         failure(FUNCTION_CONTEXT()=context); //only in the function context
+        failure(PARALLEL_FUNCTION_CONTEXT()=context); //only in the function context
         { DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         true = isArrayExpansion(aRest, cr, 2);
@@ -783,6 +812,7 @@ algorithm
     case(DAE.MATRIX(ty=aty, matrix = rows as (((DAE.CREF(componentRef=cr))::_)::_) ),context)
       equation
         failure(FUNCTION_CONTEXT()=context);
+        failure(PARALLEL_FUNCTION_CONTEXT()=context); //only in the function context
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         true = isMatrixExpansion(rows, cr, 1, 1);
@@ -1830,13 +1860,18 @@ algorithm
       Absyn.Info info;
       Boolean dynamicLoad;
       list<String> includeDirs;
+      DAE.FunctionAttributes funAttrs;
+      DAE.FunctionParallelism prl;
       
       // Modelica functions.
     case (DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
-      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype),
+      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes=funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
+        
+        DAE.FUNCTION_ATTRIBUTES(_,_,_, DAE.FP_NON_PARALLEL()) = funAttrs;
+        
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         funArgs = List.map(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
@@ -1847,6 +1882,84 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);
+        
+        
+     case (DAE.FUNCTION(path = fpath, source = source,
+      functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
+      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes=funAttrs),
+      partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
+      equation
+        
+        DAE.FUNCTION_ATTRIBUTES(_,_,_, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
+        
+        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        funArgs = List.map(args, typesSimFunctionArg);
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        vars = List.filter(daeElts, isVarNotInputNotOutput);
+        varDecls = List.map(vars, daeInOutSimVar);
+        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        bodyStmts = List.map(algs, elaborateStatement);
+        info = DAEUtil.getElementSourceFileInfo(source);
+      then
+        (KERNEL_FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);   
+        
+        
+    case (DAE.FUNCTION(path = fpath, source = source,
+      functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
+      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes = funAttrs),
+      partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
+      equation
+        
+        DAE.FUNCTION_ATTRIBUTES(_,_,_,DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
+        
+        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        funArgs = List.map(args, typesSimFunctionArg);
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        vars = List.filter(daeElts, isVarQ);
+        varDecls = List.map(vars, daeInOutSimVar);
+        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        bodyStmts = List.map(algs, elaborateStatement);
+        info = DAEUtil.getElementSourceFileInfo(source);
+      then
+        (PARALLEL_FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);
+        
+/*    
+     //mahge930: kernel functions
+    case (DAE.FUNCTION(path = fpath, source = source,
+      functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
+      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes = funAttrs),
+      partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
+      equation
+        
+        DAE.FUNCTION_ATTRIBUTES(_,_,_, DAE.FP_KERNEL_FUNCTION()) = funAttrs;
+        
+        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        funArgs = List.map(args, typesSimFunctionArg);
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        vars = List.filter(daeElts, isVarQ);
+        varDecls = List.map(vars, daeInOutSimVar);
+        algs = List.filter(daeElts, DAEUtil.isAlgorithm);
+        bodyStmts = List.map(algs, elaborateStatement);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        
+        
+        outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVarKernelInterface);     
+        //outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);     
+       
+        funArgs = Util.listMap(args, typesSimFunctionArgKernelInterface);     
+        //funArgs = Util.listMap(args, typesSimFunctionArg);     
+
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
+        
+        //kernel function "vardecls" shouldn't include output vars.
+        vars = Util.listFilter(daeElts, isVarNotInputNotOutput);
+        varDecls = Util.listMap(vars, daeInOutSimVar);
+        algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
+        bodyStmts = Util.listMap(algs, elaborateStatement);
+        
+      then
+        (KERNEL_FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);
+*/
         
         // External functions.
     case (DAE.FUNCTION(path = fpath, source = source,
@@ -9289,6 +9402,24 @@ algorithm
   end match;
 end isVarQ;
 
+/*mahge: kernel functions*/
+protected function isVarNotInputNotOutput
+"Succeeds if inElement is a variable or constant that is not input or output.
+needed in kernel functions since they shouldn't have output vars."
+  input DAE.Element inElement;
+algorithm
+  _ := match (inElement)
+    local
+      DAE.VarKind vk;
+      DAE.VarDirection vd;
+    case DAE.VAR(kind=vk, direction=vd)
+      equation
+        isVarVarOrConstant(vk);
+        isDirectionNotInputNotOutput(vd);
+      then ();
+  end match;
+end isVarNotInputNotOutput;
+
 protected function isVarVarOrConstant
   input DAE.VarKind inVarKind;
 algorithm
@@ -9307,6 +9438,14 @@ algorithm
     case DAE.BIDIR() then ();
   end match;
 end isDirectionNotInput;
+
+protected function isDirectionNotInputNotOutput
+  input DAE.VarDirection inVarDirection;
+algorithm
+  _ := match (inVarDirection)
+    case DAE.BIDIR() then ();
+  end match;
+end isDirectionNotInputNotOutput;
 
 protected function filterNg
 "Sets the number of zero crossings to zero if events are disabled."

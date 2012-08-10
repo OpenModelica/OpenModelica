@@ -126,11 +126,14 @@ void ocl_get_device(){
         clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
         printf("%d CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  : %d\n\n\n", i,mem);
         
-
+        // MinGW needs fflush. They should put it in BIG LETTERS on A BIG BANNER!!
+        fflush(stdout);
     }
     
-    printf("Select your device:      ");
+    printf("Select your device:      ");     fflush(stdout);
     scanf ("%d",&plat_id);
+    
+    
 #else
     plat_id = DEFAULT_DEVICE;
 #endif
@@ -201,9 +204,9 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
     
     // Build the program (OpenCL JIT compilation)
     char options[100];
-    const char* flags = "-w -I. -I\"";
+    const char* flags = "-I ";
     const char* OMHOME = getenv("OPENMODELICAHOME");
-    const char* OMEXT = "/include/omc\"";
+    const char* OMEXT = "/include/omc/";
     
     if ( OMHOME != NULL )
     {
@@ -263,11 +266,58 @@ void ocl_set_kernel_args(cl_kernel kernel, int count, ...){
         err = clSetKernelArg(kernel, i, sizeof(cl_mem),(void*)&tmp);
         //#ifdef SHOW_ARG_SET_ERRORS
         ocl_error_check(OCL_SET_KER_ARGS, err);
-        //if(err)
-        //printf("Error: setting argument nr:  %d\n", i + 1);
+        if(err){
+          printf("Error: setting argument nr:  %d\n", i + 1);
+          exit(1);
+        }
         //#endif
     }
     va_end(arguments); 
+}
+
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, cl_mem in_arg){
+    
+    cl_int err;
+    err = clSetKernelArg(kernel, arg_nr, sizeof(cl_mem),(void*)&in_arg);
+    
+    //#ifdef SHOW_ARG_SET_ERRORS
+    ocl_error_check(OCL_SET_KER_ARGS, err);
+    if(err){
+       printf("Error: setting argument nr:  %d\n", arg_nr + 1);
+       exit(1);
+    }
+    //#endif
+
+}
+
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg){
+    
+    cl_int err;
+    err = clSetKernelArg(kernel, arg_nr, sizeof(modelica_integer),(void*)&in_arg);
+    
+    //#ifdef SHOW_ARG_SET_ERRORS
+    ocl_error_check(OCL_SET_KER_ARGS, err);
+    if(err){
+       printf("Error: setting argument nr:  %d\n", arg_nr + 1);
+       exit(1);
+    }
+    //#endif
+
+}
+
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg){
+    
+    cl_int err;
+    err = clSetKernelArg(kernel, arg_nr, sizeof(modelica_real),(void*)&in_arg);
+    
+    //#ifdef SHOW_ARG_SET_ERRORS
+    ocl_error_check(OCL_SET_KER_ARGS, err);
+    if(err){
+       printf("Error: setting argument nr:  %d\n", arg_nr + 1);
+       exit(1);
+    }
+    //#endif
+
 }
 
 void ocl_execute_kernel(cl_kernel kernel){
@@ -308,6 +358,8 @@ void ocl_execute_kernel(cl_kernel kernel){
     
     clFinish(device_comm_queue);
     ocl_error_check(OCL_ENQUE_ND_RANGE_KERNEL, err);
+    
+    if(err) exit(1);
 
 }
 

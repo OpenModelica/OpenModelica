@@ -185,6 +185,8 @@ package SimCode
     end OTHER;
     record INLINE_CONTEXT
     end INLINE_CONTEXT;
+    record PARALLEL_FUNCTION_CONTEXT
+    end PARALLEL_FUNCTION_CONTEXT;
   end Context;
   
   uniontype Variable
@@ -396,13 +398,28 @@ package SimCode
   uniontype Function
     record FUNCTION    
       Absyn.Path name;
-      list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
       Absyn.Info info;
     end FUNCTION;
+    record PARALLEL_FUNCTION
+      Absyn.Path name;
+      list<Variable> outVars;
+      list<Variable> functionArguments;
+      list<Variable> variableDeclarations;
+      list<Statement> body;
+      Absyn.Info info;
+    end PARALLEL_FUNCTION;
+    record KERNEL_FUNCTION
+      Absyn.Path name;
+      list<Variable> outVars;
+      list<Variable> functionArguments;
+      list<Variable> variableDeclarations;
+      list<Statement> body;
+      Absyn.Info info;
+    end KERNEL_FUNCTION;
     record EXTERNAL_FUNCTION
       Absyn.Path name;
       String extName;
@@ -465,6 +482,7 @@ package SimCode
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloop;             
+  constant Context contextParallelFunction;
   constant list<DAE.Exp> listExpLength1;
 
   function elementVars
@@ -1507,6 +1525,14 @@ package DAE
       list<String> vars;
     end TAIL;
   end TailCall;
+  
+
+  uniontype FunctionParallelism
+    record FP_NON_PARALLEL   "a normal function i.e non_parallel"    end FP_NON_PARALLEL;
+    record FP_PARALLEL_FUNCTION "an OpenCL/CUDA parallel/device function" end FP_PARALLEL_FUNCTION;
+    record FP_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FP_KERNEL_FUNCTION;
+  end FunctionParallelism;
+  
 end DAE;
 
 

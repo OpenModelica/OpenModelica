@@ -81,6 +81,15 @@ cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name);
 //sets Kernel arguments. count is the number of arguments beieng passed
 void ocl_set_kernel_args(cl_kernel kernel, int count, ...);
 
+//sets a single Kernel cl_mem (device pointer) argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, cl_mem in_arg);
+
+//sets a single Kernel Real argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
+
+//sets a single Kernel Integer argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
+
 //executes a kernel
 void ocl_execute_kernel(cl_kernel kernel);
 

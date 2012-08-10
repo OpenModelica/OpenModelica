@@ -58,9 +58,15 @@
 
 
 // DEFINED IN: omc_ocl_util
-extern void ocl_initialize();
-extern void ocl_error_check(int operation, cl_int error_code);
-extern cl_program ocl_build_p_from_src(const char* source, int isfile);
+void ocl_initialize();
+void ocl_error_check(int operation, cl_int error_code);
+cl_program ocl_build_p_from_src(const char* source, int isfile);
+cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name);
+
+
+//executes a kernel
+void ocl_execute_kernel(cl_kernel kernel);
+
 //
 
 

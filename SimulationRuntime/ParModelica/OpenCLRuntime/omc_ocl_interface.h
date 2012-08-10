@@ -56,9 +56,44 @@
 #include <omc_ocl_memory_ops.h>
 
 
+
+
 size_t modelica_array_nr_of_elements(base_array_t *a);
 
 size_t device_array_nr_of_elements(device_array *a);
+
+
+
+// Just to stick to  OpenModelica's function naming pattern
+#define oclSetNumThreadsOnlyGlobal(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsGlobalLocal(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsGlobalLocalArrays(...) ocl_set_num_threads( __VA_ARGS__ ) 
+
+
+// sets the number of threads for subsequent parallel operations
+// arguments are arrays of work_dim size specifiying each workgroup dimension
+void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
+
+
+// sets the number of threads for subsequent parallel operations. 
+// similar to the above function with arrays of size 1 only.
+void ocl_set_num_threads(modelica_integer global_threads_in, modelica_integer local_threads_in);
+
+//sets the number of threads for subsequent parallel operations.
+//This time only the total number of threads desired is given. OpenCL will
+//automatically distribute workitems/threads into work groups.
+//it ca also be used(by passing 0) to reset the number of total threads to the max value of one group (default). 
+void ocl_set_num_threads(modelica_integer global_threads_in);
+
+//sets a single Kernel cl_mem (device pointer) argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, cl_mem in_arg);
+//sets a single Kernel Real argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
+//sets a single Kernel Integer argument. 
+void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
+
+
+
 
 
 //overloaded functions from real/integer/boolean _array in the C_runtime library 

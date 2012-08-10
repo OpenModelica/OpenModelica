@@ -29,7 +29,7 @@ transfer: libOMOCLRuntime.a
 	$(COPY) OpenCL.lib $(OPENMODELICA_LIB)
 	mkdir -p $(OPENMODELICA_INC)/CL/
 	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
-# cp OCLRuntimeUtil.cl $(OPENMODELICAHOME)/include/omc/
+	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICAHOME)/include/omc/
 # cp OCLRuntimeUtil.cl $(OPENMODELICAHOME)/bin/
 # cp ocloffcomp$(EXEEXT) $(OPENMODELICAHOME)/bin/
 
