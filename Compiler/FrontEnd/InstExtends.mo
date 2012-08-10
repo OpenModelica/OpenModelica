@@ -1826,7 +1826,6 @@ algorithm
     local
       String id;
       Absyn.Exp exp;
-      Absyn.NamedArg inNarg;
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;

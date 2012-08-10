@@ -1239,7 +1239,6 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-      Boolean b;
       BackendDAE.BackendDAEType btp;   
     case (false,syst,shared,_,_,_,_) then (syst,shared);
     case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs),repl,movedVars,movedAVars,meqns)
@@ -1283,7 +1282,6 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-      Boolean b;
       BackendDAE.BackendDAEType btp; 
       BackendDAE.EqSystems systs,systs1;  
       BackendDAE.Shared shared;
@@ -11017,7 +11015,6 @@ algorithm
       list<BackendDAE.Equation> eqsLst;
       list<BackendDAE.Var> varLst;
       BackendDAE.Var var;     
-      list<Integer> clst; 
     case ({},_,_,_,_,_) 
       then 
         (inVarLst,inRepl);
