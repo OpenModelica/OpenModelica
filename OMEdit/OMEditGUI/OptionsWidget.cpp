@@ -229,11 +229,9 @@ void OptionsWidget::readGeneralSettings()
   // read the language option
   if (mSettings.contains("language"))
   {
-    if (!mSettings.value("language").toLocale().name().isEmpty())
-    {
-      int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(mSettings.value("language"), Qt::UserRole, Qt::MatchExactly);
+    int currentIndex = mpGeneralSettingsPage->getLanguageComboBox()->findData(mSettings.value("language"), Qt::UserRole, Qt::MatchExactly);
+    if (currentIndex > -1)
       mpGeneralSettingsPage->getLanguageComboBox()->setCurrentIndex(currentIndex);
-    }
   }
   // read the plotting view mode
   if (mSettings.contains("plotting/viewmode"))
