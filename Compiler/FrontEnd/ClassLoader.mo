@@ -365,17 +365,19 @@ public function loadFile
 algorithm
   outProgram := matchcontinue (name,encoding)
     local
-      String dir,pd,dir_1,name,filename;
+      String dir,pd,dir_1,name,filename,cname,prio,mp;
       Absyn.Program p1_1,p1;
+      list<String> rest;
 
     case (name,encoding)
       equation
         true = System.regularFileExists(name);
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
-        p1_1 = Parser.parse(name,encoding);
-        pd = System.pathDelimiter();
-        dir_1 = stringAppendList({dir,pd,".."});
-        p1 = loadModelFromEachClass(p1_1, dir_1, SOME(encoding));
+        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
+        prio = stringDelimitList(rest, " ");
+        prio = Util.if_(stringEq(prio,""), "default", prio);
+        mp = dir +& "/../";
+        p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
       then p1;
 
     case (name,encoding)
@@ -436,44 +438,6 @@ algorithm
         fail();
   end matchcontinue;
 end parsePackageFile;
-
-protected function loadModelFromEachClass
-"function loadModelFromEachClass
-  author: x02lucpo
-  helper function to loadFile"
-  input Absyn.Program inProgram;
-  input String inString;
-  input Option<String> optEncoding;
-  output Absyn.Program outProgram;
-algorithm
-  outProgram := matchcontinue (inProgram,inString,optEncoding)
-    local
-      Absyn.Within a;
-      Absyn.Path path;
-      Absyn.Program pnew,p_res,p_1;
-      String id,dir;
-      list<Absyn.Class> res;
-      Absyn.TimeStamp ts;
-
-    case (Absyn.PROGRAM(classes = {},within_ = a,globalBuildTimes=ts),_,_)
-      then (Absyn.PROGRAM({},a,ts));
-
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a,globalBuildTimes=ts),dir,optEncoding)
-      equation
-        path = Absyn.IDENT(id);
-        pnew = loadClass(path, {"default"}, dir, optEncoding);
-        p_res = loadModelFromEachClass(Absyn.PROGRAM(res,a,ts), dir, optEncoding);
-        p_1 = Interactive.updateProgram(pnew, p_res);
-      then
-        p_1;
-
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadModelFromEachClass failed\n");
-      then
-        fail();
-  end matchcontinue;
-end loadModelFromEachClass;
 
 protected function sortPackageOrder
   "Sort the classes based on the package.order file"
