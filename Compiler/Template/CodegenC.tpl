@@ -2301,7 +2301,7 @@ template functionHeadersParModelica(String filePrefix, list<Function> functions)
   //#include "helper.cl"
   
   <%parallelFunctionHeadersImpl(functions)%>
-	  
+    
   #endif
   
   <%\n%> 
@@ -2775,7 +2775,7 @@ template functionHeader(Function fn, Boolean inFunc)
       <<
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, false)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), false)%>
-      >>	  
+      >>    
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, true)%>
@@ -2827,7 +2827,7 @@ template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Var
 ::=
     let fargsStr =  (fargs |> var => funArgDefinition(var) ;separator=", ") 
     if outVars then 
-	<<
+  <<
     <%outVars |> _ hasindex i1 fromindex 1 => '#define <%fname%>_rettype_<%i1%> c<%i1%>' ;separator="\n"%>
     typedef struct <%fname%>_rettype_s 
     {
@@ -2843,9 +2843,9 @@ template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Var
           ;separator="\n"
       %>
     } <%fname%>_rettype;
-	
-	<%fname%>_rettype _<%fname%>(<%fargsStr%>);
-	  
+  
+  <%fname%>_rettype _<%fname%>(<%fargsStr%>);
+    
     >> 
 end functionHeaderParallelImpl;
 
@@ -2990,20 +2990,20 @@ template parFunArgDefinition2(Variable var, Text &parArgList /*BUFPA*/)
 match var
 //function args will have nill instdims even if they are arrays. handled here
 case var as VARIABLE(ty=T_ARRAY(__)) then
-	let varName = '<%contextCref(var.name,contextFunction)%>'
-	let &parArgList += ',<%\n%>		__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
-	let &parArgList += '<%\n%>		__global modelica_integer* info_<%varName%>'
-	""
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let &parArgList += ',<%\n%>    __global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
+  let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
+  ""
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   if instDims then
-    let &parArgList += ',<%\n%>		__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
-	let &parArgList += '<%\n%>		__global modelica_integer* info_<%varName%>'
+    let &parArgList += ',<%\n%>    __global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
+  let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
   " "
   else
-    let &parArgList += ',<%\n%>		modelica_<%expTypeShort(var.ty)%> <%varName%>'
+    let &parArgList += ',<%\n%>    modelica_<%expTypeShort(var.ty)%> <%varName%>'
   ""
-else let &parArgList += '		#error Unknown variable type in as function argument parFunArgDefinition<%\n%>' ""
+else let &parArgList += '    #error Unknown variable type in as function argument parFunArgDefinition<%\n%>' ""
 end parFunArgDefinition2;
 
 template parFunArgDefinition(Variable var)
@@ -3013,13 +3013,13 @@ template parFunArgDefinition(Variable var)
 match var
 //function args will have nill instdims even if they are arrays. handled here
 case var as VARIABLE(ty=T_ARRAY(__)) then
-	let varName = '<%contextCref(var.name,contextFunction)%>'
-	'__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>		__global modelica_integer* info_<%varName%>'
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
 
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   if instDims then
-    '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>		__global modelica_integer* info_<%varName%>'
+    '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
 
   else
     'modelica_<%expTypeShort(var.ty)%> <%varName%>'
@@ -3033,12 +3033,12 @@ template reconstructKernelArrays(Variable var, Text &reconstructedArrs)
 match var
 //function args will have nill instdims even if they are arrays. handled here
 case var as VARIABLE(ty=T_ARRAY(__)) then
-	let varName = '<%contextCref(var.name,contextFunction)%>'
-	let &reconstructedArrs += '<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let &reconstructedArrs += '<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
     let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
     let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
     let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
-	""
+  ""
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   if instDims then
@@ -3358,16 +3358,16 @@ case KERNEL_FUNCTION(__) then
     )
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   
-	
+  
   // This odd arrangment and call is to get the commas in the right places
   // between the argumetns.
   // This puts correct comma placment even when the 'outvar' list is empty  
-  let argStr = (functionArguments |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n		")
+  let argStr = (functionArguments |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n    ")
   //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n")
   let _ = (outVars |> var => 
      parFunArgDefinition2(var, &argStr /*BUFP*/) ;separator=",\n")
-	
-  // Reconstruct array arguments to structures in the kernels	
+  
+  // Reconstruct array arguments to structures in the kernels  
   let &reconstrucedArrays = buffer ""
   let _ = (functionArguments |> var => 
       reconstructKernelArrays(var, &reconstrucedArrays /*BUFP*/)
@@ -3384,13 +3384,13 @@ case KERNEL_FUNCTION(__) then
   <<
   __kernel void _<%fname%>(
     <%\t%><%\t%><%argStr%>
-	) {
+  ) {
  
 
     /* functionBodyKernelFunction: Reconstruct Arrays */
-	<%reconstrucedArrays%>
-	
-	/* functionBodyKernelFunction: locals */
+  <%reconstrucedArrays%>
+  
+  /* functionBodyKernelFunction: locals */
     <%varDecls%>
     
     /* functionBodyKernelFunction: state in */
@@ -3404,7 +3404,7 @@ case KERNEL_FUNCTION(__) then
     restore_memory_state(<%stateVar%>);
     
     /* Free GPU/OpenCL CPU memory */
-	<%varFrees%>
+  <%varFrees%>
   }
 
   >>
@@ -3445,7 +3445,7 @@ case PARALLEL_FUNCTION(__) then
     <%funArgs%>
     <%varDecls%>
     <%outVarInits%>
-	
+  
     <%stateVar%> = get_memory_state();
 
     <%varInits%>
@@ -3456,10 +3456,10 @@ case PARALLEL_FUNCTION(__) then
     <%outVarCopy%>
     restore_memory_state(<%stateVar%>);
     <%outVarAssign%>
-	
-	/**mahge: Free unwanted meomory allocated**/
-	<%varFrees%>
-	
+  
+  /**mahge: Free unwanted meomory allocated**/
+  <%varFrees%>
+  
     return<%if outVars then ' <%retVar%>' %>;
   }
   
@@ -3499,7 +3499,7 @@ case KERNEL_FUNCTION(__) then
       varOutputKernelInterface(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign)
       ;separator="\n"; empty
     )
-	
+  
   
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
   
@@ -3509,7 +3509,7 @@ case KERNEL_FUNCTION(__) then
   let _ = (functionArguments |> var => 
       setKernelArg_ith(var, &cl_kernelVar, &kernel_arg_number, &kernelArgSets /*BUFP*/)
     )
-	
+  
   let _ = (outVars |> var => 
       setKernelArg_ith(var, &cl_kernelVar, &kernel_arg_number, &kernelArgSets /*BUFP*/)
     )
@@ -3531,30 +3531,30 @@ case KERNEL_FUNCTION(__) then
     <%funArgs%>
     <%varDecls%>
     <%outVarInits%>
-	
+  
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
 
     <%varInits%>
-	
-	///////////////// parallel operations///////////////////////
+  
+  ///////////////// parallel operations///////////////////////
     <%cl_kernelVar%> = ocl_create_kernel(ocl_kernels_program, "_<%fname%>");
-	
-	int <%kernel_arg_number%> = 0;
+  
+  int <%kernel_arg_number%> = 0;
     <%kernelArgSets%>
-	
+  
     ocl_execute_kernel(<%cl_kernelVar%>);
     clReleaseKernel(<%cl_kernelVar%>);
-   	//////////////////////////////////////////////////////////
+     //////////////////////////////////////////////////////////
 
     
     //_return:
     <%outVarCopy%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     <%outVarAssign%>
-	
-	/**mahge: Free unwanted meomory allocated**/
-	<%varFrees%>
-	
+  
+  /**mahge: Free unwanted meomory allocated**/
+  <%varFrees%>
+  
     return<%if outVars then ' <%retVar%>' %>;
   }
   
@@ -3991,9 +3991,9 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
 
       " "
     else
-	  let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
+    let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
       "")
-	  
+    
 case var as VARIABLE(parallelism = PARLOCAL(__)) then 
   let &varDecls += '#PARLOCAL variable type should not be allowed here. FIXME!!<%\n%>' ""
   
@@ -4169,10 +4169,10 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
     let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
     ""
   else
-	let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
-	""
-	
+  let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+  let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
+  ""
+  
 case var as VARIABLE(parallelism = PARLOCAL(__)) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
@@ -4182,10 +4182,10 @@ case var as VARIABLE(parallelism = PARLOCAL(__)) then
     let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
     ""
   else
-	let &varInits += 'LOCAL HERE!! <%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	let &varAssign += 'LOCAL HERE!! copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
-	""
-	
+  let &varInits += 'LOCAL HERE!! <%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+  let &varAssign += 'LOCAL HERE!! copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
+  ""
+  
 case var as VARIABLE(__) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
@@ -4225,7 +4225,7 @@ case var as VARIABLE(ty = T_STRING(__)) then
     else
       let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
       ""
-	  
+    
 case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let &varDecls += '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>'
   let varName = '<%contextCref(var.name,contextFunction)%>'
@@ -4233,20 +4233,20 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
   if instDims then
-	let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-	
-	//mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
+  let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+  
+  //mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
     //let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     //let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
     ""
   else
     let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	//let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	//let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
+  //let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+  //let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
-	""
-	  
+  ""
+    
 case var as VARIABLE(parallelism = PARLOCAL(__)) then
   let &varDecls += '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>'
   let varName = '<%contextCref(var.name,contextFunction)%>'
@@ -4254,20 +4254,20 @@ case var as VARIABLE(parallelism = PARLOCAL(__)) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
   if instDims then
-	let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-	
-	//mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
+  let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+  
+  //mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
     //let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     //let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
     ""
   else
     let &varInits += '<%varName%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	//let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-	//let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
+  //let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
+  //let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCref(var.name,contextFunction)%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
-	""
-	  
+  ""
+    
 case var as VARIABLE(__) then
   let &varDecls += '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>'
   let varName = '<%contextCref(var.name,contextFunction)%>'
@@ -4275,9 +4275,9 @@ case var as VARIABLE(__) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
   if instDims then
-	let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-	
-	//mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
+  let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+  
+  //mahge: Removed here because of leak. All return statments should be fixed this way. even serials.
     //let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     //let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
@@ -5401,9 +5401,9 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context 
-	  case FUNCTION_CONTEXT(__) then
+    case FUNCTION_CONTEXT(__) then
         daeExpCrefRhs2(exp, context, &preExp, &varDecls)
-	  case PARALLEL_FUNCTION_CONTEXT(__) then
+    case PARALLEL_FUNCTION_CONTEXT(__) then
         daeExpCrefRhs2(exp, context, &preExp, &varDecls)
       else
         daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5453,7 +5453,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 <<
                 (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                 >>
-			  case PARALLEL_FUNCTION_CONTEXT(__) then
+        case PARALLEL_FUNCTION_CONTEXT(__) then
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
                   daeExp(exp, context, &preExp, &varDecls)
                   ;separator=", ")
@@ -5590,9 +5590,9 @@ template daeExpCrefLhs(Exp exp, Context context, Text &afterExp /*BUFP*/,
   // by daeExpRecordCrefLhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context 
-	  case FUNCTION_CONTEXT(__) then
+    case FUNCTION_CONTEXT(__) then
         daeExpCrefLhs2(exp, context, &afterExp, &varDecls)
-	  case PARALLEL_FUNCTION_CONTEXT(__) then
+    case PARALLEL_FUNCTION_CONTEXT(__) then
         daeExpCrefLhs2(exp, context, &afterExp, &varDecls)
       else
         daeExpRecordCrefLhs(t, cr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5637,16 +5637,16 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
             case "metatype_array" then
               'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
             else
-	          match context
+            match context
                 case FUNCTION_CONTEXT(__) then
                   <<
                   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
-	            case PARALLEL_FUNCTION_CONTEXT(__) then
+              case PARALLEL_FUNCTION_CONTEXT(__) then
                   <<
                   (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
-		        else ""
+            else ""
         else
           // The array subscript denotes a slice
           let &afterExp += '/* daeExpCrefLhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
@@ -6297,10 +6297,10 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
       case T_NORETCALL(__) then ""
       else tempDecl(retType, &varDecls)
     let &preExp += if not attr.builtin then 
-	  match context 
-	    case FUNCTION_CONTEXT(__) then "" 
-	    case PARALLEL_FUNCTION_CONTEXT(__) then "" 
-		else
+    match context 
+      case FUNCTION_CONTEXT(__) then "" 
+      case PARALLEL_FUNCTION_CONTEXT(__) then "" 
+    else
           <<
           <%\n%>#ifdef _OMC_MEASURE_TIME
           SIM_PROF_TICK_FN(<%funName%>_index);
@@ -6308,10 +6308,10 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
           >>
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     let &preExp += if not attr.builtin then 
-	  match context 
-	    case FUNCTION_CONTEXT(__) then "" 
-	    case PARALLEL_FUNCTION_CONTEXT(__) then "" 
-		else
+    match context 
+      case FUNCTION_CONTEXT(__) then "" 
+      case PARALLEL_FUNCTION_CONTEXT(__) then "" 
+    else
           <<
           <%\n%>#ifdef _OMC_MEASURE_TIME
           SIM_PROF_ACC_FN(<%funName%>_index);
@@ -6514,9 +6514,9 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)
     match context 
-	  case FUNCTION_CONTEXT(__)  then
+    case FUNCTION_CONTEXT(__)  then
         arrName
-	  case PARALLEL_FUNCTION_CONTEXT(__)  then
+    case PARALLEL_FUNCTION_CONTEXT(__)  then
         arrName
       else
         arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, &varDecls)
@@ -6890,12 +6890,12 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
     case "metatype_array" then
       'arrayGet(<%arrName%>,<%dimsValuesStr%>) /*arrayScalarRhs*/'
     else
-	  match context
+    match context
         case FUNCTION_CONTEXT(__) then
           <<
           (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
           >>
-	      case PARALLEL_FUNCTION_CONTEXT(__) then
+        case PARALLEL_FUNCTION_CONTEXT(__) then
           <<
           (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
           >>
