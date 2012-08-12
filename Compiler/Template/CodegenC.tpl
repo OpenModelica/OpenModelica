@@ -2223,8 +2223,8 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   extern "C" {
   #endif
   
-  //the OpenCL program. Made global to avoid repeated builds
-  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true);
+  /* the OpenCL program. Made global to avoid repeated builds
+  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true); */
   
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   <%functionBodies(functions)%>
