@@ -1855,7 +1855,7 @@ algorithm
   end match;
 end isDiscreteExp1;
 
-public function traversingisDiscreteExpFinder "
+protected function traversingisDiscreteExpFinder "
 Author: Frenkel TUD 2010-11
 Helper for isDiscreteExp"
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>>> inTpl;

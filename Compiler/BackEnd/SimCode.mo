@@ -6185,8 +6185,8 @@ algorithm
       // normal call
     case (BackendDAE.ALGORITHM(alg=alg)::_,_,false,_)
       equation
-        algOutVars = CheckModel.algorithmOutputs(alg);
         solvedVars = List.map(vars,BackendVariable.varCref);
+        algOutVars = CheckModel.algorithmOutputs(alg);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = List.setEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
@@ -6206,7 +6206,7 @@ algorithm
         ({SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
         
         // Error message, inverse algorithms not supported yet
-    case (BackendDAE.ALGORITHM(alg=alg,source=source)::_,_,skipDiscinAlgorithm,_)
+    case (BackendDAE.ALGORITHM(alg=alg,source=source)::_,_,_,_)
       equation
         solvedVars = List.map(vars,BackendVariable.varCref);
         algOutVars = CheckModel.algorithmOutputs(alg);
@@ -9116,97 +9116,6 @@ algorithm
         block_;
   end match;
 end getZcMixedSystem;
-
-protected function splitOutputBlocks
-"Splits the output blocks into two
-  parts, one for continous output variables and one for discrete output values.
-  This must be done to ensure that discrete variables are calculated before and
-  after a discrete event."
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input BackendDAE.StrongComponents inComps;
-  output BackendDAE.StrongComponents contBlocks;
-  output BackendDAE.StrongComponents discBlocks;
-algorithm
-  (contBlocks,discBlocks) := match(syst,shared,inComps)
-    local 
-      BackendDAE.Variables vars,vars2,knvars;
-      list<BackendDAE.Var>  varLstDiscrete;
-      BackendDAE.EquationArray eqns;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(knownVars = knvars),inComps)
-      equation
-        varLstDiscrete = BackendVariable.getAllDiscreteVarFromVariables(vars);
-        vars2 = BackendDAEUtil.listVar(varLstDiscrete);
-        (contBlocks,discBlocks,_) = splitOutputBlocks2(vars2,vars,knvars,eqns,inComps);
-      then (contBlocks,discBlocks);
-  end match;
-end splitOutputBlocks;
-
-protected function splitOutputBlocks2
-  input BackendDAE.Variables inDiscVars;
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knvars;
-  input BackendDAE.EquationArray eqns;
-  input BackendDAE.StrongComponents inBlocks;
-  output BackendDAE.StrongComponents contBlocks;
-  output BackendDAE.StrongComponents discBlocks;
-  output BackendDAE.Variables outDiscVars;
-algorithm
-  (contBlocks,discBlocks,outDiscVars) := matchcontinue(inDiscVars,vars,knvars,eqns,inBlocks)
-    local 
-      BackendDAE.StrongComponent blck;
-      BackendDAE.Variables discVars;
-      BackendDAE.StrongComponents blocks;
-      
-      /* discrete block */
-    case(discVars,vars,knvars,eqns,blck::blocks)
-      equation
-        discVars = blockSolvesDiscrete(discVars,vars,knvars,eqns,blck);
-        (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,blocks);
-      then (contBlocks,blck::discBlocks,discVars);
-        
-        /* continous block */
-    case(discVars,vars,knvars,eqns,blck::blocks)
-      equation
-        (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,blocks);
-      then (blck::contBlocks,discBlocks,discVars);
-        
-    case(discVars,vars,knvars,eqns,{}) then ({},{},discVars);
-  end matchcontinue;
-end splitOutputBlocks2;
-
-protected function blockSolvesDiscrete
-"Help function to splitOutputBlocks
- succeds if the block solves for any discrete variable."
-  input BackendDAE.Variables inDiscVars;
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knvars;
-  input BackendDAE.EquationArray eqns;
-  input BackendDAE.StrongComponent blck;
-  output BackendDAE.Variables outDiscVars;
-algorithm
-  outDiscVars := matchcontinue(inDiscVars,vars,knvars,eqns,blck)
-    local 
-      list<BackendDAE.Equation> eqn_lst; list<BackendDAE.Var> var_lst;
-      BackendDAE.Variables discVars;
-    // Solves a discrete variable, typically in when-clause
-    case(discVars,vars,knvars,eqns,blck)
-      equation
-        (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(blck, eqns, vars);
-        _::_ = List.select(var_lst,BackendDAEUtil.isVarDiscrete);
-        discVars = BackendVariable.addVars(var_lst,discVars);
-      then discVars;
-        
-    // Equation has variablity discrete time
-    case(discVars,vars,knvars,eqns,blck) equation
-      (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(blck, eqns, vars);
-      var_lst = List.map1(var_lst,BackendVariable.setVarKind,BackendDAE.DISCRETE());
-      discVars = BackendVariable.addVars(var_lst,discVars);
-      _::_ = List.select2(eqn_lst,BackendDAEUtil.isDiscreteEquation,discVars,knvars);
-      discVars = BackendVariable.addVars(var_lst,discVars);
-    then discVars;
-  end matchcontinue;
-end blockSolvesDiscrete;
 
 protected function getCalledFunctionsInFunctions
 "function: getCalledFunctionsInFunctions

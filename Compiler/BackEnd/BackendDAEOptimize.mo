@@ -7439,7 +7439,7 @@ algorithm
                                                                          "removeSimpleEquations",
                                                                          "collapseIndependentBlocks"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
-          Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",backendDAE));
+          Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",backendDAE2));
         then backendDAE2;
      else
        equation
@@ -7498,6 +7498,7 @@ algorithm
       Env.Env env;      
       
       String matrixName;
+      array<Integer> ass2;
 
     case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache,env=env)), {}, _, _, _, _, _, _) equation
       jacOrderedVars = BackendDAEUtil.emptyVars();
@@ -7516,7 +7517,7 @@ algorithm
       jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
     then jacobian;
      
-    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, matrixName) equation
+    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, matrixName) equation
       
       // Generate tmp varibales
       diffvars = BackendDAEUtil.varList(orderedVars);
@@ -7525,7 +7526,7 @@ algorithm
 
       // differentiate the equation system
       Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
-      derivedEquationslst = deriveAll(BackendDAEUtil.equationList(orderedEqs), {x}, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, vars, (matrixName,false), {});
+      derivedEquationslst = deriveAll(BackendDAEUtil.equationList(orderedEqs),arrayList(ass2), {x}, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, vars, (matrixName,false), {});
       derivedEquations = List.flatten(derivedEquationslst);
       Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
       
@@ -7559,12 +7560,12 @@ algorithm
       
     then jacobian;
  
-    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, _) equation
+    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, _) equation
       
       diffvars = BackendDAEUtil.varList(orderedVars);
       (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, vars, (inMatrixName,false));
       Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> created all derived vars: " +& "No. :" +& intString(listLength(comref_diffvars)) +& "time: " +& realString(clock()) +& "\n");
-      derivedEquationslst = deriveAll(BackendDAEUtil.equationList(orderedEqs), vars, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, comref_diffvars, (inMatrixName,false), {});
+      derivedEquationslst = deriveAll(BackendDAEUtil.equationList(orderedEqs),arrayList(ass2), vars, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, comref_diffvars, (inMatrixName,false), {});
       derivedEquations = List.flatten(derivedEquationslst);
       false = (listLength(derivedVariables) == listLength(derivedEquations));
       Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> failed vars are not equal to equations: " +& intString(listLength(derivedEquations)) +& " time: " +& realString(clock()) +& "\n");
@@ -7888,6 +7889,7 @@ end changeIndices2;
 protected function deriveAll "function deriveAll
   author: lochel"
   input list<BackendDAE.Equation> inEquations;
+  input list<Integer> ass2;
   input list<DAE.ComponentRef> inVars;
   input DAE.FunctionTree inFunctions;
   input BackendDAE.Variables inInputVars;
@@ -7901,7 +7903,7 @@ protected function deriveAll "function deriveAll
   output list<list<BackendDAE.Equation>> outDerivedEquations;
 algorithm
   outDerivedEquations := 
-  matchcontinue(inEquations, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName, inDerivedEquations)
+  matchcontinue(inEquations, ass2, inVars, inFunctions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName, inDerivedEquations)
     local
       BackendDAE.Equation currEquation, eqn1;
       DAE.FunctionTree functions;
@@ -7909,22 +7911,24 @@ algorithm
       list<BackendDAE.Equation> restEquations, currDerivedEquations, restDerivedEquations, derivedEquations;
       BackendDAE.Variables inputVars, paramVars, stateVars, knownVars;
       DAE.ComponentRef dummycref;
+      list<Integer> ass2_1,solvedfor;
       
-    case({}, _, _, _, _, _, _, _, _, _, _) then listReverse(inDerivedEquations);
+    case({},_, _, _, _, _, _, _, _, _, _, _) then listReverse(inDerivedEquations);
       
-    case(currEquation::restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _)
+    case(currEquation::restEquations,_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _)
       equation
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " +& intString(listLength(restEquations)) +& "\n");
       //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, {currEquation});
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
       //Debug.fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
-      currDerivedEquations = derive(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
+      (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
+      currDerivedEquations = derive(currEquation, solvedfor, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, currDerivedEquations);
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //Debug.fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
      then
-       deriveAll(restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName, currDerivedEquations::inDerivedEquations);
+       deriveAll(restEquations, ass2_1, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName, currDerivedEquations::inDerivedEquations);
 
     else
      equation
@@ -7936,6 +7940,7 @@ end deriveAll;
 protected function derive "function derive
   author: lochel"
   input BackendDAE.Equation inEquation;
+  input list<Integer> solvedfor;
   input list<DAE.ComponentRef> inVar;
   input DAE.FunctionTree inFunctions;
   input BackendDAE.Variables inInputVars;
@@ -7947,7 +7952,7 @@ protected function derive "function derive
   input tuple<String,Boolean> inMatrixName;
   output list<BackendDAE.Equation> outDerivedEquations;
 algorithm
-  outDerivedEquations := matchcontinue(inEquation, inVar, inFunctions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName)
+  outDerivedEquations := matchcontinue(inEquation, solvedfor, inVar, inFunctions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName)
     local
       BackendDAE.Equation currEquation;
       list<BackendDAE.Equation> derivedEqns;
@@ -7968,24 +7973,26 @@ algorithm
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<list<DAE.Subscript>> subslst;
-    
-    //remove dicrete Equation  
-    case(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
-      true = BackendDAEUtil.isDiscreteEquation(currEquation,inorderedVars,knownVars);
-      Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
-    then {};
-        
-    case(currEquation as BackendDAE.WHEN_EQUATION(size=_), vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
+      list<BackendDAE.Var> solvedvars;
+
+    case(currEquation as BackendDAE.WHEN_EQUATION(size=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
       Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
     then {};
+    
+    //remove dicrete Equation  
+    case(currEquation,_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+      solvedvars = List.map1r(solvedfor,BackendVariable.getVarAt,inorderedVars);
+      List.mapAllValue(solvedvars, BackendVariable.isVarDiscrete, true);
+      Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
+    then {};
 
-    case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _,  _, _) equation
+    case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _,  _, _) equation
       lhs_ = differentiateWithRespectToXVec(lhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       rhs_ = differentiateWithRespectToXVec(rhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=lhs,right=rhs,source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+    case(currEquation as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=lhs,right=rhs,source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
         ad = List.map(ds,Util.makeOption);
         subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
         subslst = BackendDAEUtil.rangesToSubscripts(subslst);
@@ -7996,24 +8003,24 @@ algorithm
     then
       deriveLst(lhs_,rhs_,source,vars, functions, inputVars, paramVars, stateVars, knownVars,inorderedVars, inDiffVars, inMatrixName, {});
       
-    case(currEquation as BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=exp, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+    case(currEquation as BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=exp, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       crefs = List.map2(vars,differentiateVarWithRespectToXR,cref, inMatrixName);
       exps = differentiateWithRespectToXVec(exp, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       derivedEqns = List.threadMap1(crefs, exps, createSolvedEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.RESIDUAL_EQUATION(exp=exp, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+    case(currEquation as BackendDAE.RESIDUAL_EQUATION(exp=exp, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       exps = differentiateWithRespectToXVec(exp, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       derivedEqns = List.map1(exps, createResidualEqn, source);
     then derivedEqns;
       
-    case(currEquation as BackendDAE.ALGORITHM(size=size,alg=alg, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _)
+    case(currEquation as BackendDAE.ALGORITHM(size=size,alg=alg, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _)
     equation
       algs = deriveOneAlg(alg,vars,functions,inputVars,paramVars,stateVars,knownVars,inorderedVars,0,inDiffVars,inMatrixName);
       derivedEqns = List.map2(algs, createAlgorithmEqn, size, source);
     then derivedEqns;
 
-    case(currEquation as BackendDAE.COMPLEX_EQUATION(source=_), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
+    case(currEquation as BackendDAE.COMPLEX_EQUATION(source=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed: COMPLEX_EQUATION-case"});
     then fail();
       
@@ -8406,7 +8413,7 @@ algorithm
       true = BackendDAEUtil.isDiscreteExp(rhs,allVars,knownVars);
       Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.differentiateAlgorithmStatements: discrete equation has been removed.\n");
     then {};
-      
+ 
     case((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs,source=source_))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _) 
     equation
       controlparaVars = BackendVariable.addVars(controlVars, paramVars);
@@ -8581,6 +8588,7 @@ algorithm
       DAE.Exp z1, z2, z3, z4, z5, z6, z7;
       Integer index;
       Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
+      list<DAE.Var> varLst;
       
     case(e as DAE.ICONST(_), xlist,functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, _)
       equation
@@ -8591,11 +8599,29 @@ algorithm
       equation
         dxlist = createDiffListMeta(e,xlist,diffRealZero, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)));
     then dxlist;
-    
+
     // d(time)/d(x)
     case(e as DAE.CREF(componentRef=(cref as DAE.CREF_IDENT(ident = "time",subscriptLst = {}))), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, _)
       equation
         dxlist = createDiffListMeta(e,xlist,diffRealZero, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)));
+    then dxlist;
+          
+  // case for Records
+    case (e as DAE.CREF(componentRef=cref, ty = et as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(fname))), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, _)
+      equation
+        expList1 = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cref);
+        e1 = DAE.CALL(fname,expList1,DAE.CALL_ATTR(et,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then
+        differentiateWithRespectToXVec(e1,xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
+    // case for arrays
+    case (e as DAE.CREF(componentRef=cref, ty = et as DAE.T_ARRAY(dims=_)), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, _)
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+      then
+        differentiateWithRespectToXVec(e1,xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);   
+    
+    case(e as DAE.CREF(componentRef=cref),xlist, functions, inputVars, paramVars, stateVars, knownVars,  allVars, diffVars, _) equation
+      dxlist = createDiffListMeta(e,xlist,diffCref, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)));
     then dxlist;
       
     // dummy diff
@@ -9761,13 +9787,12 @@ algorithm
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       BackendDAE.JacobianType jacType;
       BackendDAE.AdjacencyMatrixEnhanced me;
       BackendDAE.AdjacencyMatrixTEnhanced meT;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
-      
+
     case (_,_,{})
       then (isyst,ishared,false);
     case (_,shared as BackendDAE.SHARED(constraints=constrs),
@@ -9782,7 +9807,7 @@ algorithm
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.NORMAL());
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
-          
+  
         (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,shared);
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
@@ -9812,7 +9837,7 @@ algorithm
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvars,intString,", ","\nResidualEquations:\n"));
           Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(residual,intString,", ","\n")); 
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"System.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
         // check if tearing make sense
         tornsize = listLength(tvars);
         true = intLt(tornsize,size);
@@ -10662,7 +10687,7 @@ algorithm
         kvars1 = BackendVariable.mergeVariables(sysvars1, kvars1);
         eqnslst = BackendDAEUtil.equationList(eqns);
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceDerCalls, vars);
-        derivedEquations = deriveAll(eqnslst,tvarcrefs,functionTree,BackendDAEUtil.listVar({}),kvars1,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar({}),vars,tvarcrefs,("$WRT",true),{});
+        derivedEquations = deriveAll(eqnslst,arrayList(ass2),tvarcrefs,functionTree,BackendDAEUtil.listVar({}),kvars1,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar({}),vars,tvarcrefs,("$WRT",true),{});
         derivedEquationsArr = listArray(derivedEquations);
         glst = List.map1r(othercomps1,arrayGet,derivedEquationsArr);
         hlst = List.map1r(residual1,arrayGet,derivedEquationsArr);
