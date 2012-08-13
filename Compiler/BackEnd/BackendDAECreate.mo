@@ -1351,7 +1351,7 @@ algorithm
       Integer size;
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
-      DAE.Exp cre,e,cond;
+      DAE.Exp cre,e;
       DAE.ComponentRef cr;
       list<DAE.Element> xs,eqns;
       DAE.Element el;
