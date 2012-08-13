@@ -15,7 +15,7 @@ CXX	= @CXX@
 CFLAGS	= @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
-FMILIB = -L../../3rdParty/FMIL/install/lib -lfmilib_shared
+FMILIB = -L../../3rdParty/FMIL/install/lib -lfmilib
 
 EXEEXT  = @EXEEXT@
 
