@@ -15,6 +15,7 @@ CXX	= @CXX@
 CFLAGS	= @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
+FMILIB = -L../../3rdParty/FMIL/install/lib -lfmilib_shared
 
 EXEEXT  = @EXEEXT@
 
@@ -42,4 +43,4 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
 $(PROG): $(SRCO) $(SUBDIRS)
-	$(CXX) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB)

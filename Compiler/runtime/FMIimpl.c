@@ -32,7 +32,6 @@
 extern "C" {
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <stdio.h>
 
 #include "systemimpl.h"
@@ -114,12 +113,6 @@ int FMIImpl__importFMU(char *fileName, char* workingDirectory)
   fmi_import_free_context(context);
   return 1;
 }
-#else
-int FMIImpl__importFMU(char *fileName, char* workingDirectory)
-{
-  return 1;
-}
-#endif
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,8 @@ libdir = @libdir@
 includedir = @includedir@
 datadir = @datadir@
 docdir = @docdir@
+CMAKE = cmake
+CMAKE_TARGET = "Unix Makefiles"
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@
@@ -24,11 +26,15 @@ settings:
 
 difftool: mkbuilddirs
 	$(MAKE) -C testsuite/difftool
-omc: difftool interactive docs fmi
+omc: difftool interactive docs fmi fmil
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: difftool interactive docs fmi
+omcd: difftool interactive docs fmi fmil
 	(cd Compiler && $(MAKE) -f Makefile debug)
+
+fmil:
+	mkdir -p 3rdParty/FMIL/build
+	(cd 3rdParty/FMIL/build; $(CMAKE) .. -G $(CMAKE_TARGET); $(MAKE); $(MAKE) install)
 
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
