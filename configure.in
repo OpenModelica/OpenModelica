@@ -495,9 +495,20 @@ if test -n "$QMAKE"; then
     for f in {/usr,/opt,$PREFIX}/include/{qwt5,qwt,qwt-qt4}/; do
       test -f "$f/qwt.h" && with_qwt="$f" || with_qwt_checked="$with_qwt_checked $f"
     done
-    echo $with_qwt | grep -q -- -qt4 && with_qwt_suffix="-qt4"
+    if grep -q 'QWT_VERSION *0x05@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h"; then
+      # Arch Linux AUR qwt5 package uses library name=qwt5 for both include and lib
+      for f in {/usr,/opt,/usr/local,$PREFIX}/lib/libqwt5.so; do
+        test -e "$f" && with_qwt_suffix="5"
+      done
+    # Look for QWT_VERSION 5 or 6 since we support both
+    elif grep -q 'QWT_VERSION *0x0@<:@5-6@:>@@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h"; then
+      true
+    else
+      with_qwt="bad"
+    fi
     with_qwt_res=$with_qwt
-    grep -q 'QWT_VERSION *0x0@<:@5-6@:>@@<:@0-9@:>@\{4\}$' "$with_qwt/qwt_global.h" || with_qwt="bad"
+    echo $with_qwt | grep -q -- -qt4 && with_qwt_suffix="-qt4"
+    echo with_qwt_suffix=$with_qwt_suffix
   fi
 
   if test x"$with_qwt" = "xno"; then
