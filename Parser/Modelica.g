@@ -364,29 +364,29 @@ element returns [void* ast]
   void *redecl;
 }
   :
-    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("import"), ic, INFO($start), mk_none());}
-  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER,mk_scon("extends"), ec, INFO($start),mk_none());}
+    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, INFO($start), mk_none());}
+  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, INFO($start),mk_none());}
   | du=defineunit_clause { $ast = du;}
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
            if (!cc)
              $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(),
-                                  innerouter, mk_scon("??"),
+                                  innerouter,
                                   Absyn__CLASSDEF(RML_FALSE, cdef.ast),
                                   INFO($start), mk_none());
            else
              $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(), innerouter,
-                                   mk_scon("component"), cc, INFO($start), mk_none());
+                                   cc, INFO($start), mk_none());
         }
     | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            if (cc)
              $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                  mk_scon("replaceable component"), cc, INFO($start), mk_some_or_none(constr));
+                                   cc, INFO($start), mk_some_or_none(constr));
            else
              $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                  mk_scon("replaceable ??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
+                                   Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
         }
     )
   | conn=CONNECT

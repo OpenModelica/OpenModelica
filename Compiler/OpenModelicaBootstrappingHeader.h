@@ -1308,7 +1308,7 @@ extern struct record_description Absyn_ElementItem_LEXER__COMMENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_Element_ELEMENT__desc__fields[7] = {"finalPrefix","redeclareKeywords","innerOuter","name","specification","info","constrainClass"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_Element_ELEMENT__desc__fields[6] = {"finalPrefix","redeclareKeywords","innerOuter","specification","info","constrainClass"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_Element_ELEMENT__desc = {
   "Absyn_Element_ELEMENT",
   "Absyn.Element.ELEMENT",
@@ -1318,8 +1318,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Element_ELEMENT__desc 
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Element_ELEMENT__desc;
 #endif
-#define Absyn__ELEMENT_3dBOX7 3
-#define Absyn__ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,specification,info,constrainClass) (mmc_mk_box8(3,&Absyn_Element_ELEMENT__desc,finalPrefix,redeclareKeywords,innerOuter,name,specification,info,constrainClass))
+#define Absyn__ELEMENT_3dBOX6 3
+#define Absyn__ELEMENT(finalPrefix,redeclareKeywords,innerOuter,specification,info,constrainClass) (mmc_mk_box7(3,&Absyn_Element_ELEMENT__desc,finalPrefix,redeclareKeywords,innerOuter,specification,info,constrainClass))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_DEFINEUNIT__desc_added
 #define Absyn_Element_DEFINEUNIT__desc_added

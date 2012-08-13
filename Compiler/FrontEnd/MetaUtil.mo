@@ -280,7 +280,7 @@ algorithm
       Absyn.Class class_, cl2;
       list<Absyn.Class> metaClasses, classes;
       list<Absyn.ElementItem> elementItems;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_,class_=class_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)))
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_,class_=class_),info=info)))
       equation
         metaClasses = createMetaClasses(class_);
         cl2 = createMetaClassesFromPackage(class_);
@@ -305,8 +305,8 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)
-      then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,info=info,constrainClass=constrainClass)),class_)
+      then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
     /* Annotations, comments */
     else elementItem;
   end match;
@@ -396,7 +396,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Class cl;
       Absyn.Restriction r;
-    case(Absyn.ELEMENT(_,_,_,_,spec as Absyn.CLASSDEF(_,cl as Absyn.CLASS(_,_,_,_,r,_,_)),_,_))
+    case(Absyn.ELEMENT(specification=spec as Absyn.CLASSDEF(class_=cl as Absyn.CLASS(restriction=r))))
       then r;
     case(_)
       then Absyn.R_UNKNOWN();
@@ -486,10 +486,10 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info inf;
       Option<Absyn.ConstrainClass> con;
-    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, name=n, specification=spec, info=inf, constrainClass=con),name,index,singleton)
+    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),name,index,singleton)
       equation
         spec = fixElementSpecification(spec,name,index,singleton);
-      then Absyn.ELEMENT(f,r,i,n,spec,inf,con);
+      then Absyn.ELEMENT(f,r,i,spec,inf,con);
   end match;
 end fixElement;
 

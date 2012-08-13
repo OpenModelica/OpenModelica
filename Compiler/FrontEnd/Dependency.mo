@@ -1216,7 +1216,7 @@ algorithm
     Absyn.ElementSpec spec;
     Absyn.ElementItem elit;
   case({},inTable) then inTable;
-  case((Absyn.ELEMENTITEM(Absyn.ELEMENT(name = id,specification=spec)))::elemis,inTable)
+  case((Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=spec)))::elemis,inTable)
     equation
       table1 = createLocalVariableStruct2(elemis,inTable);
       table2 = createLocalVariableStruct3(spec,table1);
@@ -1462,7 +1462,7 @@ algorithm
   elementspec := Absyn.EXTENDS(modelName,{},NONE());
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
     Absyn.PARTS({},{},{Absyn.PUBLIC({Absyn.ELEMENTITEM(
-      Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",elementspec,info,NONE())
+      Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),elementspec,info,NONE())
     )})},NONE()),info);
 end createTopLevelTotalClass;
 

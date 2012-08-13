@@ -1568,7 +1568,7 @@ algorithm
       Ident name,text;
       Absyn.ElementSpec spec;
       Absyn.Info info;
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,
                         specification = spec,info = info,constrainClass = NONE()))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -1576,16 +1576,14 @@ algorithm
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
-        Print.printBuf(", \"");
-        Print.printBuf(name);
-        Print.printBuf("\", ");
+        Print.printBuf(", ");
         printElementspec(spec);
         Print.printBuf(", ");
         printInfo(info);
         Print.printBuf("),NONE())");
       then
         ();
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,
                         specification = spec,info = info,constrainClass = SOME(_)))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -1593,9 +1591,7 @@ algorithm
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
-        Print.printBuf(", \"");
-        Print.printBuf(name);
-        Print.printBuf("\", ");
+        Print.printBuf(",");
         printElementspec(spec);
         Print.printBuf(", ");
         printInfo(info);
@@ -5975,7 +5971,7 @@ algorithm
       Option<Absyn.ConstrainClass> constrainClass;
       list<Absyn.NamedArg> args;
       Option<String> optName;
-    case Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,name,specification,info,constrainClass)
+    case Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,specification,info,constrainClass)
       equation
         Print.printBuf("\nrecord Absyn.ELEMENT finalPrefix = ");
         Print.printBuf(Util.if_(finalPrefix,"true","false"));
@@ -5983,9 +5979,7 @@ algorithm
         printOption(redeclareKeywords, printRedeclareKeywordsAsCorbaString);
         Print.printBuf(",innerOuter = ");
         printInnerOuterAsCorbaString(innerOuter);
-        Print.printBuf(",name = \"");
-        Print.printBuf(name);
-        Print.printBuf("\",specification = ");
+        Print.printBuf(",specification = ");
         printElementSpecAsCorbaString(specification);
         Print.printBuf(",info = ");
         printInfoAsCorbaString(info);

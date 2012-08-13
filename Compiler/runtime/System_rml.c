@@ -85,9 +85,9 @@ RML_BEGIN_LABEL(System__strtok)
   s=strtok(str,delimit);
   if (s == NULL)
   {
-    /* adrpo added 2004-10-27 */
     free(str);
-    rmlA0=res; RML_TAILCALLK(rmlFC);
+    /* Empty string becomes empty list: A success! */
+    rmlA0=res; RML_TAILCALLK(rmlSC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
   while ((s=strtok(NULL,delimit)))
@@ -96,7 +96,6 @@ RML_BEGIN_LABEL(System__strtok)
   }
   rmlA0=res;
 
-  /* adrpo added 2004-10-27 */
   free(str);
 
   RML_TAILCALLQ(RML__list_5freverse,1);

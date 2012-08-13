@@ -313,7 +313,6 @@ uniontype Element "Elements
     Boolean                   finalPrefix;
     Option<RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
     InnerOuter                innerOuter "inner/outer" ;
-    Ident                     name;
     ElementSpec               specification "Actual element specification" ;
     Info                      info  "File name the class is defined in + line no + column no" ;
     Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
@@ -5698,5 +5697,27 @@ algorithm
        cp;
  end matchcontinue;
 end getExternalFromClassParts;
+
+public function isParts
+  input ClassDef cl;
+  output Boolean b;
+algorithm
+  b := match cl
+    case PARTS(comment=_) then true;
+    else false;
+  end match;
+end isParts;
+
+public function makeClassElement "Makes a class into an ElementItem"
+  input Class cl;
+  output ElementItem el;
+algorithm
+  el := match cl
+    local
+      Info info;
+      Boolean fp;
+    case CLASS(finalPrefix=fp,info=info) then ELEMENTITEM(ELEMENT(fp,NONE(),NOT_INNER_OUTER(),CLASSDEF(false,cl),info,NONE()));
+  end match;
+end makeClassElement;
 
 end Absyn;

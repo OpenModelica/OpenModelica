@@ -3402,4 +3402,11 @@ algorithm
   end match;
 end translateContent;
 
+public function removeLast3Char
+  input String str;
+  output String outStr;
+algorithm
+  outStr := System.substring(str,1,stringLength(str)-3);
+end removeLast3Char;
+
 end Util;

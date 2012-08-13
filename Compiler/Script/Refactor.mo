@@ -429,7 +429,7 @@ algorithm
       Env.Env env;
 
     case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = rdk,
-      innerOuter = io, name = n, specification = es, info = i, constrainClass = cc),p,cPath,env)
+      innerOuter = io, specification = es, info = i, constrainClass = cc),p,cPath,env)
 
       equation
 
@@ -437,7 +437,7 @@ algorithm
         resultSpec = refactorGraphAnnInElSpec(es,p,cPath,env);
 
       then
-        Absyn.ELEMENT(f,rdk,io,n,resultSpec,i,cc);
+        Absyn.ELEMENT(f,rdk,io,resultSpec,i,cc);
 
   end match;
 

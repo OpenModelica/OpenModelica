@@ -124,11 +124,15 @@ protected function loadClassFromMps
 protected
   String mp,name;
   Boolean isDir;
+  Absyn.Class cl;
+  Absyn.TimeStamp ts;
 algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
   // print("System.getLoadModelPath: " +& id +& " {" +& stringDelimitList(prios,",") +& "} " +& stringDelimitList(mps,",") +& " => " +& mp +& " " +& name +& " " +& boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
-  outProgram := loadClassFromMp(id, mp, name, isDir, encoding);
+  cl := loadClassFromMp(id, mp, name, isDir, encoding);
+  ts := Absyn.getNewTimeStamp();
+  outProgram := Absyn.PROGRAM({cl},Absyn.TOP(),ts);
 end loadClassFromMps;
 
 protected function loadClassFromMp
@@ -137,33 +141,34 @@ protected function loadClassFromMp
   input String name;
   input Boolean isDir;
   input Option<String> optEncoding;
-  output Absyn.Program outProgram;
+  output Absyn.Class outClass;
 algorithm
-  outProgram := match (id,path,name,isDir,optEncoding)
+  outClass := match (id,path,name,isDir,optEncoding)
     local
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,encoding,encodingfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
+      Absyn.Class cl;
 
-    case (_,path,name,false,optEncoding)
+    case (id,path,name,false,optEncoding)
       equation
         pd = System.pathDelimiter();
+        /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
-        p = Parser.parse(path +& pd +& name,encoding);
+        cl = parsePackageFile(path +& pd +& name,encoding,false,Absyn.TOP(),id);
       then
-        p;
+        cl;
 
     case (id,path,name,true,optEncoding)
       equation
-        ts = Absyn.getNewTimeStamp();
         /* Check for path/package.encoding; OpenModelica extension */
         pd = System.pathDelimiter();
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
-        p = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
+        cl = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Error.getNumErrorMessages());
       then
-        p;
+        cl;
   end match;
 end loadClassFromMp;
 
@@ -175,185 +180,125 @@ protected function loadCompletePackageFromMp
   input String inString;
   input String encoding;
   input Absyn.Within inWithin;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+  input Integer numError;
+  output Absyn.Class cl;
 algorithm
-  outProgram := matchcontinue (id,inIdent,inString,encoding,inWithin,inProgram)
+  cl := matchcontinue (id,inIdent,inString,encoding,inWithin,numError)
     local
-      String pd,mp_1,packagefile,orderfile,subdirstr,pack,mp;
-      list<Absyn.Class> p1,oldc;
+      String pd,mp_1,packagefile,orderfile,subdirstr,pack,mp,name,str;
+      Absyn.Class cl;
+      list<Absyn.ElementItem> cbefore,cafter;
       Absyn.Within w1,within_;
       Absyn.Program p1_1,p2,p;
-      list<String> subdirs;
+      list<String> subdirs,tv,before,after;
       Absyn.Path wpath_1,wpath;
       Absyn.TimeStamp ts;
-    case (id,pack,mp,encoding,within_,Absyn.PROGRAM(classes = oldc))
+      Boolean pp,fp,ep;
+      Absyn.Restriction r;
+      list<Absyn.NamedArg> ca;
+      list<Absyn.ClassPart> cp;
+      Option<String> cmt;
+      Absyn.Info info;
+      Absyn.Path path;
+      Absyn.Within w2;
+    case (id,pack,mp,encoding,within_,numError)
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
-        Absyn.PROGRAM(p1,w1,ts) = parsePackageFile(packagefile,encoding,within_,id);
-        Print.printBuf("loading ");
-        Print.printBuf(packagefile);
-        Print.printBuf("\n");
-        p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
-        subdirs = System.subDirectories(mp_1);
-        subdirs = List.sort(subdirs, Util.strcmpBool);
-        subdirstr = stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, id, mp_1, encoding, within_, p1_1);
-        p = loadCompleteSubfiles(id, mp_1, encoding, within_, p2);
-      then
-        p;
-
-    case (id,pack,mp,encoding,within_,p) // No package.mo file is different from a parse error
+        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
+        (before,after) = getPackageContentNames(cl, orderfile, mp_1);
+        path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
+        w2 = Absyn.WITHIN(path);
+        cbefore = List.map(List.map3(before,loadCompletePackageFromMp2,mp_1,encoding,w2),Absyn.makeClassElement);
+        cafter = List.map(List.map3(after,loadCompletePackageFromMp2,mp_1,encoding,w2),Absyn.makeClassElement);
+        cp = mergeBefore(cbefore,cp);
+        cp = mergeAfter(cafter,cp);
+      then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,cmt),info);
+    case (id,pack,mp,encoding,within_,numError)
       equation
-        pd = System.pathDelimiter();
-        mp_1 = stringAppendList({mp,pd,pack});
-        packagefile = stringAppendList({mp_1,pd,"package.mo"});
-        failure(existRegularFile(packagefile));
-      then p;
-
+        true = numError == Error.getNumErrorMessages();
+        str = "loadCompletePackageFromMp failed for unknown reason: mp=" +& mp +& " pack=" +& pack;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
   end matchcontinue;
 end loadCompletePackageFromMp;
 
-protected function loadCompleteSubdirs
-"function: loadCompleteSubdirs
-  Loads all classes present in a subdirectory"
-  input list<String> inStringLst;
-  input Absyn.Ident inIdent;
-  input String inString;
-  input String encoding;
-  input Absyn.Within inWithin;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+protected function mergeBefore
+  input list<Absyn.ElementItem> cs;
+  input list<Absyn.ClassPart> cp;
+  output list<Absyn.ClassPart> ocp;
 algorithm
-  outProgram := matchcontinue (inStringLst,inIdent,inString,encoding,inWithin,inProgram)
+  ocp := match (cs,cp)
     local
-      Absyn.Within w,w2,within_;
-      list<Absyn.Class> oldcls;
-      Absyn.Path pack_1,pack2;
-      Absyn.Program p,p_1,oldp;
-      String pack,pack1,mp;
-      list<String> packs;
-      Absyn.TimeStamp ts;
-
-    case ({},_,_,encoding,w,Absyn.PROGRAM(classes = oldcls,within_ = w2, globalBuildTimes=ts))
-      then (Absyn.PROGRAM(oldcls,w2,ts));
-    case ((pack :: packs),pack1,mp,encoding,(within_ as Absyn.WITHIN(path = pack2)),oldp)
+      list<Absyn.ElementItem> ei;
+      list<Absyn.ClassPart> rest;
+    case (cs,Absyn.PUBLIC(ei)::rest)
       equation
-        pack_1 = Absyn.joinPaths(pack2, Absyn.IDENT(pack1));
-        p = loadCompletePackageFromMp(pack, pack, mp, encoding, Absyn.WITHIN(pack_1), oldp);
-        p_1 = loadCompleteSubdirs(packs, pack1, mp, encoding, within_, p);
-      then
-        p_1;
+        ei = listAppend(cs,ei);
+      then Absyn.PUBLIC(ei)::rest;
+    case (cs,cp) then Absyn.PUBLIC(cs)::cp;
+  end match;
+end mergeBefore;
 
-    case ((pack :: packs),pack1,mp,encoding,(within_ as Absyn.TOP()),oldp)
-      equation
-        pack_1 = Absyn.joinPaths(Absyn.IDENT(pack1), Absyn.IDENT(pack));
-        p = loadCompletePackageFromMp(pack, pack, mp, encoding, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
-        p_1 = loadCompleteSubdirs(packs, pack1, mp, encoding, within_, p);
-      then
-        p_1;
-
-    /* Do not silently accept broken libraries...
-    case ((pack :: packs),pack1,mp,within_,p)
-      equation
-        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
-      then
-        p_1;
-    */
-
-    case (pack::_,_,_,_,_,_)
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubdirs failed: " +& pack);
-      then
-        fail();
-  end matchcontinue;
-end loadCompleteSubdirs;
-
-protected function loadCompleteSubfiles
-"function: loadCompleteSubfiles
-  This function loads all modelicafiles (.mo) from a subdir package."
-  input Absyn.Ident inIdent;
-  input String inString;
-  input String encoding;
-  input Absyn.Within inWithin;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+protected function mergeAfter
+  input list<Absyn.ElementItem> cs;
+  input list<Absyn.ClassPart> cp;
+  output list<Absyn.ClassPart> ocp;
 algorithm
-  outProgram := matchcontinue (inIdent,inString,encoding,inWithin,inProgram)
-    local
-      list<String> mofiles;
-      Absyn.Path within_1,within_;
-      Absyn.Program p,oldp;
-      String pack,mp;
+  ocp := listReverse(mergeAfter2(cs,listReverse(cp)));
+end mergeAfter;
 
-    case (pack,mp,encoding,Absyn.WITHIN(path = within_),oldp)
-      equation
-        mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
-        mofiles = List.sort(mofiles, Util.strcmpBool);
-        within_1 = Absyn.joinPaths(within_, Absyn.IDENT(pack));
-        p = loadSubpackageFiles(mofiles, mp, encoding, Absyn.WITHIN(within_1), oldp);
-      then
-        p;
-
-    case (pack,mp,encoding,Absyn.TOP(),oldp)
-      equation
-        mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
-        mofiles = List.sort(mofiles, Util.strcmpBool);
-        p = loadSubpackageFiles(mofiles, mp, encoding, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
-      then
-        p;
-
-    else
-      equation
-        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubfiles failed");
-      then
-        fail();
-  end matchcontinue;
-end loadCompleteSubfiles;
-
-protected function loadSubpackageFiles
-"function: loadSubpackageFiles
-  Loads all classes from a subpackage"
-  input list<String> inStringLst;
-  input String inString;
-  input String encoding;
-  input Absyn.Within inWithin;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+protected function mergeAfter2
+  input list<Absyn.ElementItem> cs;
+  input list<Absyn.ClassPart> cp;
+  output list<Absyn.ClassPart> ocp;
 algorithm
-  outProgram := matchcontinue (inStringLst,inString,encoding,inWithin,inProgram)
+  ocp := match (cs,cp)
     local
-      String mp,pd,f_1,f,id;
-      Absyn.Within within_,w;
-      list<Absyn.Class> cls,oldc;
-      Absyn.Program p_1,p_2;
-      list<String> fs;
-      Absyn.TimeStamp ts;
+      list<Absyn.ElementItem> ei;
+      list<Absyn.ClassPart> rest;
+    case (cs,Absyn.PUBLIC(ei)::rest)
+      equation
+        ei = listAppend(cs,ei);
+      then Absyn.PUBLIC(ei)::rest;
+    case (cs,cp) then Absyn.PUBLIC(cs)::cp;
+  end match;
+end mergeAfter2;
 
-    case ({},mp,encoding,within_,Absyn.PROGRAM(classes = cls,within_ = w, globalBuildTimes=ts))
-      then Absyn.PROGRAM(cls,w,ts);
-
-    case ((f :: fs),mp,encoding,within_,Absyn.PROGRAM(classes = oldc,globalBuildTimes = ts))
+protected function loadCompletePackageFromMp2
+"function: loadCompletePackageFromMp
+  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
+  input String id "mo-file or directory";
+  input String mp;
+  input String encoding;
+  input Absyn.Within w1 "With the parent added";
+  output Absyn.Class cl;
+algorithm
+  cl := matchcontinue (id,mp,encoding,w1)
+    local
+      String pd,file;
+      Absyn.Path path;
+    case (id,mp,encoding,w1)
       equation
         pd = System.pathDelimiter();
-        f_1 = stringAppendList({mp,pd,f});
-        id = System.substring(f,1,stringLength(f)-3 /* .mo */);
-        Absyn.PROGRAM(classes=cls) = parsePackageFile(f_1,encoding,within_,id);
-        p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
-        p_2 = loadSubpackageFiles(fs, mp, encoding, within_, p_1);
-      then
-        p_2;
+        true = System.directoryExists(mp +& pd +& id);
+        cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
+      then cl;
 
-    else
+    case (id,mp,encoding,w1)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadSubpackageFiles failed");
-      then fail();
+        pd = System.pathDelimiter();
+        false = System.directoryExists(mp +& pd +& id);
+        file = mp +& pd +& id +& ".mo";
+        true = System.regularFileExists(file);
+        cl = parsePackageFile(file,encoding,false,w1,id);
+      then cl;
+    
   end matchcontinue;
-end loadSubpackageFiles;
+end loadCompletePackageFromMp2;
 
 public function loadFile
 "function loadFile
@@ -401,13 +346,15 @@ public function parsePackageFile
   "Parses a file containing a single class that matches the within"
   input String name;
   input String encoding;
+  input Boolean expectPackage;
   input Absyn.Within w1 "Expected within of the package";
   input String pack "Expected name of the package";
-  output Absyn.Program outProgram;
+  output Absyn.Class outClass;
 algorithm
-  outProgram := matchcontinue (name,encoding,w1,pack)
+  outClass := matchcontinue (name,encoding,expectPackage,w1,pack)
     local
       Absyn.Program p;
+      Absyn.Class cl;
       list<Absyn.Class> cs;
       Absyn.Within w2;
       Absyn.TimeStamp ts;
@@ -415,20 +362,23 @@ algorithm
       list<String> classNames;
       Absyn.Info info;
       String str,s1,s2,cname;
+      Absyn.ClassDef body;
 
-    case (name,encoding,w1,pack)
+    case (name,encoding,expectPackage,w1,pack)
       equation
         true = System.regularFileExists(name);
         Absyn.PROGRAM(cs,w2,ts) = Parser.parse(name,encoding);
         classNames = List.map(cs, Absyn.getClassName);
         str = stringDelimitList(classNames,", ");
         Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
-        Absyn.CLASS(name=cname,info=info)::{} = cs;
+        cl::{} = cs;
+        Absyn.CLASS(name=cname,body=body,info=info) = cl;
         Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
         s1 = Absyn.withinString(w1);
         s2 = Absyn.withinString(w2);
         Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_1_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-      then Absyn.PROGRAM(cs,w1 /* Modelica 1.x did not keep within */,ts);
+        Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
+      then cl;
 
     // faliling
     else
@@ -439,20 +389,21 @@ algorithm
   end matchcontinue;
 end parsePackageFile;
 
-protected function sortPackageOrder
-  "Sort the classes based on the package.order file"
-  input Absyn.Program p;
-  input Absyn.Path path "Path where the classes to sort reside";
+protected function getPackageContentNames
+  "Gets the names of packages to load before the package.mo, and the ones to load after"
+  input Absyn.Class cl;
   input String filename;
-  output Absyn.Program op;
+  input String mp;
+  output list<String> namesBefore;
+  output list<String> namesAfter;
 protected
   String contents;
   String namesToSort;
 algorithm
-  op := matchcontinue (p,path,filename)
+  (namesBefore,namesAfter) := matchcontinue (cl,filename,mp)
     local
       String contents,name;
-      list<String> namesToSort, tv;
+      list<String> namesToFind, tv, before, after, mofiles, subdirs;
       Boolean pp,fp,ep;
       list<Absyn.NamedArg> ca;
       list<Absyn.ClassPart> cp;
@@ -460,87 +411,170 @@ algorithm
       Absyn.Info info;
       list<tuple<Boolean,Absyn.Element>> elts;
       Boolean b;
-      
-    case (p,path,filename)
+    case (Absyn.CLASS(restriction=Absyn.R_PACKAGE(),body=Absyn.PARTS(tv,ca,cp,cmt),info=info),filename,mp)
       equation
-        /*
+        true = System.regularFileExists(filename);
         contents = System.readFile(filename);
-        namesToSort = List.removeOnTrue("",stringEqual,List.map(System.strtok(contents, "\n"),System.trimWhitespace));
-        Absyn.CLASS(name,pp,fp,ep,Absyn.R_PACKAGE(),Absyn.PARTS(tv,ca,cp,cmt),info) = Interactive.getPathedClassInProgram(path,p);
-        b = sortPackageAlreadyInOrder(namesToSort,cp);
-        print("sortPackageOrder: already in order " +& Absyn.pathString(path) +& "? " +& boolString(b) +& "\n");
-        */
-        /* ((cp,el)) = List.fold(namesToSort,sortPackageOrder3,(cp,{}));
-        print("number of classparts " +& intString(listLength(cp)) +& "\n"); */
-      then p;
-  end matchcontinue;
-end sortPackageOrder;
+        namesToFind = System.strtok(contents, "\n");
+        namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
+        (before,after) = getPackageContentNamesinParts(namesToFind,cp,{},false);
+        List.map2_0(before,checkPackageOrderFilesExist,mp,info);
+        List.map2_0(after,checkPackageOrderFilesExist,mp,info);
+      then (before,after);
 
-protected function sortPackageAlreadyInOrder
+    case (cl,filename,mp)
+      equation
+        false = System.regularFileExists(filename);
+        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
+        subdirs = System.subDirectories(mp);
+        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+        mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
+      then ({},mofiles);
+  end matchcontinue;
+end getPackageContentNames;
+
+protected function checkPackageOrderFilesExist
+  input String str;
+  input String mp;
+  input Absyn.Info info;
+protected
+  String pd;
+algorithm
+  pd := System.pathDelimiter();
+  Error.assertionOrAddSourceMessage(System.directoryExists(mp +& pd +& str) or System.regularFileExists(mp +& pd +& str +& ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);  
+end checkPackageOrderFilesExist;
+
+protected function existPackage
+  input String name;
+  input String mp;
+  output Boolean b;
+protected
+  String pd;
+algorithm
+  pd := System.pathDelimiter();
+  b := System.regularFileExists(mp +& pd +& name +& pd +& "package.mo"); 
+end existPackage;
+
+protected function getPackageContentNamesinParts
   input list<String> inNamesToSort;
   input list<Absyn.ClassPart> cp;
-  output Boolean b;
+  input list<String> inBefore;
+  input Boolean inFoundFirst;
+  output list<String> outBefore;
+  output list<String> outAfter;
 algorithm
-  b := matchcontinue (inNamesToSort,cp)
+  (outBefore,outAfter) := match (inNamesToSort,cp,inBefore,inFoundFirst)
     local
       list<Absyn.ClassPart> rcp;
       list<Absyn.ElementItem> elts;
-      list<String> namesToSort;
-    case (_,_) then sortPackageAlreadyInOrder2(inNamesToSort,cp);
-    else false;
-  end matchcontinue;
-end sortPackageAlreadyInOrder;
-
-protected function sortPackageAlreadyInOrder2
-  input list<String> inNamesToSort;
-  input list<Absyn.ClassPart> cp;
-  output Boolean b;
-algorithm
-  b := match (inNamesToSort,cp)
-    local
-      list<Absyn.ClassPart> rcp;
-      list<Absyn.ElementItem> elts;
-      list<String> namesToSort;
+      list<String> namesToSort, before, after;
       String str;
-    case ({},{}) then true;
-    case (namesToSort,Absyn.PUBLIC(elts)::rcp)
+      Boolean foundFirst;
+    case (namesToSort,{},before,_) then (listReverse(before),namesToSort);
+    case (namesToSort,Absyn.PUBLIC(elts)::rcp,before,foundFirst)
       equation
-        namesToSort = sortPackageAlreadyInOrderElts(namesToSort,elts);
-      then sortPackageAlreadyInOrder2(namesToSort,rcp);
-    case (namesToSort,Absyn.PROTECTED(elts)::rcp)
+        (before,foundFirst,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,before,foundFirst);
+        (before,after) = getPackageContentNamesinParts(namesToSort,rcp,before,foundFirst);
+      then (before,after);
+    case (namesToSort,Absyn.PROTECTED(elts)::rcp,before,foundFirst)
       equation
-        namesToSort = sortPackageAlreadyInOrderElts(namesToSort,elts);
-      then sortPackageAlreadyInOrder2(namesToSort,rcp);
-    case (namesToSort,_::rcp)
-      then sortPackageAlreadyInOrder2(namesToSort,rcp);
-    else
+        (before,foundFirst,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,before,foundFirst);
+        (before,after) = getPackageContentNamesinParts(namesToSort,rcp,before,foundFirst);
+      then (before,after);
+    case (namesToSort,_::rcp,before,foundFirst)
       equation
-        str = stringDelimitList(inNamesToSort, ", ");
-        print("sortPackageAlreadyInOrder2 failed: " +& str +& "\n");
-      then false;
+        (before,after) = getPackageContentNamesinParts(namesToSort,rcp,before,foundFirst);
+      then (before,after);
   end match;
-end sortPackageAlreadyInOrder2;
+end getPackageContentNamesinParts;
 
-protected function sortPackageAlreadyInOrderElts
+protected function getPackageContentNamesinElts
   input list<String> inNamesToSort;
   input list<Absyn.ElementItem> inElts;
-  output list<String> outNamesToSort;
+  input list<String> inBefore;
+  input Boolean inFoundFirst;
+  output list<String> outBefore;
+  output Boolean outFoundFirst;
+  output list<String> outNames;
 algorithm
-  outNamesToSort := match (inNamesToSort,inElts)
+  (outBefore,outFoundFirst,outNames) := match (inNamesToSort,inElts,inBefore,inFoundFirst)
     local
-      String name1,name2;
-      list<String> namesToSort;
+      String name1,name2,str;
+      list<String> namesToSort,before,names;
       list<Absyn.ElementItem> elts;
-    case (name1::namesToSort,Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2))))::elts)
+      Boolean foundFirst,b;
+      Absyn.Info info;
+      list<Absyn.ComponentItem> comps;
+    case (namesToSort,{},before,foundFirst) then (before,foundFirst,namesToSort);
+
+    case (namesToSort,Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info))::elts,before,foundFirst)
       equation
-        print(Util.if_(boolNot(name1 ==& name2), "sortPackageAlreadyInOrderElts failed: " +& name1 +& " == " +& name2 +& "\n", ""));
-        true = name1 ==& name2;
-      then sortPackageAlreadyInOrderElts(namesToSort,elts);
-    case (namesToSort,_::elts)
-      then sortPackageAlreadyInOrderElts(namesToSort,elts);
-    else inNamesToSort;
+        (before,foundFirst,names) = getPackageContentNamesinComps(namesToSort,comps,before,foundFirst,info);
+        (before,foundFirst,names) = getPackageContentNamesinElts(names,elts,before,foundFirst);
+      then (before,foundFirst,names);
+
+    case (name1::namesToSort,Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info))))::elts,before,false)
+      equation
+        b = name1 ==& name2;
+        (before,foundFirst,names) = getPackageContentNamesinElts(namesToSort,Util.if_(b,elts,inElts),List.consOnTrue(not b,name1,before),b);
+      then (before,foundFirst,names);
+    case (name1::namesToSort,Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info))))::elts,before,true)
+      equation
+        b = name1 ==& name2;
+        str = Debug.bcallret2(not b, stringDelimitList, inNamesToSort, ", ", "");
+        Error.assertionOrAddSourceMessage(name1 ==& name2, Error.PACKAGE_MO_NOT_IN_ORDER, {name2, str}, info);
+        (before,foundFirst,names) = getPackageContentNamesinElts(namesToSort,elts,before,true);
+      then (before,foundFirst,names);
+    case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info))))::elts,before,true)
+      equation
+        Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
+      then fail();
+    case (namesToSort,_::elts,before,foundFirst)
+      equation
+        (before,foundFirst,names) = getPackageContentNamesinElts(namesToSort,elts,before,foundFirst);
+      then (before,foundFirst,names);
   end match;
-end sortPackageAlreadyInOrderElts;
+end getPackageContentNamesinElts;
+
+protected function getPackageContentNamesinComps
+  input list<String> inNamesToSort;
+  input list<Absyn.ComponentItem> inComps;
+  input list<String> inBefore;
+  input Boolean inFoundFirst;
+  input Absyn.Info info;
+  output list<String> outBefore;
+  output Boolean outFoundFirst;
+  output list<String> outNames;
+algorithm
+  (outBefore,outFoundFirst,outNames) := match (inNamesToSort,inComps,inBefore,inFoundFirst,info)
+    local
+      String name1,name2,str;
+      list<String> namesToSort,before,names;
+      list<Absyn.ComponentItem> comps;
+      Boolean foundFirst,b;
+    case (namesToSort,{},before,foundFirst,info) then (before,foundFirst,namesToSort);
+    case (name1::namesToSort,Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::comps,before,false,info)
+      equation
+        b = name1 ==& name2;
+        (before,foundFirst,names) = getPackageContentNamesinComps(namesToSort,comps,List.consOnTrue(not b,name1,before),b,info);
+      then (before,foundFirst,names);
+    case (name1::namesToSort,Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::comps,before,true,info)
+      equation
+        b = name1 ==& name2;
+        str = Debug.bcallret2(not b, stringDelimitList, inNamesToSort, ", ", "");
+        Error.assertionOrAddSourceMessage(name1 ==& name2, Error.PACKAGE_MO_NOT_IN_ORDER, {name2, str}, info);
+        (before,foundFirst,names) = getPackageContentNamesinComps(namesToSort,Util.if_(b,comps,inComps),before,true,info);
+      then (before,foundFirst,names);
+    case ({},Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::comps,before,true,info)
+      equation
+        Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
+      then fail();
+    case (namesToSort,_::comps,before,foundFirst,info)
+      equation
+        (before,foundFirst,names) = getPackageContentNamesinComps(namesToSort,comps,before,foundFirst,info);
+      then (before,foundFirst,names);
+  end match;
+end getPackageContentNamesinComps;
 
 end ClassLoader;
 

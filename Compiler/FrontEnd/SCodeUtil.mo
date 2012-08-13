@@ -1264,7 +1264,7 @@ algorithm
       String name;
       SCode.Visibility vis;
 
-    case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),vis)
+    case (Absyn.ELEMENT(constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),vis)
       equation
         es = translateElementspec(cc, f, io, repl,  vis, s, info);
       then

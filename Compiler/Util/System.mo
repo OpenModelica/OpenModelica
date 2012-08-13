@@ -60,7 +60,7 @@ public function trimWhitespace
   input String inString;
   output String outString;
 
-  external "C" outString=System_trim(inString," \f\n\r\t\v") annotation(Library = "omcruntime");
+  external "C" outString=System_trimWhitespace(inString) annotation(Library = "omcruntime");
 end trimWhitespace;
 
 public function trimChar

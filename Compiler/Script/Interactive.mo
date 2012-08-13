@@ -2818,13 +2818,13 @@ algorithm
       Absyn.ComponentRef old_comp,new_comp;
     case ({},_,_) then {};  /* the old name for the component */
     case (((element as Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,
+      Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,
                     specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp)
       equation
         res_1 = renameComponentInElements(res, old_comp, new_comp);
         elementspec_1 = renameComponentInElementSpec(elementspec, old_comp, new_comp);
         element_1 = Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
+          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
           constrainClass));
       then
         (element_1 :: res_1);
@@ -3238,12 +3238,12 @@ algorithm
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
       then
         Absyn.C_ALGORITHMSECTION(b,algs_1);
-    case (Absyn.C_ELEMENT(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constrainClass)),old_comp,new_comp)
+    case (Absyn.C_ELEMENT(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)),old_comp,new_comp)
       equation
         elementspec_1 = renameComponentInElementSpec(elementspec, old_comp, new_comp);
       then
         Absyn.C_ELEMENT(
-          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
+          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
           constrainClass));
     case (Absyn.C_EXPRESSION(exp = exp),old_comp,new_comp)
       equation
@@ -5137,7 +5137,7 @@ algorithm
       Boolean finalPrefix,flowPrefix,streamPrefix,repl;
       list<Boolean> dr;
       Absyn.Element elt;
-    case (Absyn.ELEMENT(redeclareKeywords = redeclkw,innerOuter = inout,name = id,
+    case (Absyn.ELEMENT(redeclareKeywords = redeclkw,innerOuter = inout,
           specification = (spec as Absyn.COMPONENTS(components = ellst)),info = info,constrainClass = constr),
           cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau)
       equation
@@ -5146,7 +5146,7 @@ algorithm
         inout_1 = setInnerOuterAttributes(dr);
         spec_1 = setComponentPropertiesInElementspec(spec, cr, flowPrefix, streamPrefix, prl, va, cau);
       then
-        Absyn.ELEMENT(finalPrefix,redeclkw_1,inout_1,id,spec_1,info,constr);
+        Absyn.ELEMENT(finalPrefix,redeclkw_1,inout_1,spec_1,info,constr);
     case (elt,cr,_,_,_,_,_,_,_,_) then elt;
   end matchcontinue;
 end setComponentPropertiesInElement;
@@ -5523,7 +5523,7 @@ algorithm
           ", replaceable=",repl,", inout=",inout_str,", ",element_str});
       then
         str;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = id,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))) /* if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
@@ -5969,7 +5969,7 @@ algorithm
 
       then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); */
 
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,
+    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,
       specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
       equation
@@ -5977,7 +5977,7 @@ algorithm
         true = Absyn.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, submod, mod);
       then
-        Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
+        Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
     case (elt,_,_,_,_) then elt;
   end matchcontinue;
 end setExtendsSubmodifierInElement;
@@ -6445,13 +6445,13 @@ algorithm
       Absyn.ComponentRef submodident;
       Absyn.Modification mod;
       Absyn.Element elt;
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,
+    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,
       specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = compitems),
       info = info,constrainClass = constr),varname,submodident,mod)
       equation
         compitems_1 = setComponentSubmodifierInCompitems(compitems, varname, submodident, mod);
       then
-        Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr);
+        Absyn.ELEMENT(f,r,i,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr);
     case (elt,_,_,_) then elt;
   end matchcontinue;
 end setComponentSubmodifierInElement;
@@ -7166,11 +7166,11 @@ algorithm
       Absyn.Exp exp;
       Absyn.Element elt;
 
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = compitems),info = info,constrainClass = constr),id,exp)
+    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = compitems),info = info,constrainClass = constr),id,exp)
       equation
         (compitems_1, b) = setVariableBindingInCompitems(compitems, id, exp);
       then
-        (Absyn.ELEMENT(f,r,i,n,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr), b);
+        (Absyn.ELEMENT(f,r,i,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr), b);
     
     case (elt,id,exp) then (elt, false);
   end matchcontinue;
@@ -7563,12 +7563,12 @@ algorithm
       Absyn.Path old_comp,new_comp;
       list<Env.Frame> env;
     case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
-    case (((element as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp,env)
+    case (((element as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp,env)
       equation
         (res_1,changed1) = renameClassInElements(res, old_comp, new_comp, env);
         (elementspec_1,changed2) = renameClassInElementSpec(elementspec, old_comp, new_comp, env);
         element_1 = Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
+          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
           constrainClass));
         changed = Util.boolOrList({changed1,changed2});
       then
@@ -8045,26 +8045,26 @@ algorithm
       Boolean repl;
       Absyn.Class cl;
     case ({},pa,_,args,_) then (({},pa,args));
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
       equation
         ((elt_spec_1,pa_1,args_1)) = traverseInnerClassElementspec(elt_spec, pa, visitor, args, visit_prot);
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
       then
         ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,elt_spec_1,info,constr)) :: elts_1),pa_2,args_2));
+          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,elt_spec_1,info,constr)) :: elts_1),pa_2,args_2));
 
    /* Visitor failed in elementspec, but inner classes succeeded, include class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = Absyn.CLASSDEF(repl,cl),info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.CLASSDEF(repl,cl),info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
       equation
          ((cl,pa_1,args_1)) = traverseInnerClass(cl, pa, visitor, args, visit_prot);
         true  = classHasLocalClasses(cl);
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
       then
         ((
-          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
+          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
 
    /* Visitor failed in elementspec, remove class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
       equation
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
       then
@@ -9123,12 +9123,6 @@ algorithm
         res = keywordReplaceable(r);
       then
         res;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,name = id)) :: rest), str)
-      equation
-        true = stringEq(id,str);
-        res = keywordReplaceable(r);
-      then
-        res;
     case ((_ :: rest), str)
       equation
         res = isReplaceableInElements(rest, str);
@@ -9190,11 +9184,6 @@ algorithm
       list<Absyn.ElementItem> rest;
     case ({}, _) then false;
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)))) :: rest), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
-      equation
-        true = stringEq(id,str);
-      then
-        true;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(name = id)) :: rest), str)
       equation
         true = stringEq(id,str);
       then
@@ -10108,7 +10097,7 @@ algorithm
         (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,redecl,io,"",
+          Absyn.ELEMENT(false,redecl,io,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
           Absyn.INFO("",false,0,0,0,0,ts),NONE())));
@@ -10127,7 +10116,7 @@ algorithm
         (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,redecl,io,"",
+          Absyn.ELEMENT(false,redecl,io,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
           Absyn.INFO("",false,0,0,0,0,ts),NONE())));
@@ -10297,13 +10286,13 @@ algorithm
         Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,id,
+          Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
@@ -10318,13 +10307,13 @@ algorithm
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToProtected(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,id,
+          Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
@@ -10340,13 +10329,13 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,id,
+          Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
@@ -10362,13 +10351,13 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(body=Absyn.PARTS(classParts=parts)) = getPathedClassInProgram(modelpath, p);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToProtected(cdef,
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,repl,inout,id,
+          Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
@@ -12044,7 +12033,7 @@ algorithm
       list<Absyn.ElementItem> es,es_1;
       Absyn.ComponentRef cr1;
       Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = n,specification = spec,info = info,constrainClass = constr)) :: es),cr1)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = spec,info = info,constrainClass = constr)) :: es),cr1)
       equation
         cmt = getComponentCommentInElementspec(spec, cr1);
       then
@@ -12268,11 +12257,11 @@ algorithm
       list<Absyn.ElementItem> es,es_1;
       Absyn.ComponentRef cr1;
       Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = n,specification = spec,info = info,constrainClass = constr)) :: es),cr1,cmt)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = spec,info = info,constrainClass = constr)) :: es),cr1,cmt)
       equation
         spec_1 = setComponentCommentInElementspec(spec, cr1, cmt);
       then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,n,spec_1,info,constr)) :: es);
+        (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,spec_1,info,constr)) :: es);
     case ((e :: es),cr1,cmt)
       equation
         es_1 = setComponentCommentInElementitems(es, cr1, cmt);
@@ -15935,11 +15924,11 @@ algorithm
       list<Absyn.ElementItem> rest;
 
     case ((Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,name = d,
+      Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,
                     specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = (item::_)),
                     info = info,constrainClass = i)) :: _),1)
       then
-        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{item}),info,i);
+        Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst))) :: rest),n)
       equation
@@ -15951,7 +15940,7 @@ algorithm
         res;
 
     case ((Absyn.ELEMENTITEM(element =
-      (Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,name = d,
+      (Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,
                      specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = lst),
                      info = info,constrainClass = i))) :: rest),n)
       equation
@@ -15960,7 +15949,7 @@ algorithm
         n_1 = n - 1;
         item = listNth(lst, n_1);
       then
-        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{item}),info,i);
+        Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
 
     case ((_ :: rest),n)
       equation
@@ -16943,7 +16932,7 @@ algorithm
         (a1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",Absyn.CLASSDEF(false,c),
+          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),Absyn.CLASSDEF(false,c),
           Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()))};
   end matchcontinue;
 end removeClassInElementitemlist;
@@ -17026,11 +17015,11 @@ algorithm
         res = replaceClassInElementitemlist(xs, c);
       then
         (e1 :: res);
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,name = d,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),info = info,constrainClass = h))) :: xs),(c2 as Absyn.CLASS(name = name)))
+    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),info = info,constrainClass = h))) :: xs),(c2 as Absyn.CLASS(name = name)))
       equation
         true = stringEq(name1, name);
       then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,d,Absyn.CLASSDEF(e,c2),info,h)) :: xs);
+        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c2),info,h)) :: xs);
     case ((e1 :: xs),c)
       equation
         res = replaceClassInElementitemlist(xs, c);
@@ -17038,7 +17027,7 @@ algorithm
         (e1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),"",Absyn.CLASSDEF(false,c),
+          Absyn.ELEMENT(false,NONE(),Absyn.NOT_INNER_OUTER(),Absyn.CLASSDEF(false,c),
           Absyn.dummyInfo,NONE()))};
   end matchcontinue;
 end replaceClassInElementitemlist;
@@ -18417,12 +18406,12 @@ algorithm
       Absyn.Info info ;
       Option<Absyn.ConstrainClass> constr;
     case (elt as Absyn.TEXT(optName=_)) then elt;
-    case(Absyn.ELEMENT(f,r,io,name,spec,info,constr))
+    case(Absyn.ELEMENT(f,r,io,spec,info,constr))
       equation
         spec1=transformFlatElementSpec(spec);
         //TODO: constr clause might need transformation too.
       then
-        Absyn.ELEMENT(f,r,io,name,spec1,info,constr);
+        Absyn.ELEMENT(f,r,io,spec1,info,constr);
   end match;
 end transformFlatElement;
 
@@ -19738,7 +19727,7 @@ algorithm
       Absyn.Program p;
     case (Absyn.ELEMENTITEM(element = el),p)
       equation
-        Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = inout, name = id, specification = elementSpec, info = inf, constrainClass = c) = el;
+        Absyn.ELEMENT(specification = elementSpec) = el;
         //p_class = Absyn.crefToPath(id);
 //        Absyn.IDENT(name) = Absyn.crefToPath(ident);
         //cl = getPathedClassInProgram(p_class, p);
@@ -19824,10 +19813,10 @@ algorithm
       Absyn.Info info;
       list<String> tmp;
       Absyn.Program prog;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = fi,encapsulatedPrefix = e,restriction = restr,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))),prog) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(info = _)))),prog) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       then
        "";
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = id,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))),prog) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elementSpec)),prog) /* if is not a classdef, just follow the normal stuff */
       equation
         typename_str = getElementTypeName(elementSpec);
         varname_str = getElementName(elementSpec);
