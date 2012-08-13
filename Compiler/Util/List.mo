@@ -4358,7 +4358,7 @@ algorithm
       equation
         arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue);
       then 
-        fold3(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg2, arg);
+        fold3(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, arg);
 
   end match;
 end fold3;

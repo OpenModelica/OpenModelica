@@ -5720,4 +5720,11 @@ algorithm
   end match;
 end makeClassElement;
 
+public function componentName
+  input ComponentItem c;
+  output String name;
+algorithm
+  COMPONENTITEM(component=COMPONENT(name=name)) := c;
+end componentName;
+
 end Absyn;

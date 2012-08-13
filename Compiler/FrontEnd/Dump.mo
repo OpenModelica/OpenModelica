@@ -5302,11 +5302,13 @@ algorithm
     case (0) then "";
     case (i)
       equation
+        true = i > 0;
         i_1 = i - 1;
         s1 = indentStr(i_1);
         res = stringAppend(s1, "  ") "Indent using two whitespaces" ;
       then
         res;
+    else "";
   end matchcontinue;
 end indentStr;
 

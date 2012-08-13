@@ -544,13 +544,15 @@ public constant Message LIBRARY_UNEXPECTED_WITHIN = MESSAGE(235, GRAMMAR(), ERRO
 public constant Message LIBRARY_UNEXPECTED_NAME = MESSAGE(236, GRAMMAR(), ERROR(),
   Util.gettext("Expected the package to have name %s, but got %s."));
 public constant Message PACKAGE_MO_NOT_IN_ORDER = MESSAGE(236, GRAMMAR(), ERROR(),
-  Util.gettext("Elements in the package.mo-file need to be in the same order as the package.order file. Got element named %s but expected the first of these remaining names: %s."));
+  Util.gettext("Elements in the package.mo-file need to be in the same relative order as the package.order file. Got element named %s but it was already added because it was not the next element in the list at that time."));
 public constant Message LIBRARY_EXPECTED_PARTS = MESSAGE(237, GRAMMAR(), ERROR(),
   Util.gettext("%s is a package.mo-file and needs to be based on class parts (i.e. not class extends, derived class, or enumeration)."));
 public constant Message PACKAGE_ORDER_FILE_NOT_FOUND = MESSAGE(238, GRAMMAR(), ERROR(),
   Util.gettext("%1 was referenced in the package.order file, but was not found in package.mo, %1/package.mo or %1.mo."));
 public constant Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = MESSAGE(239, GRAMMAR(), ERROR(),
   Util.gettext("Got element %1 that was not referenced in the package.order file."));
+public constant Message ORDER_FILE_COMPONENTS = MESSAGE(240, GRAMMAR(), ERROR(),
+  Util.gettext("Components referenced in the package.order file must be moved in full chunks. Either split the constants to different lines or make them subsequent in the package.order file."));
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));
