@@ -32,73 +32,34 @@
 extern "C" {
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <stdio.h>
 
 #include "systemimpl.h"
 #include "errorext.h"
+#include "fmilib.h"
 
-/* return codes of the unzip tool */
-#define UNZIP_NO_ERROR 0    /* success */
-#define UNZIP_WARNINGS 1    /* one or more warning errors, but successfully completed anyway */
-#define UNZIP_NOZIP 9       /* no zip files found */
-#define UNZIP_METHOD_DECRYPTION_ERROR 81 /* unsupported compression methods or unsupported decryption */
-#define UNZIP_WRONG_PASS 82 /* no files were found due to bad decryption password */
-/* model description xml file name */
-#define FMI_MODEL_DESCRIPTION_XML "modelDescription.xml"
-#define FMI_SYSTEM_PATH_DELIMITER "/"
+#define BUFFER 1000
+#define FMI_DEBUG
 
-int extractFMU(char *fileName, char *workingDirectory)
+void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
-  int error;
-  int n;
-  char *cmd;
-  n = strlen(fileName) + strlen(workingDirectory) + 16;
-  cmd = (char*) malloc(n * sizeof(char));
-  sprintf(cmd, "unzip -q -o %s -d %s", fileName, workingDirectory);
-  /* -q  quiet mode
-   * -o  overwrite files WITHOUT prompting
-   * -d  extract files into exdir
-   */
-  error = system(cmd);
-  const char *c_tokens[1]={fileName};
-  if (error != UNZIP_NO_ERROR) {
-    switch (error) {
-      case UNZIP_WARNINGS:
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("some warnings occurred during decompression, success anyway."), NULL, 0);
-        break;
-      case UNZIP_NOZIP:
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
-        return 0;
-      case UNZIP_METHOD_DECRYPTION_ERROR:
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("unsupported compression methods or unsupported decryption"), NULL, 0);
-        return 0;
-      case UNZIP_WRONG_PASS:
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("No files were found due to bad decryption password."), NULL, 0);
-        return 0;
-      default:
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unknown errors occurred during the decompression of file %s"), c_tokens, 1);
-        return 0;
-    }
-  }
-  free(cmd);
-  return 1;
+#ifdef FMI_DEBUG
+  printf("module = %s, log level = %d: %s\n", module, log_level, message);
+#endif
 }
 
-char* getFMIModelDescriptionPath(char* workingDirectory)
+/* Logger function used by the FMU internally */
+void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
-  char* modelDescriptionPath;
-  int len = strlen(workingDirectory) + strlen(FMI_SYSTEM_PATH_DELIMITER) + strlen(FMI_MODEL_DESCRIPTION_XML) + 1;
-  modelDescriptionPath = (char*) malloc(len * sizeof(char));
-  sprintf(modelDescriptionPath, "%s%s%s", workingDirectory, FMI_SYSTEM_PATH_DELIMITER, FMI_MODEL_DESCRIPTION_XML);
-  return modelDescriptionPath;
+#ifdef FMI_DEBUG
+  char msg[BUFFER];
+  va_list argp;
+  va_start(argp, message);
+  vsprintf(msg, message, argp);
+  printf("fmiStatus = %d;  %s (%s): %s\n", status, instanceName, category, msg);
+#endif
 }
-
-int parseXML(char* modelDescriptionPath)
-{
-  /* Use FMIL to parse XML.*/
-  return 1;
-}
-
 
 int FMIImpl__importFMU(char *fileName, char* workingDirectory)
 {
@@ -108,16 +69,57 @@ int FMIImpl__importFMU(char *fileName, char* workingDirectory)
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
     return 0;
   }
-  // extract the fmu file
-  if (!extractFMU(fileName, workingDirectory))
+  fmi1_callback_functions_t callBackFunctions;
+  jm_callbacks callbacks;
+  fmi_import_context_t *context;
+  fmi_version_enu_t version;
+  jm_status_enu_t status;
+  fmi1_import_t *fmu;
+
+  callbacks.malloc = malloc;
+  callbacks.calloc = calloc;
+  callbacks.realloc = realloc;
+  callbacks.free = free;
+  callbacks.logger = importlogger;
+  callbacks.context = 0;
+
+  callBackFunctions.logger = fmilogger;
+  callBackFunctions.allocateMemory = calloc;
+  callBackFunctions.freeMemory = free;
+
+  context = fmi_import_allocate_context(&callbacks);
+  // extract the fmu file and read the version
+  version = fmi_import_get_fmi_version(context, fileName, workingDirectory);
+  if (version != fmi_version_1_enu) {
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 1);
     return 0;
-  // get the model description xml file path
-  char* modelDescriptionPath = getFMIModelDescriptionPath(workingDirectory);
-  // parse XML
-  if (!parseXML(modelDescriptionPath))
+  }
+  // parse the xml file
+  fmu = fmi1_import_parse_xml(context, workingDirectory);
+  if(!fmu) {
+    const char *c_tokens[1]={fileName};
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
     return 0;
+  }
+  status = fmi1_import_create_dllfmu(fmu, callBackFunctions, 0);
+  if (status == jm_status_error) {
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 1);
+    return 0;
+  }
+  /*
+   * Write the code generation code
+   */
+  fmi1_import_destroy_dllfmu(fmu);
+  fmi1_import_free(fmu);
+  fmi_import_free_context(context);
   return 1;
 }
+#else
+int FMIImpl__importFMU(char *fileName, char* workingDirectory)
+{
+  return 1;
+}
+#endif
 
 #ifdef __cplusplus
 }
