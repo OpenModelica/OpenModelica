@@ -36,6 +36,7 @@ extern "C" {
 
 #include "systemimpl.h"
 #include "errorext.h"
+#define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
 
 #define BUFFER 1000
