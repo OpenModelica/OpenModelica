@@ -533,8 +533,9 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
     (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0);separator=";\n")
     ;separator="\n\n")
-
+  /* generate at least one print commant to have the same index and avoid the strange side effect */
   <<
+  /* <%name%> */
   <%seedVarsResult%>
   <%columnVarsResult%>
   >>
