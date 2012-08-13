@@ -853,7 +853,7 @@ record CheckSettingsResult
   String MODELICAUSERCFLAGS,WORKING_DIRECTORY;
   Boolean CREATE_FILE_WORKS,REMOVE_FILE_WORKS;
   String OS, SYSTEM_INFO,SENDDATALIBS,C_COMPILER;
-  Boolean C_COMPILER_RESPONDING;
+  Boolean C_COMPILER_RESPONDING, HAVE_CORBA;
   String CONFIGURE_CMDLINE;
 annotation(preferredView="text");
 end CheckSettingsResult;

@@ -73,6 +73,7 @@ protected import CheckModel;
 protected import ClassInf;
 protected import ClassLoader;
 protected import Config;
+protected import Corba;
 protected import DAEQuery;
 protected import DAEUtil;
 protected import DAEDump;
@@ -831,7 +832,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
-      Boolean bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
+      Boolean have_corba, bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -1873,7 +1874,7 @@ algorithm
         /* Checks the installation of OpenModelica and tries to find common errors */
     case (cache,env,"checkSettings",{},st,msg)
       equation
-        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","HAVE_CORBA","CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
         omlib = Settings.getModelicaPath();
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
@@ -1890,6 +1891,7 @@ algorithm
         platform = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
+        have_corba = Corba.haveCorba();
         gcc_res = 0 == System.systemCall(gcc +& " -v > /dev/null 2>&1");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
@@ -1906,6 +1908,7 @@ algorithm
                 Values.STRING(senddata),
                 Values.STRING(gcc),
                 Values.BOOL(gcc_res),
+                Values.BOOL(have_corba),
                 Values.STRING(confcmd)};
       then (cache,Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"),vals,vars_1,-1),st);
         

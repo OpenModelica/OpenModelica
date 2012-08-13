@@ -48,8 +48,13 @@ encapsulated package Corba
 
   There exists some options that can be sent to configure concerning
   the usage of corba:
-     --with-CORBA=/location/of/corba/library
-     --without-CORBA"
+     --with-omniORB=/location/of/corba/library
+     --without-omniORB"
+
+public function haveCorba
+  output Boolean b;
+  external "C" Corba_haveCorba() annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+end haveCorba;
 
 public function setSessionName
   input String inSessionName;

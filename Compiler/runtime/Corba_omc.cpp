@@ -35,6 +35,11 @@ extern "C" {
 
 #include "meta_modelica.h"
 
+extern int Corba_haveCorba()
+{
+  return 1;
+}
+
 extern void Corba_setSessionName(const char* _inSessionName)
 {
   CorbaImpl__setSessionName(_inSessionName);

@@ -15,7 +15,7 @@ ifdef USE_CORBA
   OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
   IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/stubs/omc_communication_idl.py
 else
-  CORBASRC = corbaimpl_stub.cpp
+  CORBASRC = corbaimpl_stub.c
   CORBAINCL =  
   OMCCORBASRC = corbaimpl_stub_omc.o
   IDLPYTHONTARGET = 

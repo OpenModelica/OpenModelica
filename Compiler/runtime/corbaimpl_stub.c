@@ -1,18 +1,5 @@
-
-
-extern "C" {
 #include "rml.h"
-}
-
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-
-
-using namespace std;
-
-
-extern "C" {
+#include <stdio.h>
 
 char* corbaSessionName;
 
@@ -20,9 +7,16 @@ void Corba_5finit(void)
 {  
 }
 
-void errmsg() {
-  cerr << "CORBA disabled. Configure with --with-CORBA and recompile for enabling." << endl;
+static void errmsg() {
+  cerr << "CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable." << endl;
 }
+
+RML_BEGIN_LABEL(Corba__haveCorba)
+{
+  rmlA0 = mk_icon(0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__setSessionName)
 {
@@ -59,4 +53,3 @@ RML_BEGIN_LABEL(Corba__close)
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
-}

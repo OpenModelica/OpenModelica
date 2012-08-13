@@ -29,39 +29,43 @@
  */
 
 #include <stdio.h>
-
-extern "C" {
-
 #include "meta_modelica.h"
+
+static void errmsg() {
+  fputs("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.", stderr);
+}
+
+extern int Corba_haveCorba()
+{
+  return 0;
+}
 
 extern void Corba_setSessionName(const char* _inSessionName)
 {
-  fprintf(stderr, "Corba NYI\n");
+  errmsg();
   MMC_THROW();
 }
 
 extern const char* Corba_waitForCommand()
 {
-  fprintf(stderr, "Corba NYI\n");
+  errmsg();
   MMC_THROW();
 }
 
 extern void Corba_initialize()
 {
-  fprintf(stderr, "Corba NYI\n");
+  errmsg();
   MMC_THROW();
 }
 
 extern void Corba_close()
 {
-  fprintf(stderr, "Corba NYI\n");
+  errmsg();
   MMC_THROW();
 }
 
 extern void Corba_sendreply(const char* _inString)
 {
-  fprintf(stderr, "Corba NYI\n");
+  errmsg();
   MMC_THROW();
-}
-
 }
