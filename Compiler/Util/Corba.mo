@@ -53,7 +53,7 @@ encapsulated package Corba
 
 public function haveCorba
   output Boolean b;
-  external "C" Corba_haveCorba() annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+  external "C" b=Corba_haveCorba() annotation(Library = {"omcruntime", "OpenModelicaCorba"});
 end haveCorba;
 
 public function setSessionName
