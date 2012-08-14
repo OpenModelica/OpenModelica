@@ -17504,12 +17504,14 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Type tp;
-      DAE.Exp lhs,rhs;
+      DAE.Exp lhs,rhs,cond;
       list<DAE.Exp> lhsLst;
       String name;
       list<String> lhsNames;
+      list<DAE.Statement> stmts;
       DAE.ElementSource source;
       DAE.Statement stmt;
+      DAE.Else else_;
       
     case (path,DAE.STMT_ASSIGN(tp,lhs,rhs,source),invars,outvars)
       equation
@@ -17523,6 +17525,11 @@ algorithm
         rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
         stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source));
       then stmt;
+    case (path,DAE.STMT_IF(cond,stmts,else_,source),invars,outvars)
+      equation
+        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
+        else_ = optimizeElseTail(path,else_,invars,outvars);
+      then DAE.STMT_IF(cond,stmts,else_,source);
     case (path,DAE.STMT_NORETCALL(rhs,source),invars,{})
       equation
         rhs = optimizeStatementTail2(path,rhs,{},invars,{},source);
@@ -17531,6 +17538,41 @@ algorithm
     else inStmt;
   end matchcontinue;
 end optimizeStatementTail;
+
+protected function optimizeElseTail
+  input Absyn.Path path;
+  input DAE.Else inElse;
+  input list<String> invars;
+  input list<String> outvars;
+  output DAE.Else outElse;
+algorithm
+  outElse := matchcontinue (path,inElse,invars,outvars)
+    local
+      DAE.ComponentRef cr;
+      DAE.Type tp;
+      DAE.Exp lhs,rhs,cond;
+      list<DAE.Exp> lhsLst;
+      String name;
+      list<String> lhsNames;
+      list<DAE.Statement> stmts;
+      DAE.ElementSource source;
+      DAE.Statement stmt;
+      DAE.Else else_;
+      
+    case (path,DAE.ELSEIF(cond,stmts,else_),invars,outvars)
+      equation
+        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
+        else_ = optimizeElseTail(path,else_,invars,outvars);
+      then DAE.ELSEIF(cond,stmts,else_);
+
+    case (path,DAE.ELSE(stmts),invars,outvars)
+      equation
+        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
+      then DAE.ELSE(stmts);
+
+    else inElse;
+  end matchcontinue;
+end optimizeElseTail;
 
 protected function optimizeStatementTail2
   input Absyn.Path path;
