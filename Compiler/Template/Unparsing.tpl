@@ -31,6 +31,23 @@ match path
   case FULLYQUALIFIED(__) then pathString(path)
 end pathString;
 
+template metaHelperBoxStart(Integer numVariables)
+ "Helper to determine how mmc_mk_box should be called."
+::=
+  match numVariables
+  case 0
+  case 1
+  case 2
+  case 3
+  case 4
+  case 5
+  case 6
+  case 7
+  case 8
+  case 9 then '<%numVariables%>('
+  else '(<%numVariables%>, '
+end metaHelperBoxStart;
+
 template elementExternalHeader(SCode.Element elt, String pack)
 ::=
 match elt
@@ -66,7 +83,7 @@ match elt
       #define <%fullname%>_3dBOX<%nElts%> <%ctor%>
       <% if p.elementLst then
         <<
-        #define <%fullname%>(<%fields%>) (mmc_mk_box<%intAdd(1,listLength(p.elementLst))%>(<%ctor%>,&<%omcname%>__desc,<%fields%>))<%\n%>
+        #define <%fullname%>(<%fields%>) (mmc_mk_box<%metaHelperBoxStart(intAdd(1,listLength(p.elementLst)))%><%ctor%>,&<%omcname%>__desc,<%fields%>))<%\n%>
         >>
         else
         <<

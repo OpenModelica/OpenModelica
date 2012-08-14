@@ -2700,7 +2700,7 @@ extern struct record_description Absyn_Exp_LIST__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
-ADD_METARECORD_DEFINTIONS const char* Absyn_Case_CASE__desc__fields[8] = {"pattern","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
+ADD_METARECORD_DEFINTIONS const char* Absyn_Case_CASE__desc__fields[9] = {"pattern","patternGuard","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
 ADD_METARECORD_DEFINTIONS struct record_description Absyn_Case_CASE__desc = {
   "Absyn_Case_CASE",
   "Absyn.Case.CASE",
@@ -2710,8 +2710,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Case_CASE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Case_CASE__desc;
 #endif
-#define Absyn__CASE_3dBOX8 3
-#define Absyn__CASE(pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box9(3,&Absyn_Case_CASE__desc,pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info))
+#define Absyn__CASE_3dBOX9 3
+#define Absyn__CASE(pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info) (mmc_mk_box(10, 3,&Absyn_Case_CASE__desc,pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_ELSE__desc_added
 #define Absyn_Case_ELSE__desc_added

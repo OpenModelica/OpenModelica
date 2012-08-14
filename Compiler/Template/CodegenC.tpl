@@ -6806,6 +6806,8 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let &varFrees = buffer "" /*BUFF*/
   let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
+  let &preGuardCheck = buffer ""
+  let guardCheck = (match patternGuard case SOME(exp) then 'if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner)%>) <%onPatternFail%>;<%\n%>')
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 fromindex 1 => 
@@ -6822,7 +6824,9 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
-    <%patternMatching%> 
+    <%patternMatching%>
+    <%&preGuardCheck%>
+    <%guardCheck%>
     <% match c.jump
        case 0 then "/* Pattern matching succeeded */"
        else '<%ix%> += <%c.jump%>; /* Pattern matching succeeded; we may skip some cases if we fail */'

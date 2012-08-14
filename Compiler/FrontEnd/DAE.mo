@@ -1386,6 +1386,7 @@ public type ReductionIterators = list<ReductionIterator> "NOTE: OMC only handles
 public uniontype MatchCase
   record CASE
     list<Pattern> patterns "ELSE is handled by not doing pattern-matching";
+    Option<Exp> patternGuard "Guard-expression";
     list<Element> localDecls;
     list<Statement> body;
     Option<Exp> result;

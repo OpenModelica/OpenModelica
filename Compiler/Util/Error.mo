@@ -553,6 +553,8 @@ public constant Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = MESSAGE(239, GRAMMAR()
   Util.gettext("Got element %1 that was not referenced in the package.order file."));
 public constant Message ORDER_FILE_COMPONENTS = MESSAGE(240, GRAMMAR(), ERROR(),
   Util.gettext("Components referenced in the package.order file must be moved in full chunks. Either split the constants to different lines or make them subsequent in the package.order file."));
+public constant Message GUARD_EXPRESSION_TYPE_MISMATCH = MESSAGE(241, GRAMMAR(), ERROR(),
+  Util.gettext("Guard expressions need to be Boolean, got expression of type %s."));
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));

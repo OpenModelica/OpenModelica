@@ -4047,7 +4047,7 @@ algorithm
       list<Absyn.EquationItem> e;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, _, l, e, r, _, c, _)
+    case Absyn.CASE(p, _, _, l, e, r, _, c, _)
       equation
         Print.printBuf("Absyn.CASE(");
         Print.printBuf("Pattern(");
@@ -4670,25 +4670,28 @@ public function printCaseStr
 algorithm
   out := matchcontinue cas
     local
-      String s1, s2, s3, s4, s;
+      String s1, s2, s3, s4, s5, s;
       Absyn.Exp p;
       list<Absyn.ElementItem> l;
       list<Absyn.EquationItem> eq;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, _, {}, {}, r, _, c, _)
+      Option<Absyn.Exp> patternGuard;
+    case Absyn.CASE(p, patternGuard, _, {}, {}, r, _, c, _)
       equation
         s1 = printExpStr(p);
         s4 = printExpStr(r);
-        s = stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
+        s5 = printPatternGuard(patternGuard);
+        s = stringAppendList({"\tcase (", s1, ") ",s5,"then ", s4, ";"});
       then s;
-    case Absyn.CASE(p, _, l, eq, r, _, c, _)
+    case Absyn.CASE(p, patternGuard, _, l, eq, r, _, c, _)
       equation
         s1 = printExpStr(p);
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
         s4 = printExpStr(r);
-        s = stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
+        s5 = printPatternGuard(patternGuard);
+        s = stringAppendList({"\tcase (", s1, ")", s5, s2, s3, "\t  then ", s4, ";"});
       then s;
     case Absyn.ELSE({}, {}, r, _, c, _)
       equation
@@ -4704,6 +4707,18 @@ algorithm
       then s;
   end matchcontinue;
 end printCaseStr;
+
+protected function printPatternGuard
+  input Option<Absyn.Exp> oexp;
+  output String str;
+algorithm
+  str := match oexp
+    local
+      Absyn.Exp exp;
+    case NONE() then "";
+    case SOME(exp) then " guard " +& printExpStr(exp) +& " ";
+  end match;
+end printPatternGuard;
 
 public function printCodeStr
 "function: printCodeStr
@@ -7012,15 +7027,18 @@ algorithm
   _ := match case_
     local
       Absyn.Exp pattern;
+      Option<Absyn.Exp> patternGuard;
       Absyn.Info patternInfo,info,resultInfo;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.EquationItem>  equations;
       Absyn.Exp result;
       Option<String> comment;
-    case Absyn.CASE(pattern,patternInfo,localDecls,equations,result,resultInfo,comment,info)
+    case Absyn.CASE(pattern,patternGuard,patternInfo,localDecls,equations,result,resultInfo,comment,info)
       equation
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
+        Print.printBuf(", patternGuard = ");
+        printOption(patternGuard,printExpAsCorbaString);
         Print.printBuf(", patternInfo = ");
         printInfoAsCorbaString(patternInfo);
         Print.printBuf(", localDecls = ");

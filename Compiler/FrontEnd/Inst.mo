@@ -17665,7 +17665,7 @@ algorithm
       list<DAE.Pattern> patterns;
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
-      Option<DAE.Exp> result;
+      Option<DAE.Exp> result,patternGuard;
       Absyn.Info resultInfo,info;
       Integer jump;
       DAE.MatchCase case_;
@@ -17673,10 +17673,10 @@ algorithm
       list<DAE.MatchCase> cases,acc;
       
     case (_,{},true,acc,_,_) then listReverse(acc);
-    case (path,DAE.CASE(patterns,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,vars,source)
+    case (path,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,vars,source)
       equation
         (exp,true) = optimizeStatementTail3(path,exp,vars,source);
-        case_ = DAE.CASE(patterns,localDecls,body,SOME(exp),resultInfo,jump,info);
+        case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info);
       then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
     case (path,case_::cases,changed,acc,vars,source)
       then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,source);

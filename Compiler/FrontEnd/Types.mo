@@ -5317,14 +5317,14 @@ end matchTypePolymorphic;
 public function matchType "function: matchType
   This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary."
-  input DAE.Exp inExp1;
-  input Type inType2;
-  input Type inType3;
+  input DAE.Exp exp;
+  input Type actual;
+  input Type expected;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Type outType;
 algorithm
-  (outExp,outType) := matchcontinue (inExp1,inType2,inType3,printFailtrace)
+  (outExp,outType) := matchcontinue (exp,actual,expected,printFailtrace)
     local
       DAE.Exp e,e_1;
       Type e_type,expected_type,e_type_1;

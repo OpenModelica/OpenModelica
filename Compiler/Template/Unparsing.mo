@@ -201,38 +201,97 @@ algorithm
   end matchcontinue;
 end pathString;
 
-protected function lm_33
+public function metaHelperBoxStart
   input Tpl.Text in_txt;
-  input list<SCode.Element> in_items;
+  input Integer in_a_numVariables;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_items)
+  matchcontinue(in_txt, in_a_numVariables)
     local
       Tpl.Text txt;
-      list<SCode.Element> rest;
-      SCode.Ident i_name;
+      Integer i_numVariables;
 
     case ( txt,
-           {} )
+           (i_numVariables as 0) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
       then txt;
 
     case ( txt,
-           SCode.COMPONENT(name = i_name) :: rest )
+           (i_numVariables as 1) )
       equation
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.nextIter(txt);
-        txt = lm_33(txt, rest);
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
       then txt;
 
     case ( txt,
-           _ :: rest )
+           (i_numVariables as 2) )
       equation
-        txt = lm_33(txt, rest);
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 3) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 4) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 5) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 6) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 7) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 8) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           (i_numVariables as 9) )
+      equation
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+      then txt;
+
+    case ( txt,
+           i_numVariables )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeStr(txt, intString(i_numVariables));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
       then txt;
   end matchcontinue;
-end lm_33;
+end metaHelperBoxStart;
 
 protected function lm_34
   input Tpl.Text in_txt;
@@ -254,9 +313,7 @@ algorithm
     case ( txt,
            SCode.COMPONENT(name = i_name) :: rest )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.nextIter(txt);
         txt = lm_34(txt, rest);
       then txt;
@@ -269,7 +326,42 @@ algorithm
   end matchcontinue;
 end lm_34;
 
-protected function fun_35
+protected function lm_35
+  input Tpl.Text in_txt;
+  input list<SCode.Element> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+      list<SCode.Element> rest;
+      SCode.Ident i_name;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           SCode.COMPONENT(name = i_name) :: rest )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = Tpl.nextIter(txt);
+        txt = lm_35(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      equation
+        txt = lm_35(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_35;
+
+protected function fun_36
   input Tpl.Text in_txt;
   input String in_mArg;
   input Tpl.Text in_a_fieldsStr;
@@ -312,9 +404,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("};"));
       then txt;
   end matchcontinue;
-end fun_35;
+end fun_36;
 
-protected function fun_36
+protected function fun_37
   input Tpl.Text in_txt;
   input list<SCode.Element> in_a_p_elementLst;
   input Tpl.Text in_a_fields;
@@ -374,8 +466,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(") (mmc_mk_box"));
         ret_0 = listLength(i_p_elementLst);
         ret_1 = intAdd(1, ret_0);
-        txt = Tpl.writeStr(txt, intString(ret_1));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = metaHelperBoxStart(txt, ret_1);
         txt = Tpl.writeText(txt, a_ctor);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(",&"));
         txt = Tpl.writeText(txt, a_omcname);
@@ -385,7 +476,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
   end matchcontinue;
-end fun_36;
+end fun_37;
 
 public function elementExternalHeader
   input Tpl.Text in_txt;
@@ -422,10 +513,10 @@ algorithm
            a_pack )
       equation
         l_fields = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_fields = lm_33(l_fields, i_p_elementLst);
+        l_fields = lm_34(l_fields, i_p_elementLst);
         l_fields = Tpl.popIter(l_fields);
         l_fieldsStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_fieldsStr = lm_34(l_fieldsStr, i_p_elementLst);
+        l_fieldsStr = lm_35(l_fieldsStr, i_p_elementLst);
         l_fieldsStr = Tpl.popIter(l_fieldsStr);
         l_omcname = Tpl.writeStr(Tpl.emptyTxt, a_pack);
         l_omcname = Tpl.writeTok(l_omcname, Tpl.ST_STRING("_"));
@@ -442,7 +533,7 @@ algorithm
         ret_9 = intAdd(3, i_r_index);
         l_ctor = Tpl.writeStr(Tpl.emptyTxt, intString(ret_9));
         str_11 = Tpl.textString(l_nElts);
-        l_fieldsDescription = fun_35(Tpl.emptyTxt, str_11, l_fieldsStr, l_nElts, l_omcname);
+        l_fieldsDescription = fun_36(Tpl.emptyTxt, str_11, l_fieldsStr, l_nElts, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "#ifdef ADD_METARECORD_DEFINTIONS\n",
                                     "#ifndef "
@@ -493,7 +584,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_ctor);
         txt = Tpl.softNewLine(txt);
-        txt = fun_36(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
+        txt = fun_37(txt, i_p_elementLst, l_fields, l_omcname, l_ctor, l_fullname);
       then txt;
 
     case ( txt,

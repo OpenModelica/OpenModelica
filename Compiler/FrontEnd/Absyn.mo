@@ -832,6 +832,7 @@ end Exp;
 uniontype Case "case in match or matchcontinue"
   record CASE
     Exp pattern " patterns to be matched ";
+    Option<Exp> patternGuard;
     Info patternInfo "file information of the pattern";
     list<ElementItem> localDecls " local decls ";
     list<EquationItem>  equations " equations [] for no equations ";
@@ -2251,15 +2252,16 @@ algorithm
       list<ElementItem> ldecls;
       list<EquationItem> eql;
       Option<String> cmt;
+      Option<Exp> patternGuard;
 
-    case (CASE(pattern = pattern, patternInfo = pinfo, localDecls = ldecls, 
-        equations = eql, result = result, resultInfo = resultInfo, comment = cmt, info = info), tup)
+    case (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup)
       equation
         (pattern, tup) = traverseExpBidir(pattern, tup);
+        (patternGuard, tup) = traverseExpOptBidir(patternGuard, tup);
         (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
         (result, tup) = traverseExpBidir(result, tup);
       then
-        (CASE(pattern, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
+        (CASE(pattern, patternGuard, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
 
     case (ELSE(localDecls = ldecls, equations = eql, result = result, resultInfo = resultInfo,
         comment = cmt, info = info), tup)
