@@ -345,13 +345,6 @@ algorithm
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) 
       then DAE.RCONST(1.0);
     
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
-      equation
-        ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = BackendVariable.getVar(cr, timevars);
-        cr = ComponentReference.crefPrefixDer(cr);
-        e = Expression.makeCrefExp(cr, tp);
-      then
-        e;
   // case for Records
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(a)))),inVariables as (timevars,_))
       equation
@@ -369,10 +362,17 @@ algorithm
     // Constants, known variables, parameters and discrete variables have a 0-derivative 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(_,BackendDAE.SHARED(knownVars=knvars))) 
       equation
-        (_,_) = BackendVariable.getVar(cr, knvars);
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then zero;
-    
+
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
+      equation
+        ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = BackendVariable.getVar(cr, timevars);
+        cr = ComponentReference.crefPrefixDer(cr);
+        e = Expression.makeCrefExp(cr, tp);
+      then
+        e;    
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
         ({BackendDAE.VAR(varKind = kind)},_) = BackendVariable.getVar(cr, timevars);
