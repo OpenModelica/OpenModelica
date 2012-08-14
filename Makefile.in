@@ -34,7 +34,7 @@ omcd: difftool interactive docs fmi fmil
 
 fmil:
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && $(CMAKE) -D FMILIB_BUILD_SHARED_LIB:Bool=OFF -D FMILIB_BUILD_TESTS:Bool=OFF .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && $(CMAKE) -D FMILIB_BUILD_SHARED_LIB:Bool=OFF -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF .. -G $(CMAKE_TARGET))
 	$(MAKE) -C 3rdParty/FMIL/build
 	$(MAKE) -C 3rdParty/FMIL/build install
 qtclean-common:
