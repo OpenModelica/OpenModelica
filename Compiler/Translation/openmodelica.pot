@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2012-08-09 09:04+0200\n"
+"POT-Creation-Date: 2012-08-14 11:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1176,170 +1176,219 @@ msgstr ""
 msgid "The second argument of %s must be an overdetermined type or record."
 msgstr ""
 
-#: ../Util/Error.mo:542
+#: ../Util/Error.mo:541
+#, c-format
+msgid ""
+"Modelica library files should contain exactly one package, but found the "
+"following classes: %s."
+msgstr ""
+
+#: ../Util/Error.mo:543
+#, c-format
+msgid "Expected the package to have %s but got %s"
+msgstr ""
+
+#: ../Util/Error.mo:545
+#, c-format
+msgid "Expected the package to have name %s, but got %s."
+msgstr ""
+
+#: ../Util/Error.mo:547
+#, c-format
+msgid ""
+"Elements in the package.mo-file need to be in the same relative order as the "
+"package.order file. Got element named %s but it was already added because it "
+"was not the next element in the list at that time."
+msgstr ""
+
+#: ../Util/Error.mo:549
+#, c-format
+msgid ""
+"%s is a package.mo-file and needs to be based on class parts (i.e. not class "
+"extends, derived class, or enumeration)."
+msgstr ""
+
+#: ../Util/Error.mo:551
+msgid ""
+"%1 was referenced in the package.order file, but was not found in package."
+"mo, %1/package.mo or %1.mo."
+msgstr ""
+
+#: ../Util/Error.mo:553
+msgid "Got element %1 that was not referenced in the package.order file."
+msgstr ""
+
+#: ../Util/Error.mo:555
+msgid ""
+"Components referenced in the package.order file must be moved in full "
+"chunks. Either split the constants to different lines or make them "
+"subsequent in the package.order file."
+msgstr ""
+
+#: ../Util/Error.mo:558
 #, c-format
 msgid ""
 "Parameter %s has neither value nor start value, and is fixed during "
 "initialization (fixed=true)"
 msgstr ""
 
-#: ../Util/Error.mo:544
+#: ../Util/Error.mo:560
 #, c-format
 msgid "Function \"product\" has scalar as argument in %s in component %s"
 msgstr ""
 
-#: ../Util/Error.mo:546
+#: ../Util/Error.mo:562
 #, c-format
 msgid ""
 "Using overdeterimed solver for initialization. Setting fixed=false to the "
 "following variables: %s"
 msgstr ""
 
-#: ../Util/Error.mo:548
+#: ../Util/Error.mo:564
 #, c-format
 msgid "Failed to evaluate function: %s"
 msgstr ""
 
-#: ../Util/Error.mo:550
+#: ../Util/Error.mo:566
 #, c-format
 msgid "trying to override final variable in class: %s"
 msgstr ""
 
-#: ../Util/Error.mo:552
+#: ../Util/Error.mo:568
 #, c-format
 msgid ""
 "In component %s, in relation %s, %s on Reals is only allowed inside "
 "functions."
 msgstr ""
 
-#: ../Util/Error.mo:554
+#: ../Util/Error.mo:570
 #, c-format
 msgid "Ignoring the modification on outer element: %s"
 msgstr ""
 
-#: ../Util/Error.mo:556
+#: ../Util/Error.mo:572
 #, c-format
 msgid ""
 "Illegal derivative. der(%s) in component %s is of type %s, which is not a "
 "subtype of Real"
 msgstr ""
 
-#: ../Util/Error.mo:558
+#: ../Util/Error.mo:574
 #, c-format
 msgid "In modifier %s"
 msgstr ""
 
-#: ../Util/Error.mo:560
+#: ../Util/Error.mo:576
 #, c-format
 msgid "Multiple modifiers in same scope for element %s, %s"
 msgstr ""
 
-#: ../Util/Error.mo:562
+#: ../Util/Error.mo:578
 #, c-format
 msgid ""
 "The system of units is inconsistent in term %s with the units %s and %s "
 "respectively."
 msgstr ""
 
-#: ../Util/Error.mo:564
+#: ../Util/Error.mo:580
 msgid "The system of units is consistent."
 msgstr ""
 
-#: ../Util/Error.mo:566
+#: ../Util/Error.mo:582
 msgid ""
 "The system of units is incomplete. Please provide unit information to the "
 "model by e.g. using types from the SIunits package."
 msgstr ""
 
-#: ../Util/Error.mo:568
+#: ../Util/Error.mo:584
 #, c-format
 msgid "Failed to elaborate rhs of %s"
 msgstr ""
 
-#: ../Util/Error.mo:570
+#: ../Util/Error.mo:586
 #, c-format
 msgid "Could not evaluate expression: %s"
 msgstr ""
 
-#: ../Util/Error.mo:572
+#: ../Util/Error.mo:588
 #, c-format
 msgid "jacobian equation %s could not solve proper for %s. Assume %s=0."
 msgstr ""
 
-#: ../Util/Error.mo:574
+#: ../Util/Error.mo:590
 #, c-format
 msgid ""
 "Simplification produced a higher complexity (%s) than the original (%s). The "
 "simplification was: %s => %s."
 msgstr ""
 
-#: ../Util/Error.mo:576
+#: ../Util/Error.mo:592
 #, c-format
 msgid "Iterator %s, has type %s, but expected an array expression."
 msgstr ""
 
-#: ../Util/Error.mo:578
+#: ../Util/Error.mo:594
 #, c-format
 msgid "Cannot instantiate %s due to restriction %s."
 msgstr ""
 
-#: ../Util/Error.mo:580
+#: ../Util/Error.mo:596
 #, c-format
 msgid "Library %s was not loaded but is marked as used by model %s."
 msgstr ""
 
-#: ../Util/Error.mo:582
+#: ../Util/Error.mo:598
 #, c-format
 msgid ""
 "The maximum recursion depth was reached, probably due to mutual recursion. "
 "The current scope: %s."
 msgstr ""
 
-#: ../Util/Error.mo:585
+#: ../Util/Error.mo:601
 #, c-format
 msgid ""
 " Local variable '%s' shadows input or result variables in a {match,"
 "matchcontinue} expression."
 msgstr ""
 
-#: ../Util/Error.mo:587
+#: ../Util/Error.mo:603
 #, c-format
 msgid " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."
 msgstr ""
 
-#: ../Util/Error.mo:589
+#: ../Util/Error.mo:605
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
 msgstr ""
 
-#: ../Util/Error.mo:591
+#: ../Util/Error.mo:607
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 
-#: ../Util/Error.mo:593
+#: ../Util/Error.mo:609
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
 "modifications, which are not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:595
+#: ../Util/Error.mo:611
 msgid "MetaModelica complex types may not have modifiers."
 msgstr ""
 
-#: ../Util/Error.mo:597
+#: ../Util/Error.mo:613
 #, c-format
 msgid "Cannot evaluate function pointers (got %s)."
 msgstr ""
 
-#: ../Util/Error.mo:599
+#: ../Util/Error.mo:615
 #, c-format
 msgid "Tried to use function %s, but it was not instantiated."
 msgstr ""
 
-#: ../Util/Error.mo:601
+#: ../Util/Error.mo:617
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -1351,61 +1400,61 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:603
+#: ../Util/Error.mo:619
 #, c-format
 msgid "In metarecord call %s: %s"
 msgstr ""
 
-#: ../Util/Error.mo:605
+#: ../Util/Error.mo:621
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr ""
 
-#: ../Util/Error.mo:607
+#: ../Util/Error.mo:623
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr ""
 
-#: ../Util/Error.mo:609
+#: ../Util/Error.mo:625
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
 "tail %s."
 msgstr ""
 
-#: ../Util/Error.mo:611
+#: ../Util/Error.mo:627
 #, c-format
 msgid ""
 "%s. Strict RML enforces match expression input and output to be the same as "
 "the function's."
 msgstr ""
 
-#: ../Util/Error.mo:613
+#: ../Util/Error.mo:629
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr ""
 
-#: ../Util/Error.mo:615
+#: ../Util/Error.mo:631
 #, c-format
 msgid "Invalid named fields: %s"
 msgstr ""
 
-#: ../Util/Error.mo:617
+#: ../Util/Error.mo:633
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
 msgstr ""
 
-#: ../Util/Error.mo:619
+#: ../Util/Error.mo:635
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr ""
 
-#: ../Util/Error.mo:621
+#: ../Util/Error.mo:637
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr ""
 
-#: ../Util/Error.mo:623
+#: ../Util/Error.mo:639
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -1415,67 +1464,67 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: ../Util/Error.mo:625
+#: ../Util/Error.mo:641
 #, c-format
 msgid "Call pattern is not a record deconstructor %s"
 msgstr ""
 
-#: ../Util/Error.mo:627
+#: ../Util/Error.mo:643
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr ""
 
-#: ../Util/Error.mo:629
+#: ../Util/Error.mo:645
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
 msgstr ""
 
-#: ../Util/Error.mo:631
+#: ../Util/Error.mo:647
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr ""
 
-#: ../Util/Error.mo:633
+#: ../Util/Error.mo:649
 #, c-format
 msgid "Unused local variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:635
+#: ../Util/Error.mo:651
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr ""
 
-#: ../Util/Error.mo:637
+#: ../Util/Error.mo:653
 #, c-format
 msgid "Converted match expression to switch of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:639
+#: ../Util/Error.mo:655
 #, c-format
 msgid ""
 "Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr ""
 
-#: ../Util/Error.mo:641
+#: ../Util/Error.mo:657
 #, c-format
 msgid ""
 "Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:643
+#: ../Util/Error.mo:659
 #, c-format
 msgid ""
 "Cannot optimize function due to a local variable having the same name as an "
 "input variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:653
+#: ../Util/Error.mo:669
 #, c-format
 msgid "Template error: %s"
 msgstr ""
 
-#: ../Util/Error.mo:655 ../Util/Error.mo:657
+#: ../Util/Error.mo:671 ../Util/Error.mo:673
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr ""
@@ -2164,6 +2213,24 @@ msgstr ""
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr ""
 
+#: ../runtime/FMIimpl.c:69
+#, c-format
+msgid "File not Found: %s."
+msgstr ""
+
+#: ../runtime/FMIimpl.c:94
+msgid "Only version 1.0 is supported so far."
+msgstr ""
+
+#: ../runtime/FMIimpl.c:101
+#, c-format
+msgid "Error parsing the XML file contained in %s."
+msgstr ""
+
+#: ../runtime/FMIimpl.c:106
+msgid "Could not create the DLL loading mechanism(C-API)."
+msgstr ""
+
 #: ../runtime/SimulationResults.c:63 ../runtime/SimulationResults.c:71
 #: ../runtime/SimulationResults.c:79
 #, c-format
@@ -2309,12 +2376,12 @@ msgid ""
 "middle of the string."
 msgstr ""
 
-#: ../runtime/systemimpl.c:1743
+#: ../runtime/systemimpl.c:1745
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1755
+#: ../runtime/systemimpl.c:1767
 #, c-format
 msgid ""
 "Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
