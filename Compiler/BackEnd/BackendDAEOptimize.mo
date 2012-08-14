@@ -9769,7 +9769,7 @@ algorithm
   (osyst,oshared,outRunMatching):=
   matchcontinue (isyst,ishared,inComps)
     local
-      list<Integer> eindex,vindx,tvars,residual;
+      list<Integer> eindex,vindx,tvars,residual,unsolvables;
       list<list<Integer>> othercomps;
       Boolean b,b1;
       BackendDAE.EqSystem syst,subsyst;
@@ -9826,9 +9826,14 @@ algorithm
         // cheap matching stucks select additional tearing variable and continue
         ass1 = arrayCreate(size,-1);
         ass2 = arrayCreate(size,-1);
+
+        // get all unsolvable variables
+        unsolvables = getUnsolvableVars(1,size,meT,{});
+          Debug.fcall(Flags.TEARING_DUMP, print,"Unsolvable Vars:\n"); 
+          Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
         
         columark = arrayCreate(size,-1);
-        tvars = tearingSystemNew2(me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,shared,ass1,ass2,columark,1,{});
+        tvars = tearingSystemNew2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,shared,ass1,ass2,columark,1,{});
         ass1 = List.fold(tvars,unassignTVars,ass1);
         // unmatched equations are residual equations
         residual = Matching.getUnassigned(size,ass2,{});
@@ -9873,6 +9878,84 @@ algorithm
         (syst,shared,b);
   end matchcontinue;  
 end tearingSystemNew1;
+
+protected function getUnsolvableVars
+  input Integer index;
+  input Integer size;
+  input BackendDAE.AdjacencyMatrixTEnhanced meT;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(index,size,meT,iAcc)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced elem;
+      list<Integer> acc;
+      Boolean b;
+    case(_,_,_,_)
+      equation
+        true = intLe(index,size);
+        elem = meT[index];
+        b = unsolvable(elem);
+        acc = List.consOnTrue(b, index, iAcc);
+      then
+       getUnsolvableVars(index+1,size,meT,acc);
+    case(_,_,_,_)
+      then
+       iAcc;
+  end matchcontinue;
+end getUnsolvableVars;
+
+protected function unsolvable
+  input BackendDAE.AdjacencyMatrixElementEnhanced elem;
+  output Boolean b;
+algorithm
+  b := match(elem)
+    local
+      Integer e;
+      BackendDAE.AdjacencyMatrixElementEnhanced rest;
+      Boolean b1;
+    case ({}) then true;
+    case ((e,BackendDAE.SOLVABILITY_SOLVED())::rest)
+      equation
+        b1 = intLe(e,0);
+        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+      then 
+        b1;
+    case ((e,BackendDAE.SOLVABILITY_CONSTONE())::rest)
+      equation
+        b1 = intLe(e,0);
+        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+      then 
+        b1;
+    case ((e,BackendDAE.SOLVABILITY_CONST())::rest)
+      equation
+        b1 = intLe(e,0);
+        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+      then 
+        b1;
+    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=false))::rest)
+      then 
+        unsolvable(rest);
+    case ((e,BackendDAE.SOLVABILITY_PARAMETER(b=true))::rest)
+      equation
+        b1 = intLe(e,0);
+        b1 = Debug.bcallret1(b1, unsolvable, rest, false);
+      then 
+        b1;
+    case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=false))::rest)
+      then 
+        unsolvable(rest);
+    case ((e,BackendDAE.SOLVABILITY_TIMEVARYING(b=true))::rest)
+      then 
+        unsolvable(rest);
+    case ((e,BackendDAE.SOLVABILITY_NONLINEAR())::rest)
+      then 
+        unsolvable(rest);
+    case ((e,BackendDAE.SOLVABILITY_UNSOLVABLE())::rest)
+      then 
+        unsolvable(rest);
+  end match;
+end unsolvable;
 
 protected function setIntArray
   input list<Integer> inLst;
@@ -10325,6 +10408,7 @@ end markEqns;
 
 protected function tearingSystemNew2 "function tearingSystemNew2
   author: Frenkel TUD 2012-05"
+  input list<Integer> unsolvables;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<list<Integer>> mapEqnIncRow;
@@ -10339,17 +10423,17 @@ protected function tearingSystemNew2 "function tearingSystemNew2
   input list<Integer> inTVars;
   output list<Integer> outTVars;
 algorithm
-  outTVars := matchcontinue(m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  outTVars := matchcontinue(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
       Integer tvar;
-      list<Integer> unassigned;
+      list<Integer> unassigned,rest;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
       BackendDAE.EqSystem subsyst;
       list<BackendDAE.Var> vlst;
       list<BackendDAE.Equation> elst;
       BackendDAE.Variables vars1;
-      BackendDAE.EquationArray eqns1;      
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+      BackendDAE.EquationArray eqns1;
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // select tearing var
         tvar = selectTearingVar(vars,ass1,ass2,m,mt);
@@ -10373,7 +10457,29 @@ algorithm
         // check for unassigned vars, if there some rerun 
         unassigned = Matching.getUnassigned(size,ass1,{});
       then
-        tearingSystemNew3(unassigned,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        tearingSystemNew3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+    case (tvar::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
+        // mark tearing var
+        _ = arrayUpdate(ass1,tvar,size*2);
+        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]); 
+        //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns); 
+        //markEqns(vareqns,columark,mark);
+        // cheap matching
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+
+        /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
+          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
+          vars1 = BackendDAEUtil.listVar1(vlst);
+          eqns1 = BackendDAEUtil.listEquation(elst);
+          subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+          IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System.graphml");
+        */
+        // check for unassigned vars, if there some rerun 
+        unassigned = Matching.getUnassigned(size,ass1,{});
+      then
+        tearingSystemNew3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
     else
       equation
         print("BackendDAEOptimize.tearingSystemNew2 failed!");
@@ -10422,6 +10528,7 @@ end getUnnassignedFromArray;
 protected function tearingSystemNew3 "function tearingSystemNew3
   author: Frenkel TUD 2012-05"
   input list<Integer> unassigend;
+  input list<Integer> unsolvables;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
   input array<list<Integer>> mapEqnIncRow;
@@ -10436,12 +10543,12 @@ protected function tearingSystemNew3 "function tearingSystemNew3
   input list<Integer> inTVars;
   output list<Integer> outTVars;
 algorithm
-  outTVars := match(unassigend,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  outTVars := match(unassigend,unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
       Integer tvar;
       list<Integer> vareqns,unassigned;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inTVars;
-    else then tearingSystemNew2(m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then inTVars;
+    else then tearingSystemNew2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
   end match; 
 end tearingSystemNew3;
 
@@ -11161,7 +11268,7 @@ algorithm
    
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
       equation
-        (_,_) = BackendVariable.getVar(cr,vars);
+        (_::{},_) = BackendVariable.getVar(cr,vars);
         cr = ComponentReference.crefPrefixDer(cr);
         e = Expression.crefExp(cr);
       then
