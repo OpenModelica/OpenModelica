@@ -117,7 +117,8 @@ clean:
 
 install-nomodelica:
 	cp $(antlr) ../../../../build/share/omc/java
-	cp $(licenses) ../../../../build/share/doc/omc
+# Don't need these; we put them in the COPYING file instead
+#	cp $(licenses) ../../../../build/share/doc/omc
 install: install-nomodelica
 	cp modelica_java.jar ../../../../build/share/omc/java
 
