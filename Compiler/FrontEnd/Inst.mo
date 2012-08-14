@@ -14625,8 +14625,6 @@ algorithm
       then
         fail();
     
-    case (cache,_,_,_,_,_,_,_) then (cache,DAE.UNBOUND());
-    
     case (_,_,_,_,_,inPrefix,componentName,_)
       equation
         Debug.fprint(Flags.FAILTRACE, "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
