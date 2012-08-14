@@ -34,8 +34,9 @@ omcd: difftool interactive docs fmi fmil
 
 fmil:
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build; $(CMAKE) .. -G $(CMAKE_TARGET); $(MAKE); $(MAKE) install)
-
+	(cd 3rdParty/FMIL/build && $(CMAKE) -D FMILIB_BUILD_SHARED_LIB:Bool=OFF -D FMILIB_BUILD_TESTS:Bool=OFF .. -G $(CMAKE_TARGET))
+	$(MAKE) -C 3rdParty/FMIL/build
+	$(MAKE) -C 3rdParty/FMIL/build install
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*

@@ -81,6 +81,6 @@ ptolemyio_rml.o : ptolemyio.cpp errorext.h
 ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
 FMI_rml.o : FMIimpl.c
-
+	$(CC) -c -o $@ $(CPPFLAGS) -I$(FMIINCLUDE) $(CFLAGS) $<
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* 
