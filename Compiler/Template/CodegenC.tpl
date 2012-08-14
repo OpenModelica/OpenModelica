@@ -6519,7 +6519,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
         arrName
     case PARALLEL_FUNCTION_CONTEXT(__)  then
         arrName
-      else
+    else
         arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, &varDecls)
     
   case ASUB(exp=e, sub=indexes) then
@@ -6892,14 +6892,13 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
       'arrayGet(<%arrName%>,<%dimsValuesStr%>) /*arrayScalarRhs*/'
     else
     match context
-        case FUNCTION_CONTEXT(__) then
-          <<
-          (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-          >>
         case PARALLEL_FUNCTION_CONTEXT(__) then
           <<
           (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
           >>
+        else
+          '(*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))'
+          
 end arrayScalarRhs;
 
 template daeExpList(Exp exp, Context context, Text &preExp /*BUFP*/,
