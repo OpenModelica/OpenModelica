@@ -609,6 +609,12 @@ algorithm
         print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
       then
         {};
+        
+    case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
+      equation
+        print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
+      then
+        {};
     
     case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
       equation

@@ -2224,8 +2224,12 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   extern "C" {
   #endif
   
-  /* the OpenCL program. Made global to avoid repeated builds
-  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true); */
+  <%if acceptParModelicaGrammar() then 
+  << /* the OpenCL program. Made global to avoid repeated builds */
+  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true);
+  >>
+  %>
+  
   
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   <%functionBodies(functions)%>
@@ -2241,6 +2245,10 @@ end simulationFunctionsFile;
 template parModelicaKernelsFile(String filePrefix, list<Function> functions, list<Exp> literals)
  "Generates the content of the C file for functions in the simulation case."
 ::=
+
+  /* Reset the parfor loop id counter to 0*/  
+  let()= System.parForTickReset(0)
+  
   <<
   #include "OCLRuntimeUtil_new.cl"
   
@@ -2249,7 +2257,6 @@ template parModelicaKernelsFile(String filePrefix, list<Function> functions, lis
   
   // Headers finish here.
    
-  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   <%functionBodiesParModelica(functions)%>
   
     
@@ -2774,8 +2781,7 @@ template functionHeader(Function fn, Boolean inFunc)
       >>
     case KERNEL_FUNCTION(__) then
       <<
-      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, false)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), false)%>
+      <%functionHeaderKernelFunctionInterface(underscorePath(name), functionArguments, outVars)%>
       >>    
     case EXTERNAL_FUNCTION(dynamicLoad=true) then
       <<
@@ -2970,6 +2976,33 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   >>
 end functionHeaderImpl;
 
+template functionHeaderKernelFunctionInterface(String fname, list<Variable> fargs, list<Variable> outVars)
+ "Generates function header for a ParModelica Kernel function interface."
+::=
+  let fargsStr = (fargs |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", ")
+  
+  if outVars then <<
+  typedef struct <%fname%>_rettype_s {
+    <%outVars |> var hasindex i1 fromindex 1 =>
+      match var
+      case VARIABLE(__) then
+        let dimStr = match ty case T_ARRAY(__) then
+          '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
+        let typeStr = varType(var) 
+        '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
+      case FUNCTION_PTR(__) then
+        'modelica_fnptr c<%i1%>; /* <%name%> */'
+      ;separator="\n"
+    %>
+  } <%fname%>_rettype;
+
+  <%fname%>_rettype _<%fname%>(<%fargsStr%>);
+  >> else <<
+
+  void _<%fname%>(<%fargsStr%>);
+  >>
+end functionHeaderKernelFunctionInterface;
+
 template funArgName(Variable var)
 ::=
   match var
@@ -2984,19 +3017,48 @@ template funArgDefinition(Variable var)
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition;
 
-template parFunArgDefinition2(Variable var, Text &parArgList /*BUFPA*/)
+template funArgDefinitionKernelFunctionInterface(Variable var)
+::=
+  match var
+  case VARIABLE(ty=T_ARRAY(__)) then 'device_<%varType(var)%> <%contextCref(name,contextFunction)%>'
+  case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction)%>'
+  else 'Invalid function argument to Kernel function Interface.'
+end funArgDefinitionKernelFunctionInterface;
+
+template funArgDefinitionKernelFunctionBody(Variable var)
  "Generates code to initialize variables.
   Does not return anything: just appends declarations to buffers."
 ::=
 match var
 //function args will have nill instdims even if they are arrays. handled here
 case var as VARIABLE(ty=T_ARRAY(__)) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
+  '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+
+case var as VARIABLE(__) then
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
+  if instDims then
+    '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+
+  else
+    'modelica_<%expTypeShort(var.ty)%> <%varName%>'
+  
+else '#error Unknown variable type in as function argument funArgDefinitionKernelFunctionBody<%\n%>' 
+end funArgDefinitionKernelFunctionBody;
+
+template funArgDefinitionKernelFunctionBody2(Variable var, Text &parArgList /*BUFPA*/)
+ "Generates code to initialize variables.
+  Does not return anything: just appends declarations to buffers."
+::=
+match var
+//function args will have nill instdims even if they are arrays. handled here
+case var as VARIABLE(ty=T_ARRAY(__)) then
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   let &parArgList += ',<%\n%>    __global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
   let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
   ""
 case var as VARIABLE(__) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   if instDims then
     let &parArgList += ',<%\n%>    __global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
   let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
@@ -3004,29 +3066,55 @@ case var as VARIABLE(__) then
   else
     let &parArgList += ',<%\n%>    modelica_<%expTypeShort(var.ty)%> <%varName%>'
   ""
-else let &parArgList += '    #error Unknown variable type in as function argument parFunArgDefinition<%\n%>' ""
-end parFunArgDefinition2;
+else let &parArgList += '    #error Unknown variable type in as function argument funArgDefinitionKernelFunctionBody2<%\n%>' ""
+end funArgDefinitionKernelFunctionBody2;
 
-template parFunArgDefinition(Variable var)
- "Generates code to initialize variables.
-  Does not return anything: just appends declarations to buffers."
+template parFunArgDefinitionFromLooptupleVar(tuple<DAE.ComponentRef,Absyn.Info> tupleVar)
 ::=
-match var
-//function args will have nill instdims even if they are arrays. handled here
-case var as VARIABLE(ty=T_ARRAY(__)) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
-  '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
-
-case var as VARIABLE(__) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
-  if instDims then
-    '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
-
-  else
-    'modelica_<%expTypeShort(var.ty)%> <%varName%>'
+match tupleVar
+case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
+  let varName = contextArrayCref(cref,contextParallelFunction)
+  match cref.identType
+  case identType as T_ARRAY(ty = T_INTEGER(__)) then
+    '__global modelica_integer* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
+  case identType as T_ARRAY(ty = T_REAL(__)) then
+    '__global modelica_integer* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
+    
+  else 'Tempalte error in parFunArgDefinitionFromLooptupleVar'
+    
+case tupleVar as ((cref as CREF_IDENT(__),_)) then
+  let varName = contextArrayCref(cref,contextParallelFunction)
+  match cref.identType
+  case identType as T_INTEGER(__) then  
+    'modelica_integer <%varName%>'
+  case identType as T_REAL(__) then  
+    'modelica_real <%varName%>'
+    
+  else 'Tempalte error in parFunArgDefinitionFromLooptupleVar'
   
-else '#error Unknown variable type in as function argument parFunArgDefinition<%\n%>' 
-end parFunArgDefinition;
+end parFunArgDefinitionFromLooptupleVar;
+
+template reconstructKernelArraysFromLooptupleVars(tuple<DAE.ComponentRef,Absyn.Info> tupleVar, Text &reconstructedArrs)
+ "reconstructs modelica arrays in the kernels."
+::=
+match tupleVar
+case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
+  let varName = contextArrayCref(cref,contextParallelFunction)
+  match cref.identType
+  case identType as T_ARRAY(ty = T_INTEGER(__)) then
+    let &reconstructedArrs += 'integer_array <%varName%>; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
+    ""
+  case identType as T_ARRAY(ty = T_REAL(__)) then
+    let &reconstructedArrs += 'real_array <%varName%>; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
+    let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
+    ""
+else let &reconstructedArrs += '#wiered variable in kerenl reconstruction of arrays<%\n%>' ""
+end reconstructKernelArraysFromLooptupleVars;
 
 template reconstructKernelArrays(Variable var, Text &reconstructedArrs)
  "reconstructs modelica arrays in the kernels."
@@ -3034,14 +3122,14 @@ template reconstructKernelArrays(Variable var, Text &reconstructedArrs)
 match var
 //function args will have nill instdims even if they are arrays. handled here
 case var as VARIABLE(ty=T_ARRAY(__)) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   let &reconstructedArrs += '<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
-    let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
-    let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
-    let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
   ""
 case var as VARIABLE(__) then
-  let varName = '<%contextCref(var.name,contextFunction)%>'
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   if instDims then
     let &reconstructedArrs += '<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
     let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
@@ -3228,6 +3316,7 @@ template functionBodyParModelica(Function fn, Boolean inFunc)
  "Generates the body for a function."
 ::=
   match fn
+  case fn as FUNCTION(__)                  then extractParforBodies(fn, inFunc)
   case fn as KERNEL_FUNCTION(__)           then functionBodyKernelFunction(fn, inFunc)
   case fn as PARALLEL_FUNCTION(__)         then functionBodyParallelFunction(fn, inFunc)
 end functionBodyParModelica;
@@ -3247,6 +3336,24 @@ template addRoots(Variable var)
       match typ case "modelica_metatype" then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
   end match
 end addRoots;
+
+template extractParforBodies(Function fn, Boolean inFunc)
+ "Generates the body for a Modelica/MetaModelica function."
+::=
+match fn
+case FUNCTION(__) then
+  let()= System.tmpTickReset(1)
+  let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
+  
+  let &varDecls = buffer "" /*BUFD*/
+ 
+  let bodyPart = (body |> stmt  => extractParFors(stmt, &varDecls /*BUFD*/) ;separator="\n")
+  
+  
+  <<
+  <%bodyPart%>
+  >>
+end extractParforBodies;
 
 template functionBodyRegularFunction(Function fn, Boolean inFunc)
  "Generates the body for a Modelica/MetaModelica function."
@@ -3363,10 +3470,10 @@ case KERNEL_FUNCTION(__) then
   // This odd arrangment and call is to get the commas in the right places
   // between the argumetns.
   // This puts correct comma placment even when the 'outvar' list is empty  
-  let argStr = (functionArguments |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n    ")
+  let argStr = (functionArguments |> var => '<%funArgDefinitionKernelFunctionBody(var)%>' ;separator=", \n    ")
   //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n")
   let _ = (outVars |> var => 
-     parFunArgDefinition2(var, &argStr /*BUFP*/) ;separator=",\n")
+     funArgDefinitionKernelFunctionBody2(var, &argStr /*BUFP*/) ;separator=",\n")
   
   // Reconstruct array arguments to structures in the kernels  
   let &reconstrucedArrays = buffer ""
@@ -3377,21 +3484,22 @@ case KERNEL_FUNCTION(__) then
       reconstructKernelArrays(var, &reconstrucedArrays /*BUFP*/)
     )
   
-  let bodyPart = (body |> stmt  => parallelfunStatement(stmt, &varDecls /*BUFD*/) ;separator="\n")
+  let bodyPart = (body |> stmt  => parModelicafunStatement(stmt, &varDecls /*BUFD*/) ;separator="\n")
   
   /* Needs to be done last as it messes with the tmp ticks :) */
   let &varDecls += addRootsTempArray()
   
   <<
+  
   __kernel void _<%fname%>(
     <%\t%><%\t%><%argStr%>
   ) {
  
 
     /* functionBodyKernelFunction: Reconstruct Arrays */
-  <%reconstrucedArrays%>
+    <%reconstrucedArrays%>
   
-  /* functionBodyKernelFunction: locals */
+    /* functionBodyKernelFunction: locals */
     <%varDecls%>
     
     /* functionBodyKernelFunction: state in */
@@ -3405,7 +3513,7 @@ case KERNEL_FUNCTION(__) then
     restore_memory_state(<%stateVar%>);
     
     /* Free GPU/OpenCL CPU memory */
-  <%varFrees%>
+    <%varFrees%>
   }
 
   >>
@@ -3430,7 +3538,7 @@ case PARALLEL_FUNCTION(__) then
     )
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   
-  let bodyPart = (body |> stmt  => parallelfunStatement(stmt, &varDecls) ;separator="\n")
+  let bodyPart = (body |> stmt  => parModelicafunStatement(stmt, &varDecls) ;separator="\n")
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
@@ -3441,7 +3549,7 @@ case PARALLEL_FUNCTION(__) then
   
 
   <<
-  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>, memory* memory_state)
+  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -3453,13 +3561,12 @@ case PARALLEL_FUNCTION(__) then
 
     <%bodyPart%>
     
-    //_return:
     <%outVarCopy%>
     restore_memory_state(<%stateVar%>);
     <%outVarAssign%>
   
-  /**mahge: Free unwanted meomory allocated**/
-  <%varFrees%>
+    /*mahge: Free unwanted meomory allocated*/
+    <%varFrees%>
   
     return<%if outVars then ' <%retVar%>' %>;
   }
@@ -3504,7 +3611,7 @@ case KERNEL_FUNCTION(__) then
   
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
   
-  let kernel_arg_number = "ker_arg_nr"
+  let kernel_arg_number = '<%fname%>_arg_nr'
   
   let &kernelArgSets = buffer ""
   let _ = (functionArguments |> var => 
@@ -3526,8 +3633,8 @@ case KERNEL_FUNCTION(__) then
 
   <<
   
-  //Interface function to _<%fname%> defined in parallelFunctions.cl file.
-  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
+  /* Interface function to <%fname%> defined in parallelFunctions.cl file. */
+  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -3537,24 +3644,21 @@ case KERNEL_FUNCTION(__) then
 
     <%varInits%>
   
-  ///////////////// parallel operations///////////////////////
+    /* functionBodyKernelFunctionInterface : <%fname%> Kernel creation and execution */
+    int <%kernel_arg_number%> = 0;
     <%cl_kernelVar%> = ocl_create_kernel(ocl_kernels_program, "_<%fname%>");
-  
-  int <%kernel_arg_number%> = 0;
     <%kernelArgSets%>
-  
     ocl_execute_kernel(<%cl_kernelVar%>);
     clReleaseKernel(<%cl_kernelVar%>);
-     //////////////////////////////////////////////////////////
+    /*functionBodyKernelFunctionInterface : <%fname%> kernel execution ends here.*/
 
     
-    //_return:
     <%outVarCopy%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     <%outVarAssign%>
   
-  /**mahge: Free unwanted meomory allocated**/
-  <%varFrees%>
+    /*mahge: Free unwanted meomory allocated*/
+    <%varFrees%>
   
     return<%if outVars then ' <%retVar%>' %>;
   }
@@ -3581,6 +3685,22 @@ case var as VARIABLE(__) then
     let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>); ++<%argNr%>; <%\n%>'
   ""
 end setKernelArg_ith;
+
+
+template setKernelArgFormTupleLoopVars_ith(tuple<DAE.ComponentRef,Absyn.Info> tupleVar, Text &KernelName, Text &argNr, Text &parVarList, Context context /*BUFPA*/)
+::=
+match tupleVar
+//function args will have nill instdims even if they are arrays. handled here
+case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
+  let varName = contextArrayCref(cref,context)
+  let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.data); ++<%argNr%>; <%\n%>'
+  let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.info_dev); ++<%argNr%>; <%\n%>'
+  ""
+case tupleVar as ((cref as CREF_IDENT(__),_)) then
+  let varName = contextArrayCref(cref,context)
+  let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>); ++<%argNr%>; <%\n%>'
+  ""
+end setKernelArgFormTupleLoopVars_ith;
 
 
 template functionBodyExternalFunction(Function fn, Boolean inFunc)
@@ -4585,7 +4705,7 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
     "NOT IMPLEMENTED FUN STATEMENT"
 end funStatement;
 
-template parallelfunStatement(Statement stmt, Text &varDecls)
+template parModelicafunStatement(Statement stmt, Text &varDecls)
  "Generates function statements With PARALLEL context. Similar to Function context.
  Except in some cases like assignments."
 ::=
@@ -4596,7 +4716,31 @@ template parallelfunStatement(Statement stmt, Text &varDecls)
     ;separator="\n") 
   else
     "NOT IMPLEMENTED FUN STATEMENT"
-end parallelfunStatement;
+end parModelicafunStatement;
+
+template extractParFors(Statement stmt, Text &varDecls)
+ "Generates bodies of parfor loops to the kernel file.
+ The sequential C operations needed to implement the parallel
+ for loop will be handled by the normal funStatment template."
+::=
+  match stmt
+  case ALGORITHM(__) then
+    (statementLst |> stmt =>
+      extractParFors_impl(stmt, contextParallelFunction, &varDecls)
+    ;separator="\n") 
+  else
+    "NOT IMPLEMENTED FUN STATEMENT"
+end extractParFors;
+
+
+template extractParFors_impl(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates an algorithm statement."
+::=
+  match stmt
+  case s as STMT_PARFOR(__)         then algStmtParForBody(s, contextParallelFunction, &varDecls /*BUFD*/)
+end extractParFors_impl;
+
+
 
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
@@ -4608,6 +4752,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/)
   case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/)
   case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFD*/)
+  case s as STMT_PARFOR(__)         then algStmtParForInterface(s, context, &varDecls /*BUFD*/)
   case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFD*/)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/)
@@ -4904,6 +5049,140 @@ case STMT_IF(__) then
   >>
 end algStmtIf;
 
+template algStmtParForBody(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a for algorithm statement."
+::=
+  match stmt
+  case s as STMT_PARFOR(range=rng as RANGE(__)) then
+    algStmtParForRangeBody(s, context, &varDecls /*BUFD*/)
+  case s as STMT_PARFOR(__) then
+    algStmtForGeneric(s, context, &varDecls /*BUFD*/)
+end algStmtParForBody;
+
+template algStmtParForRangeBody(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a for algorithm statement where range is RANGE."
+::=
+match stmt
+case STMT_PARFOR(range=rng as RANGE(__)) then
+  let iterName = contextIteratorName(iter, context)
+  let identType = expType(type_, iterIsArray)
+  let identTypeShort = expTypeShort(type_)
+  
+  let parforKernelName = 'parfor_<%System.parForTick()%>'
+  
+  let &loopVarDecls = buffer ""
+  let body = (statementLst |> stmt => algStatement(stmt, context, &loopVarDecls)
+                 ;separator="\n")
+  
+  // Reconstruct array arguments to structures in the kernels  
+  let &reconstrucedArrays = buffer ""
+  let _ = (loopPrlVars |> var => 
+      reconstructKernelArraysFromLooptupleVars(var, &reconstrucedArrays /*BUFP*/)
+    )
+  
+  let argStr = (loopPrlVars |> var => '<%parFunArgDefinitionFromLooptupleVar(var)%>' ;separator=", \n")
+                 
+  <<
+  
+  __kernel void <%parforKernelName%>(
+        modelica_integer loop_start,
+        modelica_integer loop_step,
+        modelica_integer loop_end,
+        <%argStr%>
+  ) {
+  
+  
+      /* algStmtParForRangeBody : Thread managment for parfor loops */    
+      modelica_integer inner_start = (get_global_id(0) * loop_step) + (loop_start);
+      modelica_integer stride = get_global_size(0) * loop_step;
+    
+      for(modelica_integer <%iterName%> = (modelica_integer) inner_start; in_range_integer(<%iterName%>, loop_start, loop_end); <%iterName%> += stride)
+        {
+        
+          /*algStmtParForRangeBody : Reconstruct Arrays */
+          <%reconstrucedArrays%>
+        
+          /* algStmtParForRangeBody : locals */
+          <%loopVarDecls%>
+          
+          <%body%>
+        
+        }
+  
+  }
+  >>
+end algStmtParForRangeBody;
+
+template algStmtParForInterface(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a for algorithm statement."
+::=
+  match stmt
+  case s as STMT_PARFOR(range=rng as RANGE(__)) then
+    algStmtParForRangeInterface(s, context, &varDecls /*BUFD*/)
+  case s as STMT_PARFOR(__) then
+    algStmtForGeneric(s, context, &varDecls /*BUFD*/)
+end algStmtParForInterface;
+
+template algStmtParForRangeInterface(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a for algorithm statement where range is RANGE."
+::=
+match stmt
+case STMT_PARFOR(range=rng as RANGE(__)) then
+  let identType = expType(type_, iterIsArray)
+  let identTypeShort = expTypeShort(type_)
+  let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls)
+                 ;separator="\n")
+  algStmtParForRangeInterface_impl(rng, iter, identType, identTypeShort, loopPrlVars, stmtStr, context, &varDecls)
+end algStmtParForRangeInterface;
+
+template algStmtParForRangeInterface_impl(Exp range, Ident iterator, String type, String shortType, list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars, Text body, Context context, Text &varDecls)
+ "The implementation of algStmtParForRangeInterface."
+::=
+match range
+case RANGE(__) then
+  let iterName = contextIteratorName(iterator, context)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
+  let startVar = tempDecl(type, &varDecls)
+  let stepVar = tempDecl(type, &varDecls)
+  let stopVar = tempDecl(type, &varDecls)
+  let &preExp = buffer ""
+  let startValue = daeExp(start, context, &preExp, &varDecls)
+  let stepValue = match step case SOME(eo) then
+      daeExp(eo, context, &preExp, &varDecls)
+    else
+      "(1)"
+  let stopValue = daeExp(stop, context, &preExp, &varDecls)
+  
+  let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
+
+  let parforKernelName = 'parfor_<%System.parForTick()%>'
+  
+  let kerArgNr = '<%parforKernelName%>_arg_nr'
+  
+  let &kernelArgSets = buffer ""
+  let _ = (loopPrlVars |> varTuple => 
+      setKernelArgFormTupleLoopVars_ith(varTuple, &cl_kernelVar, &kerArgNr, &kernelArgSets, context /*BUFP*/)
+    )
+  
+  <<
+  <%preExp%>
+  <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
+  <%cl_kernelVar%> = ocl_create_kernel(ocl_kernels_program, "<%parforKernelName%>");
+  int <%kerArgNr%> = 0;
+  
+  ocl_set_kernel_arg(<%cl_kernelVar%>, <%kerArgNr%>, <%startVar%>); ++<%kerArgNr%>; <%\n%>
+  ocl_set_kernel_arg(<%cl_kernelVar%>, <%kerArgNr%>, <%stepVar%>); ++<%kerArgNr%>; <%\n%>
+  ocl_set_kernel_arg(<%cl_kernelVar%>, <%kerArgNr%>, <%stopVar%>); ++<%kerArgNr%>; <%\n%>
+  
+  <%kernelArgSets%>
+  
+  ocl_execute_kernel(<%cl_kernelVar%>);
+  clReleaseKernel(<%cl_kernelVar%>);
+  
+  
+  >> /* else we're looping over a zero-length range */
+end algStmtParForRangeInterface_impl;
+
 
 template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a for algorithm statement."
@@ -4914,7 +5193,6 @@ template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/
   case s as STMT_FOR(__) then
     algStmtForGeneric(s, context, &varDecls /*BUFD*/)
 end algStmtFor;
-
 
 template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a for algorithm statement where range is RANGE."
@@ -5454,7 +5732,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 <<
                 (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                 >>
-        case PARALLEL_FUNCTION_CONTEXT(__) then
+              case PARALLEL_FUNCTION_CONTEXT(__) then
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
                   daeExp(exp, context, &preExp, &varDecls)
                   ;separator=", ")
@@ -5639,15 +5917,15 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
               'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
             else
             match context
-                case FUNCTION_CONTEXT(__) then
-                  <<
-                  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                  >>
               case PARALLEL_FUNCTION_CONTEXT(__) then
                   <<
                   (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
                   >>
-            else ""
+              else
+                  <<
+                  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                  >>
+
         else
           // The array subscript denotes a slice
           let &afterExp += '/* daeExpCrefLhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) afterExp  */<%\n%>'
@@ -6303,7 +6581,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     match context 
       case FUNCTION_CONTEXT(__) then "" 
       case PARALLEL_FUNCTION_CONTEXT(__) then "" 
-    else
+      else
           <<
           <%\n%>#ifdef _OMC_MEASURE_TIME
           SIM_PROF_TICK_FN(<%funName%>_index);
@@ -6314,7 +6592,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     match context 
       case FUNCTION_CONTEXT(__) then "" 
       case PARALLEL_FUNCTION_CONTEXT(__) then "" 
-    else
+      else
           <<
           <%\n%>#ifdef _OMC_MEASURE_TIME
           SIM_PROF_ACC_FN(<%funName%>_index);
@@ -6909,8 +7187,9 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
           (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
           >>
         else
-          '(*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))'
-          
+          <<
+          (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+          >>  
 end arrayScalarRhs;
 
 template daeExpList(Exp exp, Context context, Text &preExp /*BUFP*/,

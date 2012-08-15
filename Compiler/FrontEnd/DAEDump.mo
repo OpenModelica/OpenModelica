@@ -1642,6 +1642,22 @@ algorithm
         Print.printBuf("end for;\n");
       then
         ();
+        
+    case (DAE.STMT_PARFOR(iter = id,index=index,range = e,statementLst = stmts),i)
+      equation
+        indent(i);
+        Print.printBuf("parfor ");
+        Print.printBuf(id);
+        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
+        Print.printBuf(" in ");
+        ExpressionDump.printExp(e);
+        Print.printBuf(" loop\n");
+        i_1 = i + 2;
+        ppStmtList(stmts, i_1);
+        indent(i);
+        Print.printBuf("end parfor;\n");
+      then
+        ();
     
     case (DAE.STMT_WHILE(exp = e,statementLst = stmts),i)
       equation

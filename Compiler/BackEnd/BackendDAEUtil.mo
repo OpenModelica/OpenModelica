@@ -5478,6 +5478,15 @@ algorithm
         extraArg = traverseStmts(stmts,func,extraArg);
       then 
         traverseStmts(xs, func, extraArg);
+    
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts)) :: xs),func,extraArg)
+      equation
+        ((_, extraArg)) = func((e, extraArg));
+        cr = ComponentReference.makeCrefIdent(id1, tp, {});
+        (stmts,_) = DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
+        extraArg = traverseStmts(stmts,func,extraArg);
+      then 
+        traverseStmts(xs, func, extraArg);
         
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts)) :: xs),func,extraArg)
       equation

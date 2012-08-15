@@ -587,6 +587,17 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_FOR;
+  
+  record STMT_PARFOR
+    Type type_ "this is the type of the iterator";
+    Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
+    Ident iter "the iterator variable";
+    Integer index "the index of the iterator variable, to make it unique; used by the new inst";
+    Exp range "range for the loop";
+    list<Statement> statementLst;
+    list<tuple<ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_PARFOR;
 
   record STMT_WHILE
     Exp exp;

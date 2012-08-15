@@ -4128,6 +4128,7 @@ algorithm
       DAE.ElementSource source;
       Algorithm.Else algElse;
       Type_a extraArg;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       
     case ({},_,extraArg) then ({},extraArg);
       
@@ -4179,6 +4180,13 @@ algorithm
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,extraArg);
+    
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)) :: xs),func,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, extraArg));
+        (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+      then (DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source) :: xs_1,extraArg);
         
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func,extraArg)
       equation

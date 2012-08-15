@@ -751,6 +751,20 @@ RML_BEGIN_LABEL(System__tmpTickReset)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__parForTick)
+{
+  rmlA0 = (void*) mk_icon(SystemImpl_parForTick());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__parForTickReset)
+{
+  SystemImpl_parForTickReset(RML_UNTAGFIXNUM(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__tmpTickIndex)
 {
   rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndex(RML_UNTAGFIXNUM(rmlA0)));

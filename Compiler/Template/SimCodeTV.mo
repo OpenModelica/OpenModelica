@@ -690,6 +690,17 @@ package System
     input Integer index;
     output Integer tickNo;
   end tmpTickIndex;
+
+  function parForTick
+  "returns a tick that can be reset. used to uniquely identify parallel for loops.
+  parfor loops are generated in two rounds. We need to match them."
+    output Integer tickNo;
+  end parForTick;
+  
+  function parForTickReset
+  "Resets parfor loop id for second round"
+    input Integer start;
+  end parForTickReset;
   
   function tmpTickIndexReserve
     input Integer index;
@@ -1199,6 +1210,15 @@ package DAE
       list<Statement> statementLst;
       ElementSource source;
     end STMT_FOR;
+    record STMT_PARFOR
+      Type type_;
+      Boolean iterIsArray;
+      Ident iter;
+      Exp range;
+      list<Statement> statementLst;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      ElementSource source;
+    end STMT_PARFOR;
     record STMT_WHILE
       Exp exp;
       list<Statement> statementLst;

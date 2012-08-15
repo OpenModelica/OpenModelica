@@ -1314,6 +1314,7 @@ algorithm
       list<Integer> helpVarIndices;
       Integer index;
       Boolean b,b1,b2,b3;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
           
     case ({},_,_,_) then (listReverse(inAcc),inBAcc);
     
@@ -1378,6 +1379,18 @@ algorithm
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
         (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source)::inAcc,true);
+      then
+        ( es_1,b);
+        
+    case ((DAE.STMT_PARFOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,loopPrlVars=loopPrlVars,source=source)::es),repl,_,_)
+      equation
+        (statementLst_1,b1) = replaceStatementLst(statementLst, repl,{},false);
+        (e1_1,b2) = replaceExp(e1, repl,NONE());
+        true = b1 or b2;
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
+        (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        (es_1,b) = replaceStatementLst(es, repl,DAE.STMT_PARFOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,loopPrlVars,source)::inAcc,true);
       then
         ( es_1,b);
     

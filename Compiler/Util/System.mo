@@ -597,6 +597,18 @@ public function tmpTickReset
   external "C" SystemImpl_tmpTickReset(start) annotation(Library = "omcruntime");
 end tmpTickReset;
 
+public function parForTick
+  "returns a tick that can be reset. used to uniquely identify parallel for loops"
+  output Integer loopNo;
+  external "C" loopNo = SystemImpl_parForTick() annotation(Library = "omcruntime");
+end parForTick;
+
+public function parForTickReset
+  "Resets parfor loop id for second round"
+  input Integer start;
+  external "C" SystemImpl_parForTickReset(start) annotation(Library = "omcruntime");
+end parForTickReset;
+
 public function tmpTickIndex
   "returns a tick that can be reset. TODO: remove me when bootstrapped (default argument index=0)"
   input Integer index;

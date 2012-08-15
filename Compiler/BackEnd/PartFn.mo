@@ -462,6 +462,8 @@ algorithm
       DAE.Statement stmt,stmt_1;
       DAE.ElementSource source;
       Integer ix;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      
     case({},dae) then ({},dae);
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation
@@ -492,6 +494,13 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_FOR(ty,b,i,ix,e_1,stmts_1,source) :: cdr_1,dae);
+    case(DAE.STMT_PARFOR(ty,b,i,ix,e,stmts,loopPrlVars,source) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_PARFOR(ty,b,i,ix,e_1,stmts_1,loopPrlVars,source) :: cdr_1,dae);
     case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
@@ -1178,6 +1187,8 @@ algorithm
       list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
       Integer ix;
+      list<tuple<DAE.ComponentRef, Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
@@ -1214,6 +1225,13 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_FOR(ty,b,i,ix,e_1,stmts_1,source) :: cdr_1;
+    case(DAE.STMT_PARFOR(ty,b,i,ix,e,stmts,loopPrlVars,source) :: cdr,dae,p,inputs,current)
+      equation
+        ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
+      then
+        DAE.STMT_PARFOR(ty,b,i,ix,e_1,stmts_1,loopPrlVars,source) :: cdr_1;
     case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));

@@ -12316,6 +12316,14 @@ algorithm
         files = getFilesFromStatements(rest, files);
       then 
         files;
+    
+    case (DAE.STMT_PARFOR(source = source, statementLst = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
         
     case (DAE.STMT_WHILE(source = source, statementLst = stmts)::rest, files)
       equation

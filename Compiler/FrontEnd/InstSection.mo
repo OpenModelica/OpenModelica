@@ -4853,6 +4853,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars;
+      DAE.ComponentRef parforIter;
 
     // one iterator
     case (cache,env,ih,pre,ci_state,i,SOME(e),sl,info,source,initial_,impl,unrollForLoops)
@@ -4868,13 +4869,18 @@ algorithm
         // situations. Start with empty list and collect all variables cref'ed 
         // in the loop body.
         loopPrlVars = collectParallelVariables({},sl_1);
+        
+        // Remove the parfor loop iterator from the list(implicitly declared). 
+        parforIter = DAE.CREF_IDENT(i, t,{});
+        (loopPrlVars,_) = List.deleteMemberOnTrue(parforIter,loopPrlVars,crefInfoListCrefsEqual);
+        
         // Check the cref's in the list one by one to make 
         // sure that they are parallel variables.
         // checkParallelVariables(cache,env_1,loopPrlVars);
         List.map2_0(loopPrlVars, isCrefParGlobalOrForIterator, cache, env_1);
         
         source = DAEUtil.addElementSourceFileInfo(source,info);
-        stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
+        stmt = Algorithm.makeParFor(i, e_2, prop, sl_1, loopPrlVars, source);
       then
         (cache,{stmt});
 
@@ -4936,12 +4942,16 @@ algorithm
         
         // is it parglobal var?
         isParglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
+        
+        // Now the iterator is already removed. No need for this.
         // is it the iterator of the parfor loop(implicitly declared)?
-        isForiterator = Util.isSome(cnstForRange);
+        // isForiterator = Util.isSome(cnstForRange);
         
         //is it either a parglobal var or for iterator
-        true = isParglobal or isForiterator;
+        //true = isParglobal or isForiterator;
         
+        true = isParglobal;
+                
       then ();
         
     case((cref,info),_,_)

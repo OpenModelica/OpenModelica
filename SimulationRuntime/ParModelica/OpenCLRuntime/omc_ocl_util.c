@@ -163,6 +163,8 @@ void ocl_initialize(){
 void ocl_create_context_and_comm_queue(){
     // Create a context to run OpenCL on the OCL-enabled Device
     cl_int err;
+    
+    printf("--- Creating OpenCL context");
     device_context = clCreateContext(0, 1, &ocl_device, NULL, NULL, &err);
     
     ocl_error_check(OCL_CREATE_CONTEXT, err);
@@ -174,6 +176,7 @@ void ocl_create_context_and_comm_queue(){
     clGetContextInfo(device_context, CL_CONTEXT_DEVICES, ParmDataBytes, OCL_Devices, NULL);
 
     // Create a command-queue on the first OCL_ device
+    printf("--- Creating OpenCL command queue");
     device_comm_queue = clCreateCommandQueue(device_context,
         OCL_Devices[0], 0, &err);
     
@@ -196,24 +199,27 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
     else
         program_source = source;
     
+    
+    printf("--- Creating OpenCL program");
     cl_program ocl_program = clCreateProgramWithSource(device_context, 1,
         (const char**)&program_source, NULL, NULL);
-    printf("********** program created.\n");
+    printf("\t\t\t - OK.\n");    
 
     free((void*)program_source);
     
     // Build the program (OpenCL JIT compilation)
+    printf("--- Building OpenCL program \n");    
     char options[100];
-    const char* flags = "-I ";
+    const char* flags = "-I\"";
     const char* OMHOME = getenv("OPENMODELICAHOME");
-    const char* OMEXT = "/include/omc/";
+    const char* OMEXT = "/include/omc/\"";
     
     if ( OMHOME != NULL )
     {
         strcpy(options, flags);
         strcat(options, OMHOME);
         strcat(options, OMEXT);
-        printf("Building OpenCL code with flags %s\n",options);
+        printf("\t :Using flags %s\n",options);
         cl_int err;
         err = clBuildProgram(ocl_program, 0, NULL, options, NULL, NULL);
         ocl_error_check(OCL_BUILD_PROGRAM, err);
@@ -223,13 +229,15 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
                                   0, NULL, &size);
         char * log = (char*)malloc(size);
         clGetProgramBuildInfo(ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
-        printf("\t\tCL_PROGRAM_BUILD_LOG:  \t%s\n", log);
+        printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
         free(log);
         
         if(err){
-            printf("Errors detected in compilation of OpenCL code:\n");
+            printf("Build failed: Errors detected in compilation of OpenCL code:\n");
             exit(1);
         }
+        
+        
         
         return ocl_program;
 
@@ -443,7 +451,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-                    printf("********** program built(JIT compilation).\n");    
+                    printf("\t\t\t\t\t\t - OK.\n");    
                     break;
                 default:
                     printf("Possible unknown error in : OCL_BUILD_PROGRAM\n");
@@ -543,7 +551,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-                    printf("********** Context created.\n");    
+                    printf("\t\t\t - OK.\n");    
                     break;
                 default:
                     printf("Possible unknown error in : OCL_CREATE_CONTEXT\n");
@@ -573,7 +581,7 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
-                    printf("********** Command queue created.\n");    
+                    printf("\t\t - OK.\n");    
                     break;
                 default:
                     printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");

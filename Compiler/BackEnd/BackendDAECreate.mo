@@ -1827,6 +1827,8 @@ algorithm
       DAE.Ident iteratorName;
       DAE.Exp e,iteratorExp;
       list<DAE.Exp> iteratorexps, expExpLst;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in a parfor loop";
+      
     case (v,_,{},_) then v;
     case (v,knv,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
       equation
@@ -1868,6 +1870,19 @@ algorithm
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2;
+
+/*        
+    case (v,knv,(DAE.STMT_PARFOR(type_= tp, iter = iteratorName, range = e,statementLst = statementLst,loopPrlVars=loopPrlVars) :: xs),true)
+      equation
+        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        iteratorExp = Expression.crefExp(cr);
+        iteratorexps = extendRange(e,knv);
+        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp,iteratorexps,v,knv,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
+      then
+        v_2;
+*/
+        
     case (v,knv,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = NONE()) :: xs),_)
       equation
         v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
@@ -2740,6 +2755,7 @@ algorithm
       DAE.ElementSource source;
       Algorithm.Else algElse;
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       
     case ({},_,extraArg,knvars) then (({},extraArg));
       
@@ -2790,6 +2806,15 @@ algorithm
         ((stmts2, extraArg)) = traverseStmtsForExps(iteratorExp, iteratorexps,e, stmts, knvars, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_FOR(tp,b1,id1,ix,e,stmts2,source) :: xs_1,extraArg));
+        
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars= loopPrlVars, source = source)) :: xs),func, extraArg, knvars)
+      equation
+        cr = ComponentReference.makeCrefIdent(id1, tp, {});
+        iteratorExp = Expression.crefExp(cr);
+        iteratorexps = extendRange(e,knvars);
+        ((stmts2, extraArg)) = traverseStmtsForExps(iteratorExp, iteratorexps,e, stmts, knvars, func, extraArg);
+        ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
+      then ((DAE.STMT_PARFOR(tp,b1,id1,ix,e,stmts2,loopPrlVars,source) :: xs_1,extraArg));
         
     case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
       equation

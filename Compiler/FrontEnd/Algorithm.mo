@@ -605,6 +605,44 @@ algorithm
   end matchcontinue;
 end makeFor;
 
+public function makeParFor "function: makeParFor
+  This function creates a DAE.STMT_PARFOR construct, checking
+  that the types of the parts are correct."
+  input Ident inIdent;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  input list<Statement> inStatementLst;
+  input list<tuple<DAE.ComponentRef,Absyn.Info>> inLoopPrlVars;
+  input DAE.ElementSource source;
+  output Statement outStatement;
+algorithm
+  outStatement := matchcontinue (inIdent,inExp,inProperties,inStatementLst,inLoopPrlVars,source)
+    local
+      Boolean isArray;
+      DAE.Type et;
+      Ident i,e_str,t_str;
+      DAE.Exp e;
+      DAE.Type t;
+      list<Statement> stmts;
+      DAE.Dimensions dims;
+    
+    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_,source)
+      equation
+        isArray = Types.isArray(t, dims);
+        et = Types.simplifyType(t);
+      then
+        DAE.STMT_PARFOR(t,isArray,i,-1,e,stmts,inLoopPrlVars,source);
+    
+    case (_,e,DAE.PROP(type_ = t),_,_,source)
+      equation
+        e_str = ExpressionDump.printExpStr(e);
+        t_str = Types.unparseType(t);
+        Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
+      then
+        fail();
+  end matchcontinue;
+end makeParFor;
+
 public function makeWhile "function: makeWhile
   This function creates a DAE.STMT_WHILE construct, checking that the types
   of the parts are correct."
@@ -794,6 +832,7 @@ algorithm
     case DAE.STMT_ASSIGN_ARR(source=source) then source;
     case DAE.STMT_IF(source=source) then source;
     case DAE.STMT_FOR(source=source) then source;
+    case DAE.STMT_PARFOR(source=source) then source;
     case DAE.STMT_WHILE(source=source) then source;
     case DAE.STMT_WHEN(source=source) then source;
     case DAE.STMT_ASSERT(source=source) then source;
