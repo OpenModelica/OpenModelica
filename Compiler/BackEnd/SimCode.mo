@@ -8763,7 +8763,7 @@ algorithm
         (vTerm,_) = ExpressionSimplify.simplify(f);
         (e22,rhs) = solveTrivialArrayEquation2(vTerm,rhs);
       then 
-        (vTerm,rhs);
+        (e22,rhs);
         
         // not succeded to solve, return unsolved equation., catched later.
     case(v,e1,e2) then (e1,e2);
