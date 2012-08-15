@@ -4158,7 +4158,9 @@ handles MATRIX row"
   output list<DAE.Exp> outExp;
 algorithm
   outExp := match(irow,op,s1,arrayScalar)
-    local DAE.Exp e; Boolean scalar; list<DAE.Exp> row;
+    local
+      DAE.Exp e;
+      list<DAE.Exp> row;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
     case(e::row,op,s1,true)

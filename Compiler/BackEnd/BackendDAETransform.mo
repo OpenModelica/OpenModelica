@@ -3800,7 +3800,6 @@ protected function varStateSelectHeuristicPrio5
   output Real prio;
 algorithm
   prio := matchcontinue(v)
-    local Integer i; Real c;
     case(v)
       equation
         true = BackendVariable.varFixed(v);

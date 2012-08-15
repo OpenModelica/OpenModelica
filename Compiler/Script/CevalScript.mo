@@ -792,9 +792,9 @@ protected function cevalInteractiveFunctions2
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,functionName,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
-             outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,
-             plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,
+      String omdev,simflags,s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,
+             outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
+             call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2;
@@ -3215,8 +3215,7 @@ public function compileModel "function: compileModel
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,command,filename,str,extra_command, 
-             fileDLL, fileEXE, fileLOG, make;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make;
       list<String> libs;
       Boolean isWindows;
 

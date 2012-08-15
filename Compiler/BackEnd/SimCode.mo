@@ -5201,7 +5201,6 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       Integer linInfo;
-      array< .DAE.Algorithm> algorithms;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       list<list<Real>> jacVals;

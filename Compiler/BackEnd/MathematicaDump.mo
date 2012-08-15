@@ -79,7 +79,6 @@ algorithm
     DAE.ComponentRef cr;
     BackendDAE.Variables vars,knvars;
     String s1,s2;
-    Integer indx;
     DAE.Algorithm alg;
     BackendDAE.WhenEquation whenEq;
     
@@ -145,7 +144,6 @@ algorithm
     local
       Expression.Ident s,s_1,s1_1,s_2,s2_1,sym,s2,s3,s3_1,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       Integer p,p1,p2,ival,i,pstart,pstop,pe1;
-      Real rval;
       DAE.ComponentRef cr;
       DAE.Type tp;
       DAE.Exp e1,e2,e,f,start,stop,step,dim,exp,iterexp,c,t;
@@ -155,11 +153,8 @@ algorithm
       Real x,x2;
       String fname,s1;
       String s_11;
-      list<list<tuple<DAE.Exp, Boolean>>> ms;
       list<list<DAE.Exp>> matrix;
       list<DAE.Exp> ae1,expLst;
-      Boolean builtin;
-      DAE.InlineType inlineTp;
       DAE.CallAttributes call_attr;
       
       
@@ -563,14 +558,14 @@ protected function relopSymbolMma "
   input DAE.Operator inOperator;
   output String outString;
 algorithm 
-  outString := matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.LESS(ty = _)) then " < "; 
     case (DAE.LESSEQ(ty = _)) then " <= "; 
     case (DAE.GREATER(ty = _)) then " > "; 
     case (DAE.GREATEREQ(ty = _)) then " >= "; 
     case (DAE.EQUAL(ty = _)) then " == "; 
     case (DAE.NEQUAL(ty = _)) then " != "; // differs from Modelica which has '<>'
-  end matchcontinue;
+  end match;
 end relopSymbolMma;
 
 protected function printBuiltinMmaFunc "Translates builtin function to corresponding Mma function"
@@ -755,7 +750,6 @@ print variables that are top level OUTPUT's
 algorithm 
   str := matchcontinue(param)
     local
-      DAE.Exp exp;
       BackendDAE.Var v;
       DAE.ComponentRef name;
       String ident;
@@ -776,7 +770,6 @@ print variables that are INPUT's
 algorithm
   str := matchcontinue(param)
     local
-      DAE.Exp exp;
       DAE.ComponentRef name;
       String ident;
       BackendDAE.Var v;
@@ -800,7 +793,6 @@ E.g. {R1R->1.0,R2R->R1R*0.5,I3I->0.1}
 algorithm
   (params, inputs) := match(knvars)
     local
-      String s1;
       list<BackendDAE.Var> varLst;
     case(knvars) equation
       varLst = BackendDAEUtil.varList(knvars);

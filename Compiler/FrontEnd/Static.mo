@@ -9825,9 +9825,7 @@ algorithm
       SCode.Element cl;
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
-      SCode.Visibility visibility "protected/public";
       DAE.Binding binding "binding ; equation modification";
-      Option<DAE.Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,_,info)

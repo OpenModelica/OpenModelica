@@ -1827,7 +1827,6 @@ algorithm
       DAE.Ident iteratorName;
       DAE.Exp e,iteratorExp;
       list<DAE.Exp> iteratorexps, expExpLst;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in a parfor loop";
       
     case (v,_,{},_) then v;
     case (v,knv,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
@@ -2697,7 +2696,7 @@ algorithm
       DAE.Operator op;
       list<BackendDAE.ZeroCrossing> newzero,zc_lst;
       BackendDAE.ZeroCrossing z_c;
-      Integer indx,length,wc_count/*, new_idx*/;
+      Integer indx,length;
       String str;
     case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
       equation

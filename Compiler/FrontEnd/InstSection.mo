@@ -4932,7 +4932,7 @@ algorithm
       DAE.ComponentRef cref;
       Absyn.Info info;
       SCode.Parallelism prl;
-      Boolean isParglobal,isForiterator;
+      Boolean isParglobal;
       Option<DAE.Const> cnstForRange;
       
     case((cref,_),_,_)

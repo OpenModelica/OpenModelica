@@ -1361,7 +1361,7 @@ public function unboxExp
 algorithm
   outExp := match (ie)
     local
-      DAE.Type ty; DAE.Exp e;
+      DAE.Exp e;
     case (DAE.BOX(e)) then unboxExp(e);
     else ie;
   end match;

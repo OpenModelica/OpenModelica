@@ -621,7 +621,6 @@ public function replaceablePrefixStr
   output String strReplaceable;
 algorithm
   (strReplaceable) := match(inReplaceable)
-    local Absyn.ConstrainClass cc;
     case (SCode.REPLACEABLE(_)) then "replaceable ";
     case (SCode.NOT_REPLACEABLE()) then "";
   end match;
