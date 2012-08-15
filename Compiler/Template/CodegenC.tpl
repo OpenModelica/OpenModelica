@@ -6280,9 +6280,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     unboxRecord(argStr, ty, &preExp, &varDecls)
   
   case exp as CALL(attr=attr as CALL_ATTR(tailCall=tail as TAIL(__))) then
+    let &postExp = buffer ""
+    let tail = daeExpTailCall(expLst,tail.vars,context,&preExp,&postExp,&varDecls)
     let res = <<
     /* Tail recursive call <%printExpStr(exp)%> */
-    <%daeExpTailCall(expLst,tail.vars,context,&preExp,&varDecls)%>goto _tailrecursive;
+    <%tail%><%&postExp%>goto _tailrecursive;
     /* TODO: Make sure any eventual dead code below is never generated */
     >>
     let &preExp += res
@@ -6329,7 +6331,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
         '<%retVar%>'
 end daeExpCall;
 
-template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
+template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &postExp, Text &varDecls)
 ::=
   match es
   case e::erest then
@@ -6340,10 +6342,16 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
       case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
         // adrpo: ignore _x = _x!
         if stringEq(v, crefStr(cr))
-        then '<%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
-        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+        then '<%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
+        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
       case _ then
-        '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+        (if anyExpHasCrefName(erest, v) then
+          /* We might overwrite a value with something else, so make an extra copy of it */
+          let tmp = tempDecl(expTypeFromExpModelica(e),&varDecls)
+          let &postExp += '_<%v%> = <%tmp%>;<%\n%>'
+          '<%tmp%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
+        else
+          '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>')
 end daeExpTailCall;
 
 template daeExpCallBuiltinPrefix(Boolean builtin)

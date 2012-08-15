@@ -2183,6 +2183,7 @@ package ComponentReference
     input DAE.ComponentRef cr;
     output DAE.ComponentRef ocr;
   end appendStringCref;
+
 end ComponentReference;
 
 package Expression
@@ -2216,6 +2217,18 @@ package Expression
     input DAE.Type e;
     output Boolean b;
   end isArrayType;
+
+  function expHasCrefName "Returns a true if the exp contains a cref that starts with the given name"
+    input DAE.Exp inExp;
+    input String name;
+    output Boolean hasCref;
+  end expHasCrefName;
+
+  function anyExpHasCrefName "Returns a true if the exp contains a cref that starts with the given name"
+    input list<DAE.Exp> inExps;
+    input String name;
+    output Boolean hasCref;
+  end anyExpHasCrefName;
 
 end Expression;
 

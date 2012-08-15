@@ -4862,6 +4862,44 @@ algorithm
   end matchcontinue;
 end traversingexpHasCref;
 
+public function expHasCrefName "Returns a true if the exp contains a cref that starts with the given name"
+  input DAE.Exp inExp;
+  input String name;
+  output Boolean hasCref;
+algorithm
+  ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasName, (name,false));
+end expHasCrefName;
+
+public function anyExpHasCrefName "Returns a true if any exp contains a cref that starts with the given name"
+  input list<DAE.Exp> inExps;
+  input String name;
+  output Boolean hasCref;
+algorithm 
+  hasCref := List.fold(List.map1(inExps, expHasCrefName, name), boolOr, false);
+end anyExpHasCrefName;
+
+public function traversingexpHasName "Returns a true if the exp contains a cref that starts with the given name"
+  input tuple<DAE.Exp, tuple<String,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<String,Boolean>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      String name;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+    
+    case ((e as DAE.CREF(componentRef = cr), (name,false)))
+      equation
+        b = name ==& ComponentReference.crefFirstIdent(cr);
+      then
+        ((e,not b,(name,b)));
+    
+    case (((e,(name,b)))) then ((e,not b,(name,b)));
+    
+  end matchcontinue;
+end traversingexpHasName;
+
 public function expHasDerCref "
 @author: Frenkel TUD 2012-06
  returns true if the expression contains the cref in function der"
