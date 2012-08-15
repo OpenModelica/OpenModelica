@@ -1032,9 +1032,20 @@ public function main
 protected
   list<String> args_1;
 algorithm
-  args_1 := Flags.new(args);
-  System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
-  main2(args_1);
+  _ := matchcontinue args
+    case args
+      equation
+        args_1 = Flags.new(args);
+        System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
+        main2(args_1);
+      then ();
+    else
+      equation
+        ErrorExt.clearMessages();
+        failure(_ = Flags.new(args));
+        print(ErrorExt.printMessagesStr()); print("\n");
+      then fail();
+  end matchcontinue;
 end main;
 
 protected function main2
