@@ -961,7 +961,7 @@ algorithm
       equation
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
-        (es,{}) = ExpressionSolve.solve(e1,e2,cre); 
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         (_,i::_) = BackendVariable.getVar(cr, vars);
         (cr,k,es,syst,shared,newvars,newvars1,eqTy)= simpleEquation1(BackendDAE.EQUATION(cre,es,source),var,i,cr,es,source,syst,shared,mvars,mavars);      
       then (cr,k,es,syst,shared,newvars,newvars1,eqTy);        
@@ -969,7 +969,7 @@ algorithm
       equation
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
-        (es,{}) = ExpressionSolve.solve(e1,e2,cre); 
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         (_,j::_) = BackendVariable.getVar(cr, vars);       
         (cr,k,es,syst,shared,newvars,newvars1,eqTy)= simpleEquation1(BackendDAE.EQUATION(cre,es,source),var,j,cr,es,source,syst,shared,mvars,mavars);      
       then (cr,k,es,syst,shared,newvars,newvars1,eqTy);         
@@ -4990,7 +4990,7 @@ algorithm
         BackendDAE.DAE({eqSystem},shared) = linearDAE1;
         BackendDAE.EQSYSTEM(variables,eqArray,_,_,matching) = eqSystem;
         BackendDAE.MATCHING(v1_new,v2_new,_) = matching;
-        (relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton});
+        (relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton},false);
         print("\nrelaxedEqSystem\n");
         BackendDump.dumpEqSystem(relaxedEqSystem);
         print("\n----end of linear system----\n");
@@ -9622,7 +9622,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
       equation
-        (syst,shared,b2) = tearingSystemNew1(syst,shared,comps);
+        (syst,shared,b2) = tearingSystemNew1(syst,shared,comps,false);
         b = b1 or b2;
       then
         (syst,(shared,b));
@@ -9633,122 +9633,142 @@ protected function tearingSystemNew1 "function tearingSystemNew1
   author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input BackendDAE.StrongComponents inComps;  
+  input BackendDAE.StrongComponents inComps;
+  input Boolean iRunMatching;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output Boolean outRunMatching;
 algorithm
   (osyst,oshared,outRunMatching):=
-  matchcontinue (isyst,ishared,inComps)
+  matchcontinue (isyst,ishared,inComps,iRunMatching)
     local
-      list<Integer> eindex,vindx,tvars,residual,unsolvables;
+      list<Integer> eindex,vindx;
       list<list<Integer>> othercomps;
       Boolean b,b1;
-      BackendDAE.EqSystem syst,subsyst;
+      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;   
-      array<Integer> ass1,ass2,columark,number,lowlink;
-      Integer size,tornsize;
-      list<BackendDAE.Equation> eqn_lst; 
-      list<BackendDAE.Var> var_lst;    
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.IncidenceMatrix m,m1;
-      BackendDAE.IncidenceMatrix mt,mt1; 
-      array<DAE.Constraint> constrs;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
-      BackendDAE.AdjacencyMatrixEnhanced me;
-      BackendDAE.AdjacencyMatrixTEnhanced meT;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;      
-
-    case (_,_,{})
-      then (isyst,ishared,false);
-    case (_,shared as BackendDAE.SHARED(constraints=constrs),
-      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps)
+    case (_,_,{},_)
+      then (isyst,ishared,iRunMatching);
+    case (_,shared,
+      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_)
       equation
-        // generate Subsystem to get the incidence matrix
-        size = listLength(vindx);
-        eqn_lst = BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));  
-        eqns = BackendDAEUtil.listEquation(eqn_lst);      
-        var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
-        vars = BackendDAEUtil.listVar1(var_lst);
-        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        (subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.NORMAL());
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
-  
-        (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,shared);
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
-        //  IndexReduction.dumpSystemGraphMLEnhanced(subsyst,shared,me,meT);
-          
-       /*   m1 = incidenceMatrixfromEnhanced(me);
-          Matching.matchingExternalsetIncidenceMatrix(size,size,m1);
-          BackendDAEEXT.matching(size,size,5,-1,1.0,1);
-          ass1 = arrayCreate(size,-1);
-          ass2 = arrayCreate(size,-1);
-          BackendDAEEXT.getAssignment(ass1,ass2);         
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass1);
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass2);          
-        */  
-        // do cheap matching until a maximum matching is there if
-        // cheap matching stucks select additional tearing variable and continue
-        ass1 = arrayCreate(size,-1);
-        ass2 = arrayCreate(size,-1);
-
-        // get all unsolvable variables
-        unsolvables = getUnsolvableVars(1,size,meT,{});
-          Debug.fcall(Flags.TEARING_DUMP, print,"Unsolvable Vars:\n"); 
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
-        
-        columark = arrayCreate(size,-1);
-        tvars = tearingSystemNew2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,shared,ass1,ass2,columark,1,{});
-        ass1 = List.fold(tvars,unassignTVars,ass1);
-        // unmatched equations are residual equations
-        residual = Matching.getUnassigned(size,ass2,{});
-        //  BackendDump.dumpMatching(ass1);
-          Debug.fcall(Flags.TEARING_DUMP, print,"TearingVars:\n"); 
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvars,intString,", ","\nResidualEquations:\n"));
-          Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(residual,intString,", ","\n")); 
-        //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
-        // check if tearing make sense
-        tornsize = listLength(tvars);
-        true = intLt(tornsize,size);
-        // run tarjan to get order of other equations
-        m1 = arrayCreate(size,{});
-        mt1 = arrayCreate(size,{});
-        m1 = getOtherEqSysIncidenceMatrix(m,size,1,residual,tvars,m1);
-        mt1 = getOtherEqSysIncidenceMatrix(mt,size,1,tvars,residual,mt1);
-        //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
-        //  BackendDump.dumpEqSystem(subsyst);
-        number = arrayCreate(size,0);
-        lowlink = arrayCreate(size,0);        
-        number = setIntArray(residual,number,size);
-        (_,_,othercomps) = BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, number, lowlink, size, 0, 1, {}, {});        
-        //  print("OtherEquationsOrder:\n"); 
-        //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
-        // handle system in case of liniear and other cases 
-        (syst,shared,b) = tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
-        Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(b,"Ok system torn\n","System not torn\n"));
-        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
+        (syst,shared,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
+        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps,b or iRunMatching);
       then
-        (syst,shared,b or b1);
-    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
+        (syst,shared,b1);
+    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,_)
       equation
-        (syst,shared,b) = tearingSystemNew1(isyst,ishared,{comp1});
-        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps);
+        (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        (syst,shared,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps,b or iRunMatching);
       then
-        (syst,shared,b1 or b);
-    case (_,_,comp::comps)
+        (syst,shared,b1);
+    case (_,_,comp::comps,_)
       equation
-        (syst,shared,b) = tearingSystemNew1(isyst,ishared,comps);
+        (syst,shared,b) = tearingSystemNew1(isyst,ishared,comps,iRunMatching);
       then
         (syst,shared,b);
   end matchcontinue;  
 end tearingSystemNew1;
+
+protected function tearingSystemNew1_1 "function tearingSystemNew1
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.JacobianType jacType;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+protected
+  list<Integer> tvars,residual,unsolvables;
+  list<list<Integer>> othercomps;
+  BackendDAE.EqSystem syst,subsyst;
+  BackendDAE.Shared shared;   
+  array<Integer> ass1,ass2,columark,number,lowlink;
+  Integer size,tornsize;
+  list<BackendDAE.Equation> eqn_lst; 
+  list<BackendDAE.Var> var_lst;    
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.IncidenceMatrix m,m1;
+  BackendDAE.IncidenceMatrix mt,mt1;      
+  BackendDAE.AdjacencyMatrixEnhanced me;
+  BackendDAE.AdjacencyMatrixTEnhanced meT;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn;      
+algorithm
+  // generate Subsystem to get the incidence matrix
+  size := listLength(vindx);
+  eqn_lst := BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));  
+  eqns := BackendDAEUtil.listEquation(eqn_lst);      
+  var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
+  vars := BackendDAEUtil.listVar1(var_lst);
+  subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, ishared, BackendDAE.NORMAL());
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
+			  
+  (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared);
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
+  //  IndexReduction.dumpSystemGraphMLEnhanced(subsyst,shared,me,meT);
+      
+  /*   m1 := incidenceMatrixfromEnhanced(me);
+       Matching.matchingExternalsetIncidenceMatrix(size,size,m1);
+       BackendDAEEXT.matching(size,size,5,-1,1.0,1);
+       ass1 := arrayCreate(size,-1);
+       ass2 := arrayCreate(size,-1);
+       BackendDAEEXT.getAssignment(ass1,ass2);         
+       Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass1);
+       Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching,ass2);          
+  */  
+  // do cheap matching until a maximum matching is there if
+  // cheap matching stucks select additional tearing variable and continue
+  ass1 := arrayCreate(size,-1);
+  ass2 := arrayCreate(size,-1);
+
+  // get all unsolvable variables
+  unsolvables := getUnsolvableVars(1,size,meT,{});
+  Debug.fcall(Flags.TEARING_DUMP, print,"Unsolvable Vars:\n"); 
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
+     
+  columark := arrayCreate(size,-1);
+  tvars := tearingSystemNew2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
+  ass1 := List.fold(tvars,unassignTVars,ass1);
+  // unmatched equations are residual equations
+  residual := Matching.getUnassigned(size,ass2,{});
+  //  BackendDump.dumpMatching(ass1);
+  Debug.fcall(Flags.TEARING_DUMP, print,"TearingVars:\n"); 
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvars,intString,", ","\nResidualEquations:\n"));
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(residual,intString,", ","\n")); 
+  //  subsyst := BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
+  //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
+  // check if tearing make sense
+  tornsize := listLength(tvars);
+  true := intLt(tornsize,size);
+  // run tarjan to get order of other equations
+  m1 := arrayCreate(size,{});
+  mt1 := arrayCreate(size,{});
+  m1 := getOtherEqSysIncidenceMatrix(m,size,1,residual,tvars,m1);
+  mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,tvars,residual,mt1);
+  //  subsyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
+  //  BackendDump.dumpEqSystem(subsyst);
+  number := arrayCreate(size,0);
+  lowlink := arrayCreate(size,0);        
+  number := setIntArray(residual,number,size);
+  (_,_,othercomps) := BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, number, lowlink, size, 0, 1, {}, {});        
+  //  print("OtherEquationsOrder:\n"); 
+  //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
+  // handle system in case of liniear and other cases 
+  (osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
+  Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"Ok system torn\n","System not torn\n"));
+end tearingSystemNew1_1;
 
 protected function getUnsolvableVars
   input Integer index;
@@ -11356,11 +11376,10 @@ algorithm
   matchcontinue (isyst,ishared,inTpl)
     local
       BackendDAE.Shared shared;
-      array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EquationArray eqns;
      
-    case (BackendDAE.EQSYSTEM(orderedEqs = eqns),shared as BackendDAE.SHARED(constraints=constrs),_)
+    case (BackendDAE.EQSYSTEM(orderedEqs = eqns),shared,_)
       then
         BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,countOperationsExp,inTpl);
   end matchcontinue;
