@@ -732,7 +732,7 @@ protected function removeWildPatternColumnsFromMatrix
   output list<Option<list<DAE.Pattern>>> optPatternMatrix;
   output Integer numNonEmptyColumns;
 algorithm
-  (optPatternMatrix,numNonEmptyColumns) := matchcontinue (inPatternMatrix,inAcc,inNumAcc)
+  (optPatternMatrix,numNonEmptyColumns) := match (inPatternMatrix,inAcc,inNumAcc)
     local
       Boolean alwaysMatch;
       list<DAE.Pattern> pats;
@@ -750,7 +750,7 @@ algorithm
         numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
         (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
       then (acc,numAcc);
-  end matchcontinue;
+  end match;
 end removeWildPatternColumnsFromMatrix;
 
 protected function findPatternToConvertToSwitch
@@ -763,7 +763,6 @@ algorithm
   tpl := matchcontinue  (inPatternMatrix,index,numPatternsInMatrix,info)
     local
       list<DAE.Pattern> pats;
-      String str;
       DAE.Type ty;
       Integer extraarg;
       list<Option<list<DAE.Pattern>>> patternMatrix;
@@ -1753,11 +1752,9 @@ algorithm
       Absyn.Exp exp;
       DAE.Exp elabExp;
       DAE.Properties prop;
-      DAE.Type ty;
       Env.Cache cache;
       Env.Env env;
       Option<Interactive.SymbolTable> st;
-      list<DAE.Statement> body;
       Absyn.Info info;
       String str;
       

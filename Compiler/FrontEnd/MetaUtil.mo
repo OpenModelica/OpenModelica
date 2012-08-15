@@ -270,12 +270,7 @@ protected function createMetaClassesFromElementItem
 algorithm
   out := matchcontinue(elementItem)
     local
-      Boolean finalPrefix;
-      Option<Absyn.RedeclareKeywords> redeclareKeywords;
-      Absyn.InnerOuter innerOuter;
-      String name;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
       Absyn.Class class_, cl2;
       list<Absyn.Class> metaClasses, classes;
@@ -301,7 +296,6 @@ algorithm
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
       Absyn.InnerOuter innerOuter;
-      String name;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
@@ -482,7 +476,6 @@ algorithm
       Boolean f;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter i;
-      Absyn.Ident n;
       Absyn.ElementSpec spec;
       Absyn.Info inf;
       Option<Absyn.ConstrainClass> con;

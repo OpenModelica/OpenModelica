@@ -143,7 +143,7 @@ public function printcheckBackendDAEWithErrorMsg"function: printcheckBackendDAEW
   input list<tuple<DAE.Exp,list<DAE.ComponentRef>>> inExpCrefs;
   input list<BackendDAE.Equation> inWrongEqns;
 algorithm   
-  _ := matchcontinue (inExpCrefs,inWrongEqns)
+  _ := match (inExpCrefs,inWrongEqns)
     local
       DAE.Exp e;
       list<DAE.ComponentRef> crefs;
@@ -152,7 +152,6 @@ algorithm
       String crefstring, expstr,scopestr;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> wrongEqns;
-      DAE.ElementSource source;
     
     case ({},{})  then ();
     
@@ -172,7 +171,7 @@ algorithm
         printcheckBackendDAEWithErrorMsg(res,wrongEqns);
       then
         ();
-  end matchcontinue;
+  end match;
 end printcheckBackendDAEWithErrorMsg;
 
 protected function printEqnSizeError"function: printEqnSizeError
@@ -227,7 +226,6 @@ algorithm
     local
       BackendDAE.Variables vars1,vars2,allvars;
       EquationArray eqns,reqns,ieqns;
-      BackendDAE.EventInfo einfo;
       list<WhenClause> whenClauseLst;      
       list<Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
@@ -294,7 +292,6 @@ algorithm
       list<DAE.ComponentRef> crefs,crefs1;
       list<DAE.Exp> expl;
       list<DAE.Var> varLst;
-      DAE.Ident ident;
       list<Var> backendVars;
       DAE.ReductionIterators riters;
     
@@ -475,7 +472,7 @@ algorithm
       DAE.Algorithm algExpanded;
       BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
-      Integer aindex,size;
+      Integer size;
       list<DAE.Exp> outputs;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crlst;
@@ -880,14 +877,12 @@ algorithm
       DAE.FunctionTree funcs;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
-      BackendDAE.Variables vars, knvars, extVars;
+      BackendDAE.Variables  knvars, extVars;
       AliasVariables av;
-      EquationArray eqns,seqns,ieqns;
+      EquationArray seqns,ieqns;
       ExternalObjectClasses extObjCls;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.Matching matching;
       EqSystems systs;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp,symjacs)),_)
       equation
@@ -1160,9 +1155,9 @@ algorithm
   outBackendDAE := match (inBackendDAE)
     local
       list<Var> knvarlst,varlst1,varlst2;
-      BackendDAE.Variables knvars,vars,extVars,paramvars;
+      BackendDAE.Variables knvars,extVars,paramvars;
       AliasVariables av;
-      EquationArray eqns,seqns,ie;
+      EquationArray seqns,ie;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
@@ -1201,7 +1196,7 @@ algorithm
       DAE.VarDirection vd;
       DAE.VarParallelism prl;
       BackendDAE.Type ty;
-      DAE.Exp e, e2;
+      DAE.Exp e;
       DAE.InstDims dims;
       Integer idx;
       DAE.ElementSource src;
@@ -1385,9 +1380,9 @@ public function updateAliasVariablesDAE
 algorithm
   oshared := match (inCref,inExp,inVar,shared)
     local
-      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.Variables knvars,exobj;
       AliasVariables aliasVars,aliasVars1;
-      EquationArray eqns,remeqns,inieqns;
+      EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
@@ -1395,7 +1390,6 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.EventInfo einfo;
       ExternalObjectClasses eoc;
-      EqSystems eqs;
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
     case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
@@ -1421,11 +1415,9 @@ algorithm
       BackendDAE.Variables aliasVariables;
       AliasVariables aliases;
       Var v;
-      list<Var> vars;
       DAE.Exp exp,exp1;
       DAE.ComponentRef cr1;
       list<tuple<HashTable4.Key,HashTable4.Value>> tableList;
-      list<String> str;
     
     case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
@@ -1502,7 +1494,6 @@ protected function updateAliasVarsFold
 algorithm
   (outAliases) := matchcontinue(inAliases, item, inExp1, inExp2)
     local
-      list<tuple<HashTable4.Key,HashTable4.Value>> rest;
       DAE.Exp exp,exp2;
       DAE.ComponentRef cref;
       Var v;
@@ -1547,8 +1538,6 @@ algorithm
   (outB, outB2, outExp) := matchcontinue(inExp1,inExp2)
     local
       DAE.Type ty;
-      DAE.ComponentRef cref;
-      Boolean b;
       DAE.Exp e1,e2;
       
    // case a=a
@@ -1686,7 +1675,7 @@ public function listVar
 algorithm
   outVariables := match (inVarLst)
     local
-      BackendDAE.Variables res,vars,vars_1;
+      BackendDAE.Variables res,vars;
       Var v;
       list<Var> vs;
     
@@ -2693,8 +2682,7 @@ algorithm
       array<Integer> arr_1,arr,a1,a2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.Variables v,kn;
-      EquationArray e,se,ie;
+      BackendDAE.Variables v;
     
     case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
@@ -2728,7 +2716,6 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       array<Integer> arr_1,arr,a1,a2;
       Integer eindx;
-      String str;
     
     case (_,(arr,m,mt,a1,a2))
       equation
@@ -3049,9 +3036,9 @@ public function whenClauseAddDAE
 algorithm
   oshared := match (inWcLst,shared)
     local
-      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.Variables knvars,exobj;
       AliasVariables aliasVars;
-      EquationArray eqns,remeqns,inieqns;
+      EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
@@ -3061,7 +3048,6 @@ algorithm
       list<ZeroCrossing> zc;
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
-      EqSystems eqs;
       BackendDAEType btp;
     case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp,symjacs))
       equation
@@ -3138,7 +3124,6 @@ algorithm
     local
       String rkeystr;
       Integer rkeyhash;
-      DAE.ComponentRef rkey;
       
     // found it
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(str=rkeystr,hash=rkeyhash))),keystr,keyhash)
@@ -3232,8 +3217,8 @@ protected function treeAdd2 "function: treeAdd
 algorithm
   outBinTree := matchcontinue (inBinTree,inKey,keyhash,keystr,inValue)
     local
-      DAE.ComponentRef nkey,key,rkey;
-      BackendDAE.Value value,rval,cmpval;
+      DAE.ComponentRef key,rkey;
+      BackendDAE.Value value,rval;
       String rkeystr;
       Option<BackendDAE.BinTree> left,right;
       BackendDAE.BinTree t_1,t,right_1,left_1;
@@ -3467,7 +3452,6 @@ algorithm
     local
       DAE.Exp e;
       Option<DAE.FunctionTree> funcs;
-      Boolean b;
     case ((e,(funcs,_))) then Expression.traverseExp(e, traversingextendArrExp, (funcs,false));
     case _ then itpl;
   end matchcontinue;
@@ -3496,7 +3480,7 @@ algorithm outExp := matchcontinue(inExp)
     Absyn.Path name;
     tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > restpl;
     list<list<DAE.Exp>> mat;
-    Boolean b,sc;
+    Boolean b;
     
   // CASE for Matrix    
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad as {id, jd})), (funcs,_)) )
@@ -3584,8 +3568,6 @@ algorithm
       list<DAE.Exp> rest;
       list<list<DAE.Exp>> res;
       list<DAE.Exp> col;
-      Expression.Type tp;
-      Boolean builtin;
   case({},r,n,incol)
     equation
       col = listReverse(incol);
@@ -3963,9 +3945,6 @@ algorithm
       EquationArray eqns;
       list<WhenClause> wc;
       Integer numberOfEqs,numberofVars;
-      list<BackendDAE.IncidenceMatrixElement> lstT;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;
     
     case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
@@ -4008,7 +3987,6 @@ algorithm
       EquationArray eqns;
       list<WhenClause> wc;
       Integer numberOfEqs,numberofVars;
-      list<BackendDAE.IncidenceMatrixElement> lstT;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
     
@@ -4068,12 +4046,11 @@ algorithm
   (outIncidenceArray,outIncidenceArrayT) := 
     match (vars, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
     local
-      list<Integer> row,rowindxs,mapIncRowEqn;
+      list<Integer> row;
       BackendDAE.Equation e;
       list<BackendDAE.IncidenceMatrixElement> iArr;
       BackendDAE.IncidenceMatrix iArrT;
-      Integer i1,rowSize,rowSize1,size;
-      list<list<Integer>> mapEqnIncRow;
+      Integer i1;
     
     // i = n (we reach the end)
     case (_, _, _, iArr, iArrT, _, _, false, _) then (listArray(listReverse(iArr)),iArrT);
@@ -4131,8 +4108,7 @@ algorithm
       BackendDAE.Equation e;
       list<BackendDAE.IncidenceMatrixElement> iArr;
       BackendDAE.IncidenceMatrix iArrT;
-      Integer i1,rowSize,rowSize1,size;
-      list<list<Integer>> mapEqnIncRow;
+      Integer i1,rowSize,size;
     
     // i = n (we reach the end)
     case (_, _, _, iArr, iArrT, _, _, false, _, _, _, _) then (listArray(listReverse(iArr)),iArrT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
@@ -4177,7 +4153,7 @@ algorithm
   outIncidenceArrayT := matchcontinue (eqns, eqnsindxs, inIncidenceArrayT)
     local
       BackendDAE.IncidenceMatrixElement row,rest,newrow;
-      Integer v,vabs,en;
+      Integer v,vabs;
       BackendDAE.IncidenceMatrixT mT,mT1;
     
     case ({},_,_) then inIncidenceArrayT;
@@ -4233,12 +4209,11 @@ algorithm
     local
       list<Integer> lst1,lst2,res,dimsize;
       DAE.Exp e1,e2,e,expCref,cond;
-      list<list<Integer>> lstlst1,lstlst2,lstlst3,lstres;
-      list<DAE.Exp> expl,inputs,outputs;
+      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we,elsewe;
       list<WhenClause> wc;
-      Integer wc_index,size,indx;
+      Integer size;
       String eqnstr;
       list<DAE.Statement> statementLst;
       list<list<BackendDAE.Equation>> eqnslst;
@@ -4411,17 +4386,12 @@ algorithm
   outIntegerLst := 
    match (inVariables,inEquation,inWhenClause,inIndexType,inRow)
     local
-      list<Integer> lst1,lst2,res,dimsize;
+      list<Integer> lst1,lst2,res;
       BackendDAE.Variables vars;
-      DAE.Exp e1,e2,e,expCref,cond;
-      list<list<Integer>> lstlst1,lstlst2,lstlst3,lstres;
-      list<DAE.Exp> expl,inputs,outputs;
+      DAE.Exp e1,e2,cond;
       DAE.ComponentRef cr;
-      BackendDAE.WhenEquation we,elsewe;
+      BackendDAE.WhenEquation elsewe;
       list<WhenClause> wc;
-      Integer size;
-      String eqnstr;
-      list<DAE.Statement> statementLst;
 
     case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()),wc,_,_)
       equation
@@ -4537,7 +4507,7 @@ Helper for statesAndVarsExp"
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<Integer> p,p_1,pa,res,ilst;
+      list<Integer> p,pa,res,ilst;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2,startvalue,stopvalue,stepvalue;
@@ -4628,7 +4598,7 @@ Helper for statesAndVarsExp"
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,p_1,pa,res;
+      list<BackendDAE.Value> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
@@ -4732,7 +4702,7 @@ Helper for statesAndVarsExp"
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,p_1,pa,res;
+      list<BackendDAE.Value> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
@@ -4786,7 +4756,7 @@ algorithm
     local
        list<Var> rest;
        list<Integer> irest,res,vars;
-       Integer i,i1;
+       Integer i;
        Boolean b;
     case ({},{},vars,_) then vars;
     /*If variable x is a state, der(x) is a variable in incidence matrix,
@@ -5002,14 +4972,11 @@ public function updateIncidenceMatrix
 algorithm
   osyst := matchcontinue (syst,shared,inIntegerLst)
     local
-      BackendDAE.IncidenceMatrix m,m_1,m_2;
-      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
-      BackendDAE.Value e_1,e,abse;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars;
-      list<list<BackendDAE.Value>> changedvars2;
-      BackendDAE.Variables vars,knvars;
-      EquationArray daeeqns,daeseqns,inieq;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+      list<BackendDAE.Value> eqns;
+      BackendDAE.Variables vars;
+      EquationArray daeeqns;
       list<WhenClause> wc;
       BackendDAE.Matching matching;
 
@@ -5040,14 +5007,13 @@ protected function updateIncidenceMatrix1
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
+  match (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       BackendDAE.Value e_1,e,abse;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars;
-      list<list<BackendDAE.Value>> changedvars2;
+      list<BackendDAE.Value> row,invars,outvars,eqns,oldvars;
 
     case (_,_,_,m,mt,{}) then (m,mt);
 
@@ -5065,7 +5031,7 @@ algorithm
         (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,wc,m_1,mt_2,eqns);
       then (m_2,mt_3);
 
-  end matchcontinue;
+  end match;
 end updateIncidenceMatrix1;
 
 public function updateIncidenceMatrixScalar
@@ -5095,14 +5061,12 @@ public function updateIncidenceMatrixScalar
 algorithm
   (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,shared,inIndxType,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
     local
-      BackendDAE.IncidenceMatrix m,m_1,m_2;
-      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
-      Integer e_1,e,abse,oldsize,newsize,oldsize1,newsize1,deltasize;
-      BackendDAE.Equation eqn;
-      list<Integer> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars;
-      list<list<BackendDAE.Value>> changedvars2;
-      BackendDAE.Variables vars,knvars;
-      EquationArray daeeqns,daeseqns,inieq;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+      Integer oldsize,newsize,oldsize1,newsize1,deltasize;
+      list<Integer> eqns;
+      BackendDAE.Variables vars;
+      EquationArray daeeqns;
       list<WhenClause> wc;
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
@@ -5155,14 +5119,13 @@ protected function updateIncidenceMatrixScalar1
   output array<Integer> oMapIncRowEqn;  
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,oMapEqnIncRow,oMapIncRowEqn):=
-  matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
+  match (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
     local
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
       Integer e_1,e,abse,size;
       BackendDAE.Equation eqn;
-      list<Integer> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars,scalarindxs;
-      list<list<BackendDAE.Value>> changedvars2;
+      list<Integer> row,invars,outvars,eqns,oldvars,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
       
@@ -5185,7 +5148,7 @@ algorithm
         (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,wc,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType);
       then (m_2,mt_3,mapEqnIncRow,mapIncRowEqn);
 
-  end matchcontinue;
+  end match;
 end updateIncidenceMatrixScalar1;
 
 protected function updateIncidenceMatrixScalar2
@@ -5211,7 +5174,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      Integer e_1,e,abse,rowsize,new_size;
+      Integer e_1,abse,rowsize,new_size;
       BackendDAE.Equation eqn;
       list<Integer> row,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
@@ -5374,7 +5337,7 @@ public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOpt
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
   (osyst,outM,outMT):=
-  matchcontinue (syst,shared,inIndxType)
+  match (syst,shared,inIndxType)
     local  
       BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.Variables v;
@@ -5394,7 +5357,7 @@ algorithm
     case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_,_)
       then
         (syst,m,mT);
-  end matchcontinue;
+  end match;
 end getIncidenceMatrixfromOption;
     
 public function getIncidenceMatrix "function getIncidenceMatrix"
@@ -5466,14 +5429,13 @@ algorithm
   oextraArg := matchcontinue(inStmts,func,iextraArg)
     local
       DAE.Exp e,e2;
-      list<DAE.Exp> expl1,expl2;
-      DAE.ComponentRef cr_1,cr;
-      list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
+      list<DAE.Exp> expl1;
+      DAE.ComponentRef cr;
+      list<DAE.Statement> xs,stmts;
       DAE.Type tp;
-      DAE.Statement x,ew,ew_1,res;
+      DAE.Statement x,ew;
       Boolean b1;
       String id1,str;
-      list<Integer> li;
       Algorithm.Else algElse;
       Type_a extraArg;
       
@@ -5621,9 +5583,9 @@ Helper function for traverseStmts
 algorithm
   oextraArg := match(inElse,func,iextraArg)
   local
-    DAE.Exp e,e_1;
-    list<DAE.Statement> st,st_1;
-    Algorithm.Else el,el_1;
+    DAE.Exp e;
+    list<DAE.Statement> st;
+    Algorithm.Else el;
     Type_a extraArg;
   case (DAE.NOELSE(),_,extraArg) then extraArg;
   case (DAE.ELSEIF(e,st,el),func,extraArg)
@@ -5721,8 +5683,7 @@ algorithm
       BackendDAE.Equation e;
       list<BackendDAE.AdjacencyMatrixElementEnhanced> iArr;
       BackendDAE.AdjacencyMatrixTEnhanced iArrT;
-      Integer i1,rowSize,rowSize1,size;
-      list<list<Integer>> mapEqnIncRow;
+      Integer i1,rowSize,size;
       list<Integer> mapIncRowEqn,rowindxs;
     
     // index = numberOfEqs (we reach the end)
@@ -5851,8 +5812,8 @@ algorithm
   outIncidenceArrayT := matchcontinue (eqns, eqnsindxs, inIncidenceArrayT)
     local
       BackendDAE.AdjacencyMatrixElementEnhanced row,rest,newrow;
-      BackendDAE.Value v,vabs,en;
-      BackendDAE.AdjacencyMatrixTEnhanced mT,mT1;
+      BackendDAE.Value v,vabs;
+      BackendDAE.AdjacencyMatrixTEnhanced mT;
       BackendDAE.Solvability solva;
       list<Integer> eqnsindxs1;
     
@@ -5908,13 +5869,12 @@ algorithm
       list<Integer> lst,ds;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e,expCref,cond;
-      list<DAE.Exp> expl,inputs,outputs;
+      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we,elsewe;
       list<BackendDAE.WhenClause> wc;
-      Integer indx,wc_index;
       String eqnstr;
-      Integer i,size;
+      Integer size;
       DAE.Algorithm alg;
       BackendDAE.AdjacencyMatrixElementEnhanced row;
       list<list<BackendDAE.Equation>> eqnslst;
@@ -6038,7 +5998,6 @@ algorithm
       list<Integer> lst;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,cond;
-      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation elsewe;
       list<WhenClause> wc;
@@ -6105,7 +6064,6 @@ algorithm
       list<Integer> rest;
       DAE.Exp de;
       DAE.ComponentRef cr,cr1;
-      Boolean b;
       BackendDAE.Solvability solvab;
       list<DAE.ComponentRef> crlst;
     case({},_,_,_,_,_,_,_) then inRow;
@@ -6326,7 +6284,7 @@ Author: Frenkel TUD 2010-11
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,p_1,pa,res;
+      list<BackendDAE.Value> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2,e3;
@@ -6714,7 +6672,7 @@ algorithm
       list<Integer> var_indxs,var_indxs_1,ds;
       list<Option<Integer>> ad;
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
-      DAE.Exp e,e1,e2,new_exp;
+      DAE.Exp e,e1,e2;
       list<DAE.Exp> expl;
       Expression.Type t;
       list<list<DAE.Subscript>> subslst;
@@ -6919,7 +6877,6 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> es;
       Integer vindx;
       list<Integer> vindxs;
-      Boolean b;
       String str;
       
     case (_,_,_,{},_,_,_) then iAcc;
@@ -7042,7 +6999,6 @@ algorithm
       Boolean b,res;
       BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
-      BackendDAE.Value indx;
 
     // check rhs for for EQUATION nodes.
     case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(vars,b)))
@@ -7119,12 +7075,12 @@ public function jacobianTypeStr "function: jacobianTypeStr
   input BackendDAE.JacobianType inJacobianType;
   output String outString;
 algorithm
-  outString := matchcontinue (inJacobianType)
+  outString := match (inJacobianType)
     case BackendDAE.JAC_CONSTANT() then "Jacobian Constant";
     case BackendDAE.JAC_TIME_VARYING() then "Jacobian Time varying";
     case BackendDAE.JAC_NONLINEAR() then "Jacobian Nonlinear";
     case BackendDAE.JAC_NO_ANALYTIC() then "No analytic jacobian";
-  end matchcontinue;
+  end match;
 end jacobianTypeStr;
 
 protected function jacobianConstant "function: jacobianConstant
@@ -7261,7 +7217,6 @@ algorithm
       Boolean b,b1;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-      DAE.CallAttributes attr;
     case ((e as DAE.CREF(ty=_),(repl,vars,b)))
       equation
         (e1,b1) = BackendVarTransform.replaceExp(e, repl, NONE());
@@ -7381,10 +7336,10 @@ algorithm
   outTypeA:=
   matchcontinue (inBackendDAE,func,inTypeA)
     local
-      BackendDAE.Variables vars1,vars2;
-      EquationArray eqns,reqns,ieqns;
+      BackendDAE.Variables vars2;
+      EquationArray reqns,ieqns;
       list<WhenClause> whenClauseLst;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))),_,_)
       equation
@@ -7421,9 +7376,9 @@ algorithm
   outTypeA:=
   matchcontinue (inBackendDAE,func,inTypeA)
     local
-      BackendDAE.Variables vars1,vars2;
-      EquationArray eqns,reqns,ieqns;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5;
+      BackendDAE.Variables vars2;
+      EquationArray reqns,ieqns;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5;
       list<BackendDAE.EqSystem> systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns)),_,_)
       equation
@@ -7747,13 +7702,11 @@ algorithm
   (ovar,outTypeA) :=
   matchcontinue (inVar,func,inTypeA)
     local
-      DAE.Exp e1, expCref, sv, n;
+      DAE.Exp e1;
       DAE.ComponentRef cref;
       list<DAE.Subscript> instdims;
       Option<DAE.VariableAttributes> attr;
-      list<Option<DAE.Exp>> ominmax;
-      list<DAE.Exp> minmax;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6;
+      Type_a ext_arg_1,ext_arg_2;
       VarKind varKind;
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
@@ -7761,7 +7714,6 @@ algorithm
       Option<Values.Value> bindValue;
       Integer index;
       DAE.ElementSource source;
-      Option<DAE.VariableAttributes> values;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
     
@@ -7805,7 +7757,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.VariableAttributes> outAttr;
   output ExtraArgType outExtraArg;
 algorithm
- (outAttr,outExtraArg) := matchcontinue(attr,func,extraArg)
+ (outAttr,outExtraArg) := match(attr,func,extraArg)
    local
      Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
      Option<DAE.StateSelect> ss;
@@ -7858,7 +7810,7 @@ algorithm
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
     then (SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),outExtraArg);
            
- end matchcontinue;
+ end match;
 end traverseBackendDAEVarAttr;
 
 protected function traverseBackendDAEAttrDistribution 
@@ -7876,7 +7828,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
   output Option<DAE.Distribution> outDistOpt;
   output ExtraArgType outExtraArg;
 algorithm
- (outDistOpt,outExtraArg) := matchcontinue(distOpt,func,extraArg)
+ (outDistOpt,outExtraArg) := match(distOpt,func,extraArg)
  local
    DAE.Exp name,arr,sarr;
    
@@ -7889,7 +7841,7 @@ algorithm
      ((arr,outExtraArg)) = Expression.traverseExp(arr,func,outExtraArg);
      ((sarr,outExtraArg)) = Expression.traverseExp(sarr,func,outExtraArg);
     then (SOME(DAE.DISTRIBUTION(name,arr,sarr)),outExtraArg);
- end matchcontinue;
+ end match;
 end traverseBackendDAEAttrDistribution;
 
 protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
@@ -8369,7 +8321,7 @@ protected function mapReduceIndexDAE
   output BackendDAE.Shared oshared;
   output list<BackendDAE.DAEHandlerArg> oargs;
 algorithm
-  (osysts,oshared,oargs) := matchcontinue (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1)
+  (osysts,oshared,oargs) := match (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
@@ -8382,7 +8334,7 @@ algorithm
         (syst,shared,arg) = reduceIndexDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection);
         (systs,shared,args) = mapReduceIndexDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1);
       then (systs,shared,args);
-  end matchcontinue;
+  end match;
 end mapReduceIndexDAE;
 
 protected function reduceIndexDAEWork
@@ -8441,7 +8393,7 @@ protected function mapStateSelectionDAE
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
 algorithm
-  (osysts,oshared) := matchcontinue (isysts,ishared,iargs,stateDeselection,acc)
+  (osysts,oshared) := match (isysts,ishared,iargs,stateDeselection,acc)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
@@ -8454,7 +8406,7 @@ algorithm
         (syst,shared) = stateSelectionDAEWork(syst,ishared,arg,stateDeselection);
         (systs,shared) = mapStateSelectionDAE(systs,shared,args,stateDeselection,syst::acc);
       then (systs,shared);
-  end matchcontinue;
+  end match;
 end mapStateSelectionDAE;
 
 protected function stateSelectionDAEWork
@@ -8890,9 +8842,9 @@ algorithm
   matchcontinue (strOptModules,inOptModules,accumulator)
     local 
       list<String> restStr;
-      String strOptModul,optModulName,str;
+      String strOptModul,str;
       tuple<Type_a,String,Boolean> optModule;
-      list<tuple<Type_a,String,Boolean>> optModules,optModules1;
+      list<tuple<Type_a,String,Boolean>> optModules;
     case ({},_,_) then {};
     case (_,{},_) then {};
     case (strOptModul::{},_,_)

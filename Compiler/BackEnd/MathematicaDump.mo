@@ -20,11 +20,11 @@ for reading into Mathematica"
 input tuple<BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>,list<BackendDAE.Equation>> inTuple "(vars, knvars, eqsn, ieqns)";
 output String res;
 algorithm
-  res := matchcontinue(inTuple)
+  res := match(inTuple)
     local 
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.Equation> eqns,ieqns;
-      String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s2,s3,s4,res;
+      String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s3,s4,res;
       list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns)) equation
         
@@ -50,7 +50,7 @@ algorithm
         //print(" Eqns-1-: " +& s3 +& "\n");
         //print(" Eqns-2-: " +& s4 +& "\n");
     then res;      
-  end matchcontinue;
+  end match;
 end dumpMmaDAEStr;
 
 protected function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
@@ -58,7 +58,7 @@ protected function printMmaEqnsStr "print equations on a form suitable for Mathe
   input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple;
   output String res;
 algorithm
-  res := matchcontinue(inEqns,inTuple)
+  res := match(inEqns,inTuple)
     local 
       String s1;
       list<BackendDAE.Equation> eqns;
@@ -66,7 +66,7 @@ algorithm
       s1 = Util.stringDelimitListNonEmptyElts(List.map1(eqns,printMmaEqnStr,inTuple),",");
       res = stringAppendList({"{",s1,"}"});
     then res;
-  end matchcontinue;
+  end match;
 end printMmaEqnsStr;
 
 protected function printMmaEqnStr "help function to printMmaEqnsStr"
@@ -143,12 +143,12 @@ algorithm
   outString:=
   matchcontinue (inExp,vars,knvars)
     local
-      Expression.Ident s,s_1,s1_1,s_2,s2_1,sym,s2,s3,s3_1,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      Expression.Ident s,s_1,s1_1,s_2,s2_1,sym,s2,s3,s3_1,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       Integer p,p1,p2,ival,i,pstart,pstop,pe1;
       Real rval;
       DAE.ComponentRef cr;
-      DAE.Type ty,ty2,tp;
-      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,dim,exp,iterexp,c,t;
+      DAE.Type tp;
+      DAE.Exp e1,e2,e,f,start,stop,step,dim,exp,iterexp,c,t;
       DAE.Operator op;
       Absyn.Path fcn,path;
       list<DAE.Exp> args,es;
@@ -580,7 +580,7 @@ protected function printBuiltinMmaFunc "Translates builtin function to correspon
 input String modelicaFuncName;
 output String mathematicaFuncName;
 algorithm
-  mathematicaFuncName := matchcontinue(modelicaFuncName)
+  mathematicaFuncName := match(modelicaFuncName)
     case("sqrt") then "Sqrt";
     case("abs") then "Abs";
     case("sign") then "Sign";
@@ -606,14 +606,14 @@ algorithm
     case("exp") then "Exp";
     case("log") then "Log";
     /* log10 not possible here. */
-  end matchcontinue;
+  end match;
 end printBuiltinMmaFunc;
 
 protected function translateKnownMmaFuncs "Translates some internal functions to corresponding Mathematica function"
   input String func;
   output String mmaFunc;
 algorithm
-  mmaFunc := matchcontinue(func)
+  mmaFunc := match(func)
     case("sin") then "Sin";
     case("Modelica.Math.sin") then "Sin";
     case("cos") then "Cos";
@@ -622,7 +622,7 @@ algorithm
     case("Modelica.Math.tan") then "Tan";
     case("exp") then "Exp";
     case("Modelica.Math.exp") then "Exp";  
-  end matchcontinue;
+  end match;
 end translateKnownMmaFuncs;
 
 protected function printRowMmaStr "Prints a list of expressions to a string on Mathematica format.
@@ -649,7 +649,7 @@ protected function dumpSingleAlgorithmStr "Help function to dump, prints algorit
   input DAE.Algorithm algs;
   output String outString;
 algorithm
-  outString := matchcontinue(algs)
+  outString := match(algs)
     local 
       list<DAE.Statement> stmts;
       String str;
@@ -659,7 +659,7 @@ algorithm
       myStream = DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
       str = IOStream.string(myStream);
     then str;
-  end matchcontinue;
+  end match;
 end dumpSingleAlgorithmStr;
 
 
@@ -667,7 +667,7 @@ protected function whenEquationStr "prints a WhenEquation to a string"
   input BackendDAE.WhenEquation whenEq;
   output String str;
 algorithm
-  str := matchcontinue(whenEq) 
+  str := match(whenEq) 
   local
     DAE.Exp cond;
     DAE.ComponentRef cr;
@@ -682,7 +682,7 @@ algorithm
     case(BackendDAE.WHEN_EQ(cond,cr,eqn,SOME(elseEqn))) equation
       str = "when "+&ExpressionDump.printExpStr(cond)+&" then\n"+&ComponentReference.crefStr(cr)+&":="+&ExpressionDump.printExpStr(eqn)+&"\n else"+&whenEquationStr(elseEqn);
     then str;      
-  end matchcontinue;
+  end match;
 end whenEquationStr;
 
 protected function printMmaVarsStr "print variables on a form suitable for Mathematica to a string.
@@ -696,7 +696,7 @@ output list<String> algs;
 output list<String> outputs;
 output list<String> inputs;
 algorithm
-  (states,algs,outputs,inputs) := matchcontinue(vars)
+  (states,algs,outputs,inputs) := match(vars)
     local
       list<BackendDAE.Var> varLst;
     case(vars)      
@@ -709,7 +709,7 @@ algorithm
         inputs = List.map(varLst,printMmaInputStr);
       then 
         (states,algs,outputs,inputs);
-  end matchcontinue;
+  end match;
 end printMmaVarsStr;
 
 protected function printMmaVarStr "help function to printMmaVarsStr"
@@ -760,8 +760,8 @@ algorithm
     local
       DAE.Exp exp;
       BackendDAE.Var v;
-      DAE.ComponentRef name,origname;
-      String expStr,paramStr,ident;
+      DAE.ComponentRef name;
+      String ident;
     case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.OUTPUT())) 
       equation
         true=BackendVariable.isVarOnTopLevelAndOutput(v);
@@ -780,8 +780,8 @@ algorithm
   str := matchcontinue(param)
     local
       DAE.Exp exp;
-      DAE.ComponentRef name,origname;
-      String expStr,paramStr,ident;
+      DAE.ComponentRef name;
+      String ident;
       BackendDAE.Var v;
     case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.INPUT())) 
       equation
@@ -801,16 +801,16 @@ E.g. {R1R->1.0,R2R->R1R*0.5,I3I->0.1}
   output list<String> params;
   output list<String> inputs;
 algorithm
-  (params, inputs) := matchcontinue(knvars)
+  (params, inputs) := match(knvars)
     local
-      String s1,s2;
+      String s1;
       list<BackendDAE.Var> varLst;
     case(knvars) equation
       varLst = BackendDAEUtil.varList(knvars);
       params = List.map(varLst,printMmaParamStr);
       inputs = List.map(varLst,printMmaInputStr);
      then (params, inputs);
-  end matchcontinue;
+  end match;
 end printMmaParamsStr;
 
 protected function printMmaParamStr "help function to prontMmaParamStr"

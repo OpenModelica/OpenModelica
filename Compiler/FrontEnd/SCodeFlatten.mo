@@ -109,7 +109,7 @@ public function flattenClassInProgram
 algorithm
   outProgram := matchcontinue(inClassName, inProgram)
     local
-      Env env, env2, env3;
+      Env env;
       SCode.Program prog;
       list<Absyn.Path> consts;
       

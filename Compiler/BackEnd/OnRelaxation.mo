@@ -86,12 +86,11 @@ protected function relaxSystem0
   output tuple<BackendDAE.Shared,Boolean> osharedChanged;
 algorithm
   (osyst,osharedChanged) := 
-    matchcontinue(isyst,sharedChanged)
+    match(isyst,sharedChanged)
     local
       BackendDAE.StrongComponents comps;
       Boolean b,b1,b2;
       BackendDAE.Shared shared;
-      BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
@@ -100,7 +99,7 @@ algorithm
         b = b1 or b2;
       then
         (syst,(shared,b));
-  end matchcontinue;  
+  end match;  
 end relaxSystem0;
 
 protected function relaxSystem1
@@ -116,30 +115,27 @@ algorithm
   (osyst,oshared,outRunMatching):=
   matchcontinue (isyst,ishared,inComps)
     local
-      list<Integer> eindex,vindx,eorphans,eforphans,vorphans,unassigned,otherorphans,roots,constraints,constraintresidual;
+      list<Integer> eindex,vindx,eorphans,vorphans,unassigned,otherorphans,roots,constraints,constraintresidual;
       Boolean b,b1;
       BackendDAE.EqSystem syst,subsyst;
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;   
-      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,vec3,vorphansarray,mapIncRowEqn,orowmarks,ocolummarks;
-      Integer size,eo,io,mark,i1,i2,i3,esize,temp;
+      array<Integer> ass1,ass2,vec2,rowmarks,colummarks,mapIncRowEqn,orowmarks,ocolummarks;
+      Integer size,mark,esize;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;    
-      BackendDAE.Variables vars,tvars,vars1;
+      BackendDAE.Variables vars,tvars;
       BackendDAE.EquationArray eqns,teqns;
       BackendDAE.IncidenceMatrix m,m1,mc;
       BackendDAE.IncidenceMatrixT mt,mct; 
-      array<DAE.Constraint> constrs;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      list<tuple<Integer,list<tuple<Integer,Integer>>>> orphanspairs;
       list<DAE.Exp> beqs;
       array<list<tuple<Integer,DAE.Exp>>> matrix;
       array<DAE.Exp> crefexps;
       list<DAE.Exp> crefexplst;
-      array<list<Integer>> vorphansarray1,vorphansarrayT1,mapEqnIncRow,ass22,vec1;
+      array<list<Integer>> vorphansarray1,mapEqnIncRow,ass22,vec1;
       list<BackendDAE.Equation> neweqns;      
-      BackendDAE.StrongComponents othercomps;
       HashTable4.HashTable ht;   
       
     case (_,_,{})
@@ -572,8 +568,7 @@ algorithm
   (omark,oconstraints) := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,iconstraints)
     local
       list<Integer> rest,constraints,rlst,elst,partner;
-      array<Integer> sorphans;
-      Integer o,c,mark;
+      Integer o,mark;
       Boolean foundflow;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -630,8 +625,8 @@ protected function generateCliquesResidual1
 algorithm
   ofoundFlow := matchcontinue(rows,ass1,ass2,m,mt,mark,rowmarks,colummarks,ifoundFlow,vars)
     local
-      Integer o,c1,e,r;
-      list<Integer> rest,next,olst,rlst,lst;
+      Integer e,r;
+      list<Integer> rest,next,rlst;
       Boolean b,b1;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -719,8 +714,8 @@ protected function generateCliquesResidual2
 algorithm
   _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan)
     local
-      Integer o,c1,e,r;
-      list<Integer> rest,next,olst,elst,lst,rlst,lst1;
+      Integer e,r;
+      list<Integer> rest,lst,rlst,lst1;
     case ({},_,_,_,_,_,_,_,_)
       then
         ();
@@ -813,7 +808,7 @@ algorithm
   (omark,oroots,oconstraints) := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphans,vars,iroots,iconstraints)
     local
       list<Integer> rest,roots,constraints,elst,rlst;
-      Integer o,c,mark;
+      Integer o,mark;
       Boolean foundflow,constr;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -867,8 +862,8 @@ protected function prepairOrphansOrder1
 algorithm
   ofoundFlow := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,ifoundFlow,vars)
     local
-      Integer o,c1,e;
-      list<Integer> rest,next,olst,r,elst,lst;
+      Integer e;
+      list<Integer> rest,next,r,elst;
       Boolean b,b1;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -937,8 +932,7 @@ algorithm
   omark := matchcontinue(inOrphans,ass1,ass2,m,mt,imark,rowmarks,colummarks,orphans)
     local
       list<Integer> rest,elst,rlst,partner;
-      array<Integer> sorphans;
-      Integer o,c;
+      Integer o;
     case ({},_,_,_,_,_,_,_,_)
       then
        imark+1;
@@ -982,8 +976,8 @@ protected function prepairOrphansOrder3
 algorithm
   _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,partner,orphans,prer)
     local
-      Integer o,c1,e;
-      list<Integer> rest,next,olst,r,elst,lst;
+      Integer e;
+      list<Integer> rest,next,r,elst,lst;
     case ({},_,_,_,_,_,_,_,_,_,_,_)
       then
         ();
@@ -1116,8 +1110,7 @@ algorithm
   omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mc,mct,mark,rowmarks,colummarks,orphans)
     local
       list<Integer> rest;
-      array<Integer> sorphans;
-      Integer o,c,mark1;
+      Integer o;
     case ({},_,_,_,_,_,_,_,_,_,_)
       then
        mark;
@@ -1145,8 +1138,8 @@ protected function hasOrphanEdvanced
 algorithm
   oAcc := matchcontinue(rows,ass1,iAcc)
     local
-      list<Integer> rest,olst;
-      Integer r,o;
+      list<Integer> rest;
+      Integer r;
     case ({},_,_::_)
       then
         iAcc;
@@ -1242,7 +1235,7 @@ protected function getOrphansOrderEdvanced1
 algorithm
   _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,nextQueue)
     local
-      Integer c1,e;
+      Integer e;
       list<Integer> rest,next,r,r1,elst,olst;
     case ({},_,_,_,_,_,_,_,_,_,{})
       then
@@ -1305,8 +1298,7 @@ algorithm
   omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mc,mct,mark,rowmarks,colummarks,orphans)
     local
       list<Integer> rest;
-      array<Integer> sorphans;
-      Integer o,c,mark1;
+      Integer o;
     case ({},_,_,_,_,_,_,_,_,_,_)
       then
        mark;
@@ -1341,7 +1333,7 @@ protected function getConstraintesOrphansOrderEdvanced1
 algorithm
   _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,nextQueue)
     local
-      Integer c1,e;
+      Integer e;
       list<Integer> rest,next,r,r1,elst,olst;
     case ({},_,_,_,_,_,_,_,_,_,{})
       then
@@ -1398,7 +1390,7 @@ algorithm
   oAcc := matchcontinue(links,m,iAcc)
     local
       Integer l;
-      list<Integer> rest,lst,acc;
+      list<Integer> rest,lst;
     case({},_,_) then iAcc;
     case(l::rest,_,_)
       equation
@@ -1485,7 +1477,7 @@ protected function getOrphansOrderEdvanced5
   output list<list<Integer>> oAcc;
   output Integer omark;
 algorithm
-  (oAcc,omark) := matchcontinue(linklst,m,mt,imark,rowmarks,iAcc)
+  (oAcc,omark) := match(linklst,m,mt,imark,rowmarks,iAcc)
     local
       Integer mark;
       list<Integer> links,lst,childs;
@@ -1501,7 +1493,7 @@ algorithm
         (acc,mark) = getOrphansOrderEdvanced5(rest,m,mt,imark+1,rowmarks,childs::iAcc);
       then
         (acc,mark);
-  end matchcontinue;
+  end match;
 end getOrphansOrderEdvanced5;
 
 protected function getOrphansOrderEdvanced6
@@ -1509,7 +1501,7 @@ protected function getOrphansOrderEdvanced6
   input list<list<Integer>> childslst;
   input array<List<Integer>> m;
 algorithm
-  _ := matchcontinue(linklst,childslst,m)
+  _ := match(linklst,childslst,m)
     local
       list<Integer> links,lst,childs;
       list<list<Integer>> rest,acc;
@@ -1524,7 +1516,7 @@ algorithm
         getOrphansOrderEdvanced6(rest,acc,m);
       then
         ();
-  end matchcontinue;
+  end match;
 end getOrphansOrderEdvanced6;
 
 protected function getOrphansOrderEdvanced4
@@ -1847,12 +1839,6 @@ protected function dumpMatrix
 algorithm
   _ := matchcontinue(row,size,matrix)
     local
-      String estr;
-      Integer c,r;
-      DAE.Exp e;
-      BackendDAE.Var v;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
-      DAE.ComponentRef cr;
     case (_,_,_)
       equation
         true = intGt(row,size);
@@ -2198,7 +2184,7 @@ algorithm
     local
       Integer c,r,i;
       DAE.Exp e;
-      Boolean b,b1,b2;
+      Boolean b,b1;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<Integer> lst;
       BackendDAE.Equation eqn;
@@ -2585,8 +2571,7 @@ algorithm
   omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks)
     local
       list<Integer> rest;
-      array<Integer> sorphans;
-      Integer o,c,mark1;
+      Integer o;
     case ({},_,_,_,_,_,_,_)
       then
        mark;
@@ -2681,8 +2666,7 @@ algorithm
   omark := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns)
     local
       list<Integer> rest;
-      array<Integer> sorphans;
-      Integer o,c,mark1;
+      Integer o;
     case ({},_,_,_,_,_,_,_,_)
       then
        mark;
@@ -2718,7 +2702,7 @@ protected function getOrphansPairsConstraints1
 algorithm
   _ := matchcontinue(eqns,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,nextQueue)
     local
-      Integer e,r,o;
+      Integer e,o;
       list<Integer> rest,next,rlst,lst,ass2lst;
     case ({},_,_,_,_,_,_,_,_,_,{})
       then
@@ -3150,7 +3134,7 @@ algorithm
   found := matchcontinue(rows,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,ifound)
     local
       Integer r,e;
-      list<Integer> rest,nextrows,queue1;
+      list<Integer> rest,nextrows;
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then ifound;
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
@@ -3501,7 +3485,7 @@ algorithm
   outNextQeue := matchcontinue(rows,c,mt,ass1,ass2,columark,mark,inNextQeue)
     local 
       Integer r;
-      BackendDAE.IncidenceMatrixElement vareqns,newqueue;
+      BackendDAE.IncidenceMatrixElement vareqns;
     case (r::{},_,_,_,_,_,_,_)
       equation
         //  print("Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
@@ -3575,14 +3559,12 @@ protected function vectorMatching1
 algorithm
   outTpl := matchcontinue(e1,e2,size,vars,inTpl)
     local 
-      Integer id,i;
+      Integer id;
       array<Integer> vec1,vec2;
       DAE.ComponentRef cr,crnosubs;
       list<DAE.ComponentRef> crlst,crlst1;
-      DAE.Exp e;
       list<DAE.Exp> elst;
-      list<BackendDAE.Var> vlst;
-      list<Integer> ds,ilst;
+      list<Integer> ilst;
       list<Boolean> blst;    
       HashSet.HashSet set;
 

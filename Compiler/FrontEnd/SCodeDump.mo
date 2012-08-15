@@ -184,7 +184,7 @@ public function printElementStr
 algorithm
   outString :=  matchcontinue (inElement)
     local
-      String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix,prefStr;
+      String str,str2,res,n,mod_str,s,vs,modStr,prefStr;
       Absyn.Path path;
       SCode.Mod mod;
       SCode.Final finalPrefix;
@@ -192,7 +192,6 @@ algorithm
       SCode.Visibility vis;
       SCode.Redeclare red;
       Absyn.InnerOuter io;
-      SCode.Element cl;
       SCode.Variability var;
       Absyn.TypeSpec tySpec;
       Option<SCode.Comment> comment;
@@ -253,12 +252,8 @@ public function shortElementStr
 algorithm
   outString := match (inElement)
     local
-      String str,res,n,mod_str,s,vs,ioStr;
-      Absyn.TypeSpec typath;
+      String str,res,n,ioStr;
       SCode.Mod mod;
-      SCode.Element cl;
-      SCode.Variability var;
-      Option<SCode.Comment> comment;
       Absyn.Path path;
       Absyn.Import imp;
       Absyn.InnerOuter io;
@@ -643,7 +638,7 @@ public function prefixesStr "Returns prefixes as string"
   input SCode.Prefixes prefixes;
   output String str;
 algorithm
-  str := matchcontinue(prefixes)
+  str := match(prefixes)
     local
       SCode.Visibility v;
       SCode.Redeclare rd;
@@ -662,7 +657,7 @@ algorithm
       then 
         s;
     
-  end matchcontinue;
+  end match;
 end prefixesStr;
 
 end SCodeDump;

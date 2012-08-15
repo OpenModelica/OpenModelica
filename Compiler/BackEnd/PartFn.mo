@@ -194,9 +194,8 @@ protected function elabElement
 algorithm
   (oel,odae) := match (iel,idae)
     local
-      DAE.Function f1,f2;
       DAE.Element el_1,el;
-      list<DAE.Element> cdr,cdr_1,elts,elts_1;
+      list<DAE.Element> elts,elts_1;
       list<list<DAE.Element>> elm,elm_1;
       DAE.ComponentRef cref;
       DAE.VarKind kind;
@@ -697,9 +696,6 @@ algorithm
       list<DAE.Function> dae;
       Absyn.Path p,p1,p_1;
       list<DAE.Exp> args,args1,args_1;
-      DAE.Type ty;
-      Boolean tu,bi;
-      DAE.InlineType inl;
       Integer i,numArgs;
       DAE.CallAttributes attr;
     case((DAE.CALL(p,args,attr),dae))
@@ -1368,7 +1364,7 @@ algorithm
       list<DAE.Function> dae;
       list<DAE.Element> inputs;
       DAE.Type ty,ty_1;
-      Boolean tup,bui;
+      Boolean tup;
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;

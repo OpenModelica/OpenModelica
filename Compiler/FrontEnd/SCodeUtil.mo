@@ -79,8 +79,6 @@ algorithm
   outProgram := match(inProgram)
     local
       SCode.Program spInitial, spAbsyn, sp;
-      InstanceHierarchy.InstanceHierarchy ih;
-      Boolean hasExpandableConnectors;
       list<Absyn.Class> inClasses,initialClasses;
 
     case (inProgram)
@@ -222,7 +220,6 @@ algorithm
       list<Absyn.ClassPart> parts;
       Option<SCode.Comment> scodeCmt;
       SCode.Ident opName;
-      list<Absyn.Path> opFuncNames;
       
   case (Absyn.PARTS(classParts = parts,comment = cmtString),opName,info)
       equation
@@ -384,7 +381,7 @@ protected function translateAttributes
   input Absyn.ArrayDim extraArrayDim;
   output SCode.Attributes outA;
 algorithm
-  outA := matchcontinue(inEA,extraArrayDim)
+  outA := match(inEA,extraArrayDim)
     local
       Boolean f, s;
       Absyn.Variability v;
@@ -403,7 +400,7 @@ algorithm
         adim = listAppend(extraADim, adim);
       then
         SCode.ATTR(adim, ct, sp, sv, dir);
-  end matchcontinue;
+  end match;
 end translateAttributes;
 
 protected function translateConnectorType
@@ -1051,7 +1048,6 @@ protected function translateClassdefExternaldecls
 algorithm
   outAbsynExternalDeclOption := match (inAbsynClassPartLst)
     local
-      Absyn.ExternalDecl decl;
       Option<SCode.ExternalDecl> res;
       list<Absyn.ClassPart> rest;
       Option<SCode.Ident> fn_name;
@@ -1331,7 +1327,7 @@ algorithm
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
-      Boolean prot,rp,pa,fi,e,repl_1,fl,st,redecl;
+      Boolean rp,pa,fi,e,repl_1,fl,st,redecl;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n;
@@ -1358,7 +1354,6 @@ algorithm
       Absyn.Variability variability;
       Absyn.Parallelism parallelism;
       Absyn.Info i,info;
-      String str;
       SCode.Element cls;
       SCode.Redeclare sRed;
       SCode.Final sFin;
@@ -1614,7 +1609,7 @@ protected function translateEquations
   input Boolean inIsInitial;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inAbsynEquationItemLst, inIsInitial)
+  outEquationLst := match (inAbsynEquationItemLst, inIsInitial)
     local
       SCode.EEquation e_1;
       list<SCode.Equation> es_1;
@@ -1623,8 +1618,6 @@ algorithm
       Option<Absyn.Comment> acom;
       Option<SCode.Comment> com;
       Absyn.Info info;
-      String s1, s2;
-      Absyn.ComponentRef c1, c2;
 
     case ({}, _) then {};
 
@@ -1642,7 +1635,7 @@ algorithm
         es_1 = translateEquations(es, inIsInitial);
       then
         es_1;
-  end matchcontinue;
+  end match;
 end translateEquations;
 
 
@@ -1923,7 +1916,6 @@ algorithm
       Option<Absyn.Modification> mod;
       Absyn.Info info;
       list<Absyn.ElementArg> rest_args;
-      list<SCode.SubMod> subs;
       SCode.Mod smod;
       Absyn.ElementSpec spec;
       String n;
@@ -2449,7 +2441,6 @@ algorithm
     local 
       SCode.Final f1, f2;
       SCode.Each e1, e2;
-      list<SCode.Element> els, redecls;
       list<SCode.SubMod> subMods1, subMods2;
       Option<tuple<Absyn.Exp, Boolean>> b1, b2;
       Absyn.Info info;

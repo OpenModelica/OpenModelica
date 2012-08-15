@@ -936,14 +936,13 @@ public function setProtectedAttr "
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  matchcontinue (attr,isProtected)
+  match (attr,isProtected)
     local
       Option<DAE.Exp> q,u,du,i,f,n;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
-      DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,_,fn)),isProtected)
@@ -958,7 +957,7 @@ algorithm
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,SOME(isProtected),fn));
     case (NONE(),isProtected)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE()));
-  end matchcontinue;
+  end match;
 end setProtectedAttr;
 
 public function getProtectedAttr "
@@ -986,14 +985,13 @@ Sets the start attribute:fixed to inputarg
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  matchcontinue (attr,start)
+  match (attr,start)
     local
-      Option<DAE.Exp> q,u,du,i,f,n,ini;
+      Option<DAE.Exp> q,u,du,n,ini;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       Option<DAE.StateSelect> ss;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distOpt;
-      DAE.Exp r;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,distOpt,eb,ip,fn)),start)
@@ -1006,7 +1004,7 @@ algorithm
     then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,_,eb,ip,fn)),start)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,start,eb,ip,fn));
-  end matchcontinue;
+  end match;
 end setFixedAttr;
 
 public function setFinalAttr "
@@ -3656,8 +3654,7 @@ public function getFunctionList
 algorithm
   fns := matchcontinue ft
     local
-      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst, lstInvalid, lstValid;
-      Absyn.Path path;
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst, lstInvalid;
       String str;
       
     case ft
@@ -3880,7 +3877,6 @@ algorithm
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
       list<DAE.Element> elist,elist2,elist22;
       DAE.Element elt2,elt;
-      DAE.Function f1,f2;
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.Type tp;
@@ -4124,7 +4120,7 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
       DAE.Type tp;
-      DAE.Statement x,ew,ew_1,res;
+      DAE.Statement x,ew,ew_1;
       Boolean b1;
       String id1,str;
       list<Integer> li;
@@ -4705,11 +4701,11 @@ algorithm
   mergedSrc := match(src1,commentIn)
     local
       Absyn.Info info;
-      list<Absyn.Within> partOfLst1,p;
-      list<Option<DAE.ComponentRef>> instanceOptLst1,i;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,c;
-      list<Absyn.Path> typeLst1,t;
-      list<DAE.SymbolicOperation> o,operations1;
+      list<Absyn.Within> partOfLst1;
+      list<Option<DAE.ComponentRef>> instanceOptLst1;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1;
+      list<Absyn.Path> typeLst1;
+      list<DAE.SymbolicOperation> operations1;
       list<SCode.Comment> comment1,comment2;
       SCode.Comment comment;
     case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1, comment1),SOME(comment))

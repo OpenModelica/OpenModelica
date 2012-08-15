@@ -655,19 +655,17 @@ public function prefixExp "function: prefixExp
 algorithm
   (outCache,outExp) := matchcontinue (inCache,inEnv,inIH,inExp,inPrefix)
     local
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp,crefExp;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,exp,crefExp;
       DAE.ComponentRef cr,cr_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       DAE.Operator o;
-      list<DAE.Exp> es_1,es,el,el_1;
-      Absyn.Path f,fcn;
-      Boolean sc,bi,tup;
-      DAE.InlineType inl;
-      list<Boolean> bl;
+      list<DAE.Exp> es_1,es;
+      Absyn.Path f;
+      Boolean sc;
       list<DAE.Exp> x_1,x;
       list<list<DAE.Exp>> xs_1,xs;
-      String id,s;
+      String s;
       Env.Cache cache;
       list<DAE.Exp> expl;
       InstanceHierarchy ih;
@@ -676,8 +674,6 @@ algorithm
       DAE.Type t,tp;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<Values.Value> v;
-      Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;

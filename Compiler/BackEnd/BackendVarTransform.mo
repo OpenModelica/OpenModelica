@@ -527,7 +527,7 @@ Extract all crefs -> exp to two separate lists.
 input VariableReplacements inVariableReplacements;
 output list<DAE.ComponentRef> crefs;
 output list<DAE.Exp> dsts;
-algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
+algorithm (crefs,dsts) := match (inVariableReplacements)
     local
       HashTable2.HashTable ht;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
@@ -538,7 +538,7 @@ algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
         dsts = List.map(tplLst,Util.tuple22);
       then
         (crefs,dsts);
-  end matchcontinue;
+  end match;
 end getAllReplacements;
 
 public function getExtendReplacement "function: getExtendReplacement
@@ -607,23 +607,19 @@ algorithm
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,r_1,r;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
       DAE.Type t,tp,ety;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path path,p;
-      Boolean c,isTuple,c1,c2,c3,sc;
+      Absyn.Path path;
+      Boolean c,c1,c2,c3;
       Integer b;
       Absyn.CodeNode a;
-      String id;
       list<list<DAE.Exp>> bexpl_1,bexpl;
-      DAE.InlineType inlineType;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<Values.Value> v;
-      Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
@@ -1023,8 +1019,7 @@ algorithm
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       list<DAE.Exp> e_1,e;
-      list<list<DAE.Exp>> es_1,es;
-      Boolean c;
+      list<list<DAE.Exp>> es;
       list<list<DAE.Exp>> acc1;
       Boolean acc2;
       
@@ -1064,11 +1059,11 @@ algorithm
   matchcontinue (inBackendDAEEquationLst,inVariableReplacements,inAcc)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
-      list<BackendDAE.Equation> es_1,es;
+      list<BackendDAE.Equation> es;
       VariableReplacements repl;
       BackendDAE.Equation a;
       DAE.ComponentRef cr;
-      Integer indx,size;
+      Integer size;
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
@@ -1311,7 +1306,7 @@ algorithm
       DAE.Type type_;
       DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
       list<DAE.Exp> expExpLst,expExpLst_1;
-      DAE.Else else_,else_1;
+      DAE.Else else_;
       DAE.ElementSource source;
       DAE.ComponentRef cr;
       Boolean iterIsArray;
@@ -1514,7 +1509,7 @@ algorithm
       list<DAE.Statement> statementLst,statementLst_1;
       DAE.Exp e1,e1_1,e1_2;
       DAE.Else else_,else_1;
-      Boolean b1,b2,b3;
+      Boolean b1,b2;
     case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl)
       equation
         (e1_1,b1) = replaceExp(e1, repl,NONE());

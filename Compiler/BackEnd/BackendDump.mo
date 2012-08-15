@@ -181,7 +181,6 @@ algorithm
     local
       BackendDAE.Value n;
       list<BackendDAE.Value> rest;
-      BackendDAE.BackendDAE dae;
     case ({},_) then ();
     case ((n :: rest),syst)
       equation
@@ -487,7 +486,7 @@ end dumpBackendDAEVarList;
 public function dumpZcStr1 ""
   input list<BackendDAE.ZeroCrossing> zero_crossings;
   output String outString;
-algorithm outString := matchcontinue(zero_crossings)
+algorithm outString := match(zero_crossings)
   local
     BackendDAE.ZeroCrossing vf;
     String s1,s2,s3;
@@ -500,7 +499,7 @@ algorithm outString := matchcontinue(zero_crossings)
       s3 = stringAppendList({s1,"\n", s2 });
     then
       s3;
-end matchcontinue;
+end match;
 end dumpZcStr1;
 
 public function dumpZcStr
@@ -650,9 +649,8 @@ algorithm
     local
       list<BackendDAE.Var> vars;
       Integer varlen,eqnlen,eqnssize;
-      String varlen_str,eqnlen_str,s;
+      String varlen_str,eqnlen_str;
       list<BackendDAE.Equation> eqnsl;
-      list<String> ss;
       BackendDAE.Variables vars1;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m;
@@ -1197,9 +1195,9 @@ public function equationStr
 algorithm
   outString := matchcontinue (inEquation)
     local
-      String s1,s2,s3,s4,res,indx_str,var_str,intsStr,outsStr;
+      String s1,s2,s3,s4,res;
       DAE.Exp e1,e2,e,cond;
-      list<DAE.Exp> expl,inps,outs;
+      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation weqn;
       DAE.Algorithm alg;
@@ -1377,7 +1375,6 @@ algorithm
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.InstDims arrayDim;
-      Boolean b;
 
     case ({},_) then ();
 
@@ -1527,7 +1524,6 @@ algorithm
   match (inAttr)
     local
        Option<DAE.Exp> min,max,start,fixed,nominal;
-       String snominal;
        Option<Boolean> isProtected,finalPrefix;
        Option<DAE.Distribution> dist;
     case NONE() then ();
@@ -1593,7 +1589,7 @@ protected function dumpOptDistribution "
 "
   input Option<DAE.Distribution> dist;
 algorithm
-  _ := matchcontinue(dist)
+  _ := match(dist)
   local
     DAE.Exp e1,e2,e3;
     
@@ -1603,7 +1599,7 @@ algorithm
       +&ExpressionDump.printExpStr(e2)+&", "
       +&ExpressionDump.printExpStr(e3)+&")");
     then ();  
-  end matchcontinue;
+  end match;
 end dumpOptDistribution;
 
 
@@ -1637,7 +1633,6 @@ algorithm
   _:=
   match (inExp,inString)
     local
-       Boolean e;
        String s,str;
     case (SOME(true),s)
       equation
@@ -1932,7 +1927,6 @@ algorithm
       String s1,s2,s3,res;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
-      BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Value> es;
     case (_,{}) then "";
@@ -1961,7 +1955,6 @@ algorithm
       String s1,s2,res,s3;
       BackendDAE.Value v;
       DAE.ComponentRef cr;
-      BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars;
       list<BackendDAE.Value> vs;
     case (_,{}) then "";

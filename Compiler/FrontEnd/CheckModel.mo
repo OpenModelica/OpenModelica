@@ -381,17 +381,13 @@ algorithm
       HashSet.HashSet ht;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
-      DAE.Exp e, exp1, e1, e2;
+      DAE.Exp e, exp1;
       DAE.Statement stmt;
       list<DAE.Statement> stmts;
       DAE.Else elsebranch;
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.Ident iteratorName;
-      DAE.Exp iteratorExp;
-      list<DAE.Exp> arrayVars, nonArrayVars;
-      list<list<DAE.Exp>> arrayElements;
-      list<DAE.Exp> flattenedElements;
       String str;
             
       // a := expr;

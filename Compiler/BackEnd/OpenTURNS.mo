@@ -386,7 +386,7 @@ algorithm
   (str,distributionVar) := matchcontinue(tpl,dae)
   local 
     String name,args,varName,distVar;
-    DAE.Exp arr,sarr,e1,e2,e3,e2_1,e3_1;
+    DAE.Exp e1,e2,e3,e2_1,e3_1;
     DAE.ComponentRef cr;
     list<DAE.Exp> expl1,expl2;
     
@@ -491,7 +491,6 @@ protected function equationIsCorrelationBinding "help function"
 algorithm
   res := matchcontinue(eqn)
   local 
-    list<DAE.ComponentRef> crs;
     DAE.Algorithm alg;
 
     case(BackendDAE.ALGORITHM(alg=alg))
@@ -660,7 +659,7 @@ public function runPythonScript
  input String inStrPythonScriptFile;
  output String outStrLogFile;
 algorithm
-  outStrLogFile := matchcontinue(inStrPythonScriptFile)
+  outStrLogFile := match(inStrPythonScriptFile)
     local
       String cmdContents, logFile, cmdFile;
     case (inStrPythonScriptFile)
@@ -673,7 +672,7 @@ algorithm
         runCommand(cmdFile +& " > " +& logFile +& " 2>&1"); 
       then
         logFile;
-  end matchcontinue;
+  end match;
 end runPythonScript;
 
 protected function runCommand

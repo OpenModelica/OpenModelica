@@ -2604,7 +2604,6 @@ algorithm
   out := match (ilst1,ilst2,iacc)
     local
       Type_a x;
-      list<list<Type_a>> acc2;
       list<Type_a> lst1;
       list<list<Type_a>> lst2;
       list<list<Type_a>> acc;
@@ -3281,7 +3280,6 @@ public function nextPrime
 algorithm
   outNextPrime := matchcontinue(inN)
     local
-      Integer x;
 
     // If the given number is larger than 2, round it up to the nearest odd
     // number and call nextPrime2.

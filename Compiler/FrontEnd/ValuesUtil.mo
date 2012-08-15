@@ -882,20 +882,19 @@ algorithm
     local
       Integer dim;
       list<DAE.Exp> explist;
-      DAE.Type vt, ty;
+      DAE.Type vt;
       DAE.Type t;
       DAE.Exp e;
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
       list<DAE.Type> typelist;
       list<list<DAE.Exp>> mexpl;
-      list<DAE.Exp> mexpl2;
       list<Integer> int_dims;
       DAE.Dimensions dims;
       Integer i;
       Real r;
       String s, scope, name, tyStr;
-      Boolean b,sc;
+      Boolean b;
       list<DAE.Exp> expl;
       list<DAE.Type> tpl;
       list<String> namelst;

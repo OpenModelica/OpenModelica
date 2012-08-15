@@ -114,7 +114,6 @@ algorithm
       String name;
       Class cls;
       SymbolTable symtab;
-      list<Absyn.Path> consts;
       list<Element> const_el;
       FunctionHashTable functions;
       Connections conn;
@@ -218,7 +217,7 @@ algorithm
       SCode.Mod smod;
       Modifier mod;
       SCodeEnv.AvlTree cls_and_vars;
-      String name, err_msg;
+      String name;
       list<Equation> eq, ieq;
       list<list<Statement>> alg, ialg;
       DAE.Type ty;
@@ -228,11 +227,9 @@ algorithm
       Absyn.Path path;
       Class cls;
       list<Element> elems;
-      SCode.Element sel;
       Boolean cse;
       SCode.Element scls;
       SCode.ClassDef cdef;
-      SCodeEnv.Frame frame;
       Integer dim_count;
       list<SCodeEnv.Extends> exts;
       SCode.Restriction res;
@@ -462,7 +459,7 @@ protected function instBasicTypeAttribute
   output DAE.Var outAttribute;
   output FunctionHashTable outFunctions;
 algorithm
-  (outAttribute,outFunctions) := matchcontinue(inMod, inAttributes, inFunctions)
+  (outAttribute,outFunctions) := match(inMod, inAttributes, inFunctions)
     local
       String ident, tspec;
       DAE.Type ty;
@@ -487,7 +484,7 @@ algorithm
         (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), functions);
 
     // TODO: Print error message for invalid attributes.
-  end matchcontinue;
+  end match;
 end instBasicTypeAttribute;
         
 protected function instBasicTypeAttributeType
@@ -681,7 +678,7 @@ algorithm
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
-      Absyn.Path path, inner_comp;
+      Absyn.Path path;
       Component comp;
       DAE.Type ty;
       Env env;
@@ -692,11 +689,9 @@ algorithm
       SCode.Mod smod;
       Modifier mod, cmod;
       String name;
-      SCode.Variability var;
       list<DAE.Dimension> dims;
       array<Dimension> dim_arr;
       Class cls;
-      Element el;
       Prefixes prefs, cls_prefs;
       Integer dim_count;
       InstPolicy ip;
@@ -799,13 +794,11 @@ algorithm
   (outElement, outContainsSpecialExtends, outFunctions) :=
   match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix, inInstPolicy, inFunctions)
     local
-      Absyn.Path path, path2;
+      Absyn.Path path;
       SCode.Mod smod;
       Absyn.Info info;
-      SCodeEnv.ExtendsTable exts;
       Item item;
       Env env;
-      list<SCodeEnv.Redeclaration> redecls;
       Modifier mod;
       Class cls;
       DAE.Type ty;
@@ -856,13 +849,8 @@ algorithm
   (outElement,outFunctions) := match(inPackage, inMod, inEnv, inPrefix, inFunctions)
     local
       String name;
-      list<SCode.Element> el;
-      list<tuple<SCode.Element, Modifier>> mel;
-      list<Element> iel;
       Option<Element> oel;
       Prefix prefix;
-      Env env;
-      SCodeEnv.Frame class_env;
       Item item;
       Class cls;
       FunctionHashTable functions;
@@ -1245,29 +1233,15 @@ protected function instBuiltinFunctionCall
 algorithm
   (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
     local
-      Integer ival;
-      Real rval;
-      String sval;
-      Boolean bval;
       Absyn.ComponentRef acref;
-      DAE.ComponentRef dcref;
       Absyn.Exp aexp1, aexp2;
       DAE.Exp dexp1, dexp2;
-      Absyn.Operator aop;
-      DAE.Operator dop;
-      list<Absyn.Exp> aexpl, afargs;
-      list<DAE.Exp> dexpl, dfargs;
-      list<list<Absyn.Exp>> mat_expl;
+      list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> anamed_args;
-      Absyn.Path path;
-      Option<Absyn.Exp> oaexp;
-      Option<DAE.Exp> odexp;
       FunctionHashTable functions;
       Absyn.Path call_path;
-      DAE.ComponentRef cref;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
-      Class func;
       list<Element> inputs, outputs; 
       
 
@@ -1385,23 +1359,12 @@ protected function instFunctionCallDispatch
 algorithm
   (outExp,outFunctions) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inFunctions)
     local
-      Integer ival;
-      Real rval;
       String str;
       Boolean bval;
       Absyn.ComponentRef funcName;
-      DAE.ComponentRef dcref;
-      Absyn.Exp aexp1, aexp2;
-      DAE.Exp dexp1, dexp2;
-      Absyn.Operator aop;
-      DAE.Operator dop;
-      list<Absyn.Exp> aexpl, afargs;
-      list<DAE.Exp> dexpl, dfargs;
-      list<list<Absyn.Exp>> mat_expl;
+      DAE.Exp dexp1;
+      list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> named_args;
-      Absyn.Path path;
-      Option<Absyn.Exp> oaexp;
-      Option<DAE.Exp> odexp;
       FunctionHashTable functions;
 
     // handle builtin
@@ -1455,11 +1418,9 @@ algorithm
       DAE.Exp dexp1, dexp2;
       Absyn.Operator aop;
       DAE.Operator dop;
-      list<Absyn.Exp> aexpl, afargs;
-      list<DAE.Exp> dexpl, dfargs;
+      list<Absyn.Exp> aexpl;
+      list<DAE.Exp> dexpl;
       list<list<Absyn.Exp>> mat_expl;
-      list<Absyn.NamedArg> named_args;
-      Absyn.Path path;
       Option<Absyn.Exp> oaexp;
       Option<DAE.Exp> odexp;
       FunctionHashTable functions;
@@ -1643,11 +1604,7 @@ algorithm
     local
       Absyn.ComponentRef acref;
       DAE.ComponentRef cref;
-      SCode.Variability var;
-      SCodeLookup.Origin origin;
       Absyn.Path path;
-      Item item;
-      Env env;
       FunctionHashTable functions;
 
     case (Absyn.WILD(), _, _, _, _) then (DAE.WILD(),inFunctions);
@@ -1783,8 +1740,6 @@ algorithm
   outCref := match(inCref, inPrefix, inOriginEnv, inFoundEnv, inOriginGlobal)
     local
       String id;
-      Absyn.Path path;
-      Env prefix_env;
       Integer iterIndex;
       DAE.Type ty;
       list<DAE.Subscript> subs;
@@ -1819,9 +1774,6 @@ algorithm
       list<String> oenv, fenv;
       Prefix prefix;
       DAE.ComponentRef cref;
-      String id;
-      Absyn.Path path;
-      Env prefix_env;
 
     // This case is for a global cref that was found in one of the scopes above
     // where it was used, e.g. it was used in A.B.C but was found in A.B. In
@@ -2009,7 +1961,7 @@ protected function instFunctionCall
   output DAE.Exp outCallExp;
   output FunctionHashTable outFunctions;
 algorithm
-  (outCallExp,outFunctions) := matchcontinue(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
+  (outCallExp,outFunctions) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
     local
       Absyn.Path call_path;
       list<DAE.Exp> pos_args, args;
@@ -2028,7 +1980,7 @@ algorithm
       then
         (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
     
-  end matchcontinue;
+  end match;
 end instFunctionCall;
 
 protected function instFunction
@@ -2049,7 +2001,6 @@ algorithm
       SCodeLookup.Origin origin;
       Env env;
       Class cls;
-      Function func;
       list<Element> inputs, outputs, locals;
       list<list<Statement>> algorithms;
       list<Statement> stmts;
@@ -2157,7 +2108,6 @@ algorithm
       list<Statement> allStatements;
       Absyn.Info info;
       String name;
-      array<InstTypes.Dimension> dimensions;
       list<DAE.Dimension> dims;
       list<DAE.Exp> exps;
 
@@ -2226,10 +2176,8 @@ algorithm
       Prefixes prefixes;
       ParamType paramType;
       DAE.Exp bindingExp;
-      Absyn.Info bindingsInfo;
       Component comp;
       Element elt;
-      list<Statement> bindings;
       
     case (InstTypes.ELEMENT(InstTypes.UNTYPED_COMPONENT(Absyn.IDENT(name),baseType,dimensions,prefixes,paramType,InstTypes.UNTYPED_BINDING(bindingExp=bindingExp,info=bindingInfo),info),cls),_)
       equation
@@ -2248,17 +2196,11 @@ protected function dimensionDeps
 algorithm
   (outElt,outBindings) := match (inElt,inBindings)
     local
-      Absyn.Info info,bindingInfo;
+      Absyn.Info info;
       String name;
       Class cls;
-      DAE.Type baseType,ty;
       array<Dimension> dimensions;
       list<DAE.Dimension> dims;
-      Prefixes prefixes;
-      ParamType paramType;
-      DAE.Exp bindingExp;
-      Absyn.Info bindingsInfo;
-      Component comp;
       Element elt;
       list<Statement> bindings;
       
@@ -2367,7 +2309,7 @@ protected function getFunctionParameters2
   output list<Element> outOutputs;
   output list<Element> outLocals;
 algorithm
-  (outInputs, outOutputs, outLocals) := matchcontinue(inElements, inAccumInputs, inAccumOutputs, inAccumLocals)
+  (outInputs, outOutputs, outLocals) := match(inElements, inAccumInputs, inAccumOutputs, inAccumLocals)
     local
       Prefixes prefs;
       Absyn.Path name;
@@ -2403,7 +2345,7 @@ algorithm
         (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
         (inputs, outputs, locals);
-  end matchcontinue;
+  end match;
 end getFunctionParameters2;
 
 protected function getFunctionParameters3
@@ -2621,7 +2563,6 @@ algorithm
   outSlots := match(inNamedArg, inSlots)
     local
       String arg_name, slot_name;
-      DAE.Exp arg;
       FunctionSlot slot;
       list<FunctionSlot> rest_slots;
       Boolean eq;
@@ -2827,7 +2768,6 @@ algorithm
     local
       SymbolTable st;
       Component comp;
-      DAE.ComponentRef cref;
 
     case (_, st)
       equation
@@ -3000,16 +2940,11 @@ algorithm
       String for_index,str;
       list<SCode.EEquation> eql;
       list<Equation> ieql;
-      list<Absyn.Exp> if_condition, expl, args;
+      list<Absyn.Exp> if_condition;
       list<list<SCode.EEquation>> if_branches;
       list<tuple<DAE.Exp, list<Equation>>> inst_branches;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> when_branches;
-      list<DAE.Exp> iexpl, iargs;
-      list<Absyn.NamedArg> nargs;
       Env env;
-      Absyn.Path func_path;
-      Item item;
-      Class cls;
       FunctionHashTable functions;
 
     case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, functions)
@@ -3361,7 +3296,7 @@ protected function instGlobalConstant2
 algorithm
   (outElement,outFunctions) := matchcontinue(inItem, inPath, inLocal, inEnv, inFunctions)
     local
-      Absyn.Path path, pre_path;
+      Absyn.Path  pre_path;
       Prefix prefix;
       SCode.Element el;
       list<SCode.Enum> enuml;
@@ -3473,9 +3408,6 @@ algorithm
       list<Element> rest_el, accum_el;
       SymbolTable st;
       Option<Element> oel;
-      Absyn.Path bc;
-      Class cls;
-      DAE.Type ty;
       FunctionHashTable functions;
 
     case ({}, st, accum_el, functions) then (listReverse(accum_el), st, functions);

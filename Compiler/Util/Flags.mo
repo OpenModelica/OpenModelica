@@ -946,9 +946,8 @@ protected function readArg
 algorithm
   outNotConsumed := matchcontinue(inArg, inFlags)
     local
-      Integer matches, len;
+      Integer  len;
       String flag;
-      list<String> values;
 
     // Ignore flags that don't start with + or -.
     case (_, _)
@@ -1157,7 +1156,6 @@ algorithm
     local
       Boolean b;
       Integer i;
-      Real r;
       String s, et, at;
       list<tuple<String, Integer>> enums;
 
@@ -1219,7 +1217,7 @@ protected function printExpectedTypeStr
   input FlagData inType;
   output String outTypeStr;
 algorithm
-  outTypeStr := matchcontinue(inType)
+  outTypeStr := match(inType)
     local
       list<tuple<String, Integer>> enums;
       list<String> enum_strs;
@@ -1234,7 +1232,7 @@ algorithm
         enum_strs = List.map(enums, Util.tuple21);
       then
         "one of the values {" +& stringDelimitList(enum_strs, ", ") +& "}";
-  end matchcontinue;
+  end match;
 end printExpectedTypeStr;
 
 protected function printActualTypeStr
@@ -1456,7 +1454,6 @@ algorithm
     local
       Util.TranslatableContent desc;
       list<String> debug_flags, rest_topics;
-      list<tuple<String, String>> options;
       String str,name;
       ConfigFlag config_flag;
 
@@ -1611,7 +1608,6 @@ algorithm
   outString := match(inFlag)
     local
       list<String> strl;
-      list<DebugFlag> flags;
       String opt_str;
       list<tuple<String, Util.TranslatableContent>> descl;
 

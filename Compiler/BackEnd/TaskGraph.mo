@@ -270,7 +270,6 @@ algorithm
       BackendDAE.BackendDAE dae;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp;
-      Integer eqn;
     case (_,{}) then ();
     case (dae,(comp as BackendDAE.SINGLEEQUATION(eqn=_))::comps)
       equation
@@ -302,10 +301,8 @@ algorithm
       Integer e_1,v_1,e,indx;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
-      list<BackendDAE.Var> varlst;
       DAE.ComponentRef cr,cr_1;
-      BackendDAE.VarKind kind;
-      String origname_str,indxs,name,c_name,id;
+      String origname_str,name,c_name,id;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))

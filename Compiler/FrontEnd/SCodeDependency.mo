@@ -165,7 +165,6 @@ algorithm
       Env env;
       String id;
       Absyn.Path rest_path;
-      SCodeEnv.Frame frame;
 
     case (Absyn.IDENT(name = _), _, _, _)
       equation
@@ -267,7 +266,6 @@ algorithm
       SCodeEnv.Frame cls_env;
       Env env;
       Absyn.Info info;
-      SCode.Ident name;
       SCode.Restriction res;
       SCode.Element cls;
 
@@ -419,7 +417,6 @@ algorithm
   _ := matchcontinue(inClassDef, inRestriction, inEnv, inInModifierScope, inInfo)
     local
       list<SCode.Element> el;
-      SCode.Element e1, e2;
       Absyn.Ident bc;
       SCode.Mod mods;
       Absyn.TypeSpec ty;
@@ -428,7 +425,6 @@ algorithm
       Option<SCode.Comment> cmt;
       list<SCode.Annotation> annl;
       Option<SCode.ExternalDecl> ext_decl;
-      Boolean is_ext_obj;
       Env ty_env, env;
       Item ty_item;
       SCode.Attributes attr;
@@ -701,8 +697,6 @@ algorithm
       Absyn.Info info;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
-      Option<SCode.ConstrainClass> cc;
-      SCode.Element cls;
       Item ty_item;
       Env ty_env, env;
       SCode.Ident name;
@@ -816,7 +810,6 @@ algorithm
   _ := matchcontinue(inName, inRestriction, inEnv, inInfo)
     local
       SCodeEnv.AvlTree cls_and_vars;
-      Item item;
       Util.StatefulBoolean is_used;
 
     case (_, _, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
@@ -961,12 +954,9 @@ algorithm
   _ := match(inElement, inEnv, inTypeEnv)
     local
       SCode.ClassDef cdef;
-      Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
       SCode.Restriction restr;
       SCode.Prefixes prefixes;
-      SCode.Ident name;
-      Item item;
 
     // Class definitions are not analysed in analyseElement but are needed here
     // in case a class is redeclared.
@@ -1017,13 +1007,12 @@ protected function analyseSubMod
   input tuple<Env, Env> inEnv;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inSubMod, inEnv, inInfo)
+  _ := match(inSubMod, inEnv, inInfo)
     local
       SCode.Ident ident;
       SCode.Mod m;
       list<SCode.Subscript> subs;
-      Env env, env2, ty_env;
-      Item item;
+      Env env,  ty_env;
 
     case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
@@ -1036,7 +1025,7 @@ algorithm
         analyseModifier(m, env, ty_env, inInfo);
       then
         ();
-  end matchcontinue;
+  end match;
 end analyseSubMod;
 
 protected function analyseNameMod
@@ -1460,7 +1449,7 @@ algorithm
       SCode.Ident iter_name;
       Env env;
       Absyn.Info info;
-      Absyn.ComponentRef cref1, cref2;
+      Absyn.ComponentRef cref1;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
@@ -1529,11 +1518,9 @@ protected function analyseStatementTraverser
 algorithm
   outTuple := match(inTuple)
     local
-      Absyn.ForIterators iters;
       Env env;
       SCode.Statement stmt;
       Absyn.Info info;
-      Absyn.ComponentRef cref;
       list<SCode.Statement> parforBody;
       String iter_name;
 
@@ -1622,7 +1609,6 @@ algorithm
       SCode.Element cls;
       SCodeEnv.ClassType cls_ty;
       Util.StatefulBoolean is_used;
-      String cls_name;
 
     // Check if the current environment is not used, we can quit here if that's
     // the case.
@@ -1659,7 +1645,6 @@ algorithm
       Absyn.Path bc;
       String cls_name;
       Env env;
-      SCode.Prefixes prefixes;
 
     case (SCode.CLASS(name = cls_name, classDef = 
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
@@ -1734,7 +1719,6 @@ algorithm
       SCode.Element cls;
       SCode.Program rest_prog;
       String name;
-      Item item;
       Env env;
       list<Absyn.Path> consts;
 
@@ -1793,7 +1777,6 @@ algorithm
       Item item, resolved_item;
       SCodeEnv.Frame class_frame;
       Env class_env, env, enclosing_env;
-      Absyn.Path cls_path;
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
       list<Absyn.Path> consts;
@@ -2042,9 +2025,7 @@ algorithm
       inAccumPath, inCollectConstants, inAccumConsts)
     local
       SCode.Ident name;
-      Boolean fp, rp, rd;
       SCode.Element cls;
-      Option<Absyn.ConstrainClass> cc;
       Env env;
       Item item;
       Absyn.Path cls_path, const_path;

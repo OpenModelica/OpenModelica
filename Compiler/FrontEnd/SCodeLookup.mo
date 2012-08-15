@@ -454,7 +454,6 @@ protected function checkBuiltinItem
 algorithm
   _ := match(inItem)
     local
-      String name;
 
     case (SOME(SCodeEnv.CLASS(classType = SCodeEnv.BUILTIN()))) then ();
     case (NONE()) then ();
@@ -481,7 +480,6 @@ algorithm
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
       list<Import> imps;
-      FrameType frame_type;
       Absyn.Path path;
       Option<Env> opt_env;
 
@@ -703,7 +701,6 @@ algorithm
       Absyn.Path path;
       Item item;
       list<Import> rest_imps;
-      Import imp;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
       Option<Env> opt_env;
@@ -809,9 +806,8 @@ algorithm
     local
       Absyn.Ident name;
       Absyn.Path path, new_path;
-      AvlTree cls_and_vars;
       Frame top_scope;
-      Env rest_env, env;
+      Env  env;
       Item item;
       Origin origin;
 
@@ -856,7 +852,6 @@ algorithm
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cref, cref_rest;
       Item item;
-      Frame top_scope;
       Env env;
      
     // Simple identifier, look in the local scope.
@@ -896,7 +891,6 @@ public function lookupNameInItem
 algorithm
   (outItem, outPath, outEnv) := match(inName, inItem, inEnv)
     local
-      SCode.Element var;
       Item item;
       Absyn.Path path;
       Frame class_env;
@@ -1045,7 +1039,6 @@ algorithm
     matchcontinue(inItem, inRedeclarePrefix, inReplaceablePrefix, inEnv, inInfo)
     local
       SCode.Ident name;
-      String scope_str;
       Item item;
       Env env;
       Absyn.Info info;
@@ -1339,7 +1332,7 @@ protected function crefStripEnvPrefix2
   input Absyn.Path inEnvPath;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inEnvPath)
+  outCref := match(inCref, inEnvPath)
     local
       Absyn.Ident id1, id2;
       Absyn.ComponentRef cref;
@@ -1358,7 +1351,7 @@ algorithm
         true = stringEqual(id1, id2);
       then
         cref;
-  end matchcontinue;
+  end match;
 end crefStripEnvPrefix2;
 
 public function lookupComponentRef
@@ -1372,7 +1365,6 @@ algorithm
   outCref := matchcontinue(inCref, inEnv, inInfo)
     local
       Absyn.ComponentRef cref;
-      String cref_str, env_str;
       Env env;
 
     // Special case for StateSelect, do nothing.

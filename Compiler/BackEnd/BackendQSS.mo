@@ -83,13 +83,11 @@ algorithm
   (QSSinfo_out,simC) :=
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents,simCode)
     local
-      QSSinfo qssInfo;
       BackendDAE.BackendDAE dlow;
-      list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst,algVarsList;
+      list<BackendDAE.Var> allVarsList, stateVarsList,orderedVarsList,discVarsLst;
       BackendDAE.StrongComponents comps;
       BackendDAE.IncidenceMatrix m, mt;
       array<Integer> ass1, ass2;
-      BackendDAE.EqSystem syst;
       list<SimCode.SimEqSystem> eqs;
       list<list<Integer>> s;
       list<DAE.ComponentRef> states,disc,algs;
@@ -142,15 +140,11 @@ public function getAllVars
    
 algorithm 
   (allVarsList, stateVarsList, orderedVarsList):=
-  matchcontinue (inDAELow1)
+  match (inDAELow1)
     local
       list<BackendDAE.Var> orderedVarsList, knownVarsList, allVarsList;
       BackendDAE.BackendDAE dae;
-      array<BackendDAE.Value> arr_1,arr;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
       BackendDAE.Variables v,kn;
-      BackendDAE.EquationArray e,se,ie;
   case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
       orderedVarsList = BackendDAEUtil.varList(v);
@@ -159,7 +153,7 @@ algorithm
       stateVarsList = BackendVariable.getAllStateVarFromVariables(v);
   then
      (allVarsList, stateVarsList,orderedVarsList) ;
-  end matchcontinue;     
+  end match;     
 end getAllVars;
 
 public function getStateIndices 
@@ -396,7 +390,7 @@ public function replaceVars
   input list<DAE.ComponentRef> algs;
   output DAE.Exp expout;
 algorithm
-expout := matchcontinue (exp,states,disc,algs)
+expout := match (exp,states,disc,algs)
   local
     DAE.Exp e;
   case (_,_,_,_) 
@@ -404,7 +398,7 @@ expout := matchcontinue (exp,states,disc,algs)
     ((e,_))=Expression.traverseExp(exp,replaceInExp,(states,disc,algs));
     (e,_)=ExpressionSimplify.simplify(e);
   then e;
-  end matchcontinue;
+  end match;
 end replaceVars;
 
 
@@ -501,7 +495,6 @@ algorithm
     matchcontinue (exp)
     local 
       DAE.Exp e1,e2;
-      DAE.Operator op;
       Integer i;
       DAE.Type t;
       Option<tuple<DAE.Exp,Integer,Integer>> o;
@@ -529,8 +522,6 @@ algorithm
     matchcontinue (eqs,handlers,states,disc,algs,condition,v,zc_exps,offset) 
       local 
         Integer h;
-        Boolean b;
-        BackendDAE.Equation eq;
         DAE.Exp exp,e1;
         DAE.Exp scalar "scalar" ;
         String s;
@@ -620,7 +611,6 @@ algorithm
     local 
       list<SimCode.SimEqSystem> tail;
       list<SimCode.SimVar> vars;
-      SimCode.SimEqSystem eq;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> vars_cref;
     case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,i_algs) 
@@ -745,12 +735,12 @@ function getStartTime
   output String s;
 algorithm
   s:=
-    matchcontinue (cond)
+    match (cond)
     local
       DAE.Exp start;
     case ((DAE.CALL(path=Absyn.IDENT(name="sample"),expLst=(start:: _)),_) )
       then ExpressionDump.printExpStr(replaceVars(start,{},{},{}));
-    end matchcontinue; 
+    end match; 
 end getStartTime;
 
 public function generateDInit
@@ -799,13 +789,9 @@ public function generateInitialParamEquations
   output String t;
 algorithm
   t:= 
-  matchcontinue (eq)
+  match (eq)
   local
     DAE.ComponentRef cref;
-    list<SimCode.SimVar> paramVars;
-    list<SimCode.SimVar> intParamVars;
-    list<SimCode.SimVar> boolParamVars;
-    Integer i;
     DAE.Exp exp;
     String t;
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))
@@ -816,7 +802,7 @@ algorithm
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));
     t = stringAppend(t,";");
   then t;
-  end matchcontinue;
+  end match;
 end generateInitialParamEquations;
 
 public function generateExtraParams
@@ -825,7 +811,7 @@ public function generateExtraParams
   output String s;
 algorithm
   s:= 
-  matchcontinue (eq,vars)
+  match (eq,vars)
   local
     DAE.ComponentRef cref;
     list<SimCode.SimVar> paramVars;
@@ -845,7 +831,7 @@ algorithm
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));
     t = stringAppend(t,";");
   then t;
-  end matchcontinue;
+  end match;
 end generateExtraParams;
 
 public function replaceVarsInputs
@@ -1037,15 +1023,9 @@ algorithm
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;
       SimCode.DelayedExpression delayedExps;
-      list<String> labels;
       Option<SimCode.SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Absyn.Path name;
-      String directory;
-      SimCode.VarInfo varInfo;
-      SimCode.SimVars vars;
-      list<SimCode.Function> functions;     
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,

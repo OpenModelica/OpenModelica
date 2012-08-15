@@ -183,7 +183,6 @@ algorithm
       Absyn.Path path;
       SCode.Element c;
       String id;
-      SCode.Restriction restr;
       Env.Cache cache;
       SCode.Restriction r;
       list<Types.Var> types;
@@ -1197,7 +1196,7 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
-      DAE.Attributes attr, attr2;
+      DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
       DAE.ComponentRef cref,cr;
@@ -1209,7 +1208,6 @@ algorithm
       Option<DAE.Const> cnstForRange;
       Absyn.Path path,scope;
       Boolean unique;
-      DAE.Type ety;
       Env.AvlTree ht;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
@@ -1855,14 +1853,13 @@ protected function lookupTypeInFrame2 "function: lookupTypeInFrame
   output Env.Env outEnv;
 algorithm
   (outCache,outType,outEnv):=
-  matchcontinue (inCache,item,inEnv3,inIdent4)
+  match (inCache,item,inEnv3,inIdent4)
     local
       DAE.Type t,ty;
       list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
       SCode.Element cdef;
       Env.Cache cache;
-      SCode.Restriction restr;
 
     case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
     case (cache,Env.VAR(_,_,_,_),env,id)
@@ -1893,7 +1890,7 @@ algorithm
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then
         (cache,ty,env_3);
-  end matchcontinue;
+  end match;
 end lookupTypeInFrame2;
 
 protected function lookupFunctionsInFrame
@@ -2137,7 +2134,6 @@ algorithm
       Option<Absyn.Exp> cond;
       SCode.Mod mod,umod;
       DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
-      Option<Absyn.ConstrainClass> cc;
       Absyn.Info info;
 
     case ({},_,_) then {};

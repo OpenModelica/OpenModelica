@@ -557,12 +557,12 @@ public function printExp2Str
 algorithm
   outString := matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
     local
-      String s,s_1,s_2,sym,s1,s2,s3,s4,res,fs,argstr,s_4,res2,str,crstr,dimstr,expstr,iterstr,id,s1_1,s2_1,cs,ts,cs_1,ts_1,fs_1,s3_1;
-      Integer ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
-      Real rval,r;
+      String s,s_1,s_2,sym,s1,s2,s3,s4,res,fs,argstr,s_4,str,crstr,dimstr,expstr,iterstr,s1_1,s2_1,cs,ts,cs_1,ts_1,fs_1,s3_1;
+      Integer i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
+      Real r;
       ComponentRef c;
       Type t,tp;
-      DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,cond,tb,fb;
       Operator op;
       Absyn.Path fcn,lit;
       list<DAE.Exp> args,es;
@@ -579,7 +579,7 @@ algorithm
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
       DAE.ComponentRef name;
-      String index_str, scope, tyStr;
+      String  scope, tyStr;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _) 
       then "<EMPTY(scope: " +& scope +& ", name: " +& ComponentReference.printComponentRefStr(name) +& ", ty: " +& tyStr +& ")>";

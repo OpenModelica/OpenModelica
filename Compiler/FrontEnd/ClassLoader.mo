@@ -85,8 +85,7 @@ algorithm
       String gd,classname,mp,pack;
       list<String> mps;
       Absyn.Program p;
-      Absyn.Path rest,path;
-      Absyn.TimeStamp ts;
+      Absyn.Path rest;
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
     case (Absyn.IDENT(name = classname),priorityList,mp,encoding)
       equation
@@ -159,9 +158,7 @@ protected function loadClassFromMp
 algorithm
   outClass := match (id,path,name,isDir,optEncoding)
     local
-      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,encoding,encodingfile;
-      Absyn.Program p;
-      Absyn.TimeStamp ts;
+      String pd,encoding,encodingfile;
       Absyn.Class cl;
 
     case (id,path,name,false,optEncoding)
@@ -199,14 +196,10 @@ protected function loadCompletePackageFromMp
 algorithm
   cl := matchcontinue (id,inIdent,inString,encoding,inWithin,numError)
     local
-      String pd,mp_1,packagefile,orderfile,subdirstr,pack,mp,name,str;
+      String pd,mp_1,packagefile,orderfile,pack,mp,name,str;
       Absyn.Class cl;
-      list<Absyn.ElementItem> cbefore,cafter;
-      Absyn.Within w1,within_;
-      Absyn.Program p1_1,p2,p;
-      list<String> subdirs,tv,before,after;
-      Absyn.Path wpath_1,wpath;
-      Absyn.TimeStamp ts;
+      Absyn.Within within_;
+      list<String> tv;
       Boolean pp,fp,ep;
       Absyn.Restriction r;
       list<Absyn.NamedArg> ca;
@@ -273,9 +266,7 @@ algorithm
     local
       Absyn.ElementItem ei;
       String pd,file,id;
-      Absyn.Path path;
       Absyn.ClassPart cp;
-      Boolean pub;
       Absyn.Class cl;
       
     case (CLASSPART(cp),_,_,_,acc)
@@ -326,8 +317,8 @@ public function loadFile
 algorithm
   outProgram := matchcontinue (name,encoding)
     local
-      String dir,pd,dir_1,name,filename,cname,prio,mp;
-      Absyn.Program p1_1,p1;
+      String dir,name,filename,cname,prio,mp;
+      Absyn.Program p1;
       list<String> rest;
 
     case (name,encoding)
@@ -369,12 +360,10 @@ public function parsePackageFile
 algorithm
   outClass := matchcontinue (name,encoding,expectPackage,w1,pack)
     local
-      Absyn.Program p;
       Absyn.Class cl;
       list<Absyn.Class> cs;
       Absyn.Within w2;
       Absyn.TimeStamp ts;
-      Boolean b;
       list<String> classNames;
       Absyn.Info info;
       String str,s1,s2,cname;
@@ -415,15 +404,10 @@ protected function getPackageContentNames
 algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
     local
-      String contents,name;
-      list<String> namesToFind, tv, before, after, mofiles, subdirs;
-      Boolean pp,fp,ep;
-      list<Absyn.NamedArg> ca;
+      String contents;
+      list<String> namesToFind,    mofiles, subdirs;
       list<Absyn.ClassPart> cp;
-      Option<String> cmt;
       Absyn.Info info;
-      list<tuple<Boolean,Absyn.Element>> elts;
-      Boolean b;
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),filename,mp,numError)
       equation
         true = System.regularFileExists(filename);
@@ -512,9 +496,7 @@ algorithm
     local
       list<Absyn.ClassPart> rcp;
       list<Absyn.ElementItem> elts;
-      list<String> namesToSort, before, after;
-      String str;
-      Boolean foundFirst;
+      list<String> namesToSort;
       Absyn.ClassPart cp;
     case (namesToSort,{},acc)
       equation
@@ -547,10 +529,10 @@ protected function getPackageContentNamesinElts
 algorithm
   (outOrder,outNames) := match (inNamesToSort,inElts,po,pub)
     local
-      String name1,name2,str;
-      list<String> namesToSort,before,names,compNames;
+      String name1,name2;
+      list<String> namesToSort,names,compNames;
       list<Absyn.ElementItem> elts;
-      Boolean foundFirst,b,b2;
+      Boolean b;
       Absyn.Info info;
       list<Absyn.ComponentItem> comps;
       Absyn.ElementItem ei;

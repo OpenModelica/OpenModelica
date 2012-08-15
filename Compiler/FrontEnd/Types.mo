@@ -146,14 +146,14 @@ public function setTypeInProps
   input DAE.Properties inProperties;
   output DAE.Properties outProperties;
 algorithm
-  outProperties := matchcontinue(inType,inProperties)
+  outProperties := match(inType,inProperties)
     local
       DAE.Const cf;
       DAE.TupleConst tc;
       DAE.Type ty;
     case(ty,DAE.PROP(_,cf)) then DAE.PROP(ty,cf);
     case(ty,DAE.PROP_TUPLE(_,tc)) then DAE.PROP_TUPLE(ty,tc);
-  end matchcontinue;
+  end match;
 end setTypeInProps;
 
 // stefan
@@ -840,7 +840,6 @@ algorithm
   outIntegerLst := matchcontinue (inType)
     local
       DAE.Dimensions res;
-      DAE.Dimension d;
       Type tp;
       DAE.Dimensions dims;
             
@@ -942,7 +941,7 @@ algorithm
       list<Var> rest;
       Values.Value v;
       list<Values.Value> vs;
-      String id,str;
+      String id;
       list<Ident> ids;
 
     case ({},{}) then {};
@@ -1228,9 +1227,8 @@ algorithm
       Ident l1,l2;
       list<Var> els1,els2;
       Absyn.Path p1,p2;
-      Type t1,t2,tp,tp2,tp1;
+      Type t1,t2,tp2,tp1;
       ClassInf.State st1,st2;
-      Option<Type> bc1,bc2;
       list<Type> type_list1,type_list2,tList1,tList2;
       list<String> names1, names2;
       DAE.Dimension dim1,dim2;
@@ -1865,10 +1863,8 @@ algorithm
       Type ty,bc_tp,restype;
       DAE.Dimensions dimlst;
       list<Var> vs;
-      Option<Type> bc;
       ClassInf.State ci_state;
       list<FuncArg> params;
-      Type t;
       Absyn.Path path,p;
       list<Type> tys;
       DAE.CodeType codeType;
@@ -2094,7 +2090,6 @@ algorithm
       list<Var> vars;
       list<Ident> l;
       ClassInf.State st;
-      Option<Type> bc;
       list<DAE.Dimension> dims;
       Type t,ty,restype;
       list<FuncArg> params;
@@ -2313,7 +2308,6 @@ algorithm
       ClassInf.State st;
       Absyn.Path connectorName;
       list<Var> vars;
-      Option<Type> bc;
       DAE.TypeSource ts;
       list<String> varNames;
       Boolean isExpandable;
@@ -2866,13 +2860,10 @@ protected function makeFarg
 algorithm
   farg := match (variable)
     local
-      list<FuncArg> fargl;
       Ident n;
       Attributes attr;
-      SCode.Visibility vis;
       Type ty;
       Binding bnd;
-      list<Var> vl;
       DAE.Const c;
       SCode.Variability var;
       Option<DAE.Exp> oexp;
@@ -3451,20 +3442,12 @@ public function simplifyType
 algorithm
   outExpType := matchcontinue (inType)
     local
-      DAE.Type expTy;
-      Type tt;
-      Integer indexBasedOnValueConstructor;
       String str;
-      Option<Absyn.Path> opt_path;
-      Absyn.Path p;
-      Type et,t;
+      Type t;
       DAE.Type t_1;
       DAE.Dimensions dims;
-      Absyn.Path path,name;
-      list<String> names;
-      list<Var> varLst,tcvl;
+      list<Var> varLst;
       ClassInf.State CIS;
-      list<DAE.Var> ecvl;
       DAE.EqualityConstraint ec;
       DAE.TypeSource ts;
      
@@ -3547,11 +3530,10 @@ protected function simplifyVars
   input list<DAE.Var> inVars;
   output list<DAE.Var> outVars;
 algorithm
-  outVars := matchcontinue(inVars)
+  outVars := match(inVars)
     local
       String name;
       DAE.Attributes attributes;
-      SCode.Visibility visibility;
       Type ty "type";
       DAE.Binding binding "binding ; equation modification";
       Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
@@ -3565,7 +3547,7 @@ algorithm
         ty = simplifyType(ty);
       then
         DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange)::rest;
-  end matchcontinue;    
+  end match;    
 end simplifyVars;
 
 protected function typeMemoryEntryEq
@@ -3830,7 +3812,7 @@ algorithm
   _ :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
-      DAE.Exp e,oe;
+      DAE.Exp e;
       Type t1,t2;
       list<Type> ts1,ts2;
     case (_,_,{}) then ();
@@ -3921,18 +3903,16 @@ algorithm
       list<DAE.Exp> elist_1,elist,inputs;
       DAE.Type at,t;
       Boolean sc, a;
-      Integer nmax,oi;
+      Integer nmax;
       DAE.Dimension dim1, dim2, dim11, dim22;
       DAE.Dimensions dims;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
-      Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
-      list<list<DAE.Exp>> ell_1,ell,melist,elist_big;
+      list<list<DAE.Exp>> ell_1,ell,elist_big;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v;
-      Absyn.Path path,tp,path1,path2;
-      String name;
+      Absyn.Path path,path1,path2;
       list<Absyn.Path> pathList;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefList;
@@ -4530,11 +4510,10 @@ algorithm
       Type t,t1,t2;
       Const c,c1,c2;
       DAE.Dimension dim,dim1,dim2;
-      DAE.TypeSource p2,p;
       Boolean havereal;
       list<Var> v;
       Type tt;
-      DAE.TypeSource ts1, ts2, ts;
+      DAE.TypeSource  ts2, ts;
 
     case (DAE.PROP(DAE.T_SUBTYPE_BASIC(complexType = t1),c1),DAE.PROP(t2,c2),havereal)
       then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
@@ -5666,7 +5645,7 @@ algorithm
       list<DAE.Const> cs;
       list<Option<DAE.Exp>> oe;
       Type ty2,resType1,resType2;
-      Type tty1,tty2;
+      Type tty1;
       Absyn.Path path;
       DAE.FunctionAttributes functionAttributes;
     
@@ -5892,7 +5871,7 @@ algorithm
       list<Type> tys;
       String id;
       Integer len1, len2;
-      PolymorphicBindings bindings,solvedBindings,unsolvedBindings;
+      PolymorphicBindings solvedBindings,unsolvedBindings;
       
     case ({}, solvedBindings, unsolvedBindings) then (solvedBindings, unsolvedBindings);
 
@@ -6278,7 +6257,6 @@ algorithm
     local
       Ident name;
       Attributes attributes;
-      SCode.Visibility vis;
       Type type_;
       Binding binding;
       Option<Const> constOfForIteratorRange;
@@ -6740,12 +6718,9 @@ algorithm
       list<Var> vars;
       list<Ident> comp;
       ClassInf.State st;
-      Option<Type> bc;
-      DAE.Dimension dim;
-      Type t,ty,restype;
-      list<FuncArg> params;
+      Type t;
       list<Type> tys;
-      String s1,s2,compType;
+      String s1;
       Absyn.Path path;
       Integer i;
       Option<Integer> iOpt;
@@ -7032,7 +7007,7 @@ public function getTypeSource
   input Type inType;
   output DAE.TypeSource outTypeSource;
 algorithm
-  outTypeSource := matchcontinue(inType)
+  outTypeSource := match(inType)
     local
       DAE.TypeSource source;
     
@@ -7063,7 +7038,7 @@ algorithm
     case (DAE.T_METABOXED(source =  source)) then source;
     case (DAE.T_METAPOLYMORPHIC(source =  source)) then source;
     case (DAE.T_METATYPE(source =  source)) then source;
-  end matchcontinue;
+  end match;
 end getTypeSource;
 
 public function setTypeSource

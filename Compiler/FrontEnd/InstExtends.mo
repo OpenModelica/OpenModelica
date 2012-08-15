@@ -409,7 +409,7 @@ protected function buildClassExtendsName
   input String inClassName;
   output String outClassName;
 algorithm
-  outClassName := matchcontinue(inEnvPath, inClassName)
+  outClassName := match(inEnvPath, inClassName)
     local String ep, cn;
     /*
     case (ep, cn)
@@ -426,7 +426,7 @@ algorithm
         cn = "$parent" +& "." +& cn +& ".$env." +& ep;
       then
         cn;
-  end matchcontinue;
+  end match;
 end buildClassExtendsName;
 
 protected function instClassExtendsList2
@@ -441,16 +441,13 @@ algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inEnv,inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
       SCode.Element elt,compelt,classExtendsElt;
-      SCode.Element cl,classExtendsClass;
+      SCode.Element cl;
       SCode.ClassDef classDef,classExtendsCdef;
       SCode.Partial partialPrefix1,partialPrefix2;
       SCode.Encapsulated encapsulatedPrefix1,encapsulatedPrefix2;
-      SCode.Final finalPrefix1,finalPrefix2;
-      SCode.Replaceable replaceablePrefix1,replaceablePrefix2;
-      SCode.Redeclare redecl1,redecl2;
       SCode.Restriction restriction1,restriction2;
       SCode.Prefixes prefixes1,prefixes2;
-      SCode.Visibility vis1,vis2;
+      SCode.Visibility vis2;
       String name1,name2,env_path;
       Option<SCode.ExternalDecl> externalDecl1,externalDecl2;
       list<SCode.Annotation> annotationLst1,annotationLst2;
@@ -464,7 +461,6 @@ algorithm
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
       DAE.Mod mod1,emod;
-      Option<Absyn.ConstrainClass> cc1,cc2;
       Absyn.Info info1, info2;
       Boolean b;
 
@@ -548,7 +544,6 @@ algorithm
       String n,name;
       Option<SCode.ExternalDecl> extdecl;
       Absyn.Info info;
-      DAE.Mod daeDMOD;
       Prefix.Prefix pre;
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name = name, classDef =
@@ -645,7 +640,7 @@ algorithm
     local
       SCode.Element comp;
       DAE.Mod cmod, cmod2, mod_rest;
-      String id, el_str, mod_str1, mod_str2;
+      String id;
       Boolean b;
  
     case ((comp as SCode.COMPONENT(name = id), cmod, b), _, _)
@@ -869,18 +864,14 @@ protected function fixElement
 algorithm
   (outCache,outElts) := matchcontinue (inCache,inEnv,inElt,inHt)
     local
-      String id,name,str;
-      Absyn.InnerOuter innerOuter;
+      String name;
       SCode.Prefixes prefixes;
       SCode.Partial partialPrefix;
-      SCode.Encapsulated encapsulatedPrefix;
-      SCode.Attributes attributes;
       Absyn.TypeSpec typeSpec;
       SCode.Mod modifications;
       Option<SCode.Comment> comment;
       Option<Absyn.Exp> condition;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> cc;
       SCode.ClassDef classDef;
       SCode.Restriction restriction;
       Option<SCode.Annotation> optAnnotation;
@@ -1026,7 +1017,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      SCode.Equation eq;
       
     case (cache,env,SCode.EQUATION(eeq),ht)
       equation
@@ -1064,12 +1054,10 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
       Option<SCode.Comment> comment;
       Option<Absyn.Exp> optExp;
-      Absyn.FunctionArgs fargs;
       Absyn.Info info;
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      SCode.EEquation eeq;
       
     case (cache,env,SCode.EQ_IF(expl,eqll,eql,comment,info),ht)
       equation
@@ -1152,7 +1140,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      SCode.AlgorithmSection alg;
 
     case (cache,env,SCode.ALGORITHM(stmts),ht)
       equation
@@ -1179,7 +1166,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      SCode.AlgorithmSection alg;
 
     case (cache,env,SCode.CONSTRAINTS(exps),ht)
       equation
@@ -1220,11 +1206,8 @@ algorithm
       Absyn.Exp exp,exp1,exp2;
       Option<Absyn.Exp> optExp;
       String iter;
-      Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
       list<SCode.Statement> truebranch,elsebranch,forbody,whilebody;
-      Absyn.ForIterators iterators;
       Option<SCode.Comment> comment;
       Absyn.Info info;
       Env.Cache cache;
@@ -1303,7 +1286,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      Option<Absyn.ArrayDim> ad;
 
     case (cache,env,NONE(),ht) then (cache,NONE());
     case (cache,env,SOME(ads),ht)
@@ -1331,7 +1313,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      Absyn.Subscript sub;
 
     case (cache,env,Absyn.NOSUB(),ht) then (cache,Absyn.NOSUB());
     case (cache,env,Absyn.SUBSCRIPT(exp),ht)
@@ -1361,7 +1342,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      Absyn.TypeSpec ts;
 
     case (cache,env,Absyn.TPATH(path,arrayDim),ht)
       equation
@@ -1627,8 +1607,6 @@ algorithm
       Absyn.Ident ident;
       list<SCode.Subscript> subs;
       Env.Cache cache;
-      Env.Env env;
-      HashTableStringToPath.HashTable ht;
     
     case (_, _, {}, _) then (inCache, {});
     
@@ -1764,7 +1742,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
-      Absyn.FunctionArgs fargs;
 
     case (cache,env,Absyn.FUNCTIONARGS(args,argNames),ht)
       equation

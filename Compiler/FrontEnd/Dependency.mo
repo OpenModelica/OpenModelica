@@ -1212,7 +1212,6 @@ algorithm
   local
     list<Absyn.ElementItem> elemis;
     HashTable2.HashTable table1,table2;
-    String id,str;
     Absyn.ElementSpec spec;
     Absyn.ElementItem elit;
   case({},inTable) then inTable;

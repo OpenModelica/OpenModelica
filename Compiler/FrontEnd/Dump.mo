@@ -1727,8 +1727,7 @@ algorithm
   outString:=
   match (inConstrainClass)
     local
-      Ident s1,s2,res;
-      Absyn.ElementSpec spec;
+      Ident res;
       Option<Absyn.Comment> cmt;
       Absyn.Path path;
       list<Absyn.ElementArg> el;

@@ -190,13 +190,12 @@ protected function handleCommand
 algorithm
   (outBoolean,outString,outInteractiveSymbolTable) := matchcontinue (inString,inInteractiveSymbolTable)
     local
-      String str,msg,res_1,res,evalstr,expmsg,debugstr;
+      String str,res_1,res,evalstr,debugstr;
       Interactive.SymbolTable isymb,newisymb;
       Absyn.Program p,p_1,newprog,iprog;
       AbsynDep.Depends aDep;
       list<Interactive.Variable> vars_1,vars;
       list<Interactive.CompiledCFunction> cf_1,cf;
-      list<SCode.Element> a;
       list<Interactive.InstantiatedClass> b;
       Interactive.Statements exp;
       list<Interactive.LoadedFile> lf;
@@ -450,7 +449,6 @@ algorithm
      list<Interactive.InstantiatedClass> ic;
      list<Interactive.Variable> iv;
      list<Interactive.CompiledCFunction> cf;
-     list<SCode.Element> sp;
      list<Interactive.LoadedFile> lf;
      AbsynDep.Depends aDep;
      Interactive.SymbolTable st, newst;
@@ -501,7 +499,6 @@ algorithm
   _ := matchcontinue (inStringLst)
     local
       Absyn.Program p, pLibs;
-      list<SCode.Element> scode;
       DAE.DAElist d_1,d;
       String s,str,f;
       list<String>  libs;
@@ -669,8 +666,6 @@ algorithm
       Env.Cache c;
       Env.Env e;
       DAE.DAElist d;
-      Absyn.Program p;
-      list<SCode.Element> s;
       Absyn.Path class_path;
       String class_to_instantiate;
       Interactive.SymbolTable st;
@@ -731,13 +726,9 @@ algorithm
   matchcontinue (inCache,inEnv,dae,ap,inPath5)
     local
       BackendDAE.BackendDAE dlow,dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> v1,v2;
-      BackendDAE.StrongComponents comps;
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
-      String str;
 
     case (cache,env,dae,ap,classname)
       equation
@@ -819,19 +810,11 @@ algorithm
   matchcontinue (inBackendDAE5,inPath,inProgram3,inDAElist4)
     local
       BackendDAE.BackendDAE dlow;
-      DAE.FunctionTree functionTree;
-      String cname_str,file_dir;
-      Absyn.ComponentRef a_cref;
+      String cname_str;
       Absyn.Path classname;
-      list<SCode.Element> p;
       Absyn.Program ap;
       DAE.DAElist dae;
-      array<Integer> ass1,ass2;
-      array<list<Integer>> m,mt;
-      BackendDAE.StrongComponents comps;
       SimCode.SimulationSettings simSettings;
-      String methodbyflag;
-      Boolean methodflag;
 
     case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
@@ -1057,10 +1040,8 @@ algorithm
   _ := matchcontinue (args)
     local
       String errstr;
-      Boolean ismode,icmode,imode,imode_1;
       String omhome,oldpath,newpath;
       Interactive.SymbolTable symbolTable;
-      list<tuple<String, String>> dbResult;
       
       /* Version requested using --version*/
     case _ // try first to see if we had a version request among flags.

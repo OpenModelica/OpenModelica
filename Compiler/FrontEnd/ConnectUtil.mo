@@ -319,7 +319,7 @@ algorithm
   outConnectionSet := match(inClassState, inPrefix, inVars, inConnectionSet, info)
     local
       Absyn.Path class_path;
-      list<DAE.Var> el, streams, flows;
+      list<DAE.Var>  streams, flows;
       Sets cs;
 
     // check balance of non expandable connectors!
@@ -431,7 +431,7 @@ algorithm
     local
       String name;
       list<DAE.Var> vars;
-      list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.ComponentRef> crefs;
       DAE.Type ty;
       DAE.Dimensions dims;
       DAE.ComponentRef cr;
@@ -483,7 +483,7 @@ algorithm
       DAE.Dimensions dims;
       DAE.Exp idx;
       DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crefs, crefs2;
+      list<DAE.ComponentRef> crefs;
 
     case (_, {}, _) then inCref :: inAccumCrefs;
 
@@ -564,7 +564,6 @@ protected function addInsideFlowVariable
 algorithm
   outSets := matchcontinue(inSets, inCref, inSource)
     local
-      DAE.ComponentRef cr;
       ConnectorElement e;
       SetTrie sets;
       Integer sc;
@@ -876,7 +875,6 @@ algorithm
       SetTrieNode node; 
       SetTrie trie;
       Integer sc, sets_added;
-      list<DAE.ComponentRef> crefs;
       list<ConnectorElement> outer_els, inner_els;
       Boolean added;
 
@@ -997,7 +995,6 @@ algorithm
   outElement := matchcontinue(inCref, inFace, inType, inSource, inSets)
     local
       SetTrie sets;
-      ConnectorElement e;
 
     case (_, _, _, _, Connect.SETS(sets = sets))
       then setTrieGetElement(inCref, inFace, sets);
@@ -1242,7 +1239,7 @@ protected function connectSets
 algorithm
   outSets := matchcontinue(inElement1, inElement2, inSets)
     local
-      Integer set1, set2, min_set, max_set;
+      Integer set1, set2;
       SetTrie sets;
       Integer sc;
       list<SetConnection> connections;
@@ -1383,8 +1380,7 @@ algorithm
       String id, name;
       DAE.ComponentRef el_cr, rest_cref;
       list<SetTrieNode> nodes;
-      SetTrieNode node;
-      list<DAE.Subscript> subs, subs2;
+      list<DAE.Subscript> subs;
 
     case (DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = rest_cref),
         _, Connect.SET_TRIE_NODE(name = name, cref = el_cr, nodes = nodes), _)
@@ -1428,7 +1424,6 @@ algorithm
       SetTrieNode node;
       list<SetTrieNode> rest_nodes;
       String id;
-      DAE.ComponentRef cr;
 
     case (_, _, _, _, {}, _)
       equation
@@ -1936,7 +1931,6 @@ algorithm
       array<Set> sets;
       Option<ConnectorElement> ie, oe;
       String name;
-      list<DAE.Subscript> subs;
       DAE.ComponentRef node_cr;
       Option<DAE.ComponentRef> prefix_cr, flow_cr;
       list<DAE.ComponentRef> prefix;
@@ -2283,7 +2277,6 @@ algorithm
   outExp := match(inElement)
     local
       DAE.ComponentRef name;
-      DAE.Exp exp;
 
     case Connect.CONNECTOR_ELEMENT(name = name, face = Connect.INSIDE())
       then Expression.crefExp(name);

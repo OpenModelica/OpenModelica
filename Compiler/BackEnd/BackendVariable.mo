@@ -245,7 +245,7 @@ algorithm
       BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<DAE.VariableAttributes> oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
 
@@ -295,7 +295,7 @@ author: Peter Aronsson (paronsson@wolfram.com)
   input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var outV;
 algorithm
-  outV := matchcontinue(v,attr)
+  outV := match(v,attr)
   local
      DAE.ComponentRef a;
       BackendDAE.VarKind b;
@@ -307,13 +307,12 @@ algorithm
       list<DAE.Subscript> g;
       BackendDAE.Value i;
       DAE.ElementSource source;
-      Option<DAE.VariableAttributes> oattr,oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       
     case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,_,s,ct),attr)
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,attr,s,ct);  
-  end matchcontinue;
+  end match;
 end setVarAttributes; 
 
 public function varStartValue
@@ -323,14 +322,14 @@ public function varStartValue
   input BackendDAE.Var v;
   output DAE.Exp sv;
 algorithm
-  sv := matchcontinue(v)
+  sv := match(v)
     local
       Option<DAE.VariableAttributes> attr;
     case (BackendDAE.VAR(values = attr))
       equation
         sv=DAEUtil.getStartAttr(attr);
       then sv;
-   end matchcontinue;
+   end match;
 end varStartValue;
 
 public function varStartValueFail
@@ -457,7 +456,7 @@ algorithm
       BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<DAE.VariableAttributes> oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
 
@@ -519,7 +518,7 @@ algorithm
       BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<DAE.VariableAttributes> oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
 
@@ -569,7 +568,6 @@ algorithm
   outExp:=
   match (inVar)
     local DAE.Exp e;
-      DAE.StateSelect stateselect;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))))) then e;
   end match;
 end varNominalValue;
@@ -595,7 +593,7 @@ algorithm
       BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
-      Option<DAE.VariableAttributes> oattr,oattr1;
+      Option<DAE.VariableAttributes> oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
 
@@ -690,10 +688,10 @@ public function varIndex "function: varIndex
   output Integer outInteger;
 algorithm
   outInteger:=
-  matchcontinue (inVar)
+  match (inVar)
     local BackendDAE.Value i;
     case (BackendDAE.VAR(index = i)) then i;
-  end matchcontinue;
+  end match;
 end varIndex;
 
 public function varNominal "function: varNominal
@@ -803,10 +801,10 @@ public function varDistribution
   input BackendDAE.Var var;
   output DAE.Distribution d;
 algorithm 
-  d := matchcontinue (var)
+  d := match (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then d;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then d;
-  end matchcontinue;
+  end match;
 end varDistribution;
 
 public function varUncertainty
@@ -818,10 +816,10 @@ public function varUncertainty
   input BackendDAE.Var var;
   output DAE.Uncertainty u;
 algorithm 
-  u := matchcontinue (var)
+  u := match (var)
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(uncertainOption = SOME(u))))) then u;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(uncertainOption  = SOME(u))))) then u;
-  end matchcontinue;
+  end match;
 end varUncertainty;
 
 public function varHasDistributionAttribute
@@ -1454,7 +1452,6 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      BackendDAE.Var oVar;
 
     case (_,BackendDAE.VAR(varKind = kind,
               varDirection = dir,
@@ -1929,7 +1926,6 @@ algorithm
       list<Option<DAE.Exp>> ominmax;
       String str, format;
       DAE.Type tp;
-      Boolean b;
     
     case(_,_,_,BackendDAE.CONST(),_) then {};
     case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
@@ -2158,7 +2154,7 @@ algorithm
   (outVarLst1,outVarLst2,outVarLst3) := matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
       list<list<BackendDAE.Var>> varsLst,vars_2;
-      list<BackendDAE.Var> knvars_2,extvars_2,extvars,vars,knvars;
+      list<BackendDAE.Var> knvars_2,extvars_2,extvars,knvars;
       list< tuple<BackendDAE.Var,Integer> > knvars_1,extvars_1;
       list<list< tuple<BackendDAE.Var,Integer> >> vars_1;
       list< tuple<BackendDAE.Var,Integer,Integer> > vars_map,knvars_map,extvars_map,all_map,all_map1,noScalar_map,noScalar_map1,scalar_map,all_map2,mergedvar_map,sort_map;
@@ -2219,7 +2215,7 @@ algorithm
       list<Type_a> rest;
       Type_a item;
       Integer value,place;
-      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst,acc;
+      list< tuple<Type_a,Integer,Integer> > acc;
       
     case ({},value,place,acc) then acc;
     case (item::rest,value,place,acc)
@@ -2247,8 +2243,8 @@ algorithm
     local
       list<list<Type_a>> rest;
       list<Type_a> item;
-      Integer value,place;
-      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst,acc;
+      Integer value;
+      list< tuple<Type_a,Integer,Integer> > acc;
     case ({},value,acc) then acc;
     case (item::rest,value,acc)
       equation
@@ -2661,7 +2657,7 @@ algorithm
     local
       BackendDAE.Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext1,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
       BackendDAE.Value x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1;
-      list< tuple<BackendDAE.Var,Integer,Integer> > vars_1,vs,acc;
+      list< tuple<BackendDAE.Var,Integer,Integer> > vs,acc;
       DAE.ComponentRef cr;
       DAE.VarDirection d;
       DAE.VarParallelism prl;
@@ -2971,7 +2967,7 @@ algorithm
   outVars := match (systs,inVars)
     local
       BackendDAE.EqSystems rest;
-      list<BackendDAE.Var> vars,systvars,vars1;
+      list<BackendDAE.Var> vars,vars1;
       BackendDAE.Variables v;
       case ({},_) then inVars;
       case (BackendDAE.EQSYSTEM(orderedVars = v)::rest,_)
@@ -3206,7 +3202,7 @@ public function deleteVars
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVars,inVariables)
+  outVariables := match (inVars,inVariables)
     local
       BackendDAE.Variables v,newvars,newvars_1;
       BackendDAE.BinTree vars;
@@ -3216,7 +3212,7 @@ algorithm
         ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVars2,(vars,newvars));
       then
         newvars_1;
-  end matchcontinue;
+  end match;
 end deleteVars;
 
 protected function deleteVars2
@@ -3253,7 +3249,7 @@ public function deleteVar
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inComponentRef,inVariables)
+  outVariables := match (inComponentRef,inVariables)
     local
       BackendDAE.Variables v,newvars,newvars_1;
       DAE.ComponentRef cr;
@@ -3263,7 +3259,7 @@ algorithm
         ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVar2,(cr,newvars));
       then
         newvars_1;
-  end matchcontinue;
+  end match;
 end deleteVar;
 
 protected function deleteVar2
@@ -3303,13 +3299,12 @@ algorithm
   matchcontinue (inVarPos,inVariables)
     local
       Integer pos,pos_1;
-      BackendDAE.Value hval,hashindx,indx,bsize,n,hvalold,indxold;
+      BackendDAE.Value hashindx,bsize,n;
       list<BackendDAE.CrefIndex> indexes,indexes1;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       array<list<BackendDAE.CrefIndex>> hashvec,hashvec_1;
       BackendDAE.VariableArray varr,varr1;
-      String name_str;
     case (pos,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
@@ -3466,11 +3461,10 @@ public function addVar
 algorithm
   outVariables := matchcontinue (inVar,inVariables)
     local
-      BackendDAE.Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
+      BackendDAE.Value indx,newpos,n_1,bsize,n,indx_1;
       BackendDAE.VariableArray varr_1,varr;
       list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
-      String name_str;
       BackendDAE.Var v,newv;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
@@ -3523,12 +3517,11 @@ public function addNewVar
 algorithm
   outVariables := matchcontinue (inVar,inVariables)
     local
-      BackendDAE.Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
+      BackendDAE.Value indx,newpos,n_1,bsize,n;
       BackendDAE.VariableArray varr_1,varr;
       list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
-      String name_str;
-      BackendDAE.Var v,newv;
+      BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
     case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
@@ -3560,7 +3553,6 @@ public function expandVarsDAE
 algorithm
   osyst := match (needed,syst)
     local
-      BackendDAE.Var var;
       BackendDAE.Variables ordvars,ordvars1;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
@@ -3583,8 +3575,6 @@ algorithm
   outVariables := matchcontinue (needed,inVariables)
     local
       BackendDAE.Value size,noe,bsize,n,size1,expandsize;
-      BackendDAE.VariableArray varr_1,varr;
-      list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec;
       BackendDAE.Variables vars;
       array<Option<BackendDAE.Var>> arr,arr_1;
@@ -3745,7 +3735,7 @@ protected function getVar2
 algorithm
   (outVar,outInteger) := match (inComponentRef,inVariables)
     local
-      BackendDAE.Value hval,hashindx,indx,indx_1,bsize,n;
+      BackendDAE.Value hashindx,indx,indx_1,bsize,n;
       list<BackendDAE.CrefIndex> indexes;
       BackendDAE.Var v;
       DAE.ComponentRef cr2,cr;
@@ -3816,7 +3806,6 @@ algorithm
       list<Integer> v_lst;
       DAE.ComponentRef cr;
       list<Integer> indxlst;
-      String res1;
     case ((v,(vars,v_lst)))
       equation   
         cr = varCref(v);
@@ -3850,7 +3839,6 @@ algorithm
       list<Integer> v_lst;
       DAE.ComponentRef cr;
       list<Integer> indxlst;
-      String res1;
     case ((v,(vars,v_lst)))
       equation   
         cr = varCref(v);
@@ -3978,7 +3966,6 @@ algorithm
   matchcontinue (inVariables,func,inTypeA)
     local
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-      BackendDAE.VariableArray varArr;
       Integer bucketSize,numberOfVars,numberOfElements,arrSize;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
       Type_a ext_arg_1;
@@ -4151,11 +4138,9 @@ algorithm
       list<DAE.Subscript> g;
       BackendDAE.Value i;
       DAE.ElementSource source;
-      DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
-      Boolean fixed;
       list<DAE.SymbolicOperation> ops;
 
     case (BackendDAE.VAR(varName = a,

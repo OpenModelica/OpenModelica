@@ -578,7 +578,7 @@ public function bcall3
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm
-  _ := matchcontinue (inBoolean,fn,inTypeA,inTypeB,inTypeC)
+  _ := match (inBoolean,fn,inTypeA,inTypeB,inTypeC)
     local
       Type_a a;
       Type_b b;
@@ -589,7 +589,7 @@ algorithm
       then
         ();
     case (false,_,_,_,_) then ();
-  end matchcontinue;
+  end match;
 end bcall3;
 
 public function notfcall

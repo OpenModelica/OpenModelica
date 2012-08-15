@@ -65,9 +65,6 @@ public function check
 algorithm
   (outClass, outSymbolTable) := match(inClass, inSymbolTable)
     local
-      list<Element> comps;
-      list<Equation> eq, ieq;
-      list<list<Statement>> al, ial;
       SymbolTable st;
 
     case (_, st) then (inClass, st);

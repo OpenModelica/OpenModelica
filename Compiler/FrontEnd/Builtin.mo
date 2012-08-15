@@ -577,7 +577,6 @@ algorithm
   (outCache,env) := matchcontinue(inCache)
     local
       list<Absyn.Class> initialClasses;
-      list<Absyn.Import> imports;
 
     // First look for cached version
     case (cache) equation
@@ -647,11 +646,8 @@ public function getInitialFunctions
 algorithm
   initialProgram := matchcontinue ()
     local
-      Boolean b;
-      String msg,fileModelica,fileMetaModelica,initialFunctionStr,initialFunctionStrMM;
+      String fileModelica,fileMetaModelica,initialFunctionStr,initialFunctionStrMM;
       list<tuple<Boolean,Absyn.Program>> assocLst;
-      Option<Absyn.Program> optProgram;
-      Absyn.Program initialProgram1,initialProgram2;
       list<Absyn.Class> classes,classes1,classes2;
     case ()
       equation

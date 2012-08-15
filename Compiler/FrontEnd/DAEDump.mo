@@ -459,7 +459,7 @@ public function dumpExtDeclStr "function: dumpExtDeclStr
   input DAE.ExternalDecl inExternalDecl;
   output String outString;
 algorithm
-  outString := matchcontinue (inExternalDecl)
+  outString := match (inExternalDecl)
     local
       String extargsstr,rettystr,str,id,lang;
       list<DAE.ExtArg> extargs;
@@ -472,7 +472,7 @@ algorithm
         str = stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpExtDeclStr;
 
 public function dumpExtArgStr "function: dumpExtArgStr
@@ -480,9 +480,9 @@ public function dumpExtArgStr "function: dumpExtArgStr
   input DAE.ExtArg inExtArg;
   output String outString;
 algorithm
-  outString := matchcontinue (inExtArg)
+  outString := match (inExtArg)
     local
-      String crstr,dirstr,tystr,str,dimstr;
+      String crstr,str,dimstr;
       DAE.ComponentRef cr;
       SCode.ConnectorType ct;
       SCode.Variability var;
@@ -509,7 +509,7 @@ algorithm
         str = stringAppendList({"size(",crstr,", ",dimstr,")"});
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpExtArgStr;
 
 protected function dumpCompElement "function: dumpCompElement
@@ -696,11 +696,11 @@ protected function dumpUncertaintyStr
   input DAE.Uncertainty uncertainty;
   output String out;
 algorithm
-  out := matchcontinue (uncertainty)
+  out := match (uncertainty)
     case DAE.GIVEN() then "Uncertainty.given";
     case DAE.SOUGHT() then "Uncertainty.sought";
     case DAE.REFINE() then "Uncertainty.refine";
-  end matchcontinue;
+  end match;
 end dumpUncertaintyStr;
 
 protected function dumpDistributionStr
@@ -712,7 +712,7 @@ protected function dumpDistributionStr
   input DAE.Distribution distribution;
   output String out;
 algorithm
-  out := matchcontinue (distribution)
+  out := match (distribution)
     local
       DAE.Exp name;
       DAE.Exp params;
@@ -725,7 +725,7 @@ algorithm
       paramNames_str = ExpressionDump.printExpStr(paramNames);
       then
       "Distribution(name = " +& name_str +& ", params = " +& params_str +& ", paramNames= " +& paramNames_str +& ")";
-  end matchcontinue;
+  end match;
 end dumpDistributionStr;
 
 public function dumpVariableAttributes "function: dumpVariableAttributes
@@ -1393,7 +1393,7 @@ protected function dumpFunction
 algorithm
   _ := matchcontinue (inElement)
     local
-      String fstr,inlineTypeStr,daestr,str, ext_decl_str, parallelism_str;
+      String fstr,inlineTypeStr, ext_decl_str, parallelism_str;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -1489,7 +1489,6 @@ algorithm
   str := matchcontinue(itp)
     local
       list<Absyn.Path> lstPath;
-      Option<DAE.Type> optTp;
       DAE.EqualityConstraint ec;
       DAE.Binding binding;
       ClassInf.State cistate;
@@ -1579,7 +1578,6 @@ algorithm
       list<String> es;
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
-      list<DAE.Dimension> dims;
       DAE.Statement stmt;
       DAE.Type ty;
       Algorithm.Else else_;
@@ -3463,7 +3461,6 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String s1, s2;
-      Absyn.Path fpath;
 
     case DAE.EXTOBJECTCLASS(path = _)
       equation

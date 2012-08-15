@@ -707,7 +707,7 @@ algorithm
     local
       MessageType msg_type;
       Severity severity;
-      String msg_str,msg_type_str,severity_string,id_str;
+      String msg_str;
       ErrorID error_id;
       MessageTokens tokens;
       Util.TranslatableContent msg;
@@ -733,7 +733,7 @@ algorithm
     local
       MessageType msg_type;
       Severity severity;
-      String msg_str,msg_type_str,severity_string,file,id_str;
+      String msg_str,file;
       ErrorID error_id,sline,scol,eline,ecol;
       MessageTokens tokens;
       Boolean isReadOnly;

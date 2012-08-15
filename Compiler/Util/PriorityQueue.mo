@@ -245,7 +245,6 @@ algorithm
       Element e1,e2;
       Rank r1,r2;
       T ts1,ts2;
-      T ots1,ots2;
     case (NODE(e1,r1,ts1),NODE(e2,r2,ts2))
       equation
         r1 = r1+1;
@@ -282,7 +281,6 @@ algorithm
     local
       Tree t,t1,t2;
       T ts1,ts2;
-      Element x,y;
       Boolean b;
     case {t} then (t,{});
     case t1::ts1

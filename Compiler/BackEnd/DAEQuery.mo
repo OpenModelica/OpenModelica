@@ -116,10 +116,8 @@ public function equationStr
 algorithm
   outString := match (inEquation, wcLst)
     local
-      String s1,s2,s3,res,indx_str,is,var_str;
+      String s1,s2,s3,res;
       DAE.Exp e1,e2,e,condition;
-      BackendDAE.Value indx,i;
-      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
     
     case (BackendDAE.EQUATION(exp = e1,scalar = e2), _)
@@ -460,12 +458,10 @@ algorithm
       list<String> lst1,lst2,res,res_1;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e;
-      list<list<String>> lst3;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
-      BackendDAE.Value indx;
-      list<list<String>> lstlst1,lstlst2,lstres;
+      list<list<String>> lstres;
       DAE.Algorithm alg;
     
     // equation

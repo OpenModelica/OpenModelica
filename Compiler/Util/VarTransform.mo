@@ -1403,23 +1403,19 @@ algorithm
   matchcontinue (inExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
     local
       DAE.ComponentRef cr;
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,r_1,r;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
       DAE.Type t,tp,ety;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path path,p;
-      Boolean c,isTuple,c1,c2,c3;
+      Absyn.Path path;
+      Boolean c,c1,c2,c3;
       Integer b;
       Absyn.CodeNode a;
-      String id;
       list<list<DAE.Exp>> bexpl_1,bexpl;
-      DAE.InlineType inlineType;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<Values.Value> v;
-      Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
@@ -1691,8 +1687,7 @@ algorithm
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       list<DAE.Exp> e_1,e;
-      list<list<DAE.Exp>> es_1,es;
-      Boolean c;
+      list<list<DAE.Exp>> es;
       list<list<DAE.Exp>> acc1;
       Boolean acc2;
       

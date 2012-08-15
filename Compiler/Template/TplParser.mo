@@ -91,8 +91,6 @@ algorithm
   outSourceInfo  := 
   match (inStartLineColumnNumber, inEndChars, inEndLineInfo)
     local
-      list<String> chars;
-      Integer lnum, llen, tillEnd;
       Integer startL, startC, endL, endC;
       LineInfo endlinfo;
       String  fileName;
@@ -4577,7 +4575,7 @@ algorithm
       Option<String> errOpt;
       Boolean isSQ;
       Integer actInd, lineInd;
-      TplAbsyn.Expression exp,  eexp;
+      TplAbsyn.Expression   eexp;
       TplAbsyn.ExpressionBase expB;
       list<TplAbsyn.Expression> expLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;

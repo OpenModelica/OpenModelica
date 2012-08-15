@@ -152,7 +152,6 @@ algorithm
       Boolean b;
       Absyn.ComponentRef cr_1;
       ComponentRef cr;
-      Type tp;
       list<Absyn.Exp> expl_1,aexpl;
       list<DAE.Exp> expl;
       DAE.Exp e1,e2,e3;
@@ -161,12 +160,9 @@ algorithm
       Absyn.Operator aop;
       list<list<DAE.Exp>> mexpl2;
       list<list<Absyn.Exp>> amexpl;
-      list<list<tuple<DAE.Exp,Boolean>>> mexpl;
       Absyn.ComponentRef acref;
       Absyn.Path path;
       Absyn.CodeNode code;
-      Option<DAE.Exp> oe1;
-      Option<Absyn.Exp> oae1;
       DAE.ReductionIterators riters;
       Absyn.ForIterators aiters;
 
@@ -1205,12 +1201,12 @@ public function expReal "returns the real value if expression is constant Real"
   input DAE.Exp exp;
   output Real r;
 algorithm
-  r := matchcontinue(exp) local Integer i;
+  r := match(exp) local Integer i;
     case(DAE.RCONST(r)) then r;
     case(DAE.ICONST(i)) then intReal(i);
     case(DAE.CAST(_,DAE.ICONST(i))) then intReal(i);
     case (DAE.ENUM_LITERAL(index = i)) then intReal(i);
-  end matchcontinue;
+  end match;
 end expReal;
 
 public function realExpIntLit "returns the int value if expression is constant Real that can be represented by an Integer"
@@ -2133,9 +2129,7 @@ protected function terms2
 algorithm
   outExpLst := match (inExp,inAcc,neg)
     local
-      list<DAE.Exp> f1,f2,res,f2_1;
       DAE.Exp e1,e2,e;
-      ComponentRef cr;
       list<DAE.Exp> acc;
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2),acc,neg)
@@ -2832,7 +2826,7 @@ algorithm
   outExp := match (inExpLst,op)
     local
       DAE.Exp e1,e2,res;
-      list<DAE.Exp> rest,lst;
+      list<DAE.Exp> rest;
       String str;
     case ({},DAE.AND(_)) then DAE.BCONST(true);
     case ({},DAE.OR(_)) then DAE.BCONST(false);
@@ -3518,13 +3512,13 @@ algorithm
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn,path;
-      Boolean t,scalar,built,sc;
+      Absyn.Path fn;
+      Boolean scalar;
       Type tp;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
-      Ident id,str;
+      Ident str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
@@ -3533,8 +3527,6 @@ algorithm
       DAE.MatchType matchTy;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1,foldExp;
-      Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters,riters_1;
       DAE.ComponentRef cr,cr_1;
@@ -3958,13 +3950,13 @@ algorithm
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn,path;
-      Boolean t,scalar,built,sc;
+      Absyn.Path fn;
+      Boolean scalar;
       Type tp;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
-      Ident id,str;
+      Ident str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
@@ -3973,8 +3965,6 @@ algorithm
       DAE.MatchType matchTy;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1,foldExp;
-      Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters,riters_1;
       DAE.ComponentRef cr,cr_1;
@@ -4379,18 +4369,17 @@ algorithm
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
-      Absyn.Path fn,path;
-      Boolean t,scalar,built,sc;
+      Absyn.Path fn;
+      Boolean scalar;
       Type tp,et;
       Integer i;
-      String id,str;
+      String str;
       list<String> fieldNames;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1,foldExp;
-      Option<Values.Value> v;
+      Option<DAE.Exp> oe1;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
@@ -5140,26 +5129,22 @@ algorithm
     local
       Integer i;
       DAE.Exp e1, e2, e3;
-      Option<DAE.Exp> oe1,foldExp;
+      Option<DAE.Exp> oe1;
       tuple<FuncType, FuncType, Argument> tup;
       DAE.Operator op;
       ComponentRef cref;
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> mat_expl;
       String error_msg;
-      Ident id;
       DAE.MatchType match_ty;
       list<DAE.Element> match_decls;
       list<DAE.MatchCase> match_cases;
-      Option<String> cmt;
       Integer index, dim;
       Option<tuple<DAE.Exp, Integer, Integer>> opt_exp_asub;
       Absyn.Path path;
-      Boolean b1, b2, sc;
+      Boolean b1;
       Type ty;
       list<String> strl;
-      Option<Values.Value> v;
-      DAE.Type dty;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
@@ -5840,9 +5825,7 @@ algorithm
   outBoolean := match (inExp,inRes)
     local
       Boolean res;
-      Operator op;
       DAE.Exp e,e1,e2;
-      Type t;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
     
@@ -6830,9 +6813,9 @@ algorithm
   outBoolean := match (inExp1,inExp2,refEq,noFailedSubExpression)
     local
       Integer i1,i2;
-      String id1,id2,s1,s2;
+      String s1,s2;
       Boolean b1,b2,res;
-      DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23,er1,er2;
+      DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23;
       Operator op1,op2;
       Absyn.Path path1,path2;
       list<DAE.Exp> expl1,expl2;
@@ -7080,8 +7063,7 @@ algorithm
       Ident s,str;
       Boolean res,res1,res2,res3;
       list<Boolean> reslist;
-      list<DAE.Exp> explist,expl_2,args;
-      list<tuple<DAE.Exp, Boolean>> expl_1;
+      list<DAE.Exp> explist,args;
       list<list<DAE.Exp>> expl;
       ComponentRef cr1,cr2;
       Operator op;
@@ -7389,7 +7371,6 @@ public function dimsEqual
 algorithm
   res := matchcontinue(dims1, dims2)
     local 
-      Boolean b;
       DAE.Dimension d1, d2;
       DAE.Dimensions dl1, dl2; 
       
@@ -7705,10 +7686,6 @@ protected function traverseReductionIteratorsTopDown
 algorithm
   (outIters,outArg) := match (inIters,func,inArg)
     local
-      String id;
-      DAE.Exp exp;
-      Option<DAE.Exp> gexp;
-      DAE.Type ty;
       Type_a arg;
       DAE.ReductionIterator iter;
       DAE.ReductionIterators iters;

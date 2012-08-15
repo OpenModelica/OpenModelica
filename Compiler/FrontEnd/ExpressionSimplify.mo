@@ -204,24 +204,18 @@ algorithm
   tpl := matchcontinue (inTpl)
     local
       Integer n,i;
-      DAE.Exp e,res,exp,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,sub,exp1;
+      DAE.Exp e,exp,e1,e_1,e2,e3,exp1;
       Type t,tp;
-      Boolean b,b1,remove_if,tpl,builtin,b2;
+      Boolean b,b2;
       String idn,str;
-      list<DAE.Exp> exps,exps_1,expl,matrix,subs;
+      list<DAE.Exp> expl,matrix,subs;
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
-      DAE.InlineType inlineType,b3;
-      Absyn.Path fn, path;
-      list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
-      Option<DAE.Exp> oe1,foldExp;
-      Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
-      DAE.TailCall tc;
       DAE.Dimensions dims;
       DAE.Dimension dim;
       Options options;
@@ -421,7 +415,7 @@ protected function checkSimplify
   input DAE.Exp before;
   input DAE.Exp after;
 algorithm
-  _ := matchcontinue (check,before,after)
+  _ := match (check,before,after)
     local
       Integer c1,c2;
       Boolean b;
@@ -438,7 +432,7 @@ algorithm
         s4 = Debug.bcallret1(b,ExpressionDump.printExpStr,after,"");
         Error.assertionOrAddSourceMessage(not b, Error.SIMPLIFICATION_COMPLEXITY, {s1,s2,s3,s4}, Absyn.dummyInfo);
       then ();
-  end matchcontinue;
+  end match;
 end checkSimplify;
 
 protected function simplify1FixP
@@ -489,11 +483,9 @@ protected function simplifyReductionIterators
 algorithm
   (outIters,outChange) := match (inIters,inAcc,inChange)
     local
-      Boolean b;
       String id;
-      DAE.Exp exp,gexp;
+      DAE.Exp exp;
       DAE.Type ty;
-      Option<DAE.Exp> ogexp;
       DAE.ReductionIterator iter;
       list<DAE.ReductionIterator> iters,acc;
       Boolean change;
@@ -524,7 +516,6 @@ protected function simplifyIfExp
 algorithm
   exp := match (cond,tb,fb)
     local
-      Boolean remove_if;
       // Condition is constant
     case (DAE.BCONST(true),tb,fb) then tb;
     case (DAE.BCONST(false),tb,fb) then fb;
@@ -550,13 +541,12 @@ algorithm
     local
       DAE.Exp e,e1,e2,e1_1,e2_1;
       Boolean b,b1,b2;
-      DAE.Type tp;
       Absyn.Path path;
       list<DAE.Exp> el;
       Integer i;
       Real r;
-      String s,idn;
-      Option<DAE.Exp> oe1,foldExp;
+      String s;
+      Option<DAE.Exp> foldExp;
       Option<Values.Value> v;
       DAE.Type ty;
       DAE.ReductionIterators riters;
@@ -650,9 +640,8 @@ algorithm
       Boolean b;
       list<DAE.Exp> exps,exps_1;
       Type t,tp_1,tp1,tp2,t1,t2;
-      DAE.Exp res,e1,e2,cond,e1_1,e2_1,e;
+      DAE.Exp e1,e2,cond,e1_1,e2_1,e;
       list<list<DAE.Exp>> mexps,mexps_1;
-      DAE.Dimensions dims1,dims2;
       Option<DAE.Exp> eo;
     
     // Real -> Real
@@ -743,17 +732,11 @@ protected function simplifyTrigIdentities
   input DAE.Exp exp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (exp)
+  outExp := match (exp)
     local
-      list<DAE.Exp> expl;
-      DAE.Exp e,len_exp,just_exp,e1,e2;
-      DAE.Type tp;
-      list<DAE.Exp> v1, v2;
-      Boolean scalar;
-      list<Values.Value> valueLst;
-      Integer i;
-      String str,id1,id2;
-      Real r,r1,r2;
+      DAE.Exp e,e1,e2;
+      String id1,id2;
+      Real r1,r2;
     
       /* arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e */
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
@@ -788,7 +771,7 @@ algorithm
         true = Expression.expEqual(e1,e2);
       then DAE.RCONST(1.0);
 
-  end matchcontinue;
+  end match;
 end simplifyTrigIdentities;
 
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions)"
@@ -806,8 +789,6 @@ algorithm
       Boolean scalar,sc;
       list<Values.Value> valueLst;
       Integer i,i1,i2,dim;
-      String str;
-      Real r;
     
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
@@ -980,7 +961,7 @@ algorithm
     local
       list<DAE.Exp> es1,es2,esn,es;
       DAE.Exp e;
-      DAE.Dimension ndim,dim1,dim2,dim11,dim21;
+      DAE.Dimension ndim,dim1,dim2,dim11;
       DAE.Dimensions dims;
       DAE.Type etp;
       Integer i1,i2,i;
@@ -1101,7 +1082,7 @@ algorithm
     local
       String s1,s2,s;
       DAE.Exp exp,exp1,exp2;      
-      list<DAE.Exp> rest,expl,acc;
+      list<DAE.Exp> rest,acc;
       Boolean change;
       
     case ({},{},_) then DAE.SCONST("");
@@ -1127,10 +1108,8 @@ protected function simplifyBuiltinConstantCalls "simplifies some builtin calls i
 algorithm
   outExp := matchcontinue exp
     local 
-      Boolean b;
       Real r,v1,v2;
       Integer i, j;
-      Absyn.Path path;
       DAE.Exp e,e1,e2;
     
     // der(constant) ==> 0
@@ -1426,9 +1405,8 @@ algorithm
   outExp := matchcontinue (inExp1,inOperator2,inExp3)
     local
       DAE.Exp e_1,e1,e2,res,s1,a1;
-      Type tp,atp,atp2;
-      Boolean b;
-      Operator op2,op;
+      Type tp;
+      Operator op;
     
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
@@ -1935,7 +1913,6 @@ algorithm
   matchcontinue (inExp1,inOperator2,inExp3)
     local
       DAE.Exp e1,e2,e;
-      Boolean b1,b2,b;
       Operator op,op2;
       list<DAE.Exp> es_1,es1,es2;
     case ({e1},op,{e2})
@@ -2102,8 +2079,6 @@ algorithm
       list<DAE.Exp> first_col,es,expl;
       list<list<DAE.Exp>> mat_1,mat;
       DAE.Exp e_1;
-      Type tp;
-      Boolean builtin;
     case ({},_) then {};
     case (expl,mat)
       equation
@@ -2162,7 +2137,7 @@ protected function simplifyBinarySortConstants
 algorithm
   outExp := matchcontinue (inExp)
     local
-      list<DAE.Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1;
+      list<DAE.Exp> e_lst,const_es1,notconst_es1,const_es1_1;
       DAE.Exp res,e,e1,e2,res1,res2;
       Type tp;
 
@@ -2737,19 +2712,16 @@ the subexpression"
 algorithm
   res := match(ie,sub)
     local 
-      Type t,t1,t2;
-      Boolean b,sc, bstart, bstop;
-      list<DAE.Exp> exps,expl_1;
-      list<Boolean> bls;
+      Type t,t1;
+      Boolean b, bstart, bstop;
+      list<DAE.Exp> exps;
       list<list<DAE.Exp>> mexps;
       list<DAE.Exp> mexpl;
-      DAE.Exp e1,e2,cond,exp,start,stop,step,e;
+      DAE.Exp e1,e2,cond,exp,e;
       Integer istart,istop,istep,ival;
       Real rstart,rstop,rstep,rval;
       DAE.ComponentRef c,c_1;
-      list<Subscript> s,s_1;
       Integer n;
-      String idn;
     
     // subscript of an array
     case(DAE.ARRAY(t,b,exps),sub) 
@@ -2824,21 +2796,11 @@ protected function simplifyAsubCref
 algorithm
   res := matchcontinue (cr,sub)
     local 
-      Type t,t1,t2;
-      Boolean b;
-      list<DAE.Exp> exps,expl_1;
-      list<Boolean> bls;
-      list<list<tuple<DAE.Exp, Boolean>>> mexps;
-      list<tuple<DAE.Exp, Boolean>> mexpl;
-      DAE.Exp e1,e2,cond,exp,start,stop,step;
-      Integer istart,istop,istep,ival;
-      Real rstart,rstop,rstep,rval;
+      Type t2;
       DAE.ComponentRef c,c_1;
       list<Subscript> s,s_1;
-      Integer n;
       String idn;
       DAE.Dimensions dims;
-      Integer ndim,nsub;
     
     // simple name subscript
     case (DAE.CREF_IDENT(idn,t2,s),sub) 
@@ -2882,9 +2844,7 @@ algorithm
       Integer indx,i_1,n;
       Operator op,op2;
       Boolean b;
-      list<DAE.Exp> exps,expl_1,expl;
-      list<Boolean> bls;
-      ComponentRef cr;
+      list<DAE.Exp> exps,expl;
       list<list<DAE.Exp>> lstexps;
     
     case (e,sub) 
@@ -3503,13 +3463,10 @@ protected function simplifyBinaryCommutativeWork
 algorithm
   exp := matchcontinue (op,lhs,rhs)
     local
-      DAE.Exp e1_1,e3,e4,e,e1,e2,res,e_1,one;
-      Operator oper,op1,op2;
+      DAE.Exp e3,e4,e,e1,e2,res;
+      Operator op1,op2;
       Type ty,ty2,tp,tp2,ty1;
-      list<DAE.Exp> exp_lst,exp_lst_1;
-      DAE.ComponentRef cr1,cr2;
-      Boolean b;
-      Real r,r1,r2,r3;
+      Real r1,r2,r3;
     // (a+b)c1 => ac1+bc1, for constant c1 and a or b
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
@@ -3645,13 +3602,13 @@ protected function simplifyBinary
 algorithm
   outExp := matchcontinue (inOperator2,inExp3,inExp4)
     local
-      DAE.Exp e1_1,e3,e,e1,e2,e4,res,e_1,one;
+      DAE.Exp e1_1,e3,e,e1,e2,e4,res,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
-      Real r,r1,r2,r3;
+      Real r;
       Option<DAE.Exp> oexp;
     
     // constants
@@ -4069,7 +4026,7 @@ algorithm
   outExp := matchcontinue (inOperator2,inExp3)
     local
       Type ty,ty1;
-      DAE.Exp e1,e1_1,e_1,e2,e;
+      DAE.Exp e1,e_1,e2;
       Integer i_1,i;
       Real r_1,r;
       Boolean b1;
@@ -4334,7 +4291,6 @@ public function simplifyRangeReal
 algorithm
   outValues := matchcontinue(inStart, inStep, inStop)
     local
-      list<Values.Value> vals;
       String error_str;
 
     case (_, _, _)
@@ -4406,18 +4362,16 @@ protected function simplifyReduction
 algorithm
   outValue := matchcontinue (inReduction,b)
     local
-      DAE.Exp expr, value, cref, range;
+      DAE.Exp expr,  cref;
       DAE.Ident iter_name;
       list<DAE.Exp> values;
       Option<Values.Value> defaultValue;
-      Absyn.Path path;
       Boolean b;
       Values.Value v;
       String str;
       Option<DAE.Exp> foldExp;
       DAE.Type ty;
       DAE.Type ety;
-      DAE.ReductionInfo reductionInfo;
       list<DAE.ReductionIterator> iterators;
 
     case (DAE.REDUCTION(iterators = iterators, reductionInfo=DAE.REDUCTIONINFO(defaultValue = SOME(v))),_)

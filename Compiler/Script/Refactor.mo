@@ -421,7 +421,6 @@ algorithm
       Boolean f;
       Option<Absyn.RedeclareKeywords> rdk;
       Absyn.InnerOuter io;
-      Absyn.Ident n;
       Absyn.ElementSpec es,resultSpec;
       Absyn.Info i;
       Option<Absyn.ConstrainClass> cc;
@@ -2392,7 +2391,6 @@ algorithm
     local
       list<Absyn.ElementArg> rest,lst,args;
       Absyn.ElementArg arg;
-      Option<Absyn.Exp> ex;
       Boolean fi;
       Absyn.Each e;
       Option<String> com;

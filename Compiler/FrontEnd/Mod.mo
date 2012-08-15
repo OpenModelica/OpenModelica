@@ -268,7 +268,7 @@ algorithm
       SCode.Visibility vis;
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
-      SCode.Ident cn,cn2,compname;
+      SCode.Ident cn,compname;
       Option<SCode.Comment> cmt;
       SCode.Restriction restr;
       Absyn.TypeSpec tp,tp1;
@@ -276,7 +276,6 @@ algorithm
       SCode.Attributes attr;
       SCode.Mod mod;
       Option<Absyn.Exp> cond;
-      Option<Absyn.ConstrainClass> cc;
       Absyn.Info i;
       InstanceHierarchy ih;
       SCode.Attributes attr1;

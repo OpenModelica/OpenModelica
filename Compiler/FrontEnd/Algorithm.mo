@@ -463,7 +463,7 @@ public function makeIfFromBranches "
   input DAE.ElementSource source;
   output list<Statement> outStatements;
 algorithm
-  outStatements := matchcontinue (branches,source)
+  outStatements := match (branches,source)
     local
       Else else_;
       DAE.Exp e;
@@ -474,7 +474,7 @@ algorithm
       equation
         else_ = makeElseFromBranches(rest);
       then {DAE.STMT_IF(e,br,else_,source)};
-  end matchcontinue;
+  end match;
 end makeIfFromBranches;
 
 protected function makeElseFromBranches "Creates the ELSE part of the DAE.STMT_IF."
@@ -483,12 +483,10 @@ protected function makeElseFromBranches "Creates the ELSE part of the DAE.STMT_I
 algorithm
   outElse := match inTpl
     local
-      list<Statement> fb,b;
+      list<Statement> b;
       Else else_;
       DAE.Exp e;
       list<tuple<DAE.Exp, list<Statement>>> xs;
-      Ident e_str,t_str;
-      DAE.Type t;
     case {} then DAE.NOELSE();
     case {(DAE.BCONST(true),b)} then DAE.ELSE(b);
     case ((e,b)::xs)
@@ -704,8 +702,6 @@ public function makeAssert "function: makeAssert
 algorithm
   outStatement := match (cond,msg,inProperties3,inProperties4,source)
     local
-      String str;
-      Absyn.Info info;
     case (DAE.BCONST(true),_,_,_,source)
       then {};
     /* Do not evaluate all assertions. These may or may not be evaluated during runtime...
@@ -753,7 +749,7 @@ public function getAllExps "function: getAllExps
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  matchcontinue (inAlgorithm)
+  match (inAlgorithm)
     local
       list<DAE.Exp> exps;
       list<Statement> stmts;
@@ -762,7 +758,7 @@ algorithm
         exps = getAllExpsStmts(stmts);
       then
         exps;
-  end matchcontinue;
+  end match;
 end getAllExps;
 
 public function getAllExpsStmts "function: getAllExpsStmts
@@ -780,12 +776,12 @@ function getAllExpsStmtsCollector
   input tuple<DAE.Exp,list<DAE.Exp>> itpl;
   output tuple<DAE.Exp,list<DAE.Exp>> otpl;
 algorithm
-  otpl := matchcontinue itpl
+  otpl := match itpl
     local
       DAE.Exp exp;
       list<DAE.Exp> inExps;
     case ((exp,inExps)) then Expression.traverseExp(exp,Expression.expressionCollector,inExps);
-  end matchcontinue;
+  end match;
 end getAllExpsStmtsCollector;
 
 public function getStatementSource

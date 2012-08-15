@@ -116,7 +116,7 @@ protected function flattenClassDef
 algorithm
   (outClassDef, outEnv) := match(inClassDef, inEnv, inInfo)
     local
-      list<SCode.Element> el, ex, cl, im, co, ud;
+      list<SCode.Element> el;
       list<SCode.Equation> neql, ieql;
       list<SCode.AlgorithmSection> nal, ial;
       list<SCode.ConstraintSection> nco;
@@ -348,7 +348,6 @@ algorithm
       Absyn.ComponentRef cref;
       Option<SCode.Comment> cmt;
       Absyn.Exp exp;
-      Absyn.FunctionArgs fargs;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
@@ -429,14 +428,10 @@ protected function flattenStatementTraverser
 algorithm
   outTuple := match(inTuple)
     local
-      Absyn.ForIterators iters;
       Env env;
       String iter_name;
       SCode.Statement stmt;
       Absyn.Info info;
-      Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;
-      Option<SCode.Comment> cmt;
 
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
@@ -549,11 +544,10 @@ protected function flattenRedeclare
 algorithm
   outElement := match(inElement, inEnv)
     local
-      SCode.Ident name, name2;
+      SCode.Ident name;
       SCode.Prefixes prefixes;
       SCode.Partial pp;
       SCode.Encapsulated ep;
-      Option<Absyn.ConstrainClass> cc;
       SCode.Restriction res;
       Absyn.Info info;
       SCode.Element element;

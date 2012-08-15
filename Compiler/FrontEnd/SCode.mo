@@ -1027,11 +1027,9 @@ public function elementEqual
    equal := matchcontinue(element1,element2)
      local
       Ident name1,name2;
-      Element cl1,cl2;
       Prefixes prefixes1, prefixes2;
       Encapsulated en1, en2;
       Partial p1,p2;
-      Absyn.InnerOuter io1,io2;
       Restriction restr1, restr2;
       Attributes attr1,attr2; 
       Mod mod1,mod2;
@@ -1041,7 +1039,6 @@ public function elementEqual
       Option<String> os1,os2;
       Option<Real> or1,or2;
       Option<Absyn.Exp> cond1, cond2;
-      Option<Absyn.ConstrainClass> cc1, cc2;
       ClassDef cd1,cd2;
       
     case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,_),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_))
@@ -1186,7 +1183,7 @@ protected function classDefEqual
  input ClassDef cdef2;
  output Boolean equal;
  algorithm
-   equal := matchcontinue(cdef1,cdef2)
+   equal := match(cdef1,cdef2)
      local
        list<Element> elts1,elts2;
        list<Annotation> anns1,anns2;
@@ -1266,7 +1263,7 @@ protected function classDefEqual
       then false;*/
     
     case(cdef1, cdef2) then fail();   
-  end matchcontinue;
+  end match;
 end classDefEqual;
 
 protected function arraydimOptEqual
@@ -1816,7 +1813,6 @@ algorithm
       Absyn.ComponentRef cr_1, cr_2;
       list<EEquation> eeqLst;
       list<list<EEquation>> eeqLstLst;
-      Absyn.FunctionArgs fArgs;
       list<tuple<Absyn.Exp, list<EEquation>>> ew;
 
       case (id,EQ_IF(condition = eLst, thenBranch = eeqLstLst, elseBranch = eeqLst))
@@ -2053,7 +2049,6 @@ algorithm
       Absyn.Exp value;
       String iterator;
       Option<Absyn.Exp> range;
-      Absyn.ForIterators iterators;
       Absyn.FunctionArgs functionArgs;
       Absyn.Info info;
       list<Absyn.Exp> conditions;
@@ -2147,7 +2142,6 @@ algorithm
       list<Statement> algLst_1,algLst_2;
       list<tuple<Absyn.Exp, list<Statement>>> branches, elseIfBranch;
       list<Absyn.ForIterator> forIterators;
-      Absyn.FunctionArgs funcArgs;
       Boolean bool;
 
       case (id,ALG_ASSIGN(assignComponent = e_1, value = e_2))
@@ -2388,20 +2382,15 @@ public function traverseEEquations2
 algorithm
   (outEEquation, outTuple) := match(inEEquation, inTuple)
     local
-      TraverseFunc traverser;
-      Argument arg;
       tuple<TraverseFunc, Argument> tup;
-      Absyn.Exp e1, e2;
+      Absyn.Exp e1;
       Option<Absyn.Exp> oe1;
       list<Absyn.Exp> expl1;
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
-      list<Absyn.NamedArg> args;
-      Absyn.ForIterators iters;
       Option<Comment> comment;
       Absyn.Info info;
-      Absyn.ComponentRef cr1, cr2;
       Ident index;
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
@@ -2499,8 +2488,6 @@ algorithm
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
-      list<Absyn.NamedArg> args;
-      Absyn.ForIterators iters;
       Option<Comment> comment;
       Absyn.Info info;
       Absyn.ComponentRef cr1, cr2;
@@ -2815,10 +2802,8 @@ algorithm
       Absyn.Exp e;
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
-      Absyn.ForIterators iters;
       Option<Comment> comment;
       Absyn.Info info;
-      Statement stmt;
       String iter;
       Option<Absyn.Exp> range;
 
@@ -2943,13 +2928,9 @@ algorithm
       Argument arg;
       tuple<TraverseFunc, Argument> tup;
       String iterator;
-      Absyn.ComponentRef cr1;
       Absyn.Exp e1, e2;
-      list<Absyn.Exp> expl1;
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
-      Absyn.ForIterators iters;
-      list<Absyn.NamedArg> args;
       Option<Comment> comment;
       Absyn.Info info;
 
@@ -3044,10 +3025,10 @@ public function getElementClass
   input Element el;
   output Element cl;
 algorithm
-  cl := matchcontinue(el)
+  cl := match(el)
     case CLASS(name=_) then el;
     case _ then fail();
-  end matchcontinue;
+  end match;
 end getElementClass;
 
 public constant list<String> knownExternalCFunctions = {"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"};
@@ -3060,8 +3041,7 @@ public function isBuiltinFunction
 algorithm
   name := match (cl,inVars,outVars)
     local
-      Absyn.Info info;
-      String inc,outVar1,outVar2,name1,name2;
+      String outVar1,outVar2;
       list<String> argsStr;
       list<Absyn.Exp> args;
     case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)

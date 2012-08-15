@@ -257,11 +257,9 @@ algorithm
   outHashSet :=
   matchcontinue (key,hashSet)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,n,bsize,indx_1;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
+      array<list<tuple<Key,Integer>>> hashvec;
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
     case (key,(hashvec,varr,bsize,n,fntpl))
@@ -312,7 +310,7 @@ protected function get1 "help function to get"
 algorithm
   (okey,indx) := match (key,hashSet)
     local
-      Integer hval,hashindx,bsize,n;
+      Integer hashindx,bsize,n;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
@@ -419,10 +417,9 @@ protected function valueArrayList2 "Helper function to valueArrayList"
 algorithm
   outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
     local
-      Key v;
       array<Option<Key>> arr;
       Integer pos,lastpos,pos_1;
-      list<Key> res, acc;
+      list<Key>  acc;
     
     case (arr,true,pos,lastpos,acc)
       equation

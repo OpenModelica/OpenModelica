@@ -168,7 +168,7 @@ algorithm
       list<FunctionVar> func_params;
       Env.Cache cache;
       Env.Env env;
-      list<Values.Value> return_values, input_values;
+      list<Values.Value> return_values;
       Values.Value return_value;
       SymbolTable st;
       String ext_fun_name;
@@ -973,7 +973,6 @@ algorithm
       Absyn.Path path;
       LoopControl loop_ctrl;
       SymbolTable st;
-      String str;
 
     case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env, st)
       equation
@@ -1256,10 +1255,8 @@ algorithm
       DAE.Type ety;
       DAE.Type ty;
       String iter_name;
-      DAE.Exp start, stop, step, range;
-      Option<DAE.Exp> opt_step;
+      DAE.Exp    range;
       list<DAE.Statement> statements;
-      Values.Value start_val, stop_val, step_val;
       list<Values.Value> range_vals;
       Env.Cache cache;
       Env.Env env;
@@ -1450,10 +1447,8 @@ algorithm
     local
       FunctionVar param;
       list<FunctionVar> rest_params;
-      Option<Values.Value> val;
       Env.Cache cache;
       Env.Env env;
-      Option<DAE.Exp> binding_exp;
       SymbolTable st;
     
     case (_, _, {}, _) then (inCache, inEnv, inST);
@@ -2636,7 +2631,6 @@ algorithm
     local
       DAE.Exp exp;
       list<FunctionVar> all_el, accum_el;
-      DAE.Ident iter, iter2;
       list<DAE.Ident> iters;
       DAE.ReductionIterators riters;
       

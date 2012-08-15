@@ -98,11 +98,8 @@ public function flattenProgram
 algorithm
   outProgram := matchcontinue(inClassName, inProgram, inEnv)
     local
-      SCodeGraph.Graph graph;
-      SCodeGraph.Context context;
       SCode.Element c;
       SCodeEnv.Env env;
-      SCodeFlat.FlatProgram fp;
 
     case (_, _, _)
       equation
@@ -133,10 +130,9 @@ algorithm
   outClass := matchcontinue(inClass, inEnv)
     local
       SCodeEnv.Env env;
-      SCode.Element cl, newCls;
+      SCode.Element cl;
       SCode.Element element;
       SCode.Ident className;
-      Absyn.ComponentRef fullCref;
       SCode.ClassDef cDef;
       Absyn.Info info;
       SCode.Ident n;
@@ -174,15 +170,11 @@ algorithm
   outClassDef := matchcontinue(inClassDef, inEnv, inInfo)
     local
       SCodeEnv.Env env;
-      SCode.Element cl, newCls, parentElement;
       SCodeEnv.ClassType cls_ty;
-      SCode.Program rest;
       SCode.Element el;
-      SCode.Ident className, baseClassName, name;
-      Absyn.ComponentRef fullCref;
+      SCode.Ident  baseClassName;
       Absyn.Path path;
-      SCodeEnv.ClassType classType;
-      list<SCode.Element> els, modifiers;
+      list<SCode.Element> els;
       list<SCode.Equation> ne "the list of equations";
       list<SCode.Equation> ie "the list of initial equations";
       list<SCode.AlgorithmSection> na "the list of algorithms";
@@ -193,7 +185,6 @@ algorithm
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
       SCode.ClassDef cDef;
-      Option<SCode.Element> baseClassOpt;
       Absyn.Info info;
       SCode.Mod mod;
       SCode.Attributes attr;
@@ -268,13 +259,12 @@ protected function flattenElements
   input Absyn.Info inInfo;
   output list<SCode.Element> outElements;  
 algorithm
-  outElements := matchcontinue(inElements, inEnv, inInfo)
+  outElements := match(inElements, inEnv, inInfo)
     local
       SCodeEnv.Env env;
       SCode.Element el;
       list<SCode.Element> rest, lst1, lst2, lst;
       Absyn.Info info;
-      Absyn.ComponentRef fullCref;
     
     // handle classes without elements!  
     case ({}, env, info) then {};
@@ -288,7 +278,7 @@ algorithm
         lst = listAppend(lst1, lst2);
       then 
         lst;
-  end matchcontinue; 
+  end match; 
 end flattenElements;
 
 protected function flattenElement
@@ -302,13 +292,11 @@ algorithm
     local
       SCodeEnv.Env env;
       SCodeEnv.ClassType cls_ty;      
-      Absyn.ComponentRef fullCref;
       SCode.Ident name;
       Absyn.Path path;
-      SCode.Element el, cl, parentElement;
+      SCode.Element el, cl;
       Absyn.Import imp;
       Absyn.Info info;
-      SCodeEnv.Item item;
       SCode.Visibility vis;
       SCode.ClassDef cDef;
       Option<SCode.Annotation> ann;

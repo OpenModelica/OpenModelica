@@ -572,10 +572,7 @@ algorithm
       String cls_name, alias_name;
       Env class_env, env;
       SCode.ClassDef cdef;
-      Absyn.Path cls_path;
-      Option<Absyn.ExternalDecl> ext_decl;
       ClassType cls_type;
-      SCode.Element cdef_el;
 
     // A class extends.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
@@ -881,7 +878,6 @@ algorithm
   (outBaseClass, outItem) := matchcontinue(inBaseClass, inInfo, inEnv)
     local
       Absyn.Path bc;
-      Absyn.Info info;
       Env env;
       Item item;
 
@@ -1017,7 +1013,6 @@ algorithm
     local
       Env env;
       SCode.Ident name;
-      SCode.Element cls;
 
     // redeclare-as-element component
     case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
@@ -2048,7 +2043,7 @@ protected function avlTreeReplace2
 algorithm
   outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
     local
-      AvlKey key, rkey;
+      AvlKey key;
       AvlValue value;
       Option<AvlTree> left, right;
       Integer h;

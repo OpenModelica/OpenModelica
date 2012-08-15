@@ -126,22 +126,21 @@ algorithm
   (outCache,outValue,outST):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg)
     local
-      Integer dim,start_1,stop_1,step_1,i,indx_1,indx,index;
-      Option<Integer> dimOpt;
+      Integer start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<Interactive.SymbolTable> stOpt;
       Real lhvReal,rhvReal,sum,r,realStart1,realStop1,realStep1;
-      String str,lhvStr,rhvStr,iter,s;
-      Boolean impl,builtin,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
+      String str,lhvStr,rhvStr,s;
+      Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
       list<Env.Frame> env;
       Msg msg;
       Absyn.Element elt_1,elt;
       Absyn.CodeNode c;
-      list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vallst_1,vals;
+      list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vals;
       list<DAE.Exp> es,expl;
       list<list<DAE.Exp>> expll;
-      Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal,startValue;
-      DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp,cond;
+      Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal;
+      DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,cond;
       Absyn.Path funcpath,name;
       DAE.Operator relop;
       Env.Cache cache;
@@ -152,12 +151,9 @@ algorithm
       list<String> fieldNames, n, names;
       DAE.Type t;
       Interactive.SymbolTable st;
-      DAE.Ident reductionName;
       DAE.Exp daeExp;
-      ReductionOperator op;
       Absyn.Path path;
       Option<Values.Value> ov;
-      Option<DAE.Exp> guardExp;
       Option<DAE.Exp> foldExp;
       DAE.Type ty;
       list<DAE.Type> tys;
@@ -952,7 +948,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       list<Env.Frame> env;
       DAE.Exp exp,dim,e;
-      Boolean impl,builtin;
+      Boolean impl;
       Msg msg;
       HandlerFunc handler;
       String id;
@@ -960,7 +956,6 @@ algorithm
       list<Values.Value> vallst;
       Absyn.Path funcpath,path;
       Env.Cache cache;
-      Option<Integer> dimOpt;
 
     case (cache,env,DAE.SIZE(exp = exp,sz = SOME(dim)),impl,st,msg)
       equation
@@ -1106,43 +1101,13 @@ algorithm
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
-      Boolean builtin;
       list<Values.Value> vallst;
       Msg msg;
       Env.Cache cache;
-      list<Interactive.CompiledCFunction> cflist;
       Option<Interactive.SymbolTable> st;
-      Absyn.Program p;
-      Integer libHandle, funcHandle;
-      String fNew,fOld;
-      Real buildTime, edit, build;
-      AbsynDep.Depends aDep;
-      Option<list<SCode.Element>> a;
-      list<Interactive.InstantiatedClass> b;
-      list<Interactive.Variable> c;
-      list<Interactive.CompiledCFunction> cf;
-      list<Interactive.LoadedFile> lf;
-      Absyn.TimeStamp ts;
-      String funcstr,f;
-      list<Interactive.CompiledCFunction> newCF;
-      String name;
-      Boolean ppref, fpref, epref;
-      Absyn.ClassDef    body;
-      Absyn.Info        info;
-      Absyn.Within      w;
       Absyn.Path complexName;
-      list<Absyn.Path> functionDependencies;
       list<Expression.Var> varLst;
       list<String> varNames;
-      SCode.Element sc;
-      SCode.ClassDef cdef;
-      String error_Str;
-      DAE.Function func;
-      SCode.Restriction res;
-      SCode.Redeclare prefixRedeclare;
-      SCode.Replaceable prefixReplaceable;
-      SCode.Partial prefixPartial;
-      Boolean isReplaceable;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
@@ -1212,13 +1177,7 @@ algorithm
      Env.Cache cache;
      Env.Env env;
      SCode.Element c;
-     String name;
      Absyn.Path fpath;
-     list<Absyn.Path> functionDependencies;
-     list<Boolean> bLst;
-     list<SCode.AlgorithmSection> algs;
-     list<SCode.Element> els;
-     Option<SCode.ExternalDecl> extDeclOpt; 
    
    // if is partial instantiation no function evaluation/generation
    case (cache, env, fpath)
@@ -1280,7 +1239,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
-      Boolean builtin, print_debug;
+      Boolean  print_debug;
       list<Values.Value> vallst;
       Msg msg;
       Env.Cache cache;
@@ -1304,10 +1263,7 @@ algorithm
       Absyn.ClassDef    body;
       Absyn.Info        info;
       Absyn.Within      w;
-      Absyn.Path complexName;
       list<Absyn.Path> functionDependencies;
-      list<Expression.Var> varLst;
-      list<String> varNames;
       SCode.Element sc;
       SCode.ClassDef cdef;
       String error_Str;
@@ -2229,7 +2185,6 @@ algorithm
       list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
       Integer res, dim;
       DAE.ComponentRef cr;
-      Env.Cache cache;
       DAE.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
       list<DAE.Exp> expl;
@@ -3929,7 +3884,7 @@ protected function cevalBuiltinMax "function cevalBuiltinMax
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
@@ -3937,8 +3892,6 @@ algorithm
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       Msg msg;
-      Integer i1,i2,i;
-      Real r1,r2,r;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg)
       equation
@@ -3953,7 +3906,7 @@ algorithm
         v = cevalBuiltinMax2(v1,v2);
       then
         (cache,v,st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinMax;
 
 protected function cevalBuiltinMax2
@@ -3966,7 +3919,6 @@ algorithm
       Integer i1,i2,i;
       Real r1,r2,r;
       Boolean b1,b2,b;
-      String s1,s2,s;
     case (Values.INTEGER(i1),Values.INTEGER(i2))
       equation
         i = intMax(i1, i2);
@@ -4042,7 +3994,7 @@ protected function cevalBuiltinMin "function: cevalBuiltinMin
   output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Values.Value v,v1,v2,v_1;
       list<Env.Frame> env;
@@ -4050,8 +4002,6 @@ algorithm
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       Msg msg;
-      Integer i1,i2,i;
-      Real r1,r2,r;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg)
       equation
@@ -4066,7 +4016,7 @@ algorithm
         v = cevalBuiltinMin2(v1, v2, msg);
       then
         (cache,v,st);
-  end matchcontinue;
+  end match;
 end cevalBuiltinMin;
 
 protected function cevalBuiltinMin2
@@ -5263,13 +5213,11 @@ algorithm
     local
       DAE.ComponentRef cr,e1;
       list<DAE.Subscript> subsc;
-      DAE.Type tp;
-      list<Integer> sizelst;
       Values.Value res,v,e_val;
       list<Env.Frame> env;
       Boolean impl;
       Msg msg;
-      String rfn,iter,id,expstr,s1,s2,str;
+      String rfn,iter,expstr,s1,s2,str;
       DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
 
@@ -5391,17 +5339,16 @@ public function cevalSubscriptValue "function: cevalSubscriptValue
 algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg)
     local
-      Integer n,n_1,dim;
+      Integer n,n_1;
       Values.Value subval,res,v;
       list<Env.Frame> env;
       DAE.Exp exp;
       list<DAE.Subscript> subs;
       list<Values.Value> lst,sliceLst,subvals;
-      list<Integer> dims,slice;
+      list<Integer> slice;
       Boolean impl;
       Msg msg;
       Env.Cache cache;
-      DAE.ComponentRef cr;
 
     // we have a subscript which is an index, try to constant evaluate it
     case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg)
@@ -5477,7 +5424,6 @@ algorithm
       list<Values.Value> lst,subvals;
       Boolean impl;
       Msg msg;
-      list<Integer> dims;
       list<DAE.Subscript> subs;
       Env.Cache cache;
     case (cache,env,subs,{},impl,msg) then (cache,{});
@@ -5685,15 +5631,10 @@ protected function cevalReduction
 algorithm
   (newCache, result, newSymbolTable) := matchcontinue (inCache, inEnv, opPath, inCurValue, exp, exprType, foldExp, iteratorNames, inValueMatrix, iterTypes, impl, inSt, msg)
     local
-      Values.Value value, value2, reduced_value;
-      list<Values.Value> rest_values,vals;
+      list<Values.Value> vals;
       Env.Env new_env,env;
-      Env.Cache new_cache,cache;
-      Option<Interactive.SymbolTable> new_st;
-      DAE.Type exp_type;
-      DAE.Type iter_type;
+      Env.Cache cache;
       list<Integer> dims;
-      Boolean guardFilter;
       Option<Interactive.SymbolTable> st;
       list<list<Values.Value>> valueMatrix;
       Option<Values.Value> curValue;
@@ -5795,10 +5736,7 @@ algorithm
   match (inCache,inEnv,opPath,inCurValue,inValue,foldExp,exprType,impl,inSt,msg)
     local
       DAE.Exp exp;
-      DAE.Type exp_type;
-      DAE.Type iter_type;
       Values.Value value;
-      Option<Values.Value> curValue;
       Env.Cache cache;
       Env.Env env;
       Option<Interactive.SymbolTable> st;
@@ -5860,9 +5798,7 @@ algorithm
   res := match(inV1, inV2)
     local
       list<Values.Value> vals;
-      Integer dim_size;
-      list<Integer> rest_dims;
-      Values.Value v1,v2;
+      Values.Value v1;
 
     case (Values.META_BOX(v1), Values.LIST(vals)) then Values.LIST(v1::vals);
     case (v1, Values.LIST(vals)) then Values.LIST(v1::vals);
@@ -6519,7 +6455,6 @@ protected function backpatchArrayReduction
 algorithm
   outValue := match (path,inValue,dims)
     local
-      Integer dim;
       list<Values.Value> vals;
       Values.Value value;
     case (_,value,{_}) then value;

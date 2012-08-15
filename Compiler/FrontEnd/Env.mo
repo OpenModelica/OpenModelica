@@ -489,8 +489,6 @@ algorithm
   outEnv := matchcontinue (inEnv,inClass,inClassEnv)
     local
       SCode.Encapsulated encflag;
-      InstStatus i;
-      Option<tuple<SCode.Element, DAE.Mod>> c;
       AvlTree httypes;
       AvlTree ht,ht_1;
       Option<Ident> sid;
@@ -499,7 +497,7 @@ algorithm
       Env fs, env, frames, classEnv, oldCE;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       SCode.Element e, oldE;
-      Ident n,id;
+      Ident n;
       list<SCode.Element> defineUnits;
 
     case (env,e,classEnv)
@@ -1357,9 +1355,7 @@ public function cacheAdd "Add an environment to the cache."
 algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
-    Option<Env> ie;
     array<EnvCache> arr;
-    array<DAE.FunctionTree> ef;
     
     case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
 
@@ -1705,7 +1701,7 @@ protected function printElementAndModOpt
   input Option<tuple<SCode.Element, DAE.Mod>> elAndMod;
   output String str;
 algorithm
-  str := matchcontinue(elAndMod)
+  str := match(elAndMod)
     local
       DAE.Mod m;
       SCode.Element e;
@@ -1714,28 +1710,27 @@ algorithm
     case (SOME((e,m))) 
       then "[el:" +& SCodeDump.unparseElementStr(e) +& ", mod" +& Mod.printModStr(m) +& "], ";
     
-  end matchcontinue; 
+  end match; 
 end printElementAndModOpt;
 
 protected function printInstStatus
   input InstStatus instStatus;
   output String str;
 algorithm
-  str := matchcontinue(instStatus)
+  str := match(instStatus)
     case (VAR_UNTYPED()) then "inst: var untyped";
     case (VAR_TYPED())   then "inst: var typed";
     case (VAR_DAE())     then "inst: var dae";
-  end matchcontinue; 
+  end match; 
 end printInstStatus;
 
 public function valueStr "prints a Value to a string"
   input AvlValue v;
   output String str;
 algorithm
-  str := matchcontinue(v)
+  str := match(v)
     local 
       String name; DAE.Type tp; Absyn.Import imp;
-      Absyn.TypeSpec tsp;
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism;
       SCode.Variability variability "variability";
@@ -1782,7 +1777,7 @@ algorithm
       equation
         str = "import: " +& Dump.unparseImportStr(imp);
       then str;
-  end matchcontinue;
+  end match;
 end valueStr;
 
 /* Generic Code below */

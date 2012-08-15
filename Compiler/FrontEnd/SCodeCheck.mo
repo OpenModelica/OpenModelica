@@ -54,9 +54,8 @@ protected import Util;
 public function checkDuplicateClasses
   input SCode.Program inProgram;
 algorithm
-  _ := matchcontinue(inProgram)
+  _ := match(inProgram)
     local
-      SCode.Element c;
       SCode.Program sp;
       list<String> names;
       
@@ -68,7 +67,7 @@ algorithm
         checkForDuplicateClassesInTopScope(names);
       then
         ();
-  end matchcontinue;
+  end match;
 end checkDuplicateClasses;
 
 protected function checkForDuplicateClassesInTopScope
@@ -96,7 +95,7 @@ algorithm
   _ := matchcontinue(inTypeSpec, inTypeName, inTypeEnv, inInfo)
     local
       Absyn.Path ts_path, ty_path;
-      String ty, id;
+      String ty;
 
     case (_, _, {}, _) then ();
 
@@ -535,7 +534,6 @@ algorithm
     local
       String cls_name, ty_name;
       SCodeEnv.AvlTree tree;
-      SCodeEnv.Item item;
       SCode.Element el;
     
     // No environment means one of the basic types.

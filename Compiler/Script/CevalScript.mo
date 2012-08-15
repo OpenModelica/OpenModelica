@@ -300,7 +300,7 @@ public function convertSimulationOptionsToSimCode "converts SimulationOptions to
   input SimulationOptions opts;
   output SimCode.SimulationSettings settings;
 algorithm
-  settings := matchcontinue(opts)
+  settings := match(opts)
   local 
     Real startTime,stopTime,stepSize,tolerance;
     Integer nIntervals;
@@ -326,7 +326,7 @@ algorithm
         options = "";
         
     then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,measureTime,cflags);  
-  end matchcontinue;
+  end match;
 end convertSimulationOptionsToSimCode;
 
 public function buildSimulationOptions
@@ -414,11 +414,9 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
 algorithm
   outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix)
     local
-      SimulationOptions defaults, simOpt,methodbyflag;
+      SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
-      String msg;
-      Boolean methodflag;
     
     // search inside annotation(experiment(...))
     case (inSymTab, inModelPath, inFileNamePrefix)
@@ -688,7 +686,6 @@ algorithm
       String str1,str2;
       Option<String> ostr2;
       Absyn.Path path;
-      list<String> validVersions;
 
     case (_,_,true,_) then false;
     case ((path,str1::_),p,false,_)
@@ -802,12 +799,10 @@ algorithm
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2;
       list<Values.Value> vals;
-      Absyn.Path path,p1,classpath,className;
+      Absyn.Path path,classpath,className;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
-      SCode.Element c;
-      DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
       list<Interactive.InstantiatedClass> ic,ic_1;
@@ -820,38 +815,30 @@ algorithm
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
-      list<DAE.Exp> expVars,options;
       array<list<Integer>> m,mt;
-      Option<array<list<Integer>>> om,omt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,size_value,value,v,cvar,cvar2,xRange,yRange,xRange1,xRange2,yRange1,yRange2;
-      DAE.Exp exp,size_expression,bool_exp,storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,varName,varTimeStamp;
+      Values.Value ret_val,simValue,value,v,cvar,cvar2;
       Absyn.ComponentRef cr_1;
-      Absyn.Restriction restriction;
-      Integer size,length,resI,timeStampI,i,n;
-      list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
-      Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
+      Integer size,resI,i,n;
+      list<String> vars_1,args,strings,strs,visvars;
+      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
-      Boolean have_corba, bval, b, b1, b2, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
+      Boolean have_corba, bval, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
       Absyn.ComponentRef crefCName;
       list<tuple<String,Values.Value>> resultValues;
-      list<Real> timeStamps,realVals;
-      list<DAE.Exp> expLst;
+      list<Real> realVals;
       list<tuple<String,list<String>>> deps;
       Absyn.CodeNode codeNode;
       list<Values.Value> cvars,vals2;
-      DAE.FunctionTree funcs;
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       SimCode.SimulationSettings simSettings;
-      list<tuple<Absyn.Path,list<String>>> usedModels;
-      Absyn.Info info;
     
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
       equation
@@ -2580,7 +2567,7 @@ algorithm
   match (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,filenameprefix)
     local
       String filename,file_dir, str;
-      list<SCode.Element> p_1,sp;
+      list<SCode.Element> p_1;
       DAE.DAElist dae_1,dae;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic_1,ic;
@@ -2591,7 +2578,6 @@ algorithm
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      DAE.Exp fileprefix;
       Env.Cache cache;
       String flatModelicaStr;
 
@@ -2651,18 +2637,14 @@ algorithm
       String str,re;
       Option<SCode.Program> fp;
       SCode.Program scodeP;
-      list<SCode.Element> sp;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic,ic_1;
       Interactive.SymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
       list<Interactive.LoadedFile> lf;
-      Absyn.TimeStamp ts;
       AbsynDep.Depends aDep;
-      list<tuple<Absyn.Path,list<String>>> usedModels;
       
     case (cache,env,className,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),relaxedFrontEnd,_)
       equation
@@ -2745,10 +2727,7 @@ algorithm
       Interactive.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
-      String file_dir, fileNamePrefix, str, re;
-      Absyn.Class absynClass;
-      Absyn.Restriction restriction;
-      list<tuple<Absyn.Path,list<String>>> usedModels;
+      String file_dir, fileNamePrefix;
       Absyn.Program p;
     
     case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,addDummy,inSimSettingsOpt)
@@ -2856,7 +2835,6 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      list<SCode.Element> sp;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic;
       Interactive.SymbolTable st;
@@ -2916,7 +2894,6 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       list<Env.Frame> env;
-      DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,outputFormat;
       Ceval.Msg msg;
       Env.Cache cache;
       Boolean measureTime;
@@ -2948,7 +2925,7 @@ protected function getListFirstShowError
   output Values.Value outValue;
   output list<Values.Value> restValues;
 algorithm
-  (outValue, restValues) := matchcontinue(inValues, errorMessage)
+  (outValue, restValues) := match(inValues, errorMessage)
     local
       Values.Value v;
       list<Values.Value> rest;
@@ -2962,7 +2939,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then
         fail();
-  end matchcontinue; 
+  end match; 
 end getListFirstShowError;
 
 protected function buildModel "function buildModel
@@ -2994,15 +2971,11 @@ algorithm
       Absyn.Path classname;
       Absyn.Program p;
       Absyn.Class cdef;
-      list<Interactive.CompiledCFunction> cf;
       Real edit,build,globalEdit,globalBuild,timeCompile;
       list<Env.Frame> env;
       SimCode.SimulationSettings simSettings;
-      Values.Value starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat,variableFilter;
-      list<SCode.Element> sp;
+      Values.Value starttime,stoptime,interval,tolerance,method,noClean,options,outputFormat,variableFilter;
       list<Values.Value> vals, values;
-      list<Interactive.InstantiatedClass> ic;
-      list<Interactive.Variable> iv;
       Ceval.Msg msg;
       Env.Cache cache;
       Boolean cdToTemp,existFile;
@@ -3119,16 +3092,15 @@ protected function buildOpenTURNSInterface "builds the OpenTURNS interface by ca
   output String scriptFile;
   output Interactive.SymbolTable outSt;
 algorithm
-  (outCache,scriptFile,outSt):= matchcontinue(inCache,inEnv,vals,inSt,inMsg)
+  (outCache,scriptFile,outSt):= match(inCache,inEnv,vals,inSt,inMsg)
   local
-    String templateFile,modelName,str;
-    Absyn.Program p,ptot;
-    list<SCode.Element> p_1;
+    String templateFile;
+    Absyn.Program p;
     Absyn.Path className;
     Env.Cache cache;
     DAE.DAElist dae;
     Env.Env env;
-    BackendDAE.BackendDAE dlow,dlow_1;
+    BackendDAE.BackendDAE dlow;
     DAE.FunctionTree funcs;
     Interactive.SymbolTable st;
     
@@ -3146,7 +3118,7 @@ algorithm
       //print("calling generateOpenTurnsInterface\n");  
       scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
     then (cache,scriptFile,inSt);
-  end matchcontinue;
+  end match;
 end buildOpenTURNSInterface;
 
 protected function runOpenTURNSPythonScript  
@@ -3160,7 +3132,7 @@ protected function runOpenTURNSPythonScript
   output String outLogFile;
   output Interactive.SymbolTable outSt;
 algorithm
-  (outCache,outLogFile,outSt):= matchcontinue(inCache,inEnv,vals,inSt,inMsg)
+  (outCache,outLogFile,outSt):= match(inCache,inEnv,vals,inSt,inMsg)
     local
       String pythonScriptFile, logFile;
       Env.Cache cache; 
@@ -3169,7 +3141,7 @@ algorithm
         logFile = OpenTURNS.runPythonScript(pythonScriptFile);
       then 
         (cache,logFile,inSt);
-  end matchcontinue;
+  end match;
 end runOpenTURNSPythonScript;
 
 protected function changeToTempDirectory "function changeToTempDirectory
@@ -3622,7 +3594,7 @@ algorithm
       Boolean f,isReadOnly,impl;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter io;
-      String id,file;
+      String file;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec tp;
       Absyn.Info info;
@@ -3846,29 +3818,17 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
-      list<SCode.Element> p_1,sp;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      list<Interactive.InstantiatedClass> ic;
-      BackendDAE.BackendDAE dlow,dlow1;
       Interactive.SymbolTable st;
-      Absyn.Program p,ptot;
-      list<Interactive.Variable> iv;
-      list<Interactive.CompiledCFunction> cf;
+      Absyn.Program p;
       Ceval.Msg msg;
       Env.Cache cache;
-      Integer eqnSize,varSize,simpleEqnSize,eqnSize1;
+      Integer eqnSize,varSize,simpleEqnSize;
       String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      BackendDAE.EquationArray eqns,eqns1;
-      Boolean partialPrefix,finalPrefix,encapsulatedPrefix,strEmpty;
+      Boolean strEmpty;
       Absyn.Restriction restriction;
-      Absyn.Info info;
-      DAE.FunctionTree funcs;
-      BackendDAE.Variables vars;
-      BackendDAE.IncidenceMatrix m;
       Absyn.Class c;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
  
     // handle normal models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -4053,28 +4013,20 @@ protected function dumpXMLDAE "function dumpXMLDAE
   output String xml_contents;
 algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents) :=
-  matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
+  match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
-      String cname_str,filenameprefix,oldDir,translationLevel,compileDir;
-      list<Interactive.InstantiatedClass> ic_1,ic;
-      list<Interactive.Variable> iv;
-      list<Interactive.CompiledCFunction> cf;
+      String cname_str,filenameprefix,oldDir,compileDir;
       list<Env.Frame> env;
       Absyn.Path classname;
       Absyn.Program p;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow;
       Env.Cache cache;
       Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
-      Interactive.SymbolTable st,st_1;
+      Interactive.SymbolTable st;
       Ceval.Msg msg;
-      array<Integer> ass1,ass2;
       DAE.DAElist dae_1,dae;
-      BackendDAE.IncidenceMatrix m,mT;
-      Option<BackendDAE.IncidenceMatrix> om,omT;
-      list<SCode.Element> p_1,sp;
-      list<list<Integer>> comps;
-      DAE.FunctionTree funcs,funcs1;
+      list<SCode.Element> p_1;
     
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4148,7 +4100,7 @@ algorithm
       then
         (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
     
-  end matchcontinue;
+  end match;
 end dumpXMLDAE;
 
 protected function getClassnamesInClassList
@@ -4284,12 +4236,8 @@ algorithm
   matchcontinue (inCache,inEnv,className,inCheckProtected,inInteractiveSymbolTable,inMsg)
     local
       list<Absyn.Path> allClassPaths;
-      list<SCode.Element> sp;
-      list<Interactive.InstantiatedClass> ic;
       Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.Variable> iv;
-      list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
       String ret;
@@ -4345,12 +4293,8 @@ algorithm
     local
       list<Absyn.Path> rest;
       Absyn.Path className;
-      list<SCode.Element> sp;
-      list<Interactive.InstantiatedClass> ic;
       Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.Variable> iv;
-      list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
       String  str, s;
@@ -4415,19 +4359,15 @@ algorithm
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
-      Interactive.SymbolTable st,st_1,st2;
+      Interactive.SymbolTable st,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
       String file_dir,method_str,filenameprefix,oldDir,s3;
       Absyn.Path classname;
       Absyn.Program p,p2;
       Absyn.Class cdef;
-      list<Interactive.CompiledCFunction> cf;
       list<Env.Frame> env;
-      Values.Value starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
-      list<SCode.Element> sp;
-      list<Interactive.InstantiatedClass> ic;
-      list<Interactive.Variable> iv;
+      Values.Value starttime,stoptime,interval,method,tolerance,noClean,options;
       Ceval.Msg msg;
       Absyn.Within win1;
       Env.Cache cache;
@@ -4531,7 +4471,6 @@ algorithm
       Env.Cache cache;
       DAE.Function mainFunction;
       list<DAE.Function> d;
-      list<Absyn.Path> uniontypePaths,paths;
       list<DAE.Type> metarecordTypes;
       DAE.FunctionTree funcs;
     // template based translation
@@ -4663,7 +4602,7 @@ protected function instantiateDaeFunctions
   input list<Absyn.Path> ipaths;
   output Env.Cache outCache;
 algorithm
-  outCache := matchcontinue (icache,ienv,ipaths)
+  outCache := match (icache,ienv,ipaths)
     local
       Absyn.Path path;
       Env.Cache cache; Env.Env env;
@@ -4674,7 +4613,7 @@ algorithm
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache,env,path,false,NONE(),true);
         cache = instantiateDaeFunctions(cache,env,paths);
       then cache;
-  end matchcontinue;
+  end match;
 end instantiateDaeFunctions;
 
 protected function getBasePathFromUri "Handle modelica:// URIs"
@@ -4730,8 +4669,8 @@ protected function findModelicaPath2 "Handle modelica:// URIs"
 algorithm
   basePath := matchcontinue (mp,names,b)
     local
-      list<String> mps,names;
-      String gd,mp,bp,str,name;
+      list<String> names;
+      String mp,name;
     case (mp,name::names,_)
       equation
         true = System.directoryExists(mp +& "/" +& name);
@@ -4853,7 +4792,6 @@ protected function getVariableNames
 algorithm
   ovars := match (vars,acc)
     local
-      list<Values.Value> res;
       list<Interactive.Variable> vs;
       String p;
     case ({},acc) then listReverse(acc);
@@ -5061,7 +4999,6 @@ algorithm
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
-      Absyn.ClassPart cp;
       Integer c1, c2, res;
     case (Absyn.ALGORITHMS(contents = algs) :: xs)
       equation
@@ -5230,7 +5167,6 @@ algorithm
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
-      Absyn.ClassPart cp;
       Integer c1, c2, res;
     case (Absyn.INITIALALGORITHMS(contents = algs) :: xs)
       equation
@@ -5503,7 +5439,6 @@ algorithm
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
-      Absyn.ClassPart cp;
       Integer c1, c2, res;
     case (Absyn.EQUATIONS(contents = eqs) :: xs)
       equation
@@ -5672,7 +5607,6 @@ algorithm
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
-      Absyn.ClassPart cp;
       Integer c1, c2, res;
     case (Absyn.INITIALEQUATIONS(contents = eqs) :: xs)
       equation
@@ -5785,7 +5719,6 @@ algorithm
       list<Absyn.EquationItem> eqs;
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
-      Absyn.ClassPart cp;
       Integer c1, c2, res;
     case (Absyn.PUBLIC(contents = els) :: xs)
       equation
@@ -6423,7 +6356,6 @@ algorithm
   res := matchcontinue (val,env)
     local
       Absyn.Path path;
-      String s1;
     case (Values.CODE(Absyn.C_TYPENAME(path)),env)
       equation
         (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
@@ -6443,8 +6375,6 @@ algorithm
   matchcontinue (inPath,inProgram)
     local
       Absyn.Path path;
-      Absyn.Class class_;
-      Boolean res;
       Absyn.Program p;
     case (path,p)
       equation

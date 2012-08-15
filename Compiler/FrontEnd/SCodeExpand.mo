@@ -310,10 +310,8 @@ algorithm
   match(inElement, inKind, inDimensions, inSubscripts, inAccumEl, inScalarFunc)
     local
       Integer dim,start;
-      DAE.Dimension first_dim;
       list<DAE.Dimension> rest_dims;
       list<AccumType> el;
-      DAE.Subscript sub;
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       String dim_str;
@@ -373,7 +371,6 @@ algorithm
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
       list<AccumType> el;
-      String err_msg;
 
     case (_, _, _, _, _, _, _, _)
       equation
@@ -406,8 +403,6 @@ algorithm
     local
       list<DAE.Subscript> subs;
       list<list<DAE.Subscript>> rest_subs;
-      list<AccumType> el;
-      String err_msg;
 
     case (_, _, _, subs :: rest_subs, _, _)
       equation
@@ -430,7 +425,6 @@ algorithm
       DAE.ComponentRef cref;
       list<list<DAE.Subscript>> subs;
       DAE.Element elem;
-      SCode.Variability var;
       DAE.VarKind var_kind;
       DAE.VarDirection dir;
       DAE.VarVisibility vis;
@@ -482,7 +476,6 @@ algorithm
     local
       DAE.Exp exp;
       Integer pd;
-      list<list<DAE.Subscript>> subs;
       list<DAE.Subscript> flat_subs;
       list<DAE.Exp> sub_exps;
 
@@ -684,10 +677,8 @@ algorithm
   outElements := matchcontinue(inEquation, inSubscripts, inAccumEl)
     local
       DAE.Exp rhs, lhs, exp, msg;
-      DAE.Element eq;
-      DAE.ComponentRef cref1, cref2;
-      DAE.Type ty1, ty2;
-      list<list<DAE.Subscript>> subs;
+      DAE.ComponentRef cref1;
+      DAE.Type ty1;
       list<DAE.Element> accum_el;
       list<DAE.Dimension> dims;
       Absyn.Path path;
@@ -822,8 +813,6 @@ algorithm
       DAE.Type ty;
       DAE.Exp e1, e2;
       DAE.Operator op;
-      Boolean scalar;
-      list<DAE.Exp> expl;
 
     case (DAE.ICONST(_), _, _) then inExp;
     case (DAE.RCONST(_), _, _) then inExp;
@@ -931,9 +920,7 @@ algorithm
     local
       DAE.Exp rhs, lhs, exp;
       list<DAE.Exp> sub_expl;
-      DAE.Statement el;
-      DAE.ComponentRef cref1, cref2;
-      DAE.Type ty1, ty2, ty;
+      DAE.Type   ty;
       list<Statement> body;
       list<DAE.Subscript> comp_subs;
       list<list<DAE.Subscript>> subs;

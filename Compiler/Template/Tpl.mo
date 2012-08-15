@@ -1530,10 +1530,10 @@ end strTokString;
 protected function failIfTrue
   input Boolean istrue;
 algorithm
-  _ := matchcontinue istrue
+  _ := match istrue
     case ( false ) then ();
     case ( _ ) then fail();
- end matchcontinue;
+ end match;
 end failIfTrue;
 
 

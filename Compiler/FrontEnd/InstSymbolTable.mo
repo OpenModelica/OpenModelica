@@ -330,7 +330,7 @@ public function addElement
   output SymbolTable outSymbolTable;
   output Boolean outAdded;
 algorithm
-  (outElement, outSymbolTable, outAdded) := matchcontinue(inElement, inSymbolTable)
+  (outElement, outSymbolTable, outAdded) := match(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
@@ -360,7 +360,7 @@ algorithm
       then
         (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, true);
 
-  end matchcontinue;
+  end match;
 end addElement;
 
 public function addClassOnTrue
@@ -755,7 +755,7 @@ algorithm
     local
       list<String> pathl;
       String comp_name;
-      Absyn.Path prefix, inner_name, path;
+      Absyn.Path  inner_name;
       Component comp;
 
     // Try to find the inner component in the symboltable.

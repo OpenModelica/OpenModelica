@@ -1153,9 +1153,8 @@ algorithm
   orooted := matchcontinue(finalRoots,table,distance,nextLevel,irooted)
     local
       HashTable.HashTable rooted;
-      list<DAE.ComponentRef> rest,level,next;
+      list<DAE.ComponentRef> rest,next;
       DAE.ComponentRef cr;
-      Integer i;
     case({},_,_,{},_) then irooted;
     case({},_,_,_,_) 
       then 

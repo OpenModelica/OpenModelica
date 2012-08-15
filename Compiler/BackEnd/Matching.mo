@@ -551,7 +551,7 @@ algorithm
       BackendDAE.IncidenceMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;      
@@ -734,7 +734,7 @@ protected function BFSBreasign
 algorithm  
   _ := matchcontinue (i,c,parentcolum,l,ass1,ass2)
     local 
-      Integer r,rc;
+      Integer r;
     case (_,_,_,_,_,_)
       equation
         true = intEq(i,c);
@@ -807,7 +807,7 @@ algorithm
   (osyst,oshared,outArg) :=
   matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
-      Integer nvars,neqns,memsize;
+      Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;      
       array<Integer> vec1,vec2;
@@ -881,7 +881,7 @@ algorithm
       BackendDAE.IncidenceMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1;      
@@ -1148,7 +1148,7 @@ algorithm
       BackendDAE.IncidenceMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
@@ -1336,7 +1336,7 @@ algorithm
   matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
     local
       list<Integer> rest; 
-      Integer rc,r;   
+      Integer r;   
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         _ = arrayUpdate(lookahead,c,l);
@@ -1511,16 +1511,16 @@ algorithm
   matchcontinue (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,memsize,i_1;
+      Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,rowmarks1,lookahead1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -1575,17 +1575,17 @@ algorithm
   (outunmatched,outrowmarks,outlookahead,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,unmatched,changedEqns,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,memsize,i_1;
+      BackendDAE.IncidenceMatrix m;
+      Integer nv_1,ne_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,meqns_1,unmatched1;
-      String eqn_str,var_str;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      list<Integer> unmatched1;
+      String eqn_str;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
+      array<Integer> ass1_1,ass2_1,rowmarks1,lookahead1; 
 
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -1627,7 +1627,7 @@ algorithm
   (outI,outUnmatched):=
   matchcontinue (i,U,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched)
     local 
-      list<Integer> rest,rows,unmatched;
+      list<Integer> rest,unmatched;
       Integer c,i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_)
@@ -1752,7 +1752,7 @@ algorithm
   matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
     local
       list<Integer> rest; 
-      Integer rc,r;   
+      Integer r;   
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         _ = arrayUpdate(lookahead,c,l);
@@ -1790,7 +1790,7 @@ algorithm
   matched:=
   matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
     local
-      list<Integer> rest,visitedColums; 
+      list<Integer> rest; 
       Integer rc,r;  
       Boolean b; 
     case ({},_,_,_,_,_,_,_,_,_,_) then false;
@@ -1927,16 +1927,16 @@ algorithm
   matchcontinue (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,memsize,i_1;
+      Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,rowmarks1,lookahead1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -1983,7 +1983,7 @@ algorithm
   (outI,outUnMatched) :=
   matchcontinue (i,U,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows)
     local 
-      list<Integer> rest,rows,visitedcolums,unmatched;
+      list<Integer> rest,unmatched;
       Integer c,i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
@@ -2118,7 +2118,7 @@ algorithm
   matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
     local
       list<Integer> rest; 
-      Integer rc,r;   
+      Integer r;   
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         _ = arrayUpdate(lookahead,c,l);
@@ -2157,7 +2157,7 @@ algorithm
   matched:=
   matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
     local
-      list<Integer> rest,visitedColums; 
+      list<Integer> rest; 
       Integer rc,r;   
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then false;
@@ -2298,14 +2298,14 @@ algorithm
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,rowmarks1,collummarks1,level1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -2362,17 +2362,17 @@ algorithm
   (outunmatched,outrowmarks,outcollummarks,outlevel,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,i_1;
+      BackendDAE.IncidenceMatrix m;
+      Integer nv_1,ne_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,meqns_1,unmatched1;
-      String eqn_str,var_str;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      list<Integer> unmatched1;
+      String eqn_str;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
+      array<Integer> ass1_1,ass2_1,rowmarks1,collummarks1,level1; 
 
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -2415,9 +2415,9 @@ algorithm
   (outI,outunMatched):=
   matchcontinue (i,U,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unMatched)
     local 
-      list<Integer> rest,unmatched;
+      list<Integer> unmatched;
       list<tuple<Integer,Integer>> rows;
-      Integer c,i_1;
+      Integer i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -2460,7 +2460,7 @@ algorithm
   matchcontinue (U,ass1,inUnmatched)
     local 
       list<Integer> rest;
-      Integer c,r;
+      Integer c;
     case ({},_,_) then inUnmatched;
     case (c::rest,_,_)
       equation
@@ -2771,7 +2771,7 @@ algorithm
   matched:=
   matchcontinue (collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched)
     local
-      list<Integer> rest,visitedColums; 
+      list<Integer> rest; 
       Integer r,c;   
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
@@ -2888,7 +2888,7 @@ algorithm
   (osyst,oshared,outArg) :=
   matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
-      Integer nvars,neqns,memsize;
+      Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;      
       array<Integer> vec1,vec2;
@@ -2963,14 +2963,14 @@ algorithm
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,rowmarks1,collummarks1,level1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -3017,10 +3017,10 @@ algorithm
   (outI,outunMatched):=
   matchcontinue (i,U,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unMatched)
     local 
-      list<Integer> rest,unmatched;
+      list<Integer> unmatched;
       list<tuple<Integer,Integer>> rows;
       list<Integer> ur;
-      Integer c,i_1;
+      Integer i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -3144,7 +3144,7 @@ algorithm
   matched:=
   matchcontinue (collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched)
     local
-      list<Integer> rest,visitedColums; 
+      list<Integer> rest; 
       Integer r,c;   
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
@@ -3301,14 +3301,14 @@ algorithm
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1,lim;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,rowmarks1,collummarks1,level1,rlevel1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1; 
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -3369,17 +3369,17 @@ algorithm
   (outunmatched,outrowmarks,outcollummarks,outlevel,outrlevel,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,i_1;
+      BackendDAE.IncidenceMatrix m;
+      Integer nv_1,ne_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,meqns_1,unmatched1;
-      String eqn_str,var_str;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      list<Integer> unmatched1;
+      String eqn_str;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1; 
+      array<Integer> ass1_1,ass2_1,rowmarks1,collummarks1,level1,rlevel1; 
 
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -3422,7 +3422,7 @@ algorithm
   unMatched:=
   match (U,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
     local 
-      list<Integer> rest,ur;
+      list<Integer> ur;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then {};     
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -3461,7 +3461,7 @@ algorithm
   unMatched:=
   match (U,unmatchedRows,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
     local 
-      list<Integer> rest,unmatched;
+      list<Integer> unmatched;
       Integer L,r;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) then U;
     case (_,r::_,_,_,_,_,_,_,_,_,_,_,_)
@@ -3732,7 +3732,7 @@ algorithm
   matchcontinue (inMatched,r,unmatchedRows,unMatched,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2)
     local
        list<Integer> unmatched;
-       Integer r1,r2,i_1,l;
+       Integer r1,r2,l;
     case (_,_,{},_,_,_,_,_,_,_,_,_,_,_) then ();
     case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -3945,7 +3945,7 @@ algorithm
   (osyst,oshared,outArg) :=
   matchcontinue (isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
-      Integer nvars,neqns,memsize;
+      Integer nvars,neqns;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;      
       array<Integer> vec1,vec2;
@@ -4016,16 +4016,16 @@ algorithm
   matchcontinue (unmatched,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,memsize,i_1;
+      Integer nv_1,ne_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,unmatched1,changedEqns,meqns_1;
-      String eqn_str,var_str;
+      list<Integer> unmatched1,meqns_1;
+      String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3,l_label1,r_label1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,l_label1,r_label1; 
 
     case ({},_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -4082,17 +4082,17 @@ algorithm
   (outunmatched,outl_label,outr_label,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,unmatched,changedEqns,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,i_1;
+      BackendDAE.IncidenceMatrix m;
+      Integer nv_1,ne_1;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,meqns_1,unmatched1,changedEqns1;
-      String eqn_str,var_str;
-      BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
+      list<Integer> unmatched1;
+      String eqn_str;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,l_label1,r_label1; 
+      array<Integer> ass1_1,ass2_1,l_label1,r_label1; 
 
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -4372,7 +4372,7 @@ algorithm
   match(b,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2)
     local
       list<Integer> rows;
-      Integer rel,minlab,minvert,tmp;
+      Integer rel,minlab,minvert;
     case(true,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         rows = List.select(m[max_vertex], Util.intPositive);
@@ -4414,7 +4414,7 @@ algorithm
   matchcontinue(rows,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2)
     local
       list<Integer> rest; 
-      Integer rc,r,minlabel,minvertex,rel;   
+      Integer r,minlabel,minvertex,rel;   
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (relabels,min_label,min_vertex);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -4713,7 +4713,7 @@ algorithm
   _  := matchcontinue (i,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
     local
       list<Integer> onecolums1,onerows1;
-      Integer c,i_1;
+      Integer c;
       Boolean b;
       case (_,_,_,_,_,_,_,_,_,_,_)
         equation
@@ -4906,7 +4906,7 @@ algorithm
   _  := matchcontinue (stack1,stack2,degrees1,degrees2,m1,m2,ass1,ass2)
     local
       Integer e;
-      list<Integer> rest,lst,stack,stack_1;
+      list<Integer> rest,lst,stack;
     case ({},{},_,_,_,_,_,_) then ();
     case (e::rest,{},_,_,_,_,_,_)
       equation
@@ -4968,7 +4968,7 @@ protected function ks_rand_match1
 algorithm
   outStack  := matchcontinue(i,entries,stack,degrees1,degrees2,incidence,ass1,ass2)
     local
-        list<Integer> rest,stack_1,lst;
+        list<Integer> rest,lst;
         Integer e;
       case (_,{},_,_,_,_,_,_) then stack;
       case (_,e::rest,_,_,_,_,_,_)
@@ -5513,9 +5513,9 @@ algorithm
   matchcontinue (meqns,internalCall,algIndx,cheapMatching,clearMatching,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
-      Integer nv_1,ne_1,memsize,clearmatching;
+      Integer nv_1,ne_1,memsize;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> var_lst,meqns_1;
+      list<Integer> meqns_1;
       String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -5756,7 +5756,7 @@ algorithm
   outEqns :=
   match (e,m,colummarks,ass2,inEqns)
     local
-      list<Integer> rest,rows; 
+      list<Integer> rows; 
     case (_,_,_,_,_)
       equation
         // traverse all adiacent rows
@@ -5782,7 +5782,7 @@ algorithm
   outEqns:=
   matchcontinue (rows,m,colummarks,ass2,inEqns)
     local
-      list<Integer> rest,queue,queue2; 
+      list<Integer> rest,queue; 
       Integer rc,r;    
       Boolean b;
     case ({},_,_,_,_) then inEqns;

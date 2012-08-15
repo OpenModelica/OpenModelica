@@ -2681,11 +2681,11 @@ public function typeSpecPath
   input TypeSpec tp;
   output Path p;
 algorithm
-  p := matchcontinue(tp)
+  p := match(tp)
     local Path p;
     case(TCOMPLEX(path = p)) then p;
     case(TPATH(path = p)) then p;
-  end matchcontinue;
+  end match;
 end typeSpecPath;
 
 public function typeSpecDimensions
@@ -5367,26 +5367,26 @@ public function innerOuterStr
   input InnerOuter io;
   output String str;
 algorithm
-  str := matchcontinue(io)
+  str := match(io)
     case (INNER_OUTER()) then "inner outer ";
     case (INNER()) then "inner ";
     case (OUTER()) then "outer ";
     case (NOT_INNER_OUTER()) then "";
-  end matchcontinue;
+  end match;
 end innerOuterStr;
 
 public function subscriptExpOpt
   input Subscript inSub;
   output Option<Exp> outExpOpt;
 algorithm
-  outExpOpt := matchcontinue(inSub)
+  outExpOpt := match(inSub)
     local 
       Exp e;
       case SUBSCRIPT(subscript = e)
         then SOME(e);
       case NOSUB()
         then NONE();
-  end matchcontinue;
+  end match;
 end subscriptExpOpt;              
 
 public function crefInsertSubscriptLstLst
@@ -5488,7 +5488,7 @@ public function getExpsFromArrayDim_tail
   output Boolean hasUnknownDimensions;
   output list<Exp> outExps;
 algorithm
-  (hasUnknownDimensions, outExps) := matchcontinue(inAd, inAccumulator)
+  (hasUnknownDimensions, outExps) := match(inAd, inAccumulator)
     local
       list<Subscript> rest;
       Exp e;
@@ -5511,7 +5511,7 @@ algorithm
         (b, exps) = getExpsFromArrayDim_tail(rest, acc);
        then
          (true, exps);
-  end matchcontinue;
+  end match;
 end getExpsFromArrayDim_tail;
 
 public function isInputOrOutput
@@ -5622,8 +5622,6 @@ algorithm
     local
       Ident name;
       Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
-      Restriction restriction;
-      ClassDef body;
       Info info;
       list<String> typeVars;
       list<ClassPart> classParts;
@@ -5668,7 +5666,7 @@ public function getExternalDecl
  input Class inCls;
  output ClassPart outExternal;
 algorithm
- outExternal := matchcontinue(inCls)
+ outExternal := match(inCls)
    local
      ClassPart cp;
      list<ClassPart> classParts;
@@ -5678,7 +5676,7 @@ algorithm
        cp = getExternalFromClassParts(classParts);
      then
        cp;
- end matchcontinue;
+ end match;
 end getExternalDecl;
 
 public function getExternalFromClassParts

@@ -175,7 +175,6 @@ algorithm
       String name, pre_str;
       Modifier mod;
       Absyn.Path path;
-      Env env;
       SCodeEnv.AvlTree tree;
       Absyn.Info info;
 
@@ -347,8 +346,8 @@ protected function checkModifierFinalOverride
 algorithm
   _ := match(inName, inOuterMod, inOuterInfo, inInnerMod, inInnerInfo)
     local
-      Absyn.Exp oexp, iexp;
-      String oexp_str, iexp_str;
+      Absyn.Exp oexp;
+      String oexp_str;
 
     case (_, _, _, InstTypes.MODIFIER(finalPrefix = SCode.FINAL()), _)
       equation
@@ -457,11 +456,8 @@ protected function splitMod
 algorithm
   outMods := match(inMod, inPrefix)
     local
-      SCode.Final fp;
-      SCode.Each ep;
       list<Modifier> submods;
       list<tuple<String, Modifier>> mods;
-      Absyn.Info info;
 
     // TOOD: print an error if this modifier has a binding?
     case (InstTypes.MODIFIER(subModifiers = submods), _)

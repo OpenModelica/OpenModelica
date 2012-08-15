@@ -2590,7 +2590,6 @@ algorithm
       TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
       tuple<MMExp, TypeSignature, SourceInfo>  argtomap;
-      SourceInfo sinfo;
       list<tuple<MMExp, TypeSignature, SourceInfo>> extargvals, inMapExtargvals, restargs;
       MatchingExp ofbind, ofbindEnc, mexp;
       Expression mapexp;
@@ -4348,7 +4347,6 @@ algorithm
     local
       PathIdent path;
       String reason, msg;
-      TypeSignature ts;
       
     case ( path, UNRESOLVED_TYPE(reason), msg, inInfo)
       equation
@@ -4376,7 +4374,6 @@ public function checkTextType
 algorithm
   outType := matchcontinue (inType, inIdent, inUnresolvedMsg, inInfo)
     local
-      PathIdent path;
       String msg;
       TypeSignature ts;
       

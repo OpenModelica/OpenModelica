@@ -561,7 +561,7 @@ algorithm
   match (inComp,offset)
     local
       Integer e;
-      list<Integer> elst,disc_eqns;
+      list<Integer> elst;
     case (BackendDAE.SINGLEEQUATION(eqn=e),_)
       equation
          dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e+offset));
@@ -948,12 +948,7 @@ algorithm
       list<BackendDAE.Var> vars,knvars,extvars;
 
       //Ordered Variables: state & algebraic variables.
-      BackendDAE.Variables vars_orderedVars;
       //VARIABLES record for vars.
-      array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
-      BackendDAE.VariableArray varArr_orderedVars;
-      Integer bucketSize_orderedVars;
-      Integer numberOfVars_orderedVars;
 
       //Known Variables: constant & parameter variables.
       BackendDAE.Variables vars_knownVars;
@@ -975,7 +970,7 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjCls;
 
       list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
-      BackendDAE.EquationArray eqns,reqns,ieqns;
+      BackendDAE.EquationArray reqns,ieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       list<BackendDAE.ZeroCrossing> zc;
@@ -1326,10 +1321,8 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s,s1,s2,res,is,var_str,indexS;
+      String s,s1,s2,res,is,indexS;
       DAE.Exp e1,e2,e;
-      BackendDAE.Value indx,i;
-      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       Boolean addMMLCode;
       list<DAE.Statement> stmts;
@@ -1555,13 +1548,13 @@ algorithm
   _:=
   matchcontinue (inExp)
     local
-      DAE.Ident s,sym,res,str,id;
+      DAE.Ident s,sym,res,str;
       DAE.Ident fs;
       Integer x,ival;
       Real rval;
       DAE.ComponentRef c;
       DAE.Type t,tp;
-      DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Exp e1,e2,e,start,stop,step,cr,dim,cond,tb,fb;
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
@@ -3503,12 +3496,9 @@ algorithm
   _:=
   match (inEquation,inIndexNumber,addMathMLCode)
     local
-      String s,s1,s2,res,is,var_str,indexS;
+      String s,s1,s2,res,is,indexS;
       DAE.Exp e1,e2,e;
-      BackendDAE.Value indx,i;
-      list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-      Boolean addMMLCode;
       list<DAE.Statement> stmts;
       DAE.ElementSource source;
 

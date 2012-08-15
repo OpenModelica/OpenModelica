@@ -453,7 +453,6 @@ algorithm
       DAE.Type t;
       DAE.Properties tprop1,tprop2;
       Real priority;
-      Absyn.FunctionArgs fargs;
       DAE.Exp exp;
       Option<Values.Value> containsEmpty;
       Option<SCode.Comment> comment;
@@ -1344,11 +1343,9 @@ algorithm
       DAE.DAElist dae1,dae2;
       ClassInf.State cs;
       String n; list<DAE.Var> vs;
-      Option<Absyn.Path> p;
       DAE.Type tt;
       Values.Value value;
       list<DAE.Element> dael;
-      Option<DAE.Type> bc;
       DAE.EqualityConstraint ec;
       DAE.TypeSource ts;
 
@@ -1672,7 +1669,6 @@ algorithm
       list<DAE.Exp> lhs_idxs, rhs_idxs;
       DAE.Type t;
       String lhs_str, rhs_str, eq_str;
-      DAE.TypeSource ts;
       
     /* Initial array equations with function calls => initial array equations */
     case (lhs, rhs, tp, _, source, SCode.INITIAL())
@@ -1847,7 +1843,6 @@ algorithm
       Env.Cache cache;
       list<Env.Frame> env,env_1;
       Prefix.Prefix pre;
-      list<Absyn.ForIterator> restIterators;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
       Boolean impl;
@@ -2053,18 +2048,17 @@ protected function instForStatement_dispatch
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
   (outCache,outStatements) := 
-  matchcontinue(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
+  match(inCache,inEnv,inIH,inPrefix,ci_state,iterator,range,inForBody,info,inSource,inInitial,inBool,unrollForLoops)
     local
       Env.Cache cache;
       list<Env.Frame> env,env_1;
       Prefix.Prefix pre;
-      list<Absyn.ForIterator> restIterators;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
       Boolean impl;
       DAE.Type t;
       DAE.Exp e_1,e_2;
-      list<DAE.Statement> sl_1,stmts;
+      list<DAE.Statement> sl_1;
       String i;
       Absyn.Exp e;
       DAE.Statement stmt;
@@ -2107,7 +2101,7 @@ algorithm
       then
         (cache,{stmt});
     
-  end matchcontinue;
+  end match;
 end instForStatement_dispatch;
 
 protected function instComplexEquation "instantiate a comlex equation, i.e. c = Complex(1.0,-1.0) when Complex is a record"
@@ -2323,13 +2317,11 @@ algorithm
       list<DAE.Exp> constraints_1;
       ClassInf.State ci_state;
       list<Absyn.Exp> constraints;
-      Absyn.Exp exp;
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
-      String s;
       
     case (cache,env,pre,ci_state,SCode.CONSTRAINTS(constraints = constraints),impl) 
       equation 
@@ -2456,17 +2448,11 @@ algorithm
       SCode.Statement alg;
       Env.Cache cache;
       Prefix.Prefix pre;
-      Absyn.ForIterators forIterators;
       InstanceHierarchy ih;
       Option<SCode.Comment> comment;
       Absyn.Info info;
-      Absyn.ComponentRef callFunc;
-      Absyn.FunctionArgs callArgs;
       list<DAE.Exp> eexpl;
       Absyn.Path ap;
-      Boolean tuple_, builtin;
-      DAE.InlineType inlineType;
-      DAE.Type tp;
       String str,iter;
       Option<Absyn.Exp> range;
       DAE.CallAttributes attr;
@@ -3216,14 +3202,13 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       String componentName;
-      Absyn.Direction dir1,dir2,dirFlipped;
+      Absyn.Direction dir1,dir2;
       DAE.Binding binding;
       Option<DAE.Const> cnstForRange;
       Lookup.SplicedExpData splicedExpData;
       ClassInf.State state;
       list<String> variables1, variables2, variablesUnion;
       DAE.ElementSource source;
-      Connect.Face face;
       SCode.Visibility vis1, vis2;
 
     // both c1 and c2 are expandable
@@ -4740,7 +4725,7 @@ protected function generateNoConstantBindingError
   input Option<Values.Value> emptyValueOpt;
   input Absyn.Info info;
 algorithm
-  _ := matchcontinue(emptyValueOpt, info)
+  _ := match(emptyValueOpt, info)
     local
       String scope "the scope where we could not find the binding";
       String name "the name of the variable";
@@ -4754,7 +4739,7 @@ algorithm
       then
         fail();
     
-  end matchcontinue;
+  end match;
 end generateNoConstantBindingError;
 
 protected function getIteratorType
@@ -4852,13 +4837,12 @@ algorithm
       Env.Cache cache;
       list<Env.Frame> env,env_1;
       Prefix.Prefix pre;
-      list<Absyn.ForIterator> restIterators;
       list<SCode.Statement> sl;
       SCode.Initial initial_;
       Boolean impl;
       DAE.Type t;
       DAE.Exp e_1,e_2;
-      list<DAE.Statement> sl_1,stmts;
+      list<DAE.Statement> sl_1;
       String i;
       Absyn.Exp e;
       DAE.Statement stmt;
@@ -5010,7 +4994,7 @@ algorithm
   outCrefInfos := matchcontinue(inCrefInfos,inStatments)
     local
       list<DAE.Statement> restStmts, stmtList;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList,crefInfoList_tmp;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
       DAE.ComponentRef foundCref;
       DAE.Exp exp1,exp2;
       Absyn.Info info;
@@ -5225,10 +5209,9 @@ protected function collectParallelVariablesInSubscriptList
 algorithm
   outCrefInfos := matchcontinue(inCrefInfos,inSubscriptLst,inInfo)
     local
-      list<DAE.Subscript> restSubs, subsList;
+      list<DAE.Subscript> restSubs;
       list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
-      DAE.ComponentRef foundCref;
-      DAE.Exp exp1,exp2;
+      DAE.Exp exp1;
       
    
     case(_,{},_) then inCrefInfos;

@@ -297,7 +297,6 @@ algorithm
       list<NodeType> edges, visited_nodes, cycle;
       Boolean is_start_node;
       Option<list<NodeType>> opt_cycle;
-      tuple<NodeType, list<NodeType>> last_node;
 
     case ((node, _), _, _ :: _, _)
       equation
@@ -874,7 +873,6 @@ public function printGraphInt
 algorithm
  _ := match(inGraph)
    local
-     tuple<Integer, list<Integer>> nodesEdges;
      Integer node;
      list<Integer> edges;
      list<String> strEdges;
@@ -976,11 +974,10 @@ algorithm
   outColored := matchcontinue(inGraphT, inforbiddenColor, inColors, inGraph, inColored)
   local
     Integer node;
-    list<Integer> rest, nodes;
+    list<Integer>  nodes;
     array<Option<list<Integer>>> forbiddenColor;
     array<Integer> colored;
-    Integer color, index;
-    array<tuple<Integer, list<Integer>>> arrayGraph;
+    Integer color;
     list<tuple<Integer, list<Integer>>> restGraph;
     case ({},_,_,_,inColored) then inColored;          
     case (((node,nodes))::restGraph, inforbiddenColor, inColors, inGraph, inColored)
@@ -1035,7 +1032,6 @@ algorithm
     Integer index;
     list<Integer> rest;
     Integer colorIndex;
-    Option<list<Integer>> forbiddenColorElement;
     case ({}, _, _, _) then ();
     case (index::rest, inColored, inForbiddenColor, inNode)
       equation

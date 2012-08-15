@@ -117,9 +117,8 @@ public function extendEnvWithClassExtends
 algorithm
   outEnv := match(inClassExtends, inEnv)
     local
-      SCode.Ident bc, cls_name;
+      SCode.Ident bc;
       list<SCode.Element> el;
-      Absyn.Path path;
       SCode.Partial pp;
       SCode.Encapsulated ep;
       SCode.Restriction res;
@@ -134,7 +133,6 @@ algorithm
       list<SCode.AlgorithmSection> nal, ial;
       list<SCode.ConstraintSection> nco;
       list<Absyn.NamedArg> clats;  //class attributes
-      Option<Absyn.ConstrainClass> cc;
       SCode.ClassDef cdef;
       SCode.Element cls, ext;
       String el_str, env_str, err_msg;
@@ -240,10 +238,8 @@ algorithm
     local
       String name;
       Env env;
-      Absyn.Path bc;
       SCode.Mod mods;
       Absyn.Info info;
-      SCodeEnv.Frame cls_env;
       SCode.Element cls, ext;
 
     case (_, SCodeEnv.FRAME(name = SOME(name), 
@@ -276,8 +272,6 @@ algorithm
       Env env;
       SCode.Element cls;
       Item item;
-      Absyn.Path info, p;
-      String n;
 
     case (_, _, _, _, cls_frame :: env)
       equation
@@ -359,10 +353,9 @@ algorithm
       SCode.Ident cls_name, name;
       Absyn.Info info;
       Absyn.Path path;
-      Env env, class_env;
+      Env env;
       Item base_item, item;
       SCode.Element redecl;
-      SCodeEnv.ClassType cls_ty;
 
     // redeclare-as-element class
     case (redecl as SCode.CLASS(name = cls_name, info = info), _)
@@ -452,7 +445,6 @@ algorithm
       Absyn.Path bc;
       list<SCodeEnv.Redeclaration> el;
       Absyn.Info info;
-      SCode.Ident name;
       SCodeEnv.Redeclaration redecl;
 
     // redeclare-as-class 
@@ -1013,9 +1005,6 @@ algorithm
       Option<Util.StatefulBoolean> iu1, iu2;
       Env env1, env2;
       SCodeEnv.ClassType ty1, ty2;
-      String name, res_str;
-      Absyn.Info info1, info2;
-      SCode.Restriction res;
 
     case (SCodeEnv.VAR(var = el1, isUsed = iu1), 
           SCodeEnv.VAR(var = el2, isUsed = iu2))

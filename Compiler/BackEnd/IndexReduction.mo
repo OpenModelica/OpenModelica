@@ -264,7 +264,6 @@ algorithm
       array<Integer> ass2;
       Integer vindx;
       list<Integer> unassignedEqns,eqnsLst,varlst,discEqns;
-      BackendDAE.Var v;
       list<BackendDAE.Var> vlst;
       Boolean b,ba;
       list<Boolean> blst;
@@ -386,11 +385,11 @@ algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,outchangedEqns,oEqnsAcc):=
   matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns,iEqnsAcc)
     local
-      Integer e_1,e,e1,i,i1,i2,p1,p2;
-      BackendDAE.Equation eqn,eqn_1;
+      Integer e_1,e,e1,i,i1,i2;
+      BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns_1,eqns;
-      list<Integer> es,ilst,eqnslst,eqnslst1,changedEqns,eqns1;
-      BackendDAE.Variables v,ev,v1;
+      list<Integer> es,eqnslst,changedEqns,eqns1;
+      BackendDAE.Variables v,v1;
       BackendDAE.StateOrder so,so1;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
@@ -480,11 +479,11 @@ algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,outchangedEqns):=
   matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns)
     local
-      Integer e_1,e,e1,i,eqnss,eqnss1,i1,i2,p1,p2;
+      Integer e_1,e,eqnss,eqnss1;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.EquationArray eqns_1,eqns;
       list<Integer> es,ilst,eqnslst,eqnslst1,changedEqns,ilst1;
-      BackendDAE.Variables v,ev,v1;
+      BackendDAE.Variables v,v1;
       BackendDAE.StateOrder so,so1;
       BackendDAE.ConstraintEquations orgEqnsLst;
       BackendDAE.IncidenceMatrix m;
@@ -493,10 +492,6 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.Matching matching;
       array<Integer> ass1,ass2,mapIncRowEqn;
-      DAE.ComponentRef cr,cr1,cr2,scr;
-      Boolean negate,b1,b2,eeuql;
-      DAE.Exp exp1,exp2;
-      BackendDAE.Var var1,var2;
       array<list<Integer>> mapEqnIncRow;
     case (_,_,{},_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns);
     case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_,_,_,_,_,_)
@@ -641,10 +636,10 @@ algorithm
   outEqns:=
   match (inEqsLst,inCrExp,indCrExp,inACr,inEqns)
     local
-      BackendDAE.EquationArray eqns,eqns1;
+      BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn,eqn1;
       Integer pos,pos_1;
-      list<Integer> rest,row;
+      list<Integer> rest;
     case (pos::rest,_,_,_,_)
       equation
         // replace in eqn
@@ -784,21 +779,18 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       Integer ne,nv,ne1,nv1,freestatevars,orgeqnscount;
-      BackendDAE.StateOrder so,so1;
-      BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1,orgEqnsLst2;
-      list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgEqnsLst_1;
+      BackendDAE.StateOrder so;
+      BackendDAE.ConstraintEquations orgEqnsLst;
       BackendDAE.Variables v,hov;
       array<Integer> vec1,vec2,ass1,ass2;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       list<DAE.ComponentRef> dummyStates;
       list<list<Integer>> comps;
-      array<list<BackendDAE.Equation>> arraylisteqns;
       DAE.FunctionTree funcs;
       list<BackendDAE.Var> varlst;  
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;  
-      array<DAE.Constraint> constrs;
       list<BackendDAE.Equation> enqnslst;
       list<Integer> changedeqns;
     // no Index Reduction performed (OrgEqnsLst is Empty)
@@ -872,7 +864,6 @@ algorithm
   oCount :=
   match (inOrgEqns,iCount)
     local
-      Integer count;
       list<BackendDAE.Equation> orgeqns;
       BackendDAE.ConstraintEquations rest;
     case ({},_) then iCount;
@@ -904,7 +895,6 @@ algorithm
       Integer e;
       list<BackendDAE.Equation> orgeqns;
       BackendDAE.ConstraintEquations rest;
-      Type_a a;
     case ({},_,_,_) then listReverse(inAcc);
     case ((e,orgeqns)::rest,_,_,_)
       equation
@@ -1182,7 +1172,7 @@ protected function processComps1
   output BackendDAE.Shared oshared;  
 algorithm
   (outDummyStates,osyst,oshared) := 
-  matchcontinue(inComps,isyst,ishared,vec2,inArg,hov,inDummyStates)
+  match(inComps,isyst,ishared,vec2,inArg,hov,inDummyStates)
     local 
       list<Integer> comp;
       list<list<Integer>> rest;
@@ -1211,7 +1201,7 @@ algorithm
         (dummyStates,syst,shared) = processComps1(rest,syst,shared,vec2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn),hov1,dummyStates);
       then
         (dummyStates,syst,shared);
-  end matchcontinue;
+  end match;
 end processComps1;
 
 protected function compareOrgEqn
@@ -1336,7 +1326,7 @@ algorithm
     local 
       list<BackendDAE.Equation> eqnslst;
       list<tuple<Integer, list<BackendDAE.Equation>, Integer>> orgeqns;
-      BackendDAE.Variables lov,hov_1,cvars1;
+      BackendDAE.Variables lov,hov_1;
       list<DAE.ComponentRef> dummyStates;
       BackendDAE.EquationArray eqns;
       list<Integer> eqnindxlst;
@@ -1481,11 +1471,7 @@ algorithm
         BackendDAE.Variables hov1,lov,vars1;
         list<DAE.ComponentRef> dummystates,crlst;
         BackendDAE.Var v;
-        DAE.ComponentRef cr,dcr;
-        BackendDAE.IncidenceMatrix m;
-        BackendDAE.IncidenceMatrixT mT;
-        array<Integer> vec1,vec2;
-        Integer rang,nv,nvd,ned;
+        DAE.ComponentRef cr;
         BackendDAE.EqSystem syst;
         BackendDAE.Shared shared;  
         list<BackendDAE.Var> varlst;
@@ -1634,16 +1620,12 @@ algorithm
   matchcontinue(me,meT,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov,iMapEqnIncRow,iMapIncRowEqn)
       local 
         BackendDAE.Variables hov1,lov;
-        list<DAE.ComponentRef> dummystates,crlst;
-        BackendDAE.Var v;
-        DAE.ComponentRef cr,dcr;
+        list<DAE.ComponentRef> dummystates;
         BackendDAE.IncidenceMatrix m;
         BackendDAE.IncidenceMatrixT mT;
         array<Integer> vec1,vec2;
-        Integer rang,nv,nvd,ned;
         BackendDAE.EqSystem syst;
         BackendDAE.Shared shared; 
-        list<BackendDAE.Var> varlst;
         list<tuple<DAE.ComponentRef, Integer>> states,dstates; 
         list<Integer> unassigned;  
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1740,19 +1722,16 @@ algorithm
         BackendDAE.Variables hov1,lov;
         list<DAE.ComponentRef> dummystates,crset,crstates;
         DAE.ComponentRef crcon;
-        BackendDAE.IncidenceMatrix m;
-        BackendDAE.IncidenceMatrixT mT;
-        array<Integer> vec1,vec2;
         Integer rang,size,setsize;
         BackendDAE.EqSystem syst;
         BackendDAE.Shared shared; 
         list<BackendDAE.Var> varlst,statesvars;
         BackendDAE.Var vcont;
         list<tuple<DAE.ComponentRef, Integer>> dstates1,states1; 
-        list<Integer> unassigned,changedeqns,stateindxs;   
+        list<Integer> changedeqns,stateindxs;   
         BackendDAE.Equation eqn,eqcont;
         DAE.Exp exp,contExp,crconexp,contstartExp;
-        list<DAE.Exp> explst,sexplst;
+        list<DAE.Exp> explst;
         list<BackendDAE.Equation> selecteqns,dselecteqns;
         list<BackendDAE.WhenClause> wclst;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1882,7 +1861,7 @@ protected function generateSelectEquations
   output list<BackendDAE.WhenClause> oWc;
   output list<BackendDAE.Var> osetvarlst;
 algorithm
-  (oEqns,odEqns,oWc,osetvarlst) := matchcontinue(indx,crset,contexp,states,contstartExp,ivarlst,istartvalues,iEqns,idEqns,iWc,isetvarlst)
+  (oEqns,odEqns,oWc,osetvarlst) := match(indx,crset,contexp,states,contstartExp,ivarlst,istartvalues,iEqns,idEqns,iWc,isetvarlst)
     local
       list<BackendDAE.Equation> eqns,deqns;
       BackendDAE.Equation eqn,deqn;
@@ -1913,7 +1892,7 @@ algorithm
         (eqns,deqns,wclst,varlst1) = generateSelectEquations(indx+1,crlst,contexp,e2::explst,contstartExp,varlst,es2::startvalues,eqn::iEqns,deqn::idEqns,wc1::(wc::iWc),var::isetvarlst);
       then
         (eqns,deqns,wclst,varlst1);
-  end matchcontinue;
+  end match;
 end generateSelectEquations;
 
 protected function generateCondition
@@ -1958,7 +1937,6 @@ protected function generateCondition1
 algorithm
   outCont:= matchcontinue(p1,p2,size,inExps)
     local
-      Integer p;
       DAE.Exp expCond,expThen,expElse,e1,e2;
     case(_,_,_,_)
       equation
@@ -1990,8 +1968,7 @@ protected function generateCondition2
 algorithm
   outCont:= matchcontinue(p1,p2,size,inExps)
     local
-      Integer p;
-      DAE.Exp expCond,expThen,expElse,e1,e2;
+      DAE.Exp expCond,expThen,e1,e2;
     case(_,_,_,_)
       equation
         true = intLt(p2,size);
@@ -2251,7 +2228,7 @@ protected function checkAssignment
 algorithm
   (outAssigned,outUnassigned) := matchcontinue(indx,len,ass,vars,inAssigned,inUnassigned)
     local 
-      Integer r,c;
+      Integer r;
       DAE.ComponentRef cr;
       list<tuple<DAE.ComponentRef, Integer>> assigend,unassigned;
     case (_,_,_,_,_,_)
@@ -2333,10 +2310,9 @@ algorithm
   (osyst,oshared,ochangedeqns) := 
   match (dummyStates,isyst,ishared,inAss1,inAss2,mapIncRowEqn,ichangedeqns)
     local
-     DAE.ComponentRef cr,dcr;
+     DAE.ComponentRef cr;
      BackendDAE.EqSystem syst;
      BackendDAE.Shared shared;
-     array<Integer> vec1,vec2;
      list<DAE.ComponentRef> rest;
      Integer i,e;
      list<Integer> changedeqns;
@@ -2842,7 +2818,6 @@ algorithm
       BackendDAE.EquationArray eqns1;
       DAE.Exp ecr,edcr,c;
       BackendDAE.StateOrder so;
-      Integer leqns;
       list<Integer> eqnindxs;
     case (_,_,_,_,_,_,_,_,_)
       equation
@@ -3059,7 +3034,7 @@ algorithm
     local
       BackendDAE.Equation eqn;
       String str,color;
-      Integer t,e;
+      Integer e;
       array<Integer> vec2,mapIncRowEqn;
       array<Boolean> eqnsflag;
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),_)

@@ -1502,7 +1502,6 @@ algorithm
     local
       list<ElementType> firstl;
       list<list<ElementType>> restl;
-      list<Boolean> bools;
 
     case ({}, _) then listReverse(inAccum);
     case ({} :: _, _) then listReverse(inAccum);
@@ -2042,7 +2041,7 @@ algorithm
   outUnion := match(inList1, inList2, inCompFunc, inAccumList)
     local
       ElementType e;
-      list<ElementType> rest, res, accum;
+      list<ElementType> rest,  accum;
 
     case ({}, {}, _, _) then listReverse(inAccumList);
     case ({}, e :: rest, _, _)
@@ -6492,7 +6491,7 @@ public function removeOnTrue_tail
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  outList := matchcontinue(inValue, inCompFunc, inList, inAccumList)
+  outList := match(inValue, inCompFunc, inList, inAccumList)
     local
       ElementType e;
       list<ElementType> rest, accum;
@@ -6507,7 +6506,7 @@ algorithm
       then
         removeOnTrue_tail(inValue, inCompFunc, rest, accum);
 
-  end matchcontinue;
+  end match;
 end removeOnTrue_tail;
 
 public function select

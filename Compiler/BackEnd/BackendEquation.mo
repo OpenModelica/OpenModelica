@@ -245,15 +245,10 @@ protected function checkEquationsVarsExp
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      DAE.Exp e,e1;
+      DAE.Exp e;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
-      list<DAE.Exp> expl;
-      list<DAE.Var> varLst;
-      DAE.Ident ident;
       list<BackendDAE.Var> backendVars;
-      BackendDAE.Var var;
-      DAE.ReductionIterators riters;
     
     // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,vars1)))
@@ -438,10 +433,6 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.Exp> expl;
       list<DAE.Var> varLst;
-      DAE.Ident ident;
-      list<BackendDAE.Var> backendVars;
-      BackendDAE.Var var;
-      DAE.ReductionIterators riters;
     
     // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,knvars,ht)))
@@ -537,7 +528,7 @@ algorithm
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;
-      Integer index,size;
+      Integer size;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       list<Integer> dimSize;
       DAE.Algorithm alg;
@@ -689,12 +680,12 @@ algorithm
   (outEquation,outflag,outTypeA):= match (inEquation,func,inTypeA)
     local
       DAE.Exp e1,e2,e_1,e_2,cond;
-      list<DAE.Exp> expl,exps;
+      list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;
-      Integer index,size;
+      Integer size;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       BackendDAE.Equation eq;
       Boolean b1,b2,b3,b4,bres;
@@ -1161,12 +1152,8 @@ public function equationSetnthDAE
 algorithm
   osyst := match (inInteger,inEquation,syst)
     local
-      BackendDAE.Variables ordvars,knvars,exobj;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.Shared shared;
+      BackendDAE.Variables ordvars;
+      BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
     case (inInteger,inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
@@ -1380,12 +1367,10 @@ public function equationToExp
 algorithm
   outTpl := matchcontinue inTpl
     local
-      Integer   index;
       DAE.Exp e;
-      DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
+      DAE.Exp e1,e2,new_exp,rhs_exp,rhs_exp_1,rhs_exp_2;
       list<Integer> ds;
       list<Option<Integer>> ad;
-      list<DAE.Subscript> subs;
       BackendDAE.Equation eqn;
       BackendDAE.Variables v;
       list<DAE.Exp> explst,explst1;
@@ -1708,7 +1693,7 @@ public function derivativeEquation
 algorithm
   (cr,dcr,e,de,negate) := match (eqn)
       local
-        DAE.Exp e,ne,ne1;
+        DAE.Exp e,ne;
       // a = der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
         then (cr,dcr,e,de,false);
@@ -1771,9 +1756,9 @@ public function addOperation
 algorithm
   oeq := match (eq,op)
     local
-      Integer i1,i2,size;
+      Integer size;
       DAE.Exp e1,e2;
-      list<DAE.Exp> es,es1,es2,conditions;
+      list<DAE.Exp> conditions;
       DAE.ElementSource source;
       BackendDAE.WhenEquation whenEquation;
       DAE.ComponentRef cr1;

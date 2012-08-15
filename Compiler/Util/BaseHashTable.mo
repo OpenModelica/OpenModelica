@@ -187,12 +187,11 @@ public function addNoUpdCheck
 algorithm
   outHashTable := matchcontinue (entry,hashTable)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n,n_1,bsize;
       tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
-      tuple<Key,Value> v,newv;
+      tuple<Key,Value> v;
       Key key;
       Value value;
       FuncsTuple fntpl;
@@ -225,11 +224,11 @@ public function addUnique
 algorithm
   outHashTable := match(entry, hashTable)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n,n_1,bsize;
       tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      tuple<Key,Value> v,newv;
+      tuple<Key,Value> v;
       Key key;
       Value value;
       FuncsTuple fntpl;
@@ -266,13 +265,9 @@ algorithm
   outHashTable :=
   matchcontinue (key,hashTable)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,n,bsize,indx_1;
       tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
-      tuple<Key,Value> v,newv;
-      Value value;
+      array<list<tuple<Key,Integer>>> hashvec;
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
     case (key,(hashvec,varr,bsize,n,fntpl))
@@ -307,7 +302,7 @@ protected function get1 "help function to get"
 algorithm
   (value,indx) := match (key,hashTable)
     local
-      Integer hval,hashindx,bsize,n;
+      Integer hashindx,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;
@@ -374,7 +369,7 @@ protected function dumpTuple
   input FuncValString printValue;
   output String str;
 algorithm
-  str := matchcontinue(tpl,printKey,printValue)
+  str := match(tpl,printKey,printValue)
     local
       Key k;
       Value v;
@@ -385,7 +380,7 @@ algorithm
         sv = printValue(v);
         str = "{" +& sk +& ",{" +& sv +& "}}";
       then str;
-  end matchcontinue;
+  end match;
 end dumpTuple;
 
 public function hashTableValueList "return the Value entries as a list of Values"
@@ -453,10 +448,8 @@ protected function valueArrayList2 "Helper function to valueArrayList"
 algorithm
   outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
     local
-      tuple<Key,Value> v;
       array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
-      list<tuple<Key,Value>> res;
       list<tuple<Key,Value>> acc;
     
     case (arr,true,pos,lastpos,acc)

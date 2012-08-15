@@ -429,7 +429,7 @@ algorithm
   (outSpecialExtends, outRestElements) := matchcontinue(inElements, inAccumEl)
     local
       Element el;
-      list<Element> rest_el, accum_el;
+      list<Element> rest_el;
       DAE.Type ty;
 
     case ((el as InstTypes.EXTENDED_ELEMENTS(ty = ty)) :: rest_el, _)
@@ -489,7 +489,6 @@ algorithm
     local
       DAE.Exp exp;
       Integer pd, index;
-      Absyn.Info info;
 
     case (InstTypes.TYPED_BINDING(bindingExp = exp, propagatedDims = pd), _, _)
       equation
@@ -749,7 +748,6 @@ algorithm
       SCode.ConnectorType ct;
       SCode.Variability var;
       Absyn.Direction dir;
-      Absyn.Info info;
 
     // All attributes are the default ones, same as having no prefixes.
     case (SCode.ATTR(connectorType = SCode.POTENTIAL(), variability = SCode.VAR(),
@@ -1078,7 +1076,6 @@ algorithm
     local
       Absyn.Path path;
       String name;
-      Prefix prefix;
 
     case (Absyn.QUALIFIED(name, path), _)
       then pathPrefix2(path, (name, {}) :: inPrefix);
@@ -1324,7 +1321,6 @@ algorithm
   outIsConnector := match(inComponent)
     local
       DAE.Type ty;
-      Absyn.Path name;
 
     case InstTypes.TYPED_COMPONENT(ty = ty)
       equation

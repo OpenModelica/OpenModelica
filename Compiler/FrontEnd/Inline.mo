@@ -81,11 +81,9 @@ algorithm
   outBackendDAE := matchcontinue(inITLst,inBackendDAE)
     local
       list<DAE.InlineType> itlst;
-      BackendDAE.Variables orderedVars;
       BackendDAE.Variables knownVars;
       BackendDAE.Variables externalObjects;
       BackendDAE.AliasVariables aliasVars "alias-variables' hashtable";
-      BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
       array<DAE.Constraint> constrs;
@@ -127,7 +125,6 @@ algorithm
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      BackendDAE.EquationArray initialEqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
     case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),tpl)
@@ -197,8 +194,8 @@ algorithm
   outEquation := matchcontinue(inEquation,fns)
     local
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      Integer i,size;
-      list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
+      Integer size;
+      list<DAE.Exp> explst;
       DAE.ComponentRef cref;
       BackendDAE.WhenEquation weq,weq_1;
       DAE.ElementSource source;
@@ -583,7 +580,6 @@ algorithm
       Absyn.Path p;
       list<DAE.Exp> explst,explst_1;
       DAE.ElementSource source "the origin of the element";
-      DAE.Function f1,f2;      
 
     case ({},_) then {};
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
@@ -1031,7 +1027,7 @@ algorithm
   (outExps,outSource) := match (inExps,inElementList,inSource)
     local
       Functiontuple fns;
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e;
       list<DAE.Exp> exps;
       DAE.ElementSource source;
       
@@ -1084,13 +1080,10 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
-      Boolean tup,built;
-      DAE.Type t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
-      DAE.Type ty1,ty2;
       HashTableCG.HashTable checkcr;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
@@ -1135,8 +1128,6 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
-      Boolean tup,built;
-      DAE.Type t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;

@@ -159,13 +159,11 @@ protected function typeComponent
 algorithm
   (outComponent, outSymbolTable) := match(inComponent, inContext, inSymbolTable)
     local
-      Absyn.Path name, inner_name;
+      Absyn.Path name;
       DAE.Type ty;
       Binding binding;
-      list<Dimension> dims;
       SymbolTable st;
       Component comp, inner_comp;
-      SCode.Variability var;
 
     case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding), _, st)
       equation
@@ -338,7 +336,7 @@ algorithm
       SymbolTable st;
       DAE.Dimension dim;
       DAE.Exp dim_exp;
-      Integer dim_int, dim_count;
+      Integer  dim_count;
       Dimension typed_dim;
       Component comp;
 
@@ -448,7 +446,6 @@ algorithm
       Prefixes pf;
       DaePrefixes dpf;
       ParamType pty;
-      SCode.Element el;
       array<Dimension> dims;
       Absyn.Info info;
      
@@ -472,10 +469,8 @@ algorithm
   outSymbolTable := matchcontinue(inComponent, inSymbolTable)
     local
       Absyn.Path name;
-      SCode.Element el;
       DAE.Type ty;
       array<Dimension> dims;
-      Binding binding;
       Component comp;
       SCode.Variability var;
       DAE.Exp binding_exp;
@@ -622,7 +617,7 @@ public function typeExp
 algorithm
   (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inSymbolTable)
     local
-      DAE.Exp e1, e2, e3;
+      DAE.Exp e1, e2;
       DAE.ComponentRef cref;
       DAE.Type ty,tyOp;
       SymbolTable st;
@@ -735,7 +730,6 @@ algorithm
   (outExp, outType, outSymbolTable) :=
   matchcontinue(inCref, inEvalPolicy, inSymbolTable)
     local
-      Absyn.Path path;
       SymbolTable st;
       Component comp;
       DAE.Type ty;
@@ -795,7 +789,7 @@ protected function typeCref2
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  matchcontinue(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
+  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
     local
       DAE.Type ty;
       Binding binding;
@@ -845,7 +839,7 @@ algorithm
       then
         (exp, ty, st);
 
-  end matchcontinue;
+  end match;
 end typeCref2;
 
 protected function propagateCrefSubsToType
@@ -1085,7 +1079,6 @@ algorithm
       SymbolTable st;
       Absyn.Info info;
       DAE.ComponentRef cref1, cref2;
-      Connect2.Face face1, face2;
       Prefix prefix;
       String name;
       Integer index;
@@ -1093,10 +1086,9 @@ algorithm
       DAE.Type ty;
       list<tuple<DAE.Exp, list<Equation>>> branches;
       list<Equation> acc_el;
-      Absyn.Path iter_name, func_name;
+      Absyn.Path iter_name;
       Component iter;
       Equation eq;
-      Boolean cond;
       Connections conn;
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
@@ -1329,7 +1321,6 @@ protected function typeConnectorCref2
 algorithm
   (outFace, outType, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
     local
-      Absyn.Path name;
       Connect2.Face face;
       Component comp;
       DAE.Type ty;
@@ -1488,7 +1479,7 @@ protected function getConnectorFace
   input Option<Component> inPrefixComponent;
   output Connect2.Face outFace;
 algorithm
-  outFace := matchcontinue(inPrefixComponent)
+  outFace := match(inPrefixComponent)
     local
       Component comp;
       Boolean is_conn;
@@ -1507,7 +1498,7 @@ algorithm
       then
         face;
 
-  end matchcontinue;
+  end match;
 end getConnectorFace;
 
 protected function checkComponentIsConnector
@@ -1720,7 +1711,6 @@ algorithm
   outTpl := matchcontinue (path,inTpl)
     local
       Absyn.Path path;
-      list<DAE.Element> el;
       list<InstTypes.Element> inputs,outputs,locals;
       list<InstTypes.Statement> al;
       HashTablePathToFunction.HashTable ht;
