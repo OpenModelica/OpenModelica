@@ -599,7 +599,7 @@ outEq:=matchcontinue(dae,uncertainVariables)
   case (BackendDAE.DAE(BackendDAE.EQSYSTEM(_,_,SOME(m),_,_)::_,_),uncertainVariables)
    then
      getEquationsWithOneVariable2(arrayList(m),uncertainVariables,1);
-end matchcontinue;     
+end match;     
 end getEquationsWithOneVariable;
 
 protected function getEquationsWithOneVariable2

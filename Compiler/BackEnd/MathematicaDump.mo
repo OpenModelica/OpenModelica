@@ -540,11 +540,10 @@ protected function lbinopSymbolMma "Return string representation of logical bina
   input DAE.Operator inOperator;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.AND(_)) then " && "; 
     case (DAE.OR(_)) then " || "; 
-  end matchcontinue;
+  end match;
 end lbinopSymbolMma;
 
 protected function lunaryopSymbolMma "
@@ -553,10 +552,9 @@ protected function lunaryopSymbolMma "
   input DAE.Operator inOperator;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inOperator)
+  outString := match (inOperator)
     case (DAE.NOT(_)) then " ! "; 
-  end matchcontinue;
+  end match;
 end lunaryopSymbolMma;
 
 protected function relopSymbolMma "
@@ -565,8 +563,7 @@ protected function relopSymbolMma "
   input DAE.Operator inOperator;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inOperator)
+  outString := matchcontinue (inOperator)
     case (DAE.LESS(ty = _)) then " < "; 
     case (DAE.LESSEQ(ty = _)) then " <= "; 
     case (DAE.GREATER(ty = _)) then " > "; 

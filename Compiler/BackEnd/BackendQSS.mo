@@ -693,7 +693,7 @@ algorithm
     /* TODO: Check matrix A for discrete values */
     vars_cref = List.intersectionOnTrue(listAppend(states,listAppend(disc,algs)),vars_cref,ComponentReference.crefEqual);
     then vars_cref;
-  end matchcontinue;
+  end match;
 end getRHSVars;
 
 function getInitExp
@@ -900,7 +900,7 @@ algorithm
     /* TODO: Check matrix A for discrete values */
     vars_cref = List.intersectionOnTrue(listAppend(states,listAppend(disc,algs)),vars_cref,ComponentReference.crefEqual);
     then vars_cref;
-  end matchcontinue;
+  end match;
 
 end getDiscRHSVars;
 
