@@ -6424,7 +6424,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,mark);
+        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,_,_,_,_,true)
@@ -6439,7 +6439,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,mark);
+        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,_,_,_,_,true)
@@ -6454,7 +6454,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,mark);
+        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,_,_,_,_,true)
@@ -6469,7 +6469,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,_,_,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,mark);
+        _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,_,_,_,_,true)
@@ -7315,7 +7315,7 @@ algorithm
     case ((var,repl))
       equation
         cr =  BackendVariable.varCref(var);
-        repl1 = BackendVarTransform.addReplacement(repl,cr,Expression.makeConstZero(ComponentReference.crefLastType(cr)));
+        repl1 = BackendVarTransform.addReplacement(repl,cr,Expression.makeConstZero(ComponentReference.crefLastType(cr)),NONE());
       then
         ((var,repl1));
     else then inTpl;

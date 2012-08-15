@@ -901,7 +901,7 @@ algorithm
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
-       orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl));
+       orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl,NONE()));
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
@@ -1177,7 +1177,7 @@ algorithm
     case (e::eqns,eqnIndex,vars,knvars,mvars,repl,inDoubles,m,elimVarIndexList,false) equation
       //true = RTOpts.eliminationLevel() > 0;
       //false = equationHasZeroCrossing(e);
-      {e} = BackendVarTransform.replaceEquations({e},repl);
+      {e} = BackendVarTransform.replaceEquations({e},repl,NONE());
       
       // Attempt to solve the equation wrt to the variables to be eliminated.
       varIndexList = m[eqnIndex];
@@ -1194,7 +1194,7 @@ algorithm
       //false = varHasStartValue(cr1Var) "never remove variables with start value";
       //false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       //false = arrayPartiallyIndexed(cr1,inDoubles);
-      repl_1 = BackendVarTransform.addReplacement(repl, cr1, e2);
+      repl_1 = BackendVarTransform.addReplacement(repl, cr1, e2,NONE());
       //failCheck = checkCircularEquation(cr1,e2,e);
       mvars_1 = BaseHashTable.add((cr1,0),mvars);
       (eqns_1,seqns_1,mvars_2,repl_2) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars_1, repl_1, inDoubles, m, elimVarIndexList_1, failCheck);

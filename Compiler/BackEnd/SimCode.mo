@@ -4405,7 +4405,7 @@ algorithm
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))  = Expression.typeof(e1);
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(skipPreOperator), {}, false);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
         (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
@@ -4424,7 +4424,7 @@ algorithm
         //((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))  = Expression.typeof(e2);
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(skipPreOperator), {}, false);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);     
         (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
@@ -4450,7 +4450,7 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()-tmp = 0
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(skipPreOperator), {}, false);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex);
         
@@ -4478,7 +4478,7 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()-tmp = 0
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(skipPreOperator), {}, false);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex);
         
@@ -4571,7 +4571,7 @@ algorithm
         res_exp = Expression.expSub(e1,e2);
         (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
+        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
         (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex,itempvars);
       then
         (SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
@@ -4580,7 +4580,7 @@ algorithm
       equation
         (res_exp,_) = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
+        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
         (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex,itempvars);
       then
         (SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
@@ -4591,7 +4591,7 @@ algorithm
         res_exp = Expression.expSub(e1,e2);
         (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(skipPreOperator));
+        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
         ad = List.map(ds,Util.makeOption);
         subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
         subslst = BackendDAEUtil.rangesToSubscripts(subslst);
@@ -4641,7 +4641,7 @@ algorithm
         explst = List.map(explst,replaceDerOpInExp);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(explst,makeSES_RESIDUAL,source,iuniqueEqIndex);        
         (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,uniqueEqIndex,itempvars);
-        (e2lst,_) = BackendVarTransform.replaceExpList(explst, repl, SOME(skipPreOperator), {}, false);
+        (e2lst,_) = BackendVarTransform.replaceExpList(explst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(explst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex); 
        (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
@@ -4751,7 +4751,7 @@ algorithm
       
     case (SES_RESIDUAL(indx,exp,source), _)
       equation
-        (res_exp,true) = BackendVarTransform.replaceExp(exp, repl, SOME(skipPreOperator));
+        (res_exp,true) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreOperator));
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,exp,res_exp);
       then
         SES_RESIDUAL(indx,exp,source);
@@ -5078,8 +5078,8 @@ algorithm
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
-        (e2_1,b2) = BackendVarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(BackendVarTransform.skipPreOperator));
+        (e2_1,b2) = BackendVarTransform.replaceExp(e2, repl, SOME(BackendVarTransform.skipPreOperator));
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
       then
@@ -5087,7 +5087,7 @@ algorithm
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
-        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(BackendVarTransform.skipPreOperator));
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
       then
         BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
@@ -5583,7 +5583,7 @@ algorithm
         varexp = Expression.crefExp(c);
         (exp,_) = solveEquation(eqn, varexp);
         (exps,_) = BackendVarTransform.replaceExp(exp,repl,NONE());
-        repl1 = BackendVarTransform.addReplacement(repl, c, exps);
+        repl1 = BackendVarTransform.addReplacement(repl, c, exps,NONE());
         source = BackendEquation.equationSource(eqn);
         (repl2,seqns,uniqueEqIndex) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1,iuniqueEqIndex+1);
       then 
@@ -5668,7 +5668,7 @@ algorithm
         c = listGet(crefs,s);
         var = listGet(varlst,s);
         eqn = listGet(eqnLst,e);
-        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl);
+        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl,NONE());
         (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);
       then 
         ((eqn1::eqnLst1),(var::varlst1));
@@ -8869,7 +8869,7 @@ algorithm
     case (repl,(cr :: crs),pos)
       equation
         cref_ = ComponentReference.makeCrefIdent("xloc", DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), {DAE.INDEX(DAE.ICONST(pos))});
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, Expression.crefExp(cref_),NONE());
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -8887,19 +8887,6 @@ algorithm
     case (DAE.CREF(componentRef=cr)) then cr;
   end match;
 end getExpCref;
-
-protected function skipPreOperator "function: skipPreOperator
-  Condition function, used in generate_ode_system2_nonlinear_residuals2.
-  The variable in the pre operator should not be replaced in residual
-  functions. This function is passed to replace_exp to ensure this."
-  input DAE.Exp inExp;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inExp)
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
-    case (_) then true;
-  end matchcontinue;
-end skipPreOperator;
 
 protected function transformXToXd "function transformXToXd
   author: PA
