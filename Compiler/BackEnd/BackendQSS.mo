@@ -681,7 +681,7 @@ public function getRHSVars
   input list<DAE.ComponentRef> states,disc,algs;
   output list<DAE.ComponentRef> out;
 algorithm
-  out:=matchcontinue (beqs,vars,simJac,states,disc,algs) 
+  out:= match (beqs,vars,simJac,states,disc,algs) 
     local 
       list<DAE.ComponentRef> vars_cref;
       list<DAE.Exp> eqs;
@@ -888,7 +888,7 @@ public function getDiscRHSVars
   input list<DAE.ComponentRef> algs;
   output list<DAE.ComponentRef> out;
 algorithm
-  out:=matchcontinue (beqs,vars,simJac,states,disc,algs) 
+  out:= match (beqs,vars,simJac,states,disc,algs) 
     local 
       list<DAE.ComponentRef> vars_cref;
       list<DAE.Exp> eqs;

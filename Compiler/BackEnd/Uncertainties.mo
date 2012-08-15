@@ -594,12 +594,12 @@ protected function getEquationsWithOneVariable
    input list<Integer> uncertainVariables;
    output list<Integer> outEq;  
 algorithm
-outEq:=matchcontinue(dae,uncertainVariables)
+  outEq := match(dae,uncertainVariables)
    local array<list<Integer>> m;
   case (BackendDAE.DAE(BackendDAE.EQSYSTEM(_,_,SOME(m),_,_)::_,_),uncertainVariables)
    then
      getEquationsWithOneVariable2(arrayList(m),uncertainVariables,1);
-end match;     
+  end match;     
 end getEquationsWithOneVariable;
 
 protected function getEquationsWithOneVariable2
