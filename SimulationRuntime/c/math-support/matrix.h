@@ -165,17 +165,17 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++;  giveUp=0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
-          INFO_AL(" - iteration making no progress:\tvary initial point by +1\%"); \
+          INFO_AL(" - iteration making no progress:\tvary initial point by +1%%"); \
       } else if ((info == 4 || info == 5) && retries < 7) {   \
          for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i]*1.01; }; \
          retries++; giveUp=0; \
          if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
-           INFO_AL(" - iteration making no progress:\tvary initial point by adding 1%"); \
+           INFO_AL(" - iteration making no progress:\tvary initial point by adding 1%%"); \
       } else if ((info == 4 || info == 5) && retries < 9) { \
         for (i = 0; i < n; i++) { nls_x[i] = nls_xEx[i] * 0.99; }; \
         retries++; giveUp=0; \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
-          INFO_AL(" - iteration making no progress:\tvary initial point by %"); \
+          INFO_AL(" - iteration making no progress:\tvary initial point by %%"); \
       } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
         factor = initial_factor; retries = 0; retries2++; giveUp = 0; \
         for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
