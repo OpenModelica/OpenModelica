@@ -611,9 +611,7 @@ algorithm
   matchcontinue (expList)
     local
       list<Absyn.Exp> restList;
-    case ({}) then false;
-    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
-    case ({Absyn.CREF(_)}) then true;
+    case ({}) then true;
     case (Absyn.CREF(_) :: restList) then onlyCrefExpressions(restList);
     case (_) then false;
   end matchcontinue;

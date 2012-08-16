@@ -4956,7 +4956,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 1 =>
                     let rhsStr = '<%retStruct%>.c<%i1%>'
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
-                  ;separator="\n")
+                  ;separator="\n" ; empty)
   <<
   /* algStmtTupleAssign: preExp printout <%marker%>*/
   <%preExp%>
