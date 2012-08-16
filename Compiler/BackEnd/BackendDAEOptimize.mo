@@ -56,6 +56,7 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import BaseHashTable;
+protected import BaseHashSet;
 protected import Builtin;
 protected import Ceval;
 protected import ClassInf;
@@ -70,6 +71,7 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import Graph;
+protected import HashSet;
 protected import Inline;
 protected import List;
 protected import Matching;
@@ -10656,6 +10658,8 @@ algorithm
       list<BackendDAE.Var> vlst,states;
       BackendDAE.BinTree bt;
       array<Boolean> eqnmark;
+      
+      HashSet.HashSet ht;
 
     case (BackendDAE.JAC_TIME_VARYING(),_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_,_,_)
     //case (_,_,BackendDAE.SHARED(knownVars=kvars,functionTree=functionTree),_,_,_,_,_,_,_,_)
@@ -10747,6 +10751,14 @@ algorithm
         true = intLt(size,50);
         eqns = BackendEquation.daeEqns(subsyst);
         vars = BackendVariable.daeVars(subsyst);
+        // take care that tearing vars not used in relations until tearing information is saved for code generation and other equations needs not to be solved and
+        // solution inserted in residual equation
+        k0 = List.map1r(tvars,BackendVariable.getVarAt,vars);
+        pdcr_lst = List.map(k0,BackendVariable.varCref);
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(pdcr_lst,BaseHashSet.add,ht);
+        ((ht,true)) = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,checkTVarsnoRelations,(ht,true));
+        
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
         Debug.fcall(Flags.TEARING_DUMP, print,"TVars: ");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,", ","\nOther Equations:\n"));        
@@ -10772,6 +10784,121 @@ algorithm
         (isyst,ishared,false);        
   end matchcontinue;  
 end tearingSystemNew4;
+
+protected function checkTVarsnoRelations
+  input tuple<DAE.Exp, tuple<HashSet.HashSet,Boolean>> inTpl;
+  output tuple<DAE.Exp, tuple<HashSet.HashSet,Boolean>> outTpl;
+algorithm
+  outTpl :=
+  match inTpl
+    local  
+      DAE.Exp exp;
+      HashSet.HashSet ht;
+      Boolean b;
+    case ((exp,(ht,true)))
+      equation
+         ((_,(_,b))) = Expression.traverseExpTopDown(exp,checkTVarsnoRelationsExp,(ht,true));
+       then
+        ((exp,(ht,b)));
+    case inTpl then inTpl;
+  end match;
+end checkTVarsnoRelations;
+
+protected function checkTVarsnoRelationsExp
+  input tuple<DAE.Exp, tuple<HashSet.HashSet,Boolean>> inTuple;
+  output tuple<DAE.Exp, Boolean, tuple<HashSet.HashSet,Boolean>> outTuple;
+algorithm
+  outTuple := match(inTuple)
+    local
+      DAE.Exp e,ife,e1,e2,e3;
+      HashSet.HashSet ht;
+      Boolean b;
+      
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(ht,b))) then ((e,false,(ht,b)));     
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(ht,b))) then ((e,false,(ht,b)));     
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(ht,b))) then ((e,false,(ht,b)));     
+
+    case ((e as DAE.IFEXP(expCond=e1, expThen=e2, expElse=e3),(ht,true)))
+      equation
+        ((_,(_,b))) = Expression.traverseExpTopDown(e1,checkTVarsnoRelationsExp1,(ht,true));  
+        ((_,(_,b))) = Expression.traverseExpTopDown(e2,checkTVarsnoRelationsExp,(ht,b));  
+        ((_,(_,b))) = Expression.traverseExpTopDown(e3,checkTVarsnoRelationsExp,(ht,b));
+      then ((e, b, (ht,b)));
+
+    case ((e as DAE.LBINARY(exp1=e1, exp2=e2),(ht,true)))
+      equation
+        ((_,(_,b))) = Expression.traverseExpTopDown(e1,checkTVarsnoRelationsExp1,(ht,true));  
+        ((_,(_,b))) = Expression.traverseExpTopDown(e2,checkTVarsnoRelationsExp1,(ht,b));  
+      then ((e, b, (ht,b)));
+
+    case ((e as DAE.RELATION(exp1=e1, exp2=e2),(ht,true)))
+      equation
+        ((_,(_,b))) = Expression.traverseExpTopDown(e1,checkTVarsnoRelationsExp1,(ht,true));  
+        ((_,(_,b))) = Expression.traverseExpTopDown(e2,checkTVarsnoRelationsExp1,(ht,b));  
+      then ((e, b, (ht,b)));
+
+    case ((e as DAE.LUNARY(exp=e1),(ht,true)))
+      equation
+        ((_,(_,b))) = Expression.traverseExpTopDown(e1,checkTVarsnoRelationsExp1,(ht,true));  
+      then ((e, b, (ht,b)));
+    
+    case ((e,(ht,b))) then ((e,b,(ht,b)));
+  end match;
+end checkTVarsnoRelationsExp;
+
+protected function checkTVarsnoRelationsExp1
+  input tuple<DAE.Exp, tuple<HashSet.HashSet,Boolean>> inTuple;
+  output tuple<DAE.Exp, Boolean, tuple<HashSet.HashSet,Boolean>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e,e1;
+      DAE.ComponentRef cr;
+      HashSet.HashSet ht;
+      list<DAE.Var> varLst;
+      list<DAE.Exp> expl;
+      Boolean b,b1;
+  
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(ht,b))) then ((e,false,(ht,b)));     
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(ht,b))) then ((e,false,(ht,b)));     
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(ht,b))) then ((e,false,(ht,b)));  
+    
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(ht,true)))
+      then ((e, false, (ht,true)));
+    
+    // Special Case for Records
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(ht,true)))
+      equation
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        ((_,(ht,b))) = Expression.traverseExpListTopDown(expl,checkTVarsnoRelationsExp1,(ht,true));
+      then
+        ((e,false,(ht,b)));
+
+    // Special Case for Arrays
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(ht,true)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((_,(ht,b))) = Expression.traverseExpTopDown(e1,checkTVarsnoRelationsExp1,(ht,true));
+      then
+        ((e,false, (ht,b)));
+    
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(ht,true)))
+      then
+        ((e,false, (ht,true)));
+
+    // already there
+    case ((e as DAE.CREF(componentRef = cr),(ht,true)))
+      equation
+         b1 = BaseHashSet.has(cr, ht);
+         b1 = not b1;
+      then
+        ((e, b1,(ht,b1)));
+
+    case ((e,(ht,b))) then ((e,b,(ht,b)));
+  end matchcontinue;
+end checkTVarsnoRelationsExp1;
 
 protected function replaceHEquationsinSystem
   input list<Integer> eindx;
