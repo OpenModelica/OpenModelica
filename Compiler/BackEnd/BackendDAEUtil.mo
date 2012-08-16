@@ -6109,7 +6109,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
-        false = Expression.expHasCref(e2,cr);
+        false = expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
     case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
@@ -6119,7 +6119,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
-        false = Expression.expHasCref(e1,cr);
+        false = expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
     case(r::rest,_,_,_,_,_,_,_)
@@ -6157,7 +6157,60 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow);
   end matchcontinue;
 end adjacencyRowEnhanced1;
+
+protected function expHasCrefNoPreorDer "
+@author: Frenkel TUD 2011-04
+ returns true if the expression contains the cref"
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output Boolean hasCref;
+algorithm 
+  hasCref := match(inExp,inCr) 
+    local
+      Boolean b;
+      
+    case(inExp,inCr)
+      equation
+        ((_,(_,b))) = Expression.traverseExpTopDown(inExp, traversingexpHasCrefNoPreorDer, (inCr,false));
+      then
+        b;
+  end match;
+end expHasCrefNoPreorDer;
+
+public function traversingexpHasCrefNoPreorDer "
+@author: Frenkel TUD 2011-04
+Returns a true if the exp the componentRef"
+  input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      DAE.ComponentRef cr,cr1;
+      DAE.Exp e;
+
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+
     
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        ((e,not b,(cr,b)));
+    
+    case (((e,(cr,b)))) then ((e,not b,(cr,b)));
+    
+  end matchcontinue;
+end traversingexpHasCrefNoPreorDer;
+
 protected function adjacencyRowEnhanced2
 "function: adjacencyRowEnhanced1
   author: Frenkel TUD 2012-05
