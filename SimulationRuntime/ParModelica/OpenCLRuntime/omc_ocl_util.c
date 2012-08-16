@@ -207,46 +207,55 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
 
     free((void*)program_source);
     
-    // Build the program (OpenCL JIT compilation)
+   
+   
+    // Check for OpenModelica env variable.
+    const char* OMHOME = getenv("OPENMODELICAHOME");
+    if ( OMHOME == NULL )
+    {
+       printf("Couldn't find OPENMODELICAHOME!\n");
+       exit(1);
+    }    
+    
+    
+    // Build the program (OpenCL JIT compilation).
     printf("--- Building OpenCL program \n");    
     char options[100];
     const char* flags = "-I\"";
-    const char* OMHOME = getenv("OPENMODELICAHOME");
     const char* OMEXT = "/include/omc/\"";
     
-    if ( OMHOME != NULL )
-    {
-        strcpy(options, flags);
-        strcat(options, OMHOME);
-        strcat(options, OMEXT);
-        printf("\t :Using flags %s\n",options);
-        cl_int err;
-        err = clBuildProgram(ocl_program, 0, NULL, options, NULL, NULL);
-        ocl_error_check(OCL_BUILD_PROGRAM, err);
-        
-        size_t size;
-        clGetProgramBuildInfo(ocl_program, ocl_device, CL_PROGRAM_BUILD_LOG,        // Get build log size
-                                  0, NULL, &size);
-        char * log = (char*)malloc(size);
-        clGetProgramBuildInfo(ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
-        printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
-        free(log);
-        
-        if(err){
-            printf("Build failed: Errors detected in compilation of OpenCL code:\n");
-            exit(1);
-        }
-        
-        
-        
-        return ocl_program;
+    
+    strcpy(options, flags);
+    strcat(options, OMHOME);
+    strcat(options, OMEXT);
+    printf("\t :Using flags %s\n",options);
+    
+    // Build the OpenCL program.
+    cl_int err = 0;
+    err = clBuildProgram(ocl_program, 0, NULL, options, NULL, NULL);
+    ocl_error_check(OCL_BUILD_PROGRAM, err);
+    
+    // Get build log size.
+    size_t size;
+    clGetProgramBuildInfo(ocl_program, ocl_device, CL_PROGRAM_BUILD_LOG,        
+                              0, NULL, &size);
+    
+    // Get the build log.
+    char * log = (char*)malloc(size);
+    clGetProgramBuildInfo(ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
+    printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
+    free(log);
+    
+    if(err){
+        printf("Build failed: Errors detected in compilation of OpenCL code:\n");
+        exit(1);
+    }
+    
+    
+    
+    return ocl_program;
 
-   }
-   else
-   {
-       printf("Couldn't find OPENMODELICAHOME!\n");
-       exit(1);
-   }
+
 
     
 }

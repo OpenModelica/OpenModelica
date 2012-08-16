@@ -50,8 +50,13 @@
 
 
 #include <stdio.h>
-#include "ocl_util.hpp"
+#include "omc_ocl_util.h"
+#include "omc_ocl_common_header.h"
 
+
+extern cl_command_queue device_comm_queue;
+extern cl_context  device_context;
+extern cl_device_id ocl_device;
 
 
 // Main function

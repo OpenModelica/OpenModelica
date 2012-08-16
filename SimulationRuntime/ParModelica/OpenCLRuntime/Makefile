@@ -11,6 +11,7 @@ CXX=g++
 EXEEXT=.exe
 DLLEXT=.dll
 CFLAGS= -O3 -Wall -I. -I"$(OPENMODELICAHOME)/include/omc"
+OPENLC_LIB= OpenCL.lib 
 
 
 OBJS = \
@@ -26,15 +27,15 @@ transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_common_header.h $(OPENMODELICA_INC)
 	$(COPY) omc_ocl_memory_ops.h $(OPENMODELICA_INC)
 	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
-	$(COPY) OpenCL.lib $(OPENMODELICA_LIB)
+	$(COPY) $(OPENLC_LIB) $(OPENMODELICA_LIB)
 	mkdir -p $(OPENMODELICA_INC)/CL/
 	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
 	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICAHOME)/include/omc/
 # cp OCLRuntimeUtil.cl $(OPENMODELICAHOME)/bin/
 # cp ocloffcomp$(EXEEXT) $(OPENMODELICAHOME)/bin/
 
-ocloffc: ocl_offcomp.c ocl_util.hpp libOMOCLRuntime
-	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a OpenCL.lib $(CFLAGS) 
+ocloffc: omc_ocl_util.h libOMOCLRuntime.a
+	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS) 
 	 
 libOMOCLRuntime.a: $(OBJS)
 	@rm -f $@
