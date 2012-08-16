@@ -9748,7 +9748,7 @@ algorithm
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvars,intString,", ","\nResidualEquations:\n"));
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(residual,intString,", ","\n")); 
   //  subsyst := BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-  //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
+  //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"TornSystem" +& intString(size) +& ".graphml");
   // check if tearing make sense
   tornsize := listLength(tvars);
   true := intLt(tornsize,size-1);
@@ -10206,6 +10206,7 @@ algorithm
         points = List.fold2(states, calcVarWights,mt,ass2,points);
         eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
         points = List.fold2(eqns,addEqnWights,m,ass1,points);
+        points = List.fold1(states,discriminateDiscrete,vars,points);
         //points = List.fold2(states,addOneEdgeEqnWights,(m,mt),ass1,points);
          Debug.fcall(Flags.TEARING_DUMP,  BackendDump.dumpMatching,points);
         tvar = selectVarWithMostPoints(states,points,-1,-1);
@@ -10223,6 +10224,23 @@ algorithm
         fail();
   end matchcontinue;  
 end selectTearingVar;
+
+protected function discriminateDiscrete
+ input Integer v;
+ input BackendDAE.Variables vars;
+ input array<Integer> iPoints;
+ output array<Integer> oPoints;
+protected
+ Integer p;
+ Boolean b;
+ BackendDAE.Var var;
+algorithm
+  var := BackendVariable.getVarAt(vars, v);
+  b := BackendVariable.isVarDiscrete(var);
+  p := iPoints[v];
+  p := Util.if_(b,intDiv(p,10),p);
+  oPoints := arrayUpdate(iPoints,v,p);
+end discriminateDiscrete;
 
 protected function selectVarWithMostEqnsOneEdge
   input list<Integer> vars;
