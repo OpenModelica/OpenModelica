@@ -6040,16 +6040,16 @@ case BINARY(__) then
     else match realExpIntLit(exp2)
       case SOME(2) then
         let tmp = tempDecl("modelica_real", &varDecls)
-        let &preExp += '<%tmp%> = <%e1%>;'
+        let &preExp += '<%tmp%> = <%e1%>;<%\n%>'
         '(<%tmp%> * <%tmp%>)'
       case SOME(3) then
         let tmp = tempDecl("modelica_real", &varDecls)
-        let &preExp += '<%tmp%> = <%e1%>;'
+        let &preExp += '<%tmp%> = <%e1%>;<%\n%>'
         '(<%tmp%> * <%tmp%> * <%tmp%>)'
       case SOME(4) then
         let tmp = tempDecl("modelica_real", &varDecls)
-        let &preExp += '<%tmp%> = <%e1%>;'
-        let &preExp += '<%tmp%> *= <%tmp%>;'
+        let &preExp += '<%tmp%> = <%e1%>;<%\n%>'
+        let &preExp += '<%tmp%> *= <%tmp%>;<%\n%>'
         '(<%tmp%> * <%tmp%>)'
       case SOME(i) then 'real_int_pow(<%e1%>, <%i%>)'
       else 'pow(<%e1%>, <%e2%>)'
