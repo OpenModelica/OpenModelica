@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 /* 16 MB of data ought to be enough */
-#define NR_ELEMENTS    (16*1024*1024)
+#define NR_ELEMENTS    (4*1024*1024)
 
 static one_state *current_states = NULL;
 
