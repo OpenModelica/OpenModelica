@@ -14,7 +14,6 @@ RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 FMILIB = -L../../3rdParty/FMIL/install/lib -lfmilib
 
-
 USE_CORBA = @USE_CORBA@
 
 EXEEXT = @EXEEXT@

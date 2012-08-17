@@ -85,9 +85,6 @@ runtimeCPPinstall:
 runtimeCPPclean: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean
 	
-fmiwrapper:
-	$(MAKE) -C Compiler/runtime/FMI -f $(defaultMakefileTarget)
-	
 fmil:
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build

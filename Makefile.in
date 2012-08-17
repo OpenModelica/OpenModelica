@@ -26,10 +26,10 @@ settings:
 
 difftool: mkbuilddirs
 	$(MAKE) -C testsuite/difftool
-omc: difftool interactive docs fmi fmil fmiwrapper
+omc: difftool interactive docs fmi fmil
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: difftool interactive docs fmi fmil fmiwrapper
+omcd: difftool interactive docs fmi fmil
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:

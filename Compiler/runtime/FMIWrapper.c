@@ -100,6 +100,7 @@ void* fmiImportInstance_OMC(char* workingDirectory)
   fmi_import_context_t *context;
   context = fmi_import_allocate_context(&callbacks);
   // parse the xml file
+  //void* fmu1 = malloc(sizeof(fmi1_import_t));
   fmi1_import_t *fmu;
   fmu = fmi1_import_parse_xml(context, workingDirectory);
   if(!fmu) {
@@ -118,11 +119,12 @@ void* fmiImportInstance_OMC(char* workingDirectory)
 
 void fmiImportFreeInstance_OMC(void* fmu)
 {
-  fmi1_import_t* fmu1 = (fmi1_import_t*)fmu;
+  fmi1_import_t *fmu1 = (fmi1_import_t*)fmu;
+  //fprintf(stderr, "Path is %s\n", ((fmi1_import_t*)fmu)->dirPath); fflush(NULL);
   fprintf(stderr, "0\n"); fflush(NULL);
-  fmi1_import_destroy_dllfmu((fmi1_import_t*)fmu);
+  fmi1_import_destroy_dllfmu(fmu1);
   fprintf(stderr, "1\n"); fflush(NULL);
-  fmi1_import_free((fmi1_import_t*)fmu);
+  fmi1_import_free(fmu1);
 }
 
 #ifdef __cplusplus
