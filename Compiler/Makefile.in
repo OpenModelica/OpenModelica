@@ -108,6 +108,7 @@ clean:
 		(cd $$d ; $(MAKE) clean) \
 	done
 	(cd omc_release; $(MAKE) clean)
+	(cd runtime/FMI; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
