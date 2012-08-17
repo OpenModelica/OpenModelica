@@ -1,0 +1,15 @@
+#
+# Makefile for Compiler/runtime/FMI
+#
+
+RMLINCLUDE = @rmlinc@
+FMIINCLUDE = ../../../3rdParty/FMIL/install/include
+CFLAGS = @CFLAGS@
+
+SHELL	= /bin/sh
+CC	= @CC@
+CXX	= @CXX@
+CXXFLAGS = $(CFLAGS)
+CPPFLAGS = @CPPFLAGS@ -I../ -I$(RMLINCLUDE) -I../../../SimulationRuntime/c -I$(FMIINCLUDE)
+
+include Makefile.common
