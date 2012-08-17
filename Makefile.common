@@ -62,7 +62,7 @@ docs: mkbuilddirs omlibrary
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
 	# man pages
-	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
+	(cd doc/manpages/ && for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
 fmi: interactive
 	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
@@ -72,21 +72,21 @@ fmiclean:
 	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
 
 breakprocess:
-	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
-	(cd testsuite/bootstrapping; cp BreakProcess.exe ../../$(builddir_bin)/)
+	(cd testsuite/bootstrapping && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
+	(cd testsuite/bootstrapping && cp BreakProcess.exe ../../$(builddir_bin)/)
 	
 runtimeCPP: 
-	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget))	
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget)
 
 runtimeCPPinstall: 
-	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) install)
-	(cd testsuite/cppruntime; time $(MAKE) -f Makefile)
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
+	time $(MAKE) -C testsuite/cppruntime -f Makefile
 	
 runtimeCPPclean: 
-	(cd SimulationRuntime/cpp/; $(MAKE) -f $(defaultMakefileTarget) clean)
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean
 	
 fmiwrapper:
-	(cd Compiler/runtime/FMI; $(MAKE) -f $(defaultMakefileTarget))
+	$(MAKE) -C Compiler/runtime/FMI -f $(defaultMakefileTarget)
 	
 fmil:
 	test -d 3rdParty/FMIL
@@ -100,46 +100,46 @@ fmil:
 testfast: test
 
 test:
-	(cd testsuite; time $(MAKE) -f Makefile)
+	time $(MAKE) -C testsuite -f Makefile
 
 testlog:
-	(cd testsuite; time $(MAKE) -f Makefile > testsuite-trace.txt 2>&1)
+	time $(MAKE) -C testsuite -f Makefile > testsuite-trace.txt 2>&1
 	echo "log is in testsuite/testsuite-trace.txt"
 	echo "Failed models: "
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
 testmos:
-	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
+	time $(MAKE) -C testsuite/mosfiles -f Makefile
 
 testsimulation:
-	(cd testsuite; time $(MAKE) -f Makefile simulation)
+	time $(MAKE) -C testsuite -f Makefile simulation
 
 testmo:
-	(cd testsuite/mofiles; time $(MAKE) -f Makefile test)
+	(cd testsuite/mofiles && time $(MAKE) -f Makefile test)
 	
 testmeta:
-	(cd testsuite/meta; time $(MAKE) -f Makefile)
-	(cd testsuite/records; time $(MAKE) -f Makefile)
+	(cd testsuite/meta && time $(MAKE) -f Makefile)
+	(cd testsuite/records && time $(MAKE) -f Makefile)
 
 testboot:
-	(cd testsuite/bootstrapping; time ../../build/bin/omc MainTest.mos)
+	(cd testsuite/bootstrapping && time ../../build/bin/omc MainTest.mos)
 
 t:
-	(cd testsuite/meta; time ../rtest -v SimplifyTest.mos)
+	(cd testsuite/meta && time ../rtest -v SimplifyTest.mos)
 
 testlibraries:
-	(cd testsuite/libraries; time $(MAKE) -f Makefile)
+	(cd testsuite/libraries && time $(MAKE) -f Makefile)
 
 testlibrariemsl31:
-	(cd testsuite/libraries/msl31/simulate; time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
+	(cd testsuite/libraries/msl31/simulate && time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
 	echo "log is in testsuite/libraries/msl31/simulate/testsuite-msl31-trace.txt" 
 
 testfmi:
-	(cd testsuite/fmi; time $(MAKE) -f Makefile)
+	(cd testsuite/fmi && time $(MAKE) -f Makefile)
 	
 testSummary:
-	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
+	(cd testsuite && time $(MAKE) -f Makefile | grep "==")
 	
 testPar:
 	(cd testsuite/partest && time ./runtests.pl -j8)
@@ -169,7 +169,9 @@ distclean: clean
 	rm -f $(autoconfGeneratedFiles)
 	rm -f config.status config.log
 	rm -rf build/
-clean: qtclean
+fmil-clean:
+	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
+clean: qtclean fmil-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
