@@ -365,7 +365,6 @@ algorithm
       list<Absyn.Exp> rest;
       Absyn.Exp aExp;
       Prefix.Prefix pre;
-      Absyn.Info info;
       Absyn.ComponentRef cr;
       list<DAE.Attributes> attrLst;
       list<DAE.Exp> expLst;
@@ -1172,7 +1171,6 @@ algorithm
       Boolean doVect,hasGuardExp;
       Env.Cache cache;
       Prefix.Prefix pre;
-      Absyn.ForIterators iterators;
       Option<Absyn.Exp> afoldExp;
       Option<DAE.Exp> foldExp;
       Option<Values.Value> v;
@@ -2491,7 +2489,6 @@ algorithm
       list<DAE.Exp> es_1;
       Ident e_str,str,elt_str,t1_str,t2_str,sp;
       list<Ident> strs;
-      Prefix.Prefix pre;
       list<DAE.Properties> props;
 
     case ({}, {}, _, _)
@@ -10209,7 +10206,6 @@ protected function allowQualSubscript ""
   output Boolean bool;
 algorithm bool := matchcontinue( subs, ty )
   local
-    list<DAE.Subscript> subs;
     list<Option<Integer>> ad;
     list<list<Integer>> ill;
     list<Integer> il;

@@ -4374,7 +4374,6 @@ algorithm
       DAE.Ident iter_name;
       list<DAE.Exp> values;
       Option<Values.Value> defaultValue;
-      Boolean b;
       Values.Value v;
       String str;
       Option<DAE.Exp> foldExp;

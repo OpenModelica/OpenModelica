@@ -4581,7 +4581,6 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
-      Absyn.Info info;
       DAE.Type ty;
       DAE.Exp e2_2,e2_2_2;
       Absyn.Exp left;

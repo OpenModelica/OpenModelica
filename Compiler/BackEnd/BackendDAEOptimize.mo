@@ -1293,7 +1293,7 @@ algorithm
         ordvarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         ordvars = BackendDAEUtil.listVar(ordvarslst);
         // replace moved vars in knvars,ineqns,remeqns
-        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceVarTraverser,repl);
+        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,repl);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
         (inieqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
@@ -1327,6 +1327,27 @@ algorithm
           removeSimpleEquationsUpdateWrapper(rest,systs,repl);
     end match;
 end removeSimpleEquationsUpdateWrapper;
+
+protected function replaceAliasVarTraverser
+"autor: Frenkel TUD 2011-03"
+ input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+ output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v,v1;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.Exp e,e1;
+    case ((v as BackendDAE.VAR(bindExp=SOME(e)),repl))
+      equation
+        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
+        false = Expression.isConst(e1);
+        v1 = BackendVariable.setBindExp(v,e1);
+      then ((v1,repl));
+    case inTpl then inTpl;
+  end matchcontinue;
+end replaceAliasVarTraverser;
 
 protected function replaceVarTraverser
 "autor: Frenkel TUD 2011-03"
@@ -5950,7 +5971,7 @@ algorithm
     list<tuple<Real,BackendDAE.Value>> rest;
     Real weight,oldWeight;
     BackendDAE.Value var,oldVar;
-    tuple<Real,BackendDAE.Value> tupl,oldTupl;
+    tuple<Real,BackendDAE.Value> tupl;
     list<BackendDAE.Value> exclude;
   case ((weight,var)::rest,(oldWeight,oldVar),exclude)
     equation
@@ -8674,7 +8695,6 @@ algorithm
    outExpList := matchcontinue (inExp, indiffVars, func, inTypeA)  
    local
      DAE.Exp e,e1;
-     FuncExpType func;
      DAE.ComponentRef diff_cref;
      list<DAE.ComponentRef> rest;
      list<DAE.Exp> res;
@@ -9173,11 +9193,11 @@ protected function partitionIndependentBlocksHelper
   "Finds independent partitions of the equation system by "
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input Integer i;
+  input Integer numErrorMessages;
   output list<BackendDAE.EqSystem> systs;
   output BackendDAE.Shared oshared;
 algorithm
-  (systs,oshared) := matchcontinue (isyst,ishared,i)
+  (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages)
     local
       BackendDAE.IncidenceMatrix m,mT;
       array<Integer> ixs;
@@ -9201,7 +9221,7 @@ algorithm
       then (systs,shared);
     else
       equation
-        Error.assertion(not (i==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
+        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end partitionIndependentBlocksHelper;

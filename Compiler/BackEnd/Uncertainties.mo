@@ -1158,16 +1158,15 @@ algorithm
   (outEqns,outSimpleEqns,outMvars,outRepl):=
   matchcontinue (eqns,eqnIndex,vars,knvars,mvars,repl,inDoubles,m,elimVarIndexList,failCheck)
     local
-      BackendDAE.Variables vars,knvars;
-      HashTable.HashTable mvars,mvars_1,mvars_2;
-      BackendVarTransform.VariableReplacements repl,repl_1,repl_2;
+      HashTable.HashTable mvars_1,mvars_2;
+      BackendVarTransform.VariableReplacements repl_1,repl_2;
       DAE.ComponentRef cr1;
-      list<BackendDAE.Equation> eqns_1,seqns_1,eqns;
+      list<BackendDAE.Equation> eqns_1,seqns_1;
       list<Integer> varIndexList, elimVarIndexList_1;
       Integer elimVarIndex;
       BackendDAE.Equation e;
       DAE.Exp e2;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       array<Option<BackendDAE.Var>> varOptArr;
       BackendDAE.Var elimVar;
 

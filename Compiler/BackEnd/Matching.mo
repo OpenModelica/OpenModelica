@@ -4178,7 +4178,7 @@ protected function PR_Global_Relabel1
 algorithm
   _ := matchcontinue(queue,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,nextqueue)
     local
-      list<Integer> rest,collums,queue; 
+      list<Integer> rest,collums,queue1; 
       Integer r;      
     case({},_,_,_,_,_,_,_,_,_,{}) then ();
     case({},_,_,_,_,_,_,_,_,_,_)
@@ -4189,8 +4189,8 @@ algorithm
     case(r::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         collums = List.select(mT[r], Util.intPositive);
-        queue = PR_Global_Relabel_traverseCollums(collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
-        PR_Global_Relabel1(rest,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,queue);
+        queue1 = PR_Global_Relabel_traverseCollums(collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
+        PR_Global_Relabel1(rest,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,queue1);
       then
         ();
   end matchcontinue;

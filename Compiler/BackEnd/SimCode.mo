@@ -4779,8 +4779,8 @@ protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
   input Boolean linearSystem "if true generate allway a linear system";
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponent inComp;
   input list<HelpVarInfo> helpVarInfo;
   input Integer iuniqueEqIndex;
@@ -4791,7 +4791,7 @@ protected function createOdeSystem
   output list<SimVar> otempvars;
 algorithm
   (equations_,noDiscequations_,ouniqueEqIndex,otempvars) :=
-  matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, inComp, helpVarInfo, iuniqueEqIndex,itempvars)
+  matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, isyst, ishared, inComp, helpVarInfo, iuniqueEqIndex,itempvars)
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1;
@@ -7880,6 +7880,7 @@ algorithm
         // does not work
         //e = BaseHashTable.get(name,varMappings);
         e = BackendVariable.varBindExp(var);
+        (e,_) = ExpressionSimplify.simplify(e);
         alias = getAliasVar1(e,var);
       then alias;
     case(_,_) then NOALIAS();
@@ -10724,7 +10725,6 @@ end addNoUpdCheck;
  array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
  String name_str;
  tuple<Key,Value> v,newv;
- Key key;
  Value value;
  // * adding when already present => Updating value * /
   case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -10998,7 +10998,7 @@ end valueArraySetnth;
  matchcontinue (valueArray,pos)
  local
  array<Option<tuple<Key,Value>>> arr_1,arr;
- Integer n,size,pos;
+ Integer n,size;
  case (VALUE_ARRAY(n,size,arr),pos)
  equation
  (pos < size) = true;
@@ -11149,7 +11149,6 @@ algorithm outOrder := matchcontinue(inDlow,syst)
     list<tuple<DAE.ComponentRef, Integer>> variableIndex;
     list<list<DAE.ComponentRef>> firstOrderVars;
     list<DAE.ComponentRef> firstOrderVarsFiltered;
-    BackendDAE.EqSystem syst;
   case(inDlow,syst)
     equation
       Debug.fcall(Flags.CPP_VAR,print, " set variabale der index"+& "\n");

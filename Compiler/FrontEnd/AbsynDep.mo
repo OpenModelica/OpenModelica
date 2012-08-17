@@ -90,7 +90,7 @@ public function dumpAvlTreeKeys "prints all keys in an Avltree to stdout"
   input AvlTree used;
 algorithm
   _ := matchcontinue(used)
-  local AvlTree used, usedBy;
+  local AvlTree usedBy;
     list<tuple<AvlKey,AvlValue>> usedLst;
     case(used) equation
       usedLst = avlTreeToList(used);

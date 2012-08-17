@@ -308,8 +308,8 @@ algorithm
         ocolummarks = List.fold1(eorphans,markOrphans,1,ocolummarks);
         mark = getIndexesForEqnsAdvanced(vorphans,1,m,mt,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass22,vec1,vec2,arrayCreate(esize,false), vars,eqns,shared,size);
         
-          BackendDump.dumpIncidenceMatrix(vec1);
-          BackendDump.dumpMatching(vec2);
+        //  BackendDump.dumpIncidenceMatrix(vec1);
+        //  BackendDump.dumpMatching(vec2);
         //  vec3 = arrayCreate(size,-1);
         //  _ = List.fold1(arrayList(vec2),transposeOrphanVec,vec3,1);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
@@ -336,7 +336,7 @@ algorithm
           dumpMatrix(1,size,matrix);
         ht = HashTable4.emptyHashTable();
         (tvars,teqns) = gaussElimination(1,size,matrix,BackendDAEUtil.emptyVars(),BackendDAEUtil.listEquation({}),(1,1));
-        //  dumpMatrix(1,size,matrix);
+          dumpMatrix(1,size,matrix);
         //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(subsyst);
         eqn_lst = BackendDAEUtil.equationList(teqns);  
@@ -568,7 +568,7 @@ algorithm
   (omark,oconstraints) := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,iconstraints)
     local
       list<Integer> rest,constraints,rlst,elst,partner;
-      Integer o,mark;
+      Integer o;
       Boolean foundflow;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -596,14 +596,14 @@ algorithm
         foundflow = generateCliquesResidual1(rlst,ass1,ass2,m,mt,mark,rowmarks,colummarks,foundflow,vars);
         generateCliquesResidual2(rlst,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,o::partner);
         constraints = Debug.bcallret2(not foundflow, listAppend, o::partner, iconstraints, iconstraints);
-        (mark,constraints) = generateCliquesResidual(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,constraints);
+        (omark,constraints) = generateCliquesResidual(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,constraints);
       then
-       (mark,constraints);
+       (omark,constraints);
     case (_::rest,_,_,_,_,_,_,_,_,_)
       equation
-        (mark,constraints) = generateCliquesResidual(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,iconstraints); 
+        (omark,constraints) = generateCliquesResidual(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,iconstraints); 
       then
-        (mark,constraints);
+        (omark,constraints);
   end matchcontinue;
 end generateCliquesResidual;
 
@@ -808,7 +808,7 @@ algorithm
   (omark,oroots,oconstraints) := matchcontinue(inOrphans,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphans,vars,iroots,iconstraints)
     local
       list<Integer> rest,roots,constraints,elst,rlst;
-      Integer o,mark;
+      Integer o;
       Boolean foundflow,constr;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;      
@@ -831,14 +831,14 @@ algorithm
         //  BackendDump.debuglst((mt[o],intString,", ","\n"));
         foundflow = prepairOrphansOrder1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{o},false,vars);
         roots = List.consOnTrue(foundflow and not constr, o, iroots);
-        (mark,roots,constraints) = prepairOrphansOrder(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,orphans,vars,roots,constraints);
+        (omark,roots,constraints) = prepairOrphansOrder(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,orphans,vars,roots,constraints);
       then
-       (mark,roots,constraints);
+       (omark,roots,constraints);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        (mark,roots,constraints) = prepairOrphansOrder(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphans,vars,iroots,iconstraints); 
+        (omark,roots,constraints) = prepairOrphansOrder(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphans,vars,iroots,iconstraints); 
       then
-        (mark,roots,constraints);
+        (omark,roots,constraints);
   end matchcontinue;
 end prepairOrphansOrder;
 
@@ -1830,7 +1830,7 @@ algorithm
   s := stringAppendList({cs,":",es});
 end dumpMatrix1;
 
-protected function dumpMatrix
+public function dumpMatrix
 "function dumpMatrix
   author: Frenkel TUD 2012-05"
   input Integer row;
@@ -2275,7 +2275,7 @@ algorithm
    end matchcontinue;
 end transformJacToIncidenceMatrix;
 
-protected function transformJacToMatrix
+public function transformJacToMatrix
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer row;
   input Integer col;

@@ -6042,7 +6042,6 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
-      Key key;
       Value value;
     // adding when already present => Updating value
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -6275,7 +6274,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,pos,entry)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
         (pos < size) = true;
@@ -6300,7 +6299,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,pos)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
         (pos < size) = true;
@@ -6326,7 +6325,7 @@ algorithm
   value := matchcontinue (valueArray,pos)
     local
       Value v;
-      Integer n,pos,len;
+      Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)

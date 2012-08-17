@@ -1308,7 +1308,6 @@ public function switchInnerToOuterAndPrefix
       DAE.VarParallelism prl;
       String s1,s2;
       DAE.Element x;
-      Absyn.InnerOuter io;
       DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
@@ -2153,7 +2152,6 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
-      Key key;
       Value value;
     // adding when already present => Updating value
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -2412,7 +2410,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,pos)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
         (pos < size) = true;

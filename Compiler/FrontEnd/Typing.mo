@@ -1710,7 +1710,6 @@ public function typeFunction
 algorithm
   outTpl := matchcontinue (path,inTpl)
     local
-      Absyn.Path path;
       list<InstTypes.Element> inputs,outputs,locals;
       list<InstTypes.Statement> al;
       HashTablePathToFunction.HashTable ht;

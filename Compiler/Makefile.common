@@ -196,7 +196,6 @@ Scope.mo \
 Relation.mo \
 VarTransform.mo \
 # Not used by OpenModelica!
-# HashTable4.mo \
 # HashTable6.mo \
 
 

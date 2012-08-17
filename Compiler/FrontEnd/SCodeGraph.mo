@@ -1201,7 +1201,7 @@ algorithm
     local
       Graph g;
       String name;
-      Context iContext, oContext;
+      Context oContext;
 
     // unit
     case (g, iContext, inEl as Element.E(element = SCode.DEFINEUNIT(name = name)), order)

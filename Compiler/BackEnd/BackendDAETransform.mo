@@ -435,7 +435,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       Integer i_1,nv_1,nf_1,nvd,an1,am1,an2,am2;
       BackendDAE.MatchingOptions match_opts;
-      BackendDAE.EquationArray eqns;
+      BackendDAE.EquationArray eqnsarr;
       BackendDAE.EquationConstraints eq_cons;
       list<Integer> eqn_lst,var_lst,meqns;
       String eqn_str,var_str;
@@ -479,8 +479,8 @@ algorithm
          the original equation is removed from the system." ;
         ass1_1 = BackendDAE.ASSIGNMENTS(an1,am1,vec1); 
         ass2_1 = BackendDAE.ASSIGNMENTS(an2,am2,vec2); 
-        eqns = BackendEquation.daeEqns(syst);
-        nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
+        eqnsarr = BackendEquation.daeEqns(syst);
+        nf_1 = BackendDAEUtil.equationSize(eqnsarr) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
                                    work to continue without restarting.

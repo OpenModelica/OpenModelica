@@ -3135,7 +3135,7 @@ protected function makeEquationsFromIf
   input list<DAE.Exp> inExp1;
   input list<list<DAE.Element>> inElementLst2;
   input list<DAE.Element> inElementLst3;
-  input DAE.ElementSource source "the origin of the element";
+  input DAE.ElementSource source;
   output list<DAE.Element> outElementLst;
 algorithm
   outElementLst := matchcontinue (inExp1,inElementLst2,inElementLst3,source)
@@ -3145,7 +3145,6 @@ algorithm
       DAE.Element fb,eq;
       list<DAE.Exp> conds,tbsexp;
       DAE.Exp fbexp,ifexp, cond;
-      DAE.ElementSource source "the origin of the element";
 
     case (_,tbs,{},_)
       equation

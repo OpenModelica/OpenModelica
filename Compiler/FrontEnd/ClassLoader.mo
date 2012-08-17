@@ -317,7 +317,7 @@ public function loadFile
 algorithm
   outProgram := matchcontinue (name,encoding)
     local
-      String dir,name,filename,cname,prio,mp;
+      String dir,filename,cname,prio,mp;
       Absyn.Program p1;
       list<String> rest;
 

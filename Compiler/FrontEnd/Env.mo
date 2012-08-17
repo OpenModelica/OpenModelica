@@ -1086,7 +1086,6 @@ algorithm
   _ := matchcontinue(env)
     local
       list<DAE.ComponentRef> crs;
-      Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
       print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));

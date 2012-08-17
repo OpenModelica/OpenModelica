@@ -2692,7 +2692,7 @@ protected function zerocrossingindex
 algorithm
   out_exp := matchcontinue (exp,index,zeroCrossings,/*inputzeroinfo,*/zc)
     local
-      DAE.Exp exp,e_1,e1,e2;
+      DAE.Exp e_1,e1,e2;
       DAE.Operator op;
       list<BackendDAE.ZeroCrossing> newzero,zc_lst;
       BackendDAE.ZeroCrossing z_c;
@@ -3068,7 +3068,6 @@ algorithm
     local
       list<DAE.Statement> statementLst;
       DAE.Exp ie,range;
-      list<DAE.Exp> inExplst;
       BackendDAE.Variables v,kn;
       list<BackendDAE.ZeroCrossing> zcs;
       Integer idx,alg_idx;

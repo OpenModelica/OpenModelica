@@ -4658,14 +4658,14 @@ end findModelicaPath;
 
 protected function findModelicaPath2 "Handle modelica:// URIs"
   input String mp;
-  input list<String> names;
+  input list<String> inames;
   input Boolean b;
   output String basePath;
 algorithm
-  basePath := matchcontinue (mp,names,b)
+  basePath := matchcontinue (mp,inames,b)
     local
       list<String> names;
-      String mp,name;
+      String name;
     case (mp,name::names,_)
       equation
         true = System.directoryExists(mp +& "/" +& name);

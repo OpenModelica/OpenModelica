@@ -419,7 +419,7 @@ algorithm
   matchcontinue (extendrepl,cr,preCr)
     local
       HashTable2.HashTable erepl,erepl1;
-      DAE.ComponentRef cr,subcr,precr,precr1,pcr,precrn,precrn1;
+      DAE.ComponentRef subcr,precr,precr1,pcr,precrn,precrn1;
       DAE.Ident ident;
       DAE.Type ty;
       list<DAE.Subscript> subscriptLst;

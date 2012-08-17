@@ -43,7 +43,6 @@ public import DAE;
 public import HashTable2;
 public import HashTable3;
 public import SCode;
-public import Values;
 
 public
 uniontype VariableReplacements 
@@ -517,7 +516,6 @@ public function applyReplacementList "function: applyReplacements
 algorithm  (ocrefs):= matchcontinue (repl,increfs)
     local
       DAE.ComponentRef cr1_1,cr1;
-      VariableReplacements repl;
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation
@@ -542,7 +540,6 @@ algorithm
   matchcontinue (repl,inExp1,inExp2)
     local
       DAE.Exp e1,e2;
-      VariableReplacements repl;
       Boolean b1,b2;
     case (repl,e1,e2)
       equation
@@ -1111,7 +1108,7 @@ algorithm
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
-      VariableReplacements repl, repl_1;
+      VariableReplacements repl_1;
     case (false,repl,src,dst) /* source dest */
       equation
         repl_1 = addReplacement(repl,src,dst);
@@ -1247,14 +1244,14 @@ protected function addReplacements "function: addReplacements
   Uses add_replacement
 "
   input VariableReplacements repl;
-  input list<DAE.ComponentRef> srcs;
+  input list<DAE.ComponentRef> isrcs;
   input DAE.Exp dst;
   output VariableReplacements outRepl;
 algorithm
   outRepl:=
-  matchcontinue (repl,srcs,dst)
+  matchcontinue (repl,isrcs,dst)
     local
-      VariableReplacements repl,repl_1,repl_2;
+      VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src;
       list<DAE.ComponentRef> srcs;
     case (repl,{},_) then repl;

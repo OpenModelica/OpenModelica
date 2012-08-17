@@ -512,7 +512,8 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "partitionIndependentBlocks",
     "expandDerOperator",
     "inlineArrayEqn",
-    "removeSimpleEquationsFast"}),
+    "removeSimpleEquationsFast"
+}),
   SOME(STRING_DESC_OPTION({
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
