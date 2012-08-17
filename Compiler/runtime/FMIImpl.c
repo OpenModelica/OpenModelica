@@ -70,7 +70,7 @@ static void generateModelicaCode(fmi1_import_t* fmu, char* fileName, const char*
   if (!file) {
     const char *c_tokens[1]={fileName};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unable to create the file: %s."), c_tokens, 1);
-    return "";
+    return;
   } else {
     const char* FMU_TEMPLATE_STR =
         #include "FMIModelica.h"
@@ -84,7 +84,7 @@ static void generateModelicaCode(fmi1_import_t* fmu, char* fileName, const char*
     fprintf(file, "protected\n");
     fprintf(file, "\tfmiImportInstance fmu = fmiImportInstance(context, tempPath);\n");
     fprintf(file, "\tfmiImportContext context = fmiImportContext();\n");
-    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instName);\n");
+    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instanceName);\n");
     fprintf(file, "end FMUBlock;\n");
     fprintf(file, "end FMUImportNew_%s;", modelIdentifier);
   }
@@ -130,6 +130,9 @@ char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
     return "";
   }
+  // check the platform of FMU.
+  const char* platform = fmi1_import_get_model_types_platform(fmu);
+  fprintf(stderr, "Platform is : %s", platform);
   //fprintf(stderr, "Path is %s\n", fmu->dirPath); fflush(NULL);
   // Load the dll
   jm_status_enu_t status;
