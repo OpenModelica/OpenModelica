@@ -61,19 +61,10 @@ static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_statu
 #endif
 }
 
-static char* generateModelicaCode(fmi1_import_t* fmu, const char* workingDirectory)
+static void generateModelicaCode(fmi1_import_t* fmu, char* fileName, const char* workingDirectory)
 {
   FILE* file;
-  char* fileName;
-  // read the model identifier from FMI.
   const char* modelIdentifier = fmi1_import_get_model_identifier(fmu);
-  int len = strlen(workingDirectory) + strlen(modelIdentifier);
-  fileName = (char*) malloc(len + 16);
-  strcpy(fileName, workingDirectory);
-  strcat(fileName, "/");
-  strcat(fileName, modelIdentifier);
-  strcat(fileName, "FMUImportNew");
-  strcat(fileName, ".mo");
   // create the Modelica File.
   file = fopen(fileName, "w");
   if (!file) {
@@ -98,7 +89,6 @@ static char* generateModelicaCode(fmi1_import_t* fmu, const char* workingDirecto
     fprintf(file, "end FMUImportNew_%s;", modelIdentifier);
   }
   fclose(file);
-  return fileName;
 }
 
 char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
@@ -148,9 +138,21 @@ char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 1);
     return "";
   }
-  char* generatedFileName = generateModelicaCode(fmu, workingDirectory);
+  // create a file name for generated Modelica code
+  char* generatedFileName;
+  // read the model identifier from FMI.
+  const char* modelIdentifier = fmi1_import_get_model_identifier(fmu);
+  int len = strlen(workingDirectory) + strlen(modelIdentifier);
+  generatedFileName = (char*) malloc(len + 16);
+  strcpy(generatedFileName, workingDirectory);
+  strcat(generatedFileName, "/");
+  strcat(generatedFileName, modelIdentifier);
+  strcat(generatedFileName, "FMUImportNew");
+  strcat(generatedFileName, ".mo");
+  // Generate Modelica code and save the file
+  generateModelicaCode(fmu, generatedFileName, workingDirectory);
   fmi1_import_destroy_dllfmu(fmu);
-  /*fmi1_import_free(fmu);*/    /* Crashes the app */
+  fmi1_import_free(fmu);
   fmi_import_free_context(context);
   return generatedFileName;
 }
