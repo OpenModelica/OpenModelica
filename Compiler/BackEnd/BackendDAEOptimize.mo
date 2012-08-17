@@ -71,6 +71,7 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import Graph;
+protected import HashTable4;
 protected import HashSet;
 protected import Inline;
 protected import List;
@@ -1226,7 +1227,7 @@ algorithm
   (osyst,oshared):=
   match (b,syst,shared,repl,movedVars,movedAVars,meqns)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,ordvars3,movedAVars1;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,ordvars3;
       BackendDAE.AliasVariables aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<DAE.Constraint> constrs;
@@ -1253,8 +1254,7 @@ algorithm
         // replace moved vars in vars,knvars,aliasVars,ineqns,remeqns
         (ordvars3,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(ordvars2,replaceVarTraverser,repl);
         // add alias variables
-        (movedAVars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(movedAVars,replaceVarTraverser,repl);
-        aliasVars = BackendDAEUtil.addAliasVariables(BackendDAEUtil.varList(movedAVars1),aliasVars);
+        aliasVars = BackendDAEUtil.addAliasVariables(BackendDAEUtil.varList(movedAVars),aliasVars);
       then 
         (BackendDAE.EQSYSTEM(ordvars3,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs));
   end match;
@@ -1271,7 +1271,9 @@ algorithm
   match (b,inDAE,repl)
     local
       BackendDAE.Variables ordvars,knvars,exobj,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      HashTable2.HashTable varMappingsCref;
+      HashTable4.HashTable varMappingsExp;
+      BackendDAE.Variables aliasVars;      
       BackendDAE.EquationArray remeqns,inieqns,inieqns1,remeqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -1286,18 +1288,19 @@ algorithm
       BackendDAE.EqSystems systs,systs1;  
       list<BackendDAE.Var> ordvarslst;
     case (false,_,_) then inDAE;
-    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
+    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,BackendDAE.ALIASVARS(varMappingsCref,varMappingsExp,aliasVars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
       equation
         ordvarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         ordvars = BackendDAEUtil.listVar(ordvarslst);
         // replace moved vars in knvars,ineqns,remeqns
+        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceVarTraverser,repl);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
         (inieqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         systs1 = removeSimpleEquationsUpdateWrapper(systs,{},repl);
       then 
-        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs));
+        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,BackendDAE.ALIASVARS(varMappingsCref,varMappingsExp,aliasVars),inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs));
   end match;
 end removeSimpleEquationsShared;
 
