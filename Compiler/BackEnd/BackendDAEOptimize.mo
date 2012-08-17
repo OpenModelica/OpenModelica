@@ -1317,7 +1317,7 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;      
+      BackendDAE.Matching matching;
       case ({},_,_) then inSysts1;
       case (BackendDAE.EQSYSTEM(v,eqns,m,mT,matching)::rest,_,_)
         equation

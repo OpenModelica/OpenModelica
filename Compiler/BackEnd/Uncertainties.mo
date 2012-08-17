@@ -1140,7 +1140,7 @@ protected function eliminateVariablesDAE2
   the given set of equations. Returns a set of variable replacements that can
   be used to replace the variables in the equations that are left
 "
-  input list<BackendDAE.Equation> eqns;
+  input list<BackendDAE.Equation> ieqns;
   input Integer eqnIndex;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables knvars;
@@ -1156,7 +1156,7 @@ protected function eliminateVariablesDAE2
   output BackendVarTransform.VariableReplacements outRepl;
 algorithm 
   (outEqns,outSimpleEqns,outMvars,outRepl):=
-  matchcontinue (eqns,eqnIndex,vars,knvars,mvars,repl,inDoubles,m,elimVarIndexList,failCheck)
+  matchcontinue (ieqns,eqnIndex,vars,knvars,mvars,repl,inDoubles,m,elimVarIndexList,failCheck)
     local
       HashTable.HashTable mvars_1,mvars_2;
       BackendVarTransform.VariableReplacements repl_1,repl_2;
@@ -1165,6 +1165,7 @@ algorithm
       list<Integer> varIndexList, elimVarIndexList_1;
       Integer elimVarIndex;
       BackendDAE.Equation e;
+      list<BackendDAE.Equation> eqns;
       DAE.Exp e2;
       DAE.ElementSource source;
       array<Option<BackendDAE.Var>> varOptArr;
