@@ -2994,17 +2994,6 @@ algorithm
   BackendDAE.SHARED(knownVars = vars) := shared;
 end daeKnVars;
 
-public function daeAliasVars
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.Variables vars;
-algorithm
-  vars := match (inBackendDAE)
-    local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(aliasVars = BackendDAE.ALIASVARS(aliasVars = vars))))
-      then vars;
-  end match;
-end daeAliasVars;
-
 public function varsSize "function: varsSize
   author: PA
 
@@ -3198,43 +3187,45 @@ public function deleteVars
   Deletes variables from Variables. This is an expensive operation
   since we need to create a new binary tree with new indexes as well
   as a new compacted vector of variables."
-  input BackendDAE.BinTree inVars;
+  input BackendDAE.Variables inDelVars;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := match (inVars,inVariables)
+  outVariables := matchcontinue (inDelVars,inVariables)
     local
-      BackendDAE.Variables v,newvars,newvars_1;
-      BackendDAE.BinTree vars;
-    case (vars,v)
+      BackendDAE.Variables newvars;
+    case (_,_)
       equation
+        true = intGt(varsSize(inDelVars),0);
         newvars = BackendDAEUtil.emptyVars();
-        ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVars2,(vars,newvars));
+        ((_,newvars)) = traverseBackendDAEVars(inVariables,deleteVars2,(inDelVars,newvars));
       then
-        newvars_1;
-  end match;
+        newvars;
+    else
+      then
+        inVariables; 
+  end matchcontinue;
 end deleteVars;
 
 protected function deleteVars2
 "autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<BackendDAE.BinTree,BackendDAE.Variables>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.BinTree,BackendDAE.Variables>> outTpl;
+ input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
       BackendDAE.Var v;
-      BackendDAE.Variables vars,vars1;
-      BackendDAE.BinTree delvars;
+      BackendDAE.Variables vars,vars1,delvars;
       DAE.ComponentRef cr;
     case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
       equation
-        _ = BackendDAEUtil.treeGet(delvars, cr) "alg var deleted" ;
+        (_::{},_) = getVar(cr,delvars) "alg var deleted" ;
       then
         ((v,(delvars,vars)));
     case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
       equation
-        failure(_ = BackendDAEUtil.treeGet(delvars, cr)) "alg var not deleted" ;
+        failure((_,_) = getVar(cr,delvars)) "alg var not deleted" ;
         vars1 = addVar(v,vars);
       then
         ((v,(delvars,vars1)));
