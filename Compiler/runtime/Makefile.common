@@ -22,7 +22,8 @@ endif
 RML_COMPAT=$(top_builddir)/SimulationRuntime/c/meta/rml_compatibility.h
 
 SRC	= Print_rml.c System_rml.c Settings_rml.c \
-  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c ModelicaExternalC_rml.c  matching.c matching_cheap.c FMI_rml.c
+  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c ModelicaExternalC_rml.c  matching.c matching_cheap.c \
+  FMI_rml.c FMIWrapper.c
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
   BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
@@ -31,7 +32,7 @@ CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
-  IOStreamExt_omc.o ErrorMessage.o FMI_rml.o systemimplmisc.o \
+  IOStreamExt_omc.o ErrorMessage.o FMI_rml.o FMIWrapper.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
   Database_omc.o Dynload_omc.o SimulationResults_omc.o ptolemyio_omc.o Lapack_omc.o $(OMCCORBASRC)
 
@@ -80,7 +81,12 @@ SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c errorext.h 
 ptolemyio_rml.o : ptolemyio.cpp errorext.h
 ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
-FMI_rml.o : FMIImpl.c FMIWrapper.c
+FMI_rml.o : FMIImpl.c
+FMIImpl.c : FMIModelica.h
+FMIWrapper.o : FMIWrapper.c
+FMIModelica.h: FMIModelica.in
+	sed 's/"/\\"/g' $< | sed 's/^/"/' | sed 's/$$/\\n"/' > $@.tmp
+	mv $@.tmp $@
 
 clean:
-	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* 
+	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* FMIModelica.h

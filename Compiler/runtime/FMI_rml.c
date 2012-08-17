@@ -38,7 +38,11 @@ void FMI_5finit(void)
 
 RML_BEGIN_LABEL(FMI__importFMU)
 {
-  rmlA0 = (void*) mk_icon(FMIImpl__importFMU(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1)));
+  const char* filename = RML_STRINGDATA(rmlA0);
+  const char* workingDirectory = RML_STRINGDATA(rmlA1);
+  char* res = FMIImpl__importFMU(filename, workingDirectory);
+  rmlA0 = (void*) mk_scon(res);
+  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

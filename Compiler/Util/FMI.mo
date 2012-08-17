@@ -36,8 +36,8 @@
 public function importFMU
   input String inFileName;
   input String inWorkingDirectory;
-  output Boolean outBool;
-  external "C" outBool=FMIImpl__importFMU(inFileName, inWorkingDirectory) annotation(Library = "omcruntime");
+  output String outGeneratedFileName;
+  external "C" outGeneratedFileName=FMIImpl__importFMU(inFileName, inWorkingDirectory) annotation(Library = "omcruntime");
 end importFMU;
 
 end FMI;

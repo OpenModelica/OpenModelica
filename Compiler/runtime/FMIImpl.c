@@ -61,18 +61,53 @@ void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t sta
 #endif
 }
 
-int generateModelicaCode(fmi1_import_t* fmu)
+char* generateModelicaCode(fmi1_import_t* fmu, const char* workingDirectory)
 {
-
+  FILE* file;
+  char* fileName;
+  // read the model identifier from FMI.
+  const char* modelIdentifier = fmi1_import_get_model_identifier(fmu);
+  int len = strlen(workingDirectory) + strlen(modelIdentifier);
+  fileName = (char*) malloc(len + 16);
+  strcpy(fileName, workingDirectory);
+  strcat(fileName, "/");
+  strcat(fileName, modelIdentifier);
+  strcat(fileName, "FMUImportNew");
+  strcat(fileName, ".mo");
+  // create the Modelica File.
+  file = fopen(fileName, "w");
+  if (!file) {
+    const char *c_tokens[1]={fileName};
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unable to create the file: %s."), c_tokens, 1);
+    return "";
+  } else {
+    const char* FMU_TEMPLATE_STR =
+        #include "FMIModelica.h"
+        ;
+    fprintf(file, "package FMUImportNew_%s\n", modelIdentifier);
+    fputs(FMU_TEMPLATE_STR, file);
+    // generate the code for FMUBlock
+    fprintf(file, "public\nblock FMUBlock\n");
+    fprintf(file, "\tconstant String tempPath = \"%s\";\n", workingDirectory);
+    fprintf(file, "\tconstant String instanceName = \"%s\";\n", modelIdentifier);
+    fprintf(file, "protected\n");
+    fprintf(file, "\tfmiImportInstance fmu = fmiImportInstance(context, tempPath);\n");
+    fprintf(file, "\tfmiImportContext context = fmiImportContext();\n");
+    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instName);\n");
+    fprintf(file, "end FMUBlock;\n");
+    fprintf(file, "end FMUImportNew_%s;", modelIdentifier);
+  }
+  fclose(file);
+  return fileName;
 }
 
-int FMIImpl__importFMU(char *fileName, char* workingDirectory)
+char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
 {
   // check the if the fmu file exists
   if (!SystemImpl__regularFileExists(fileName)) {
-    const char *c_tokens[1]={fileName};
+    const char* c_tokens[1]={fileName};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
-    return 0;
+    return "";
   }
   // JM callbacks
   jm_callbacks callbacks;
@@ -95,31 +130,29 @@ int FMIImpl__importFMU(char *fileName, char* workingDirectory)
   version = fmi_import_get_fmi_version(context, fileName, workingDirectory);
   if (version != fmi_version_1_enu) {
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 1);
-    return 0;
+    return "";
   }
   // parse the xml file
   fmi1_import_t *fmu;
   fmu = fmi1_import_parse_xml(context, workingDirectory);
   if(!fmu) {
-    const char *c_tokens[1]={fileName};
+    const char* c_tokens[1]={fileName};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
-    return 0;
+    return "";
   }
+  //fprintf(stderr, "Path is %s\n", fmu->dirPath); fflush(NULL);
   // Load the dll
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmu, callBackFunctions, 0);
   if (status == jm_status_error) {
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 1);
-    return 0;
+    return "";
   }
-  generateModelicaCode(fmu);
-  /*
-   * Write the code generation code
-   */
+  char* generatedFileName = generateModelicaCode(fmu, workingDirectory);
   fmi1_import_destroy_dllfmu(fmu);
-  fmi1_import_free(fmu);
+  /*fmi1_import_free(fmu);*/    /* Crashes the app */
   fmi_import_free_context(context);
-  return 1;
+  return generatedFileName;
 }
 
 #ifdef __cplusplus

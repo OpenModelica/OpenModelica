@@ -1841,7 +1841,7 @@ function importFMUNew "Imports the Functional Mockup Unit
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
   input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  output Boolean success "Returns true on success";
+  output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");
 end importFMUNew;

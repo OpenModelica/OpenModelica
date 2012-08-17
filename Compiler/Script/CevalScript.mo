@@ -1434,13 +1434,9 @@ algorithm
     case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
       equation
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
-        true = FMI.importFMU(filename, workdir);
+        str = FMI.importFMU(filename, workdir);
       then
-        (cache,Values.BOOL(true),st);
-        
-    case (cache,env,"importFMUNew",_,st,msg)
-      then
-        (cache,Values.BOOL(false),st);
+        (cache,Values.STRING(str),st);
         
     case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,msg)
       equation

@@ -59,29 +59,7 @@ void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t sta
 #endif
 }
 
-void* jm_callbacks_OMC()
-{
-  void* callbacks = malloc(sizeof(jm_callbacks));
-  ((jm_callbacks*) callbacks)->malloc = malloc;
-  ((jm_callbacks*) callbacks)->calloc = calloc;
-  ((jm_callbacks*) callbacks)->realloc = realloc;
-  ((jm_callbacks*) callbacks)->free = free;
-  ((jm_callbacks*) callbacks)->logger = importlogger;
-  ((jm_callbacks*) callbacks)->context = 0;
-  return callbacks;
-}
-
-void* fmi_import_allocate_context_OMC(void* callbacks)
-{
-  fprintf(stderr, "0\n"); fflush(NULL);
-  fprintf(stderr, "YEssss %s", jm_get_last_error((jm_callbacks*) callbacks)); fflush(NULL);
-  fmi_import_allocate_context((jm_callbacks*) callbacks);
-  fprintf(stderr, "1\n"); fflush(NULL);
-  void* context = fmi_import_allocate_context((jm_callbacks*) callbacks);
-  return context;
-}
-
-void* fmiImportInstance_OMC(char* workingDirectory)
+void* fmi_import_allocate_context_OMC()
 {
   // JM callbacks
   jm_callbacks callbacks;
@@ -91,18 +69,27 @@ void* fmiImportInstance_OMC(char* workingDirectory)
   callbacks.free = free;
   callbacks.logger = importlogger;
   callbacks.context = 0;
+  void* context;
+  context = (fmi_import_context_t*)fmi_import_allocate_context(&callbacks);
+  return context;
+}
+
+void fmi_import_free_context_OMC(void* context)
+{
+  fmi_import_free_context((fmi_import_context_t*)context);
+}
+
+void* fmiImportInstance_OMC(void* context, char* workingDirectory)
+{
   // FMI function callbacks
   fmi1_callback_functions_t callBackFunctions;
   callBackFunctions.logger = fmilogger;
   callBackFunctions.allocateMemory = calloc;
   callBackFunctions.freeMemory = free;
-  // FMI context
-  fmi_import_context_t *context;
-  context = fmi_import_allocate_context(&callbacks);
   // parse the xml file
   //void* fmu1 = malloc(sizeof(fmi1_import_t));
-  fmi1_import_t *fmu;
-  fmu = fmi1_import_parse_xml(context, workingDirectory);
+  fmi1_import_t* fmu;
+  fmu = fmi1_import_parse_xml((fmi_import_context_t*)context, workingDirectory);
   if(!fmu) {
     fprintf(stderr, "Error parsing the XML file contained in %s\n", workingDirectory);
     return 0;
@@ -119,12 +106,9 @@ void* fmiImportInstance_OMC(char* workingDirectory)
 
 void fmiImportFreeInstance_OMC(void* fmu)
 {
-  fmi1_import_t *fmu1 = (fmi1_import_t*)fmu;
   //fprintf(stderr, "Path is %s\n", ((fmi1_import_t*)fmu)->dirPath); fflush(NULL);
-  fprintf(stderr, "0\n"); fflush(NULL);
-  fmi1_import_destroy_dllfmu(fmu1);
-  fprintf(stderr, "1\n"); fflush(NULL);
-  fmi1_import_free(fmu1);
+  fmi1_import_destroy_dllfmu((fmi1_import_t*)fmu);
+  fmi1_import_free((fmi1_import_t*)fmu);
 }
 
 #ifdef __cplusplus
