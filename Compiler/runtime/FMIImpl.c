@@ -97,7 +97,7 @@ char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
   if (!SystemImpl__regularFileExists(fileName)) {
     const char* c_tokens[1]={fileName};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
-    return "";
+    return strdup("");
   }
   // JM callbacks
   jm_callbacks callbacks;
@@ -115,12 +115,12 @@ char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
   // FMI context
   fmi_import_context_t *context;
   context = fmi_import_allocate_context(&callbacks);
-  fmi_version_enu_t version;
   // extract the fmu file and read the version
+  fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, fileName, workingDirectory);
   if (version != fmi_version_1_enu) {
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 1);
-    return "";
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
+    return strdup("");
   }
   // parse the xml file
   fmi1_import_t *fmu;
@@ -128,18 +128,15 @@ char* FMIImpl__importFMU(const char* fileName, const char* workingDirectory)
   if(!fmu) {
     const char* c_tokens[1]={fileName};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
-    return "";
+    return strdup("");
   }
-  // check the platform of FMU.
-  const char* platform = fmi1_import_get_model_types_platform(fmu);
-  fprintf(stderr, "Platform is : %s", platform);
   //fprintf(stderr, "Path is %s\n", fmu->dirPath); fflush(NULL);
   // Load the dll
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmu, callBackFunctions, 0);
   if (status == jm_status_error) {
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 1);
-    return "";
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+    return strdup("");
   }
   // create a file name for generated Modelica code
   char* generatedFileName;
