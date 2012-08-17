@@ -40,7 +40,7 @@ extern "C" {
 #define BUFFER 1000
 #define FMI_DEBUG
 
-void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
+static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
 #ifdef FMI_DEBUG
   printf("module = %s, log level = %d: %s\n", module, log_level, message);
@@ -48,7 +48,7 @@ void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_leve
 }
 
 /* Logger function used by the FMU internally */
-void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
+static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
 #ifdef FMI_DEBUG
   char msg[BUFFER];
