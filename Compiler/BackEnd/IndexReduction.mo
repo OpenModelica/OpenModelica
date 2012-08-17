@@ -1337,7 +1337,7 @@ algorithm
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
         eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,BackendDAEUtil.emptyVars());
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,so,BackendDAEUtil.emptyVars());
         // get derivatives one order less
         lov = lowerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so);
         // call again with original equations of derived equations 
@@ -1398,7 +1398,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray,vars);
         // select dummy derivatives
         eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(vars,BackendVariable.numVariables(vars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov_1,dummyStates,syst,shared,BackendDAEUtil.emptyVars());
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(vars,BackendVariable.numVariables(vars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov_1,dummyStates,syst,shared,so,BackendDAEUtil.emptyVars());
         // get derivatives 
         (lov,dummyStates) = higerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so,dummyStates);
         Debug.fcall(Flags.BLT_DUMP, print,"HigerOrderVars:\n");
@@ -1458,6 +1458,7 @@ protected function selectDummyDerivatives
   input list<DAE.ComponentRef> inDummyStates;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input BackendDAE.StateOrder so;
   input BackendDAE.Variables inLov;
   output BackendDAE.Variables outhov;
   output list<DAE.ComponentRef> outDummyStates;
@@ -1466,7 +1467,7 @@ protected function selectDummyDerivatives
   output BackendDAE.Shared oshared;
 algorithm
   (outhov,outDummyStates,outlov,osyst,oshared) := 
-  matchcontinue(vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov)
+  matchcontinue(vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,so,inLov)
       local 
         BackendDAE.Variables hov1,lov,vars1;
         list<DAE.ComponentRef> dummystates,crlst;
@@ -1480,11 +1481,11 @@ algorithm
         BackendDAE.AdjacencyMatrixTEnhanced meT;  
         array<list<Integer>> mapEqnIncRow;
         array<Integer> mapIncRowEqn;     
-    case(_,0,_,_,_,_,_,_,_,_)
+    case(_,0,_,_,_,_,_,_,_,_,_)
         // if no vars then there is nothing do do
       then
         (hov,inDummyStates,inLov,isyst,ishared);
-    case(_,1,_,1,_,_,dummystates,_,_,_)
+    case(_,1,_,1,_,_,dummystates,_,_,_,_)
       equation
         // if there is only one var select it because there is no choice
         Debug.fcall(Flags.BLT_DUMP, print, "single var and eqn\n");
@@ -1496,7 +1497,7 @@ algorithm
         lov = BackendVariable.addVar(v,inLov);
       then
         (hov1,cr::dummystates,lov,isyst,ishared);
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         // if eqnsSize is equal to varsize all variables are dummy derivatives no choise
         true = intGt(varSize,1);
@@ -1511,7 +1512,7 @@ algorithm
         (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         // try to select dummy vars
         true = intGt(varSize,1);
@@ -1528,7 +1529,7 @@ algorithm
         (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         // try to select dummy vars
         true = intGt(varSize,1);
@@ -1541,7 +1542,7 @@ algorithm
         varlst = BackendDAEUtil.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
-        vars1 = BackendDAETransform.sortStateCandidatesVars(syst,mapIncRowEqn);
+        vars1 = BackendDAETransform.sortStateCandidatesVars(syst,mapIncRowEqn,so);
 
         varlst = List.map1(BackendDAEUtil.varList(vars1),BackendVariable.setVarKind,BackendDAE.VARIABLE());   
         vars1 = BackendDAEUtil.listVar1(varlst);         
@@ -1553,7 +1554,7 @@ algorithm
         (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives1(me,meT,vars1,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov,mapEqnIncRow,mapIncRowEqn);
       then
         (hov1,dummystates,lov,syst,shared);
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         // try to select dummy vars heuristic based
         true = intGt(varSize,1);
@@ -1564,7 +1565,7 @@ algorithm
         varlst = BackendDAEUtil.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
-        states = BackendDAETransform.sortStateCandidates(states,syst);
+        states = BackendDAETransform.sortStateCandidates(states,syst,so);
         //states = List.sort(states,stateSortFunc);
         //states = listReverse(states);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
@@ -1572,7 +1573,7 @@ algorithm
         (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared);        
-    case(_,_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_,_)
       equation
         // if ther are more equations than vars, singular system
         true = intGt(varSize,1);
@@ -2400,7 +2401,7 @@ algorithm
 end tryDeterminant0;
 
 
-protected function determinant
+public function determinant
 "function determinant
   author: Frenkel TUD 2012-06"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
@@ -2422,9 +2423,9 @@ algorithm
   visited := arrayCreate(size,-1);
   
   _ := arrayUpdate(visited,1,1);
-  //print("Starte Determinantenberechnung mit 1. Node\n");
+  print("Starte Determinantenberechnung mit 1. Node\n");
   zycles := determinantEdges(digraph[1],size,1,{1},{},1,1,digraph,{});
-  //dumpzycles(zycles,size);
+  dumpzycles(zycles,size);
   det := determinantfromZycles(zycles,size,DAE.RCONST(0.0));
   print("Determinant: \n" +& ExpressionDump.printExpStr(det) +& "\n");
 end determinant;
@@ -2453,6 +2454,7 @@ algorithm
       equation
         sign = realPow(-1.0,intReal(size-d));
         e = List.fold(elst, Expression.expMul, DAE.RCONST(sign));
+        (e,_) = ExpressionSimplify.simplify(e);
         e = Expression.expAdd(iExp,e);
       then
         determinantfromZycles(rest,size,e);
@@ -2640,13 +2642,14 @@ algorithm
       DAE.Exp e;
       list<tuple<Integer,DAE.Exp>> ilst;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
+      array<list<tuple<Integer,DAE.Exp>>> digraph;
     case({},_) then iDigraph;
     case((i,j,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_)
       equation
         ilst = iDigraph[j];
-        _ = arrayUpdate(iDigraph,j,(i,e)::ilst);
+        digraph = arrayUpdate(iDigraph,j,(i,e)::ilst);
       then
-        getDeterminantDigraph(rest,iDigraph);
+        getDeterminantDigraph(rest,digraph);
   end matchcontinue;
 end getDeterminantDigraph;
 

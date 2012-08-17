@@ -2402,10 +2402,11 @@ public function sortStateCandidatesVars
   sort the state candidates"
   input BackendDAE.EqSystem syst;
   input array<Integer> mapIncRowEqn;
+  input BackendDAE.StateOrder so;
   output BackendDAE.Variables outStates;
 algorithm
   outStates:=
-  matchcontinue (syst,mapIncRowEqn)
+  matchcontinue (syst,mapIncRowEqn,so)
     local
       list<DAE.ComponentRef> varCrefs;
       list<Integer> varIndices;
@@ -2416,11 +2417,11 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
       list<BackendDAE.Var> vlst;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_)
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_,_)
       equation
         varCrefs = List.map(BackendDAEUtil.varList(vars),BackendVariable.varCref);
         varIndices = List.intRange(listLength(varCrefs));
-        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn);
+        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn,so,{});
         prioTuples = List.sort(prioTuples,sortprioTuples);
         varIndices = List.map(prioTuples,Util.tuple32);
         vlst = List.map1r(varIndices,BackendVariable.getVarAt,vars);
@@ -2442,10 +2443,11 @@ public function sortStateCandidates
   sort the state candidates"
   input list<tuple<DAE.ComponentRef,Integer>> inStates;
   input BackendDAE.EqSystem syst;
+  input BackendDAE.StateOrder so;
   output list<tuple<DAE.ComponentRef,Integer>> outStates;
 algorithm
   outStates:=
-  matchcontinue (inStates,syst)
+  matchcontinue (inStates,syst,so)
     local
       list<DAE.ComponentRef> varCrefs;
       list<Integer> varIndices;
@@ -2456,16 +2458,16 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
       list<tuple<DAE.ComponentRef,Integer>> states;
 
-    case (inStates,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)))
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_)
       equation
         varCrefs = List.map(inStates,Util.tuple21);
         varIndices = List.map(inStates,Util.tuple22);
-        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,listArray({}));
+        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,listArray({}),so,{});
         prioTuples = List.sort(prioTuples,sortprioTuples);
         states = List.map(prioTuples,Util.tuple312);
       then states;
 
-    case ({},_)
+    case ({},_,_)
       equation
         print("Error, sortStateCandidates:");
         //dump(dae);
@@ -2708,7 +2710,7 @@ algorithm
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, syst,{},{});
         (syst,shared,deqns,so1,orgEqnsLst1) = differentiateEqns(syst,shared,eqns_1,so,orgEqnsLst);
-        (state,stateno) = selectDummyState(states, stateindx, syst, mapIncRowEqn);
+        (state,stateno) = selectDummyState(states, stateindx, syst, mapIncRowEqn, so);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates: ");print(stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
         (dummy_der,syst) = newDummyVar(state, syst, DAE.NEW_DUMMY_DER(state,states));
@@ -3597,11 +3599,12 @@ protected function selectDummyState
   input list<Integer> varIndices;
   input BackendDAE.EqSystem syst;
   input array<Integer> mapIncRowEqn;
+  input BackendDAE.StateOrder so;
   output DAE.ComponentRef outComponentRef;
   output Integer outInteger;
 algorithm
   (outComponentRef,outInteger):=
-  matchcontinue (varCrefs,varIndices,syst,mapIncRowEqn)
+  matchcontinue (varCrefs,varIndices,syst,mapIncRowEqn,so)
     local
       DAE.ComponentRef s;
       BackendDAE.Value sn;
@@ -3611,14 +3614,14 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
 
-    case (varCrefs,varIndices,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_)
+    case (varCrefs,varIndices,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_,_)
       equation
-        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn);
+        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn,so,{});
         //print("priorities:");print(stringDelimitList(List.map(prioTuples,printPrioTuplesStr),","));print("\n");
         (s,sn) = selectMinPrio(prioTuples);
       then (s,sn);
 
-    case ({},_,syst,_)
+    case ({},_,syst,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAETransform.selectDummyState: no state to select"});
         BackendDump.dumpEqSystem(syst);
@@ -3677,28 +3680,29 @@ protected function calculateVarPriorities
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> mapIncRowEqn;
+  input BackendDAE.StateOrder so;
+  input list<tuple<DAE.ComponentRef,Integer,Real>> iTuples;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := match(inVarCrefs,inVarIndices,vars,eqns,m,mt,mapIncRowEqn)
+  tuples := match(inVarCrefs,inVarIndices,vars,eqns,m,mt,mapIncRowEqn,so,iTuples)
     local 
       DAE.ComponentRef varCref;
       Integer varIndx;
       BackendDAE.Var v;
       Real prio,prio1,prio2;
-      list<tuple<DAE.ComponentRef,Integer,Real>> prios;
       list<DAE.ComponentRef> varCrefs;
       list<Integer> varIndices;    
     
-    case ({},{},_,_,_,_,_) then {};
-    case (varCref::varCrefs,varIndx::varIndices,vars,eqns,m,mt,_)
+    case ({},{},_,_,_,_,_,_,_) then listReverse(iTuples);
+    case (varCref::varCrefs,varIndx::varIndices,_,_,_,_,_,_,_)
       equation
-        prios = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn);
         v = BackendVariable.getVarAt(vars,varIndx);
         prio1 = varStateSelectPrio(v);
-        prio2 = varStateSelectHeuristicPrio(v,varIndx,vars,eqns,m,mt,mapIncRowEqn);
+        prio2 = varStateSelectHeuristicPrio(v,varIndx,vars,eqns,m,mt,mapIncRowEqn,so);
         prio = prio1 +. prio2;
         Debug.fcall(Flags.DUMMY_SELECT,BackendDump.debugStrCrefStrRealStrRealStrRealStr,("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n"));
-      then ((varCref,varIndx,prio)::prios);
+      then
+        calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn,so,(varCref,varIndx,prio)::iTuples);
   end match;
 end calculateVarPriorities;
 
@@ -3725,12 +3729,13 @@ protected function varStateSelectHeuristicPrio
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> mapIncRowEqn;
+  input BackendDAE.StateOrder so;
   output Real prio;
 protected
   list<Integer> vEqns;
   DAE.ComponentRef vCr;
 //  Integer vindx;
-  Real prio1,prio2,prio3,prio4,prio5,prio6;
+  Real prio1,prio2,prio3,prio4,prio5,prio6,prio7;
 algorithm
 //  (_,vindx::_) := BackendVariable.getVar(BackendVariable.varCref(v),vars); // Variable index not stored in var itself => lookup required
   vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
@@ -3743,8 +3748,9 @@ algorithm
 //  prio4 := varStateSelectHeuristicPrio4(v);
   prio5 := varStateSelectHeuristicPrio5(v);
   prio6 := varStateSelectHeuristicPrio6(v);
-  prio:= prio1 +. prio2 +. prio3 +. prio5 +. prio6;// +. prio4;
-  dumpvarStateSelectHeuristicPrio(prio1,prio2,prio3,prio5,prio6);
+  prio7 := varStateSelectHeuristicPrio7(v,so,vars);
+  prio:= prio1 +. prio2 +. prio3 +. prio5 +. prio6 +. prio7;// +. prio4;
+  dumpvarStateSelectHeuristicPrio(prio1,prio2,prio3,prio5,prio6,prio7);
 end varStateSelectHeuristicPrio;
 
 protected function dumpvarStateSelectHeuristicPrio
@@ -3754,9 +3760,10 @@ protected function dumpvarStateSelectHeuristicPrio
 //  input Real Prio4;
   input Real Prio5;
   input Real Prio6;
+  input Real Prio7;
 algorithm
-  _ := matchcontinue(Prio1,Prio2,Prio3,Prio5,Prio6)
-    case(_,_,_,_,_)
+  _ := matchcontinue(Prio1,Prio2,Prio3,Prio5,Prio6,Prio7)
+    case(_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.DUMMY_SELECT);
         print("Prio 1 : " +& realString(Prio1) +& "\n");
@@ -3765,11 +3772,33 @@ algorithm
 //        print("Prio 4 : " +& realString(Prio4) +& "\n");
         print("Prio 5 : " +& realString(Prio5) +& "\n");
         print("Prio 6 : " +& realString(Prio6) +& "\n");
+        print("Prio 7 : " +& realString(Prio7) +& "\n");
       then
         ();
     else then ();        
   end matchcontinue;
 end dumpvarStateSelectHeuristicPrio;
+
+protected function varStateSelectHeuristicPrio7
+"function varStateSelectHeuristicPrio6
+  author: Frenkel TUD 2012-08
+  Helper function to varStateSelectHeuristicPrio.
+  added prio for states/variables wich are derivatives of deselected states"
+  input BackendDAE.Var v;
+  input BackendDAE.StateOrder so;
+  input BackendDAE.Variables vars;
+  output Real prio;
+algorithm
+  prio := matchcontinue(v,so,vars)
+    local DAE.ComponentRef cr,pcr;
+    case(BackendDAE.VAR(varName=cr),_,_)
+      equation
+        pcr::_ = getDerStateOrder(cr, so);
+        (BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE())::{},_) = BackendVariable.getVar(pcr, vars);
+      then -1.0;
+    else then 0.0;
+  end matchcontinue;
+end varStateSelectHeuristicPrio7;
 
 protected function varStateSelectHeuristicPrio6
 "function varStateSelectHeuristicPrio6
