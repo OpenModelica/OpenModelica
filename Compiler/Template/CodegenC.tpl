@@ -5060,12 +5060,8 @@ case UNARY(exp = e as CREF(__)) then
   <<
   <%lhsStr%> = -<%rhsStr%>;
   >>
-case _ then 
-  <<
-  /* SimCodeC.tpl template: writeLhsCref: UNHANDLED LHS 
-   * <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%> 
-   */
-  >>
+else
+  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
 end writeLhsCref;
 
 template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)

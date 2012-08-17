@@ -1142,7 +1142,7 @@ algorithm
       equation
         mod1 = lookupCompModification2(subs, n);
         mod2 = lookupComplexCompModification(eqMod,n,f,e);
-        mod = checkDuplicateModifications(mod1,mod2);
+        mod = checkDuplicateModifications(mod1,mod2,n);
       then
         mod;
   end match;
@@ -1169,7 +1169,7 @@ algorithm
       equation
         mod1 = lookupCompModification2(subs, n);
         mod2 = lookupComplexCompModification(eqMod,n,f,e);
-        mod = selectEqMod(mod1, mod2);
+        mod = selectEqMod(mod1, mod2, n);
       then
         mod;
   end match;
@@ -1181,18 +1181,19 @@ protected function selectEqMod
   Otherwise check for duplicates"
  input DAE.Mod subMod;
  input DAE.Mod eqMod;
+ input String n;
  output DAE.Mod mod;
 algorithm
-  mod := matchcontinue(subMod, eqMod)
+  mod := match (subMod, eqMod, n)
     // eqmod is nomod!
-    case (subMod, eqMod as DAE.NOMOD()) then subMod;
-    case (subMod, eqMod as DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _)))) then eqMod;
-    case (subMod, eqMod)
+    case (subMod, DAE.NOMOD(), _) then subMod;
+    case (_, eqMod as DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))), _) then eqMod;
+    case (subMod, eqMod, n)
       equation
-        mod = checkDuplicateModifications(subMod,eqMod);
+        mod = checkDuplicateModifications(subMod,eqMod,n);
       then
         mod;
-  end matchcontinue;
+  end match;
 end selectEqMod;
 
 public function lookupCompModification12 "function: lookupCompModification
@@ -1302,25 +1303,26 @@ protected function checkDuplicateModifications "Checks if two modifiers are pres
 print error of duplicate modifications, if not, the one modification having a value is returned"
   input DAE.Mod mod1;
   input DAE.Mod mod2;
+  input String n;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue(mod1,mod2)
+  outMod := matchcontinue(mod1,mod2,n)
     local 
       String s1,s2,s;
 
-    case(DAE.NOMOD(),mod2) then mod2;
-    case(mod1,DAE.NOMOD()) then mod1;
+    case(DAE.NOMOD(),mod2,_) then mod2;
+    case(mod1,DAE.NOMOD(),_) then mod1;
     // if they are equal, return the second one!
-    case(mod1,mod2) 
+    case(mod1,mod2,_) 
       equation
         true = modEqual(mod1, mod2);
       then mod2;
     // print error message
-    case(mod1,mod2) equation
+    case(mod1,mod2,n) equation
       s1 = printModStr(mod1);
       s2 = printModStr(mod2);
       s = s1 +& " and " +& s2;
-      Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s});
+      Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n});
     then fail();
   end matchcontinue;
 end checkDuplicateModifications;
