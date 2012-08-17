@@ -5138,19 +5138,15 @@ algorithm
   (valuesRet, value_dims) :=
   match (inBackendDAEEquationLst1,inBackendDAEVarLst2,inBackendDAEEquationLst3,inBackendDAEVarLst4)
     local
-      list<DAE.Exp> rels;
       list<list<Integer>> values,values_1;
-      list<Integer> values_2;
       list<BackendDAE.Equation> cont_e,disc_e;
       list<BackendDAE.Var> cont_v,disc_v;
       
     case (cont_e,cont_v,disc_e,disc_v)
       equation
-        rels = mixedCollectRelations(cont_e, disc_e);
-        (values,value_dims) = generateMixedDiscretePossibleValues2(rels, disc_v, 0);
+        (values,value_dims) = generateMixedDiscretePossibleValues2(disc_v, 0);
         values_1 = generateMixedDiscreteCombinationValues(values);
-        values_2 = List.flatten(values_1);
-        valuesRet = values_2;
+        valuesRet = List.flatten(values_1);
       then
         (valuesRet, value_dims);
     // failure
@@ -8540,81 +8536,27 @@ algorithm
   str := stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
 
-protected function mixedCollectRelations "function: mixedCollectRelations
-  author: PA
-"
-  input list<BackendDAE.Equation> c_eqn;
-  input list<BackendDAE.Equation> d_eqn;
-  output list<DAE.Exp> res;
-protected
-  list<DAE.Exp> l1,l2;
-algorithm
-  l1 := mixedCollectRelations2(c_eqn);
-  l2 := mixedCollectRelations2(d_eqn);
-  res := listAppend(l1, l2);
-end mixedCollectRelations;
-
-protected function mixedCollectRelations2 "function: mixedCollectRelations2
-  author: PA
-
-  Helper function to mixed_collect_functions.
-"
-  input list<BackendDAE.Equation> inBackendDAEEquationLst;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inBackendDAEEquationLst)
-    local
-      list<DAE.Exp> l1,l2,l3,res;
-      DAE.Exp e1,e2;
-      list<BackendDAE.Equation> es;
-      Expression.ComponentRef cr;
-    case ({}) then {};
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es))
-      equation
-        l1 = Expression.getRelations(e1);
-        l2 = Expression.getRelations(e2);
-        l3 = mixedCollectRelations2(es);
-        res = List.flatten({l1,l2,l3});
-      then
-        res;
-    case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
-      equation
-        l1 = Expression.getRelations(e1);
-        l2 = mixedCollectRelations2(es);
-        res = listAppend(l1, l2);
-      then
-        res;
-    case (_) then {};
-  end matchcontinue;
-end mixedCollectRelations2;
-
 protected function generateMixedDiscreteCombinationValues "function generateMixedDiscreteCombinationValues
   author: PA
   Generates all combinations of the values given as argument"
-  input list<list<Integer>> inStringLstLst;
-  output list<list<Integer>> outStringLstLst;
+  input list<list<Integer>> iValues;
+  output list<list<Integer>> oValues;
 algorithm
-  outStringLstLst := matchcontinue (inStringLstLst)
+  oValues := match (iValues)
     local
       list<Integer> value;
-      list<list<Integer>> values_1,values;
-      
     case ({value}) then {value};
-      
-    case (values)
-      equation
-        values_1 = generateMixedDiscreteCombinationValues1(values);
+    else
       then
-        values_1;
-  end matchcontinue;
+        generateMixedDiscreteCombinationValues1(iValues);
+  end match;
 end generateMixedDiscreteCombinationValues;
 
 protected function generateMixedDiscreteCombinationValues1
-  input list<list<Integer>> inStringLstLst;
-  output list<list<Integer>> outStringLstLst;
+  input list<list<Integer>> iValues;
+  output list<list<Integer>> oValues;
 algorithm
-  outStringLstLst := matchcontinue (inStringLstLst)
+  oValues := matchcontinue (iValues)
     local
       list<list<Integer>> values_1,values_2,values;
       list<Integer> value;
@@ -8659,13 +8601,12 @@ end generateMixedDiscreteCombinationValues2;
 
 protected function generateMixedDiscretePossibleValues2 "function: generateMixedDiscretePossibleValues2
   Helper function to generateMixedDiscretePossibleValues."
-  input list<DAE.Exp> inExpExpLst;
   input list<BackendDAE.Var> inBackendDAEVarLst;
   input Integer inInteger;
   output list<list<Integer>> outStringLstLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outStringLstLst,outIntegerLst) := matchcontinue (inExpExpLst,inBackendDAEVarLst,inInteger)
+  (outStringLstLst,outIntegerLst) := matchcontinue (inBackendDAEVarLst,inInteger)
     local
       Integer cg_id;
       list<list<Integer>> values;
@@ -8674,16 +8615,16 @@ algorithm
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
       
-    case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
+    case ({},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
       
-    case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
+    case ((v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
         DAE.T_BOOL(source = _) = BackendVariable.varType(v);
-        (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
+        (values,dims) = generateMixedDiscretePossibleValues2(vs, cg_id);
       then
         ({1,0} :: values, 2 :: dims);
         
-    case (rels,(v :: vs),_)
+    case ((v :: vs),_)
       equation
         DAE.T_INTEGER(source = _) = BackendVariable.varType(v);
         Error.addMessage(Error.INTERNAL_ERROR,

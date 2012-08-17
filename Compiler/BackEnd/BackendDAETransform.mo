@@ -1023,7 +1023,7 @@ protected function analyseStrongComponentBlock"function: analyseStrongComponentB
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;  
   input array<Integer> inAss1;
-  input array<Integer> inAss2; 
+  input array<Integer> inAss2;
   input Boolean inLoop; //true if the function call itself
   output BackendDAE.StrongComponent outComp;
 algorithm
@@ -4263,7 +4263,7 @@ algorithm
 
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n to \n");
+        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn_1) +& "\n to \n");
         (eqn_1,so) = traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,inStateOrd);
         // print(BackendDump.equationStr(eqn_1) +& "\n");
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));

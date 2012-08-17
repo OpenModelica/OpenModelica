@@ -88,45 +88,6 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
   printf("}\n"); \
 } while(0)
 
-#define solve_nonlinear_system_mixed(residual, no, userdata) do { \
-   int giveUp = 0; \
-   int retries = 0; \
-   int retries2 = 0; \
-   while(!giveUp) { \
-     giveUp = 1; \
-     _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
-          nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
-        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
-      if (info == 0) { \
-        DEBUG_INFO2(LOG_NONLIN_SYS,"improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
-      } \
-      if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
-      retries++; giveUp = 0; \
-      factor = factor / 10.0; \
-      DEBUG_INFO2(LOG_NONLIN_SYS,"Solving nonlinear system: iteration not making progress, trying to decrease factor to %f",factor);  \
-      if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
-        int i = 0; \
-        for (i = 0; i < n; i++) { nls_x[i]+=0.1; }; \
-        retries++; giveUp = 0; \
-        DEBUG_INFO2(LOG_NONLIN_SYS,"Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
-        if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-          retries = 0; retries2++; giveUp = 0; \
-          int i = 0; \
-          for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
-        } else if (info >= 2 && info <= 5) { \
-          int i = 0; \
-          modelErrorCode=ERROR_NONLINSYS; \
-          DEBUG_INFO2(LOG_NONLIN_SYS, "error solving nonlinear system nr. %d at time %f", no, data->localData[0]->timeValue); \
-          if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
-            for (i = 0; i < n; i++) { \
-               DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
-               DEBUG_INFO_AL2(LOG_NONLIN_SYS," x[%d] = %f",i,nls_x[i]); \
-            } \
-          } \
-        } \
-      }\
-} while(0) /* (no trailing ;)*/
-
 #define solve_nonlinear_system(residual, no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
@@ -142,8 +103,10 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
      _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
-      if (info == 0) \
+      if (info == 0) {\
           printErrorEqSyst(IMPROPER_INPUT, no, data->localData[0]->timeValue); \
+          data->found_solution = -1; \
+      }\
       if (info == 1){ \
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
           INFO_AL("### System solved! ###"); \
@@ -197,6 +160,7 @@ void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* 
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
         INFO_AL(" - iteration making no progress:\tremove scaling factor at all!"); \
       } else if (info >= 2 && info <= 5) { \
+        data->found_solution = -1; \
         modelErrorCode=ERROR_NONLINSYS; \
         printErrorEqSyst(ERROR_AT_TIME, no, data->localData[0]->timeValue); \
         if (DEBUG_FLAG(LOG_DEBUG)) { \
@@ -255,28 +219,13 @@ assert(ipiv != 0); \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    DEBUG_INFO3(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
+   data->found_solution = -1; \
  } \
  else if (info > 0) { \
    DEBUG_INFO2(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
+   data->found_solution = -1; \
  } \
 free(ipiv); \
-} while (0) /* (no trailing ; ) */
-
-#define solve_linear_equation_system_mixed(A,b,size,id) do { integer n=size; \
-integer nrhs = 1; /* number of righthand sides*/\
-integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
-integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
-assert(ipiv != 0); \
-integer info = 0; /* output */ \
-_omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
- if (info < 0) { \
-   if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); fflush(NULL); \
- } \
- else if (info > 0) { \
-     found_solution = -1; \
- } \
- free(ipiv);\
 } while (0) /* (no trailing ; ) */
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
@@ -336,33 +285,34 @@ int ldfjac = size;
 (data->localData[1]->timeValue-data->localData[2]->timeValue))
 
 #define mixed_equation_system(size) do { \
-    int found_solution = 0; \
     int cur_value_indx = 0; \
+    data->found_solution = 0; \
     do { \
         double discrete_loc[size] = {0}; \
         double discrete_loc2[size] = {0};
 
-#define mixed_equation_system_end(size) } while (!found_solution); \
+#define mixed_equation_system_end(size) } while (!data->found_solution); \
  } while(0)
 
 #define check_discrete_values(size,numValues) \
 do { \
   int i = 0; \
-  if (found_solution == -1) { \
+  if (data->found_solution == -1) { \
   /*system of equations failed */ \
-      found_solution = 0; \
+      data->found_solution = 0; \
   } else { \
-      found_solution = 1; \
+      data->found_solution = 1; \
       for (i = 0; i < size; i++) { \
           if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
-              found_solution=0;\
+          data->found_solution=0;\
+              break;\
           }\
       }\
   }\
-  if (!found_solution ) { \
+  if (!data->found_solution ) { \
       cur_value_indx++; \
       if (cur_value_indx >= numValues/size) { \
-          found_solution = -1; \
+          data->found_solution = -1; \
       } else {\
       /* try next set of values*/ \
           for (i = 0; i < size; i++) { \
@@ -371,7 +321,7 @@ do { \
       } \
   } \
   /* we found a solution*/ \
-  if (found_solution && DEBUG_FLAG(LOG_NONLIN_SYS)){ \
+  if (data->found_solution && DEBUG_FLAG(LOG_NONLIN_SYS)){ \
       int i = 0; \
       printf("Result of mixed system discrete variables:\n"); \
       for (i = 0; i < size; i++) { \

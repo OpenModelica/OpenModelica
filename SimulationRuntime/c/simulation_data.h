@@ -7,16 +7,16 @@
 *
 * All rights reserved.
 *
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
-* AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+* AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
 * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
 *
 * The OpenModelica software and the Open Source Modelica
 * Consortium (OSMC) Public License (OSMC-PL) are obtained
 * from Link�ping University, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
-* http://www.openmodelica.org, and in the OpenModelica distribution. 
+* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+* http://www.openmodelica.org, and in the OpenModelica distribution.
 * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
 *
 * This program is distributed WITHOUT ANY WARRANTY; without
@@ -30,7 +30,7 @@
 */
 
 /*! \file simulation_data.h
- * Description: This is the C header file to provide all information 
+ * Description: This is the C header file to provide all information
  * for simulation
  */
 
@@ -141,7 +141,7 @@
   /* Alias data with various types*/
   typedef struct DATA_REAL_ALIAS
   {
-    int negate;  
+    int negate;
     int nameID;  /* Pointer to Alias */
     char aliasType; /* 0 variable, 1 parameter, 2 time */
     VAR_INFO info;
@@ -385,6 +385,7 @@
     SIMULATION_DATA **localData;
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
+    int found_solution;             /* helper for mixed systems */
   }DATA;
 
 #endif
