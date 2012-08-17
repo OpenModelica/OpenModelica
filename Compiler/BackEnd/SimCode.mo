@@ -881,7 +881,11 @@ public function createAssertforSqrt
 algorithm
   outExp := 
   match (inExp)
-  case(_) then DAE.RELATION(inExp,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE());
+    case(_)
+      equation
+        // Simplify things like abs(exp) >= 0 to exp
+        (outExp,_) = ExpressionSimplify.simplify(DAE.RELATION(inExp,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()));
+      then outExp;
   end match;
 end createAssertforSqrt;
 

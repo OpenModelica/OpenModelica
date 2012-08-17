@@ -338,7 +338,7 @@ algorithm
   end matchcontinue;
 end checkAssignmentToInputs;
 
-public function elabExpCrefList
+public function elabExpCrefNoEvalList
 "elaborates a list of expressions that are only component references."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -381,15 +381,15 @@ algorithm
     case (cache,env,Absyn.CREF(componentRef = cr)::rest,impl,st,doVect,pre,info,_) // BoschRexroth specifics
       equation
         false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
-        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),attr))) = elabCref(cache,env, cr, impl, doVect, pre, info);
-        (cache, expLst, propLst, attrLst, st) = elabExpCrefList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages); 
+        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),attr))) = elabCrefNoEval(cache,env, cr, impl, doVect, pre, info);
+        (cache, expLst, propLst, attrLst, st) = elabExpCrefNoEvalList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages); 
       then
         (cache,exp::expLst,DAE.PROP(ty,DAE.C_VAR())::propLst,attr::attrLst,st);
 
     case (cache,env,Absyn.CREF(componentRef = cr)::rest,impl,st,doVect,pre,info,_)
       equation
-        (cache,SOME((exp,prop,attr))) = elabCref(cache, env, cr, impl, doVect, pre, info);
-        (cache, expLst, propLst, attrLst, st) = elabExpCrefList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages);
+        (cache,SOME((exp,prop,attr))) = elabCrefNoEval(cache, env, cr, impl, doVect, pre, info);
+        (cache, expLst, propLst, attrLst, st) = elabExpCrefNoEvalList(cache, env, rest, impl, st, doVect, pre, info, numErrorMessages);
       then
         (cache,exp::expLst,prop::propLst,attr::attrLst,st);
         
@@ -401,7 +401,7 @@ algorithm
      then
        fail();
   end matchcontinue;
-end elabExpCrefList;
+end elabExpCrefNoEvalList;
 
 protected function elabExp2 "
 function: elabExp

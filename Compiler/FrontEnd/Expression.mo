@@ -5724,6 +5724,33 @@ algorithm
   end match;
 end isZero;
 
+public function isPositiveOrZero
+"function: isPositiveOrZero
+  Returns true if an expression is known to be >= 0"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    
+    case DAE.CALL(path = Absyn.IDENT("abs")) then true;
+    else isZero(inExp);
+
+  end match;
+end isPositiveOrZero;
+
+public function isNegativeOrZero
+"function: isNegativeOrZero
+  Returns true if an expression is known to be <= 0"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    
+    case _ then isZero(inExp);
+
+  end match;
+end isNegativeOrZero;
+
 public function isHalf
 "Returns true if an expression is 0.5"
   input DAE.Exp inExp;

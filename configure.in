@@ -621,8 +621,11 @@ AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
 GENERATED_AUTOCONF_FILES="Makefile \
-Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile \
-Compiler/omc_profiler/Makefile Compiler/runtime/Makefile \
+Compiler/Makefile \
+Compiler/omc_release/Makefile \
+Compiler/omc_debug/Makefile \
+Compiler/omc_profiler/Makefile \
+Compiler/runtime/Makefile \
 Compiler/modpar/Makefile \
 Compiler/runtime/config.unix.h \
 PythonInterface/Makefile \

@@ -3296,6 +3296,12 @@ algorithm
 
     case(DAE.GREATEREQ(ty=_),exp1,exp2) 
       equation
+        true = Expression.isPositiveOrZero(exp1);
+        true = Expression.isNegativeOrZero(exp2);
+      then DAE.BCONST(true);
+
+    case(DAE.GREATEREQ(ty=_),exp1,exp2) 
+      equation
         v1 = Expression.getRealConst(exp1);
         v2 = Expression.getRealConst(exp2);
         b = v1 >=. v2;

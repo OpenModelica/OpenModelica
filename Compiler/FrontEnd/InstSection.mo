@@ -4636,7 +4636,7 @@ algorithm
         true = MetaUtil.onlyCrefExpressions(expl);
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
+        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -4652,7 +4652,7 @@ algorithm
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
+        (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -4675,7 +4675,7 @@ algorithm
       equation 
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), Ceval.MSG(info));
-        (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefList(cache,env, expl, impl,NONE(),false,pre,info, Error.getNumErrorMessages());
+        (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache,env, expl, impl,NONE(),false,pre,info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);
