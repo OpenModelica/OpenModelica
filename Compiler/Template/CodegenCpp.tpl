@@ -66,7 +66,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  
    Functions::Functions() 
    { 
-     <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n"%>
+     <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
    } 
 
    Functions::~Functions() 
@@ -113,7 +113,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        void Assert(bool cond,string msg);
        
        //Literals
-        <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
+        <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
@@ -824,7 +824,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     MMC_TRY_TOP()
     out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction,simCode) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%outVars |> var as VARIABLE(__) hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n"%>
+    <%outVars |> var as VARIABLE(__) hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty%>
     return 0;
   }
   >> %>
@@ -1560,12 +1560,13 @@ case SES_NONLINEAR(__) then
   <<
    
    <%crefs |> name hasindex i0 =>
-    let namestr = cref1(name,simCode,contextAlgloop)
-    <<
-      doubleUnknowns[<%i0%>] = <%namestr%>;
+     let namestr = cref1(name,simCode,contextAlgloop)
+     <<
+       doubleUnknowns[<%i0%>] = <%namestr%>;
      >>
-  ;separator="\n"%>
-   >>
+     ;separator="\n"
+   %>
+  >>
  case SES_LINEAR(__) then
    <<
    
@@ -1605,8 +1606,8 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
     let namestr = cref(name)
     <<
      <%namestr%> = algloopvars<%index%>[<%i0%>];
-     >>
-  ;separator="\n"%>
+    >>
+    ;separator="\n"%>
   
    >>
   case e as SES_LINEAR(__) then
@@ -1638,15 +1639,15 @@ case SES_NONLINEAR(__) then
     let namestr = cref1(name,simCode,contextAlgloop)
     <<
     <%namestr%>  = doubleUnknowns[<%i0%>];
-     >>
-  ;separator="\n"%>
-   >>
+    >>
+   ;separator="\n"%>
+  >>
   case SES_LINEAR(__) then
   <<
    
    <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,contextAlgloop)%>=doubleUnknowns[<%i0%>];' ;separator="\n"%><%inlineVars(contextSimulationNonDiscrete,vars)%>
   
-   >>
+  >>
 end setAlgloopvars;
 
 template initAlgloopDimension(SimEqSystem eq, Text &varDecls /*BUFP*/)
@@ -1779,11 +1780,11 @@ template writeoutput3(SimEqSystem eqn, SimCode simCode)
   >>
   case e as SES_LINEAR(__) then
   <<
-  <%(vars |> var hasindex myindex2 => writeoutput4(e.index,myindex2));separator=","%>
+  <%(vars |> var hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
   >>
   case e as SES_NONLINEAR(__) then
   <<
-  <%(eqs |> eq hasindex myindex2 => writeoutput4(e.index,myindex2));separator=","%>
+  <%(eqs |> eq hasindex myindex2 => writeoutput4(e.index,myindex2));separator=",";empty%>
   >>
   case SES_MIXED(__) then writeoutput3(cont,simCode)
   case SES_WHEN(__) then
@@ -4051,7 +4052,7 @@ template helpvarvector(list<SimWhenClause> whenClauses,SimCode simCode)
   let &varDecls = buffer "" /*BUFD*/
   let reinit = (whenClauses |> when hasindex i0 =>
       helpvarvector1(when, contextOther,&varDecls,i0,simCode)
-    ;separator="")
+    ;separator="";empty)
   <<
     <%reinit%>
   >>
@@ -4092,7 +4093,7 @@ template resethelpvar2(list<SimWhenClause> whenClauses,SimCode simCode)
   let &varDecls = buffer "" /*BUFD*/
   let reinit = (whenClauses |> when hasindex i0 =>
       resethelpvar1(when, contextOther,&varDecls,i0,simCode)
-    ;separator="\n")
+    ;separator="\n";empty)
   <<
     <%reinit%>
   >>
@@ -4105,8 +4106,8 @@ template resethelpvar1(SimWhenClause whenClauses,Context context, Text &varDecls
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-   let &preExp += ""
+    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let &preExp += ""
     ' if(index==<%hidx%>)
      _event_handling.setHelpVar(<%hidx%>,<%helpInit%>);
     '
@@ -5415,7 +5416,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 0 =>
                     let rhsStr = 'get<<%i1%>>(<%retStruct%>)'
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/ , simCode)
-                  ;separator="\n")
+                  ;separator="\n";empty)
   <<
   /* algStmtTupleAssign: preExp printout <%marker%>*/
   <%preExp%>
@@ -5619,7 +5620,7 @@ template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BU
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     zeroCrossingTpl2(i0, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end zeroCrossingsTpl2;
 
 /*
@@ -5836,7 +5837,7 @@ template checkConditions1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUF
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     checkConditions2(i0, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end checkConditions1;
 
 template checkConditions2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
@@ -5898,7 +5899,7 @@ template handleSystemEvents1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     handleSystemEvents2(i0, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end handleSystemEvents1;
 
 template handleSystemEvents2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
@@ -5988,7 +5989,7 @@ template giveZeroFunc2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     giveZeroFunc3(i0, relation_, &varDecls /*BUFD*/,&preExp,simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end giveZeroFunc2;
 
 template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Text &preExp ,SimCode simCode)
@@ -5996,18 +5997,18 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
  
   match relation
   case rel as  RELATION(index=zerocrossingIndex) then
-       let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
       let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-       match rel.operator
+      match rel.operator
         
-        case LESS(__) 
-        case LESSEQ(__) then
+      case LESS(__) 
+      case LESSEQ(__) then
        <<
          if(_conditions0[<%zerocrossingIndex%>])
                 f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
            else
                 f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
-      >>
+       >>
       case GREATER(__)
       case GREATEREQ(__) then
         <<
@@ -6016,7 +6017,7 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
            else
                 f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
          >>
-     end match  
+      end match  
 end giveZeroFunc3;
 
 /*
@@ -6053,7 +6054,7 @@ template conditionvarZero(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     conditionvarZero1(i0, relation_, simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end conditionvarZero;
 
 template conditionvarZero1(Integer index1, Exp relation,SimCode simCode)
@@ -6069,7 +6070,7 @@ template saveconditionvar(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     saveconditionvar1(i0, relation_, simCode)
-  ;separator="\n")
+  ;separator="\n";empty)
 end saveconditionvar;
 
 template saveconditionvar1(Integer index1, Exp relation,SimCode simCode)
@@ -6230,7 +6231,7 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
     ;separator="\n")
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode)
-    ;separator="\n") 
+    ;separator="\n";empty) 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
@@ -6261,7 +6262,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode)
-    ;separator="\n") 
+    ;separator="\n";empty) 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
@@ -6375,20 +6376,20 @@ then
 <<
  <%{(vars.algVars |> SIMVAR(__) hasindex myindex =>
        '<%cref(name)%>=variables(<%myindex%>);'
-      ;separator="\n"),
-      (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
+       ;separator="\n"),
+    (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
        '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%myindex%>);'
-      ;separator="\n"),
-      (vars.boolAlgVars |> SIMVAR(__) hasindex myindex =>
+       ;separator="\n"),
+    (vars.boolAlgVars |> SIMVAR(__) hasindex myindex =>
        '<%cref(name)%>=variables(<%numAlgvar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
-      ;separator="\n"),
-      (vars.stateVars |> SIMVAR(__) hasindex myindex =>
+       ;separator="\n"),
+    (vars.stateVars |> SIMVAR(__) hasindex myindex =>
        '__z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
-      ;separator="\n"),
-      (vars.derivativeVars |> SIMVAR(__) hasindex myindex =>
+       ;separator="\n"),
+    (vars.derivativeVars |> SIMVAR(__) hasindex myindex =>
       '__zDot[<%index%>]=variables2(<%myindex%>);'
       ;separator="\n")}
-     ;separator="\n"%>     
+   ;separator="\n"%>     
 >>
 end setVariables;
 
@@ -6425,17 +6426,17 @@ case "A" then
          case _ then
           let sp_size_index =  lengthListElements(sparsepattern) 
           let leadindex = ( sparsepattern |> (indexes) hasindex index0 => 
-          if index0 then  
-          <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%intSub(index0,1)%>] + <%listLength(indexes)%>;>>
-          else
-          <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = <%listLength(indexes)%>;>>
-          ;separator="\n")
+            if index0 then  
+            <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%intSub(index0,1)%>] + <%listLength(indexes)%>;>>
+            else
+            <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = <%listLength(indexes)%>;>>
+            ;separator="\n")
           let indexElems = ( flatten(sparsepattern) |> (indexes) hasindex index0 => 
-          <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%indexes%>; >> 
-          ;separator="\n")
+            <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%indexes%>; >> 
+            ;separator="\n")
           let colorArray = ( colorList |> (indexes) hasindex index0 => 
-          <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%index0%>] = <%indexes%>; >> 
-          ;separator="\n")  
+            <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%index0%>] = <%indexes%>; >> 
+            ;separator="\n")  
           let sp_size_index =  lengthListElements(sparsepattern)
           let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
@@ -6460,10 +6461,10 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
 ::=
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
-    ;separator="\n\n")
+    ;separator="\n\n";empty)
  let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) hasindex index0  =>
     generateMatrix(index0, mat, vars, name, sparsepattern, colorList, maxColor,simCode)
-    ;separator="\n\n")
+    ;separator="\n\n";empty)
 <<
 <%initialjacMats%> 
 <%jacMats%>
@@ -6545,13 +6546,13 @@ case _ then
     let jacvals = ( sparsepattern |> (indexes) hasindex index0 =>  
      
       let jaccol = ( indexes |> i_index =>   
-     ' _jacobian(<%index0%>,<%intSub(i_index,1)%>) = _jac_y(<%intSub(i_index,1)%>);'
-      ;separator="\n" )
-     ' _jac_x(<%index0%>)=1;
+         ' _jacobian(<%index0%>,<%intSub(i_index,1)%>) = _jac_y(<%intSub(i_index,1)%>);'
+         ;separator="\n" )
+      ' _jac_x(<%index0%>)=1;
 calcJacobianColumn();
 _jac_x.clear();
 <%jaccol%>'
-    ;separator="\n")
+      ;separator="\n")
    
   <<
     <%jacMats%>
@@ -6568,7 +6569,7 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
 ::=
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _, _) hasindex index0 =>
     variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
-    ;separator="\n")
+    ;separator="\n";empty)
 <<
 /* Jacobian Variables */
 <%analyticVars%>
@@ -6580,9 +6581,10 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
     jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0)
-    ;separator="\n")
+    ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0);separator="\n")
+      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0)
+      ;separator="\n";empty)
     ;separator="\n\n")
 <<
 <%seedVarsResult%>
@@ -6723,7 +6725,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
       let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls,simCode)
-        '<%re%> = <%rec%>.<%var.name%>;'
+      '<%re%> = <%rec%>.<%var.name%>;'
     ; separator="\n"    
     %>
     Record = func;

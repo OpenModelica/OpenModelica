@@ -150,4 +150,12 @@ case _ then
 end writeLhsCref;
 				  
 
+				  
+---------------
+-- CodegenCpp.tpl
+---------------
 
+--- all the similar constructs as in CodegenC.tpl are considered as they assume the "empty" option
+--- in the first step, I've added an explicit "empty" option to every ireration expression with hasindex where it is not obvious that every iteration produces an output 
+---------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------

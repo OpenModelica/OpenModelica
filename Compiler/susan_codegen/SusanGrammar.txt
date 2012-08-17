@@ -112,11 +112,11 @@ expression:
 	|
 	map-expr
 	|
-	'{' expression (',' expression )* '}'   // list construction with possible mixed scalars and lists 
-	                                      //… useful in map/concatenation context
-	                                      //TODO: decide if mix of scalars / list values are allowed
+	'{' expression (',' expression )* '}'  // list construction with possible mixed scalars and lists 
+	                                       // useful in map/concatenation context
+	                                       //TODO: decide if mix of scalars / list values are allowed
 	|
-	expression '+' expression   //  concatenation ...… same as '<expression><expression>'
+	expression '+' expression   //  concatenation ... same as '<expression><expression>'
 	|
 	'(' expression ')'
 	|
@@ -153,7 +153,7 @@ fn-call:
 	// path-ident to be able to call an imported function from a package
 
 map-expr:
-	expression '|>'  binding ('hasindex' IDENT ('fromindex' IDENT)? )? '=>' expression   // only 1 for the first impl. … left assoc
+	expression '|>'  binding ('hasindex' IDENT ('fromindex' IDENT)? )? '=>' expression   // only 1 for the first impl. left assoc
 	// expression (',' expression)* '|>'  binding  (','  binding)* ('hasindex' IDENT)? '=>'  expression 
 
 condition:  // we will stick to simple inline only if expression for now ... not <%if cond%> <%endif%> form ... that is ugly looking
@@ -189,7 +189,7 @@ binding:
 	|
 	'(' binding ( ',' binding )+  ')'  //maybe without ( ) ? - no, it would not work when we will want multi map-expr
 	|
-	'{' ( binding  (',' binding )* )? '}'  // list of individual list values … 
+	'{' ( binding  (',' binding )* )? '}'  // list of individual list values  
 	|
 	binding '::' binding    // left assoc
 	|
@@ -693,7 +693,7 @@ expression_base(lesc,resc):
 	'{' '}'  => MAP_ARG_LIST({})	                                                           
 	|
 	'{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
-	                                                           //… useful in map/concatenation context
+	                                                           // useful in map/concatenation context
 	   => MAP_ARG_LIST(exp::expLst)	                                                           
 	|
 	'(' expression(lesc,resc):exp ')'
@@ -1142,7 +1142,7 @@ expressionMapTailRight(lesc,resc):
 	  => exp
 
 plusTailOpt(lesc,resc,bexp):	
-	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation ... same as "<expression><expression>"
 	  => TEMPLATE(bexp::exp::expLst, "+", "");
 	|
 	'+' expressionUnary(lesc,resc):exp

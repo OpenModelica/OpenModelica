@@ -331,7 +331,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
      */
      let &eqnsDefines = buffer ""
      /*
-     let eqnsDefines = (allEquations |> eq hasindex i0 => '<%functionSimProfDef(eq,i0)%>'; separator="")
+     let eqnsDefines = (allEquations |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
@@ -519,7 +519,7 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
 ::=
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _, _) hasindex index0 =>
     variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
-    ;separator="\n")
+    ;separator="\n";empty)
   
   <<
   /* Jacobian Variables */
@@ -1130,7 +1130,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
     ;separator="\n")
   let reinit = (whenClauses |> when hasindex i0 =>
     genreinits(when, &varDecls,i0)
-    ;separator="\n")
+    ;separator="\n";empty)
   
   <<
   <%&tmp%>
@@ -1626,7 +1626,7 @@ template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BU
 ::=
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     zeroCrossingTpl2(i0, relation_, &varDecls /*BUFD*/)
-  ;separator="\n")
+  ;separator="\n";empty)
 end zeroCrossingsTpl2;
 
 
@@ -1657,7 +1657,7 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUF
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     zeroCrossingTpl(i0, relation_, &varDecls /*BUFD*/)
-  ;separator="\n")
+  ;separator="\n";empty)
 end zeroCrossingsTpl;
 
 template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
@@ -2234,7 +2234,7 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   %>
   
   
-  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
+  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
   <%functionBodies(functions)%>
   
   #ifdef __cplusplus
@@ -2567,7 +2567,7 @@ template functionsHeaderFile(String filePrefix,
   <%functionHeaders(functions)%>
   <%externalFunctionIncludes(includes)%>
   
-  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>  
+  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>  
 
   #ifdef __cplusplus
   }
@@ -2876,13 +2876,13 @@ template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Var
       <%outVars |> var hasindex i1 fromindex 1 =>
         match var
         case VARIABLE(__) then
-          let dimStr = match ty case T_ARRAY(__) then
-            '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
+          let dimStr = match ty case T_ARRAY(__) 
+                       then '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
           let typeStr = if boxed then varTypeBoxed(var) else varType(var) 
-            '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
+          '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
         case FUNCTION_PTR(__) then
           'modelica_fnptr c<%i1%>; /* <%name%> */'
-          ;separator="\n"
+      ;separator="\n";empty
       %>
     } <%fname%>_rettype;
   
@@ -2999,7 +2999,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
         '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
       case FUNCTION_PTR(__) then
         'modelica_fnptr c<%i1%>; /* <%name%> */'
-      ;separator="\n"
+      ;separator="\n";empty
     %>
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
@@ -3027,7 +3027,7 @@ template functionHeaderKernelFunctionInterface(String fname, list<Variable> farg
         '<%typeStr%> c<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
       case FUNCTION_PTR(__) then
         'modelica_fnptr c<%i1%>; /* <%name%> */'
-      ;separator="\n"
+      ;separator="\n";empty
     %>
   } <%fname%>_rettype;
 
@@ -3469,7 +3469,7 @@ case FUNCTION(__) then
     MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
     pop_memory_states(states);
     return 0;
@@ -3570,6 +3570,7 @@ case PARALLEL_FUNCTION(__) then
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInitParallel(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/)
+      ;empty
     )
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   
@@ -3796,7 +3797,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
     pop_memory_states(states);
     return 0;
@@ -4851,7 +4852,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
       let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
-        '<%re%> = <%rec%>.<%var.name%>;'
+      '<%re%> = <%rec%>.<%var.name%>;'
     ; separator="\n"    
     %>
     Record = func;
@@ -5010,7 +5011,7 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   let lhsCrefs = (expExpLst |> cr hasindex i0 =>
                     let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
-                  ;separator="\n")  
+                  ;separator="\n"; empty)  
   <<
   <%expExpLst |> cr hasindex i0 =>
     let typ = '<%expTypeFromExpModelica(cr)%>' 
@@ -7978,7 +7979,7 @@ template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
     let res =
     <<
     const struct EQUATION_INFO equationInfo[<%listLength(eqs)%>] = {
-      <% eqs |> eq hasindex eqIndex =>
+      <% eqs |> eq =>
         <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
         >> ; separator=",\n"%>
     };
@@ -7986,7 +7987,7 @@ template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
     <<
     <%preBuf%>
     <%res%>
-    const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq hasindex i0 => match eq
+    const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq => match eq
         case SES_MIXED(__)
         case SES_LINEAR(__)
         case SES_NONLINEAR(__) then '+1'
@@ -8011,23 +8012,23 @@ case MODELINFO(vars=SIMVARS(__)) then
   <ModelVariables>
   <%System.tmpTickReset(1000)%>
   
-  <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n"%>  
-  <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n"%>
-  <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n"%>
-  <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n"%>
-  <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n"%>
+  <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>  
+  <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
+  <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
+  <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
+  <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
   
-  <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n"%>
-  <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n"%>
-  <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n"%>
+  <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n";empty%>
+  <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n";empty%>
+  <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n";empty%>
   
-  <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n"%>
-  <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n"%>  
-  <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n"%>  
+  <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n";empty%>
+  <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n";empty%>  
+  <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n";empty%>  
   
-  <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n"%>
-  <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n"%> 
-  <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n"%> 
+  <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n";empty%>
+  <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n";empty%> 
+  <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n";empty%> 
   </ModelVariables> 
   >>
 end ModelVariables;
