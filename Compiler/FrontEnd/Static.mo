@@ -9588,6 +9588,7 @@ algorithm
       list<Absyn.NamedArg> nas,narg;
       list<DAE.FuncArg> farg;
       Boolean impl;
+      DAE.CodeType ct;
       Env.Cache cache;
       DAE.Dimensions ds;
       Prefix.Prefix pre;
@@ -9597,11 +9598,21 @@ algorithm
     case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings,_,_,_)
       then (cache,slots,{},polymorphicBindings);
 
+    case (cache, env, (Absyn.NAMEDARG(argName = id,argValue = e) :: nas), farg, slots, checkTypes as true, impl, polymorphicBindings,_,pre,info)
+      equation
+        (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
+        e_1 = elabCodeExp(e,cache,env,ct,info);
+        slots_1 = fillSlot((id,vt,DAE.C_VAR(),NONE()), e_1, {}, slots,checkTypes,pre,info);
+        (cache,newslots,clist,polymorphicBindings) =
+        elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings, st, pre, info);
+      then
+        (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
+
     // check types exact match
     case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,st,pre,info)
       equation
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         vt = findNamedArgType(id, farg);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot((id,vt,c1,NONE()), e_2, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
@@ -13937,6 +13948,10 @@ algorithm
       DAE.Type et;
       Integer i;
       DAE.Exp dexp;
+      
+    // Expression
+    case (_,_,_,DAE.C_EXPRESSION(),_)
+      then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
     
     // Type Name
     case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_)

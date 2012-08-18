@@ -1542,16 +1542,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "addClassAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        newp = addClassAnnotation(cr, nargs, p);
-        newst = setSymbolTableAST(st, newp);
-      then
-        ("true",newst);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getComponentCount");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         count = getComponentCount(cr, p);
@@ -10342,7 +10332,7 @@ algorithm
   end matchcontinue;
 end updateComponent;
 
-protected function addClassAnnotation
+public function addClassAnnotation
 "function:addClassAnnotation
    This function takes a `ComponentRef\' and an `Exp\' expression and a
    `Program\' and adds the expression as a annotation to the specified
@@ -10360,6 +10350,7 @@ algorithm
       Absyn.ComponentRef model_;
       list<Absyn.NamedArg> nargs;
       Absyn.TimeStamp ts;
+      Absyn.Exp exp;
     case ((model_ as Absyn.CREF_QUAL(name = _)),nargs, p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
         modelpath = Absyn.crefToPath(model_) "Class inside other class" ;
@@ -10371,6 +10362,7 @@ algorithm
         newp;
     case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
+        exp = Absyn.CALL(model_,Absyn.FUNCTIONARGS({},nargs));
         modelpath = Absyn.crefToPath(model_) "Class on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);

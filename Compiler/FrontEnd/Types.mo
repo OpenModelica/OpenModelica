@@ -1066,6 +1066,9 @@ algorithm
     case Values.CODE(A=Absyn.C_TYPENAME(path=_))
       then DAE.T_CODE(DAE.C_TYPENAME(), {});
 
+    case Values.CODE(A=Absyn.C_EXPRESSION(exp=_))
+      then DAE.T_CODE(DAE.C_EXPRESSION(), {});
+
     case (v)
       equation
         str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);
@@ -2281,6 +2284,7 @@ algorithm
         str;
     
     // Code
+    case (DAE.T_CODE(DAE.C_EXPRESSION(),_)) then "$Code(Expression)";
     case (DAE.T_CODE(DAE.C_TYPENAME(),_)) then "$Code(TypeName)";
     case (DAE.T_CODE(DAE.C_VARIABLENAME(),_)) then "$Code(VariableName)";
     case (DAE.T_CODE(DAE.C_VARIABLENAMES(),_)) then "$Code(VariableName[:])";
@@ -6654,6 +6658,7 @@ public function printCodeTypeStr
   output String str;
 algorithm
   str := match ct
+    case DAE.C_EXPRESSION() then "OpenModelica.Code.Expression";
     case DAE.C_TYPENAME() then "OpenModelica.Code.TypeName";
     case DAE.C_VARIABLENAME() then "OpenModelica.Code.VariableName";
     case DAE.C_VARIABLENAMES() then "OpenModelica.Code.VariableNames";

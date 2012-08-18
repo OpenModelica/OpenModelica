@@ -811,6 +811,7 @@ algorithm
       DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.ClassDef cdef;
+      Absyn.Exp aexp;
       DAE.DAElist dae;
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
@@ -1776,7 +1777,17 @@ algorithm
         ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, "Documentation", SOME(("","")),Interactive.getDocumentationAnnotationString);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
-      
+
+    case (cache,env,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),msg)
+      equation
+        p = Interactive.addClassAnnotation(Absyn.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
+      then
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
+
+    case (cache,env,"addClassAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         b = Interactive.isPackage(classpath, p);

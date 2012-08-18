@@ -930,6 +930,9 @@ public uniontype Type "models the different front-end and back-end types"
 end Type;
 
 public uniontype CodeType
+  record C_EXPRESSION
+  end C_EXPRESSION;
+
   record C_TYPENAME
   end C_TYPENAME;
   
