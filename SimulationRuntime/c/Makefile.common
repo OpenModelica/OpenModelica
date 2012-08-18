@@ -55,6 +55,13 @@ RUNTIME_HEADERS = ./f2c.h \
 ./util/utility.h \
 ./util/varinfo.h
 
+RUNTIME_HEADERS_FMU = \
+./simulation/solver/initialization.h \
+./simulation/solver/initialization_data.h \
+./simulation/solver/events.h \
+./simulation/solver/solver_main.h \
+./util/list.h \
+
 .PHONY : clean all ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
 
 all : install 
@@ -104,7 +111,7 @@ install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simula
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)
 	# copy fmi stuff
-	cp -p ../fmi/export/*.h \
+	cp -p $(RUNTIME_HEADERS_FMU) ../fmi/export/*.h \
 	   ../fmi/export/fmu_model_interface.c \
 	   ../fmi/import/fmuWrapper.h \
 	   ../fmi/import/xmlparser.h $(builddir_inc)
