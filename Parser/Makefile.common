@@ -1,5 +1,5 @@
 COMPILERHOME=../Compiler/
-BUILDINC = -I../build/include/omc -I../Compiler/runtime
+BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
 RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
