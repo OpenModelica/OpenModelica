@@ -543,7 +543,6 @@ algorithm
       list<SCode.Enum> enumLst;
       String n,name;
       Option<SCode.ExternalDecl> extdecl;
-      Absyn.Info info;
       Prefix.Prefix pre;
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name = name, classDef =

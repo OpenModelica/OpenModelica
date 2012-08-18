@@ -1298,7 +1298,7 @@ algorithm
       DAE.Function daeMainFunction;
       Function mainFunction;
       list<Function> fns;
-      list<String> libs, includes, includeDirs;
+      list<String> libs, includeDirs;
       MakefileParams makefileParams;
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
@@ -2280,7 +2280,6 @@ algorithm
       list<BackendDAE.Variables> orderedVars;
       BackendDAE.Variables knownVars,vars;
       list<BackendDAE.Var> varlst,varlst1,varlst2;
-      list<RecordDeclaration> recordDecls;
       
       list<JacobianMatrix> LinearMatrices;
       HashTableCrefToSimVar crefToSimVarHT;

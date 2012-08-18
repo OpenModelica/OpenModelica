@@ -5420,7 +5420,6 @@ protected function matrixVectorMultiplication
 algorithm
   (outExp,outLstRef) := matchcontinue(jac,row,col,vars,size,inExpArr,inLstRef)
   local
-    list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
     DAE.Exp e,exp1,eqExp,varExp;
     array<DAE.Exp> expArr;
     DAE.ComponentRef cr;

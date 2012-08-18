@@ -11317,7 +11317,7 @@ algorithm
         inlineType = isInlineFunc2(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
         
-        daeElts = optimizeFunction(fpath,daeElts,NONE(),{},{},{});
+        daeElts = optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
         cmt = extractClassDefComment(cache, env, cd);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
         Debug.bcall3(false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
@@ -17324,8 +17324,9 @@ algorithm
   end matchcontinue;
 end redeclareBasicType; 
 
-protected function optimizeFunction
-  "Does for example tail recursion optimization"
+protected function optimizeFunctionCheckForLocals
+  "* Checks for shadowing local declarations
+  * Does tail recursion optimization"
   input Absyn.Path path;
   input list<DAE.Element> inElts;
   input Option<DAE.Element> oalg;
@@ -17347,24 +17348,25 @@ algorithm
       equation
         // Adding tail recursion optimization
         stmts = optimizeLastStatementTail(path,stmts,listReverse(invars),listReverse(outvars),{});
+        (_,(false,_)) = DAEUtil.traverseDAEEquationsStmts(stmts,checkMatchShadowing,(false,invars));
       then listReverse(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::acc);
       // Remove empty sections
     case (path,(elt1 as DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,oalg,acc,invars,outvars)
-      then optimizeFunction(path,elts,oalg,acc,invars,outvars);
+      then optimizeFunctionCheckForLocals(path,elts,oalg,acc,invars,outvars);
     case (path,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),acc,invars,outvars)
       equation
         str = Absyn.pathString(path);
         Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
-      then optimizeFunction(path,elts,SOME(elt1),elt2::acc,invars,outvars);
+      then optimizeFunctionCheckForLocals(path,elts,SOME(elt1),elt2::acc,invars,outvars);
     case (path,(elt as DAE.ALGORITHM(source=_))::elts,NONE(),acc,invars,outvars)
-      then optimizeFunction(path,elts,SOME(elt),acc,invars,outvars);
+      then optimizeFunctionCheckForLocals(path,elts,SOME(elt),acc,invars,outvars);
     case (path,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.OUTPUT()))::elts,oalg,acc,invars,outvars)
-      then optimizeFunction(path,elts,oalg,elt::acc,invars,name::outvars);
+      then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,name::outvars);
     case (path,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.INPUT()))::elts,oalg,acc,invars,outvars)
-      then optimizeFunction(path,elts,oalg,elt::acc,name::invars,outvars);
-    case (path,elt::elts,oalg,acc,invars,outvars) then optimizeFunction(path,elts,oalg,elt::acc,invars,outvars);
+      then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,name::invars,outvars);
+    case (path,elt::elts,oalg,acc,invars,outvars) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
   end match;
-end optimizeFunction;
+end optimizeFunctionCheckForLocals;
 
 protected function optimizeLastStatementTail
   input Absyn.Path path;
@@ -17507,35 +17509,52 @@ algorithm
       then (DAE.IFEXP(e1,e2,e3),true);
     case (path,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,localDecls,cases,et),vars,source)
       equation
-        checkShadowing(localDecls,vars);
         cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,source);
       then (DAE.MATCHEXPRESSION(matchType,inputs,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
 end optimizeStatementTail3;
 
+protected function checkMatchShadowing
+  input tuple<DAE.Exp,tuple<Boolean,list<String>>> inTpl;
+  output tuple<DAE.Exp,tuple<Boolean,list<String>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp exp;
+      list<String> vars;
+      list<DAE.Element> localDecls;
+      Boolean b;
+    case ((exp as DAE.MATCHEXPRESSION(localDecls=localDecls),(_,vars)))
+      equation
+        b = checkShadowing(localDecls,vars);
+      then ((exp,(b,vars)));
+    else inTpl;
+  end matchcontinue;
+end checkMatchShadowing;
+
 protected function checkShadowing
   input list<DAE.Element> inElts;
   input list<String> vars;
+  output Boolean shadows;
 algorithm
-  _ := matchcontinue (inElts,vars)
+  shadows := matchcontinue (inElts,vars)
     local
       String name;
       DAE.ElementSource source;
       list<DAE.Element> elts;
       
-    case ({},_) then ();
+    case ({},_) then false;
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name))::elts,vars)
       equation
         // TODO: Make this scale better than squared
         false = listMember(name,vars);
-        checkShadowing(elts,vars);
-      then ();
+      then checkShadowing(elts,vars);
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),source=source)::elts,vars)
       equation
         true = listMember(name,vars);
-        Error.addSourceMessage(Error.MATCH_SHADOWING_OPTIMIZER,{name},DAEUtil.getElementSourceFileInfo(source));
-      then fail();
+        Error.addSourceMessage(Error.MATCH_SHADOWING,{name},DAEUtil.getElementSourceFileInfo(source));
+      then true;
   end matchcontinue;
 end checkShadowing;
 

@@ -600,9 +600,9 @@ public constant Message RECURSION_DEPTH_REACHED = MESSAGE(526, TRANSLATION(), ER
   Util.gettext("The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
-  Util.gettext(" Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."));
+  Util.gettext("Local variable '%s' shadows input or result variables in a match-expression."));
 public constant Message META_POLYMORPHIC = MESSAGE(5002, TRANSLATION(), ERROR(),
-  Util.gettext(" %s uses invalid subtypeof syntax. Only subtypeof Any is supported."));
+  Util.gettext("%s uses invalid subtypeof syntax. Only subtypeof Any is supported."));
 public constant Message META_FUNCTION_TYPE_NO_PARTIAL_PREFIX = MESSAGE(5003, TRANSLATION(), ERROR(),
   Util.gettext("%s is used as a function reference, but doesn't specify the partial prefix."));
 public constant Message META_MATCH_EQUATION_FORBIDDEN = MESSAGE(5004, TRANSLATION(), ERROR(),
@@ -657,8 +657,6 @@ public constant Message REDUCTION_TYPE_ERROR = MESSAGE(5030, TRANSLATION(), ERRO
   Util.gettext("Reductions require the types of the %s and %s to be %s, but got: %s and %s."));
 public constant Message UNSUPPORTED_REDUCTION_TYPE = MESSAGE(5031, TRANSLATION(), ERROR(),
   Util.gettext("Expected a reduction function with type signature ('A,'B) => 'B, but got %s."));
-public constant Message MATCH_SHADOWING_OPTIMIZER = MESSAGE(5032, TRANSLATION(), WARNING(),
-  Util.gettext("Cannot optimize function due to a local variable having the same name as an input variable: %s."));
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(),
