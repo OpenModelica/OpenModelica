@@ -1286,14 +1286,15 @@ algorithm
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       BackendDAE.BackendDAEType btp; 
       BackendDAE.EqSystems systs,systs1;  
-      list<BackendDAE.Var> ordvarslst;
+      list<BackendDAE.Var> ordvarslst,varlst;
     case (false,_,_) then inDAE;
     case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,BackendDAE.ALIASVARS(varMappingsCref,varMappingsExp,aliasVars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
       equation
         ordvarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         ordvars = BackendDAEUtil.listVar(ordvarslst);
         // replace moved vars in knvars,ineqns,remeqns
-        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,repl);
+        (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
+        aliasVars = List.fold(varlst,fixAliasConstBindings,aliasVars);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
         (inieqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
@@ -1328,10 +1329,48 @@ algorithm
     end match;
 end removeSimpleEquationsUpdateWrapper;
 
+protected function fixAliasConstBindings
+  input BackendDAE.Var iAVar;
+  input BackendDAE.Variables iAVars;
+  output BackendDAE.Variables oAVars;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e;
+  BackendDAE.Var avar;
+algorithm
+  cr := BackendVariable.varCref(iAVar);
+  e := BackendVariable.varBindExp(iAVar);
+  e := fixAliasConstBindings1(cr,e,iAVars);
+  avar := BackendVariable.setBindExp(iAVar, e);
+  oAVars := BackendVariable.addVar(avar, iAVars);
+end fixAliasConstBindings;
+
+protected function fixAliasConstBindings1
+  input DAE.ComponentRef iCr;
+  input DAE.Exp iExp;
+  input BackendDAE.Variables iAVars;
+  output DAE.Exp oExp;
+algorithm
+  oExp := matchcontinue(iCr,iExp,iAVars)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+    case (_,_,_)
+      equation
+        cr::_ = Expression.extractCrefsFromExp(iExp);
+        (BackendDAE.VAR(bindExp=SOME(e))::{},_) = BackendVariable.getVar(cr,iAVars);
+      then
+        fixAliasConstBindings1(cr,e,iAVars);
+    else
+      then 
+        iExp;  
+  end matchcontinue;
+end fixAliasConstBindings1;
+
 protected function replaceAliasVarTraverser
 "autor: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
- output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+ input tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>>> inTpl;
+ output tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -1339,12 +1378,15 @@ algorithm
       BackendDAE.Var v,v1;
       BackendVarTransform.VariableReplacements repl;
       DAE.Exp e,e1;
-    case ((v as BackendDAE.VAR(bindExp=SOME(e)),repl))
+      list<BackendDAE.Var> varlst;
+      Boolean b;
+    case ((v as BackendDAE.VAR(bindExp=SOME(e)),(repl,varlst)))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
-        false = Expression.isConst(e1);
-        v1 = BackendVariable.setBindExp(v,e1);
-      then ((v1,repl));
+        b = Expression.isConst(e1);
+        v1 = Debug.bcallret2(not b,BackendVariable.setBindExp,v,e1,v);
+        varlst = List.consOnTrue(b, v1, varlst);
+      then ((v1,(repl,varlst)));
     case inTpl then inTpl;
   end matchcontinue;
 end replaceAliasVarTraverser;
