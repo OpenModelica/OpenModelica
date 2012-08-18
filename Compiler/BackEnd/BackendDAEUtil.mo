@@ -8355,7 +8355,7 @@ protected function reduceIndexDAE
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
-  list<BackendDAE.DAEHandlerArg> args;
+  list<Option<BackendDAE.DAEHandlerArg>> args;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
@@ -8378,18 +8378,18 @@ protected function mapReduceIndexDAE
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   input list<BackendDAE.EqSystem> acc;
-  input list<BackendDAE.DAEHandlerArg> acc1;
+  input list<Option<BackendDAE.DAEHandlerArg>> acc1;
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
-  output list<BackendDAE.DAEHandlerArg> oargs;
+  output list<Option<BackendDAE.DAEHandlerArg>> oargs;
 algorithm
   (osysts,oshared,oargs) := match (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-      BackendDAE.DAEHandlerArg arg;
-      list<BackendDAE.DAEHandlerArg> args;
+      Option<BackendDAE.DAEHandlerArg> arg;
+      list<Option<BackendDAE.DAEHandlerArg>> args;
     case ({},_,_,_,_,_,_) then (listReverse(acc),ishared,listReverse(acc1));
     case (syst::systs,_,_,_,_,_,_)
       equation
@@ -8411,7 +8411,7 @@ protected function reduceIndexDAEWork
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output BackendDAE.DAEHandlerArg oArg;
+  output Option<BackendDAE.DAEHandlerArg> oArg;
 algorithm
   (osyst,oshared,oArg) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection)
     local 
@@ -8424,8 +8424,11 @@ algorithm
       StructurallySingularSystemHandlerFunc sssHandler;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
-      
-    case (_,_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
+
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_)
+      then
+        (isyst,ishared,NONE());      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
       equation
         //print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.SOLVABLE());
@@ -8435,7 +8438,7 @@ algorithm
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
         //profilerresults();        
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      then (syst,shared,arg);
+      then (syst,shared,SOME(arg));
     else
       equation
         str = "Transformation Module failed!";
@@ -8449,7 +8452,7 @@ protected function mapStateSelectionDAE
   Run the state selection Algorithm."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
-  input list<BackendDAE.DAEHandlerArg> iargs;
+  input list<Option<BackendDAE.DAEHandlerArg>> iargs;
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   input list<BackendDAE.EqSystem> acc;
   output list<BackendDAE.EqSystem> osysts;
@@ -8461,9 +8464,13 @@ algorithm
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
       BackendDAE.DAEHandlerArg arg;
-      list<BackendDAE.DAEHandlerArg> args;
+      list<Option<BackendDAE.DAEHandlerArg>> args;
     case ({},_,_,_,_) then (listReverse(acc),ishared);
-    case (syst::systs,_,arg::args,_,_)
+    case (syst::systs,_,NONE()::args,_,_)
+      equation
+        (systs,shared) = mapStateSelectionDAE(systs,ishared,args,stateDeselection,syst::acc);
+      then (systs,shared);
+    case (syst::systs,_,SOME(arg)::args,_,_)
       equation
         (syst,shared) = stateSelectionDAEWork(syst,ishared,arg,stateDeselection);
         (systs,shared) = mapStateSelectionDAE(systs,shared,args,stateDeselection,syst::acc);
@@ -8533,10 +8540,10 @@ algorithm
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
         (dae,runMatching) = optModule(inDAE);
+        dae1 = reduceIndexDAE(dae,NONE(),matchingAlgorithm,daeHandler);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
-        dae1 = checktransformDAE(runMatching,dae,matchingAlgorithm,daeHandler);
         (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
       then
         (dae2,status);
@@ -8839,7 +8846,6 @@ algorithm
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters",false),
           (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
           (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
-          (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
           (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
           (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
           (BackendDAECreate.expandDerOperator,"expandDerOperator",false),

@@ -5,6 +5,7 @@ package Uncertainties
   import Algorithm;
   import BackendDAE;
   import BackendVariable;
+  import Debug;
   import List;
   import Env;
   import Interactive;
@@ -893,6 +894,8 @@ algorithm
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
     BackendDAE.SymbolicJacobians symjacs;
+    list<BackendDAE.Equation> eqnslst;
+    Boolean b;
   
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
@@ -901,7 +904,9 @@ algorithm
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
        orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
-       orderedEqs = BackendDAEUtil.listEquation(BackendVarTransform.replaceEquations(BackendDAEUtil.equationList(orderedEqs),repl,NONE()));
+       eqnslst = BackendDAEUtil.equationList(orderedEqs);
+       (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst,repl,NONE());
+       orderedEqs = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,orderedEqs);
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
@@ -1177,7 +1182,7 @@ algorithm
     case (e::eqns,eqnIndex,vars,knvars,mvars,repl,inDoubles,m,elimVarIndexList,false) equation
       //true = RTOpts.eliminationLevel() > 0;
       //false = equationHasZeroCrossing(e);
-      {e} = BackendVarTransform.replaceEquations({e},repl,NONE());
+      ({e},_) = BackendVarTransform.replaceEquations({e},repl,NONE());
       
       // Attempt to solve the equation wrt to the variables to be eliminated.
       varIndexList = m[eqnIndex];

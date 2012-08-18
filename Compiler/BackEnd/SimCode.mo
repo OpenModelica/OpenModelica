@@ -5667,7 +5667,7 @@ algorithm
         c = listGet(crefs,s);
         var = listGet(varlst,s);
         eqn = listGet(eqnLst,e);
-        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl,NONE());
+        (eqn1::_,_) = BackendVarTransform.replaceEquations({eqn},repl,NONE());
         (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);
       then 
         ((eqn1::eqnLst1),(var::varlst1));

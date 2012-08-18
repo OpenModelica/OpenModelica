@@ -66,7 +66,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
-protected import HashTableCrILst;
 protected import List;
 protected import Types;
 
@@ -125,14 +124,12 @@ algorithm
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),tpl)
+    case (BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching),tpl)
       equation
         orderedVars = inlineVariables(orderedVars,tpl);
         orderedEqs = inlineEquationArray(orderedEqs,tpl);
-        // TODO: Incidencematrix may change, but it's not updated here?! 
-      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
+      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching);
   end match;
 end inlineEquationSystem;
 

@@ -463,7 +463,7 @@ algorithm
         // get Vars in Eqn
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        {eqn} = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
+        ({eqn},_) = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
         vars1 = BackendEquation.equationVars(eqn,vars);
         varlst = BackendDAEUtil.varList(vars1);
         l = listLength(varlst);
@@ -793,7 +793,7 @@ algorithm
         // get Vars in Eqn
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        {eqn} = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
+        ({eqn},_) = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
         vars1 = BackendEquation.equationVars(eqn,vars);
         varlst = BackendDAEUtil.varList(vars1);
         l = listLength(varlst);
@@ -1423,7 +1423,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case ((e,repl))
       equation
-        {e1} = BackendVarTransform.replaceEquations({e},repl,NONE());
+        ({e1},_) = BackendVarTransform.replaceEquations({e},repl,NONE());
       then ((e1,repl));
   end match;
 end replaceEquationTraverser;
@@ -1661,7 +1661,7 @@ algorithm
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl,NONE());
+        ({eqn1},_) = BackendVarTransform.replaceEquations({eqn},repl,NONE());
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
         eqns2 = replacementsInEqns1(rest,repl,eqns1);
       then eqns2;
@@ -3079,23 +3079,25 @@ end removeFinalParameters;
 protected function removeFinalParametersWork
 "function: removeFinalParametersWork
   autor Frenkel TUD"
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := match (syst,repl)
+  osyst := match (isyst,repl)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       list<BackendDAE.Equation> eqns_1,lsteqns;
-      BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),_)
+      Boolean b;
+      BackendDAE.EqSystem syst;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_)
       equation
         lsteqns = BackendDAEUtil.equationList(eqns);
-        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        eqns1 = BackendDAEUtil.listEquation(eqns_1);
+        (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+        eqns1 = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqns_1,eqns);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),isyst);
       then
-        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching);
+        syst;
   end match;
 end removeFinalParametersWork;
 
@@ -3276,7 +3278,7 @@ algorithm
       equation      
         lsteqns = BackendDAEUtil.equationList(eqns);
         (vars,_) = replaceFinalVars(1,vars,repl); // replacing variable attributes (e.g start) in unknown vars 
-        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+        (eqns_1,_) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = BackendDAEUtil.listEquation(eqns_1);
       then
         BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching);
@@ -3361,18 +3363,19 @@ protected function removeProtectedParameterswork
 algorithm
   osyst := match (isyst,repl)
     local
-      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.EqSystem syst;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       list<BackendDAE.Equation> eqns_1,lsteqns;
-      BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_)
+      Boolean b;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_)
       equation      
         lsteqns = BackendDAEUtil.equationList(eqns);
-        eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        eqns1 = BackendDAEUtil.listEquation(eqns_1);
+        (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+        eqns1 = Debug.bcallret1(b, BackendDAEUtil.listEquation,eqns_1,eqns);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),isyst);
       then
-        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching);
+        syst;
   end match;
 end removeProtectedParameterswork;
 
@@ -3506,6 +3509,7 @@ algorithm
       Integer size;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
+      Boolean b;
     case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation     
         // sort parameters
@@ -3519,12 +3523,12 @@ algorithm
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
         // do replacements in initial equations
         eqnslst = BackendDAEUtil.equationList(inieqns);
-        eqnslst = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        inieqns = BackendDAEUtil.listEquation(eqnslst);
+        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
+        inieqns = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,inieqns);
         // do replacements in simple equations
         eqnslst = BackendDAEUtil.equationList(remeqns);
-        eqnslst = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        remeqns = BackendDAEUtil.listEquation(eqnslst);
+        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
+        remeqns = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,remeqns);
         // do replacements in systems        
         systs = List.map1(systs,removeProtectedParameterswork,repl);
       then
@@ -3792,7 +3796,6 @@ protected
 algorithm
   BackendDAE.DAE({syst},shared) := inDAE;
   (syst,shared,b) := removeEqualFunctionCalls1(syst,shared);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
   outRunMatching := b; // until does not update assignments and comps  
   outDAE := BackendDAE.DAE({syst},shared);
 end removeEqualFunctionCallsPast;
@@ -4612,10 +4615,8 @@ algorithm
         // remove changed eqns
         eqnlst = List.map1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),matching);
+        syst = Util.if_(b2,BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),syst);
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
-        (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),matching);
       then
         (syst,(shared,b));
   end match;  
@@ -10777,7 +10778,6 @@ algorithm
         glst = List.map1r(othercomps1,arrayGet,derivedEquationsArr);
         hlst = List.map1r(residual1,arrayGet,derivedEquationsArr);
         g = List.flatten(glst);
-        //g = BackendVarTransform.replaceEquations(g, repl,NONE());
         //pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendDAEUtil.listVar(listAppend(BackendDAEUtil.varList(sysvars),knvarlst)));
         pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendVariable.daeVars(isyst),kvars);
         pdvarlst = List.map(pdcr_lst,makePardialDerVar);
@@ -11161,7 +11161,7 @@ protected function getEquationsPointZero "function getEquationsPointZero
 algorithm
   outEqn := BackendDAEUtil.equationNth(inEqns, index-1);
   (outEqn,_) := BackendEquation.traverseBackendDAEExpsEqn(outEqn,replaceDerCalls,inVars);
-  outEqn::_ := BackendVarTransform.replaceEquations({outEqn}, inRepl,NONE());
+  (outEqn::_,_) := BackendVarTransform.replaceEquations({outEqn}, inRepl,NONE());
 end getEquationsPointZero;
 
 protected function getZeroVarReplacements "function getZeroVarReplacements
@@ -11295,7 +11295,7 @@ algorithm
         _ = arrayUpdate(eqnmark,e,true);
         eqn = BackendDAEUtil.equationNth(inEqns, e-1);
         (eqn,_) = BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inVars);
-        eqn::_ = BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
+        (eqn::_,_) = BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
        (outEqsLst,outComps) = getOtherEquationsPointZero(rest,inVars,inEqns,inRepl,eqnmark,mapIncRowEqn,eqn::inEqsLst,e::inComps);
       then
         (outEqsLst,outComps);
@@ -11307,7 +11307,7 @@ algorithm
         _ = arrayUpdate(eqnmark,e,true);
         eqn = BackendDAEUtil.equationNth(inEqns, e-1);
         (eqn,_) = BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inVars);
-        eqn::_ = BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
+        (eqn::_,_) = BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
        (outEqsLst,outComps) = getOtherEquationsPointZero(rest,inVars,inEqns,inRepl,eqnmark,mapIncRowEqn,eqn::inEqsLst,e::inComps);
       then
         (outEqsLst,outComps);        
@@ -11492,7 +11492,7 @@ protected
 algorithm
   eqn := BackendDAEUtil.equationNth(inEqns, c-1);
   (eqn,_) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCalls,inOtherVars);
-  eqn::_ := BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
+  (eqn::_,_) := BackendVarTransform.replaceEquations({eqn}, inRepl,SOME(BackendVarTransform.skipPreOperator));
   outEqns := BackendEquation.equationSetnth(inEqns,c-1,eqn);
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquation,eqn);
 end replaceOtherVarinResidualEqns;
