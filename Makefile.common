@@ -204,7 +204,7 @@ install: install-dirs install-python
 	# Libraries
 	cp -rp ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
-	cp -p ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
+	cp -rp ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
 	# License
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
