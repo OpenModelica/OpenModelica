@@ -99,6 +99,8 @@ tab-error:
 utf8-error:
 	rm -f utf8-error.log*
 	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
+	# Also detect some valid UTF-8 that were obviously fucked up by eclipse
+	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
 	@cat utf8-error.log
 	@test ! -s utf8-error.log
 	rm -f utf8-error.log*
