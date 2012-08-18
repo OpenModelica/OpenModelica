@@ -1197,7 +1197,7 @@ algorithm
         (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
-        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.EQUATION(e1_2,e2_2,source)::inAcc,false);
+        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.EQUATION(e1_2,e2_2,source)::inAcc,true);
       then
         (es,b1);
     case ((BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source) :: es),repl,_,_,_)
