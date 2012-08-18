@@ -72,9 +72,8 @@ public function relaxSystem
   author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,relaxSystem0,false);
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,relaxSystem0,false);
 end relaxSystem;
 
 protected function relaxSystem0

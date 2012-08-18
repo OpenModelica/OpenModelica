@@ -90,19 +90,6 @@ protected import Uncertainties;
  * inline arrayeqns stuff
  *
  */
-public function inlineArrayEqnPast "function inlineArrayEqnPast
-  autor: Frenkel TUD 2011-3"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
-protected
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,inlineArrayEqn1,false);
-end inlineArrayEqnPast;
-
 public function inlineArrayEqn "function inlineArrayEqn
   autor: Frenkel TUD 2011-3"
   input BackendDAE.BackendDAE inDAE;
@@ -277,10 +264,8 @@ end generateScalarArrayEqns2;
 public function lateInlineFunction "function lateInlineFunction"
     input BackendDAE.BackendDAE inDAE;
     output BackendDAE.BackendDAE outDAE;
-    output Boolean outRunMatching;
 algorithm
   outDAE := Inline.inlineCalls({DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
-  outRunMatching := true;
 end lateInlineFunction;
 
 
@@ -364,20 +349,6 @@ algorithm
   end match;
 end removeSimpleEquationsFast1New;
 */
-
-public function removeSimpleEquationsFastPast "function removeSimpleEquationsFastPast"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
-protected
-  BackendVarTransform.VariableReplacements repl,repl1;
-algorithm
-  repl := BackendVarTransform.emptyReplacements();
-  (outDAE,(repl1,outRunMatching)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsFast1,(repl,false));
-  outDAE := removeSimpleEquationsShared(outRunMatching,outDAE,repl1);
-  outDAE := BackendDAEUtil.mapEqSystem(outDAE,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
-  // until remove simple equations does not update assignments and comps  
-end removeSimpleEquationsFastPast;
 
 public function removeSimpleEquationsFast
 "function: removeSimpleEquationsFast
@@ -611,13 +582,13 @@ public function removeSimpleEquationsPast
  autor: Frenkel TUD 2012-13"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 protected
   BackendVarTransform.VariableReplacements repl,repl1;
+  Boolean b;
 algorithm
   repl := BackendVarTransform.emptyReplacements();
-  (outDAE,(repl1,outRunMatching)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsPast1,(repl,false));
-  outDAE := removeSimpleEquationsShared(outRunMatching,outDAE,repl1);
+  (outDAE,(repl1,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsPast1,(repl,false));
+  outDAE := removeSimpleEquationsShared(b,outDAE,repl1);
   // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
 
@@ -3029,19 +3000,6 @@ end evaluateFinalParameters;
  * remove final paramters stuff
  *
  */ 
-public function removeFinalParametersPast
-"function removeFinalParametersPast"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
-protected
-  BackendVarTransform.VariableReplacements repl,repl1;
-algorithm
-  outDAE := removeFinalParameters(inDAE);
-  outRunMatching := true;
-  // until remove simple equations does not update assignments and comps  
-end removeFinalParametersPast;
-
 public function removeFinalParameters
 "function: removeFinalParameters
   autor Frenkel TUD"
@@ -3466,20 +3424,6 @@ end evaluateParameters;
  * remove all parameter with evaluate=true Annotation
  */
 
- 
-public function removeevaluateParametersPast
-"function removeevaluateParametersPast"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
-protected
-  BackendVarTransform.VariableReplacements repl,repl1;
-algorithm
-  outDAE := removeevaluateParameters(inDAE);
-  outRunMatching := true;
-  // until remove simple equations does not update assignments and comps  
-end removeevaluateParametersPast;
-
 public function removeevaluateParameters
 "function: removeevaluateParameters
   autor Frenkel TUD"
@@ -3783,23 +3727,6 @@ end hasEvaluateAnnotation;
  * remove equal function calls equations stuff
  *
  */
-public function removeEqualFunctionCallsPast
-"function removeEqualFunctionCallsPast"
-    input BackendDAE.BackendDAE inDAE;
-    output BackendDAE.BackendDAE outDAE;
-    output Boolean outRunMatching;
-protected
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  Boolean b;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-algorithm
-  BackendDAE.DAE({syst},shared) := inDAE;
-  (syst,shared,b) := removeEqualFunctionCalls1(syst,shared);
-  outRunMatching := b; // until does not update assignments and comps  
-  outDAE := BackendDAE.DAE({syst},shared);
-end removeEqualFunctionCallsPast;
-
 public function removeEqualFunctionCalls
 "function: removeEqualFunctionCalls
   autor: Frenkel TUD 2011-04
@@ -3816,26 +3743,12 @@ protected function removeEqualFunctionCallsWork
   autor: Frenkel TUD 2011-04
   This function detect equal function call on the form a=f(b) and c=f(b) 
   in BackendDAE.BackendDAE to get speed up"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared,_) := removeEqualFunctionCalls1(syst,shared);
-end removeEqualFunctionCallsWork;
-
-protected function removeEqualFunctionCalls1
-"function: removeEqualFunctionCalls
-  autor: Frenkel TUD 2011-04
-  This function detect equal function call on the form a=f(b) and c=f(b) 
-  in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output Boolean optimized;
 algorithm
-  (osyst,oshared,optimized) := match (isyst,ishared)
+  (osyst,oshared) := match (isyst,ishared)
     local
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
@@ -3855,9 +3768,9 @@ algorithm
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING());
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,changed);
-      then (syst,shared,b);
+      then (syst,shared);
   end match;
-end removeEqualFunctionCalls1;
+end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCallFinder
 "autor: Frenkel TUD 2010-12"
@@ -4049,21 +3962,6 @@ end replaceExp;
  * remove unused parameter
  */
 
-public function removeUnusedParameterPast
-"function removeUnusedParameterPast"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
-protected
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-algorithm
-  (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedParameter(inDAE);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
-  outRunMatching := false;   
-end removeUnusedParameterPast;
-
 public function removeUnusedParameter
 "function: removeUnusedParameter
   autor: Frenkel TUD 2011-04
@@ -4205,20 +4103,6 @@ end checkUnusedParameterExp;
  * remove unused variables
  */
 
-public function removeUnusedVariablesPast
-"function removeUnusedVariablesPast"
-    input BackendDAE.BackendDAE inDAE;
-    output BackendDAE.BackendDAE outDAE;
-    output Boolean outRunMatching;
-protected
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-algorithm
-  (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedVariables(inDAE);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
-  outRunMatching := false;   
-end removeUnusedVariablesPast;
-
 public function removeUnusedVariables
 "function: removeUnusedVariables
   autor: Frenkel TUD 2011-04
@@ -4337,19 +4221,6 @@ end checkUnusedVariablesExp;
 /* 
  * remove unused functions
  */
-
-public function removeUnusedFunctionsPast
-"function removeUnusedFunctionsPast"
-    input BackendDAE.BackendDAE inDAE;
-    output BackendDAE.BackendDAE outDAE;
-    output Boolean outRunMatching;
-protected
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-algorithm
-  outDAE := removeUnusedFunctions(inDAE);
-  outRunMatching := false;   
-end removeUnusedFunctionsPast;
 
 public function removeUnusedFunctions
 "function: removeUnusedFunctions
@@ -4569,9 +4440,8 @@ public function constantLinearSystem
 "function constantLinearSystem"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,constantLinearSystem0,false);
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,constantLinearSystem0,false);
 end constantLinearSystem;
 
 protected function constantLinearSystem0
@@ -7148,7 +7018,6 @@ end generateInitialMatrices;
 public function generateSymbolicJacobianPast
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
-  output Boolean outRunMatching;
 protected 
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
@@ -7160,14 +7029,12 @@ algorithm
   shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := Flags.enableDebug(Flags.JACOBIAN);
-  outRunMatching := false;
   _ := System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
 
 public function generateSymbolicLinearizationPast
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
-  output Boolean outRunMatching;
 protected 
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
@@ -7179,7 +7046,6 @@ algorithm
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := Flags.enableDebug(Flags.JACOBIAN);
-  outRunMatching := false;
   _ := System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicLinearizationPast;
 
@@ -9171,16 +9037,6 @@ end mergeTuple;
  * parallel backend stuff
  *
  */
-public function collapseIndependentBlocksPast
-  "Finds independent partitions of the equation system by "
-  input BackendDAE.BackendDAE dlow;
-  output BackendDAE.BackendDAE outDlow;
-  output Boolean outRunMatching;
-algorithm
-  outDlow := collapseIndependentBlocks(dlow);
-  outRunMatching := true;
-end collapseIndependentBlocksPast;
-
 public function collapseIndependentBlocks
   "Finds independent partitions of the equation system by "
   input BackendDAE.BackendDAE dlow;
@@ -9557,9 +9413,8 @@ public function simplifyTimeIndepFuncCalls "function simplifyTimeIndepFuncCalls
   author: Frenkel TUD 2012-06"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
   outDAE := simplifyTimeIndepFuncCallsShared(outDAE);
 end simplifyTimeIndepFuncCalls;
 
@@ -9682,9 +9537,8 @@ public function tearingSystemNew "function tearingSystem
   author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
 end tearingSystemNew;
 
 protected function tearingSystemNew0 "function tearingSystem0
@@ -11553,9 +11407,8 @@ public function countOperations "function countOperations
   author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
 end countOperations;
 
 protected function countOperations0 "function countOperations0

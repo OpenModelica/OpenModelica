@@ -1975,7 +1975,6 @@ public function dumpComponentsGraphStr
  components to format suitable for Mathematica"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 protected
   Integer n;
   list<String> lst;
@@ -1992,7 +1991,6 @@ algorithm
   s := stringAppendList({"{",s,"}"});
   print(s);
   outDAE := inDAE;
-  outRunMatching := false;
 end dumpComponentsGraphStr;
 
 protected function dumpComponentsGraphStr2 "help function"

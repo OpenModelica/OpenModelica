@@ -8177,7 +8177,6 @@ partial function pastoptimiseDAEModule
   This is the interface for past optimisation modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output Boolean outRunMatching;
 end pastoptimiseDAEModule;
 
 partial function StructurallySingularSystemHandlerFunc
@@ -8361,7 +8360,7 @@ algorithm
   // reduce index
   (systs,shared,args) := mapReduceIndexDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{});
   // do late inline 
-  (BackendDAE.DAE(systs,shared),_) := BackendDAEOptimize.lateInlineFunction(BackendDAE.DAE(systs,shared));
+  BackendDAE.DAE(systs,shared) := BackendDAEOptimize.lateInlineFunction(BackendDAE.DAE(systs,shared));
   // do state selection
   (systs,shared) := mapStateSelectionDAE(systs,shared,args,stateDeselection,{});
   outDAE := BackendDAE.DAE(systs,shared);
@@ -8531,7 +8530,7 @@ algorithm
       pastoptimiseDAEModule optModule;
       list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
-      Boolean runMatching,b;
+      Boolean b;
     case (_,{},_,_) 
       equation
         Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post optimisation done.\n");
@@ -8539,7 +8538,7 @@ algorithm
         (inDAE,Util.SUCCESS());
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
-        (dae,runMatching) = optModule(inDAE);
+        dae = optModule(inDAE);
         dae1 = reduceIndexDAE(dae,NONE(),matchingAlgorithm,daeHandler);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
@@ -8557,29 +8556,6 @@ algorithm
         (dae,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
 end pastoptimiseDAE;
-
-protected function checktransformDAE
-"function checktransformDAE 
-  check if the matching and sorting algorithm should be performed"
-  input Boolean inRunMatching;
-  input BackendDAE.BackendDAE inDAE;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE :=
-  match (inRunMatching,inDAE,matchingAlgorithm,daeHandler)
-    local 
-      BackendDAE.BackendDAE sode;
-    case (true,_,_,_)
-      equation
-        sode = reduceIndexDAE(inDAE,NONE(),matchingAlgorithm,daeHandler);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
-      then sode;
-    case (false,_,_,_)
-      then inDAE;
-  end match;
-end checktransformDAE;
 
 protected function checkCompsMatching
 "Function check if comps are complete, they are not complete 
@@ -8875,22 +8851,22 @@ protected
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
   (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
-  (BackendDAEOptimize.removeSimpleEquationsFastPast,"removeSimpleEquationsFast",false),
-  (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls",false),
-  (BackendDAEOptimize.removeFinalParametersPast,"removeFinalParameters",false),
-  (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn",false),
-  (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter",false),
-  (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables",false),
+  (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquationsFast",false),
+  (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
+  (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
+  (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
+  (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
+  (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
   (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
   (BackendDAEOptimize.tearingSystemNew,"tearingSystem",false),
   (OnRelaxation.relaxSystem,"relaxSystem",false),
-  (BackendDAEOptimize.removeevaluateParametersPast,"removeevaluateParameters",false),
+  (BackendDAEOptimize.removeevaluateParameters,"removeevaluateParameters",false),
   (BackendDAEOptimize.countOperations,"countOperations",false),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false),
   (BackendDAEOptimize.generateSymbolicJacobianPast,"generateSymbolicJacobian",false),
   (BackendDAEOptimize.generateSymbolicLinearizationPast,"generateSymbolicLinearization",false),
-  (BackendDAEOptimize.collapseIndependentBlocksPast,"collapseIndependentBlocks",true),
-  (BackendDAEOptimize.removeUnusedFunctionsPast,"removeUnusedFunctions",false),
+  (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
+  (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
   (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false)};
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
