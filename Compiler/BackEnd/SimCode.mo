@@ -1291,14 +1291,14 @@ public function translateFunctions
   input Option<DAE.Function> optMainFunction;
   input list<DAE.Function> idaeElements;
   input list<DAE.Type> metarecordTypes;
-  input list<String> includes;
+  input list<String> inIncludes;
 algorithm
-  _ := match (name, optMainFunction, idaeElements, metarecordTypes, includes)
+  _ := match (name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
     local
       DAE.Function daeMainFunction;
       Function mainFunction;
       list<Function> fns;
-      list<String> libs, includeDirs;
+      list<String> includes, libs, includeDirs;
       MakefileParams makefileParams;
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;

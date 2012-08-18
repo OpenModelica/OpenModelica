@@ -515,7 +515,7 @@ public function instDerivedClasses
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
-  input Absyn.Info info "File information of the extends element";
+  input Absyn.Info inInfo "File information of the extends element";
   output Env.Cache outCache;
   output Env.Env outEnv1;
   output InstanceHierarchy outIH;
@@ -526,7 +526,7 @@ public function instDerivedClasses
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
 algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,info)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo)
     local
       list<SCode.Element> elt;
       list<Env.Frame> env,cenv;
@@ -544,6 +544,7 @@ algorithm
       String n,name;
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
+      Absyn.Info info;
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
