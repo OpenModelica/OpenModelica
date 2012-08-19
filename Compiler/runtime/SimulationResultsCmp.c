@@ -632,7 +632,11 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       return mk_cons(mk_scon("Error get ref time!"),mk_nil());
     }
   }
-
+  /* check if reftime is larger or equal time */
+  res = mk_nil();
+  if (time.data[time.n] > timeref.data[timeref.n]) {
+    res = mk_cons(mk_scon("Reference file has not enough time points!\n"),res);
+  }
   var1=NULL;
   var2=NULL;
   /* compare vars */
@@ -698,7 +702,6 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     /* fprintf(stderr, "diff: %d\n",ddf.n); */
     /* for (i=0;i<vardiffindx;i++)
     fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
-    res = mk_nil();
     for (i=0;i<vardiffindx;i++){
       res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
     }
