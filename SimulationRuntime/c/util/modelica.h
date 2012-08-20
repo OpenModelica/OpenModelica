@@ -77,7 +77,7 @@ extern "C" {
 #define EXIT(code) {fflush(NULL); _exit(code);}
 #endif
 
-#include "inline.h"
+#include "omc_inline.h"
 
 #include "modelica_string.h"
 #include "memory_pool.h"

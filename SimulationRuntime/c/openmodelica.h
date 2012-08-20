@@ -88,7 +88,7 @@ typedef void* modelica_fnptr;
 #define EXIT(code) {fflush(NULL); _exit(code);}
 #endif
 
-#include "inline.h"
+#include "omc_inline.h"
 
 
 /* BEFORE: modelica_string.h */

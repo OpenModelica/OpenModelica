@@ -15,7 +15,7 @@ FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
 RUNTIME_HEADERS = ./f2c.h \
-./inline.h \
+./omc_inline.h \
 ./math-support/blaswrap.h \
 ./math-support/matrix.h \
 ./meta/gc/common.h \

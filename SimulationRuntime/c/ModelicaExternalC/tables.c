@@ -37,7 +37,7 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "inline.h"
+#include "omc_inline.h"
 #ifdef _MSC_VER
 #include "omc_msvc.h"
 #endif
