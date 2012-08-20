@@ -837,8 +837,8 @@ algorithm
         syst = BackendVariable.expandVarsDAE(ndummystates,syst);
         (syst,shared,changedeqns) = addDummyStates(dummyStates,syst,shared,vec1,vec2,mapIncRowEqn,{});
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);  
-        (syst,_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
+        (syst as BackendDAE.EQSYSTEM(m = SOME(m)),_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn);
         Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);        
         BackendDAEEXT.matching(nv1,ne1,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);     
@@ -868,10 +868,13 @@ algorithm
     local
       list<BackendDAE.Equation> orgeqns;
       BackendDAE.ConstraintEquations rest;
+      Integer size;
     case ({},_) then iCount;
     case ((_,orgeqns)::rest,_)
+      equation
+        size = BackendEquation.equationLstSize(orgeqns);
       then
-        countOrgEqns(rest,intAdd(listLength(orgeqns),iCount));
+        countOrgEqns(rest,intAdd(size,iCount));
   end match;
 end countOrgEqns;
 
@@ -1737,6 +1740,7 @@ algorithm
         list<DAE.Exp> explst;
         list<BackendDAE.Equation> selecteqns,dselecteqns;
         list<BackendDAE.WhenClause> wclst;
+        Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(listLength(dstates),eqnsSize);
@@ -1804,6 +1808,19 @@ algorithm
         (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,syst,shared);             
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        rang = listLength(states)-listLength(unassignedEqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
+        // get jacobian for all variables
+        jac = BackendDAEUtil.calculateJacobianEnhanced(vars, eqns, me, true);
+        // get for each state the determinant of the jacobian [state,dummystates]
+        //explst = getDeterminants(states,
+        // try to find listLength(unassignedEqns) constant nonzero determinants
+        
+        
+      then
+        fail();
     // dummy derivative case - no dynamic state selection // this case will be removed as var c_runtime works well            
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation

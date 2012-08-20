@@ -4371,6 +4371,7 @@ algorithm
       equation
          (f as SOME(_)) = DAEUtil.avlTreeGet(func, path);
          usefuncs1 = DAEUtil.avlTreeAdd(usefuncs, path, f);
+         // print("add partial function " +& Absyn.pathStringNoQual(path) +& "\n");
       then
         ((e, (func,usefuncs1)));
             

@@ -1525,16 +1525,18 @@ algorithm
        Option<DAE.Exp> min,max,start,fixed,nominal;
        Option<Boolean> isProtected,finalPrefix;
        Option<DAE.Distribution> dist;
+       Option<DAE.StateSelect> stateSelectOption;
     case NONE() then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
-    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
       equation
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptExpression(nominal,"nominal");
+        dumpOptStateSelection(stateSelectOption);
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
         dumpOptDistribution(dist);
@@ -1601,6 +1603,22 @@ algorithm
   end match;
 end dumpOptDistribution;
 
+
+protected function dumpOptStateSelection "
+
+"
+  input Option<DAE.StateSelect> ss;
+algorithm
+  _ := match(ss)
+  local
+    case(SOME(DAE.NEVER())) equation print("stateSelect=StateSelect.never "); then ();
+    case(SOME(DAE.AVOID())) equation print("stateSelect=StateSelect.avoid "); then ();
+    case(SOME(DAE.DEFAULT())) then ();
+    case(SOME(DAE.PREFER())) equation print("stateSelect=StateSelect.prefer "); then ();
+    case(SOME(DAE.ALWAYS())) equation print("stateSelect=StateSelect.alwas "); then ();
+    else ();
+  end match;
+end dumpOptStateSelection;
 
 protected function dumpOptExpression
 "function: dumpOptExpression
